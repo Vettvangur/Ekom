@@ -65,9 +65,9 @@ public class ManagerRepository
         return order;
     }
 
-    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string page, string pageSize)
+    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize)
     {
-        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku);
+        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId);
 
         var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
         var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
@@ -103,6 +103,12 @@ public class ManagerRepository
             store,
             paymentProvider = paymentProviderValue,
             productSku = string.IsNullOrWhiteSpace(productSku) ? null : productSku.Trim(),
+            trackingSource = string.IsNullOrWhiteSpace(trackingSource) ? null : trackingSource.Trim(),
+            trackingMedium = string.IsNullOrWhiteSpace(trackingMedium) ? null : trackingMedium.Trim(),
+            trackingCampaign = string.IsNullOrWhiteSpace(trackingCampaign) ? null : trackingCampaign.Trim(),
+            trackingTerm = string.IsNullOrWhiteSpace(trackingTerm) ? null : trackingTerm.Trim(),
+            trackingContent = string.IsNullOrWhiteSpace(trackingContent) ? null : trackingContent.Trim(),
+            trackingClickId = string.IsNullOrWhiteSpace(trackingClickId) ? null : trackingClickId.Trim(),
             pageSize = _pageSize,
             offset
         };
@@ -153,7 +159,7 @@ ORDER BY {bucketDateExpression}";
         return await db.QueryToListAsync<ChartAggregateRow>(sql, param).ConfigureAwait(false);
     }
 
-    private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider, string productSku = "")
+    private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider, string productSku = "", string trackingSource = "", string trackingMedium = "", string trackingCampaign = "", string trackingTerm = "", string trackingContent = "", string trackingClickId = "")
     {
         var whereClause = new StringBuilder();
 
@@ -195,6 +201,13 @@ ORDER BY {bucketDateExpression}";
             }
         }
 
+        AppendTrackingJsonFilter(whereClause, trackingSource, "Source", "trackingSource");
+        AppendTrackingJsonFilter(whereClause, trackingMedium, "Medium", "trackingMedium");
+        AppendTrackingJsonFilter(whereClause, trackingCampaign, "Campaign", "trackingCampaign");
+        AppendTrackingJsonFilter(whereClause, trackingTerm, "Term", "trackingTerm");
+        AppendTrackingJsonFilter(whereClause, trackingContent, "Content", "trackingContent");
+        AppendTrackingJsonFilter(whereClause, trackingClickId, "ClickId", "trackingClickId");
+
         if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders" && orderStatus != "AllOrders")
         {
             whereClause.Append(" AND OrderStatusCol = @orderStatus");
@@ -210,6 +223,22 @@ ORDER BY {bucketDateExpression}";
         }
 
         return whereClause.ToString();
+    }
+
+    private void AppendTrackingJsonFilter(StringBuilder whereClause, string value, string propertyName, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        if (_databaseFactory.IsSqlite)
+        {
+            whereClause.Append($" AND lower(json_extract(OrderInfo, '$.Tracking.{propertyName}')) = lower(@{parameterName})");
+            return;
+        }
+
+        whereClause.Append($" AND LOWER(JSON_VALUE(OrderInfo, '$.Tracking.{propertyName}')) = LOWER(@{parameterName})");
     }
 
     public async Task<List<MostSoldProduct>> MostSoldProducts(DateTime start, DateTime end, string store, string orderStatus)

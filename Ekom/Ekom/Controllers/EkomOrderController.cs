@@ -93,6 +93,11 @@ public partial class EkomOrderController : ControllerBase
                         p => p.Name,
                         p => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(p.Value?.ToString() ?? ""),
                         StringComparer.OrdinalIgnoreCase);
+
+                    request.Consent ??= obj["consent"]?.ToObject<OrderConsent>();
+                    request.Tracking ??= obj["tracking"]?.ToObject<OrderTracking>();
+                    customData.Remove("consent");
+                    customData.Remove("tracking");
                 }
                 catch (JsonReaderException ex)
                 {
@@ -110,7 +115,9 @@ public partial class EkomOrderController : ControllerBase
             {
                 OrderAction = request.Action ?? OrderAction.AddOrUpdate,
                 VariantKey = request.VariantId,
-                CustomData = customData
+                CustomData = customData,
+                Consent = request.Consent,
+                Tracking = request.Tracking
             }, ct);
 
         return Ok(orderInfo);
@@ -257,6 +264,8 @@ public partial class EkomOrderController : ControllerBase
         Request.EnableBuffering();
 
         Dictionary<string, string> customerData = new(StringComparer.OrdinalIgnoreCase);
+        OrderConsent? consent = null;
+        OrderTracking? tracking = null;
 
         if (Request.HasFormContentType)
         {
@@ -276,7 +285,12 @@ public partial class EkomOrderController : ControllerBase
             {
                 var json = JObject.Parse(body);
 
+                consent = json["consent"]?.ToObject<OrderConsent>();
+                tracking = json["tracking"]?.ToObject<OrderTracking>();
+
                 customerData = json.Properties()
+                    .Where(p => !p.Name.Equals("consent", StringComparison.OrdinalIgnoreCase))
+                    .Where(p => !p.Name.Equals("tracking", StringComparison.OrdinalIgnoreCase))
                     .ToDictionary(
                         p => p.Name,
                         p => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(p.Value?.ToString() ?? ""),
@@ -289,7 +303,28 @@ public partial class EkomOrderController : ControllerBase
             return BadRequest("Unsupported content type. Only application/json or form data is supported.");
         }
 
-        var orderInfo = await Order.Instance.UpdateCustomerInformationAsync(customerData, ct: ct);
+        var orderInfo = await Order.Instance.UpdateCustomerInformationAsync(customerData, new OrderSettings
+        {
+            Consent = consent,
+            Tracking = tracking
+        }, ct: ct);
+        return Ok(orderInfo);
+    }
+
+    [HttpPost]
+    [Route("updatetracking")]
+    [Consumes("application/json")]
+    public async Task<IActionResult> UpdateTracking([FromBody] OrderTrackingUpdateRequest request, CancellationToken ct = default)
+    {
+        if (request?.Tracking == null || string.IsNullOrWhiteSpace(request.StoreAlias))
+        {
+            return BadRequest("Missing storeAlias or tracking.");
+        }
+
+        var orderInfo = await Order.Instance.UpdateTrackingAsync(request.StoreAlias, request.Tracking, new API.OrderSettings
+        {
+            Consent = request.Consent
+        }, ct: ct);
         return Ok(orderInfo);
     }
 

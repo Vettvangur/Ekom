@@ -121,6 +121,123 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `Headless:ReValidateApis` (list): Items with `Store`, `Url`, `Secret` for headless revalidation.
 - `Payments` (object): Provider-specific configuration used by payment providers.
 
+### Tracking and consent
+
+Ekom tracking supports order-level `Consent` and `Tracking` data for automatic GA4 and Meta purchase dispatch.
+
+- `Ekom:Tracking:Enabled` turns tracking features on or off.
+- `Ekom:Tracking:CaptureEnabled` controls whether Ekom captures consent and browser tracking data from incoming requests.
+- `Ekom:Tracking:CookieName` and `Ekom:Tracking:CookieLifetimeDays` control Ekom's own tracking cookie.
+- `Ekom:Tracking:SiteBaseUrl` is used as a fallback base URL when no landing URL can be resolved from the request.
+- `Ekom:Tracking:Consent` defines the default consent cookie/header names and fallback values.
+- `Ekom:Tracking:Consent:Stores` lets you override consent handling per store alias.
+- Consent is resolved through a chain of `ITrackingConsentResolver` services.
+- The first resolver that returns a value wins; if none resolve, Ekom falls back to the configured fallback values.
+- CookieHub consent resolution is built in. Set the relevant consent cookie name(s) to `cookiehub` for any store that uses CookieHub.
+- `Ekom:Tracking:Ga4` configures GA4 purchase dispatching per store.
+- `Ekom:Tracking:Meta` configures Meta purchase dispatching per store.
+
+Full tracking config example:
+
+```json
+"Tracking": {
+  "Enabled": true,
+  "CaptureEnabled": true,
+  "CookieName": "EkomTracking",
+  "CookieLifetimeDays": 30,
+  "SiteBaseUrl": "https://www.example.com",
+  "Consent": {
+    "FallbackAnalyticsConsent": false,
+    "FallbackMarketingConsent": false,
+    "AnalyticsCookieName": "ekom_consent_analytics",
+    "AnalyticsHeaderName": "X-Ekom-Consent-Analytics",
+    "MarketingCookieName": "ekom_consent_marketing",
+    "MarketingHeaderName": "X-Ekom-Consent-Marketing",
+    "Stores": [
+      {
+        "Alias": "Store",
+        "AnalyticsCookieName": "cookiehub",
+        "MarketingCookieName": "cookiehub"
+      }
+    ]
+  },
+  "Ga4": {
+    "Enabled": true,
+    "Testing": false,
+    "Dispatching": {
+      "Capacity": 1000,
+      "MaxConcurrency": 2
+    },
+    "Stores": [
+      {
+        "Alias": "Store",
+        "MeasurementId": "G-XXXXXXXXXX",
+        "ApiSecret": "your-ga4-api-secret"
+      }
+    ]
+  },
+  "Meta": {
+    "Enabled": true,
+    "Testing": false,
+    "Dispatching": {
+      "Capacity": 1000,
+      "MaxConcurrency": 2
+    },
+    "Stores": [
+      {
+        "Alias": "Store",
+        "PixelId": "123456789012345",
+        "AccessToken": "your-meta-access-token",
+        "TestEventCode": "TEST12345"
+      }
+    ]
+  }
+}
+```
+
+Notes:
+
+- `Ga4:Stores[*]` uses `MeasurementId` and `ApiSecret` for Measurement Protocol purchase events.
+- `Meta:Stores[*]` uses `PixelId` and `AccessToken` for Conversion API purchase events.
+- `Ga4:Testing` sends events through the GA4 debug endpoint.
+- `Meta:Testing` uses `TestEventCode` when configured for the store.
+- `Dispatching:Capacity` and `Dispatching:MaxConcurrency` control the background queue used for provider dispatching.
+
+Default consent config example:
+
+```json
+"Tracking": {
+  "Consent": {
+    "FallbackAnalyticsConsent": false,
+    "FallbackMarketingConsent": false,
+    "AnalyticsCookieName": "ekom_consent_analytics",
+    "AnalyticsHeaderName": "X-Ekom-Consent-Analytics",
+    "MarketingCookieName": "ekom_consent_marketing",
+    "MarketingHeaderName": "X-Ekom-Consent-Marketing"
+  }
+}
+```
+
+Store-specific override example:
+
+```json
+"Tracking": {
+  "Consent": {
+    "FallbackAnalyticsConsent": false,
+    "FallbackMarketingConsent": false,
+    "Stores": [
+      {
+        "Alias": "Store",
+        "AnalyticsCookieName": "cookiehub",
+        "MarketingCookieName": "cookiehub"
+      }
+    ]
+  }
+}
+```
+
+When a store points `AnalyticsCookieName` and/or `MarketingCookieName` to `cookiehub`, Ekom automatically reads the CookieHub cookie, decodes its JSON payload, and maps CookieHub categories to `OrderConsent`. Additional notes and config examples are available in `Samples/U10/Ekom.Site/CookieHubConsentResolver.md`.
+
 ### Manager access rules
 
 - A user can open the Ekom manager when they belong to `Manager:SectionAccessGroup` or to any group configured under `Manager:StoreGroupPermissions`.

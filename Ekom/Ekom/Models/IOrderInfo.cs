@@ -145,6 +145,10 @@ public interface IOrderInfo
     /// </summary>
     DateTime UpdateDate { get; }
 
+    OrderConsent? Consent { get; set; }
+
+    OrderTracking? Tracking { get; set; }
+
     /// <summary>
     /// 
     /// </summary>

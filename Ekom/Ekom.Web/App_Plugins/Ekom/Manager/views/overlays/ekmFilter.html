@@ -33,8 +33,38 @@
              ng-model="filters.productSku"
              ng-model-options="{ updateOn: 'default blur', debounce: { default: 300, blur: 0 } }"
              ng-change="onProductSkuChanged()"
-             placeholder="Exact SKU" />
+              placeholder="Exact SKU" />
 
+    </div>
+
+    <div style="margin-top: 15px;">
+      <label for="ekmFilterTrackingSource" style="display:block;">Tracking source:</label>
+      <input id="ekmFilterTrackingSource" type="text" class="form-control" no-dirty-check ng-model="filters.trackingSource" ng-model-options="{ updateOn: 'default blur', debounce: { default: 300, blur: 0 } }" ng-change="onTrackingFieldChanged('trackingSource')" placeholder="facebook" />
+    </div>
+
+    <div style="margin-top: 15px;">
+      <label for="ekmFilterTrackingMedium" style="display:block;">Tracking medium:</label>
+      <input id="ekmFilterTrackingMedium" type="text" class="form-control" no-dirty-check ng-model="filters.trackingMedium" ng-model-options="{ updateOn: 'default blur', debounce: { default: 300, blur: 0 } }" ng-change="onTrackingFieldChanged('trackingMedium')" placeholder="paid-social" />
+    </div>
+
+    <div style="margin-top: 15px;">
+      <label for="ekmFilterTrackingCampaign" style="display:block;">Tracking campaign:</label>
+      <input id="ekmFilterTrackingCampaign" type="text" class="form-control" no-dirty-check ng-model="filters.trackingCampaign" ng-model-options="{ updateOn: 'default blur', debounce: { default: 300, blur: 0 } }" ng-change="onTrackingFieldChanged('trackingCampaign')" placeholder="summer_2026" />
+    </div>
+
+    <div style="margin-top: 15px;">
+      <label for="ekmFilterTrackingTerm" style="display:block;">Tracking term:</label>
+      <input id="ekmFilterTrackingTerm" type="text" class="form-control" no-dirty-check ng-model="filters.trackingTerm" ng-model-options="{ updateOn: 'default blur', debounce: { default: 300, blur: 0 } }" ng-change="onTrackingFieldChanged('trackingTerm')" placeholder="running shoes" />
+    </div>
+
+    <div style="margin-top: 15px;">
+      <label for="ekmFilterTrackingContent" style="display:block;">Tracking content:</label>
+      <input id="ekmFilterTrackingContent" type="text" class="form-control" no-dirty-check ng-model="filters.trackingContent" ng-model-options="{ updateOn: 'default blur', debounce: { default: 300, blur: 0 } }" ng-change="onTrackingFieldChanged('trackingContent')" placeholder="hero_banner" />
+    </div>
+
+    <div style="margin-top: 15px;">
+      <label for="ekmFilterTrackingClickId" style="display:block;">Tracking click id:</label>
+      <input id="ekmFilterTrackingClickId" type="text" class="form-control" no-dirty-check ng-model="filters.trackingClickId" ng-model-options="{ updateOn: 'default blur', debounce: { default: 300, blur: 0 } }" ng-change="onTrackingFieldChanged('trackingClickId')" placeholder="gclid or fbclid" />
     </div>
 
   </div>
