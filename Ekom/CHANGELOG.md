@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.105](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.104...Ekom-v0.2.105) (2026-04-15)
+
+
+### Features
+
+* add core tracking with built-in CookieHub consent ([#458](https://github.com/Vettvangur/Ekom/issues/458)) ([c71ac4b](https://github.com/Vettvangur/Ekom/commit/c71ac4b9fac0933ee96c95e9c547d36ab0c171e3))
+
 ## [0.2.104](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.103...Ekom-v0.2.104) (2026-04-15)
 
 

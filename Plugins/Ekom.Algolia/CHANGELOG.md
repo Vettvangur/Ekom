@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.12](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.11...Ekom.Algolia-v0.2.12) (2026-04-15)
+
+
+### Features
+
+* add core tracking with built-in CookieHub consent ([#458](https://github.com/Vettvangur/Ekom/issues/458)) ([c71ac4b](https://github.com/Vettvangur/Ekom/commit/c71ac4b9fac0933ee96c95e9c547d36ab0c171e3))
+
 ## [0.2.11](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.10...Ekom.Algolia-v0.2.11) (2026-04-15)
 
 
