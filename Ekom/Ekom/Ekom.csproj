@@ -80,7 +80,7 @@
     <ItemGroup>
         <PackageReference Include="Azure.Identity" Version="1.17.1" />
         <PackageReference Include="CommonServiceLocator" Version="2.0.7" />
-        <PackageReference Include="Ekom.Payments.Core" Version="0.2.51" />
+        <PackageReference Include="Ekom.Payments.Core" Version="0.2.59" />
         <PackageReference Include="Hangfire" Version="1.8.18" />
         <PackageReference Include="linq2db" Version="5.4.1" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.9" />
@@ -89,8 +89,8 @@
         <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="murmurhash" Version="1.0.3" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
