@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.70](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.69...Ekom.Klaviyo-v0.2.70) (2026-04-15)
+
+
+### Features
+
+* add core tracking with built-in CookieHub consent ([#458](https://github.com/Vettvangur/Ekom/issues/458)) ([c71ac4b](https://github.com/Vettvangur/Ekom/commit/c71ac4b9fac0933ee96c95e9c547d36ab0c171e3))
+
 ## [0.2.69](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.68...Ekom.Klaviyo-v0.2.69) (2026-04-15)
 
 
