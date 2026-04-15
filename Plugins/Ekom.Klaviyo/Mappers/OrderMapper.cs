@@ -173,6 +173,8 @@ public static class OrderMapper
             attributes = new
             {
                 unique_id = uniqueId,
+                value = o.Value,
+                value_currency = o.Currency,
                 metric = new
                 {
                     data = new

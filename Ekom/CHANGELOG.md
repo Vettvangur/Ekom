@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.101](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.100...Ekom-v0.2.101) (2026-03-31)
+
+
+### Bug Fixes
+
+* avoid manager order status dirty prompts ([#446](https://github.com/Vettvangur/Ekom/issues/446)) ([fc5914c](https://github.com/Vettvangur/Ekom/commit/fc5914cdca75336491cbf15de629610095e0e898))
+
+## [0.2.100](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.99...Ekom-v0.2.100) (2026-03-30)
+
+
+### Bug Fixes
+
+* allow manager access when no store permissions are configured ([#444](https://github.com/Vettvangur/Ekom/issues/444)) ([edb5fb4](https://github.com/Vettvangur/Ekom/commit/edb5fb484b712b0ce058df15197a54863f18b61b))
+
 ## [0.2.99](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.98...Ekom-v0.2.99) (2026-03-27)
 
 
