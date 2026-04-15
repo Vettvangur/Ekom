@@ -620,7 +620,8 @@ public class CheckoutControllerService
                         PaymentProviderKey = ekomPP.Key,
                         PaymentProviderName = ekomPP.Name,
                         OrderUniqueId = order.UniqueId,
-                        Orders = orderItems
+                        Orders = orderItems,
+                        OrderNumber =  order.OrderNumber
                     },
                 };
 
@@ -712,7 +713,8 @@ public class CheckoutControllerService
                 Store = storeAlias,
                 Member = currentMember?.Key,
                 PaymentProviderKey = ekomPP.Key,
-                OrderUniqueId = order.UniqueId
+                OrderUniqueId = order.UniqueId,
+                OrderNumber = order.OrderNumber
             };
 
             paymentSettings.OrderCustomData.Add("ekomOrderUniqueId", order.UniqueId.ToString());

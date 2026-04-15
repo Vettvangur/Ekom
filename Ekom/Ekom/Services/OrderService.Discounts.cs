@@ -164,6 +164,58 @@ partial class OrderService
     }
 
     /// <summary>
+    /// Removes the current order-level coupon discount only.
+    /// </summary>
+    public async Task RemoveCouponFromOrderAsync(string storeAlias, CancellationToken ct = default, DiscountOrderSettings? settings = null)
+    {
+        if (settings == null)
+        {
+            settings = new DiscountOrderSettings();
+        }
+
+        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+
+        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
+        if (!settings.IsEventHandler)
+        {
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        }
+        try
+        {
+            if (!TryRemoveCouponFromOrder(orderInfo))
+            {
+                return;
+            }
+
+            if (settings.UpdateOrder)
+            {
+                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+                    .ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            if (!settings.IsEventHandler)
+            {
+                semaphore.Release();
+            }
+        }
+    }
+
+    private static bool TryRemoveCouponFromOrder(OrderInfo orderInfo)
+    {
+        if (string.IsNullOrWhiteSpace(orderInfo.Coupon))
+        {
+            return false;
+        }
+
+        orderInfo.Discount = null;
+        orderInfo.Coupon = null;
+
+        return true;
+    }
+
+    /// <summary>
     /// 
     /// </summary>
     /// <exception cref="ProductNotFoundException"></exception>

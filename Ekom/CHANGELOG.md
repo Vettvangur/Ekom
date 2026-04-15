@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.2.104](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.103...Ekom-v0.2.104) (2026-04-15)
+
+
+### Bug Fixes
+
+* added enum for remove order discount ([#456](https://github.com/Vettvangur/Ekom/issues/456)) ([d766e51](https://github.com/Vettvangur/Ekom/commit/d766e517551b361fa4e78bf7ad99da80af533794))
+
+## [0.2.103](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.102...Ekom-v0.2.103) (2026-04-15)
+
+
+### Bug Fixes
+
+* remove coupon discounts without clearing manual discounts ([#454](https://github.com/Vettvangur/Ekom/issues/454)) ([f5d6dba](https://github.com/Vettvangur/Ekom/commit/f5d6dba9a702917a8d31619f1af597514d968728))
+
+## [0.2.102](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.101...Ekom-v0.2.102) (2026-04-15)
+
+
+### Bug Fixes
+
+* add ordernumber in payments settings ([#452](https://github.com/Vettvangur/Ekom/issues/452)) ([2c3b664](https://github.com/Vettvangur/Ekom/commit/2c3b664365d5aea8c834224be27d4387b9ed7e43))
+
+## [0.2.101](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.100...Ekom-v0.2.101) (2026-03-31)
+
+
+### Bug Fixes
+
+* avoid manager order status dirty prompts ([#446](https://github.com/Vettvangur/Ekom/issues/446)) ([fc5914c](https://github.com/Vettvangur/Ekom/commit/fc5914cdca75336491cbf15de629610095e0e898))
+
+## [0.2.100](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.99...Ekom-v0.2.100) (2026-03-30)
+
+
+### Bug Fixes
+
+* allow manager access when no store permissions are configured ([#444](https://github.com/Vettvangur/Ekom/issues/444)) ([edb5fb4](https://github.com/Vettvangur/Ekom/commit/edb5fb484b712b0ce058df15197a54863f18b61b))
+
 ## [0.2.99](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.98...Ekom-v0.2.99) (2026-03-27)
 
 

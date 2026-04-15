@@ -152,7 +152,11 @@ public enum FormType
     /// <summary>
     /// 
     /// </summary>
-    UpdateOrderLineQuantity
+    UpdateOrderLineQuantity,
+    /// <summary>
+    /// 
+    /// </summary>
+    RemoveCouponFromOrder
 }
 
 /// <summary>

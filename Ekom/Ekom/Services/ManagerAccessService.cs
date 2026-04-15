@@ -53,6 +53,11 @@ public sealed class ManagerAccessService : IManagerAccessService
         var normalizedStoreAlias = storeAlias.Trim();
         var permissions = _options.Value.Manager.StoreGroupPermissions;
 
+        if (permissions.Count == 0)
+        {
+            return true;
+        }
+
         if (!TryGetAllowedGroupsForStore(permissions, normalizedStoreAlias, out var allowedGroups))
         {
             return false;
@@ -86,6 +91,13 @@ public sealed class ManagerAccessService : IManagerAccessService
     public IEnumerable<IStore> GetAllowedStores()
     {
         if (_securityService.IsCurrentUserAdmin())
+        {
+            return _storeService.GetAllStores();
+        }
+
+        var permissions = _options.Value.Manager.StoreGroupPermissions;
+
+        if (permissions.Count == 0)
         {
             return _storeService.GetAllStores();
         }

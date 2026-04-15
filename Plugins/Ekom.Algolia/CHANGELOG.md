@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.11](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.10...Ekom.Algolia-v0.2.11) (2026-04-15)
+
+
+### Bug Fixes
+
+* add ordernumber in payments settings ([#452](https://github.com/Vettvangur/Ekom/issues/452)) ([2c3b664](https://github.com/Vettvangur/Ekom/commit/2c3b664365d5aea8c834224be27d4387b9ed7e43))
+
 ## [0.2.10](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.9...Ekom.Algolia-v0.2.10) (2026-03-27)
 
 

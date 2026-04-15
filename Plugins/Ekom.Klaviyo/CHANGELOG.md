@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.69](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.68...Ekom.Klaviyo-v0.2.69) (2026-04-15)
+
+
+### Bug Fixes
+
+* add ordernumber in payments settings ([#452](https://github.com/Vettvangur/Ekom/issues/452)) ([2c3b664](https://github.com/Vettvangur/Ekom/commit/2c3b664365d5aea8c834224be27d4387b9ed7e43))
+
+## [0.2.68](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.67...Ekom.Klaviyo-v0.2.68) (2026-04-13)
+
+
+### Bug Fixes
+
+* add value attributes to Klaviyo placed order event ([#448](https://github.com/Vettvangur/Ekom/issues/448)) ([c115397](https://github.com/Vettvangur/Ekom/commit/c11539731a7260e91db70d50ac52aeaaa28ccabc))
+
 ## [0.2.67](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.66...Ekom.Klaviyo-v0.2.67) (2026-03-27)
 
 
