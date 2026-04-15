@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.69](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.68...Ekom.Klaviyo-v0.2.69) (2026-04-15)
+
+
+### Bug Fixes
+
+* add ordernumber in payments settings ([#452](https://github.com/Vettvangur/Ekom/issues/452)) ([2c3b664](https://github.com/Vettvangur/Ekom/commit/2c3b664365d5aea8c834224be27d4387b9ed7e43))
+
 ## [0.2.68](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.67...Ekom.Klaviyo-v0.2.68) (2026-04-13)
 
 
