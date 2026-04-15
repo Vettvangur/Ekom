@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.103](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.102...Ekom-v0.2.103) (2026-04-15)
+
+
+### Bug Fixes
+
+* remove coupon discounts without clearing manual discounts ([#454](https://github.com/Vettvangur/Ekom/issues/454)) ([f5d6dba](https://github.com/Vettvangur/Ekom/commit/f5d6dba9a702917a8d31619f1af597514d968728))
+
 ## [0.2.102](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.101...Ekom-v0.2.102) (2026-04-15)
 
 
