@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.71](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.70...Ekom.Klaviyo-v0.2.71) (2026-04-16)
+
+
+### Bug Fixes
+
+* flatten placed order item fields for Klaviyo ([#460](https://github.com/Vettvangur/Ekom/issues/460)) ([484692e](https://github.com/Vettvangur/Ekom/commit/484692e399eebd31e04dcc3cb0fd6d67f4243b8b))
+
 ## [0.2.70](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.69...Ekom.Klaviyo-v0.2.70) (2026-04-15)
 
 
