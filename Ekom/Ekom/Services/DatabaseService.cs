@@ -67,4 +67,47 @@ internal class DatabaseService
         }
 
     }
+
+    internal virtual void EnsureOrderActivityLogTypeColumn()
+    {
+        try
+        {
+            using Repositories.DbContext db = _databaseFactory.GetDatabase();
+
+            if (_databaseFactory.IsSqlServer)
+            {
+                db.Execute(@"
+IF NOT EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'EkomOrdersActivityLog'
+      AND COLUMN_NAME = 'LogType'
+)
+BEGIN
+    ALTER TABLE [dbo].[EkomOrdersActivityLog]
+    ADD [LogType] int NOT NULL
+        CONSTRAINT [DF_EkomOrdersActivityLog_LogType] DEFAULT (0);
+END");
+
+                return;
+            }
+
+            if (_databaseFactory.IsSqlite)
+            {
+                var hasColumn = db.Execute<int>(@"
+SELECT COUNT(1)
+FROM pragma_table_info('EkomOrdersActivityLog')
+WHERE name = 'LogType';");
+
+                if (hasColumn == 0)
+                {
+                    db.Execute("ALTER TABLE EkomOrdersActivityLog ADD COLUMN LogType INTEGER NOT NULL DEFAULT 0;");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to ensure activity log type column exists");
+        }
+    }
 }

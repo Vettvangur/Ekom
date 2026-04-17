@@ -34,6 +34,24 @@ class MigrationCreateTables : MigrationBase
     }
 }
 
+class MigrationAddOrderActivityLogTypeColumn : MigrationBase
+{
+    readonly DatabaseService _dbService;
+
+    public MigrationAddOrderActivityLogTypeColumn(
+        DatabaseService dbService,
+        IMigrationContext context)
+        : base(context)
+    {
+        _dbService = dbService;
+    }
+
+    protected override void Migrate()
+    {
+        _dbService.EnsureOrderActivityLogTypeColumn();
+    }
+}
+
 class EkomMigrationPlan : MigrationPlan
 {
     public const string OrderDataUniqueIndex = "IX_EkomOrders_UniqueId";
@@ -43,6 +61,9 @@ class EkomMigrationPlan : MigrationPlan
     {
         From(string.Empty)
             .To<MigrationCreateTables>("1"); // Run only if the state is empty
+
+        From("1")
+            .To<MigrationAddOrderActivityLogTypeColumn>("2");
     }
 }
 
@@ -83,15 +104,23 @@ class EnsureTablesExist : IComponent
 
         var currentState = keyValueService.GetValue("Umbraco.Core.Upgrader.State+Ekom");
 
-        if (string.IsNullOrEmpty(currentState)) // Run only if the state is empty
+        if (string.IsNullOrEmpty(currentState))
         {
             logger.LogInformation("Running initial database setup for Ekom.");
 
             var upgrader = new Upgrader(new EkomMigrationPlan());
             upgrader.Execute(_migrationPlanExecutor, scopeProvider, keyValueService);
 
-            // Mark as complete so it never runs again
-            keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "1");
+            keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "2");
+        }
+        else if (currentState == "1")
+        {
+            logger.LogInformation("Running Ekom database activity log type migration.");
+
+            var upgrader = new Upgrader(new EkomMigrationPlan());
+            upgrader.Execute(_migrationPlanExecutor, scopeProvider, keyValueService);
+
+            keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "2");
         }
         else
         {

@@ -19,7 +19,9 @@ class CheckoutService
     readonly OrderRepository _orderRepo;
     readonly CouponRepository _couponRepo;
     readonly OrderService _orderService;
+    readonly IOrderActivityLogService _orderActivityLogService;
     readonly IMailService _mailService;
+
     public CheckoutService(
         ILogger<CheckoutService> logger,
         Configuration config,
@@ -27,6 +29,7 @@ class CheckoutService
         CouponRepository couponRepo,
         OrderService orderService,
         DiscountStockRepository discountStockRepo,
+        IOrderActivityLogService orderActivityLogService,
         IMailService mailService)
     {
         _logger = logger;
@@ -35,6 +38,7 @@ class CheckoutService
         _couponRepo = couponRepo;
         _orderService = orderService;
         _discountStockRepo = discountStockRepo;
+        _orderActivityLogService = orderActivityLogService;
         _mailService = mailService;
     }
 
@@ -129,8 +133,19 @@ class CheckoutService
             if (model.UpdateOrderStatus)
             {
                 await _orderService.ChangeOrderStatusAsync(o.UniqueId, OrderStatus.ReadyForDispatch)
-                .ConfigureAwait(false);
+                    .ConfigureAwait(false);
             }
+
+            string completionMessage = model.UpdateOrderStatus
+                ? "Order Completed."
+                : "Order Completed. Offline payment.";
+
+            await _orderActivityLogService.AddOrderLogAsync(
+                    o.UniqueId,
+                    completionMessage,
+                    logType: OrderActivityLogType.Success,
+                    ct: ct)
+                .ConfigureAwait(false);
         }
         catch (NotEnoughStockException ex)
         {

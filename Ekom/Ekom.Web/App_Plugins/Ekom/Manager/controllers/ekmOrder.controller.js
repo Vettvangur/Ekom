@@ -3,10 +3,18 @@
 
   function controller($scope, notificationsService, resources, $document, eventsService, state, $timeout) {
     var managerState = state.getState();
+    var activityLogPreviewCharacterLimit = 180;
+    var activityLogTypeInfo = 0;
+    var activityLogTypeSuccess = 1;
+    var activityLogTypeAlert = 2;
 
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
     $scope.statusList = managerState.statusList;
+    $scope.activityLogs = [];
+    $scope.activityLogsLoading = false;
+    $scope.activityLogsError = false;
+    $scope.activityLogExpandedStates = {};
 
     $scope.toggleDropdown = function (dropdownId) {
       $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
@@ -66,6 +74,8 @@
           notify: notify.checked
         })
           .then(function () {
+            $scope.model.editModel.order.orderStatus = $scope.orderChangeStatus.value;
+            loadActivityLogs();
             notificationsService.success("Success", "Order status updated.");
             eventsService.emit("order.changed", {});
           }, function () {
@@ -210,6 +220,65 @@
         shipping.phone
       );
     };
+
+    $scope.toggleActivityLog = function (index) {
+      $scope.activityLogExpandedStates[index] = !$scope.activityLogExpandedStates[index];
+    };
+
+    $scope.isActivityLogExpanded = function (index) {
+      return !!$scope.activityLogExpandedStates[index];
+    };
+
+    $scope.canExpandActivityLog = function (log) {
+      return !!(log && log.message && log.message.length > activityLogPreviewCharacterLimit);
+    };
+
+    $scope.getActivityLogIcon = function (log) {
+      switch ((log && log.logType)) {
+        case activityLogTypeSuccess:
+          return "✓";
+        case activityLogTypeAlert:
+          return "!";
+        default:
+          return "i";
+      }
+    };
+
+    $scope.getActivityLogTypeClass = function (log) {
+      switch ((log && log.logType)) {
+        case activityLogTypeSuccess:
+          return "ekmOrderActivityLog__icon--success";
+        case activityLogTypeAlert:
+          return "ekmOrderActivityLog__icon--alert";
+        default:
+          return "ekmOrderActivityLog__icon--info";
+      }
+    };
+
+    function loadActivityLogs() {
+      var order = $scope.model && $scope.model.editModel && $scope.model.editModel.order;
+
+      if (!order || !order.uniqueId) {
+        return;
+      }
+
+      $scope.activityLogsLoading = true;
+      $scope.activityLogsError = false;
+
+      resources.OrderLogs(order.uniqueId)
+        .then(function (result) {
+          $scope.activityLogs = result.data || [];
+          $scope.activityLogExpandedStates = {};
+        }, function () {
+          $scope.activityLogs = [];
+          $scope.activityLogsError = true;
+        })
+        .finally(function () {
+          $scope.activityLogsLoading = false;
+        });
+    }
+
+    loadActivityLogs();
 
     var printOrderButton = document.getElementById("printOrder");
 

@@ -96,6 +96,10 @@ static class Registrations
         services.AddTransient<OrderRepository>();
         services.AddTransient<CouponRepository>();
         services.AddTransient<ActivityLogRepository>();
+        services.AddSingleton<OrderActivityLogDispatcher>();
+        services.AddSingleton<IOrderActivityLogDispatcher>(sp => sp.GetRequiredService<OrderActivityLogDispatcher>());
+        services.AddHostedService(sp => sp.GetRequiredService<OrderActivityLogDispatcher>());
+        services.AddTransient<IOrderActivityLogService, OrderActivityLogService>();
         services.AddTransient<IProductFilterService, ProductFilterService>();
 
         services.AddSingleton<IObjectFactory<IStore>, StoreFactory>();
@@ -160,7 +164,8 @@ static class Registrations
                 f.GetService<CheckoutService>(),
                 f.GetService<IStoreService>(),
                 f.GetService<OrderRepository>(),
-                f.GetService<CheckoutControllerService>()
+                f.GetService<CheckoutControllerService>(),
+                f.GetService<IOrderActivityLogService>()
             )
         );
         services.AddTransient<Providers>(f =>

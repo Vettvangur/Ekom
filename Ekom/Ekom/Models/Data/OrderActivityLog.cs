@@ -18,6 +18,10 @@ namespace Ekom.Models
         public string UserName { get; set; }
         [Column, NotNull]
         public DateTime Date { get; set; }
+
+        [Column, NotNull]
+        public OrderActivityLogType LogType { get; set; }
+
         public string OrderNumber { get; set; }
     }
 }
