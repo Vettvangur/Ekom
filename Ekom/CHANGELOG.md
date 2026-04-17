@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.107](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.106...Ekom-v0.2.107) (2026-04-17)
+
+
+### Features
+
+* **order:** add activity log service and manager UI ([#464](https://github.com/Vettvangur/Ekom/issues/464)) ([eced8e5](https://github.com/Vettvangur/Ekom/commit/eced8e5bcf1f389331b1a7ce919186ec8341139b))
+
 ## [0.2.106](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.105...Ekom-v0.2.106) (2026-04-17)
 
 
