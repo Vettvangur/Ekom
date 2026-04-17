@@ -54,7 +54,20 @@ class UrlService : IUrlService
             return urls;
         }
 
-        var categoryProperty = JsonConvert.DeserializeObject<PropertyValue>(rawSlug);
+        PropertyValue? categoryProperty;
+        
+        if (rawSlug.IsJson())
+        {
+            categoryProperty = JsonConvert.DeserializeObject<PropertyValue>(rawSlug);
+        }
+        else
+        {
+            categoryProperty = new PropertyValue()
+            {
+                Type = PropertyEditorType.Store
+            };
+        }
+        
 
         if (categoryProperty != null && categoryProperty.Type == PropertyEditorType.Language && store.Domains.Any())
         {
