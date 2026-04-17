@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.106](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.105...Ekom-v0.2.106) (2026-04-17)
+
+
+### Bug Fixes
+
+* handle non-json slugs from Ekom ([#462](https://github.com/Vettvangur/Ekom/issues/462)) ([6e79ccc](https://github.com/Vettvangur/Ekom/commit/6e79cccf251b809953db6383701f74fce61b0d9e))
+
 ## [0.2.105](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.104...Ekom-v0.2.105) (2026-04-15)
 
 

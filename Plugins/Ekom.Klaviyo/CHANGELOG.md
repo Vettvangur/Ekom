@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.72](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.71...Ekom.Klaviyo-v0.2.72) (2026-04-17)
+
+
+### Bug Fixes
+
+* handle non-json slugs from Ekom ([#462](https://github.com/Vettvangur/Ekom/issues/462)) ([6e79ccc](https://github.com/Vettvangur/Ekom/commit/6e79cccf251b809953db6383701f74fce61b0d9e))
+
 ## [0.2.71](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.70...Ekom.Klaviyo-v0.2.71) (2026-04-16)
 
 
