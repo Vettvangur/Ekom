@@ -451,7 +451,7 @@
         "dependencies": {
           "Azure.Identity": "[1.17.1, )",
           "CommonServiceLocator": "[2.0.7, )",
-          "Ekom.Common": "[0.2.104, )",
+          "Ekom.Common": "[0.2.105, )",
           "Ekom.Payments.Core": "[0.2.59, )",
           "Hangfire": "[1.8.18, )",
           "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "[8.0.11, )",
