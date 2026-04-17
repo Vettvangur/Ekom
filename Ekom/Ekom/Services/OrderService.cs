@@ -64,7 +64,7 @@ partial class OrderService
     readonly IMemberService _memberService;
     readonly DiscountCache _discountCache;
     readonly IOrderTrackingService _orderTrackingService;
-    readonly ActivityLogRepository _activityLogRepository;
+    readonly IOrderActivityLogService _orderActivityLogService;
     readonly OrderRepository _orderRepository;
     readonly CouponRepository _couponRepository;
     readonly IStoreService _storeSvc;
@@ -81,7 +81,7 @@ partial class OrderService
         Configuration config,
         OrderRepository orderRepo,
         CouponRepository couponRepository,
-        ActivityLogRepository activityLogRepository,
+        IOrderActivityLogService orderActivityLogService,
         ILogger<OrderService> logger,
         IStoreService storeService,
         IMemoryCache memoryCache,
@@ -94,7 +94,7 @@ partial class OrderService
         _config = config;
         _orderRepository = orderRepo;
         _couponRepository = couponRepository;
-        _activityLogRepository = activityLogRepository;
+        _orderActivityLogService = orderActivityLogService;
         _storeSvc = storeService;
         _discountCache = discountCache;
         _orderTrackingService = orderTrackingService;
@@ -111,7 +111,7 @@ partial class OrderService
         Configuration config,
         OrderRepository orderRepo,
         CouponRepository couponRepository,
-        ActivityLogRepository activityLogRepository,
+        IOrderActivityLogService orderActivityLogService,
         ILogger<OrderService> logger,
         IStoreService storeService,
         IMemoryCache memoryCache,
@@ -119,7 +119,7 @@ partial class OrderService
         DiscountCache discountCache,
         IOrderTrackingService orderTrackingService,
         IHttpContextAccessor httpContextAccessor)
-        : this(config, orderRepo, couponRepository, activityLogRepository, logger, storeService, memoryCache, memberService, discountCache, orderTrackingService)
+        : this(config, orderRepo, couponRepository, orderActivityLogService, logger, storeService, memoryCache, memberService, discountCache, orderTrackingService)
     {
 
         try
@@ -429,12 +429,11 @@ partial class OrderService
 
         }
 
-        await _activityLogRepository.InsertAsync(
+        await _orderActivityLogService.AddOrderLogAsync(
             uniqueId,
             $"Order status changed. From: {oldStatus.ToString()} To: {status.ToString()}",
-            string.IsNullOrEmpty(userName)
-                ? "Customer"
-                : userName)
+            userName,
+            ct: ct)
             .ConfigureAwait(false);
 
         _logger.LogDebug(
@@ -1155,6 +1154,8 @@ partial class OrderService
                     .FirstOrDefault(x => x.Product.Key == product.Key);
             }
 
+            var isNewOrderLine = false;
+
             if (orderLine != null && action != OrderAction.New)
             {
                 _logger.LogDebug("AddOrderLineToOrderInfo: existingOrderLine Found");
@@ -1212,6 +1213,7 @@ partial class OrderService
                 );
 
                 orderInfo.orderLines.Add(orderLine);
+                isNewOrderLine = true;
             }
 
             var productDiscount = product.ProductDiscount();
@@ -1257,8 +1259,19 @@ partial class OrderService
             OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
             await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
 
-            return await UpdateOrderAndOrderInfoAsync(addedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+            var updatedOrderInfo = await UpdateOrderAndOrderInfoAsync(addedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
+
+            if (isNewOrderLine)
+            {
+                await _orderActivityLogService.AddOrderLogAsync(
+                        updatedOrderInfo.UniqueId,
+                        $"Order line added. Product: {orderLine.Product.Title}",
+                        ct: ct)
+                    .ConfigureAwait(false);
+            }
+
+            return updatedOrderInfo;
         }
         finally
         {
@@ -1368,6 +1381,7 @@ partial class OrderService
                 if (string.IsNullOrWhiteSpace(previousCustomerEmail)
                     && !string.IsNullOrWhiteSpace(newCustomerEmail))
                 {
+
                     await OrderEvents.OnCustomerEmailAddedAsync(this, new CustomerEmailAddedEventArgs
                     {
                         OrderInfo = orderInfo,
@@ -1734,6 +1748,8 @@ partial class OrderService
         {
             if (shippingProviderId == Guid.Empty) return orderInfo;
 
+            Guid previousShippingProviderId = orderInfo.ShippingProvider?.Key ?? Guid.Empty;
+
             IShippingProvider? provider = Providers.Instance.GetShippingProvider(shippingProviderId, store);
 
             if (provider == null) return orderInfo;
@@ -1744,8 +1760,20 @@ partial class OrderService
 
             await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+            OrderInfo updatedOrderInfo = await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
+
+            if (previousShippingProviderId != provider.Key)
+            {
+                await _orderActivityLogService.AddOrderLogAsync(
+                        updatedOrderInfo.UniqueId,
+                        $"Shipping provider added. Provider: {provider.Title}",
+                        logType: OrderActivityLogType.Info,
+                        ct: ct)
+                    .ConfigureAwait(false);
+            }
+
+            return updatedOrderInfo;
 
         }
         finally
@@ -1795,6 +1823,8 @@ partial class OrderService
         {
             if (paymentProviderId == Guid.Empty) return orderInfo;
 
+            Guid previousPaymentProviderId = orderInfo.PaymentProvider?.Key ?? Guid.Empty;
+
             IPaymentProvider? provider = Providers.Instance.GetPaymentProvider(paymentProviderId, store);
 
             if (provider == null) return orderInfo;
@@ -1805,8 +1835,20 @@ partial class OrderService
 
             await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+            OrderInfo updatedOrderInfo = await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
+
+            if (previousPaymentProviderId != provider.Key)
+            {
+                await _orderActivityLogService.AddOrderLogAsync(
+                        updatedOrderInfo.UniqueId,
+                        $"Payment provider added. Provider: {provider.Title}",
+                        logType: OrderActivityLogType.Info,
+                        ct: ct)
+                    .ConfigureAwait(false);
+            }
+
+            return updatedOrderInfo;
 
         }
         finally

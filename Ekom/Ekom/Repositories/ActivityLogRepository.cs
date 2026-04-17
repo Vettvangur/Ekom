@@ -4,7 +4,7 @@ using LinqToDB;
 using Microsoft.Extensions.Logging;
 
 namespace Ekom.Repositories;
-class ActivityLogRepository
+public class ActivityLogRepository
 {
     readonly ILogger _logger;
     readonly DatabaseFactory _databaseFactory;
@@ -17,18 +17,43 @@ class ActivityLogRepository
         _databaseFactory = databaseFactory;
     }
 
-    public async Task InsertAsync(Guid Key, string Log, string UserName)
-    {
-        await using DbContext db = _databaseFactory.GetDatabase();
+    public Task InsertAsync(Guid key, string log, string userName)
+        => InsertAsync(
+            new[]
+            {
+                new OrderActivityLogWrite(
+                    key,
+                    log,
+                    userName,
+                    DateTime.Now,
+                    OrderActivityLogType.Info),
+            },
+            CancellationToken.None);
 
-        await db.InsertAsync(new OrderActivityLog
+    public async Task InsertAsync(IReadOnlyCollection<OrderActivityLogWrite> items, CancellationToken ct = default)
+    {
+        if (items.Count == 0)
         {
-            UniqueID = Guid.NewGuid(),
-            Key = Key,
-            Log = Log,
-            UserName = UserName,
-            Date = DateTime.Now,
-        }).ConfigureAwait(false);
+            return;
+        }
+
+        await using DbContext db = _databaseFactory.GetDatabase();
+        await using var transaction = await db.BeginTransactionAsync().ConfigureAwait(false);
+
+        foreach (OrderActivityLogWrite item in items)
+        {
+            await db.InsertAsync(new OrderActivityLog
+            {
+                UniqueID = Guid.NewGuid(),
+                Key = item.OrderId,
+                Log = item.Message,
+                UserName = item.UserName,
+                Date = item.Date,
+                LogType = item.LogType,
+            }, token: ct).ConfigureAwait(false);
+        }
+
+        await transaction.CommitAsync(ct).ConfigureAwait(false);
     }
 
     public async Task<List<OrderActivityLog>> GetLatestActivityLogsOrdersByUserAsync(string userName)
@@ -40,8 +65,9 @@ class ActivityLogRepository
                   ,a.[Key]
                   ,a.[Log]
                   ,a.[UserName]
-                  ,a.[DATE],
- 	              b.orderNumber as OrderNumber
+                  ,a.[DATE]
+                  ,a.[LogType],
+  	              b.orderNumber as OrderNumber
               FROM [EkomOrdersActivityLog] a
               left join EkomOrders b on b.UniqueId = a.[Key]
               WHERE a.[UserName] = @0
@@ -51,8 +77,9 @@ class ActivityLogRepository
                   ,a.[Key]
                   ,a.[Log]
                   ,a.[UserName]
-                  ,a.[DATE],
- 	              b.orderNumber as OrderNumber
+                  ,a.[DATE]
+                  ,a.[LogType],
+  	              b.orderNumber as OrderNumber
               FROM [EkomOrdersActivityLog] a
               left join EkomOrders b on b.UniqueId = a.[Key]
               WHERE a.[UserName] = @0
@@ -76,8 +103,9 @@ class ActivityLogRepository
                         ,a.[Key]
                         ,a.[Log]
                         ,a.[UserName]
-                        ,a.[DATE],
- 	                    b.orderNumber as OrderNumber
+                        ,a.[DATE]
+                        ,a.[LogType],
+  	                    b.orderNumber as OrderNumber
                     FROM [EkomOrdersActivityLog] a
                     left join EkomOrders b on b.UniqueId = a.[Key]
                     WHERE UserName != 'Customer' AND UserName != ''
@@ -87,8 +115,9 @@ class ActivityLogRepository
                         ,a.[Key]
                         ,a.[Log]
                         ,a.[UserName]
-                        ,a.[DATE],
- 	                    b.orderNumber as OrderNumber
+                        ,a.[DATE]
+                        ,a.[LogType],
+  	                    b.orderNumber as OrderNumber
                     FROM [EkomOrdersActivityLog] a
                     left join EkomOrders b on b.UniqueId = a.[Key]
                     WHERE UserName != 'Customer' AND UserName != ''
@@ -111,7 +140,8 @@ class ActivityLogRepository
                       ,a.[Key]
                       ,a.[Log]
                       ,a.[UserName]
-                      ,a.[DATE],
+                      ,a.[DATE]
+                      ,a.[LogType],
 	                  b.orderNumber as OrderNumber
                   FROM [EkomOrdersActivityLog] a
                   left join EkomOrders b on b.UniqueId = a.[Key]
@@ -124,17 +154,23 @@ class ActivityLogRepository
     public async Task<List<OrderActivityLog>> GetLogsAsync(Guid uniqueId)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
-        return await db.FromSql<OrderActivityLog>(@"SELECT a.[UniqueId]
-                        ,a.[Key]
-                        ,a.[Log]
-                        ,a.[UserName]
-                        ,a.[DATE],
-	                    b.orderNumber as OrderNumber
-                    FROM [EkomOrdersActivityLog] a
-                    left join EkomOrders b on b.UniqueId = a.[Key]
-                    WHERE a.[Key] = @0
-                    order by Date desc",
-                uniqueId)
+
+        return await (
+            from activityLog in db.OrderActivityLog
+            from order in db.OrderData
+                .LeftJoin(x => x.UniqueId == activityLog.Key)
+            where activityLog.Key == uniqueId
+            orderby activityLog.Date descending
+            select new OrderActivityLog
+            {
+                UniqueID = activityLog.UniqueID,
+                Key = activityLog.Key,
+                Log = activityLog.Log,
+                UserName = activityLog.UserName,
+                Date = activityLog.Date,
+                LogType = activityLog.LogType,
+                OrderNumber = order != null ? order.OrderNumber : string.Empty,
+            })
             .ToListAsync()
             .ConfigureAwait(false);
     }

@@ -237,4 +237,27 @@
       </div>
     </div>
   </div>
+
+  <div class="ekmOrderActivityLog">
+    <h4>Activity log</h4>
+
+    <p ng-if="activityLogsLoading">Loading activity...</p>
+    <p ng-if="!activityLogsLoading && activityLogsError">Unable to load activity log.</p>
+    <p ng-if="!activityLogsLoading && !activityLogsError && activityLogs.length === 0">No activity yet.</p>
+
+    <div class="ekmOrderActivityLog__list" ng-if="!activityLogsLoading && !activityLogsError && activityLogs.length > 0">
+      <div class="ekmOrderActivityLog__item" ng-repeat="log in activityLogs track by $index">
+        <div class="ekmOrderActivityLog__content">
+          <span class="ekmOrderActivityLog__icon" ng-class="getActivityLogTypeClass(log)">{{ getActivityLogIcon(log) }}</span>
+          <div class="ekmOrderActivityLog__body">
+            <div class="ekmOrderActivityLog__date">{{ log.date | date:'dd. MMMM yyyy HH:mm' }}</div>
+            <div class="ekmOrderActivityLog__message" ng-class="{ 'ekmOrderActivityLog__message--expanded': isActivityLogExpanded($index) }">{{ log.message }}</div>
+            <button type="button" class="btn-reset ekmOrderActivityLog__toggle" ng-if="canExpandActivityLog(log)" ng-click="toggleActivityLog($index)">
+              {{ isActivityLogExpanded($index) ? 'Show less' : 'Show more' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </article>
