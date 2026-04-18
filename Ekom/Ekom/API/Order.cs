@@ -29,6 +29,7 @@ public partial class Order
     readonly IStoreService _storeSvc;
     readonly OrderRepository _orderRepo;
     readonly CheckoutControllerService _checkoutControllerService;
+    readonly IOrderActivityLogService _orderActivityLogService;
 
     /// <summary>
     /// ctor
@@ -42,7 +43,8 @@ public partial class Order
         CheckoutService checkoutService,
         IStoreService storeService,
         OrderRepository orderRepo,
-        CheckoutControllerService checkoutControllerService)
+        CheckoutControllerService checkoutControllerService,
+        IOrderActivityLogService orderActivityLogService)
     {
         _discountCache = discountCache;
         _orderService = orderService;
@@ -53,6 +55,7 @@ public partial class Order
         _logger = logger;
         _orderRepo = orderRepo;
         _checkoutControllerService = checkoutControllerService;
+        _orderActivityLogService = orderActivityLogService;
     }
 
     public IOrderInfo? GetOrder() => GetOrderAsync().GetAwaiter().GetResult();
@@ -291,6 +294,39 @@ public partial class Order
     public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string? userName = null, ChangeOrderSettings? settings = null, CancellationToken ct = default)
     {
         await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName, settings, ct)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Add an activity log entry to an existing order.
+    /// </summary>
+    /// <exception cref="ArgumentException">Thrown when orderId or message is invalid.</exception>
+    /// <exception cref="OrderInfoNotFoundException">Thrown when no order exists for the provided orderId.</exception>
+    public async Task AddActivityLogAsync(
+        Guid orderId,
+        string message,
+        string? userName = null,
+        OrderActivityLogType logType = OrderActivityLogType.Info,
+        CancellationToken ct = default)
+    {
+        if (orderId == Guid.Empty)
+        {
+            throw new ArgumentException("Order id cannot be empty.", nameof(orderId));
+        }
+
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            throw new ArgumentException("Message cannot be null or empty.", nameof(message));
+        }
+
+        OrderInfo? orderInfo = await _orderService.GetOrderAsync(orderId, ct).ConfigureAwait(false);
+
+        if (orderInfo == null)
+        {
+            throw new OrderInfoNotFoundException();
+        }
+
+        await _orderActivityLogService.AddOrderLogAsync(orderId, message, userName, logType, ct)
             .ConfigureAwait(false);
     }
 

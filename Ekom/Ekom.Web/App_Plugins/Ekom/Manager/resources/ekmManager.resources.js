@@ -55,6 +55,9 @@ angular.module("umbraco.resources").factory("Ekom.Manager.Resources", [
       OrderInfo: function (orderId) {
         return get(backofficeBaseUrl + "OrderInfo/" + orderId);
       },
+      OrderLogs: function (orderId) {
+        return get(backofficeBaseUrl + "OrderLogs/" + orderId);
+      },
       Charts: function (query) {
         return get(backofficeBaseUrl + "Charts", query);
       },

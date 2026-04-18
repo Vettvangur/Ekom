@@ -106,6 +106,13 @@ public static class OrderMapper
     internal static object ToPlacedOrderEvent(this KlaviyoPlacedOrder o, KlaviyoOptions opt)
     {
         JsonObject? shippingTo = null;
+        var itemSkus = o.Items
+            .Select(x => x.Sku)
+            .Where(x => !string.IsNullOrWhiteSpace(x));
+        var itemNames = o.Items
+            .Select(x => x.Name)
+            .Where(x => !string.IsNullOrWhiteSpace(x));
+        var itemCount = o.Items.Sum(x => x.Quantity);
 
         if (o.ShipTo is not null)
         {
@@ -162,6 +169,9 @@ public static class OrderMapper
             ["tax_value"] = o.TaxValue,
             ["shipping_to"] = shippingTo,
             ["items"] = o.Items.ToOrderLinesEvent(),
+            ["item_skus_text"] = string.Join("|", itemSkus),
+            ["item_names_text"] = string.Join("|", itemNames),
+            ["item_count"] = itemCount,
             ["store_alias"] = o.StoreAlias
         };
 

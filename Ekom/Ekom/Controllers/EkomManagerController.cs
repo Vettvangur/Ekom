@@ -18,12 +18,14 @@ public class EkomManagerController : ControllerBase
     readonly ManagerRepository _repo;
     readonly IManagerAccessService _managerAccessService;
     readonly INodeService _nodeService;
+    readonly IOrderActivityLogService _orderActivityLogService;
     readonly ILogger<EkomManagerController> _logger;
-    public EkomManagerController(ManagerRepository repo, IManagerAccessService managerAccessService, INodeService nodeService, ILogger<EkomManagerController> logger)
+    public EkomManagerController(ManagerRepository repo, IManagerAccessService managerAccessService, INodeService nodeService, IOrderActivityLogService orderActivityLogService, ILogger<EkomManagerController> logger)
     {
         _repo = repo;
         _managerAccessService = managerAccessService;
         _nodeService = nodeService;
+        _orderActivityLogService = orderActivityLogService;
         _logger = logger;
     }
 
@@ -74,6 +76,30 @@ public class EkomManagerController : ControllerBase
             return StatusCode(500, "An unexpected error occurred.");
         }
 
+    }
+
+    [HttpGet]
+    [Route("OrderLogs/{orderId}")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> GetOrderLogsAsync(Guid orderId, CancellationToken ct = default)
+    {
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(orderId, ct);
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            return Ok(await _orderActivityLogService.GetOrderLogsAsync(orderId, ct).ConfigureAwait(false));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get order logs. {OrderId}", orderId);
+
+            return StatusCode(500, "An unexpected error occurred.");
+        }
     }
 
     [HttpGet]
@@ -139,7 +165,7 @@ public class EkomManagerController : ControllerBase
 
         if (Enum.TryParse(orderStatus, out OrderStatus status))
         {
-            await Order.Instance.UpdateStatusAsync(status, orderId, null, new ChangeOrderSettings
+            await Order.Instance.UpdateStatusAsync(status, orderId, HttpContext?.User?.Identity?.Name, new ChangeOrderSettings
             {
                 FireEvents = notify
 

@@ -127,6 +127,7 @@ Ekom tracking supports order-level `Consent` and `Tracking` data for automatic G
 
 - `Ekom:Tracking:Enabled` turns tracking features on or off.
 - `Ekom:Tracking:CaptureEnabled` controls whether Ekom captures consent and browser tracking data from incoming requests.
+- `Ekom:Tracking:LogPurchaseEventData` controls whether outbound GA4 and Meta purchase payloads are logged before dispatch.
 - `Ekom:Tracking:CookieName` and `Ekom:Tracking:CookieLifetimeDays` control Ekom's own tracking cookie.
 - `Ekom:Tracking:SiteBaseUrl` is used as a fallback base URL when no landing URL can be resolved from the request.
 - `Ekom:Tracking:Consent` defines the default consent cookie/header names and fallback values.
@@ -143,6 +144,7 @@ Full tracking config example:
 "Tracking": {
   "Enabled": true,
   "CaptureEnabled": true,
+  "LogPurchaseEventData": false,
   "CookieName": "EkomTracking",
   "CookieLifetimeDays": 30,
   "SiteBaseUrl": "https://www.example.com",

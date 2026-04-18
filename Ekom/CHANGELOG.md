@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.2.110](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.109...Ekom-v0.2.110) (2026-04-18)
+
+
+### Bug Fixes
+
+* send anonymous purchase events without tracking data ([#470](https://github.com/Vettvangur/Ekom/issues/470)) ([6c8e489](https://github.com/Vettvangur/Ekom/commit/6c8e4893f4c6320e20efdd0137aa733ac03d6f7f))
+
+## [0.2.109](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.108...Ekom-v0.2.109) (2026-04-18)
+
+
+### Bug Fixes
+
+* add tracking activity log entries ([#468](https://github.com/Vettvangur/Ekom/issues/468)) ([e1cee7f](https://github.com/Vettvangur/Ekom/commit/e1cee7f81bf1380f96a99b65a230a258972c8354))
+
+## [0.2.108](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.107...Ekom-v0.2.108) (2026-04-18)
+
+
+### Bug Fixes
+
+* add optional tracking payload logging ([#466](https://github.com/Vettvangur/Ekom/issues/466)) ([9a3c57b](https://github.com/Vettvangur/Ekom/commit/9a3c57b05b8fcf04bddfb4c1f4b1e7507fd39542))
+
+## [0.2.107](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.106...Ekom-v0.2.107) (2026-04-17)
+
+
+### Features
+
+* **order:** add activity log service and manager UI ([#464](https://github.com/Vettvangur/Ekom/issues/464)) ([eced8e5](https://github.com/Vettvangur/Ekom/commit/eced8e5bcf1f389331b1a7ce919186ec8341139b))
+
+## [0.2.106](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.105...Ekom-v0.2.106) (2026-04-17)
+
+
+### Bug Fixes
+
+* handle non-json slugs from Ekom ([#462](https://github.com/Vettvangur/Ekom/issues/462)) ([6e79ccc](https://github.com/Vettvangur/Ekom/commit/6e79cccf251b809953db6383701f74fce61b0d9e))
+
 ## [0.2.105](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.104...Ekom-v0.2.105) (2026-04-15)
 
 

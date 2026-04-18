@@ -1,5 +1,7 @@
 using Ekom.Models;
+using Ekom.Repositories;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
@@ -18,12 +20,14 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
     private readonly HttpClient _httpClient;
     private readonly IOptions<TrackingOptions> _options;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<MetaTrackingService> _logger;
 
-    public MetaTrackingService(HttpClient httpClient, IOptions<TrackingOptions> options, ILogger<MetaTrackingService> logger)
+    public MetaTrackingService(HttpClient httpClient, IOptions<TrackingOptions> options, IServiceScopeFactory scopeFactory, ILogger<MetaTrackingService> logger)
     {
         _httpClient = httpClient;
         _options = options;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -32,6 +36,7 @@ public sealed class MetaTrackingService : IMetaTrackingService
         var tracking = orderInfo.Tracking ?? new OrderTracking();
         var request = new MetaPurchaseRequest
         {
+            OrderUniqueId = orderInfo.UniqueId,
             StoreAlias = orderInfo.StoreInfo.Alias,
             EventTimeUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             EventId = orderInfo.OrderNumber,
@@ -84,14 +89,24 @@ public sealed class MetaTrackingService : IMetaTrackingService
         };
 
         var url = $"{storeOptions.PixelId}/events?access_token={storeOptions.AccessToken}";
-        using var content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
+        var payloadJson = JsonSerializer.Serialize(payload, JsonOptions);
+        if (_options.Value.LogPurchaseEventData)
+        {
+            _logger.LogInformation("Meta purchase event payload for store {StoreAlias}: {Payload}", request.StoreAlias, payloadJson);
+        }
+
+        using var content = new StringContent(payloadJson, Encoding.UTF8, "application/json");
         using var response = await _httpClient.PostAsync(url, content, ct).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
             var responseBody = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            await WriteActivityLogAsync(request.OrderUniqueId, $"Meta purchase event failed ({(int)response.StatusCode})").ConfigureAwait(false);
             _logger.LogWarning("Meta tracking failed for store {StoreAlias}. Status: {StatusCode}. Response: {Response}", request.StoreAlias, response.StatusCode, responseBody);
+            return;
         }
+
+        await WriteActivityLogAsync(request.OrderUniqueId, "Meta purchase event sent").ConfigureAwait(false);
     }
 
     private object BuildEvent(MetaPurchaseRequest request)
@@ -242,5 +257,19 @@ public sealed class MetaTrackingService : IMetaTrackingService
         using var sha = SHA256.Create();
         var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(value));
         return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+    }
+
+    private async Task WriteActivityLogAsync(Guid orderUniqueId, string message)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var activityLogRepository = scope.ServiceProvider.GetRequiredService<ActivityLogRepository>();
+            await activityLogRepository.InsertAsync(orderUniqueId, message, "System").ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to write Meta activity log for order {OrderUniqueId}.", orderUniqueId);
+        }
     }
 }

@@ -2,6 +2,7 @@ namespace Ekom.Tracking;
 
 public sealed class MetaPurchaseRequest
 {
+    public Guid OrderUniqueId { get; set; }
     public string StoreAlias { get; set; } = string.Empty;
     public bool HasMarketingConsent { get; set; }
     public string EventName { get; set; } = "Purchase";
