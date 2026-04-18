@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.108](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.107...Ekom-v0.2.108) (2026-04-18)
+
+
+### Bug Fixes
+
+* add optional tracking payload logging ([#466](https://github.com/Vettvangur/Ekom/issues/466)) ([9a3c57b](https://github.com/Vettvangur/Ekom/commit/9a3c57b05b8fcf04bddfb4c1f4b1e7507fd39542))
+
 ## [0.2.107](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.106...Ekom-v0.2.107) (2026-04-17)
 
 
