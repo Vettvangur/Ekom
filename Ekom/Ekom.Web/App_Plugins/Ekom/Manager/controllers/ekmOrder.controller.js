@@ -15,6 +15,7 @@
     $scope.activityLogsLoading = false;
     $scope.activityLogsError = false;
     $scope.activityLogExpandedStates = {};
+    $scope.isTrackingExpanded = false;
 
     var tracking = ($scope.model.editModel.order && $scope.model.editModel.order.tracking) || null;
     $scope.ga4TrackingData = tracking && tracking.ga4 && tracking.ga4.data ? Object.entries(tracking.ga4.data) : [];
@@ -248,6 +249,10 @@
         (orderTracking.ga4 && (orderTracking.ga4.clientId || orderTracking.ga4.sessionId || $scope.ga4TrackingData.length > 0)) ||
         (orderTracking.meta && (orderTracking.meta.fbp || orderTracking.meta.fbc || $scope.metaTrackingData.length > 0))
       );
+    };
+
+    $scope.toggleTracking = function () {
+      $scope.isTrackingExpanded = !$scope.isTrackingExpanded;
     };
 
     $scope.toggleActivityLog = function (index) {

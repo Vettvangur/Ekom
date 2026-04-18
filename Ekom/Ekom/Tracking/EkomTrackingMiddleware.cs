@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using System.IO;
 
 namespace Ekom.Tracking;
 
@@ -21,17 +22,48 @@ public sealed class EkomTrackingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (_options.Value.Enabled && _options.Value.CaptureEnabled)
+        Models.OrderTracking? captured = null;
+
+        if (_options.Value.Enabled && _options.Value.CaptureEnabled && IsEligibleRequest(context.Request))
         {
-            var captured = _trackingCookieService.CaptureFromRequest(context);
-            if (captured is not null)
-            {
-                var existing = _trackingCookieService.ReadCookie(context);
-                _trackingCookieService.WriteCookie(context, Merge(existing, captured));
-            }
+            captured = _trackingCookieService.CaptureFromRequest(context);
         }
 
         await _next(context).ConfigureAwait(false);
+
+        if (captured is not null && ShouldPersistTracking(context))
+        {
+            var existing = _trackingCookieService.ReadCookie(context);
+            _trackingCookieService.WriteCookie(context, Merge(existing, captured));
+        }
+    }
+
+    private static bool IsEligibleRequest(HttpRequest request)
+    {
+        if (!HttpMethods.IsGet(request.Method) && !HttpMethods.IsHead(request.Method))
+        {
+            return false;
+        }
+
+        if (request.Path.StartsWithSegments("/umbraco", StringComparison.OrdinalIgnoreCase)
+            || request.Path.StartsWithSegments("/ekom", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return !Path.HasExtension(request.Path.Value);
+    }
+
+    private static bool ShouldPersistTracking(HttpContext context)
+    {
+        if (context.Response.HasStarted)
+        {
+            return false;
+        }
+
+        var contentType = context.Response.ContentType;
+        return !string.IsNullOrWhiteSpace(contentType)
+            && contentType.StartsWith("text/html", StringComparison.OrdinalIgnoreCase);
     }
 
     private static Models.OrderTracking Merge(Models.OrderTracking? existing, Models.OrderTracking incoming)
