@@ -2,6 +2,7 @@ namespace Ekom.Tracking;
 
 public sealed class Ga4PurchaseRequest
 {
+    public Guid OrderUniqueId { get; set; }
     public string StoreAlias { get; set; } = string.Empty;
     public string? ClientId { get; set; }
     public long? SessionId { get; set; }
