@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.113](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.112...Ekom-v0.2.113) (2026-04-18)
+
+
+### Bug Fixes
+
+* show order tracking details in manager ([#476](https://github.com/Vettvangur/Ekom/issues/476)) ([20601d4](https://github.com/Vettvangur/Ekom/commit/20601d45df224744b91f743bb2ceb3ea2161590d))
+
 ## [0.2.112](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.111...Ekom-v0.2.112) (2026-04-18)
 
 
