@@ -31,7 +31,7 @@ internal sealed class TrackingAutomationEvents : IComponent
 
     private async Task OnCompleteCheckoutAsync(object sender, CompleteCheckoutEventArgs args, CancellationToken ct)
     {
-        if (!_options.Enabled || args.OrderInfo?.Tracking?.HasData() != true)
+        if (!_options.Enabled || args.OrderInfo == null)
         {
             return;
         }
@@ -40,10 +40,11 @@ internal sealed class TrackingAutomationEvents : IComponent
         var consentService = scope.ServiceProvider.GetRequiredService<ITrackingConsentService>();
         var consent = args.OrderInfo.Consent;
 
-        if (_options.Ga4.Enabled && consentService.CanCaptureAnalytics(consent))
+        if (_options.Ga4.Enabled)
         {
             var ga4Service = scope.ServiceProvider.GetRequiredService<IGa4TrackingService>();
             var request = ga4Service.CreatePurchaseRequest(args.OrderInfo);
+            request.HasAnalyticsConsent = consentService.CanCaptureAnalytics(consent);
             var eventArgs = new Ga4PurchasePreparingEventArgs
             {
                 OrderInfo = args.OrderInfo,
@@ -59,10 +60,11 @@ internal sealed class TrackingAutomationEvents : IComponent
             }
         }
 
-        if (_options.Meta.Enabled && consentService.CanCaptureMarketing(consent))
+        if (_options.Meta.Enabled)
         {
             var metaService = scope.ServiceProvider.GetRequiredService<IMetaTrackingService>();
             var request = metaService.CreatePurchaseRequest(args.OrderInfo);
+            request.HasMarketingConsent = consentService.CanCaptureMarketing(consent);
             var eventArgs = new MetaPurchasePreparingEventArgs
             {
                 OrderInfo = args.OrderInfo,

@@ -68,6 +68,8 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
     public async Task SendPurchaseAsync(MetaPurchaseRequest request, CancellationToken ct = default)
     {
+        ApplyConsent(request);
+
         var storeOptions = ResolveStore(request.StoreAlias);
         if (string.IsNullOrWhiteSpace(storeOptions?.PixelId) || string.IsNullOrWhiteSpace(storeOptions.AccessToken))
         {
@@ -165,6 +167,23 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
     private TrackingStoreOptions? ResolveStore(string storeAlias)
         => _options.Value.Meta.Stores.FirstOrDefault(x => x.Alias.Equals(storeAlias, StringComparison.OrdinalIgnoreCase));
+
+    private static void ApplyConsent(MetaPurchaseRequest request)
+    {
+        if (request.HasMarketingConsent)
+        {
+            return;
+        }
+
+        request.Email = null;
+        request.Phone = null;
+        request.FirstName = null;
+        request.LastName = null;
+        request.Fbp = null;
+        request.Fbc = null;
+        request.UserData.Clear();
+        request.CustomData.Clear();
+    }
 
     private string? ResolveTestEventCode(TrackingStoreOptions? storeOptions, string storeAlias)
     {

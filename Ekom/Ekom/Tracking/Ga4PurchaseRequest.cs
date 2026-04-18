@@ -3,6 +3,7 @@ namespace Ekom.Tracking;
 public sealed class Ga4PurchaseRequest
 {
     public string StoreAlias { get; set; } = string.Empty;
+    public bool HasAnalyticsConsent { get; set; }
     public string? ClientId { get; set; }
     public long? SessionId { get; set; }
     public string EventName { get; set; } = "purchase";
