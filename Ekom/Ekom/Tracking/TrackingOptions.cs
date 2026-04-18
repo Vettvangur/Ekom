@@ -6,6 +6,7 @@ public sealed class TrackingOptions
 {
     public bool Enabled { get; set; }
     public bool CaptureEnabled { get; set; } = true;
+    public bool LogPurchaseEventData { get; set; }
     public string CookieName { get; set; } = "EkomTracking";
     public double CookieLifetimeDays { get; set; } = 30;
     public string? SiteBaseUrl { get; set; }

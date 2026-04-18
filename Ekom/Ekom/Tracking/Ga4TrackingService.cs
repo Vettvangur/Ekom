@@ -121,7 +121,13 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
         var endpoint = _options.Value.Ga4.Testing ? "debug/mp/collect" : "mp/collect";
         var url = $"https://www.google-analytics.com/{endpoint}?measurement_id={storeOptions.MeasurementId}&api_secret={storeOptions.ApiSecret}";
-        using var content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
+        var payloadJson = JsonSerializer.Serialize(payload, JsonOptions);
+        if (_options.Value.LogPurchaseEventData)
+        {
+            _logger.LogInformation("GA4 purchase event payload for store {StoreAlias}: {Payload}", request.StoreAlias, payloadJson);
+        }
+
+        using var content = new StringContent(payloadJson, Encoding.UTF8, "application/json");
         using var response = await _httpClientFactory.CreateClient().PostAsync(url, content, ct).ConfigureAwait(false);
         var responseBody = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
 
