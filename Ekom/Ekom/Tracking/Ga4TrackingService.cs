@@ -1,6 +1,7 @@
 using Ekom.API;
 using Ekom.Models;
 using Ekom.Repositories;
+using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -141,12 +142,19 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
         if (!response.IsSuccessStatusCode)
         {
-            await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 purchase event failed ({(int)response.StatusCode})").ConfigureAwait(false);
+            await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 purchase event failed ({(int)response.StatusCode})", OrderActivityLogType.Alert).ConfigureAwait(false);
             _logger.LogWarning("GA4 tracking failed for store {StoreAlias}. Status: {StatusCode}. Response: {Response}", request.StoreAlias, response.StatusCode, responseBody);
             return;
         }
 
-        await WriteActivityLogAsync(request.OrderUniqueId, "GA4 purchase event sent").ConfigureAwait(false);
+        if (_options.Value.Ga4.Testing && TryGetValidationError(responseBody, out string? validationError))
+        {
+            await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 purchase event validation failed: {validationError}", OrderActivityLogType.Alert).ConfigureAwait(false);
+            _logger.LogWarning("GA4 debug validation failed for store {StoreAlias}: {ValidationError}. Response: {Response}", request.StoreAlias, validationError, responseBody);
+            return;
+        }
+
+        await WriteActivityLogAsync(request.OrderUniqueId, "GA4 purchase event sent", OrderActivityLogType.Success).ConfigureAwait(false);
 
         if (_options.Value.Ga4.Testing && !string.IsNullOrWhiteSpace(responseBody))
         {
@@ -181,7 +189,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
                 ["discount"] = item.Discount,
                 ["quantity"] = item.Quantity,
                 ["item_variant"] = item.ItemVariant
-            }).ToList()
+            }).Select(FilterNullValues).ToList()
         };
 
         if (request.SessionId.HasValue)
@@ -193,7 +201,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         foreach (var item in request.Parameters)
             parameters[item.Key] = item.Value;
 
-        return parameters;
+        return FilterNullValues(parameters);
     }
 
     private TrackingStoreOptions? ResolveStore(string storeAlias)
@@ -214,17 +222,64 @@ public sealed class Ga4TrackingService : IGa4TrackingService
     private static long? ParseLong(string? value)
         => long.TryParse(value, out var parsed) ? parsed : null;
 
-    private async Task WriteActivityLogAsync(Guid orderUniqueId, string message)
+    private async Task WriteActivityLogAsync(Guid orderUniqueId, string message, OrderActivityLogType logType)
     {
         try
         {
             using var scope = _scopeFactory.CreateScope();
             var activityLogRepository = scope.ServiceProvider.GetRequiredService<ActivityLogRepository>();
-            await activityLogRepository.InsertAsync(orderUniqueId, message, "System").ConfigureAwait(false);
+            await activityLogRepository.InsertAsync(
+                new[]
+                {
+                    new OrderActivityLogWrite(orderUniqueId, message, "System", DateTime.Now, logType),
+                })
+                .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to write GA4 activity log for order {OrderUniqueId}.", orderUniqueId);
+        }
+    }
+
+    private static Dictionary<string, object?> FilterNullValues(Dictionary<string, object?> source)
+        => source
+            .Where(x => x.Value != null)
+            .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+
+    private static bool TryGetValidationError(string? responseBody, out string? validationError)
+    {
+        validationError = null;
+        if (string.IsNullOrWhiteSpace(responseBody))
+        {
+            return false;
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(responseBody);
+            if (!document.RootElement.TryGetProperty("validationMessages", out JsonElement validationMessages) || validationMessages.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            JsonElement.ArrayEnumerator enumerator = validationMessages.EnumerateArray();
+            if (!enumerator.MoveNext())
+            {
+                return false;
+            }
+
+            JsonElement first = enumerator.Current;
+            string? fieldPath = first.TryGetProperty("fieldPath", out JsonElement fieldPathElement) ? fieldPathElement.GetString() : null;
+            string? description = first.TryGetProperty("description", out JsonElement descriptionElement) ? descriptionElement.GetString() : null;
+            validationError = string.IsNullOrWhiteSpace(fieldPath)
+                ? description
+                : $"{fieldPath}: {description}";
+
+            return !string.IsNullOrWhiteSpace(validationError);
+        }
+        catch (JsonException)
+        {
+            return false;
         }
     }
 
