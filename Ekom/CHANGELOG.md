@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.110](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.109...Ekom-v0.2.110) (2026-04-18)
+
+
+### Bug Fixes
+
+* send anonymous purchase events without tracking data ([#470](https://github.com/Vettvangur/Ekom/issues/470)) ([6c8e489](https://github.com/Vettvangur/Ekom/commit/6c8e4893f4c6320e20efdd0137aa733ac03d6f7f))
+
 ## [0.2.109](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.108...Ekom-v0.2.109) (2026-04-18)
 
 
