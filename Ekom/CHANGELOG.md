@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.109](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.108...Ekom-v0.2.109) (2026-04-18)
+
+
+### Bug Fixes
+
+* add tracking activity log entries ([#468](https://github.com/Vettvangur/Ekom/issues/468)) ([e1cee7f](https://github.com/Vettvangur/Ekom/commit/e1cee7f81bf1380f96a99b65a230a258972c8354))
+
 ## [0.2.108](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.107...Ekom-v0.2.108) (2026-04-18)
 
 
