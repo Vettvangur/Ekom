@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.111](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.110...Ekom-v0.2.111) (2026-04-18)
+
+
+### Bug Fixes
+
+* preserve attribution for anonymous purchases ([#472](https://github.com/Vettvangur/Ekom/issues/472)) ([b67a6ab](https://github.com/Vettvangur/Ekom/commit/b67a6abd49ae45911b11015480a209910786e30f))
+
 ## [0.2.110](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.109...Ekom-v0.2.110) (2026-04-18)
 
 
