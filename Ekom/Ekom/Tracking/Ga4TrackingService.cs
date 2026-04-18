@@ -105,6 +105,8 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
     public async Task SendPurchaseAsync(Ga4PurchaseRequest request, CancellationToken ct = default)
     {
+        ApplyConsent(request);
+
         var storeOptions = ResolveStore(request.StoreAlias);
         if (string.IsNullOrWhiteSpace(storeOptions?.MeasurementId) || string.IsNullOrWhiteSpace(storeOptions.ApiSecret))
         {
@@ -196,6 +198,24 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
     private TrackingStoreOptions? ResolveStore(string storeAlias)
         => _options.Value.Ga4.Stores.FirstOrDefault(x => x.Alias.Equals(storeAlias, StringComparison.OrdinalIgnoreCase));
+
+    private void ApplyConsent(Ga4PurchaseRequest request)
+    {
+        if (request.HasAnalyticsConsent)
+        {
+            return;
+        }
+
+        request.ClientId = GenerateClientId();
+        request.SessionId = null;
+        request.Source = null;
+        request.Medium = null;
+        request.Campaign = null;
+        request.Term = null;
+        request.Content = null;
+        request.Gclid = null;
+        request.Parameters.Clear();
+    }
 
     private static long? ParseLong(string? value)
         => long.TryParse(value, out var parsed) ? parsed : null;
