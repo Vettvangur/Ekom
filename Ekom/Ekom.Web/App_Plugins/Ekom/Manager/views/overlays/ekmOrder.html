@@ -167,49 +167,6 @@
     </div>
   </div>
 
-  <div class="ekmOrderTracking">
-    <h4>Tracking</h4>
-
-    <p ng-if="!hasTrackingData()">No tracking data was captured for this order.</p>
-
-    <div class="ekmSplit" ng-if="hasTrackingData()">
-      <div class="ekmSplit__column">
-        <p ng-if="model.editModel.order.tracking.capturedAtUtc">Captured: {{ model.editModel.order.tracking.capturedAtUtc | date:'dd. MMMM yyyy HH:mm' }}</p>
-        <p ng-if="model.editModel.order.tracking.captureMethod">Capture method: {{ model.editModel.order.tracking.captureMethod }}</p>
-        <p ng-if="model.editModel.order.tracking.hasCookieSupport !== null && model.editModel.order.tracking.hasCookieSupport !== undefined">Cookie support: {{ model.editModel.order.tracking.hasCookieSupport ? 'Yes' : 'No' }}</p>
-        <p ng-if="model.editModel.order.tracking.source">Source: {{ model.editModel.order.tracking.source }}</p>
-        <p ng-if="model.editModel.order.tracking.medium">Medium: {{ model.editModel.order.tracking.medium }}</p>
-        <p ng-if="model.editModel.order.tracking.campaign">Campaign: {{ model.editModel.order.tracking.campaign }}</p>
-        <p ng-if="model.editModel.order.tracking.term">Term: {{ model.editModel.order.tracking.term }}</p>
-        <p ng-if="model.editModel.order.tracking.content">Content: {{ model.editModel.order.tracking.content }}</p>
-        <p ng-if="model.editModel.order.tracking.clickId">Click ID: {{ model.editModel.order.tracking.clickId }}</p>
-        <p ng-if="model.editModel.order.tracking.clickIdType">Click ID Type: {{ model.editModel.order.tracking.clickIdType }}</p>
-        <p ng-if="model.editModel.order.tracking.landingUrl" class="ekmOrderTracking__wrap">Landing URL: {{ model.editModel.order.tracking.landingUrl }}</p>
-        <p ng-if="model.editModel.order.tracking.referrer" class="ekmOrderTracking__wrap">Referrer: {{ model.editModel.order.tracking.referrer }}</p>
-      </div>
-
-      <div class="ekmSplit__column">
-        <div ng-if="model.editModel.order.tracking.ga4.clientId || model.editModel.order.tracking.ga4.sessionId || ga4TrackingData.length > 0">
-          <h5>GA4</h5>
-          <p ng-if="model.editModel.order.tracking.ga4.clientId" class="ekmOrderTracking__wrap">Client ID: {{ model.editModel.order.tracking.ga4.clientId }}</p>
-          <p ng-if="model.editModel.order.tracking.ga4.sessionId">Session ID: {{ model.editModel.order.tracking.ga4.sessionId }}</p>
-          <ul ng-if="ga4TrackingData.length > 0" class="ekmOrderTracking__list">
-            <li ng-repeat="pair in ga4TrackingData track by $index" class="ekmOrderTracking__wrap"><strong>{{ pair[0] }}</strong>: {{ pair[1] }}</li>
-          </ul>
-        </div>
-
-        <div ng-if="model.editModel.order.tracking.meta.fbp || model.editModel.order.tracking.meta.fbc || metaTrackingData.length > 0" class="ekmOrderTracking__provider">
-          <h5>Meta</h5>
-          <p ng-if="model.editModel.order.tracking.meta.fbp" class="ekmOrderTracking__wrap">FBP: {{ model.editModel.order.tracking.meta.fbp }}</p>
-          <p ng-if="model.editModel.order.tracking.meta.fbc" class="ekmOrderTracking__wrap">FBC: {{ model.editModel.order.tracking.meta.fbc }}</p>
-          <ul ng-if="metaTrackingData.length > 0" class="ekmOrderTracking__list">
-            <li ng-repeat="pair in metaTrackingData track by $index" class="ekmOrderTracking__wrap"><strong>{{ pair[0] }}</strong>: {{ pair[1] }}</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <h4>Order Details</h4>
 
   <div class="umb-table" style="width:100%;">
@@ -277,6 +234,54 @@
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell">Total</div>
         <div class="umb-table-cell" style="text-align: right;"><strong>{{ model.editModel.order.chargedAmount.currencyString }}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ekmOrderTracking">
+    <div class="ekmOrderTracking__header" ng-class="{ 'ekmOrderTracking__header--spaced': isTrackingExpanded || !hasTrackingData() }">
+      <h4>Tracking</h4>
+      <button type="button" class="btn-reset ekmOrderTracking__toggle" ng-if="hasTrackingData()" ng-click="toggleTracking()">{{ isTrackingExpanded ? 'Hide' : 'Show' }}</button>
+    </div>
+
+    <p ng-if="!hasTrackingData()">No tracking data was captured for this order.</p>
+
+    <div ng-if="isTrackingExpanded && hasTrackingData()">
+      <div class="ekmSplit">
+        <div class="ekmSplit__column">
+          <p ng-if="model.editModel.order.tracking.capturedAtUtc">Captured: {{ model.editModel.order.tracking.capturedAtUtc | date:'dd. MMMM yyyy HH:mm' }}</p>
+          <p ng-if="model.editModel.order.tracking.captureMethod">Capture method: {{ model.editModel.order.tracking.captureMethod }}</p>
+          <p ng-if="model.editModel.order.tracking.hasCookieSupport !== null && model.editModel.order.tracking.hasCookieSupport !== undefined">Cookie support: {{ model.editModel.order.tracking.hasCookieSupport ? 'Yes' : 'No' }}</p>
+          <p ng-if="model.editModel.order.tracking.source">Source: {{ model.editModel.order.tracking.source }}</p>
+          <p ng-if="model.editModel.order.tracking.medium">Medium: {{ model.editModel.order.tracking.medium }}</p>
+          <p ng-if="model.editModel.order.tracking.campaign">Campaign: {{ model.editModel.order.tracking.campaign }}</p>
+          <p ng-if="model.editModel.order.tracking.term">Term: {{ model.editModel.order.tracking.term }}</p>
+          <p ng-if="model.editModel.order.tracking.content">Content: {{ model.editModel.order.tracking.content }}</p>
+          <p ng-if="model.editModel.order.tracking.clickId">Click ID: {{ model.editModel.order.tracking.clickId }}</p>
+          <p ng-if="model.editModel.order.tracking.clickIdType">Click ID Type: {{ model.editModel.order.tracking.clickIdType }}</p>
+          <p ng-if="model.editModel.order.tracking.landingUrl" class="ekmOrderTracking__wrap">Landing URL: {{ model.editModel.order.tracking.landingUrl }}</p>
+          <p ng-if="model.editModel.order.tracking.referrer" class="ekmOrderTracking__wrap">Referrer: {{ model.editModel.order.tracking.referrer }}</p>
+        </div>
+
+        <div class="ekmSplit__column">
+          <div ng-if="model.editModel.order.tracking.ga4.clientId || model.editModel.order.tracking.ga4.sessionId || ga4TrackingData.length > 0">
+            <h5>GA4</h5>
+            <p ng-if="model.editModel.order.tracking.ga4.clientId" class="ekmOrderTracking__wrap">Client ID: {{ model.editModel.order.tracking.ga4.clientId }}</p>
+            <p ng-if="model.editModel.order.tracking.ga4.sessionId">Session ID: {{ model.editModel.order.tracking.ga4.sessionId }}</p>
+            <ul ng-if="ga4TrackingData.length > 0" class="ekmOrderTracking__list">
+              <li ng-repeat="pair in ga4TrackingData track by $index" class="ekmOrderTracking__wrap"><strong>{{ pair[0] }}</strong>: {{ pair[1] }}</li>
+            </ul>
+          </div>
+
+          <div ng-if="model.editModel.order.tracking.meta.fbp || model.editModel.order.tracking.meta.fbc || metaTrackingData.length > 0" class="ekmOrderTracking__provider">
+            <h5>Meta</h5>
+            <p ng-if="model.editModel.order.tracking.meta.fbp" class="ekmOrderTracking__wrap">FBP: {{ model.editModel.order.tracking.meta.fbp }}</p>
+            <p ng-if="model.editModel.order.tracking.meta.fbc" class="ekmOrderTracking__wrap">FBC: {{ model.editModel.order.tracking.meta.fbc }}</p>
+            <ul ng-if="metaTrackingData.length > 0" class="ekmOrderTracking__list">
+              <li ng-repeat="pair in metaTrackingData track by $index" class="ekmOrderTracking__wrap"><strong>{{ pair[0] }}</strong>: {{ pair[1] }}</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>

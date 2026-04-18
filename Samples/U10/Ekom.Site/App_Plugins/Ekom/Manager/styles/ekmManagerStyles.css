@@ -116,6 +116,47 @@
     margin-top: 30px;
 }
 
+.ekmOrderTracking {
+    border: 1px solid #d8d7d9;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    padding: 14px 16px;
+}
+
+.ekmOrderTracking__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.ekmOrderTracking__header--spaced {
+    margin-bottom: 12px;
+}
+
+.ekmOrderTracking__header h4 {
+    margin: 0;
+}
+
+.ekmOrderTracking__toggle {
+    color: #2152a3;
+    font-weight: 600;
+}
+
+.ekmOrderTracking__provider {
+    margin-top: 20px;
+}
+
+.ekmOrderTracking__list {
+    margin: 10px 0 0;
+    padding-left: 18px;
+}
+
+.ekmOrderTracking__wrap {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .ekmOrderActivityLog__list {
     border-top: 1px solid #eee;
 }

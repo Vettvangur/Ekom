@@ -154,12 +154,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
             return;
         }
 
-        await WriteActivityLogAsync(request.OrderUniqueId, "GA4 purchase event sent", OrderActivityLogType.Success).ConfigureAwait(false);
-
-        if (_options.Value.Ga4.Testing && !string.IsNullOrWhiteSpace(responseBody))
-        {
-            _logger.LogInformation("GA4 debug response for store {StoreAlias}: {Response}", request.StoreAlias, responseBody);
-        }
+        await WriteActivityLogAsync(request.OrderUniqueId, "GA4 purchase event successfully sent", OrderActivityLogType.Success).ConfigureAwait(false);
     }
 
     private object BuildParameters(Ga4PurchaseRequest request)

@@ -1300,6 +1300,11 @@ partial class OrderService
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest?.IPAddress ?? "";
 
+            if (orderInfo.Consent == null || orderInfo.Tracking?.HasData() != true)
+            {
+                ApplyConsentAndTracking(orderInfo, null, null, replaceExisting: false);
+            }
+
             string serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.Settings);
 
             OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct)
