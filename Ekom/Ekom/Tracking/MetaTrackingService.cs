@@ -1,5 +1,6 @@
 using Ekom.Models;
 using Ekom.Repositories;
+using Ekom.Services;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -75,6 +76,13 @@ public sealed class MetaTrackingService : IMetaTrackingService
     {
         ApplyConsent(request);
 
+        if (!HasMatchableUserData(request))
+        {
+            await WriteActivityLogAsync(request.OrderUniqueId, "Meta purchase event skipped: insufficient customer information for matching", OrderActivityLogType.Alert).ConfigureAwait(false);
+            _logger.LogWarning("Meta tracking skipped for store {StoreAlias} because no matchable customer information is available.", request.StoreAlias);
+            return;
+        }
+
         var storeOptions = ResolveStore(request.StoreAlias);
         if (string.IsNullOrWhiteSpace(storeOptions?.PixelId) || string.IsNullOrWhiteSpace(storeOptions.AccessToken))
         {
@@ -101,12 +109,16 @@ public sealed class MetaTrackingService : IMetaTrackingService
         if (!response.IsSuccessStatusCode)
         {
             var responseBody = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-            await WriteActivityLogAsync(request.OrderUniqueId, $"Meta purchase event failed ({(int)response.StatusCode})").ConfigureAwait(false);
+            var errorMessage = TryGetErrorMessage(responseBody, out string? parsedError)
+                ? parsedError
+                : $"Meta purchase event failed ({(int)response.StatusCode})";
+
+            await WriteActivityLogAsync(request.OrderUniqueId, errorMessage, OrderActivityLogType.Alert).ConfigureAwait(false);
             _logger.LogWarning("Meta tracking failed for store {StoreAlias}. Status: {StatusCode}. Response: {Response}", request.StoreAlias, response.StatusCode, responseBody);
             return;
         }
 
-        await WriteActivityLogAsync(request.OrderUniqueId, "Meta purchase event sent").ConfigureAwait(false);
+        await WriteActivityLogAsync(request.OrderUniqueId, "Meta purchase event sent", OrderActivityLogType.Success).ConfigureAwait(false);
     }
 
     private object BuildEvent(MetaPurchaseRequest request)
@@ -200,6 +212,15 @@ public sealed class MetaTrackingService : IMetaTrackingService
         request.CustomData.Clear();
     }
 
+    private static bool HasMatchableUserData(MetaPurchaseRequest request)
+        => HasValue(request.Email)
+            || HasValue(request.Phone)
+            || HasValue(request.FirstName)
+            || HasValue(request.LastName)
+            || HasValue(request.Fbp)
+            || HasValue(request.Fbc)
+            || request.UserData.Any(x => HasValue(x.Value));
+
     private string? ResolveTestEventCode(TrackingStoreOptions? storeOptions, string storeAlias)
     {
         if (!_options.Value.Meta.Testing)
@@ -259,17 +280,67 @@ public sealed class MetaTrackingService : IMetaTrackingService
         return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
     }
 
-    private async Task WriteActivityLogAsync(Guid orderUniqueId, string message)
+    private async Task WriteActivityLogAsync(Guid orderUniqueId, string message, OrderActivityLogType logType)
     {
         try
         {
             using var scope = _scopeFactory.CreateScope();
             var activityLogRepository = scope.ServiceProvider.GetRequiredService<ActivityLogRepository>();
-            await activityLogRepository.InsertAsync(orderUniqueId, message, "System").ConfigureAwait(false);
+            await activityLogRepository.InsertAsync(
+                    new[]
+                    {
+                        new OrderActivityLogWrite(orderUniqueId, message, "System", DateTime.Now, logType),
+                    })
+                .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to write Meta activity log for order {OrderUniqueId}.", orderUniqueId);
         }
     }
+
+    private static bool TryGetErrorMessage(string? responseBody, out string? errorMessage)
+    {
+        errorMessage = null;
+        if (string.IsNullOrWhiteSpace(responseBody))
+        {
+            return false;
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(responseBody);
+            if (!document.RootElement.TryGetProperty("error", out JsonElement error) || error.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            string? message = error.TryGetProperty("message", out JsonElement messageElement) ? messageElement.GetString() : null;
+            string? userMessage = error.TryGetProperty("error_user_msg", out JsonElement userMessageElement) ? userMessageElement.GetString() : null;
+
+            errorMessage = string.IsNullOrWhiteSpace(userMessage)
+                ? message
+                : $"{message} - {userMessage}";
+
+            if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                errorMessage = $"Meta purchase event failed: {errorMessage}";
+            }
+
+            return !string.IsNullOrWhiteSpace(errorMessage);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool HasValue(object? value)
+        => value switch
+        {
+            null => false,
+            string text => !string.IsNullOrWhiteSpace(text),
+            JsonElement element => element.ValueKind != JsonValueKind.Null && element.ValueKind != JsonValueKind.Undefined,
+            _ => true,
+        };
 }
