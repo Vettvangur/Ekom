@@ -190,19 +190,12 @@ public sealed class MetaTrackingService : IMetaTrackingService
             return;
         }
 
-        request.EventSourceUrl = null;
         request.Email = null;
         request.Phone = null;
         request.FirstName = null;
         request.LastName = null;
         request.Fbp = null;
         request.Fbc = null;
-        request.Source = null;
-        request.Medium = null;
-        request.Campaign = null;
-        request.Term = null;
-        request.Content = null;
-        request.Gclid = null;
         request.UserData.Clear();
         request.CustomData.Clear();
     }

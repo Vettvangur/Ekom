@@ -208,12 +208,6 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
         request.ClientId = GenerateClientId();
         request.SessionId = null;
-        request.Source = null;
-        request.Medium = null;
-        request.Campaign = null;
-        request.Term = null;
-        request.Content = null;
-        request.Gclid = null;
         request.Parameters.Clear();
     }
 
