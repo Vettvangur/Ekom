@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.112](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.111...Ekom-v0.2.112) (2026-04-18)
+
+
+### Bug Fixes
+
+* improve tracking error activity logs ([#474](https://github.com/Vettvangur/Ekom/issues/474)) ([e03d8dd](https://github.com/Vettvangur/Ekom/commit/e03d8dddccfdaf21dd96d40621cada98de06b1c5))
+
 ## [0.2.111](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.110...Ekom-v0.2.111) (2026-04-18)
 
 
