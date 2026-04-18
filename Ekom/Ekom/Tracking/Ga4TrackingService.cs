@@ -1,5 +1,7 @@
 using Ekom.API;
 using Ekom.Models;
+using Ekom.Repositories;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text;
@@ -12,15 +14,18 @@ public sealed class Ga4TrackingService : IGa4TrackingService
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptions<TrackingOptions> _options;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<Ga4TrackingService> _logger;
 
     public Ga4TrackingService(
         IHttpClientFactory httpClientFactory,
         IOptions<TrackingOptions> options,
+        IServiceScopeFactory scopeFactory,
         ILogger<Ga4TrackingService> logger)
     {
         _httpClientFactory = httpClientFactory;
         _options = options;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -45,6 +50,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
         var request = new Ga4PurchaseRequest
         {
+            OrderUniqueId = orderInfo.UniqueId,
             StoreAlias = orderInfo.StoreInfo.Alias,
             ClientId = clientId,
             SessionId = sessionId,
@@ -133,9 +139,12 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
         if (!response.IsSuccessStatusCode)
         {
+            await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 purchase event failed ({(int)response.StatusCode})").ConfigureAwait(false);
             _logger.LogWarning("GA4 tracking failed for store {StoreAlias}. Status: {StatusCode}. Response: {Response}", request.StoreAlias, response.StatusCode, responseBody);
             return;
         }
+
+        await WriteActivityLogAsync(request.OrderUniqueId, "GA4 purchase event sent").ConfigureAwait(false);
 
         if (_options.Value.Ga4.Testing && !string.IsNullOrWhiteSpace(responseBody))
         {
@@ -190,6 +199,20 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
     private static long? ParseLong(string? value)
         => long.TryParse(value, out var parsed) ? parsed : null;
+
+    private async Task WriteActivityLogAsync(Guid orderUniqueId, string message)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var activityLogRepository = scope.ServiceProvider.GetRequiredService<ActivityLogRepository>();
+            await activityLogRepository.InsertAsync(orderUniqueId, message, "System").ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to write GA4 activity log for order {OrderUniqueId}.", orderUniqueId);
+        }
+    }
 
     private static string GenerateClientId()
         => $"{Random.Shared.Next(100000000, 999999999)}.{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
