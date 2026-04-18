@@ -82,7 +82,13 @@ public sealed class MetaTrackingService : IMetaTrackingService
         };
 
         var url = $"{storeOptions.PixelId}/events?access_token={storeOptions.AccessToken}";
-        using var content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
+        var payloadJson = JsonSerializer.Serialize(payload, JsonOptions);
+        if (_options.Value.LogPurchaseEventData)
+        {
+            _logger.LogInformation("Meta purchase event payload for store {StoreAlias}: {Payload}", request.StoreAlias, payloadJson);
+        }
+
+        using var content = new StringContent(payloadJson, Encoding.UTF8, "application/json");
         using var response = await _httpClient.PostAsync(url, content, ct).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
