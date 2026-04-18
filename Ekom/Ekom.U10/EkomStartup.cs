@@ -36,8 +36,8 @@ class StartupFilter : IStartupFilter
         app.UseEkomMalformedFormGuard();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseEkomTrackingMiddleware();
         app.UseEkomMiddleware();
+        app.UseEkomTrackingMiddleware();
         next(app);
     };
 }

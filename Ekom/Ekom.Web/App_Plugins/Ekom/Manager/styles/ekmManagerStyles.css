@@ -116,6 +116,24 @@
     margin-top: 30px;
 }
 
+.ekmOrderTracking {
+    margin-bottom: 30px;
+}
+
+.ekmOrderTracking__provider {
+    margin-top: 20px;
+}
+
+.ekmOrderTracking__list {
+    margin: 10px 0 0;
+    padding-left: 18px;
+}
+
+.ekmOrderTracking__wrap {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .ekmOrderActivityLog__list {
     border-top: 1px solid #eee;
 }

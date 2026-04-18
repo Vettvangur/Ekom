@@ -16,6 +16,10 @@
     $scope.activityLogsError = false;
     $scope.activityLogExpandedStates = {};
 
+    var tracking = ($scope.model.editModel.order && $scope.model.editModel.order.tracking) || null;
+    $scope.ga4TrackingData = tracking && tracking.ga4 && tracking.ga4.data ? Object.entries(tracking.ga4.data) : [];
+    $scope.metaTrackingData = tracking && tracking.meta && tracking.meta.data ? Object.entries(tracking.meta.data) : [];
+
     $scope.toggleDropdown = function (dropdownId) {
       $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
     };
@@ -218,6 +222,31 @@
         shipping.country ||
         shipping.zipCode ||
         shipping.phone
+      );
+    };
+
+    $scope.hasTrackingData = function () {
+      var orderTracking = $scope.model.editModel.order && $scope.model.editModel.order.tracking;
+
+      if (!orderTracking) {
+        return false;
+      }
+
+      return !!(
+        orderTracking.source ||
+        orderTracking.medium ||
+        orderTracking.campaign ||
+        orderTracking.term ||
+        orderTracking.content ||
+        orderTracking.clickId ||
+        orderTracking.clickIdType ||
+        orderTracking.landingUrl ||
+        orderTracking.referrer ||
+        orderTracking.captureMethod ||
+        orderTracking.capturedAtUtc ||
+        orderTracking.hasCookieSupport !== null && orderTracking.hasCookieSupport !== undefined ||
+        (orderTracking.ga4 && (orderTracking.ga4.clientId || orderTracking.ga4.sessionId || $scope.ga4TrackingData.length > 0)) ||
+        (orderTracking.meta && (orderTracking.meta.fbp || orderTracking.meta.fbc || $scope.metaTrackingData.length > 0))
       );
     };
 
