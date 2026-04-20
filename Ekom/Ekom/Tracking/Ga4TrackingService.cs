@@ -76,11 +76,6 @@ public sealed class Ga4TrackingService : IGa4TrackingService
             _logger.LogWarning("GA4 client_id missing for order {OrderNumber}. Generated fallback client_id for store {StoreAlias}.", orderInfo.OrderNumber, orderInfo.StoreInfo.Alias);
         }
 
-        if (generatedSessionId)
-        {
-            _logger.LogWarning("GA4 session_id missing for order {OrderNumber}. Generated fallback session_id for store {StoreAlias}.", orderInfo.OrderNumber, orderInfo.StoreInfo.Alias);
-        }
-
         foreach (var entry in tracking.Ga4.Data)
             request.Parameters[entry.Key] = entry.Value;
 

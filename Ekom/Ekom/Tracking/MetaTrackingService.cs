@@ -74,7 +74,10 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
     public async Task SendPurchaseAsync(MetaPurchaseRequest request, CancellationToken ct = default)
     {
-        ApplyConsent(request);
+        if (!request.HasMarketingConsent)
+        {
+            return;
+        }
 
         if (!HasMatchableUserData(request))
         {
@@ -194,23 +197,6 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
     private TrackingStoreOptions? ResolveStore(string storeAlias)
         => _options.Value.Meta.Stores.FirstOrDefault(x => x.Alias.Equals(storeAlias, StringComparison.OrdinalIgnoreCase));
-
-    private static void ApplyConsent(MetaPurchaseRequest request)
-    {
-        if (request.HasMarketingConsent)
-        {
-            return;
-        }
-
-        request.Email = null;
-        request.Phone = null;
-        request.FirstName = null;
-        request.LastName = null;
-        request.Fbp = null;
-        request.Fbc = null;
-        request.UserData.Clear();
-        request.CustomData.Clear();
-    }
 
     private static bool HasMatchableUserData(MetaPurchaseRequest request)
         => HasValue(request.Email)
