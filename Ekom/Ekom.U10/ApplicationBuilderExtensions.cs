@@ -16,6 +16,9 @@ public static class ApplicationBuilderExtensions
     {
         services.AddSingleton<IStartupFilter, StartupFilter>();
 
+        services.AddDistributedMemoryCache();
+        services.AddSession();
+
         services.AddAspNetCoreEkom(config);
 
         services.AddHttpClient();

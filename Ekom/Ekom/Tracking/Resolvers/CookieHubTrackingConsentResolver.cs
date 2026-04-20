@@ -1,5 +1,6 @@
 using Ekom.Models;
 using Microsoft.AspNetCore.Http;
+using System.Text;
 using System.Text.Json;
 
 namespace Ekom.Tracking;
@@ -23,22 +24,20 @@ public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
 
         try
         {
-            var decoded = Uri.UnescapeDataString(rawCookie);
-            using var document = JsonDocument.Parse(decoded);
-            if (!document.RootElement.TryGetProperty("categories", out var categories))
+            using var document = JsonDocument.Parse(DecodePayload(rawCookie));
+            var consent = new OrderConsent
             {
-                return null;
-            }
-
-            return new OrderConsent
-            {
-                Analytics = ReadCategory(categories, "analytics"),
-                Marketing = ReadCategory(categories, "marketing"),
+                Analytics = ReadAnalyticsConsent(document.RootElement),
+                Marketing = ReadMarketingConsent(document.RootElement),
                 ResolvedAtUtc = ReadTimestamp(document.RootElement),
                 Source = "cookiehub"
             };
+
+            return consent.Analytics.HasValue || consent.Marketing.HasValue
+                ? consent
+                : null;
         }
-        catch (JsonException)
+        catch (Exception ex) when (ex is JsonException || ex is FormatException || ex is ArgumentException)
         {
             return null;
         }
@@ -47,6 +46,69 @@ public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
     private static bool UsesCookieHub(TrackingConsentOptions options)
         => string.Equals(options.AnalyticsCookieName, "cookiehub", StringComparison.OrdinalIgnoreCase)
         || string.Equals(options.MarketingCookieName, "cookiehub", StringComparison.OrdinalIgnoreCase);
+
+    private static string DecodePayload(string rawCookie)
+    {
+        var decoded = Uri.UnescapeDataString(rawCookie);
+        if (LooksLikeJson(decoded))
+        {
+            return decoded;
+        }
+
+        var bytes = Convert.FromBase64String(decoded);
+        return Encoding.UTF8.GetString(bytes);
+    }
+
+    private static bool LooksLikeJson(string value)
+    {
+        var trimmed = value.TrimStart();
+        return trimmed.StartsWith("{", StringComparison.Ordinal)
+            || trimmed.StartsWith("[", StringComparison.Ordinal);
+    }
+
+    private static bool? ReadAnalyticsConsent(JsonElement root)
+        => ReadCategoryConsent(root, "analytics");
+
+    private static bool? ReadMarketingConsent(JsonElement root)
+        => ReadCategoryConsent(root, "marketing");
+
+    private static bool? ReadCategoryConsent(JsonElement root, string propertyName)
+    {
+        if (TryReadAllAllowed(root, out var allAllowed))
+        {
+            return allAllowed;
+        }
+
+        if (!root.TryGetProperty("categories", out var categories))
+        {
+            return null;
+        }
+
+        return categories.ValueKind == JsonValueKind.Object
+            ? ReadCategory(categories, propertyName)
+            : null;
+    }
+
+    private static bool TryReadAllAllowed(JsonElement root, out bool allAllowed)
+    {
+        if (root.TryGetProperty("allAllowed", out var property))
+        {
+            if (property.ValueKind == JsonValueKind.True)
+            {
+                allAllowed = true;
+                return true;
+            }
+
+            if (property.ValueKind == JsonValueKind.False)
+            {
+                allAllowed = false;
+                return true;
+            }
+        }
+
+        allAllowed = false;
+        return false;
+    }
 
     private static bool? ReadCategory(JsonElement categories, string propertyName)
     {

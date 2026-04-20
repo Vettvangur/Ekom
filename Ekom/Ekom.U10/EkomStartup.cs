@@ -34,6 +34,7 @@ class StartupFilter : IStartupFilter
         });
 
         app.UseEkomMalformedFormGuard();
+        app.UseSession();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseEkomMiddleware();

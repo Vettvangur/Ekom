@@ -1,5 +1,6 @@
 using Ekom.Tracking;
 using Microsoft.AspNetCore.Http;
+using System.Text;
 using Xunit;
 
 namespace Ekom.Tests.Tests;
@@ -41,6 +42,21 @@ public class CookieHubTrackingConsentResolverTests
         var result = sut.Resolve(httpContext, "Store", CreateOptions("cookiehub", "cookiehub"));
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public void Resolve_Returns_Full_Consent_When_Base64_Cookie_Uses_AllAllowed()
+    {
+        var sut = new CookieHubTrackingConsentResolver();
+        var payload = "{\"answered\":true,\"allAllowed\":true,\"categories\":[],\"timestamp\":\"2026-04-19T13:30:24.287Z\"}";
+        var httpContext = CreateHttpContext(Convert.ToBase64String(Encoding.UTF8.GetBytes(payload)));
+
+        var result = sut.Resolve(httpContext, "Store", CreateOptions("cookiehub", "cookiehub"));
+
+        Assert.NotNull(result);
+        Assert.True(result!.Analytics);
+        Assert.True(result.Marketing);
+        Assert.Equal("cookiehub", result.Source);
     }
 
     private static DefaultHttpContext CreateHttpContext(string cookieValue)

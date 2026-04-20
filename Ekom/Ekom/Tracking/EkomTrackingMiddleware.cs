@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.IO;
+using StoreApi = Ekom.API.Store;
 
 namespace Ekom.Tracking;
 
@@ -8,38 +10,80 @@ public sealed class EkomTrackingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IOptions<TrackingOptions> _options;
+    private readonly ITrackingConsentService _trackingConsentService;
     private readonly ITrackingCookieService _trackingCookieService;
+    private readonly IPreConsentTrackingSessionService _preConsentTrackingSessionService;
 
     public EkomTrackingMiddleware(
         RequestDelegate next,
         IOptions<TrackingOptions> options,
-        ITrackingCookieService trackingCookieService)
+        ITrackingConsentService trackingConsentService,
+        ITrackingCookieService trackingCookieService,
+        IPreConsentTrackingSessionService preConsentTrackingSessionService)
     {
         _next = next;
         _options = options;
+        _trackingConsentService = trackingConsentService;
         _trackingCookieService = trackingCookieService;
+        _preConsentTrackingSessionService = preConsentTrackingSessionService;
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var captured = _options.Value.Enabled && _options.Value.CaptureEnabled && IsEligibleRequest(context.Request)
-            ? _trackingCookieService.CaptureFromRequest(context)
-            : null;
+        Models.OrderTracking? captured = null;
+        var canCaptureTracking = false;
 
-        if (captured is not null)
+        if (_options.Value.Enabled && _options.Value.CaptureEnabled && IsEligibleRequest(context.Request))
+        {
+            var storeAlias = context.RequestServices is null
+                ? null
+                : context.RequestServices.GetService<StoreApi>()?.GetStore()?.Alias;
+            var consent = _trackingConsentService.GetConsent(context, storeAlias);
+            canCaptureTracking = _trackingConsentService.CanCaptureAnalytics(consent)
+                || _trackingConsentService.CanCaptureMarketing(consent);
+
+            if (canCaptureTracking)
+            {
+                captured = _trackingCookieService.CaptureFromRequest(context);
+            }
+            else
+            {
+                var preConsentTracking = _trackingCookieService.CaptureAttributionFromRequest(context);
+                if (preConsentTracking is not null)
+                {
+                    _preConsentTrackingSessionService.WriteFirstTouch(context, preConsentTracking);
+                }
+            }
+        }
+
+        if (canCaptureTracking)
         {
             context.Response.OnStarting(static state =>
             {
-                var (httpContext, trackingCookieService, tracking) = ((HttpContext, ITrackingCookieService, Models.OrderTracking))state;
+                var (httpContext, trackingCookieService, preConsentTrackingSessionService, tracking) = ((HttpContext, ITrackingCookieService, IPreConsentTrackingSessionService, Models.OrderTracking?))state;
 
                 if (ShouldPersistTracking(httpContext))
                 {
+                    var preConsentTracking = preConsentTrackingSessionService.Read(httpContext);
                     var existing = trackingCookieService.ReadCookie(httpContext);
-                    trackingCookieService.WriteCookie(httpContext, Merge(existing, tracking));
+                    var merged = tracking;
+
+                    if (preConsentTracking is not null)
+                    {
+                        merged = merged is null
+                            ? preConsentTracking
+                            : Merge(merged, preConsentTracking);
+                    }
+
+                    if (merged is not null)
+                    {
+                        trackingCookieService.WriteCookie(httpContext, Merge(existing, merged));
+                        preConsentTrackingSessionService.Clear(httpContext);
+                    }
                 }
 
                 return Task.CompletedTask;
-            }, (context, _trackingCookieService, captured));
+            }, (context, _trackingCookieService, _preConsentTrackingSessionService, captured));
         }
 
         await _next(context).ConfigureAwait(false);
