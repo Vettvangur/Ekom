@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using System.Net;
 using System.Text.Json;
 
 namespace Ekom.Site.Controllers;
@@ -14,12 +15,16 @@ public sealed class TrackingSimulationController : ControllerBase
     private const string MetaBrowserCookieName = "_fbp";
     private const string MetaClickCookieName = "_fbc";
 
-    
     [HttpGet("simple")]
     public IActionResult SimulateSimple([FromQuery] string? provider = null, [FromQuery] string? redirectPath = null)
     {
+        if (!IsLocalRequest())
+        {
+            return NotFound();
+        }
+
         DeleteCookies();
-        
+
         var targetProvider = string.IsNullOrWhiteSpace(provider)
             ? "both"
             : provider.Trim().ToUpperInvariant() switch
@@ -30,7 +35,6 @@ public sealed class TrackingSimulationController : ControllerBase
             };
 
         var now = DateTimeOffset.UtcNow;
-        var gclid = "test-gclid-123";
         var fbclid = "test-fbclid-123";
 
         WriteCookie(CookieHubCookieName, BuildCookieHubCookie(now));
@@ -47,16 +51,19 @@ public sealed class TrackingSimulationController : ControllerBase
             WriteCookie(MetaClickCookieName, $"fb.1.{now.ToUnixTimeMilliseconds()}.{fbclid}");
         }
 
-        var finalRedirectPath = NormalizeRedirectPath(redirectPath);
-
-        return Redirect(finalRedirectPath);
+        return Redirect(NormalizeRedirectPath(redirectPath));
     }
-    
+
     [HttpGet("")]
     public IActionResult Simulate([FromQuery] string? provider = null, [FromQuery] string? redirectPath = null)
     {
+        if (!IsLocalRequest())
+        {
+            return NotFound();
+        }
+
         DeleteCookies();
-        
+
         var targetProvider = string.IsNullOrWhiteSpace(provider)
             ? "both"
             : provider.Trim().ToUpperInvariant() switch
@@ -103,6 +110,11 @@ public sealed class TrackingSimulationController : ControllerBase
     [HttpGet("clear")]
     public IActionResult Clear([FromQuery] string? redirectPath = null)
     {
+        if (!IsLocalRequest())
+        {
+            return NotFound();
+        }
+
         DeleteCookies();
 
         return Redirect(NormalizeRedirectPath(redirectPath));
@@ -116,7 +128,24 @@ public sealed class TrackingSimulationController : ControllerBase
         DeleteCookie(MetaBrowserCookieName);
         DeleteCookie(MetaClickCookieName);
     }
-    
+
+    private bool IsLocalRequest()
+    {
+        var remoteIp = HttpContext.Connection.RemoteIpAddress;
+        if (remoteIp == null)
+        {
+            return false;
+        }
+
+        if (IPAddress.IsLoopback(remoteIp))
+        {
+            return true;
+        }
+
+        var localIp = HttpContext.Connection.LocalIpAddress;
+        return localIp != null && remoteIp.Equals(localIp);
+    }
+
     private static string NormalizeRedirectPath(string? redirectPath)
         => !string.IsNullOrWhiteSpace(redirectPath) && redirectPath.StartsWith("/", StringComparison.Ordinal)
             ? redirectPath
