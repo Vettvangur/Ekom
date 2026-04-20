@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.118](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.117...Ekom-v0.2.118) (2026-04-20)
+
+
+### Bug Fixes
+
+* **tracking:** support CookieHub category consent ([#486](https://github.com/Vettvangur/Ekom/issues/486)) ([bac6898](https://github.com/Vettvangur/Ekom/commit/bac6898d47f17eb484fe09b5df79ab6fa7408ec9))
+
 ## [0.2.117](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.116...Ekom-v0.2.117) (2026-04-20)
 
 
