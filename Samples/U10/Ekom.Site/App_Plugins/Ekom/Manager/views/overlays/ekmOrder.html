@@ -27,6 +27,21 @@
     <p>Store: {{ model.editModel.order.storeInfo.alias }}</p>
     <p>Payment: <strong>{{ model.editModel.order.chargedAmount.currencyString }}</strong></p>
 
+    <div ng-if="orderActions.length > 0 || orderActionsLoading" style="margin-top:15px;">
+      <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        <button
+          type="button"
+          class="btn umb-button__button"
+          ng-repeat="action in orderActions track by action.key"
+          ng-class="getOrderActionButtonClass(action)"
+          ng-click="executeOrderAction(action)"
+          ng-disabled="!action.enabled || executingOrderActionKey === action.key">
+          {{ action.label }}
+        </button>
+      </div>
+      <p ng-if="orderActionsLoading" style="margin-top:10px;">Loading actions...</p>
+    </div>
+
   </div>
 
   <div class="ekmSplit">
@@ -187,6 +202,9 @@
           <small ng-if="orderLine.variant" style="font-style:italic; display:block; margin-top:3px; text-overflow: unset !important; white-space:normal !important;">
             {{ orderLine.variant.title }} <span ng-if="orderLine.variant.sku">({{ orderLine.variant.sku }})</span>
           </small>
+          <small ng-repeat="property in orderLine.displayProperties track by $index" style="display:block; margin-top:3px; text-overflow: unset !important; white-space:normal !important;">
+            <strong>{{ property.key }}</strong>: {{ property.value }}
+          </small>
         </div>
         <div class="umb-table-cell">{{ orderLine.quantity }}</div>
         <div class="umb-table-cell">{{orderLine.product.price.withVat.currencyString}}</div>
@@ -283,6 +301,22 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="ekmOrderTracking">
+    <div class="ekmOrderTracking__header" ng-class="{ 'ekmOrderTracking__header--spaced': isConsentExpanded || !hasConsentData() }">
+      <h4>Consent</h4>
+      <button type="button" class="btn-reset ekmOrderTracking__toggle" ng-if="hasConsentData()" ng-click="toggleConsent()">{{ isConsentExpanded ? 'Hide' : 'Show' }}</button>
+    </div>
+
+    <p ng-if="!hasConsentData()">No consent data was captured for this order.</p>
+
+    <div ng-if="isConsentExpanded && hasConsentData()">
+      <p ng-if="model.editModel.order.consent.resolvedAtUtc">Resolved: {{ model.editModel.order.consent.resolvedAtUtc | date:'dd. MMMM yyyy HH:mm' }}</p>
+      <p ng-if="model.editModel.order.consent.source">Source: {{ model.editModel.order.consent.source }}</p>
+      <p>Analytics: {{ getConsentValueLabel(model.editModel.order.consent.analytics) }}</p>
+      <p>Marketing: {{ getConsentValueLabel(model.editModel.order.consent.marketing) }}</p>
     </div>
   </div>
 

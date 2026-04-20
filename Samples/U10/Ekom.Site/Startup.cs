@@ -63,6 +63,7 @@ public class Startup
         
         services.AddScoped<UmbracoService>();
         services.AddTransient<IProductFilterService, CustomProductFilterService>();
+        services.AddTransient<IOrderManagerActionProvider, DemoOrderManagerActionProvider>();
         //services.AddTransient<Service>();
         services.AddHsts(options =>
         {

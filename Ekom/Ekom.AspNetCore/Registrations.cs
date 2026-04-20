@@ -101,6 +101,7 @@ static class Registrations
         services.AddSingleton<IOrderActivityLogDispatcher>(sp => sp.GetRequiredService<OrderActivityLogDispatcher>());
         services.AddHostedService(sp => sp.GetRequiredService<OrderActivityLogDispatcher>());
         services.AddTransient<IOrderActivityLogService, OrderActivityLogService>();
+        services.AddTransient<IOrderManagerActionService, OrderManagerActionService>();
         services.AddTransient<IProductFilterService, ProductFilterService>();
 
         services.AddSingleton<IObjectFactory<IStore>, StoreFactory>();
