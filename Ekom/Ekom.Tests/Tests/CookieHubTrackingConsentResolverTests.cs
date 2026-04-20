@@ -1,5 +1,6 @@
 using Ekom.Tracking;
 using Microsoft.AspNetCore.Http;
+using System.Text;
 using Xunit;
 
 namespace Ekom.Tests.Tests;
@@ -43,6 +44,34 @@ public class CookieHubTrackingConsentResolverTests
         Assert.Null(result);
     }
 
+    [Fact]
+    public void Resolve_Returns_Consent_From_CookieHub_Category_Array()
+    {
+        var sut = new CookieHubTrackingConsentResolver();
+        var payload = "{\"answered\":true,\"allAllowed\":false,\"categories\":[1,2,3],\"timestamp\":\"2026-04-20T14:06:20.128Z\"}";
+        var httpContext = CreateHttpContext(ToBase64Url(payload));
+
+        var result = sut.Resolve(httpContext, "Store", CreateOptions("cookiehub", "cookiehub"));
+
+        Assert.NotNull(result);
+        Assert.True(result!.Analytics);
+        Assert.False(result.Marketing);
+    }
+
+    [Fact]
+    public void Resolve_Returns_Full_Consent_When_AllAllowed_Is_True()
+    {
+        var sut = new CookieHubTrackingConsentResolver();
+        var payload = "{\"answered\":true,\"allAllowed\":true,\"categories\":[],\"timestamp\":\"2026-04-20T14:06:20.128Z\"}";
+        var httpContext = CreateHttpContext(ToBase64Url(payload));
+
+        var result = sut.Resolve(httpContext, "Store", CreateOptions("cookiehub", "cookiehub"));
+
+        Assert.NotNull(result);
+        Assert.True(result!.Analytics);
+        Assert.True(result.Marketing);
+    }
+
     private static DefaultHttpContext CreateHttpContext(string cookieValue)
     {
         var httpContext = new DefaultHttpContext();
@@ -56,4 +85,10 @@ public class CookieHubTrackingConsentResolverTests
             AnalyticsCookieName = analyticsCookieName,
             MarketingCookieName = marketingCookieName
         };
+
+    private static string ToBase64Url(string value)
+        => Convert.ToBase64String(Encoding.UTF8.GetBytes(value))
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
 }
