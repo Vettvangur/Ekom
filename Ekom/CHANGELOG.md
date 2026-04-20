@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.119](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.118...Ekom-v0.2.119) (2026-04-20)
+
+
+### Features
+
+* **manager:** add order actions and consent panel ([#488](https://github.com/Vettvangur/Ekom/issues/488)) ([ca62933](https://github.com/Vettvangur/Ekom/commit/ca6293387cd33a13ea9e7e8c7608afffcd619aae))
+
 ## [0.2.118](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.117...Ekom-v0.2.118) (2026-04-20)
 
 
