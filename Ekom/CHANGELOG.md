@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.115](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.114...Ekom-v0.2.115) (2026-04-20)
+
+
+### Bug Fixes
+
+* improve tracking capture and manager view ([#480](https://github.com/Vettvangur/Ekom/issues/480)) ([bef7146](https://github.com/Vettvangur/Ekom/commit/bef714659fd1df6de4cf589acaddd1ab9a37fbcf))
+
 ## [0.2.114](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.113...Ekom-v0.2.114) (2026-04-18)
 
 
