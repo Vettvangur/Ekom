@@ -16,7 +16,7 @@ public class CookieHubTrackingConsentResolverTests
         var result = sut.Resolve(httpContext, "Store", CreateOptions("cookiehub", "cookiehub"));
 
         Assert.NotNull(result);
-        Assert.True(result.Analytics);
+        Assert.True(result!.Analytics);
         Assert.False(result.Marketing);
         Assert.Equal("cookiehub", result.Source);
         Assert.Equal(new DateTime(2026, 4, 3, 12, 0, 0, DateTimeKind.Utc), result.ResolvedAtUtc);

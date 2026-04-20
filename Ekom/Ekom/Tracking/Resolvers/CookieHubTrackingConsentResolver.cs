@@ -25,7 +25,6 @@ public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
         try
         {
             using var document = JsonDocument.Parse(DecodePayload(rawCookie));
-
             var consent = new OrderConsent
             {
                 Analytics = ReadAnalyticsConsent(document.RootElement),

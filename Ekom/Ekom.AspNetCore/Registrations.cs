@@ -73,6 +73,7 @@ static class Registrations
         services.AddSingleton<ITrackingConsentResolver, DefaultTrackingConsentResolver>();
         services.AddSingleton<ITrackingConsentService, TrackingConsentService>();
         services.AddSingleton<ITrackingCookieService, TrackingCookieService>();
+        services.AddSingleton<IPreConsentTrackingSessionService, PreConsentTrackingSessionService>();
         services.AddTransient<IOrderTrackingService, OrderTrackingService>();
         services.AddTransient<IGa4TrackingService, Ga4TrackingService>();
         services.AddHttpClient<IMetaTrackingService, MetaTrackingService>(client =>
