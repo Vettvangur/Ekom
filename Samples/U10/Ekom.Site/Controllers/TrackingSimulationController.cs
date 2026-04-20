@@ -15,6 +15,45 @@ public sealed class TrackingSimulationController : ControllerBase
     private const string MetaBrowserCookieName = "_fbp";
     private const string MetaClickCookieName = "_fbc";
 
+    [HttpGet("simple")]
+    public IActionResult SimulateSimple([FromQuery] string? provider = null, [FromQuery] string? redirectPath = null)
+    {
+        if (!IsLocalRequest())
+        {
+            return NotFound();
+        }
+
+        DeleteCookies();
+
+        var targetProvider = string.IsNullOrWhiteSpace(provider)
+            ? "both"
+            : provider.Trim().ToUpperInvariant() switch
+            {
+                "GA4" => "ga4",
+                "META" => "meta",
+                _ => "both"
+            };
+
+        var now = DateTimeOffset.UtcNow;
+        var fbclid = "test-fbclid-123";
+
+        WriteCookie(CookieHubCookieName, BuildCookieHubCookie(now));
+
+        if (targetProvider is "ga4" or "both")
+        {
+            WriteCookie(GaCookieName, "GA1.1.123456789.1710000000");
+            WriteCookie(GaSessionCookieName, "GS1.1.1710000000.1.1.1710000001.0.0.0");
+        }
+
+        if (targetProvider is "meta" or "both")
+        {
+            WriteCookie(MetaBrowserCookieName, $"fb.1.{now.ToUnixTimeMilliseconds()}.1234567890");
+            WriteCookie(MetaClickCookieName, $"fb.1.{now.ToUnixTimeMilliseconds()}.{fbclid}");
+        }
+
+        return Redirect(NormalizeRedirectPath(redirectPath));
+    }
+
     [HttpGet("")]
     public IActionResult Simulate([FromQuery] string? provider = null, [FromQuery] string? redirectPath = null)
     {
@@ -22,6 +61,8 @@ public sealed class TrackingSimulationController : ControllerBase
         {
             return NotFound();
         }
+
+        DeleteCookies();
 
         var targetProvider = string.IsNullOrWhiteSpace(provider)
             ? "both"
@@ -74,13 +115,18 @@ public sealed class TrackingSimulationController : ControllerBase
             return NotFound();
         }
 
+        DeleteCookies();
+
+        return Redirect(NormalizeRedirectPath(redirectPath));
+    }
+
+    private void DeleteCookies()
+    {
         DeleteCookie(CookieHubCookieName);
         DeleteCookie(GaCookieName);
         DeleteCookie(GaSessionCookieName);
         DeleteCookie(MetaBrowserCookieName);
         DeleteCookie(MetaClickCookieName);
-
-        return Redirect(NormalizeRedirectPath(redirectPath));
     }
 
     private bool IsLocalRequest()
