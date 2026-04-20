@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.116](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.115...Ekom-v0.2.116) (2026-04-20)
+
+
+### Bug Fixes
+
+* **tracking:** preserve consented attribution across visits ([#482](https://github.com/Vettvangur/Ekom/issues/482)) ([68a49e8](https://github.com/Vettvangur/Ekom/commit/68a49e89baca343f268f570b2cf2a2d932379b00))
+
 ## [0.2.115](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.114...Ekom-v0.2.115) (2026-04-20)
 
 
