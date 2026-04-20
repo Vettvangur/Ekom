@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.117](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.116...Ekom-v0.2.117) (2026-04-20)
+
+
+### Bug Fixes
+
+* **tracking:** skip silent meta events without consent ([#484](https://github.com/Vettvangur/Ekom/issues/484)) ([d0ab4a0](https://github.com/Vettvangur/Ekom/commit/d0ab4a0d5a5b28b5409d89483ee117e0d438adb8))
+
 ## [0.2.116](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.115...Ekom-v0.2.116) (2026-04-20)
 
 

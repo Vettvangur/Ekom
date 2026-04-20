@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
     <UseProjectReferences>true</UseProjectReferences>
-    <Version>0.2.116</Version>
+    <Version>0.2.117</Version>
   </PropertyGroup>
 </Project>
