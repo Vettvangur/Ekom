@@ -2,6 +2,7 @@ using Ekom.Models;
 using Ekom.API;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
@@ -58,9 +59,10 @@ public sealed class TrackingCookieService : ITrackingCookieService
     public OrderTracking? CaptureFromRequest(HttpContext httpContext)
     {
         var request = httpContext.Request;
-        var query = request.Query;
         var cookies = request.Cookies;
-        var storeAlias = StoreApi.Instance.GetStore()?.Alias;
+        var storeAlias = httpContext.RequestServices is null
+            ? null
+            : httpContext.RequestServices.GetService<StoreApi>()?.GetStore()?.Alias;
         var consent = _trackingConsentService.GetConsent(httpContext, storeAlias);
 
         if (!_trackingConsentService.CanCaptureAnalytics(consent)
@@ -69,8 +71,30 @@ public sealed class TrackingCookieService : ITrackingCookieService
             return null;
         }
 
+        var tracking = CaptureAttributionFromRequest(httpContext);
+        if (tracking is null)
+        {
+            return null;
+        }
+
+        tracking.HasCookieSupport = request.Cookies.Count > 0 || request.Headers.ContainsKey("Cookie");
+        tracking.CaptureMethod = "cookie";
+        tracking.Ga4.ClientId = _trackingConsentService.CanCaptureAnalytics(consent) ? ParseGaClientId(cookies["_ga"]) : null;
+        tracking.Ga4.SessionId = _trackingConsentService.CanCaptureAnalytics(consent) ? ParseGaSessionId(cookies) : null;
+        tracking.Meta.Fbp = _trackingConsentService.CanCaptureMarketing(consent) ? ValueOrNull(cookies["_fbp"]) : null;
+        tracking.Meta.Fbc = _trackingConsentService.CanCaptureMarketing(consent) ? ValueOrNull(cookies["_fbc"]) ?? BuildFbc(ValueOrNull(request.Query["fbclid"])) : null;
+
+        return tracking.HasData() ? tracking : null;
+    }
+
+    public OrderTracking? CaptureAttributionFromRequest(HttpContext httpContext)
+    {
+        var request = httpContext.Request;
+        var query = request.Query;
+
         var fbclid = ValueOrNull(query["fbclid"]);
         var gclid = ValueOrNull(query["gclid"]);
+
         var tracking = new OrderTracking
         {
             CapturedAtUtc = DateTime.UtcNow,
@@ -83,18 +107,12 @@ public sealed class TrackingCookieService : ITrackingCookieService
             ClickIdType = !string.IsNullOrWhiteSpace(gclid) ? "gclid" : !string.IsNullOrWhiteSpace(fbclid) ? "fbclid" : null,
             LandingUrl = request.GetEncodedUrl(),
             Referrer = ValueOrNull(request.Headers.Referer.ToString()),
-            HasCookieSupport = request.Cookies.Count > 0 || request.Headers.ContainsKey("Cookie"),
-            CaptureMethod = "cookie",
             Ga4 = new Ga4OrderTracking
             {
-                ClientId = _trackingConsentService.CanCaptureAnalytics(consent) ? ParseGaClientId(cookies["_ga"]) : null,
-                SessionId = _trackingConsentService.CanCaptureAnalytics(consent) ? ParseGaSessionId(cookies) : null,
                 Data = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
             },
             Meta = new MetaOrderTracking
             {
-                Fbp = _trackingConsentService.CanCaptureMarketing(consent) ? ValueOrNull(cookies["_fbp"]) : null,
-                Fbc = _trackingConsentService.CanCaptureMarketing(consent) ? ValueOrNull(cookies["_fbc"]) ?? BuildFbc(fbclid) : null,
                 Data = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
             }
         };
