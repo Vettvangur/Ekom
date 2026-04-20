@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
-using System.Net;
 using System.Text.Json;
 
 namespace Ekom.Site.Controllers;
@@ -15,14 +14,49 @@ public sealed class TrackingSimulationController : ControllerBase
     private const string MetaBrowserCookieName = "_fbp";
     private const string MetaClickCookieName = "_fbc";
 
+    
+    [HttpGet("simple")]
+    public IActionResult SimulateSimple([FromQuery] string? provider = null, [FromQuery] string? redirectPath = null)
+    {
+        DeleteCookies();
+        
+        var targetProvider = string.IsNullOrWhiteSpace(provider)
+            ? "both"
+            : provider.Trim().ToUpperInvariant() switch
+            {
+                "GA4" => "ga4",
+                "META" => "meta",
+                _ => "both"
+            };
+
+        var now = DateTimeOffset.UtcNow;
+        var gclid = "test-gclid-123";
+        var fbclid = "test-fbclid-123";
+
+        WriteCookie(CookieHubCookieName, BuildCookieHubCookie(now));
+
+        if (targetProvider is "ga4" or "both")
+        {
+            WriteCookie(GaCookieName, "GA1.1.123456789.1710000000");
+            WriteCookie(GaSessionCookieName, "GS1.1.1710000000.1.1.1710000001.0.0.0");
+        }
+
+        if (targetProvider is "meta" or "both")
+        {
+            WriteCookie(MetaBrowserCookieName, $"fb.1.{now.ToUnixTimeMilliseconds()}.1234567890");
+            WriteCookie(MetaClickCookieName, $"fb.1.{now.ToUnixTimeMilliseconds()}.{fbclid}");
+        }
+
+        var finalRedirectPath = NormalizeRedirectPath(redirectPath);
+
+        return Redirect(finalRedirectPath);
+    }
+    
     [HttpGet("")]
     public IActionResult Simulate([FromQuery] string? provider = null, [FromQuery] string? redirectPath = null)
     {
-        if (!IsLocalRequest())
-        {
-            return NotFound();
-        }
-
+        DeleteCookies();
+        
         var targetProvider = string.IsNullOrWhiteSpace(provider)
             ? "both"
             : provider.Trim().ToUpperInvariant() switch
@@ -69,37 +103,20 @@ public sealed class TrackingSimulationController : ControllerBase
     [HttpGet("clear")]
     public IActionResult Clear([FromQuery] string? redirectPath = null)
     {
-        if (!IsLocalRequest())
-        {
-            return NotFound();
-        }
+        DeleteCookies();
 
+        return Redirect(NormalizeRedirectPath(redirectPath));
+    }
+
+    private void DeleteCookies()
+    {
         DeleteCookie(CookieHubCookieName);
         DeleteCookie(GaCookieName);
         DeleteCookie(GaSessionCookieName);
         DeleteCookie(MetaBrowserCookieName);
         DeleteCookie(MetaClickCookieName);
-
-        return Redirect(NormalizeRedirectPath(redirectPath));
     }
-
-    private bool IsLocalRequest()
-    {
-        var remoteIp = HttpContext.Connection.RemoteIpAddress;
-        if (remoteIp == null)
-        {
-            return false;
-        }
-
-        if (IPAddress.IsLoopback(remoteIp))
-        {
-            return true;
-        }
-
-        var localIp = HttpContext.Connection.LocalIpAddress;
-        return localIp != null && remoteIp.Equals(localIp);
-    }
-
+    
     private static string NormalizeRedirectPath(string? redirectPath)
         => !string.IsNullOrWhiteSpace(redirectPath) && redirectPath.StartsWith("/", StringComparison.Ordinal)
             ? redirectPath

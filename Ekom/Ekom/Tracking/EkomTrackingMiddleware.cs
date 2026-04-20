@@ -22,20 +22,27 @@ public sealed class EkomTrackingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        Models.OrderTracking? captured = null;
+        var captured = _options.Value.Enabled && _options.Value.CaptureEnabled && IsEligibleRequest(context.Request)
+            ? _trackingCookieService.CaptureFromRequest(context)
+            : null;
 
-        if (_options.Value.Enabled && _options.Value.CaptureEnabled && IsEligibleRequest(context.Request))
+        if (captured is not null)
         {
-            captured = _trackingCookieService.CaptureFromRequest(context);
+            context.Response.OnStarting(static state =>
+            {
+                var (httpContext, trackingCookieService, tracking) = ((HttpContext, ITrackingCookieService, Models.OrderTracking))state;
+
+                if (ShouldPersistTracking(httpContext))
+                {
+                    var existing = trackingCookieService.ReadCookie(httpContext);
+                    trackingCookieService.WriteCookie(httpContext, Merge(existing, tracking));
+                }
+
+                return Task.CompletedTask;
+            }, (context, _trackingCookieService, captured));
         }
 
         await _next(context).ConfigureAwait(false);
-
-        if (captured is not null && ShouldPersistTracking(context))
-        {
-            var existing = _trackingCookieService.ReadCookie(context);
-            _trackingCookieService.WriteCookie(context, Merge(existing, captured));
-        }
     }
 
     private static bool IsEligibleRequest(HttpRequest request)
@@ -46,7 +53,9 @@ public sealed class EkomTrackingMiddleware
         }
 
         if (request.Path.StartsWithSegments("/umbraco", StringComparison.OrdinalIgnoreCase)
-            || request.Path.StartsWithSegments("/ekom", StringComparison.OrdinalIgnoreCase))
+            || request.Path.StartsWithSegments("/ekom", StringComparison.OrdinalIgnoreCase)
+            || request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase)
+            || request.Path.StartsWithSegments("/webapi", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
@@ -56,11 +65,6 @@ public sealed class EkomTrackingMiddleware
 
     private static bool ShouldPersistTracking(HttpContext context)
     {
-        if (context.Response.HasStarted)
-        {
-            return false;
-        }
-
         var contentType = context.Response.ContentType;
         return !string.IsNullOrWhiteSpace(contentType)
             && contentType.StartsWith("text/html", StringComparison.OrdinalIgnoreCase);
