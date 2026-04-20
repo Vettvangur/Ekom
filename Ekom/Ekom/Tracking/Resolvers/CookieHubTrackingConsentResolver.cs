@@ -55,8 +55,26 @@ public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
             return decoded;
         }
 
-        var bytes = Convert.FromBase64String(decoded);
-        return Encoding.UTF8.GetString(bytes);
+        return Encoding.UTF8.GetString(DecodeBase64(decoded));
+    }
+
+    private static byte[] DecodeBase64(string value)
+    {
+        try
+        {
+            return Convert.FromBase64String(value);
+        }
+        catch (FormatException)
+        {
+            var normalized = value.Replace('-', '+').Replace('_', '/');
+            var padding = normalized.Length % 4;
+            if (padding > 0)
+            {
+                normalized = normalized.PadRight(normalized.Length + (4 - padding), '=');
+            }
+
+            return Convert.FromBase64String(normalized);
+        }
     }
 
     private static bool LooksLikeJson(string value)
@@ -67,16 +85,16 @@ public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
     }
 
     private static bool? ReadAnalyticsConsent(JsonElement root)
-        => ReadCategoryConsent(root, "analytics");
+        => ReadCategoryConsent(root, "analytics", 3);
 
     private static bool? ReadMarketingConsent(JsonElement root)
-        => ReadCategoryConsent(root, "marketing");
+        => ReadCategoryConsent(root, "marketing", 4);
 
-    private static bool? ReadCategoryConsent(JsonElement root, string propertyName)
+    private static bool? ReadCategoryConsent(JsonElement root, string propertyName, int categoryId)
     {
-        if (TryReadAllAllowed(root, out var allAllowed))
+        if (TryReadAllAllowed(root, out var allAllowed) && allAllowed)
         {
-            return allAllowed;
+            return true;
         }
 
         if (!root.TryGetProperty("categories", out var categories))
@@ -84,9 +102,12 @@ public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
             return null;
         }
 
-        return categories.ValueKind == JsonValueKind.Object
-            ? ReadCategory(categories, propertyName)
-            : null;
+        return categories.ValueKind switch
+        {
+            JsonValueKind.Object => ReadNamedCategory(categories, propertyName),
+            JsonValueKind.Array => ReadCategoryId(categories, categoryId),
+            _ => null
+        };
     }
 
     private static bool TryReadAllAllowed(JsonElement root, out bool allAllowed)
@@ -110,7 +131,7 @@ public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
         return false;
     }
 
-    private static bool? ReadCategory(JsonElement categories, string propertyName)
+    private static bool? ReadNamedCategory(JsonElement categories, string propertyName)
     {
         if (!categories.TryGetProperty(propertyName, out var property))
         {
@@ -122,6 +143,19 @@ public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
             : property.ValueKind == JsonValueKind.False
                 ? false
                 : null;
+    }
+
+    private static bool ReadCategoryId(JsonElement categories, int categoryId)
+    {
+        foreach (var item in categories.EnumerateArray())
+        {
+            if (item.ValueKind == JsonValueKind.Number && item.TryGetInt32(out var value) && value == categoryId)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static DateTime? ReadTimestamp(JsonElement root)

@@ -16,7 +16,7 @@ public class CookieHubTrackingConsentResolverTests
         var result = sut.Resolve(httpContext, "Store", CreateOptions("cookiehub", "cookiehub"));
 
         Assert.NotNull(result);
-        Assert.True(result.Analytics);
+        Assert.True(result!.Analytics);
         Assert.False(result.Marketing);
         Assert.Equal("cookiehub", result.Source);
         Assert.Equal(new DateTime(2026, 4, 3, 12, 0, 0, DateTimeKind.Utc), result.ResolvedAtUtc);
@@ -45,18 +45,31 @@ public class CookieHubTrackingConsentResolverTests
     }
 
     [Fact]
-    public void Resolve_Returns_Full_Consent_When_Base64_Cookie_Uses_AllAllowed()
+    public void Resolve_Returns_Consent_From_CookieHub_Category_Array()
     {
         var sut = new CookieHubTrackingConsentResolver();
-        var payload = "{\"answered\":true,\"allAllowed\":true,\"categories\":[],\"timestamp\":\"2026-04-19T13:30:24.287Z\"}";
-        var httpContext = CreateHttpContext(Convert.ToBase64String(Encoding.UTF8.GetBytes(payload)));
+        var payload = "{\"answered\":true,\"allAllowed\":false,\"categories\":[1,2,3],\"timestamp\":\"2026-04-20T14:06:20.128Z\"}";
+        var httpContext = CreateHttpContext(ToBase64Url(payload));
+
+        var result = sut.Resolve(httpContext, "Store", CreateOptions("cookiehub", "cookiehub"));
+
+        Assert.NotNull(result);
+        Assert.True(result!.Analytics);
+        Assert.False(result.Marketing);
+    }
+
+    [Fact]
+    public void Resolve_Returns_Full_Consent_When_AllAllowed_Is_True()
+    {
+        var sut = new CookieHubTrackingConsentResolver();
+        var payload = "{\"answered\":true,\"allAllowed\":true,\"categories\":[],\"timestamp\":\"2026-04-20T14:06:20.128Z\"}";
+        var httpContext = CreateHttpContext(ToBase64Url(payload));
 
         var result = sut.Resolve(httpContext, "Store", CreateOptions("cookiehub", "cookiehub"));
 
         Assert.NotNull(result);
         Assert.True(result!.Analytics);
         Assert.True(result.Marketing);
-        Assert.Equal("cookiehub", result.Source);
     }
 
     private static DefaultHttpContext CreateHttpContext(string cookieValue)
@@ -72,4 +85,10 @@ public class CookieHubTrackingConsentResolverTests
             AnalyticsCookieName = analyticsCookieName,
             MarketingCookieName = marketingCookieName
         };
+
+    private static string ToBase64Url(string value)
+        => Convert.ToBase64String(Encoding.UTF8.GetBytes(value))
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
 }
