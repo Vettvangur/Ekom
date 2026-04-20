@@ -120,6 +120,43 @@
       return textArea.value;
     }
 
+    function formatOrderLinePropertyKey(key) {
+      var cleanedKey = (key || "").replace(/^orderline/i, "");
+      var spacedKey = cleanedKey.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim();
+
+      if (!spacedKey) {
+        return "";
+      }
+
+      return spacedKey.charAt(0).toUpperCase() + spacedKey.slice(1);
+    }
+
+    function getOrderLineProperties(orderLine) {
+      var properties = orderLine && orderLine.orderLineInfo && orderLine.orderLineInfo.properties
+        ? orderLine.orderLineInfo.properties
+        : {};
+
+      return Object.entries(properties)
+        .filter(function (entry) {
+          return !!entry[1];
+        })
+        .map(function (entry) {
+          return {
+            key: formatOrderLinePropertyKey(entry[0]),
+            value: htmlDecode(entry[1])
+          };
+        })
+        .filter(function (entry) {
+          return !!entry.key;
+        });
+    }
+
+    var orderLines = ($scope.model.editModel.order && $scope.model.editModel.order.orderLines) || [];
+
+    orderLines.forEach(function (orderLine) {
+      orderLine.displayProperties = getOrderLineProperties(orderLine);
+    });
+
     var shippingProps = $scope.model.editModel.order.customerInformation.shipping.properties || {};
 
     $scope.extraShippingProperties = Object.entries(shippingProps)

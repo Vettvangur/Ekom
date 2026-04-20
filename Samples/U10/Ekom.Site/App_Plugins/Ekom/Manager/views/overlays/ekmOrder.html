@@ -187,6 +187,9 @@
           <small ng-if="orderLine.variant" style="font-style:italic; display:block; margin-top:3px; text-overflow: unset !important; white-space:normal !important;">
             {{ orderLine.variant.title }} <span ng-if="orderLine.variant.sku">({{ orderLine.variant.sku }})</span>
           </small>
+          <small ng-repeat="property in orderLine.displayProperties track by $index" style="display:block; margin-top:3px; text-overflow: unset !important; white-space:normal !important;">
+            <strong>{{ property.key }}</strong>: {{ property.value }}
+          </small>
         </div>
         <div class="umb-table-cell">{{ orderLine.quantity }}</div>
         <div class="umb-table-cell">{{orderLine.product.price.withVat.currencyString}}</div>
