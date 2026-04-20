@@ -7,6 +7,7 @@
     var activityLogTypeInfo = 0;
     var activityLogTypeSuccess = 1;
     var activityLogTypeAlert = 2;
+    var orderId = $scope.model && $scope.model.editModel && $scope.model.editModel.order && $scope.model.editModel.order.uniqueId;
 
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
@@ -16,10 +17,12 @@
     $scope.activityLogsError = false;
     $scope.activityLogExpandedStates = {};
     $scope.isTrackingExpanded = false;
-
-    var tracking = ($scope.model.editModel.order && $scope.model.editModel.order.tracking) || null;
-    $scope.ga4TrackingData = tracking && tracking.ga4 && tracking.ga4.data ? Object.entries(tracking.ga4.data) : [];
-    $scope.metaTrackingData = tracking && tracking.meta && tracking.meta.data ? Object.entries(tracking.meta.data) : [];
+    $scope.isConsentExpanded = false;
+    $scope.orderActions = [];
+    $scope.orderActionsLoading = false;
+    $scope.executingOrderActionKey = null;
+    $scope.ga4TrackingData = [];
+    $scope.metaTrackingData = [];
 
     $scope.toggleDropdown = function (dropdownId) {
       $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
@@ -120,6 +123,23 @@
       return textArea.value;
     }
 
+    function parseProperties(properties, predicate) {
+      return Object.entries(properties || {})
+        .filter(function (entry) {
+          var key = entry[0];
+          var value = entry[1];
+
+          if (!value) {
+            return false;
+          }
+
+          return predicate(key, value);
+        })
+        .map(function (entry) {
+          return [entry[0], htmlDecode(entry[1])];
+        });
+    }
+
     function formatOrderLinePropertyKey(key) {
       var cleanedKey = (key || "").replace(/^orderline/i, "");
       var spacedKey = cleanedKey.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim();
@@ -151,97 +171,198 @@
         });
     }
 
-    var orderLines = ($scope.model.editModel.order && $scope.model.editModel.order.orderLines) || [];
+    function applyOrderData(order) {
+      var tracking = (order && order.tracking) || null;
+      var orderLines = (order && order.orderLines) || [];
+      var shippingProps = order.customerInformation.shipping.properties || {};
+      var customerProps = order.customerInformation.customer.properties || {};
+      var customShippingProps = (order.shippingProvider && order.shippingProvider.customData) || {};
+      var customPaymentProps = (order.paymentProvider && order.paymentProvider.customData) || {};
 
-    orderLines.forEach(function (orderLine) {
-      orderLine.displayProperties = getOrderLineProperties(orderLine);
-    });
+      $scope.model.editModel.order = order;
+      $scope.ga4TrackingData = tracking && tracking.ga4 && tracking.ga4.data ? Object.entries(tracking.ga4.data) : [];
+      $scope.metaTrackingData = tracking && tracking.meta && tracking.meta.data ? Object.entries(tracking.meta.data) : [];
 
-    var shippingProps = $scope.model.editModel.order.customerInformation.shipping.properties || {};
+      orderLines.forEach(function (orderLine) {
+        orderLine.displayProperties = getOrderLineProperties(orderLine);
+      });
 
-    $scope.extraShippingProperties = Object.entries(shippingProps)
-      .filter(function (entry) {
-        var key = entry[0];
-        var value = entry[1];
-
-        if (!value) {
-          return false;
-        }
-
+      $scope.extraShippingProperties = parseProperties(shippingProps, function (key) {
         var normalisedKey = (key || "").toLowerCase();
         return normalisedKey.startsWith("shipping") && !$scope.isDefaultKey(normalisedKey);
-      })
-      .map(function (entry) {
-        return [entry[0], htmlDecode(entry[1])];
       });
 
-    var customerProps = $scope.model.editModel.order.customerInformation.customer.properties || {};
-
-    $scope.extraCustomerProperties = Object.entries(customerProps)
-      .filter(function (entry) {
-        var key = entry[0];
-        var value = entry[1];
-
-        if (!value) {
-          return false;
-        }
-
+      $scope.extraCustomerProperties = parseProperties(customerProps, function (key) {
         var normalisedKey = (key || "").toLowerCase();
         return normalisedKey.startsWith("customer") && !$scope.isDefaultKey(normalisedKey);
-      })
-      .map(function (entry) {
-        return [entry[0], htmlDecode(entry[1])];
       });
 
-    var customShippingProps = ($scope.model.editModel.order.shippingProvider && $scope.model.editModel.order.shippingProvider.customData) || {};
-
-    $scope.extraCustomShippingProperties = Object.entries(customShippingProps)
-      .filter(function (entry) {
-        var key = entry[0];
-        var value = entry[1];
-
-        if (!value) {
-          return false;
-        }
-
+      $scope.extraCustomShippingProperties = parseProperties(customShippingProps, function (key) {
         var normalisedKey = (key || "").toLowerCase();
         return normalisedKey.startsWith("customshipping") && !$scope.isDefaultKey(normalisedKey);
-      })
-      .map(function (entry) {
-        return [entry[0], htmlDecode(entry[1])];
       });
 
-    var customPaymentProps = ($scope.model.editModel.order.paymentProvider && $scope.model.editModel.order.paymentProvider.customData) || {};
-
-    $scope.extraCustomPaymentProperties = Object.entries(customPaymentProps)
-      .filter(function (entry) {
-        var key = entry[0];
-        var value = entry[1];
-
-        if (!value) {
-          return false;
-        }
-
+      $scope.extraCustomPaymentProperties = parseProperties(customPaymentProps, function (key) {
         var normalisedKey = (key || "").toLowerCase();
         return normalisedKey.startsWith("custompayment") && !$scope.isDefaultKey(normalisedKey);
-      })
-      .map(function (entry) {
-        return [entry[0], htmlDecode(entry[1])];
       });
+    }
+
+    function loadOrder() {
+      if (!orderId) {
+        return Promise.resolve();
+      }
+
+      return resources.OrderInfo(orderId)
+        .then(function (result) {
+          applyOrderData(result.data);
+        }, function (error) {
+          window.alert(getErrorMessage(error, "Failed to reload order."));
+        });
+    }
+
+    function loadOrderActions() {
+      if (!orderId) {
+        return Promise.resolve();
+      }
+
+      $scope.orderActionsLoading = true;
+
+      return resources.OrderActions(orderId)
+        .then(function (result) {
+          $scope.orderActions = result.data || [];
+        }, function (error) {
+          $scope.orderActions = [];
+          window.alert(getErrorMessage(error, "Failed to load order actions."));
+        })
+        .finally(function () {
+          $scope.orderActionsLoading = false;
+        });
+    }
+
+    function readBlobText(blob) {
+      if (!blob) {
+        return Promise.resolve("");
+      }
+
+      if (typeof blob.text === "function") {
+        return blob.text();
+      }
+
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          resolve(reader.result || "");
+        };
+        reader.onerror = reject;
+        reader.readAsText(blob);
+      });
+    }
+
+    function tryParseMessage(text) {
+      if (!text) {
+        return "";
+      }
+
+      try {
+        var data = JSON.parse(text);
+        return data && data.message ? data.message : text;
+      } catch (error) {
+        return text;
+      }
+    }
+
+    function getErrorMessage(response, fallbackMessage) {
+      if (!response || !response.data) {
+        return fallbackMessage;
+      }
+
+      if (typeof response.data === "string") {
+        return response.data || fallbackMessage;
+      }
+
+      if (response.data && typeof response.data.message === "string") {
+        return response.data.message || fallbackMessage;
+      }
+
+      return fallbackMessage;
+    }
+
+    function isFileResponse(response) {
+      var contentDisposition = (response.headers("content-disposition") || "").toLowerCase();
+      var contentType = (response.headers("content-type") || "").toLowerCase();
+
+      return contentDisposition.indexOf("filename=") !== -1 ||
+        contentType.indexOf("application/pdf") === 0 ||
+        contentType.indexOf("application/octet-stream") === 0 ||
+        contentType.indexOf("image/") === 0;
+    }
+
+    function refreshOrderView() {
+      return loadOrder()
+        .then(function () {
+          loadActivityLogs();
+          return loadOrderActions();
+        });
+    }
+
+    $scope.getOrderActionButtonClass = function (action) {
+      if (action && action.look === "primary") {
+        return "btn-success";
+      }
+
+      return "btn-outline umb-outline";
+    };
+
+    $scope.executeOrderAction = function (action) {
+      if (!action || !action.key || $scope.executingOrderActionKey) {
+        return;
+      }
+
+      if (action.confirmMessage && !window.confirm(action.confirmMessage)) {
+        return;
+      }
+
+      $scope.executingOrderActionKey = action.key;
+
+      resources.ExecuteOrderAction(orderId, action.key)
+        .then(function (response) {
+          if (isFileResponse(response)) {
+            var fileUrl = window.URL.createObjectURL(response.data);
+            window.open(fileUrl, "_blank");
+            return;
+          }
+
+          return readBlobText(response.data)
+            .then(function (text) {
+              var message = tryParseMessage(text);
+
+              if (message) {
+                notificationsService.success("Success", message);
+              }
+
+              return refreshOrderView();
+            });
+        }, function (error) {
+          return readBlobText(error.data)
+            .then(function (text) {
+              var message = tryParseMessage(text) || getErrorMessage(error, "Order action failed.");
+              window.alert(message);
+            });
+        })
+        .finally(function () {
+          $scope.executingOrderActionKey = null;
+        });
+    };
+
+    applyOrderData($scope.model.editModel.order);
 
     $scope.$watch("model.editModel.order.customerInformation.customer.properties", function (props) {
       var liveCustomerProps = props || {};
 
-      $scope.extraCustomerProperties = Object.entries(liveCustomerProps)
-        .filter(function (entry) {
-          var key = entry[0];
-          var value = entry[1];
-
-          return value && key.toLowerCase().startsWith("customer") && !$scope.isDefaultKey(key);
-        })
-        .map(function (entry) {
-          return [entry[0], htmlDecode(entry[1])];
-        });
+      $scope.extraCustomerProperties = parseProperties(liveCustomerProps, function (key) {
+        return key.toLowerCase().startsWith("customer") && !$scope.isDefaultKey(key);
+      });
     });
 
     $scope.hasShippingInfo = function () {
@@ -290,6 +411,37 @@
 
     $scope.toggleTracking = function () {
       $scope.isTrackingExpanded = !$scope.isTrackingExpanded;
+    };
+
+    $scope.hasConsentData = function () {
+      var consent = $scope.model.editModel.order && $scope.model.editModel.order.consent;
+
+      if (!consent) {
+        return false;
+      }
+
+      return !!(
+        consent.resolvedAtUtc ||
+        consent.source ||
+        consent.analytics !== null && consent.analytics !== undefined ||
+        consent.marketing !== null && consent.marketing !== undefined
+      );
+    };
+
+    $scope.toggleConsent = function () {
+      $scope.isConsentExpanded = !$scope.isConsentExpanded;
+    };
+
+    $scope.getConsentValueLabel = function (value) {
+      if (value === true) {
+        return "Yes";
+      }
+
+      if (value === false) {
+        return "No";
+      }
+
+      return "Unknown";
     };
 
     $scope.toggleActivityLog = function (index) {
@@ -350,6 +502,7 @@
     }
 
     loadActivityLogs();
+    loadOrderActions();
 
     var printOrderButton = document.getElementById("printOrder");
 

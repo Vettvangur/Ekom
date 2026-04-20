@@ -19,13 +19,15 @@ public class EkomManagerController : ControllerBase
     readonly IManagerAccessService _managerAccessService;
     readonly INodeService _nodeService;
     readonly IOrderActivityLogService _orderActivityLogService;
+    readonly IOrderManagerActionService _orderManagerActionService;
     readonly ILogger<EkomManagerController> _logger;
-    public EkomManagerController(ManagerRepository repo, IManagerAccessService managerAccessService, INodeService nodeService, IOrderActivityLogService orderActivityLogService, ILogger<EkomManagerController> logger)
+    public EkomManagerController(ManagerRepository repo, IManagerAccessService managerAccessService, INodeService nodeService, IOrderActivityLogService orderActivityLogService, IOrderManagerActionService orderManagerActionService, ILogger<EkomManagerController> logger)
     {
         _repo = repo;
         _managerAccessService = managerAccessService;
         _nodeService = nodeService;
         _orderActivityLogService = orderActivityLogService;
+        _orderManagerActionService = orderManagerActionService;
         _logger = logger;
     }
 
@@ -97,6 +99,80 @@ public class EkomManagerController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get order logs. {OrderId}", orderId);
+
+            return StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
+    [HttpGet]
+    [Route("OrderActions/{orderId}")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> GetOrderActionsAsync(Guid orderId, CancellationToken ct = default)
+    {
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(orderId, ct);
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            var order = await _repo.GetOrderInfoAsync(orderId, ct);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(await _orderManagerActionService.GetActionsAsync(order, ct).ConfigureAwait(false));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get order actions. {OrderId}", orderId);
+
+            return StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
+    [HttpPost]
+    [Route("OrderActions/{orderId}/{actionKey}")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> ExecuteOrderActionAsync(Guid orderId, string actionKey, CancellationToken ct = default)
+    {
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(orderId, ct);
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            var order = await _repo.GetOrderInfoAsync(orderId, ct);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            OrderManagerActionExecutionResult? result = await _orderManagerActionService.ExecuteAsync(order, actionKey, HttpContext?.User?.Identity?.Name, ct).ConfigureAwait(false);
+
+            if (result == null)
+            {
+                return BadRequest("Unknown order action.");
+            }
+
+            return result switch
+            {
+                OrderManagerActionFileResult fileResult => File(fileResult.Content, fileResult.ContentType, fileResult.FileName),
+                OrderManagerActionBadRequestResult badRequestResult => BadRequest(badRequestResult.Message ?? "Order action failed."),
+                _ => Ok(new OrderActionExecuteResponse { Message = result.Message })
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to execute order action {ActionKey}. {OrderId}", actionKey, orderId);
 
             return StatusCode(500, "An unexpected error occurred.");
         }
@@ -266,6 +342,11 @@ public class EkomManagerController : ControllerBase
 
         public string x { get; set; } = string.Empty;
         public decimal y { get; set; }
+    }
+
+    public sealed class OrderActionExecuteResponse
+    {
+        public string? Message { get; set; }
     }
 
 
