@@ -93,7 +93,7 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     /// Select the Primary variant.
     /// First Variant in the group that is available, if none are available, return the first variant.
     /// </summary>
-    public virtual IVariant PrimaryVariant
+    public virtual IVariant? PrimaryVariant
     {
         get
         {
