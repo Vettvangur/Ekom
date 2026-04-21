@@ -47,5 +47,5 @@ public interface IVariantGroup : IPerStoreNodeEntity
     /// Select the Primary variant.
     /// First Variant in the group that is available, if none are available, return the first variant.
     /// </summary>
-    IVariant PrimaryVariant { get; }
+    IVariant? PrimaryVariant { get; }
 }

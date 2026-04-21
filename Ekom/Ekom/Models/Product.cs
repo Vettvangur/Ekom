@@ -158,11 +158,14 @@ public class Product : PerStoreNodeEntity, IProduct
 
                         if (!string.IsNullOrEmpty(primaryGroupValue))
                         {
-                            UmbracoContent? node = Configuration.Resolver.GetService<INodeService>()?.NodeById(primaryGroupValue);
+                            var nodeService = Configuration.Resolver?.GetService<INodeService>();
+                            var variantGroupCache = _variantGroupCache;
+
+                            UmbracoContent? node = nodeService?.NodeById(primaryGroupValue);
 
                             if (node != null && node.ContentTypeAlias == "ekmProductVariantGroup")
                             {
-                                if (__variantGroupCache.Cache.TryGetValue(Store.Alias, out var storeDict) && storeDict.TryGetValue(node.Key, out var variantGroup))
+                                if (variantGroupCache?.Cache.TryGetValue(Store.Alias, out var storeDict) == true && storeDict.TryGetValue(node.Key, out var variantGroup))
                                 {
                                     return variantGroup;
                                 }
@@ -187,8 +190,6 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var primaryVariantGroup = PrimaryVariantGroup;
-
             var lazy = _cache.GetOrAdd("PrimaryVariant", _ =>
                 new Lazy<object?>(() =>
                 {
@@ -198,17 +199,22 @@ public class Product : PerStoreNodeEntity, IProduct
 
                         if (!string.IsNullOrEmpty(primaryVariantValue))
                         {
-                            UmbracoContent? node = Configuration.Resolver.GetService<INodeService>()?.NodeById(primaryVariantValue);
+                            var nodeService = Configuration.Resolver?.GetService<INodeService>();
+                            var variantCache = _variantCache;
+
+                            UmbracoContent? node = nodeService?.NodeById(primaryVariantValue);
 
                             if (node != null && node.ContentTypeAlias == "ekmProductVariant")
                             {
-                                if (__variantCache.Cache.TryGetValue(Store.Alias, out var storeDict) && storeDict.TryGetValue(node.Key, out var variant))
+                                if (variantCache?.Cache.TryGetValue(Store.Alias, out var storeDict) == true && storeDict.TryGetValue(node.Key, out var variant))
                                 {
                                     return variant;
                                 }
                             }
                         }
                     }
+
+                    var primaryVariantGroup = PrimaryVariantGroup;
                     
                     if (primaryVariantGroup == null)
                         return null;
