@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.15](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.14...Ekom.Algolia-v0.2.15) (2026-04-21)
+
+
+### Bug Fixes
+
+* **product:** honor configured primary variant ([#491](https://github.com/Vettvangur/Ekom/issues/491)) ([0cf7777](https://github.com/Vettvangur/Ekom/commit/0cf7777ed166d12e4d6981c6d995cc68a66d8284))
+
 ## [0.2.14](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.13...Ekom.Algolia-v0.2.14) (2026-04-20)
 
 
