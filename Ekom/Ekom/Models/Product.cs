@@ -142,7 +142,7 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            List<IVariantGroup> variantGroups = VariantGroups.ToList();
+            var variantGroups = VariantGroups.ToList();
 
             if (!variantGroups.Any())
             {
@@ -183,9 +183,6 @@ public class Product : PerStoreNodeEntity, IProduct
     /// Select the Primary variant.
     /// First Variant in the primary variant group that is available, if none are available, return the first variant.
     /// </summary>
-    [System.Text.Json.Serialization.JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
-    [XmlIgnore]
     public virtual IVariant? PrimaryVariant
     {
         get
@@ -195,6 +192,24 @@ public class Product : PerStoreNodeEntity, IProduct
             var lazy = _cache.GetOrAdd("PrimaryVariant", _ =>
                 new Lazy<object?>(() =>
                 {
+                    if (Properties.ContainsKey("primaryVariant"))
+                    {
+                        var primaryVariantValue = GetValue("primaryVariant");
+
+                        if (!string.IsNullOrEmpty(primaryVariantValue))
+                        {
+                            UmbracoContent? node = Configuration.Resolver.GetService<INodeService>()?.NodeById(primaryVariantValue);
+
+                            if (node != null && node.ContentTypeAlias == "ekmProductVariant")
+                            {
+                                if (__variantCache.Cache.TryGetValue(Store.Alias, out var storeDict) && storeDict.TryGetValue(node.Key, out var variant))
+                                {
+                                    return variant;
+                                }
+                            }
+                        }
+                    }
+                    
                     if (primaryVariantGroup == null)
                         return null;
 
