@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.121](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.120...Ekom-v0.2.121) (2026-04-21)
+
+
+### Bug Fixes
+
+* **product:** harden primary variant fallback ([#493](https://github.com/Vettvangur/Ekom/issues/493)) ([7a29c8f](https://github.com/Vettvangur/Ekom/commit/7a29c8fd0d38230f7375cad54877ced15e444ada))
+
 ## [0.2.120](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.119...Ekom-v0.2.120) (2026-04-21)
 
 
