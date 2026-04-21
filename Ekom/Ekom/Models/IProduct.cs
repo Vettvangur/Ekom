@@ -130,9 +130,6 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// Select the Primary variant.
     /// First Variant in the primary variant group that is available, if none are available, return the first variant.
     /// </summary>
-    [System.Text.Json.Serialization.JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
-    [System.Xml.Serialization.XmlIgnore]
     IVariant? PrimaryVariant { get; }
 
     /// <summary>
