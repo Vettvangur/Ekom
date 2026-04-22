@@ -2,6 +2,7 @@ using Ekom.Algolia;
 using Ekom.Algolia.Mappers;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Text.Json;
 using Xunit;
 
 namespace Ekom.Tests.Tests;
@@ -22,8 +23,11 @@ public class AlgoliaProductIndexMapperTests
         var record = mapper.Map(product.Object, CreateStore(), "products");
 
         Assert.NotNull(record);
-        Assert.Equal(["Candy", "Organic"], Assert.IsAssignableFrom<IReadOnlyList<string>>(record!.Data["categories.lvl0"]));
-        Assert.Equal(["Candy > Chocolate"], Assert.IsAssignableFrom<IReadOnlyList<string>>(record.Data["categories.lvl1"]));
+        Assert.Equal(["Candy", "Organic"], Assert.IsAssignableFrom<IReadOnlyList<string>>(record!.Data["hierarchical_categories.lvl0"]));
+        Assert.Equal(["Candy > Chocolate"], Assert.IsAssignableFrom<IReadOnlyList<string>>(record.Data["hierarchical_categories.lvl1"]));
+        Assert.Equal(
+            ["Candy", "Candy > Chocolate", "Organic"],
+            Assert.IsAssignableFrom<IReadOnlyList<string>>(record.Data["category_paths"]));
     }
 
     [Theory]
@@ -41,6 +45,108 @@ public class AlgoliaProductIndexMapperTests
 
         Assert.NotNull(record);
         Assert.Equal(expected, Assert.IsType<bool>(record!.Data["featured"]));
+    }
+
+    [Fact]
+    public void Maps_Int_Product_Properties_From_Configured_Modifier()
+    {
+        var mapper = CreateMapper(productProperties: ["stockCount|int"]);
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["stockCount"] = "0"
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(0, Assert.IsType<int>(record!.Data["stockCount"]));
+    }
+
+    [Theory]
+    [InlineData("0,1", 0.1)]
+    [InlineData("0.0", 0.0)]
+    public void Maps_Decimal_Product_Properties_From_Configured_Modifier(string rawValue, decimal expected)
+    {
+        var mapper = CreateMapper(productProperties: ["weight|decimal"]);
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["weight"] = rawValue
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(expected, Assert.IsType<decimal>(record!.Data["weight"]));
+    }
+
+    [Fact]
+    public void Skips_Invalid_Int_Product_Properties_From_Configured_Modifier()
+    {
+        var mapper = CreateMapper(productProperties: ["stockCount|int"]);
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["stockCount"] = "abc"
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.DoesNotContain("stockCount", record!.Data.Keys);
+    }
+
+    [Fact]
+    public void Skips_Invalid_Decimal_Product_Properties_From_Configured_Modifier()
+    {
+        var mapper = CreateMapper(productProperties: ["weight|decimal"]);
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["weight"] = "abc"
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.DoesNotContain("weight", record!.Data.Keys);
+    }
+
+    [Fact]
+    public void Omits_Empty_And_Whitespace_Values_From_Indexed_Record()
+    {
+        var mapper = CreateMapper(productProperties: ["emptyProp", "blankProp", "featured"]);
+        var product = CreateProduct(
+            summary: "   ",
+            description: string.Empty,
+            sku: " ",
+            url: " ",
+            properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["emptyProp"] = string.Empty,
+                ["blankProp"] = "   ",
+                ["featured"] = "0"
+            });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Null(record!.Sku);
+        Assert.Null(record.Summary);
+        Assert.Null(record.Description);
+        Assert.Null(record.Url);
+        Assert.Null(record.ImageUrl);
+        Assert.Null(record.ImageUrls);
+        Assert.DoesNotContain("emptyProp", record.Data.Keys);
+        Assert.DoesNotContain("blankProp", record.Data.Keys);
+        Assert.False(Assert.IsType<bool>(record.Data["featured"]));
+
+        var json = JsonSerializer.Serialize(record);
+
+        Assert.DoesNotContain("Summary", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("Description", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("image_url", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("ImageUrls", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("emptyProp", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("blankProp", json, StringComparison.Ordinal);
+        Assert.Contains("\"featured\":false", json, StringComparison.Ordinal);
     }
 
     private static ProductIndexMapper CreateMapper(IReadOnlyCollection<string>? productProperties = null)
@@ -76,7 +182,11 @@ public class AlgoliaProductIndexMapperTests
 
     private static Mock<Ekom.Models.IProduct> CreateProduct(
         IReadOnlyList<Mock<Ekom.Models.ICategory>>? categories = null,
-        IReadOnlyDictionary<string, string>? properties = null)
+        IReadOnlyDictionary<string, string>? properties = null,
+        string sku = "sku",
+        string summary = "Summary",
+        string description = "Description",
+        string url = "/product")
     {
         var price = new Mock<Ekom.Models.IPrice>();
         price.SetupGet(x => x.Value).Returns(100m);
@@ -86,11 +196,11 @@ public class AlgoliaProductIndexMapperTests
 
         var product = new Mock<Ekom.Models.IProduct>();
         product.SetupGet(x => x.Key).Returns(Guid.NewGuid());
-        product.SetupGet(x => x.SKU).Returns("sku");
+        product.SetupGet(x => x.SKU).Returns(sku);
         product.SetupGet(x => x.Title).Returns("Product");
-        product.SetupGet(x => x.Summary).Returns("Summary");
-        product.SetupGet(x => x.Description).Returns("Description");
-        product.SetupGet(x => x.Url).Returns("/product");
+        product.SetupGet(x => x.Summary).Returns(summary);
+        product.SetupGet(x => x.Description).Returns(description);
+        product.SetupGet(x => x.Url).Returns(url);
         product.SetupGet(x => x.Images).Returns([]);
         product.SetupGet(x => x.UrlsWithContext).Returns([]);
         product.SetupGet(x => x.Urls).Returns([]);
