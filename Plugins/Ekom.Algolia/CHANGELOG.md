@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [0.2.17](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.16...Ekom.Algolia-v0.2.17) (2026-04-22)
+
+
+### Bug Fixes
+
+* **algolia:** warn on invalid store domains ([#499](https://github.com/Vettvangur/Ekom/issues/499)) ([d502a14](https://github.com/Vettvangur/Ekom/commit/d502a14dc2c87bb2fb790a0ed5a2f082dca791e5))
+
+## [0.2.16](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.15...Ekom.Algolia-v0.2.16) (2026-04-22)
+
+
+### Bug Fixes
+
+* **algolia:** tighten indexed product property values ([#497](https://github.com/Vettvangur/Ekom/issues/497)) ([738e686](https://github.com/Vettvangur/Ekom/commit/738e6861b1138078cb169af63681c293e8d1e76b))
+
 ## [0.2.15](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.14...Ekom.Algolia-v0.2.15) (2026-04-21)
 
 
