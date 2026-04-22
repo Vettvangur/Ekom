@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.123](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.122...Ekom-v0.2.123) (2026-04-22)
+
+
+### Bug Fixes
+
+* **algolia:** tighten indexed product property values ([#497](https://github.com/Vettvangur/Ekom/issues/497)) ([738e686](https://github.com/Vettvangur/Ekom/commit/738e6861b1138078cb169af63681c293e8d1e76b))
+
 ## [0.2.122](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.121...Ekom-v0.2.122) (2026-04-22)
 
 
