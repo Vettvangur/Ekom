@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.124](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.123...Ekom-v0.2.124) (2026-04-22)
+
+
+### Bug Fixes
+
+* **algolia:** warn on invalid store domains ([#499](https://github.com/Vettvangur/Ekom/issues/499)) ([d502a14](https://github.com/Vettvangur/Ekom/commit/d502a14dc2c87bb2fb790a0ed5a2f082dca791e5))
+
 ## [0.2.123](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.122...Ekom-v0.2.123) (2026-04-22)
 
 
