@@ -660,7 +660,7 @@ public class CheckoutControllerService
         {
             await Order.Instance.UpdateStatusAsync(
                 OrderStatus.WaitingForPayment,
-                order.UniqueId).ConfigureAwait(false);
+                order.UniqueId, ct: ct).ConfigureAwait(false);
 
             Uri paymentReturnErrorUrl = new(BuildPaymentReturnUrl(order.UniqueId, "error"));
             Uri paymentReturnCancelUrl = new(BuildPaymentReturnUrl(order.UniqueId, "cancel"));
