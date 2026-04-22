@@ -32,6 +32,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             return null;
 
         var allowedProps = BuildAllowedProperties(product, store);
+        var allowedTransforms = allowedProps.ToDictionary(x => x.Key, x => x.Value.Transform, StringComparer.OrdinalIgnoreCase);
         var price = ResolvePrice(product, store);
         var locale = store.Locale;
         var categoryLevels = BuildCategoryLevels(product, locale);
@@ -66,22 +67,22 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var record = new AlgoliaProductRecord
         {
             ObjectId = product.Key.ToString(),
-            Sku = product.SKU,
-            NodeName = product.Title,
+            Sku = NullIfWhiteSpace(product.SKU),
+            NodeName = NullIfWhiteSpace(product.Title),
             Title = title,
-            Summary = GetLocalizedValue(product, "summary", product.Summary, locale),
-            Description = GetLocalizedValue(product, "description", product.Description, locale),
-            Url = urls.FirstOrDefault() ?? ApplyDomain(product.Url, store.Domain),
-            ImageUrl = images.FirstOrDefault(),
-            ImageUrls = images,
+            Summary = NullIfWhiteSpace(GetLocalizedValue(product, "summary", product.Summary, locale)),
+            Description = NullIfWhiteSpace(GetLocalizedValue(product, "description", product.Description, locale)),
+            Url = NullIfWhiteSpace(urls.FirstOrDefault() ?? ApplyDomain(product.Url, store.Domain)),
+            ImageUrl = NullIfWhiteSpace(images.FirstOrDefault()),
+            ImageUrls = images.Count > 0 ? images : null,
             Price = price?.Value,
             PriceWithVat = price?.WithVat.Value,
             PriceWithoutVat = price?.WithoutVat.Value,
-            Currency = price?.Currency.CurrencyValue ?? store.Currency,
+            Currency = NullIfWhiteSpace(price?.Currency.ISOCurrencySymbol ?? store.Currency),
             Available = product.Available,
             Stock = store.IncludeStock ? product.Stock : null,
-            StoreAlias = store.Alias,
-            Locale = store.Locale,
+            StoreAlias = NullIfWhiteSpace(store.Alias),
+            Locale = NullIfWhiteSpace(store.Locale),
             CreatedAt = ToUnixTimeSeconds(product.CreateDate),
             UpdatedAt = ToUnixTimeSeconds(product.UpdateDate),
             Data = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -90,16 +91,21 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         foreach (var categoryLevel in categoryLevels)
             record.Data[categoryLevel.Key] = categoryLevel.Value;
 
+        var categoryPaths = BuildCategoryPaths(product, locale);
+
+        if (categoryPaths.Count > 0)
+            record.Data["category_paths"] = categoryPaths;
+
         foreach (var kvp in allowedProps)
         {
             var alias = kvp.Key;
-            var transform = kvp.Value;
+            var configuredField = kvp.Value;
 
             var raw = GetLocalizedValue(product, alias, product.GetValue(alias, store.Alias), locale);
             if (string.IsNullOrWhiteSpace(raw))
                 continue;
 
-            object? converted = NormalizePropertyValue(raw);
+            object? converted = NormalizePropertyValue(raw, configuredField.ValueType);
             var ctx = new AlgoliaProductFieldContext(product, store, alias, baseIndexName);
             converted = ConvertProperty(ctx, converted);
 
@@ -108,9 +114,9 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
             record.Data[alias] = converted;
 
-            if (transform != AlgoliaFieldTransform.None)
+            if (configuredField.Transform != AlgoliaFieldTransform.None)
             {
-                var unixValue = transform switch
+                var unixValue = configuredField.Transform switch
                 {
                     AlgoliaFieldTransform.UnixSeconds => TryToUnix(converted, unixMilliseconds: false),
                     AlgoliaFieldTransform.UnixMilliseconds => TryToUnix(converted, unixMilliseconds: true),
@@ -124,24 +130,26 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
         if (_enrichers.Count > 0)
         {
-            var ctx = new AlgoliaProductEnrichmentContext(product, store, baseIndexName, allowedProps);
+            var ctx = new AlgoliaProductEnrichmentContext(product, store, baseIndexName, allowedTransforms);
             foreach (var enricher in _enrichers)
                 enricher.Enrich(record, ctx);
         }
 
+        RemoveEmptyValues(record.Data);
+
         return record;
     }
 
-    private Dictionary<string, AlgoliaFieldTransform> BuildAllowedProperties(IProduct product, AlgoliaResolvedStore store)
+    private Dictionary<string, ConfiguredField> BuildAllowedProperties(IProduct product, AlgoliaResolvedStore store)
     {
         if (_options.Indexing.ProductProperties.Count == 0)
-            return new Dictionary<string, AlgoliaFieldTransform>(StringComparer.OrdinalIgnoreCase);
+            return new Dictionary<string, ConfiguredField>(StringComparer.OrdinalIgnoreCase);
 
         return _options.Indexing.ProductProperties
             .Select(ConfiguredField.Parse)
             .Where(f => !string.IsNullOrWhiteSpace(f.Alias))
             .GroupBy(f => f.Alias, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.Last().Transform, StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase);
     }
 
     private object? ConvertProperty(AlgoliaProductFieldContext ctx, object? value)
@@ -201,7 +209,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
             for (var i = 0; i < segments.Count; i++)
             {
-                var key = $"categories.lvl{i}";
+                var key = $"hierarchical_categories.lvl{i}";
                 if (!categoryLevels.TryGetValue(key, out var values))
                 {
                     values = [];
@@ -221,8 +229,66 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             StringComparer.OrdinalIgnoreCase);
     }
 
-    private static object NormalizePropertyValue(string value)
+    private static IReadOnlyList<string> BuildCategoryPaths(IProduct product, string? locale)
     {
+        var categoryPaths = new List<string>();
+
+        foreach (var category in product.Categories)
+        {
+            var segments = category.Ancestors
+                .Select(ancestor => GetLocalizedValue(ancestor, "title", ancestor.Title, locale))
+                .Where(title => !string.IsNullOrWhiteSpace(title))
+                .ToList();
+
+            var categoryTitle = GetLocalizedValue(category, "title", category.Title, locale);
+            if (!string.IsNullOrWhiteSpace(categoryTitle))
+                segments.Add(categoryTitle);
+
+            for (var i = 0; i < segments.Count; i++)
+            {
+                var path = string.Join(" > ", segments.Take(i + 1));
+                if (!string.IsNullOrWhiteSpace(path) && !categoryPaths.Contains(path, StringComparer.OrdinalIgnoreCase))
+                    categoryPaths.Add(path);
+            }
+        }
+
+        return categoryPaths;
+    }
+
+    private static void RemoveEmptyValues(IDictionary<string, object?> values)
+    {
+        var keysToRemove = values
+            .Where(kvp => IsEmptyValue(kvp.Value))
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var key in keysToRemove)
+            values.Remove(key);
+    }
+
+    private static bool IsEmptyValue(object? value)
+    {
+        return value switch
+        {
+            null => true,
+            string s => string.IsNullOrWhiteSpace(s),
+            System.Collections.IDictionary dictionary => dictionary.Count == 0,
+            System.Collections.IEnumerable enumerable when value is not string => !enumerable.Cast<object?>().Any(),
+            _ => false
+        };
+    }
+
+    private static string? NullIfWhiteSpace(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value;
+
+    private static object? NormalizePropertyValue(string value, AlgoliaFieldValueType valueType)
+    {
+        if (valueType == AlgoliaFieldValueType.Int)
+            return TryParseInt(value);
+
+        if (valueType == AlgoliaFieldValueType.Decimal)
+            return TryParseDecimal(value);
+
         if (bool.TryParse(value, out var booleanValue))
             return booleanValue;
 
@@ -232,6 +298,29 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             "1" => true,
             _ => value
         };
+    }
+
+    private static int? TryParseInt(string value)
+    {
+        var trimmedValue = value.Trim();
+        if (int.TryParse(trimmedValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intValue))
+            return intValue;
+
+        return int.TryParse(trimmedValue, NumberStyles.Integer, CultureInfo.CurrentCulture, out intValue)
+            ? intValue
+            : null;
+    }
+
+    private static decimal? TryParseDecimal(string value)
+    {
+        var trimmedValue = value.Trim();
+        if (string.IsNullOrWhiteSpace(trimmedValue))
+            return null;
+
+        var normalizedValue = trimmedValue.Replace(',', '.');
+        return decimal.TryParse(normalizedValue, NumberStyles.Number, CultureInfo.InvariantCulture, out var decimalValue)
+            ? decimalValue
+            : null;
     }
 
     private static IPrice? ResolvePrice(IProduct product, AlgoliaResolvedStore store)
@@ -292,25 +381,34 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         return dto.ToUnixTimeSeconds();
     }
 
-    internal readonly record struct ConfiguredField(string Alias, AlgoliaFieldTransform Transform)
+    internal readonly record struct ConfiguredField(string Alias, AlgoliaFieldValueType ValueType, AlgoliaFieldTransform Transform)
     {
         public static ConfiguredField Parse(string raw)
         {
             if (string.IsNullOrWhiteSpace(raw))
-                return new ConfiguredField(string.Empty, AlgoliaFieldTransform.None);
+                return new ConfiguredField(string.Empty, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None);
 
             var parts = raw.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             var alias = parts[0];
 
             if (parts.Length < 2)
-                return new ConfiguredField(alias, AlgoliaFieldTransform.None);
+                return new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None);
 
             return parts[1].ToLowerInvariant() switch
             {
-                "unix" => new ConfiguredField(alias, AlgoliaFieldTransform.UnixSeconds),
-                "unixms" => new ConfiguredField(alias, AlgoliaFieldTransform.UnixMilliseconds),
-                _ => new ConfiguredField(alias, AlgoliaFieldTransform.None)
+                "int" => new ConfiguredField(alias, AlgoliaFieldValueType.Int, AlgoliaFieldTransform.None),
+                "decimal" => new ConfiguredField(alias, AlgoliaFieldValueType.Decimal, AlgoliaFieldTransform.None),
+                "unix" => new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixSeconds),
+                "unixms" => new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixMilliseconds),
+                _ => new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None)
             };
         }
     }
+}
+
+internal enum AlgoliaFieldValueType
+{
+    None,
+    Int,
+    Decimal
 }

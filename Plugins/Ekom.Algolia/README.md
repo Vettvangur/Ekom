@@ -81,7 +81,10 @@ public sealed class ProductSearchController
         "ProductProperties": [
           "title",
           "summary",
-          "description"
+          "description",
+          "stockCount|int",
+          "weight|decimal",
+          "publishedAt|unix"
         ],
         "Dispatching": {
           "MaxBatchSize": 100,
@@ -141,5 +144,8 @@ public sealed class ProductSearchController
 - Request and order context decide which culture and currency suffix is used; background indexing falls back to the store's default culture/currency.
 - `Title` is always indexed as a top-level field, and `NodeName` contains the Umbraco node name.
 - Variants are not indexed by default.
+- `Indexing.ProductProperties` supports one optional modifier per property: `|int`, `|decimal`, `|unix`, or `|unixms`.
+- `|decimal` accepts either comma or dot decimal separators, so values like `0,1` and `0.0` are indexed as decimals.
+- Invalid `|int` and `|decimal` values are skipped instead of being indexed as strings.
 - Manual reindex all endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildIndexesAsync`.
 - Manual reindex store endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildStoreIndexesAsync?storeAlias=Store`.
