@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.122](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.121...Ekom-v0.2.122) (2026-04-22)
+
+
+### Bug Fixes
+
+* **order:** skip no-op status updates and pass cancellation ([#495](https://github.com/Vettvangur/Ekom/issues/495)) ([cb6e5e4](https://github.com/Vettvangur/Ekom/commit/cb6e5e488558a1a23ee87cebda812bce50a35b0f))
+
 ## [0.2.121](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.120...Ekom-v0.2.121) (2026-04-21)
 
 
