@@ -81,6 +81,7 @@ public sealed class ProductSearchController
           "title",
           "summary",
           "description",
+          "channels|array",
           "stockCount|int",
           "weight|decimal",
           "publishedAt|unix"
@@ -144,8 +145,9 @@ public sealed class ProductSearchController
 - Request and order context decide which culture and currency suffix is used; background indexing falls back to the store's default culture/currency.
 - `Title` is always indexed as a top-level field, and `NodeName` contains the Umbraco node name.
 - Variants are not indexed by default.
-- `Indexing.ProductProperties` supports one optional modifier per property: `|int`, `|decimal`, `|unix`, or `|unixms`.
+- `Indexing.ProductProperties` supports one optional modifier per property: `|array`, `|int`, `|decimal`, `|unix`, or `|unixms`.
+- `|array` parses JSON arrays such as checkbox-list values like `["Web","Store"]` into Algolia string arrays.
 - `|decimal` accepts either comma or dot decimal separators, so values like `0,1` and `0.0` are indexed as decimals.
-- Invalid `|int` and `|decimal` values are skipped instead of being indexed as strings.
+- Invalid `|array`, `|int`, and `|decimal` values are skipped instead of being indexed as strings.
 - Manual reindex all endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildIndexesAsync`.
 - Manual reindex store endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildStoreIndexesAsync?storeAlias=Store`.
