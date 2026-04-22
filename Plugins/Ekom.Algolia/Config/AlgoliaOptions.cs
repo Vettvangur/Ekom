@@ -13,7 +13,6 @@ public sealed class AlgoliaOptions
     public string? AnalyticsRegion { get; init; }
 
     public string Environment { get; init; } = "prod";
-    public string? Domain { get; init; }
 
     public AlgoliaIndexingOptions Indexing { get; set; } = new();
     public AlgoliaEventsOptions Events { get; set; } = new();
