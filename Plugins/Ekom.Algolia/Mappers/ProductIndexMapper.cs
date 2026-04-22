@@ -3,6 +3,7 @@ using Ekom.Models;
 using Microsoft.Extensions.Options;
 using System.Globalization;
 using System.Linq;
+using System.Text.Json;
 
 namespace Ekom.Algolia.Mappers;
 
@@ -289,6 +290,9 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         if (valueType == AlgoliaFieldValueType.Decimal)
             return TryParseDecimal(value);
 
+        if (valueType == AlgoliaFieldValueType.Array)
+            return TryParseStringArray(value);
+
         if (bool.TryParse(value, out var booleanValue))
             return booleanValue;
 
@@ -321,6 +325,41 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         return decimal.TryParse(normalizedValue, NumberStyles.Number, CultureInfo.InvariantCulture, out var decimalValue)
             ? decimalValue
             : null;
+    }
+
+    private static IReadOnlyList<string>? TryParseStringArray(string value)
+    {
+        var trimmedValue = value.Trim();
+        if (string.IsNullOrWhiteSpace(trimmedValue))
+            return null;
+
+        try
+        {
+            using var document = JsonDocument.Parse(trimmedValue);
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+                return null;
+
+            var results = new List<string>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in document.RootElement.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.String)
+                    continue;
+
+                var stringValue = item.GetString()?.Trim();
+                if (string.IsNullOrWhiteSpace(stringValue) || !seen.Add(stringValue))
+                    continue;
+
+                results.Add(stringValue);
+            }
+
+            return results.Count > 0 ? results : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static IPrice? ResolvePrice(IProduct product, AlgoliaResolvedStore store)
@@ -398,6 +437,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             {
                 "int" => new ConfiguredField(alias, AlgoliaFieldValueType.Int, AlgoliaFieldTransform.None),
                 "decimal" => new ConfiguredField(alias, AlgoliaFieldValueType.Decimal, AlgoliaFieldTransform.None),
+                "array" => new ConfiguredField(alias, AlgoliaFieldValueType.Array, AlgoliaFieldTransform.None),
                 "unix" => new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixSeconds),
                 "unixms" => new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixMilliseconds),
                 _ => new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None)
@@ -410,5 +450,6 @@ internal enum AlgoliaFieldValueType
 {
     None,
     Int,
-    Decimal
+    Decimal,
+    Array
 }

@@ -4,9 +4,9 @@
     "net8.0": {
       "Algolia.Search": {
         "type": "Direct",
-        "requested": "[7.38.0, )",
-        "resolved": "7.38.0",
-        "contentHash": "ShA+pbAjL2UTmWkSjxIOHQu/N4VElviYU0d0kEeFaVpnRNSb+RpN8nfKiyFOvr62SAwsOjTuUttbjp6emITN4g==",
+        "requested": "[7.40.0, )",
+        "resolved": "7.40.0",
+        "contentHash": "d6h5GQ+3N668Y2A0qpz1EsRMLV2NxZ30L5W6SEyL7CR92SyislmwyDSxaP5gTCgLu60N1ReYeQSNFJcYp9cTZg==",
         "dependencies": {
           "Microsoft.Extensions.Logging": "[8.0.0, 11.0.0)",
           "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, 11.0.0)",
@@ -3008,7 +3008,7 @@
       "ekom.aspnetcore": {
         "type": "Project",
         "dependencies": {
-          "Ekom.Core": "[0.2.117, )"
+          "Ekom.Core": "[0.2.121, )"
         }
       },
       "ekom.common": {
@@ -3023,7 +3023,7 @@
         "dependencies": {
           "Azure.Identity": "[1.17.1, )",
           "CommonServiceLocator": "[2.0.7, )",
-          "Ekom.Common": "[0.2.117, )",
+          "Ekom.Common": "[0.2.121, )",
           "Ekom.Payments.Core": "[0.2.59, )",
           "Hangfire": "[1.8.18, )",
           "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "[8.0.11, )",
@@ -3039,7 +3039,7 @@
       "ekom.u10": {
         "type": "Project",
         "dependencies": {
-          "Ekom.AspNetCore": "[0.2.117, )",
+          "Ekom.AspNetCore": "[0.2.121, )",
           "Ekom.Payments.U10": "[0.2.59, )",
           "Umbraco.Cms.Api.Common": "[13.13.0, )",
           "Umbraco.Cms.Core": "[13.13.0, )",

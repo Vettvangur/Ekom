@@ -80,6 +80,21 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Fact]
+    public void Maps_Array_Product_Properties_From_Configured_Modifier()
+    {
+        var mapper = CreateMapper(productProperties: ["channels|array"]);
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["channels"] = "[\"Web\", \"Store\", \"Web\", \" \" ]"
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(["Web", "Store"], Assert.IsAssignableFrom<IReadOnlyList<string>>(record!.Data["channels"]));
+    }
+
+    [Fact]
     public void Skips_Invalid_Int_Product_Properties_From_Configured_Modifier()
     {
         var mapper = CreateMapper(productProperties: ["stockCount|int"]);
@@ -107,6 +122,21 @@ public class AlgoliaProductIndexMapperTests
 
         Assert.NotNull(record);
         Assert.DoesNotContain("weight", record!.Data.Keys);
+    }
+
+    [Fact]
+    public void Skips_Invalid_Array_Product_Properties_From_Configured_Modifier()
+    {
+        var mapper = CreateMapper(productProperties: ["channels|array"]);
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["channels"] = "Web"
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.DoesNotContain("channels", record!.Data.Keys);
     }
 
     [Fact]
