@@ -382,6 +382,12 @@ partial class OrderService
 
         OrderStatus oldStatus = order.OrderStatus;
 
+        if (oldStatus == order.OrderStatus)
+        {
+            _logger.LogWarning("Order status is the same, did not update order status. {OrderStatus}", order.OrderStatus);
+            return;
+        }
+        
         var OrderStatusEventModel = new OrderStatusEventArgs()
         {
             OrderUniqueId = uniqueId,
@@ -393,7 +399,7 @@ partial class OrderService
         if (settings.FireOnOrderStatusChangingEvent)
         {
             OrderEvents.OnOrderStatusChanging(this, OrderStatusEventModel);
-            await OrderEvents.OnOrderStatusChangingAsync(this, OrderStatusEventModel);
+            await OrderEvents.OnOrderStatusChangingAsync(this, OrderStatusEventModel, ct: ct);
         }
 
         order.OrderStatus = status;
@@ -403,7 +409,7 @@ partial class OrderService
             ClearCustomerOrderReference(order);
         }
 
-        await _orderRepository.UpdateOrderAsync(order)
+        await _orderRepository.UpdateOrderAsync(order, ct)
             .ConfigureAwait(false);
 
         _memoryCache.Set<OrderInfo>(
@@ -425,7 +431,7 @@ partial class OrderService
                 OrderUniqueId = uniqueId,
                 PreviousStatus = oldStatus,
                 Status = status,
-            });
+            }, ct);
 
         }
 
