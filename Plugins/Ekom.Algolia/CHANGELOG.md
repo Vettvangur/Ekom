@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.18](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.17...Ekom.Algolia-v0.2.18) (2026-04-22)
+
+
+### Bug Fixes
+
+* **algolia:** add array product property modifier ([#501](https://github.com/Vettvangur/Ekom/issues/501)) ([ddba50e](https://github.com/Vettvangur/Ekom/commit/ddba50ee39bb0782ea8a64ed0e894b791b6089ef))
+
 ## [0.2.17](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.16...Ekom.Algolia-v0.2.17) (2026-04-22)
 
 
