@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.125](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.124...Ekom-v0.2.125) (2026-04-22)
+
+
+### Bug Fixes
+
+* **algolia:** add array product property modifier ([#501](https://github.com/Vettvangur/Ekom/issues/501)) ([ddba50e](https://github.com/Vettvangur/Ekom/commit/ddba50ee39bb0782ea8a64ed0e894b791b6089ef))
+
 ## [0.2.124](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.123...Ekom-v0.2.124) (2026-04-22)
 
 
