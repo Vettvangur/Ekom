@@ -1,5 +1,6 @@
 using Ekom.Algolia;
 using Ekom.Algolia.Mappers;
+using Ekom.Models.Umbraco;
 using Microsoft.Extensions.Options;
 using Moq;
 using System.Text.Json;
@@ -179,6 +180,26 @@ public class AlgoliaProductIndexMapperTests
         Assert.Contains("\"featured\":false", json, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Keeps_Relative_Urls_And_Image_Urls_As_Is()
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct(url: "/product/fallback");
+        product.SetupGet(x => x.Images).Returns([
+            new Ekom.Models.Image { Url = "/media/product.jpg" }
+        ]);
+        product.SetupGet(x => x.UrlsWithContext).Returns([
+            new UmbracoUrl { Culture = "is-IS", Url = "/product/context" }
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(locale: "is-IS"), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal("/product/context", record!.Url);
+        Assert.Equal("/media/product.jpg", record.ImageUrl);
+        Assert.Equal(["/media/product.jpg"], record.ImageUrls);
+    }
+
     private static ProductIndexMapper CreateMapper(IReadOnlyCollection<string>? productProperties = null)
     {
         var options = Options.Create(new AlgoliaOptions
@@ -195,9 +216,10 @@ public class AlgoliaProductIndexMapperTests
         return new ProductIndexMapper(options);
     }
 
-    private static AlgoliaResolvedStore CreateStore() => new()
+    private static AlgoliaResolvedStore CreateStore(string? locale = null) => new()
     {
-        Alias = "store"
+        Alias = "store",
+        Locale = locale
     };
 
     private static Mock<Ekom.Models.ICategory> CreateCategory(string title, IReadOnlyList<Mock<Ekom.Models.ICategory>>? ancestors = null)

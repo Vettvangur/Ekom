@@ -42,7 +42,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var images = product.Images
             .Select(i => i?.Url)
             .Where(u => !string.IsNullOrWhiteSpace(u))
-            .Select(u => ApplyDomain(u!, store.Domain))
+            .Select(u => u!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -50,7 +50,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             .Where(u => string.IsNullOrWhiteSpace(locale) || u.Culture.Equals(locale, StringComparison.OrdinalIgnoreCase))
             .Select(u => u.Url)
             .Where(u => !string.IsNullOrWhiteSpace(u))
-            .Select(u => ApplyDomain(u!, store.Domain))
+            .Select(u => u!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList()
             ?? [];
@@ -59,7 +59,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         {
             urls = product.Urls
                 ?.Where(u => !string.IsNullOrWhiteSpace(u))
-                .Select(u => ApplyDomain(u!, store.Domain))
+                .Select(u => u!)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList()
                 ?? [];
@@ -73,7 +73,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             Title = title,
             Summary = NullIfWhiteSpace(GetLocalizedValue(product, "summary", product.Summary, locale)),
             Description = NullIfWhiteSpace(GetLocalizedValue(product, "description", product.Description, locale)),
-            Url = NullIfWhiteSpace(urls.FirstOrDefault() ?? ApplyDomain(product.Url, store.Domain)),
+            Url = NullIfWhiteSpace(urls.FirstOrDefault() ?? product.Url),
             ImageUrl = NullIfWhiteSpace(images.FirstOrDefault()),
             ImageUrls = images.Count > 0 ? images : null,
             Price = price?.Value,
@@ -173,25 +173,6 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         return string.IsNullOrWhiteSpace(localized) ? fallbackValue : localized;
     }
 
-    private static string ApplyDomain(string? url, string? domain)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return string.Empty;
-
-        if (string.IsNullOrWhiteSpace(domain))
-            return url;
-
-        if (Uri.TryCreate(url, UriKind.Absolute, out _))
-            return url;
-
-        if (!Uri.TryCreate(domain, UriKind.Absolute, out var baseUri))
-            return url;
-
-        if (!Uri.TryCreate(baseUri, url, out var absoluteUri))
-            return url;
-
-        return absoluteUri.ToString();
-    }
 
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> BuildCategoryLevels(IProduct product, string? locale)
     {

@@ -123,8 +123,7 @@ public sealed class ProductSearchController
       },
       "Stores": [
         {
-          "Alias": "Store",
-          "Domain": "https://example.com"
+          "Alias": "Store"
         }
       ]
     }
@@ -140,8 +139,7 @@ public sealed class ProductSearchController
 - `IAlgoliaSearchService.SearchProductsAsync(...)` returns hits together with paging metadata, query text, processing time, and raw facets.
 - The plugin always resolves and sets the Algolia index name from Ekom store alias, locale, and currency; callers should not set `IndexName` themselves.
 - Search cache keys include the resolved index name and serialized Algolia query payload so all SDK options affect caching.
-- Store `Locale` and `Currency` now come from the Ekom store resolved by alias, so `appsettings.json` only needs the store alias and optional domain.
-- `Stores[].Domain` must be an absolute URL such as `https://example.com`; invalid values are ignored and logged as warnings during indexing.
+- Store `Locale` and `Currency` now come from the Ekom store resolved by alias, so `appsettings.json` only needs the store alias.
 - Request and order context decide which culture and currency suffix is used; background indexing falls back to the store's default culture/currency.
 - `Title` is always indexed as a top-level field, and `NodeName` contains the Umbraco node name.
 - Variants are not indexed by default.
