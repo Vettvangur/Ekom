@@ -12,12 +12,14 @@ namespace Ekom.Algolia.Services;
 public interface IAlgoliaSearchService
 {
     Task<AlgoliaSearchResponse<AlgoliaProductRecord>> SearchProductsAsync(AlgoliaSearchRequest request, CancellationToken ct = default);
+    Task<AlgoliaSearchResponse<AlgoliaCategoryRecord>> SearchCategoriesAsync(AlgoliaSearchRequest request, CancellationToken ct = default);
     Task<AlgoliaSearchResponse<AlgoliaQuerySuggestionRecord>> SearchQuerySuggestionsAsync(AlgoliaSearchRequest request, CancellationToken ct = default);
 }
 
 internal sealed class AlgoliaSearchService : IAlgoliaSearchService
 {
     private const string ProductsEntity = "products";
+    private const string CategoriesEntity = "categories";
     private const string QuerySuggestionsEntity = "products";
 
     private readonly IAlgoliaQueryClient _queryClient;
@@ -86,6 +88,59 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         }
 
         var response = await QueryProductsAsync(query, ct).ConfigureAwait(false);
+
+        if (!useCache)
+            return response;
+
+        if (response.Hits.Count == 0 && !_options.Search.Cache.CacheEmptyResults)
+            return response;
+
+        var ttlMinutes = _options.Search.Cache.DurationMinutes <= 0 ? 60 : _options.Search.Cache.DurationMinutes;
+        _cache.Set(cacheKey, response, TimeSpan.FromMinutes(ttlMinutes));
+
+        return response;
+    }
+
+    public async Task<AlgoliaSearchResponse<AlgoliaCategoryRecord>> SearchCategoriesAsync(AlgoliaSearchRequest request, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.StoreAlias);
+        ArgumentNullException.ThrowIfNull(request.Query);
+
+        if (!_options.Enabled || !_options.Search.Enabled || !_options.Search.Categories)
+        {
+            _logger.LogDebug("Algolia category search skipped because search is disabled. Store={Store}", request.StoreAlias);
+            return EmptyResponse<AlgoliaCategoryRecord>(request.Query.Query, request.Query.Page, request.Query.HitsPerPage);
+        }
+
+        var query = CloneQuery(request.Query);
+        var trimmedQuery = query.Query?.Trim();
+
+        if (_options.Search.MinimumQueryLength > 0 && string.IsNullOrWhiteSpace(trimmedQuery))
+            return EmptyResponse<AlgoliaCategoryRecord>(trimmedQuery, query.Page, query.HitsPerPage);
+
+        if (_options.Search.MinimumQueryLength > 0 && trimmedQuery!.Length < _options.Search.MinimumQueryLength)
+            return EmptyResponse<AlgoliaCategoryRecord>(trimmedQuery, query.Page, query.HitsPerPage);
+
+        var store = _storeResolver.Resolve(request.StoreAlias);
+        var target = store.WithSelection(request.Locale ?? store.Locale, currency: null);
+        var indexName = _indexNameBuilder.BuildPrimary(CategoriesEntity, target, currencyOverride: string.Empty);
+
+        query.IndexName = indexName;
+
+        if (_options.Search.MaxHitsPerPage > 0 && query.HitsPerPage > _options.Search.MaxHitsPerPage)
+            query.HitsPerPage = _options.Search.MaxHitsPerPage;
+
+        var useCache = _options.Search.Cache.Enabled && !request.BypassCache;
+        var cacheKey = _cacheKeyBuilder.BuildCategoriesKey(request, query, indexName);
+
+        if (useCache && _cache.TryGetValue(cacheKey, out AlgoliaSearchResponse<AlgoliaCategoryRecord>? cached) && cached is not null)
+        {
+            _logger.LogDebug("Algolia category search cache hit for store {Store} and index {IndexName}.", request.StoreAlias, indexName);
+            return cached;
+        }
+
+        var response = await QueryAsync<AlgoliaCategoryRecord>(query, ct).ConfigureAwait(false);
 
         if (!useCache)
             return response;

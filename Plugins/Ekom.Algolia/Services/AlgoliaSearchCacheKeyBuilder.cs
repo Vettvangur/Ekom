@@ -20,6 +20,9 @@ internal sealed class AlgoliaSearchCacheKeyBuilder
     public string BuildProductsKey(AlgoliaSearchRequest request, SearchForHits query, string indexName)
         => BuildKey("products", request, query, indexName);
 
+    public string BuildCategoriesKey(AlgoliaSearchRequest request, SearchForHits query, string indexName)
+        => BuildKey("categories", request, query, indexName);
+
     public string BuildQuerySuggestionsKey(AlgoliaSearchRequest request, SearchForHits query, string indexName)
         => BuildKey("query-suggestions", request, query, indexName);
 

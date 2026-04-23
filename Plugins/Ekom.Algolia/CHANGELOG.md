@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Features
+
+* **algolia:** add standalone category indexing and search
+
+
 ## [0.2.19](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.18...Ekom.Algolia-v0.2.19) (2026-04-23)
 
 
