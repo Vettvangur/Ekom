@@ -102,11 +102,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             var alias = kvp.Key;
             var configuredField = kvp.Value;
 
-            var raw = GetLocalizedValue(product, alias, product.GetValue(alias, store.Alias), locale);
-            if (string.IsNullOrWhiteSpace(raw))
-                continue;
-
-            object? converted = NormalizePropertyValue(raw, configuredField.ValueType);
+            object? converted = ResolveConfiguredValue(product, store, configuredField);
             var ctx = new AlgoliaProductFieldContext(product, store, alias, baseIndexName);
             converted = ConvertProperty(ctx, converted);
 
@@ -162,6 +158,66 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         }
 
         return value;
+    }
+
+    private static object? ResolveConfiguredValue(IProduct product, AlgoliaResolvedStore store, ConfiguredField configuredField)
+    {
+        return configuredField.Source switch
+        {
+            AlgoliaFieldSource.Metafield => ResolveMetafieldValue(product, configuredField.Alias, store.Locale, configuredField.ValueType),
+            _ => ResolveProductPropertyValue(product, store, configuredField)
+        };
+    }
+
+    private static object? ResolveProductPropertyValue(IProduct product, AlgoliaResolvedStore store, ConfiguredField configuredField)
+    {
+        var raw = GetLocalizedValue(product, configuredField.Alias, product.GetValue(configuredField.Alias, store.Alias), store.Locale);
+        if (string.IsNullOrWhiteSpace(raw))
+            return null;
+
+        return NormalizePropertyValue(raw, configuredField.ValueType);
+    }
+
+    private static object? ResolveMetafieldValue(IProduct product, string alias, string? locale, AlgoliaFieldValueType valueType)
+    {
+        var metafield = product.Metafields
+            .FirstOrDefault(x => x.Field.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
+
+        if (metafield is null || metafield.Values.Count == 0)
+            return null;
+
+        var values = metafield.Values
+            .Select(value => ResolveMetafieldText(value, locale))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (values.Count == 0)
+            return null;
+
+        if (valueType == AlgoliaFieldValueType.Array)
+            return values;
+
+        if (values.Count != 1)
+            return null;
+
+        return NormalizePropertyValue(values[0], valueType);
+    }
+
+    private static string? ResolveMetafieldText(IReadOnlyDictionary<string, string> values, string? locale)
+    {
+        if (!string.IsNullOrWhiteSpace(locale) &&
+            values.TryGetValue(locale, out var localizedValue) &&
+            !string.IsNullOrWhiteSpace(localizedValue))
+        {
+            return localizedValue;
+        }
+
+        if (values.TryGetValue(string.Empty, out var rawValue) && !string.IsNullOrWhiteSpace(rawValue))
+            return rawValue;
+
+        return values.Values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
     }
 
     private static string GetLocalizedValue(INodeEntity node, string propertyAlias, string fallbackValue, string? locale)
@@ -401,30 +457,46 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         return dto.ToUnixTimeSeconds();
     }
 
-    internal readonly record struct ConfiguredField(string Alias, AlgoliaFieldValueType ValueType, AlgoliaFieldTransform Transform)
+    internal readonly record struct ConfiguredField(string Alias, AlgoliaFieldSource Source, AlgoliaFieldValueType ValueType, AlgoliaFieldTransform Transform)
     {
         public static ConfiguredField Parse(string raw)
         {
             if (string.IsNullOrWhiteSpace(raw))
-                return new ConfiguredField(string.Empty, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None);
+                return new ConfiguredField(string.Empty, AlgoliaFieldSource.Property, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None);
 
             var parts = raw.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            var alias = parts[0];
+            var (alias, source) = ParseSource(parts[0]);
 
             if (parts.Length < 2)
-                return new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None);
+                return new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None);
 
             return parts[1].ToLowerInvariant() switch
             {
-                "int" => new ConfiguredField(alias, AlgoliaFieldValueType.Int, AlgoliaFieldTransform.None),
-                "decimal" => new ConfiguredField(alias, AlgoliaFieldValueType.Decimal, AlgoliaFieldTransform.None),
-                "array" => new ConfiguredField(alias, AlgoliaFieldValueType.Array, AlgoliaFieldTransform.None),
-                "unix" => new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixSeconds),
-                "unixms" => new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixMilliseconds),
-                _ => new ConfiguredField(alias, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None)
+                "int" => new ConfiguredField(alias, source, AlgoliaFieldValueType.Int, AlgoliaFieldTransform.None),
+                "decimal" => new ConfiguredField(alias, source, AlgoliaFieldValueType.Decimal, AlgoliaFieldTransform.None),
+                "array" => new ConfiguredField(alias, source, AlgoliaFieldValueType.Array, AlgoliaFieldTransform.None),
+                "unix" => new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixSeconds),
+                "unixms" => new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixMilliseconds),
+                _ => new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None)
             };
         }
+
+        private static (string Alias, AlgoliaFieldSource Source) ParseSource(string rawAlias)
+        {
+            const string metafieldPrefix = "metafield:";
+
+            if (rawAlias.StartsWith(metafieldPrefix, StringComparison.OrdinalIgnoreCase))
+                return (rawAlias[metafieldPrefix.Length..], AlgoliaFieldSource.Metafield);
+
+            return (rawAlias, AlgoliaFieldSource.Property);
+        }
     }
+}
+
+internal enum AlgoliaFieldSource
+{
+    Property,
+    Metafield
 }
 
 internal enum AlgoliaFieldValueType
