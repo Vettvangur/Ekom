@@ -200,6 +200,105 @@ public class AlgoliaProductIndexMapperTests
         Assert.Equal(["/media/product.jpg"], record.ImageUrls);
     }
 
+    [Fact]
+    public void Maps_Scalar_Metafield_When_Explicitly_Configured()
+    {
+        var mapper = CreateMapper(productProperties: ["metafield:material"]);
+        var product = CreateProduct(metafields:
+        [
+            CreateMetafield("material", [CreateMetafieldValue((string.Empty, "Cotton"))])
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal("Cotton", Assert.IsType<string>(record!.Data["material"]));
+    }
+
+    [Fact]
+    public void Maps_Localized_Metafield_When_Explicitly_Configured()
+    {
+        var mapper = CreateMapper(productProperties: ["metafield:color"]);
+        var product = CreateProduct(metafields:
+        [
+            CreateMetafield("color", [CreateMetafieldValue(("en-US", "Red"), ("is-IS", "Rauður"))])
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(locale: "is-IS"), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal("Rauður", Assert.IsType<string>(record!.Data["color"]));
+    }
+
+    [Fact]
+    public void Maps_Multi_Value_Metafield_As_Array_When_Configured()
+    {
+        var mapper = CreateMapper(productProperties: ["metafield:channels|array"]);
+        var product = CreateProduct(metafields:
+        [
+            CreateMetafield("channels",
+            [
+                CreateMetafieldValue((string.Empty, "Web")),
+                CreateMetafieldValue((string.Empty, "Store")),
+                CreateMetafieldValue((string.Empty, "Web"))
+            ])
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(["Web", "Store"], Assert.IsAssignableFrom<IReadOnlyList<string>>(record!.Data["channels"]));
+    }
+
+    [Fact]
+    public void Skips_Multi_Value_Metafield_Without_Array_Modifier()
+    {
+        var mapper = CreateMapper(productProperties: ["metafield:channels"]);
+        var product = CreateProduct(metafields:
+        [
+            CreateMetafield("channels",
+            [
+                CreateMetafieldValue((string.Empty, "Web")),
+                CreateMetafieldValue((string.Empty, "Store"))
+            ])
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.DoesNotContain("channels", record!.Data.Keys);
+    }
+
+    [Fact]
+    public void Skips_Invalid_Int_Metafield_Value()
+    {
+        var mapper = CreateMapper(productProperties: ["metafield:stockLevel|int"]);
+        var product = CreateProduct(metafields:
+        [
+            CreateMetafield("stockLevel", [CreateMetafieldValue((string.Empty, "abc"))])
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.DoesNotContain("stockLevel", record!.Data.Keys);
+    }
+
+    [Fact]
+    public void Plain_Property_Alias_Does_Not_Read_Metafield_Value()
+    {
+        var mapper = CreateMapper(productProperties: ["material"]);
+        var product = CreateProduct(metafields:
+        [
+            CreateMetafield("material", [CreateMetafieldValue((string.Empty, "Cotton"))])
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.DoesNotContain("material", record!.Data.Keys);
+    }
+
     private static ProductIndexMapper CreateMapper(IReadOnlyCollection<string>? productProperties = null)
     {
         var options = Options.Create(new AlgoliaOptions
@@ -234,6 +333,7 @@ public class AlgoliaProductIndexMapperTests
 
     private static Mock<Ekom.Models.IProduct> CreateProduct(
         IReadOnlyList<Mock<Ekom.Models.ICategory>>? categories = null,
+        IReadOnlyList<Ekom.Models.MetavalueSlim>? metafields = null,
         IReadOnlyDictionary<string, string>? properties = null,
         string sku = "sku",
         string summary = "Summary",
@@ -261,6 +361,7 @@ public class AlgoliaProductIndexMapperTests
         product.SetupGet(x => x.Price).Returns(price.Object);
         product.SetupGet(x => x.Prices).Returns([price.Object]);
         product.SetupGet(x => x.Categories).Returns((categories ?? []).Select(x => x.Object));
+        product.SetupGet(x => x.Metafields).Returns(metafields?.ToList() ?? []);
         product.SetupGet(x => x.CreateDate).Returns(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc));
         product.SetupGet(x => x.UpdateDate).Returns(new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc));
         product.Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<string?>(), true)).Returns(string.Empty);
@@ -269,4 +370,19 @@ public class AlgoliaProductIndexMapperTests
 
         return product;
     }
+
+    private static Ekom.Models.MetavalueSlim CreateMetafield(string alias, IReadOnlyList<Dictionary<string, string>> values)
+        => new()
+        {
+            Field = new Ekom.Models.MetafieldSlim
+            {
+                Alias = alias,
+                Name = alias,
+                Description = string.Empty
+            },
+            Values = values.ToList()
+        };
+
+    private static Dictionary<string, string> CreateMetafieldValue(params (string Key, string Value)[] values)
+        => values.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
 }

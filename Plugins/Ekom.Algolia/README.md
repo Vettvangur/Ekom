@@ -144,6 +144,8 @@ public sealed class ProductSearchController
 - `Title` is always indexed as a top-level field, and `NodeName` contains the Umbraco node name.
 - Variants are not indexed by default.
 - `Indexing.ProductProperties` supports one optional modifier per property: `|array`, `|int`, `|decimal`, `|unix`, or `|unixms`.
+- Metafields can be indexed explicitly with `metafield:<alias>`, for example `metafield:material`, `metafield:color|array`, or `metafield:releaseDate|unix`.
+- Multi-value metafields are skipped unless `|array` is configured.
 - `|array` parses JSON arrays such as checkbox-list values like `["Web","Store"]` into Algolia string arrays.
 - `|decimal` accepts either comma or dot decimal separators, so values like `0,1` and `0.0` are indexed as decimals.
 - Invalid `|array`, `|int`, and `|decimal` values are skipped instead of being indexed as strings.
