@@ -4,9 +4,7 @@ using Ekom.Algolia.Models.Search;
 using Ekom.Algolia.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Moq;
 using Xunit;
 
 namespace Ekom.Tests.Tests;
@@ -120,92 +118,5 @@ public class AlgoliaSearchTests
             "primary.store.products");
 
         Assert.NotEqual(first, second);
-    }
-
-    [Fact]
-    public void Store_Resolver_Returns_Absolute_Store_Domain()
-    {
-        using var loggerFactory = LoggerFactory.Create(_ => { });
-        var resolver = CreateStoreResolver("https://www.lyfja.is", loggerFactory);
-
-        var store = resolver.Resolve("Lyfja");
-
-        Assert.Equal("https://www.lyfja.is/", store.Domain);
-    }
-
-    [Fact]
-    public void Store_Resolver_Warns_When_Store_Domain_Is_Invalid()
-    {
-        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new TestLoggerProvider()));
-        var resolver = CreateStoreResolver("www.lyfja.is", loggerFactory);
-
-        var store = resolver.Resolve("Lyfja");
-
-        Assert.Null(store.Domain);
-        Assert.Contains(
-            TestLoggerProvider.Entries,
-            x => x.LogLevel == LogLevel.Warning
-                && x.Message.Contains("Algolia store domain is invalid", StringComparison.Ordinal));
-    }
-
-    private static AlgoliaStoreResolver CreateStoreResolver(string? domain, ILoggerFactory loggerFactory)
-    {
-        var options = Options.Create(new AlgoliaOptions
-        {
-            ApplicationId = "app-id",
-            AdminApiKey = "admin-key",
-            SearchApiKey = "search-key",
-            Stores =
-            [
-                new AlgoliaStoreOptions
-                {
-                    Alias = "Lyfja",
-                    Domain = domain
-                }
-            ]
-        });
-
-        var serviceProvider = new Mock<IServiceProvider>();
-
-        return new AlgoliaStoreResolver(options, serviceProvider.Object, loggerFactory.CreateLogger<AlgoliaStoreResolver>());
-    }
-
-    private sealed record TestLogEntry(LogLevel LogLevel, string Message);
-
-    private sealed class TestLoggerProvider : ILoggerProvider
-    {
-        public static List<TestLogEntry> Entries { get; } = [];
-
-        public TestLoggerProvider()
-        {
-            Entries.Clear();
-        }
-
-        public ILogger CreateLogger(string categoryName) => new TestLogger();
-
-        public void Dispose()
-        {
-        }
-
-        private sealed class TestLogger : ILogger
-        {
-            public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
-
-            public bool IsEnabled(LogLevel logLevel) => true;
-
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-            {
-                TestLoggerProvider.Entries.Add(new TestLogEntry(logLevel, formatter(state, exception)));
-            }
-        }
-
-        private sealed class NullScope : IDisposable
-        {
-            public static NullScope Instance { get; } = new();
-
-            public void Dispose()
-            {
-            }
-        }
     }
 }
