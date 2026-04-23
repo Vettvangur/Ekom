@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.128](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.127...Ekom-v0.2.128) (2026-04-23)
+
+
+### Features
+
+* **algolia:** add standalone category indexing and search ([#507](https://github.com/Vettvangur/Ekom/issues/507)) ([5c609a4](https://github.com/Vettvangur/Ekom/commit/5c609a4df94a9c2c225b5b1cf4a9554f9de117f7))
+
 ## [0.2.127](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.126...Ekom-v0.2.127) (2026-04-23)
 
 
