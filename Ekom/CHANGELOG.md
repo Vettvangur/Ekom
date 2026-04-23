@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.126](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.125...Ekom-v0.2.126) (2026-04-23)
+
+
+### Bug Fixes
+
+* **algolia:** stop prefixing indexed urls ([#503](https://github.com/Vettvangur/Ekom/issues/503)) ([09f8ff1](https://github.com/Vettvangur/Ekom/commit/09f8ff1876be8e58cd335f57ad9d845b44773e45))
+
 ## [0.2.125](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.124...Ekom-v0.2.125) (2026-04-22)
 
 
