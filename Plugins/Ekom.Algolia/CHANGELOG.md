@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.19](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.18...Ekom.Algolia-v0.2.19) (2026-04-23)
+
+
+### Bug Fixes
+
+* **algolia:** stop prefixing indexed urls ([#503](https://github.com/Vettvangur/Ekom/issues/503)) ([09f8ff1](https://github.com/Vettvangur/Ekom/commit/09f8ff1876be8e58cd335f57ad9d845b44773e45))
+
 ## [0.2.18](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.17...Ekom.Algolia-v0.2.18) (2026-04-22)
 
 
