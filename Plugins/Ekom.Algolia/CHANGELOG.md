@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.20](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.19...Ekom.Algolia-v0.2.20) (2026-04-23)
+
+
+### Bug Fixes
+
+* **algolia:** support explicit metafield indexing ([#505](https://github.com/Vettvangur/Ekom/issues/505)) ([381054f](https://github.com/Vettvangur/Ekom/commit/381054f3a5d1383ce6fdc5f9126b91afcf90ba86))
+
 ## [0.2.19](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.18...Ekom.Algolia-v0.2.19) (2026-04-23)
 
 

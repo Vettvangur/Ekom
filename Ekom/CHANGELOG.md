@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.127](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.126...Ekom-v0.2.127) (2026-04-23)
+
+
+### Bug Fixes
+
+* **algolia:** support explicit metafield indexing ([#505](https://github.com/Vettvangur/Ekom/issues/505)) ([381054f](https://github.com/Vettvangur/Ekom/commit/381054f3a5d1383ce6fdc5f9126b91afcf90ba86))
+
 ## [0.2.126](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.125...Ekom-v0.2.126) (2026-04-23)
 
 
