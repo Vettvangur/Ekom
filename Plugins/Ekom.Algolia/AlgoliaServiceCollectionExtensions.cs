@@ -55,12 +55,19 @@ public static class AlgoliaServiceCollectionExtensions
         services.AddSingleton<AlgoliaSearchCacheVersionProvider>();
         services.AddSingleton<AlgoliaSearchCacheKeyBuilder>();
         services.AddSingleton<IAlgoliaProductIndexMapper, ProductIndexMapper>();
+        services.AddSingleton<IAlgoliaCategoryIndexMapper, CategoryIndexMapper>();
 
         services.AddSingleton<IAlgoliaProductIndexQueue, AlgoliaProductIndexQueue>();
         services.AddSingleton<AlgoliaProductIndexExecutor>();
         services.AddSingleton<IAlgoliaProductIndexService, AlgoliaProductIndexService>();
         services.AddSingleton<AlgoliaProductIndexWorker>();
         services.AddHostedService(sp => sp.GetRequiredService<AlgoliaProductIndexWorker>());
+
+        services.AddSingleton<IAlgoliaCategoryIndexQueue, AlgoliaCategoryIndexQueue>();
+        services.AddSingleton<AlgoliaCategoryIndexExecutor>();
+        services.AddSingleton<IAlgoliaCategoryIndexService, AlgoliaCategoryIndexService>();
+        services.AddSingleton<AlgoliaCategoryIndexWorker>();
+        services.AddHostedService(sp => sp.GetRequiredService<AlgoliaCategoryIndexWorker>());
 
         services.AddSingleton<IAlgoliaUserTokenProvider, DefaultAlgoliaUserTokenProvider>();
         services.AddSingleton<IAlgoliaEventService, AlgoliaEventService>();

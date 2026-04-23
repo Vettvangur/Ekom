@@ -11,14 +11,27 @@ internal sealed class IndexNameBuilder
         _options = options.Value;
     }
 
-    public string BuildPrimary(string entity, AlgoliaResolvedStore? store = null)
-        => Build(AlgoliaIndexKind.Primary, entity, store, replica: null);
+    public string BuildPrimary(
+        string entity,
+        AlgoliaResolvedStore? store = null,
+        string? localeOverride = null,
+        string? currencyOverride = null)
+        => Build(AlgoliaIndexKind.Primary, entity, store, replica: null, localeOverride, currencyOverride);
 
-    public string BuildReplica(string entity, AlgoliaSortedReplicaOptions replica, AlgoliaResolvedStore? store = null)
-        => Build(AlgoliaIndexKind.Replica, entity, store, replica);
+    public string BuildReplica(
+        string entity,
+        AlgoliaSortedReplicaOptions replica,
+        AlgoliaResolvedStore? store = null,
+        string? localeOverride = null,
+        string? currencyOverride = null)
+        => Build(AlgoliaIndexKind.Replica, entity, store, replica, localeOverride, currencyOverride);
 
-    public string BuildQuerySuggestions(string entity, AlgoliaResolvedStore? store = null)
-        => Build(AlgoliaIndexKind.QuerySuggestions, entity, store, replica: null);
+    public string BuildQuerySuggestions(
+        string entity,
+        AlgoliaResolvedStore? store = null,
+        string? localeOverride = null,
+        string? currencyOverride = null)
+        => Build(AlgoliaIndexKind.QuerySuggestions, entity, store, replica: null, localeOverride, currencyOverride);
 
     public string Build(
         AlgoliaIndexKind kind,

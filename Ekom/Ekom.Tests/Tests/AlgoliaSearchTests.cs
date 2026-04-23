@@ -22,6 +22,7 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:SearchApiKey"] = "search-key",
                 ["Ekom:Algolia:Search:Enabled"] = "true",
                 ["Ekom:Algolia:Search:Products"] = "true",
+                ["Ekom:Algolia:Search:Categories"] = "true",
                 ["Ekom:Algolia:Search:QuerySuggestions"] = "true",
                 ["Ekom:Algolia:Search:MinimumQueryLength"] = "3",
                 ["Ekom:Algolia:Search:MaxHitsPerPage"] = "50",
@@ -38,6 +39,7 @@ public class AlgoliaSearchTests
         var options = provider.GetRequiredService<IOptions<AlgoliaOptions>>().Value;
 
         Assert.Equal("search-key", options.SearchApiKey);
+        Assert.True(options.Search.Categories);
         Assert.True(options.Search.QuerySuggestions);
         Assert.Equal(3, options.Search.MinimumQueryLength);
         Assert.Equal(50, options.Search.MaxHitsPerPage);
@@ -118,5 +120,27 @@ public class AlgoliaSearchTests
             "primary.store.products");
 
         Assert.NotEqual(first, second);
+    }
+
+    [Fact]
+    public void Category_Cache_Key_Uses_Category_Entity_Prefix()
+    {
+        var versions = new AlgoliaSearchCacheVersionProvider();
+        var builder = new AlgoliaSearchCacheKeyBuilder(versions);
+        var request = new AlgoliaSearchRequest
+        {
+            StoreAlias = "Store",
+            Locale = "en-US",
+            Query = new SearchForHits
+            {
+                Query = "candy",
+                HitsPerPage = 10,
+                Page = 0
+            }
+        };
+
+        var key = builder.BuildCategoriesKey(request, request.Query, "primary.store.categories.en-us");
+
+        Assert.Contains("categories", key);
     }
 }

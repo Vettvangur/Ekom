@@ -72,6 +72,56 @@ public sealed class SearchController : ControllerBase
             ct);
     }
 
+    [HttpGet("categories")]
+    public Task<ActionResult<AlgoliaSearchResponse<AlgoliaCategoryRecord>>> SearchCategoriesAsync(
+        [FromQuery] string storeAlias,
+        [FromQuery] string? query,
+        [FromQuery] string? locale = null,
+        [FromQuery] int? page = null,
+        [FromQuery] int? hitsPerPage = null,
+        [FromQuery] bool bypassCache = false,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(storeAlias))
+            return Task.FromResult<ActionResult<AlgoliaSearchResponse<AlgoliaCategoryRecord>>>(BadRequest("Store alias is required."));
+
+        return SearchCategoriesCoreAsync(
+            new AlgoliaSearchRequest
+            {
+                StoreAlias = storeAlias,
+                Locale = locale,
+                BypassCache = bypassCache,
+                Query = new SearchForHits
+                {
+                    Query = query,
+                    Page = page,
+                    HitsPerPage = hitsPerPage
+                }
+            },
+            ct);
+    }
+
+    [HttpPost("categories")]
+    public Task<ActionResult<AlgoliaSearchResponse<AlgoliaCategoryRecord>>> SearchCategoriesAdvancedAsync(
+        [FromBody] SearchProductsRequest request,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.StoreAlias))
+            return Task.FromResult<ActionResult<AlgoliaSearchResponse<AlgoliaCategoryRecord>>>(BadRequest("Store alias is required."));
+
+        return SearchCategoriesCoreAsync(
+            new AlgoliaSearchRequest
+            {
+                StoreAlias = request.StoreAlias,
+                Locale = request.Locale,
+                BypassCache = request.BypassCache,
+                Query = request.Query
+            },
+            ct);
+    }
+
     [HttpGet("suggestions")]
     public Task<ActionResult<AlgoliaSearchResponse<AlgoliaQuerySuggestionRecord>>> SearchQuerySuggestionsAsync(
         [FromQuery] string storeAlias,
@@ -130,10 +180,14 @@ public sealed class SearchController : ControllerBase
         CancellationToken ct)
     {
         var response = await _algoliaSearchService.SearchProductsAsync(request, ct).ConfigureAwait(false);
+        return Ok(response);
+    }
 
-        var products = // how to access products from the response and do something with them, e.g. log them
-            response.Hits.Select(hit => hit.Title);
-
+    private async Task<ActionResult<AlgoliaSearchResponse<AlgoliaCategoryRecord>>> SearchCategoriesCoreAsync(
+        AlgoliaSearchRequest request,
+        CancellationToken ct)
+    {
+        var response = await _algoliaSearchService.SearchCategoriesAsync(request, ct).ConfigureAwait(false);
         return Ok(response);
     }
 

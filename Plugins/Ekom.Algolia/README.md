@@ -7,7 +7,9 @@ Algolia integration plugin for Ekom (Umbraco).
 
 ## Features
 - Product indexing with background queue/worker.
+- Category indexing with background queue/worker.
 - Product search service with Algolia SDK `SearchForHits` requests.
+- Category search service with Algolia SDK `SearchForHits` requests.
 - Algolia Insights events for view, add-to-cart, checkout, purchase.
 - In-memory search result caching with store-scoped invalidation after reindex/update/delete.
 - Index naming convention: `{primary|replica|query_suggestions}.ENVIRONMENT.STORE.ENTITY[_sorted_by_{asc|desc}_ATTRIBUTE][.Locale][.Currency]`.
@@ -76,6 +78,7 @@ public sealed class ProductSearchController
       "Indexing": {
         "Enabled": true,
         "Products": true,
+        "Categories": true,
         "BatchSize": 1000,
         "ProductProperties": [
           "title",
@@ -96,6 +99,7 @@ public sealed class ProductSearchController
       "Search": {
         "Enabled": true,
         "Products": true,
+        "Categories": true,
         "QuerySuggestions": true,
         "MinimumQueryLength": 2,
         "MaxHitsPerPage": 100,
@@ -132,12 +136,14 @@ public sealed class ProductSearchController
 ```
 
 ## Notes
-- Indexing triggers from Umbraco content notifications for `ekmProduct`.
+- Indexing triggers from Umbraco content notifications for `ekmProduct` and `ekmCategory`.
 - Search uses the required `SearchApiKey`; indexing and settings operations continue to use `AdminApiKey`.
 - When `Search.QuerySuggestions` is enabled, the plugin provisions the separate `query_suggestions...` index configuration automatically with the Admin API key.
 - Set `AnalyticsRegion` to `us` or `eu` if you know your Algolia analytics region; if omitted, the plugin tries `us` and then `eu`.
 - `IAlgoliaSearchService.SearchProductsAsync(...)` returns hits together with paging metadata, query text, processing time, and raw facets.
+- `IAlgoliaSearchService.SearchCategoriesAsync(...)` searches a dedicated category index scoped by store alias and locale.
 - The plugin always resolves and sets the Algolia index name from Ekom store alias, locale, and currency; callers should not set `IndexName` themselves.
+- Category indexes omit the currency suffix because category records are scoped by store alias and locale only.
 - Search cache keys include the resolved index name and serialized Algolia query payload so all SDK options affect caching.
 - Store `Locale` and `Currency` now come from the Ekom store resolved by alias, so `appsettings.json` only needs the store alias.
 - Request and order context decide which culture and currency suffix is used; background indexing falls back to the store's default culture/currency.

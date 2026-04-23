@@ -27,17 +27,21 @@ internal sealed class AlgoliaUmbracoNotifications :
     INotificationAsyncHandler<ContentDeletedNotification>
 {
     private const string ProductAlias = "ekmProduct";
+    private const string CategoryAlias = "ekmCategory";
 
-    private readonly IAlgoliaProductIndexService _indexer;
+    private readonly IAlgoliaProductIndexService _productIndexer;
+    private readonly IAlgoliaCategoryIndexService _categoryIndexer;
     private readonly AlgoliaOptions _options;
     private readonly ILogger<AlgoliaUmbracoNotifications> _logger;
 
     public AlgoliaUmbracoNotifications(
-        IAlgoliaProductIndexService indexer,
+        IAlgoliaProductIndexService productIndexer,
+        IAlgoliaCategoryIndexService categoryIndexer,
         IOptions<AlgoliaOptions> options,
         ILogger<AlgoliaUmbracoNotifications> logger)
     {
-        _indexer = indexer;
+        _productIndexer = productIndexer;
+        _categoryIndexer = categoryIndexer;
         _options = options.Value;
         _logger = logger;
     }
@@ -47,7 +51,7 @@ internal sealed class AlgoliaUmbracoNotifications :
         _logger.LogDebug("Algolia received ContentPublishedNotification with {Count} published entities.", notification.PublishedEntities.Count());
 
         foreach (var entity in notification.PublishedEntities)
-            await EnqueueIfProductAsync(entity, isPublished: true, cancellationToken).ConfigureAwait(false);
+            await EnqueueIfSupportedAsync(entity, isPublished: true, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task HandleAsync(ContentUnpublishedNotification notification, CancellationToken cancellationToken)
@@ -55,7 +59,7 @@ internal sealed class AlgoliaUmbracoNotifications :
         _logger.LogDebug("Algolia received ContentUnpublishedNotification with {Count} unpublished entities.", notification.UnpublishedEntities.Count());
 
         foreach (var entity in notification.UnpublishedEntities)
-            await EnqueueIfProductAsync(entity, isPublished: false, cancellationToken).ConfigureAwait(false);
+            await EnqueueIfSupportedAsync(entity, isPublished: false, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task HandleAsync(ContentMovedToRecycleBinNotification notification, CancellationToken cancellationToken)
@@ -63,7 +67,7 @@ internal sealed class AlgoliaUmbracoNotifications :
         _logger.LogDebug("Algolia received ContentMovedToRecycleBinNotification with {Count} entities.", notification.MoveInfoCollection.Count());
 
         foreach (var entity in notification.MoveInfoCollection.Select(x => x.Entity))
-            await EnqueueIfProductAsync(entity, isPublished: false, cancellationToken).ConfigureAwait(false);
+            await EnqueueIfSupportedAsync(entity, isPublished: false, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task HandleAsync(ContentDeletedNotification notification, CancellationToken cancellationToken)
@@ -71,20 +75,27 @@ internal sealed class AlgoliaUmbracoNotifications :
         _logger.LogDebug("Algolia received ContentDeletedNotification with {Count} deleted entities.", notification.DeletedEntities.Count());
 
         foreach (var entity in notification.DeletedEntities)
-            await EnqueueIfProductAsync(entity, isPublished: false, cancellationToken).ConfigureAwait(false);
+            await EnqueueIfSupportedAsync(entity, isPublished: false, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task EnqueueIfProductAsync(IContent entity, bool isPublished, CancellationToken ct)
+    private Task EnqueueIfSupportedAsync(IContent entity, bool isPublished, CancellationToken ct)
     {
-        if (!string.Equals(entity.ContentType.Alias, ProductAlias, StringComparison.OrdinalIgnoreCase))
-        {
-            _logger.LogDebug(
-                "Algolia skipping content {Id} because alias {Alias} is not {ProductAlias}.",
-                entity.Id,
-                entity.ContentType.Alias,
-                ProductAlias);
-            return;
-        }
+        if (string.Equals(entity.ContentType.Alias, ProductAlias, StringComparison.OrdinalIgnoreCase))
+            return EnqueueProductAsync(entity, isPublished, ct);
+
+        if (string.Equals(entity.ContentType.Alias, CategoryAlias, StringComparison.OrdinalIgnoreCase))
+            return EnqueueCategoryAsync(entity, isPublished, ct);
+
+        _logger.LogDebug(
+            "Algolia skipping content {Id} because alias {Alias} is not supported.",
+            entity.Id,
+            entity.ContentType.Alias);
+
+        return Task.CompletedTask;
+    }
+
+    private async Task EnqueueProductAsync(IContent entity, bool isPublished, CancellationToken ct)
+    {
 
         _logger.LogDebug(
             "Algolia handling product publish event for content {Id} key {Key}. Published={IsPublished}, StoresConfigured={StoreCount}",
@@ -116,7 +127,7 @@ internal sealed class AlgoliaUmbracoNotifications :
                     store.Alias,
                     isPublished);
 
-                await _indexer.EnqueueProductAsync(store.Alias, entity.Key, isPublished, ct).ConfigureAwait(false);
+                await _productIndexer.EnqueueProductAsync(store.Alias, entity.Key, isPublished, ct).ConfigureAwait(false);
 
                 _logger.LogDebug(
                     "Algolia enqueue completed for product {Id} key {Key} store {Store}. Published={IsPublished}",
@@ -128,6 +139,33 @@ internal sealed class AlgoliaUmbracoNotifications :
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Algolia enqueue failed for product {Id} store {Store}.", entity.Id, store.Alias);
+            }
+        }
+    }
+
+    private async Task EnqueueCategoryAsync(IContent entity, bool isPublished, CancellationToken ct)
+    {
+        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Categories)
+        {
+            _logger.LogDebug("Algolia disabled; skipping ekmCategory {Id}.", entity.Id);
+            return;
+        }
+
+        if (_options.Stores.Count == 0)
+        {
+            _logger.LogDebug("Algolia stores not configured; skipping ekmCategory {Id}.", entity.Id);
+            return;
+        }
+
+        foreach (var store in _options.Stores)
+        {
+            try
+            {
+                await _categoryIndexer.EnqueueCategoryAsync(store.Alias, entity.Key, isPublished, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Algolia enqueue failed for category {Id} store {Store}.", entity.Id, store.Alias);
             }
         }
     }
