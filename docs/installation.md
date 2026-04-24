@@ -32,11 +32,11 @@ Install-Package Ekom.Web
 
 ### `Ekom.U10`
 
-Install into the Umbraco application that runs Ekom.
+Install this package in the project where you use Ekom APIs and services. If that code lives outside the main web project, make sure the project is referenced by the Umbraco web application.
 
 ### `Ekom.Web`
 
-Install into the main site project that contains the site web assets and `wwwroot`.
+Install this package in the main Umbraco web project that contains `wwwroot`.
 
 ## Add Ekom references to `_ViewImports.cshtml`
 
@@ -67,6 +67,8 @@ This includes creating Ekom-related data structures such as:
 - nodes required by Ekom
 
 You should also see an Ekom root node added to the Umbraco content tree.
+
+After Ekom has completed its bootstrap setup, the next step is to create a store. This should be done before you start working with products, checkout, providers, or other Ekom features.
 
 ## Verify installation
 
