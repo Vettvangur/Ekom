@@ -1,60 +1,91 @@
-# Ekom documentation drafts
+# Ekom Documentation
 
-This folder contains Markdown drafts for the Ekom documentation refresh.
-
-The files are structured for easy reading directly on GitHub.
-
-## Overview tree
-
-```text
-docs/
-├── README.md
-├── what-is-ekom.md
-├── installation.md
-├── appsettings-reference.md
-├── quick-start.md
-├── api-order-reference.md
-├── order-endpoints.md
-├── order-lifecycle.md
-├── checkout-flow-overview.md
-├── activity-logs.md
-├── payment-provider-selection.md
-├── shipping-provider-selection.md
-├── tracking-overview.md
-├── cookiehub-integration.md
-├── manager-overview.md
-├── orders-view.md
-└── order-detail-view.md
-```
-
-## Suggested reading order
-
-### Core onboarding
 - [What is Ekom](what-is-ekom.md)
+
+## Getting Started
+
 - [Installation](installation.md)
-- [Appsettings Reference](appsettings-reference.md)
-- [Quick Start](quick-start.md)
+- [Configuration](configuration.md)
 
-### Orders and checkout
-- [API.Order Reference](api-order-reference.md)
-- [Order Endpoints](order-endpoints.md)
+## How To
+
+- [Render a Category Page](render-category-page.md)
+- [Render a Product Page](render-product-page.md)
+- [Add Product to Cart](add-product-to-cart.md)
+- [Update Customer Information](update-customer-information.md)
+- [Select Shipping Provider](select-shipping-provider.md)
+- [Select Payment Provider](select-payment-provider.md)
+- [Complete Checkout](complete-checkout.md)
+- [Create an Order Activity Log](create-order-activity-log.md)
+- [Add dynamic price to product/variant](add-dynamic-price-to-product-variant.md)
+
+## Stores
+
+- [Stores Overview](stores-overview.md)
+
+## Events
+
+- [Catalog Events](catalog-events.md)
+- [Checkout Events](checkout-events.md)
+- [Discount Events](discount-events.md)
+- [Order Events](order-events.md)
+- [Provider Events](provider-events.md)
+- [Tracking Events](tracking-events.md)
+
+## Orders
+
+- [Orders Overview](orders-overview.md)
 - [Order Lifecycle](order-lifecycle.md)
-- [Checkout Flow Overview](checkout-flow-overview.md)
-
-### Providers and logs
-- [Payment Provider Selection](payment-provider-selection.md)
-- [Shipping Provider Selection](shipping-provider-selection.md)
 - [Activity Logs](activity-logs.md)
 
-### Tracking and manager
+## Checkout
+
+- [Checkout Overview](checkout-overview.md)
+- [Checkout Flow](checkout-flow.md)
+- [Payment Provider Selection](payment-provider-selection.md)
+- [Shipping Provider Selection](shipping-provider-selection.md)
+
+## Payment Providers
+
+- [Payment Providers Overview](payment-providers-overview.md)
+- [Built-in Providers](built-in-providers.md)
+- [Creating a Payment Provider](creating-a-payment-provider.md)
+
+## Shipping Providers
+
+- [Shipping Providers Overview](shipping-providers-overview.md)
+- [Create a Shipping Provider](create-a-shipping-provider.md)
+
+## Discounts
+
+- [Discounts Overview](discounts-overview.md)
+- [Order Discounts](order-discounts.md)
+- [Product Discounts](product-discounts.md)
+- [Coupon Discounts](coupon-discounts.md)
+
+## Tracking and Consent
+
 - [Tracking Overview](tracking-overview.md)
+- [Consent Resolvers](consent-resolvers.md)
 - [CookieHub Integration](cookiehub-integration.md)
-- [Manager Overview](manager-overview.md)
-- [Orders View](orders-view.md)
-- [Order Detail View](order-detail-view.md)
 
-## Notes
+## Endpoints
 
-- The pages are developer-first and focus on practical examples.
-- Screenshots are intentionally not included at this stage.
-- As more pages are added, this file can act as the GitHub-friendly table of contents.
+- [Catalog Endpoints](catalog-endpoints.md)
+- [Order Endpoints](order-endpoints.md)
+- [Checkout Endpoints](checkout-endpoints.md)
+- [Provider Endpoints](provider-endpoints.md)
+
+## API
+
+- [Store API](store-api.md)
+- [Catalog API](catalog-api.md)
+- [Order API](api-order-reference.md)
+- [Provider API](provider-api.md)
+- [Discount API](discount-api.md)
+- [Stock API](stock-api.md)
+
+## Plugins
+
+- [Ekom.Klaviyo](ekom-klaviyo.md)
+- [Ekom.Algolia](ekom-algolia.md)
