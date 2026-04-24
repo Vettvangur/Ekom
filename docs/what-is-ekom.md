@@ -1,78 +1,37 @@
 # What is Ekom
 
-Ekom is an open source eCommerce package for Umbraco.
+Ekom is a fully open source ecommerce platform for Umbraco.
 
-It is built for developers who want full control over catalog, checkout, orders, providers, integrations, and custom business logic without being locked into a closed platform.
+It is built for teams that want full control over their commerce solution without being locked into a closed platform. Ekom is a feature-rich ecommerce platform for both B2C and B2B scenarios, free to use, flexible to extend, and will always remain open source.
 
-## Key characteristics
+## Why choose Ekom
 
-- Open source and free to use
-- Built for Umbraco and ASP.NET Core
-- Supports Umbraco 10+
-- Supports B2B and B2C scenarios
-- Supports multilingual and multicurrency stores
-- Includes catalog, cart, checkout, and order management
-- Supports payment and shipping providers
-- Can be used in headless and server-rendered solutions
-- Can be extended through code, events, providers, and integrations
+Ekom is made for businesses and developers who want commerce to fit their project instead of forcing their project to fit the platform.
 
-## Main packages
+With Ekom, you can shape the shopping experience, checkout flow, business rules, integrations, and provider setup around your own requirements. You are not limited by a closed system or vendor restrictions.
 
-In most setups you will work with these packages:
+Because Ekom is fully open source, you keep ownership and transparency. You can inspect the code, extend it, customize it, and build on top of it with confidence for the long term.
 
-- `Ekom.U10`
-- `Ekom.Web`
+Ekom is a strong choice for teams that want freedom, flexibility, and a platform they can trust as their solution grows.
 
-### `Ekom.U10`
+## What you can build with Ekom
 
-This is the main Ekom package for Umbraco 10+.
+Ekom can support a wide range of ecommerce solutions in Umbraco, from straightforward online stores to more tailored commerce setups.
 
-It contains the core commerce logic, APIs, services, controllers, events, and infrastructure.
+With Ekom, you can build:
 
-### `Ekom.Web`
+- B2C ecommerce experiences
+- B2B commerce solutions
+- multilingual and multicurrency stores
+- custom checkout experiences
+- custom provider and integration flows
+- traditional Umbraco storefronts
+- headless commerce solutions
 
-This contains the web assets required for the Ekom backoffice/manager UI.
+The goal of Ekom is to give you a solid commerce foundation while still letting you build the experience your business or clients actually need.
 
-Install this into the main site project that contains the website `wwwroot`.
-
-## What Ekom gives you
-
-Ekom provides a developer-focused commerce foundation:
-
-- product and category querying
-- cart and order handling
-- shipping and payment provider selection
-- order completion flows
-- discounts and coupon handling
-- manager/backoffice order UI
-- integration points for plugins and external systems
-
-## Typical usage model
-
-You can use Ekom in two main ways:
-
-### Server-side usage
-
-Inject and use the Ekom API classes directly in your Umbraco application.
-
-Examples:
-
-- `Ekom.API.Order`
-- `Ekom.API.Catalog`
-- `Ekom.API.Store`
-
-### Headless usage
-
-Use Ekom’s HTTP endpoints from a frontend or external client.
-
-This is useful for:
-
-- custom frontend frameworks
-- external checkout UIs
-- headless commerce builds
-
-## Related pages
+## Next steps
 
 - [Installation](installation.md)
-- [Appsettings Reference](appsettings-reference.md)
-- [Quick Start](quick-start.md)
+- [Configuration](configuration.md)
+- [How To](README.md)
