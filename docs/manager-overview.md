@@ -204,4 +204,4 @@ The manager loads order logs through a separate endpoint.
 - [Activity Logs](activity-logs.md)
 - [Order Lifecycle](order-lifecycle.md)
 - [Order Endpoints](order-endpoints.md)
-- [Appsettings Reference](appsettings-reference.md)
+- [Configuration](configuration.md)

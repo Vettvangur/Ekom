@@ -218,6 +218,6 @@ Use store-specific overrides carefully in multi-store setups.
 ## Related pages
 
 - [Tracking Overview](tracking-overview.md)
-- [Appsettings Reference](appsettings-reference.md)
+- [Configuration](configuration.md)
 - [Order Lifecycle](order-lifecycle.md)
 - [Checkout Flow Overview](checkout-flow-overview.md)

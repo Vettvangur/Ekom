@@ -343,7 +343,7 @@ It is usually better to attach tracking data during the order lifecycle, not aft
 
 ## Related pages
 
-- [Appsettings Reference](appsettings-reference.md)
+- [Configuration](configuration.md)
 - [Order Lifecycle](order-lifecycle.md)
 - [Checkout Flow Overview](checkout-flow-overview.md)
 - [Order Endpoints](order-endpoints.md)

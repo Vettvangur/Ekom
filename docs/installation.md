@@ -96,5 +96,5 @@ If you are rendering Ekom from Razor, missing imports and injections will make e
 ## Related pages
 
 - [What is Ekom](what-is-ekom.md)
-- [Appsettings Reference](appsettings-reference.md)
+- [Configuration](configuration.md)
 - [Quick Start](quick-start.md)
