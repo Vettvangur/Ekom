@@ -220,4 +220,4 @@ Use store-specific overrides carefully in multi-store setups.
 - [Tracking Overview](tracking-overview.md)
 - [Configuration](configuration.md)
 - [Order Lifecycle](order-lifecycle.md)
-- [Checkout Flow Overview](checkout-flow-overview.md)
+- [Checkout Flow](checkout-flow.md)

@@ -263,7 +263,7 @@ Activity logging for provider changes only happens when the provider actually ch
 
 ## Related pages
 
-- [Checkout Flow Overview](checkout-flow-overview.md)
+- [Checkout Flow](checkout-flow.md)
 - [API.Order Reference](api-order-reference.md)
 - [Order Endpoints](order-endpoints.md)
 - [Order Lifecycle](order-lifecycle.md)

@@ -243,4 +243,4 @@ The view also renders extra customer, shipping, and provider custom data when pr
 - [Manager Overview](manager-overview.md)
 - [Activity Logs](activity-logs.md)
 - [Order Lifecycle](order-lifecycle.md)
-- [Checkout Flow Overview](checkout-flow-overview.md)
+- [Checkout Flow](checkout-flow.md)

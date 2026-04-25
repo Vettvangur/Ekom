@@ -280,5 +280,5 @@ Choose the right type when writing custom logs:
 
 - [API.Order Reference](api-order-reference.md)
 - [Order Lifecycle](order-lifecycle.md)
-- [Checkout Flow Overview](checkout-flow-overview.md)
+- [Checkout Flow](checkout-flow.md)
 - [Order Endpoints](order-endpoints.md)

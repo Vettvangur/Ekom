@@ -250,7 +250,7 @@ The log entry is only written when the provider actually changes.
 ## Related pages
 
 - [Payment Provider Selection](payment-provider-selection.md)
-- [Checkout Flow Overview](checkout-flow-overview.md)
+- [Checkout Flow](checkout-flow.md)
 - [Order Endpoints](order-endpoints.md)
 - [API.Order Reference](api-order-reference.md)
 - [Order Lifecycle](order-lifecycle.md)

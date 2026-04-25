@@ -345,5 +345,5 @@ It is usually better to attach tracking data during the order lifecycle, not aft
 
 - [Configuration](configuration.md)
 - [Order Lifecycle](order-lifecycle.md)
-- [Checkout Flow Overview](checkout-flow-overview.md)
+- [Checkout Flow](checkout-flow.md)
 - [Order Endpoints](order-endpoints.md)

@@ -135,5 +135,5 @@ After the quick start, continue with:
 
 - [API.Order Reference](api-order-reference.md)
 - [Order Lifecycle](order-lifecycle.md)
-- [Checkout Flow Overview](checkout-flow-overview.md)
+- [Checkout Flow](checkout-flow.md)
 - [Activity Logs](activity-logs.md)

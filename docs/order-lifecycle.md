@@ -354,6 +354,6 @@ The current-order methods are best for active basket/checkout flows. Order-id re
 
 - [Quick Start](quick-start.md)
 - [API.Order Reference](api-order-reference.md)
-- [Checkout Flow Overview](checkout-flow-overview.md)
+- [Checkout Flow](checkout-flow.md)
 - [Activity Logs](activity-logs.md)
 - [Order Endpoints](order-endpoints.md)
