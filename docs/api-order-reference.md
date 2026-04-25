@@ -1,19 +1,43 @@
-# API.Order Reference
+# Order API
 
-`Ekom.API.Order` is the main C# entry point for working with carts, orders, checkout state, providers, discounts, completion, and order activity logs.
+`Ekom.API.Order` is the main C# entry point for working with carts, orders, checkout state, providers, discounts, payment submission, order status, and order activity logs.
 
-This page focuses on practical server-side usage for developers building on top of Ekom.
+## Example
+
+```csharp
+using Ekom.API;
+using Ekom.Models;
+
+public sealed class CartApplicationService
+{
+    private readonly Order _order;
+
+    public CartApplicationService(Order order)
+    {
+        _order = order;
+    }
+
+    public async Task<IOrderInfo> AddToCartAsync(Guid productKey, CancellationToken ct)
+    {
+        return await _order.AddOrderLineAsync(
+            productKey,
+            quantity: 1,
+            storeAlias: "Store",
+            ct: ct);
+    }
+}
+```
 
 ## When to use `API.Order`
 
-Use `API.Order` when you are working inside the Umbraco/.NET application and want to:
+Use `API.Order` when you want to:
 
 - read the current cart or a specific order
 - add, remove, or update order lines
-- update customer information
-- update shipping or payment providers
-- apply coupons
+- update customer, shipping, payment, tracking, or currency information
+- apply or remove coupons
 - complete an order
+- submit an order to payment
 - update order status
 - add custom activity log entries
 
@@ -47,35 +71,43 @@ In most application code, constructor injection is the better option.
 
 ## Reading orders
 
-### Get the current order for the current store context
+### `GetOrderAsync(CancellationToken ct = default)`
 
 ```csharp
 IOrderInfo? order = await _order.GetOrderAsync(ct);
 ```
 
-This is the normal way to get the current basket/cart for the active store.
+Returns the current order for the active request store.
 
-### Get the current order for a specific store
+This is the normal method for reading the current cart or basket.
+
+### `GetOrderAsync(string? storeAlias, CancellationToken ct = default)`
 
 ```csharp
 IOrderInfo? order = await _order.GetOrderAsync("Store", ct);
 ```
 
-### Get a specific order by id
+Returns the current order for a specific store.
+
+### `GetOrderAsync(Guid uniqueId, CancellationToken ct = default)`
 
 ```csharp
 IOrderInfo? order = await _order.GetOrderAsync(orderId, ct);
 ```
 
-This lookup can return completed/final orders as well. Do not use it as a replacement for the current cart lookup in checkout UI code.
+Returns an order by id regardless of status.
 
-### Get the completed order for a store
+This may return completed or final orders. Do not use this as the normal cart lookup for checkout UI.
+
+### `GetCompletedOrderAsync(string storeAlias, CancellationToken ct = default)`
 
 ```csharp
-IOrderInfo? completedOrder = await _order.GetCompletedOrderAsync("Store", ct);
+IOrderInfo? order = await _order.GetCompletedOrderAsync("Store", ct);
 ```
 
-### Get orders by status
+Returns the completed order for a store using cookie/session data.
+
+### `GetStatusOrdersAsync(CancellationToken ct = default, params OrderStatus[] orderStatuses)`
 
 ```csharp
 IEnumerable<IOrderInfo> orders = await _order.GetStatusOrdersAsync(
@@ -84,69 +116,117 @@ IEnumerable<IOrderInfo> orders = await _order.GetStatusOrdersAsync(
     OrderStatus.Closed);
 ```
 
-There are also overloads for:
+Returns orders matching one or more statuses.
 
-- current logged in customer id
-- explicit customer id
-- customer username
-
-## Adding order lines
-
-Use `AddOrderLineAsync(...)` to add a product to the order.
+### `GetStatusOrdersByCustomerIdAsync(int customerId, CancellationToken ct = default, params OrderStatus[] orderStatuses)`
 
 ```csharp
-IOrderInfo order = await _order.AddOrderLineAsync(
-    productId,
-    1,
-    "Store",
-    ct: ct);
+IEnumerable<IOrderInfo> orders = await _order.GetStatusOrdersByCustomerIdAsync(
+    customerId,
+    ct,
+    OrderStatus.Closed);
 ```
 
-### Parameters
+Returns orders matching one or more statuses for a specific customer id.
 
-- `productId`: product key
-- `quantity`: decimal quantity to add
-- `storeAlias`: target store alias
-- `settings`: optional `AddOrderSettings`
+### `GetStatusOrdersByCustomerIdAsync(CancellationToken ct = default, params OrderStatus[] orderStatuses)`
 
-### Important behavior
+```csharp
+IEnumerable<IOrderInfo> orders = await _order.GetStatusOrdersByCustomerIdAsync(
+    ct,
+    OrderStatus.Closed);
+```
 
-- if the line already exists, Ekom may update the quantity instead of creating a new line
-- if a brand new line is created, Ekom writes an `Info` activity log entry
-- stock and variant validation still apply
+Returns orders matching one or more statuses for the logged-in customer.
 
-### Common exceptions
+### `GetStatusOrdersByCustomerUsernameAsync(string customerUsername, CancellationToken ct = default, params OrderStatus[] orderStatuses)`
 
-- `ArgumentException`
-- `OrderLineNegativeException`
-- `ProductNotFoundException`
-- `VariantNotFoundException`
-- `NotEnoughStockException`
+```csharp
+IEnumerable<IOrderInfo> orders = await _order.GetStatusOrdersByCustomerUsernameAsync(
+    "customer@example.com",
+    ct,
+    OrderStatus.Closed);
+```
 
-## Updating customer information
+Returns orders matching one or more statuses for a customer username.
 
-Use `UpdateCustomerInformationAsync(...)` to update customer-related order data.
+### `GetCompleteCustomerOrdersAsync(int customerId, CancellationToken ct = default, string? storeAlias = null)`
+
+```csharp
+IEnumerable<IOrderInfo> orders = await _order.GetCompleteCustomerOrdersAsync(customerId, ct, "Store");
+```
+
+Returns completed customer orders for a customer id.
+
+### `GetCompleteCustomerOrdersAsync(string userName, CancellationToken ct = default, string? storeAlias = null)`
+
+```csharp
+IEnumerable<IOrderInfo> orders = await _order.GetCompleteCustomerOrdersAsync("customer@example.com", ct, "Store");
+```
+
+Returns completed customer orders for a username.
+
+## Updating order state
+
+### `UpdateStatusAsync(string storeAlias, OrderStatus newStatus, ChangeOrderSettings? settings = null, CancellationToken ct = default)`
+
+```csharp
+await _order.UpdateStatusAsync("Store", OrderStatus.ReadyForDispatch, ct: ct);
+```
+
+Updates the status for the current order in the provided store.
+
+### `UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string? userName = null, ChangeOrderSettings? settings = null, CancellationToken ct = default)`
+
+```csharp
+await _order.UpdateStatusAsync(OrderStatus.ReadyForDispatch, orderId, "admin@example.com", ct: ct);
+```
+
+Updates the status for a specific order id.
+
+### `CompleteOrderAsync(Guid orderId, CancellationToken ct = default)`
+
+```csharp
+await _order.CompleteOrderAsync(orderId, ct);
+```
+
+Completes an order through the checkout completion service.
+
+### `ClearCustomerOrderReferenceAsync(Guid orderId, OrderData? order = null, CancellationToken ct = default)`
+
+```csharp
+await _order.ClearCustomerOrderReferenceAsync(orderId, ct: ct);
+```
+
+Clears the customer order reference for an order.
+
+### `ReInitializeOrder(string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)`
+
+```csharp
+IOrderInfo order = await _order.ReInitializeOrder("Store", ct: ct);
+```
+
+Reinitializes order lines for a store.
+
+This method returns a `Task` but is named `ReInitializeOrder` in the API.
+
+## Updating order data
+
+### `UpdateCustomerInformationAsync(Dictionary<string, string> form, OrderSettings? settings = null, CancellationToken ct = default)`
 
 ```csharp
 IOrderInfo order = await _order.UpdateCustomerInformationAsync(
     new Dictionary<string, string>
     {
         ["email"] = "customer@example.com",
-        ["name"] = "Jane Doe",
-        ["address"] = "Example Street 1"
+        ["name"] = "Jane Doe"
     },
     ct: ct);
 ```
 
-### Important behavior
+Updates customer-related order data.
 
-- the exact keys depend on your checkout form/data flow
-- when customer email is added for the first time, Ekom treats that as checkout started
-- that checkout-started behavior can trigger activity logging and event flows
-
-## Updating tracking information
-
-Use `UpdateTrackingAsync(...)` to attach tracking data to an order.
+### `UpdateTrackingAsync(string storeAlias, OrderTracking tracking, OrderSettings? settings = null, CancellationToken ct = default)`
 
 ```csharp
 IOrderInfo order = await _order.UpdateTrackingAsync(
@@ -159,11 +239,9 @@ IOrderInfo order = await _order.UpdateTrackingAsync(
     ct: ct);
 ```
 
-This is useful when you are integrating analytics or consent-aware order tracking flows.
+Updates tracking data on the current order for a store.
 
-## Updating shipping provider
-
-Use `UpdateShippingInformationAsync(...)` to assign a shipping provider to the current order.
+### `UpdateShippingInformationAsync(Guid shippingProvider, string storeAlias, Dictionary<string, string> allData, OrderSettings? settings = null, CancellationToken ct = default)`
 
 ```csharp
 IOrderInfo order = await _order.UpdateShippingInformationAsync(
@@ -173,15 +251,9 @@ IOrderInfo order = await _order.UpdateShippingInformationAsync(
     ct: ct);
 ```
 
-### Important behavior
+Assigns shipping information and a shipping provider to the order.
 
-- the shipping provider must exist and be valid for the current order/store
-- Ekom updates the order and provider-related data together
-- when the provider actually changes, Ekom writes an `Info` activity log entry
-
-## Updating payment provider
-
-Use `UpdatePaymentInformationAsync(...)` to assign a payment provider.
+### `UpdatePaymentInformationAsync(Guid paymentProvider, string storeAlias, Dictionary<string, string> allData, OrderSettings? settings = null, CancellationToken ct = default)`
 
 ```csharp
 IOrderInfo order = await _order.UpdatePaymentInformationAsync(
@@ -191,108 +263,153 @@ IOrderInfo order = await _order.UpdatePaymentInformationAsync(
     ct: ct);
 ```
 
-### Important behavior
+Assigns payment information and a payment provider to the order.
 
-- the payment provider must exist and be valid
-- when the provider actually changes, Ekom writes an `Info` activity log entry
-- offline payment and online payment flows can behave differently later in checkout
-
-## Removing order lines
-
-There are two common remove flows.
-
-### Remove by product key
+### `UpdateCurrencyAsync(string currency, Guid orderId, string storeAlias, CancellationToken ct = default)`
 
 ```csharp
-IOrderInfo order = await _order.RemoveOrderLineProductAsync(
-    productId,
-    "Store",
-    ct: ct);
+IOrderInfo? order = await _order.UpdateCurrencyAsync("USD", orderId, "Store", ct);
 ```
 
-### Remove by line id
+Updates the order currency.
+
+## Order lines
+
+### `AddOrderLineAsync(Guid productId, decimal quantity, string storeAlias, AddOrderSettings? settings = null, CancellationToken ct = default)`
 
 ```csharp
-IOrderInfo order = await _order.RemoveOrderLineAsync(
-    lineId,
-    "Store",
-    ct: ct);
+IOrderInfo order = await _order.AddOrderLineAsync(productKey, 1, "Store", ct: ct);
 ```
 
-Use the line-id overload when you already know the exact line you want to remove.
+Adds a product to the order.
 
-## Updating order line quantity
+If the line already exists, Ekom may update the existing line instead of creating a new one.
 
-Use `UpdateOrderlineQuantityAsync(...)` to set a specific quantity.
+### `RemoveOrderLineProductAsync(Guid productKey, string storeAlias, RemoveOrderSettings? settings = null, CancellationToken ct = default)`
 
 ```csharp
-IOrderInfo order = await _order.UpdateOrderlineQuantityAsync(
-    lineId,
-    3,
-    "Store",
-    ct: ct);
+IOrderInfo order = await _order.RemoveOrderLineProductAsync(productKey, "Store", ct: ct);
 ```
 
-### Important behavior
+Removes an order line by product key.
 
-- this sets the quantity to the provided value
-- it does not count as a new order-line-added event
-- stock checks still apply
-
-## Completing an order
-
-Use `CompleteOrderAsync(...)` to finalize an order.
+### `RemoveOrderLineAsync(Guid lineId, string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)`
 
 ```csharp
-await _order.CompleteOrderAsync(orderId, ct);
+IOrderInfo order = await _order.RemoveOrderLineAsync(lineId, "Store", ct: ct);
 ```
 
-### Important behavior
+Removes an order line by line id.
 
-Completing an order may:
-
-- update stock
-- finalize coupon/discount behavior
-- update the order status
-- write a success activity log
-
-Current built-in completion logs include:
-
-- `Order Completed.`
-- `Order Completed. Offline payment.`
-
-## Updating order status
-
-There are two common status update patterns.
-
-### Update status for the current store order
+### `UpdateOrderlineQuantityAsync(Guid lineId, decimal quantity, string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)`
 
 ```csharp
-await _order.UpdateStatusAsync(
-    "Store",
-    OrderStatus.ReadyForDispatch,
-    ct: ct);
+IOrderInfo order = await _order.UpdateOrderlineQuantityAsync(lineId, 3, "Store", ct: ct);
 ```
 
-### Update status for a specific order id
+Sets the order line quantity to a specific amount.
+
+## Coupons and discounts
+
+### `ApplyCouponToOrderAsync(string coupon, CancellationToken ct = default)`
 
 ```csharp
-await _order.UpdateStatusAsync(
-    OrderStatus.ReadyForDispatch,
-    orderId,
-    "admin@example.com",
-    ct: ct);
+bool applied = await _order.ApplyCouponToOrderAsync("spring10", ct);
 ```
 
-### Important behavior
+Applies a coupon to the current order for the current request store.
 
-- status changes create activity log entries
-- a manual status change is not the same thing as payment completion
-- use completion methods for real checkout/payment completion flows
+### `ApplyCouponToOrderAsync(string coupon, string storeAlias, CancellationToken ct = default)`
+
+```csharp
+bool applied = await _order.ApplyCouponToOrderAsync("spring10", "Store", ct);
+```
+
+Applies a coupon to the current order for a specific store.
+
+### `RemoveCouponFromOrderAsync(CancellationToken ct = default)`
+
+```csharp
+await _order.RemoveCouponFromOrderAsync(ct);
+```
+
+Removes a coupon from the current order for the current request store.
+
+### `RemoveCouponFromOrderAsync(string? storeAlias, CancellationToken ct = default)`
+
+```csharp
+await _order.RemoveCouponFromOrderAsync("Store", ct);
+```
+
+Removes a coupon from the current order for a specific store.
+
+### `ApplyCouponToOrderLineAsync(Guid productKey, string coupon)`
+
+```csharp
+bool applied = await _order.ApplyCouponToOrderLineAsync(productKey, "spring10");
+```
+
+Applies a coupon to an order line using the current request store.
+
+### `ApplyCouponToOrderLineAsync(Guid productKey, string coupon, string storeAlias)`
+
+```csharp
+bool applied = await _order.ApplyCouponToOrderLineAsync(productKey, "spring10", "Store");
+```
+
+Applies a coupon to an order line in a specific store.
+
+### `RemoveCouponFromOrderLineAsync(Guid productKey, CancellationToken ct = default)`
+
+```csharp
+await _order.RemoveCouponFromOrderLineAsync(productKey, ct);
+```
+
+Removes a coupon from an order line using the current request store.
+
+### `RemoveCouponFromOrderLineAsync(Guid productKey, string? storeAlias, CancellationToken ct = default)`
+
+```csharp
+await _order.RemoveCouponFromOrderLineAsync(productKey, "Store", ct);
+```
+
+Removes a coupon from an order line in a specific store.
+
+### `SetCouponCodeAsync(string coupon, DiscountOrderSettings? discountOrderSettings = null, CancellationToken ct = default)`
+
+```csharp
+await _order.SetCouponCodeAsync("spring10", ct: ct);
+```
+
+Sets a coupon code on the current order context.
+
+### `InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId, CancellationToken ct = default)`
+
+```csharp
+await _order.InsertCouponCodeAsync("spring10", 100, discountId, ct);
+```
+
+Creates a coupon code for a discount.
+
+### `RemoveCouponCodeAsync(string couponCode, Guid discountId)`
+
+```csharp
+await _order.RemoveCouponCodeAsync("spring10", discountId);
+```
+
+Removes a coupon code from a discount.
+
+### `GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize, CancellationToken ct = default)`
+
+```csharp
+var result = await _order.GetCouponsForDiscountAsync(discountId, "spring", 1, 20, ct);
+```
+
+Returns coupon data for a discount.
 
 ## Activity logs
 
-Use `AddActivityLogAsync(...)` to add a custom activity log entry to an existing order.
+### `AddActivityLogAsync(Guid orderId, string message, string? userName = null, OrderActivityLogType logType = OrderActivityLogType.Info, CancellationToken ct = default)`
 
 ```csharp
 await _order.AddActivityLogAsync(
@@ -303,144 +420,97 @@ await _order.AddActivityLogAsync(
     ct);
 ```
 
-### Parameters
-
-- `orderId`: target order id
-- `message`: required log message
-- `userName`: optional actor/source name
-- `logType`: `Info`, `Success`, or `Alert`
-
-### Important behavior
-
-- the order must exist
-- blank messages are rejected
-- log writes are queued and batched in the background
-- because of batching, log entries are eventually consistent and may not appear instantly
-
-## Coupons and discounts
-
-Discount and coupon operations live on the same API surface.
-
-### Apply coupon to the current order
-
-```csharp
-bool applied = await _order.ApplyCouponToOrderAsync("spring10", ct);
-```
-
-### Apply coupon to the current order for a specific store
-
-```csharp
-bool applied = await _order.ApplyCouponToOrderAsync("spring10", "Store", ct);
-```
-
-### Remove coupon from the current order
-
-```csharp
-await _order.RemoveCouponFromOrderAsync(ct);
-```
-
-### Apply coupon to an order line
-
-```csharp
-bool applied = await _order.ApplyCouponToOrderLineAsync(productId, "spring10", "Store");
-```
-
-### Remove coupon from an order line
-
-```csharp
-await _order.RemoveCouponFromOrderLineAsync(productId, "Store", ct);
-```
-
-### Coupon administration helpers
-
-There are also helper methods for:
-
-- `SetCouponCodeAsync(...)`
-- `InsertCouponCodeAsync(...)`
-- `RemoveCouponCodeAsync(...)`
-- `GetCouponsForDiscountAsync(...)`
+Adds a custom activity log entry to an order.
 
 ## Payment submission
 
-Use `PayAsync(...)` to submit the order to the payment flow.
-
-### Pay by order id
+### `PayAsync(PaymentRequest paymentRequest, string storeAlias, Guid orderId, CancellationToken ct = default)`
 
 ```csharp
-CheckoutResponse response = await _order.PayAsync(
-    paymentRequest,
-    "Store",
-    orderId,
-    ct);
+CheckoutResponse response = await _order.PayAsync(paymentRequest, "Store", orderId, ct);
 ```
 
-### Pay by passing an order instance
+Submits an order to the payment flow by order id.
+
+### `PayAsync(PaymentRequest paymentRequest, string storeAlias, IOrderInfo order, CancellationToken ct = default)`
 
 ```csharp
-CheckoutResponse response = await _order.PayAsync(
-    paymentRequest,
-    "Store",
-    order,
-    ct);
+CheckoutResponse response = await _order.PayAsync(paymentRequest, "Store", order, ct);
 ```
 
-This is the handoff point into the payment-processing flow.
+Submits an order to the payment flow using an order instance.
 
-## Utility methods
+## Hangfire job references
 
-`API.Order` also contains a few utility helpers.
-
-### Re-initialize order lines
+### `AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, string? storeAlias = null, CancellationToken ct = default)`
 
 ```csharp
-IOrderInfo order = await _order.ReInitializeOrder("Store", ct: ct);
+await _order.AddHangfireJobsToOrderAsync(jobIds, order, "Store", ct);
 ```
 
-### Update currency
+Adds Hangfire job ids to an order.
+
+### `AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, CancellationToken ct = default)`
 
 ```csharp
-IOrderInfo? order = await _order.UpdateCurrencyAsync("USD", orderId, "Store", ct);
+await _order.AddHangfireJobsToOrderAsync("Store", jobIds, order, ct);
 ```
 
-### Delete order cookie
+Adds Hangfire job ids to an order for a specific store.
+
+### `RemoveHangfireJobsFromOrderAsync(string storeAlias, CancellationToken ct = default)`
+
+```csharp
+await _order.RemoveHangfireJobsFromOrderAsync("Store", ct);
+```
+
+Removes Hangfire job ids from the current order for a store.
+
+## Cookie and status helpers
+
+### `DeleteOrderCookie(string? storeAlias = null)`
 
 ```csharp
 _order.DeleteOrderCookie("Store");
 ```
 
-### Hangfire job references on orders
+Deletes the order cookie for the resolved store.
 
-There are helper methods for adding and removing Hangfire job ids linked to an order:
+This method is sync-only.
 
-- `AddHangfireJobsToOrderAsync(...)`
-- `RemoveHangfireJobsFromOrderAsync(...)`
+### `EnsureOrderCookie(Guid orderId, string? storeAlias = null)`
 
-## Common pitfalls
+```csharp
+_order.EnsureOrderCookie(orderId, "Store");
+```
 
-### Using order-id lookup for cart UI
+Ensures the order cookie points to the provided order id.
 
-`GetOrderAsync(Guid)` can return completed/final orders. Use the current-order methods for cart/checkout display.
+This method is sync-only.
 
-### Assuming `AddOrderLineAsync(...)` always creates a new line
+### `IsOrderFinal(OrderStatus? orderStatus)`
 
-If the product already exists on the order, quantity may be updated instead.
+```csharp
+bool final = Order.IsOrderFinal(order.Status);
+```
 
-### Assuming activity logs are written immediately
+Returns whether an order status is considered final by Ekom.
 
-Activity log writes are queued and batched in the background.
+This method is static and sync-only.
 
-### Confusing status change with completion
+## Notes
 
-Changing an order status does not mean the full checkout completion flow ran.
-
-### Using invalid store aliases
-
-Many methods depend on a valid store alias when store context cannot be resolved automatically.
+- This page documents async methods where async methods exist.
+- Sync-only methods are included where there is no async alternative.
+- Many methods require a valid store alias when store context cannot be resolved automatically.
+- `GetOrderAsync(Guid)` can return completed or final orders. Use current-order methods for cart and checkout UI.
+- Activity log writes may be queued or batched, so they can be eventually consistent.
+- Updating order status is not the same as running checkout completion.
 
 ## Related pages
 
-- [Quick Start](quick-start.md)
 - [Order Lifecycle](order-lifecycle.md)
-- [Checkout Flow Overview](checkout-flow-overview.md)
+- [Checkout Flow](checkout-flow.md)
 - [Activity Logs](activity-logs.md)
 - [Order Endpoints](order-endpoints.md)
+- [Store API](store-api.md)
