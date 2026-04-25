@@ -1,4 +1,4 @@
-# Select Payment Provider
+# Add Shipping Provider to an Order
 
 This page is a placeholder for the upcoming Ekom documentation refresh.
 
