@@ -76,7 +76,7 @@
 - [Checkout Endpoints](checkout-endpoints.md)
 - [Provider Endpoints](provider-endpoints.md)
 
-## API
+## API References
 
 - [Store API](store-api.md)
 - [Catalog API](catalog-api.md)
