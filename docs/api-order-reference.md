@@ -129,16 +129,6 @@ IEnumerable<IOrderInfo> orders = await _order.GetStatusOrdersByCustomerIdAsync(
 
 Returns orders matching one or more statuses for a specific customer id.
 
-### `GetStatusOrdersByCustomerIdAsync(CancellationToken ct = default, params OrderStatus[] orderStatuses)`
-
-```csharp
-IEnumerable<IOrderInfo> orders = await _order.GetStatusOrdersByCustomerIdAsync(
-    ct,
-    OrderStatus.Closed);
-```
-
-Returns orders matching one or more statuses for the logged-in customer.
-
 ### `GetStatusOrdersByCustomerUsernameAsync(string customerUsername, CancellationToken ct = default, params OrderStatus[] orderStatuses)`
 
 ```csharp
