@@ -33,7 +33,6 @@ Use `API.Catalog` when you want to:
 - list products from a store or category
 - work with variants and variant groups
 - return related products
-- perform catalog product search
 
 Use HTTP endpoints instead when you are building a headless frontend or calling Ekom from an external client.
 
@@ -632,22 +631,6 @@ IReadOnlyList<IProduct> products = await _catalog.GetRelatedProductsBySkuAsync("
 
 Async version of `GetRelatedProductsBySku(...)`.
 
-## Search
-
-### `ProductSearchAsync(SearchRequest req, CancellationToken ct = default)`
-
-```csharp
-ProductResponse results = await _catalog.ProductSearchAsync(new SearchRequest
-{
-    SearchQuery = "shoe",
-    StoreAlias = "Store"
-}, ct);
-```
-
-Searches products through the configured catalog search service.
-
-If no node type aliases are provided, Ekom defaults to `ekmProduct` and `ekmVariant`.
-
 ## Supporting models
 
 ### `ProductQuery`
@@ -667,20 +650,6 @@ Common properties include:
 - `PropertyFilters`
 - `OrderBy`
 - `RaiseEvents`
-
-### `SearchRequest`
-
-Use `SearchRequest` with `ProductSearchAsync(...)`.
-
-Common properties include:
-
-- `SearchQuery`
-- `StoreAlias`
-- `NodeTypeAlias`
-- `MetaFilters`
-- `PropertyFilters`
-- `OrderBy`
-- `ExamineIndex`
 
 ### `ProductResponse`
 
