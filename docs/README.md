@@ -71,6 +71,8 @@
 
 ## Endpoints
 
+- [Headless Endpoints Overview](headless-endpoints-overview.md)
+- [Store and Country Endpoints](store-country-endpoints.md)
 - [Catalog Endpoints](catalog-endpoints.md)
 - [Order Endpoints](order-endpoints.md)
 - [Checkout Endpoints](checkout-endpoints.md)

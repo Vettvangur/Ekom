@@ -1,8 +1,6 @@
 # Order Endpoints
 
-This page documents the public HTTP order endpoints under:
-
-- `/ekom/order`
+This page documents the public HTTP order endpoints used in headless setups.
 
 These endpoints are useful when you are building a headless frontend, JavaScript cart flow, or other external integration that talks to Ekom over HTTP instead of using `Ekom.API.Order` directly.
 
@@ -16,92 +14,21 @@ All endpoints on this page are under:
 
 ## Content types
 
-Different endpoints accept different content types, but the order controller currently supports a mix of:
+Order endpoints use a mix of request formats depending on the endpoint.
+
+Common patterns include:
 
 - `application/json`
 - `application/x-www-form-urlencoded`
 - `multipart/form-data`
 
-Some endpoints also read query string values for provider and store alias fallback behavior.
+Many order endpoints also depend on a valid `storeAlias` supplied through route values, query string, headers, or request body.
 
-## 1. Add product to order
+## Reading orders
 
-### Endpoint
-
-```text
-POST /ekom/order/add
-```
-
-### Purpose
-
-Adds a product to the current order.
-
-This endpoint can also update quantity depending on the selected action.
-
-### Supported content types
-
-- `application/json`
-- `application/x-www-form-urlencoded`
-- `multipart/form-data`
-
-### Example JSON request
+## Current order
 
 ```http
-POST /ekom/order/add
-Content-Type: application/json
-
-{
-  "productId": "00000000-0000-0000-0000-000000000001",
-  "quantity": 1,
-  "storeAlias": "Store",
-  "variantId": "00000000-0000-0000-0000-000000000002",
-  "action": "AddOrUpdate"
-}
-```
-
-### Notes
-
-- request body must be JSON object when sending JSON
-- request size larger than the controller limit is rejected
-- consent and tracking data can also be supplied in the request body
-- custom request fields are preserved and passed as custom order data
-
-### Response
-
-Returns `200 OK` with the updated `IOrderInfo` payload.
-
-## 2. Get order by id
-
-### Endpoint
-
-```text
-GET /ekom/order/{orderId}
-```
-
-### Purpose
-
-Returns a specific order by unique id.
-
-### Example
-
-```http
-GET /ekom/order/11111111-1111-1111-1111-111111111111
-```
-
-### Response
-
-- `200 OK` with the order
-- `404 Not Found` if the order does not exist
-
-### Important behavior
-
-This can return completed/final orders as well, not just the current basket.
-
-## 3. Get current order by store
-
-### Endpoints
-
-```text
 GET /ekom/order
 GET /ekom/order/storeAlias/{storeAlias}
 ```
@@ -109,6 +36,12 @@ GET /ekom/order/storeAlias/{storeAlias}
 ### Purpose
 
 Returns the current order for the active or specified store.
+
+### Request parameters
+
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `storeAlias` | route | No | Target store alias for the second route. |
 
 ### Example
 
@@ -118,14 +51,47 @@ GET /ekom/order/storeAlias/Store
 
 ### Response
 
-- `200 OK` with the order
-- `404 Not Found` if no current order exists
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Returns the current order. |
+| `404 Not Found` | No current order exists. |
 
-## 4. Get related products from current order
+## Order by guid
 
-### Endpoints
+```http
+GET /ekom/order/{orderId}
+```
 
-```text
+### Purpose
+
+Returns a specific order by unique id.
+
+### Request parameters
+
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `orderId` | route | Yes | Order unique id. |
+
+### Example
+
+```http
+GET /ekom/order/11111111-1111-1111-1111-111111111111
+```
+
+### Response
+
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Returns the order. |
+| `404 Not Found` | The order does not exist. |
+
+### Notes
+
+This can return completed or final orders as well, not just the current basket.
+
+## Related products from current order
+
+```http
 GET /ekom/order/relatedproducts/{count}
 GET /ekom/order/relatedproducts/storeAlias/{storeAlias}/{count}
 ```
@@ -133,6 +99,13 @@ GET /ekom/order/relatedproducts/storeAlias/{storeAlias}/{count}
 ### Purpose
 
 Returns related products based on the current order.
+
+### Request parameters
+
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `count` | route | Yes | Number of related products to return. |
+| `storeAlias` | route | No | Target store alias for the second route. |
 
 ### Example
 
@@ -142,14 +115,143 @@ GET /ekom/order/relatedproducts/storeAlias/Store/4
 
 ### Response
 
-- `200 OK` with related products
-- `404 Not Found` if there is no current order
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Returns related products. |
+| `404 Not Found` | No current order exists. |
 
-## 5. Update customer information
+## Cart operations
 
-### Endpoint
+## Add to order
 
-```text
+```http
+POST /ekom/order/add
+```
+
+### Purpose
+
+Adds a product to the current order.
+
+This endpoint can also update quantity depending on the selected action.
+
+### Request fields
+
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `ProductId` | body | Yes | Product key. |
+| `VariantId` | body | No | Variant key. |
+| `StoreAlias` | body | No | Target store alias. |
+| `Quantity` | body | Yes | Quantity to add or set. |
+| `Action` | body | No | `AddOrUpdate`, `Set`, or `New`. |
+
+### Example JSON request
+
+```http
+POST /ekom/order/add
+Content-Type: application/json
+
+{
+  "ProductId": "cb6906db-c156-4c88-814c-6cc181bd1ae3",
+  "VariantId": "5abc5a27-cf22-4438-bcb6-f12c2a8564c9",
+  "StoreAlias": "store",
+  "Quantity": 1,
+  "Action": "AddOrUpdate"
+}
+```
+
+### Response
+
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Returns the updated order. |
+| `400 Bad Request` | Request data is missing or invalid. |
+
+### Notes
+
+- request body must be a JSON object when sending JSON
+- request size larger than the controller limit is rejected
+- consent and tracking data can also be supplied in the request body
+- custom request fields are preserved and passed as custom order data
+
+## Remove orderline
+
+```http
+POST /ekom/order/removeorderline
+```
+
+### Purpose
+
+Removes an order line by line id.
+
+### Request fields
+
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `LineId` | body | Yes | Order line id. |
+| `StoreAlias` | body | Yes | Target store alias. |
+
+### Example JSON request
+
+```http
+POST /ekom/order/removeorderline
+Content-Type: application/json
+
+{
+  "LineId": "00000000-0000-0000-0000-000000000030",
+  "StoreAlias": "Store"
+}
+```
+
+### Response
+
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Returns the updated order. |
+| `400 Bad Request` | Request data is missing or invalid. |
+
+## Update orderline quantity
+
+```http
+POST /ekom/order/Updateorderlinequantity
+```
+
+### Purpose
+
+Sets a specific quantity on an existing order line.
+
+### Request fields
+
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `LineId` | body | Yes | Order line id. |
+| `Quantity` | body | Yes | New quantity. |
+| `StoreAlias` | body | Yes | Target store alias. |
+
+### Example JSON request
+
+```http
+POST /ekom/order/Updateorderlinequantity
+Content-Type: application/json
+
+{
+  "LineId": "00000000-0000-0000-0000-000000000030",
+  "Quantity": 3,
+  "StoreAlias": "Store"
+}
+```
+
+### Response
+
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Returns the updated order. |
+| `400 Bad Request` | Request data is missing or invalid. |
+
+## Order data
+
+## Update customer information
+
+```http
 POST /ekom/order/updatecustomer
 ```
 
@@ -157,10 +259,16 @@ POST /ekom/order/updatecustomer
 
 Updates customer-related order data.
 
-### Supported content types
+### Request fields
 
-- form data
-- JSON
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `StoreAlias` | body | No | Target store alias. |
+| `customerEmail` | body | No | Customer email. |
+| `customerName` | body | No | Customer name. |
+| `customerPhone` | body | No | Customer phone. |
+| `consent` | body | No | Consent payload. |
+| `tracking` | body | No | Tracking payload. |
 
 ### Example JSON request
 
@@ -176,79 +284,20 @@ Content-Type: application/json
 }
 ```
 
-### Example with consent and tracking
-
-```http
-POST /ekom/order/updatecustomer
-Content-Type: application/json
-
-{
-  "storeAlias": "Store",
-  "customerEmail": "customer@example.com",
-  "consent": {
-    "analytics": true,
-    "marketing": false
-  },
-  "tracking": {
-    "landingUrl": "https://example.com/products/shoe"
-  }
-}
-```
-
 ### Response
 
-Returns `200 OK` with the updated order.
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Returns the updated order. |
 
-### Important behavior
+### Notes
 
 - only JSON and form content types are supported
 - first-time customer email can mark checkout as started in the core flow
 
-## 6. Update tracking
-
-### Endpoint
-
-```text
-POST /ekom/order/updatetracking
-```
-
-### Purpose
-
-Attaches tracking information to the current order for a store.
-
-### Content type
-
-- `application/json`
-
-### Example request
+## Update shipping provider
 
 ```http
-POST /ekom/order/updatetracking
-Content-Type: application/json
-
-{
-  "storeAlias": "Store",
-  "tracking": {
-    "landingUrl": "https://example.com/products/shoe",
-    "referrerUrl": "https://google.com"
-  },
-  "consent": {
-    "analytics": true,
-    "marketing": false
-  }
-}
-```
-
-### Response
-
-- `200 OK` with the updated order
-- `400 Bad Request` if `storeAlias` or `tracking` is missing
-
-## 7. Update shipping provider
-
-### Endpoints
-
-```text
 POST /ekom/order/update/shippingprovider/
 POST /ekom/order/updateshippingprovider
 ```
@@ -257,11 +306,15 @@ POST /ekom/order/updateshippingprovider
 
 Assigns the shipping provider on the current order.
 
-### Supported request shapes
+### Request fields
 
-- form data
-- JSON
-- query string fallback for provider/store alias values
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `ShippingProvider` | body/query | Yes | Shipping provider guid. |
+| `StoreAlias` | body/query | No | Target store alias. |
+| `customshipping` | body | No | Custom provider-specific payload. |
+| `ekomUpdateInformation` | body | No | Additional update information. |
+| `customerDeliveryDate` | body | No | Delivery-specific value. |
 
 ### Example JSON request
 
@@ -271,25 +324,25 @@ Content-Type: application/json
 
 {
   "ShippingProvider": "00000000-0000-0000-0000-000000000010",
-  "storeAlias": "Store"
+  "StoreAlias": "Store"
 }
 ```
 
 ### Response
 
-- `200 OK` with the updated order
-- `400 Bad Request` if required values are missing
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Returns the updated order. |
+| `400 Bad Request` | Required values are missing or invalid. |
 
-### Important behavior
+### Notes
 
 - provider id must be a valid `Guid`
 - successful provider changes create an `Info` activity log entry
 
-## 8. Update payment provider
+## Update payment provider
 
-### Endpoints
-
-```text
+```http
 POST /ekom/order/update/paymentprovider/
 POST /ekom/order/updatepaymentprovider
 ```
@@ -297,6 +350,16 @@ POST /ekom/order/updatepaymentprovider
 ### Purpose
 
 Assigns the payment provider on the current order.
+
+### Request fields
+
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `PaymentProvider` | body/query | Yes | Payment provider guid. |
+| `StoreAlias` | body/query | No | Target store alias. |
+| `custompayment` | body | No | Custom provider-specific payload. |
+| `ekomUpdateInformation` | body | No | Additional update information. |
+| `customerDeliveryDate` | body | No | Delivery-specific value. |
 
 ### Example JSON request
 
@@ -306,92 +369,39 @@ Content-Type: application/json
 
 {
   "PaymentProvider": "00000000-0000-0000-0000-000000000020",
-  "storeAlias": "Store"
+  "StoreAlias": "Store"
 }
 ```
 
 ### Response
 
-- `200 OK` with the updated order
-- `400 Bad Request` if required values are missing
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Returns the updated order. |
+| `400 Bad Request` | Required values are missing or invalid. |
 
-### Important behavior
+### Notes
 
 - successful provider changes create an `Info` activity log entry
 - assigning the payment provider does not complete checkout
 
-## 9. Remove order line
-
-### Endpoint
-
-```text
-POST /ekom/order/removeorderline
-```
-
-### Purpose
-
-Removes an order line by line id.
-
-### Example request
+## Change currency
 
 ```http
-POST /ekom/order/removeorderline
-Content-Type: application/json
-
-{
-  "lineId": "00000000-0000-0000-0000-000000000030",
-  "storeAlias": "Store"
-}
-```
-
-### Response
-
-- `200 OK` with the updated order
-- `400 Bad Request` if request data is missing or invalid
-
-## 10. Update order line quantity
-
-### Endpoint
-
-```text
-POST /ekom/order/Updateorderlinequantity
-```
-
-### Purpose
-
-Sets a specific quantity on an existing order line.
-
-### Example request
-
-```http
-POST /ekom/order/Updateorderlinequantity
-Content-Type: application/json
-
-{
-  "lineId": "00000000-0000-0000-0000-000000000030",
-  "quantity": 3,
-  "storeAlias": "Store"
-}
-```
-
-### Response
-
-- `200 OK` with the updated order
-- `400 Bad Request` if request data is missing or invalid
-
-## 11. Change currency
-
-### Endpoint
-
-```text
-POST /ekom/order/currency
+POST /ekom/order/currency?currency={currency}
 ```
 
 ### Purpose
 
 Changes the current order currency for the current store and updates the currency cookie.
 
-### Example request
+### Request parameters
+
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `currency` | query | Yes | Target currency code. |
+
+### Example
 
 ```http
 POST /ekom/order/currency?currency=USD
@@ -399,18 +409,20 @@ POST /ekom/order/currency?currency=USD
 
 ### Response
 
-- `200 OK` with the updated order or `null` if no active order exists
-- `404 Not Found` if the current store cannot be resolved
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Returns the updated order, or `null` if no active order exists. |
+| `404 Not Found` | The current store cannot be resolved. |
 
-### Important behavior
+### Notes
 
 This endpoint also updates the `EkomCurrency-{StoreAlias}` cookie.
 
-## 12. Apply coupon to order
+## Coupons
 
-### Endpoint
+## Apply coupon to order
 
-```text
+```http
 POST /ekom/order/coupon/apply
 ```
 
@@ -418,7 +430,14 @@ POST /ekom/order/coupon/apply
 
 Applies a coupon to the current order.
 
-### Example request
+### Request fields
+
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `coupon` | body | Yes | Coupon code. |
+| `storeAlias` | body | No | Target store alias. |
+
+### Example JSON request
 
 ```http
 POST /ekom/order/coupon/apply
@@ -432,19 +451,19 @@ Content-Type: application/json
 
 ### Response
 
-- `200 OK` when the coupon is applied
-- `450` when the discount is not modified because a better discount was found
-- `400 Bad Request` if coupon is empty
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Coupon applied. |
+| `400 Bad Request` | Coupon is empty or request is invalid. |
+| `450` | Discount was not modified because a better discount was found. |
 
 ### Notes
 
 This endpoint is rate limited by the `order-coupon` policy.
 
-## 13. Remove coupon from order
+## Remove coupon from order
 
-### Endpoint
-
-```text
+```http
 POST /ekom/order/coupon/remove
 ```
 
@@ -452,7 +471,13 @@ POST /ekom/order/coupon/remove
 
 Removes the coupon from the current order.
 
-### Example request
+### Request parameters
+
+| Name | Source | Required | Description |
+| --- | --- | --- | --- |
+| `storeAlias` | query | No | Target store alias. |
+
+### Example
 
 ```http
 POST /ekom/order/coupon/remove?storeAlias=Store
@@ -460,7 +485,9 @@ POST /ekom/order/coupon/remove?storeAlias=Store
 
 ### Response
 
-- `200 OK`
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Coupon removed. |
 
 ## Common endpoint behavior
 
@@ -471,13 +498,13 @@ The order controller uses an API exception filter, so some domain exceptions are
 - JSON endpoints expect valid JSON objects
 - some endpoints support both JSON and form posts
 - many order operations depend on a valid `storeAlias`
-- provider update endpoints also allow query string fallback for provider/store values
+- provider update endpoints also allow query string fallback for provider or store values
 
 ## When to use these endpoints vs `API.Order`
 
 Use these HTTP endpoints when:
 
-- building a JavaScript/cart frontend
+- building a JavaScript cart frontend
 - building a headless frontend
 - integrating from an external client
 
@@ -488,8 +515,9 @@ Use `Ekom.API.Order` when:
 
 ## Related pages
 
-- [API.Order Reference](api-order-reference.md)
-- [Quick Start](quick-start.md)
+- [Headless Endpoints Overview](headless-endpoints-overview.md)
+- [Checkout Endpoints](checkout-endpoints.md)
+- [Provider Endpoints](provider-endpoints.md)
+- [Order API](api-order-reference.md)
 - [Order Lifecycle](order-lifecycle.md)
-- [Checkout Flow Overview](checkout-flow-overview.md)
 - [Activity Logs](activity-logs.md)
