@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.130](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.129...Ekom-v0.2.130) (2026-04-27)
+
+
+### Bug Fixes
+
+* **import:** improve category import performance ([#511](https://github.com/Vettvangur/Ekom/issues/511)) ([caa5f2c](https://github.com/Vettvangur/Ekom/commit/caa5f2c8f5a9725e1067ce2065028b88f54f9b87))
+
 ## [0.2.129](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.128...Ekom-v0.2.129) (2026-04-27)
 
 
