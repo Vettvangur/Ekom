@@ -347,7 +347,7 @@
           return readBlobText(error.data)
             .then(function (text) {
               var message = tryParseMessage(text) || getErrorMessage(error, "Order action failed.");
-              window.alert(message);
+              notificationsService.error("Error", message);
             });
         })
         .finally(function () {
