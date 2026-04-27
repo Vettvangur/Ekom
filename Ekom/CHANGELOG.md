@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.129](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.128...Ekom-v0.2.129) (2026-04-27)
+
+
+### Bug Fixes
+
+* **manager:** show order action refresh feedback ([#509](https://github.com/Vettvangur/Ekom/issues/509)) ([bf67f6b](https://github.com/Vettvangur/Ekom/commit/bf67f6b3d03a0991f9e59791aea8516e237ccafc))
+
 ## [0.2.128](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.127...Ekom-v0.2.128) (2026-04-23)
 
 
