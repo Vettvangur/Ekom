@@ -34,25 +34,48 @@ public sealed class DemoOrderManagerActionProvider : IOrderManagerActionProvider
         return Task.FromResult(actions);
     }
 
-    public Task<OrderManagerActionExecutionResult?> ExecuteAsync(IOrderInfo orderInfo, string actionKey, string? userName = null, CancellationToken ct = default)
+    private async Task RunTestFunction()
     {
-        OrderManagerActionExecutionResult? result = actionKey switch
+        
+    }
+    
+
+    public async Task<OrderManagerActionExecutionResult?> ExecuteAsync(IOrderInfo orderInfo, string actionKey, string? userName = null, CancellationToken ct = default)
+    {
+        if (actionKey == DemoRefreshActionKey)
         {
-            DemoRefreshActionKey => new OrderManagerActionSuccessResult
+            try
             {
-                Message = $"Demo refresh completed for order {orderInfo.ReferenceId}."
-            },
-            DemoPdfActionKey => new OrderManagerActionFileResult
+                await RunTestFunction().ConfigureAwait(false);
+
+                return new OrderManagerActionSuccessResult
+                {
+                    Message = $"Demo refresh completed for order {orderInfo.ReferenceId}."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new OrderManagerActionBadRequestResult
+                {
+                    Message = string.IsNullOrWhiteSpace(ex.Message)
+                        ? $"Demo refresh failed for order {orderInfo.ReferenceId}."
+                        : ex.Message
+                };
+            }
+        }
+
+        if (actionKey == DemoPdfActionKey)
+        {
+            return new OrderManagerActionFileResult
             {
                 Content = CreateDemoPdf(orderInfo),
                 ContentType = "application/pdf",
                 FileName = $"ekom-demo-order-{orderInfo.ReferenceId}.pdf",
                 Message = "Demo PDF generated."
-            },
-            _ => null
-        };
+            };
+        }
 
-        return Task.FromResult(result);
+        return null;
     }
 
     private static byte[] CreateDemoPdf(IOrderInfo orderInfo)
