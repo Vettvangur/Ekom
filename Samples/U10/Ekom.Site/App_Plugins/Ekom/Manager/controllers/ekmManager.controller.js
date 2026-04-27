@@ -4,6 +4,7 @@
   function controller($scope, notificationsService, resources, $location, $document, eventsService, state, chartService, $timeout, $q) {
     var managerState = state.getState();
     var unbindDocumentClick = angular.noop;
+    var searchDebouncePromise = null;
 
     $scope.loading = true;
     $scope.loadingMostSoldProducts = true;
@@ -126,6 +127,13 @@
         page: $scope.pageMostSoldProducts,
         pageSize: 20
       };
+    }
+
+    function cancelSearchDebounce() {
+      if (searchDebouncePromise) {
+        $timeout.cancel(searchDebouncePromise);
+        searchDebouncePromise = null;
+      }
     }
 
     function refreshCurrentView() {
@@ -333,7 +341,12 @@
 
     $scope.search = function () {
       $scope.page = 1;
-      $scope.GetData();
+
+      cancelSearchDebounce();
+      searchDebouncePromise = $timeout(function () {
+        searchDebouncePromise = null;
+        $scope.GetData();
+      }, 300);
     };
 
     $scope.onDateRangeChanged = function () {
@@ -561,6 +574,7 @@
     };
 
     $scope.$on("$destroy", function () {
+      cancelSearchDebounce();
       chartService.destroyAll();
       $document.off("click", unbindDocumentClick);
     });
