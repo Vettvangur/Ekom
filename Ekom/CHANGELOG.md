@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.132](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.131...Ekom-v0.2.132) (2026-04-28)
+
+
+### Features
+
+* **coupons:** add discount calculation and coupon tools ([#515](https://github.com/Vettvangur/Ekom/issues/515)) ([db114df](https://github.com/Vettvangur/Ekom/commit/db114dfcb7e962f37911210a28b880dad81d4105))
+
 ## [0.2.131](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.130...Ekom-v0.2.131) (2026-04-28)
 
 
