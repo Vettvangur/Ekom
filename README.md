@@ -75,6 +75,9 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
   "GlobalCatalog": false,
   "EmailNotifications": "orders@example.com",
   "CustomerData": false,
+  "OrderDiscountCalculation": {
+    "ApiKey": "integration-secret"
+  },
   "Manager": {
     "SectionAccessGroup": "ekom,commerce-admins",
     "StoreGroupPermissions": {
@@ -119,7 +122,33 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `Manager:StoreGroupPermissions` (object): Store alias to allowed group list mapping.
 - `SectionAccessRules` (CSV string, legacy): Backwards-compatible alias for `Manager:SectionAccessGroup`.
 - `Headless:ReValidateApis` (list): Items with `Store`, `Url`, `Secret` for headless revalidation.
+- `OrderDiscountCalculation:ApiKey` (string, optional): When set, `POST /ekom/order-discounts/calculate` requires this value in the `X-Ekom-Api-Key` header. When missing or empty, the endpoint is open.
 - `Payments` (object): Provider-specific configuration used by payment providers.
+
+### Order discount calculation API
+
+Use the order discount calculation API to quote an order-level coupon discount without creating or loading an order. The public API accepts a coupon code only; Ekom resolves the linked discount internally.
+
+```http
+POST /ekom/order-discounts/calculate
+X-Ekom-Api-Key: integration-secret
+```
+
+```json
+{
+  "couponCode": "12345",
+  "storeAlias": "Store",
+  "lines": [
+    {
+      "sku": "SKU-123",
+      "variantSku": "VARIANT-SKU-123",
+      "quantity": 1
+    }
+  ]
+}
+```
+
+`variantSku` is optional. If configured, `Ekom:OrderDiscountCalculation:ApiKey` protects the endpoint; callers must send the same value in `X-Ekom-Api-Key`.
 
 ### Tracking and consent
 

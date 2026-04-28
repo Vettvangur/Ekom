@@ -1,0 +1,72 @@
+<div>
+
+  <div class="control-group umb-control-group">
+    <div class="umb-el-wrap">
+      <label class="control-label" for="couponCount">
+        Amount
+      </label>
+      <div class="controls">
+        <div class="umb-property-editor">
+          <input type="number" ng-model="model.editModel.count" id="couponCount" class="umb-textstring textstring" min="1" required=""/>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br/>
+  <div class="control-group umb-control-group">
+    <div class="umb-el-wrap">
+      <label class="control-label" for="generatedAvailable">
+        Usage limits
+      </label>
+      <div class="controls">
+        <div class="umb-property-editor">
+          <input type="number" ng-model="model.editModel.numberAvailable" id="generatedAvailable" class="umb-textstring textstring" min="0" required=""/>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br/>
+  <div class="control-group umb-control-group">
+    <div class="umb-el-wrap">
+      <label class="control-label" for="couponPrefix">
+        Prefix
+      </label>
+      <div class="controls">
+        <div class="umb-property-editor">
+          <input type="text" ng-model="model.editModel.prefix" id="couponPrefix" class="umb-textstring textstring"/>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br/>
+  <div class="control-group umb-control-group">
+    <div class="umb-el-wrap">
+      <label class="control-label" for="randomLength">
+        Random length
+      </label>
+      <div class="controls">
+        <div class="umb-property-editor">
+          <input type="number" ng-model="model.editModel.randomLength" id="randomLength" class="umb-textstring textstring" min="1" required=""/>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br/>
+  <div class="control-group umb-control-group">
+    <div class="umb-el-wrap">
+      <label class="control-label" for="characterSet">
+        Character set
+      </label>
+      <div class="controls">
+        <div class="umb-property-editor">
+          <select ng-model="model.editModel.characterSet" id="characterSet" class="umb-textstring textstring">
+            <option value="UppercaseAlphanumeric">Uppercase letters and numbers</option>
+            <option value="Numbers">Numbers only</option>
+            <option value="Letters">Letters only</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

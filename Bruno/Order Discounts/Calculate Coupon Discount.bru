@@ -1,0 +1,29 @@
+meta {
+  name: Calculate Coupon Discount
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/ekom/order-discounts/calculate
+  body: json
+  auth: none
+}
+
+headers {
+  X-Ekom-Api-Key: {{ekomOrderDiscountApiKey}}
+}
+
+body:json {
+  {
+    "couponCode": "5perc",
+    "storeAlias": "Store",
+    "lines": [
+      {
+        "sku": "everyday-ruck-snack",
+        "variantSku": "18L",
+        "quantity": 1
+      }
+    ]
+  }
+}
