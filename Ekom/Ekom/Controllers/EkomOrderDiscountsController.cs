@@ -53,7 +53,7 @@ public class EkomOrderDiscountsController : ControllerBase
         var configuredApiKey = _options.Value.ApiKey;
         if (string.IsNullOrWhiteSpace(configuredApiKey))
         {
-            return true;
+            return false;
         }
 
         if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKeyValues))

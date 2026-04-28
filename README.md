@@ -122,7 +122,7 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `Manager:StoreGroupPermissions` (object): Store alias to allowed group list mapping.
 - `SectionAccessRules` (CSV string, legacy): Backwards-compatible alias for `Manager:SectionAccessGroup`.
 - `Headless:ReValidateApis` (list): Items with `Store`, `Url`, `Secret` for headless revalidation.
-- `OrderDiscountCalculation:ApiKey` (string, optional): When set, `POST /ekom/order-discounts/calculate` requires this value in the `X-Ekom-Api-Key` header. When missing or empty, the endpoint is open.
+- `OrderDiscountCalculation:ApiKey` (string, required to enable): `POST /ekom/order-discounts/calculate` requires this value in the `X-Ekom-Api-Key` header. When missing or empty, the endpoint always returns unauthorized.
 - `Payments` (object): Provider-specific configuration used by payment providers.
 
 ### Order discount calculation API
@@ -148,7 +148,7 @@ X-Ekom-Api-Key: integration-secret
 }
 ```
 
-`variantSku` is optional. If configured, `Ekom:OrderDiscountCalculation:ApiKey` protects the endpoint; callers must send the same value in `X-Ekom-Api-Key`.
+`variantSku` is optional. Configure `Ekom:OrderDiscountCalculation:ApiKey` to enable the endpoint; callers must send the same value in `X-Ekom-Api-Key`.
 
 ### Tracking and consent
 
