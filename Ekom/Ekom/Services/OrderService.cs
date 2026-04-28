@@ -381,12 +381,6 @@ partial class OrderService
         }
 
         OrderStatus oldStatus = order.OrderStatus;
-
-        if (oldStatus == order.OrderStatus)
-        {
-            _logger.LogWarning("Order status is the same, did not update order status. {OrderStatus}", order.OrderStatus);
-            return;
-        }
         
         var OrderStatusEventModel = new OrderStatusEventArgs()
         {

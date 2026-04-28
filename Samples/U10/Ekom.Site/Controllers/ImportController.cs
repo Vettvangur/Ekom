@@ -299,6 +299,37 @@ public class ImportController : UmbracoAuthorizedApiController
                         Url = "https://www.vettvangur.is/images/illustrations/1.png"
                     }
                 },
+                VariantGroups = new List<ImportVariantGroup>()
+                {
+                    new ImportVariantGroup
+                    {
+                        Title = new Dictionary<string, object>
+                        {
+                            { "en-US", $"Variants" },
+                            { "is-IS", $"Variants" }
+                        },
+                        NodeName = "Variants",
+                        Identifier = $"Variant Group SKU {currentDepth}-{i + 1} - {identifier}",
+                        SaveEvent = ImportSaveEntEnum.SavePublish,
+                        Variants = new List<ImportVariant>()
+                        {
+                            new ImportVariant()
+                            {
+                                Title = new Dictionary<string, object>
+                                {
+                                    { "en-US", $"Variant" },
+                                    { "is-IS", $"Variant" }
+                                },
+                                NodeName = "Variant",
+                                Identifier = $"Variant SKU {currentDepth}-{i + 1} - {identifier}",
+                                AdditionalProperties =  new Dictionary<string, object>
+                                {
+                                    { "discount", $"1234" },
+                                }
+                            }
+                        }
+                    }
+                },
                 AdditionalProperties = new Dictionary<string, object>
                 {
                     { "customPropertyFilter", $"customProperty-{currentDepth}-{i + 1}" }
