@@ -5,6 +5,7 @@ using Ekom.Models;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 
 namespace Ekom.Services;
 
@@ -845,6 +846,96 @@ partial class OrderService
         }, ct: ct).ConfigureAwait(false);
     }
 
+    public async Task<CouponGenerationResult> GenerateCouponCodesAsync(
+        Guid discountId,
+        CouponGenerationRequest request,
+        CancellationToken ct = default)
+    {
+        if (discountId == Guid.Empty)
+        {
+            throw new ArgumentException("== Guid.Empty", nameof(discountId));
+        }
+
+        if (request == null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        if (request.Count <= 0)
+        {
+            throw new ArgumentException("Count must be greater than zero", nameof(request));
+        }
+
+        if (request.NumberAvailable < 0)
+        {
+            throw new ArgumentException("NumberAvailable can not be negative", nameof(request));
+        }
+
+        if (request.RandomLength <= 0)
+        {
+            throw new ArgumentException("RandomLength must be greater than zero", nameof(request));
+        }
+
+        var coupons = new List<string>();
+        var skippedDuplicates = 0;
+        var attempts = 0;
+        var maxAttempts = request.Count * 10;
+
+        while (coupons.Count < request.Count && attempts < maxAttempts)
+        {
+            ct.ThrowIfCancellationRequested();
+            attempts++;
+
+            var couponCode = GenerateCouponCode(request);
+            if (await _couponRepository.CouponCodeExistAsync(couponCode).ConfigureAwait(false))
+            {
+                skippedDuplicates++;
+                continue;
+            }
+
+            await _couponRepository.InsertCouponAsync(new CouponData
+            {
+                CouponCode = couponCode,
+                CouponKey = Guid.NewGuid(),
+                DiscountId = discountId,
+                NumberAvailable = request.NumberAvailable,
+                Date = DateTime.Now,
+            }, ct: ct).ConfigureAwait(false);
+
+            coupons.Add(couponCode);
+        }
+
+        return new CouponGenerationResult
+        {
+            Created = coupons.Count,
+            SkippedDuplicates = skippedDuplicates,
+            Coupons = coupons,
+        };
+    }
+
+    private static string GenerateCouponCode(CouponGenerationRequest request)
+    {
+        var characters = request.CharacterSet switch
+        {
+            CouponGenerationCharacterSet.Numbers => "23456789",
+            CouponGenerationCharacterSet.Letters => "ABCDEFGHJKLMNPQRSTUVWXYZ",
+            _ => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789",
+        };
+
+        var code = new char[request.RandomLength];
+        for (var i = 0; i < code.Length; i++)
+        {
+            code[i] = characters[RandomNumberGenerator.GetInt32(characters.Length)];
+        }
+
+        var randomPart = new string(code);
+        var prefix = request.Prefix?.Trim();
+
+        return string.IsNullOrWhiteSpace(prefix)
+            ? randomPart.ToLowerInvariant()
+            : $"{prefix}-{randomPart}".ToLowerInvariant();
+    }
+
     public async Task RemoveCouponCodeAsync(string couponCode, Guid discountId, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(couponCode))
@@ -869,6 +960,17 @@ partial class OrderService
         }
 
         return await _couponRepository.GetCouponsForDiscountAsync(discountId, query, page, pageSize, ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<List<CouponData>> GetCouponsForDiscountAsync(Guid discountId, CancellationToken ct = default)
+    {
+        if (discountId == Guid.Empty)
+        {
+            throw new ArgumentException("== Guid.Empty", nameof(discountId));
+        }
+
+        return await _couponRepository.GetCouponsForDiscountAsync(discountId, ct)
             .ConfigureAwait(false);
     }
 }

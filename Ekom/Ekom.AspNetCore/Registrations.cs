@@ -66,6 +66,14 @@ static class Registrations
         services.AddTransient<IStoreService, StoreService>();
 
         services.AddTransient<OrderService>();
+        services.AddTransient<IOrderDiscountCalculationService>(f =>
+            new OrderDiscountCalculationService(
+                f.GetRequiredService<Catalog>(),
+                f.GetRequiredService<ICouponCache>(),
+                f.GetRequiredService<DiscountCache>(),
+                f.GetRequiredService<IStoreService>()
+            )
+        );
         services.AddScoped<RevalidateService>();
         services.AddScoped<ControllerRequestHelper>();
         services.AddTransient<CheckoutService>();
@@ -214,6 +222,7 @@ static class Registrations
 
         services.Configure<EkomOptions>(config.GetSection("Ekom"));
         services.Configure<TrackingOptions>(config.GetSection("Ekom:Tracking"));
+        services.Configure<OrderDiscountCalculationOptions>(config.GetSection("Ekom:OrderDiscountCalculation"));
 
         services.Configure<MvcOptions>(mvcOptions =>
         {

@@ -56,6 +56,56 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, $routePara
     
   };
 
+  $scope.openGenerateOverlay = function () {
+
+    var model = {
+      count: 10,
+      numberAvailable: 1,
+      prefix: '',
+      randomLength: 8,
+      characterSet: 'UppercaseAlphanumeric'
+    };
+
+    $scope.overlay = {
+      title: "Generate Coupons",
+      view: "/App_Plugins/Ekom/DataTypes/CouponEditor/ekmCouponGenerateOverlay.html",
+      editModel: model,
+      show: true,
+      submit: function (submitModel) {
+
+        if (!submitModel.editModel.count || submitModel.editModel.count <= 0) {
+          notificationsService.error("Error", "Amount must be greater than zero");
+          return;
+        }
+
+        if (submitModel.editModel.numberAvailable === '' || submitModel.editModel.numberAvailable < 0) {
+          notificationsService.error("Error", "Usage Limit is required and can not be negative");
+          return;
+        }
+
+        if (!submitModel.editModel.randomLength || submitModel.editModel.randomLength <= 0) {
+          notificationsService.error("Error", "Random length must be greater than zero");
+          return;
+        }
+
+        $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/generate/discountId/' + key, submitModel.editModel)
+          .then(function (result) {
+            $scope.getCoupons(false);
+            $scope.closeOverlay();
+
+            notificationsService.success("Success", "Generated " + result.data.created + " coupon codes");
+          }, function errorCallback() {
+            notificationsService.error("Error", "Error on generating coupons.");
+          });
+
+      },
+      close: function () {
+        $scope.closeOverlay();
+      }
+    };
+
+  };
+
   $scope.closeOverlay = function () {
     $scope.overlay.show = false;
     $scope.overlay = null;
@@ -101,6 +151,10 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, $routePara
 
       });
 
+  };
+
+  $scope.exportCoupons = function () {
+    window.location = Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/export/discountId/' + key;
   };
 
   $scope.getCoupons(true);

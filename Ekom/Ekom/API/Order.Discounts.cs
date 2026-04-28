@@ -206,6 +206,12 @@ public partial class Order
             .ConfigureAwait(false);
     }
 
+    public async Task<CouponGenerationResult> GenerateCouponCodesAsync(Guid discountId, CouponGenerationRequest request, CancellationToken ct = default)
+    {
+        return await _orderService.GenerateCouponCodesAsync(discountId, request, ct: ct)
+            .ConfigureAwait(false);
+    }
+
     public async Task RemoveCouponCodeAsync(string couponCode, Guid discountId)
     {
         await _orderService.RemoveCouponCodeAsync(couponCode, discountId)
@@ -215,6 +221,12 @@ public partial class Order
     public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize, CancellationToken ct = default)
     {
         return await _orderService.GetCouponsForDiscountAsync(discountId, query, page, pageSize, ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<List<CouponData>> GetCouponsForDiscountAsync(Guid discountId, CancellationToken ct = default)
+    {
+        return await _orderService.GetCouponsForDiscountAsync(discountId, ct)
             .ConfigureAwait(false);
     }
 }

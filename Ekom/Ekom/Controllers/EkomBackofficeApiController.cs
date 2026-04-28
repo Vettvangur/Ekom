@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Text;
 
 namespace Ekom.Controllers;
 
@@ -374,6 +375,50 @@ public class EkomBackofficeApiController : ControllerBase
     }
 
     /// <summary>
+    /// Generate Coupons
+    /// </summary>
+    [HttpPost]
+    [Route("coupon/generate/discountId/{id:Guid}")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> GenerateCoupons(Guid id, [FromBody] CouponGenerationRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            CouponGenerationResult result = await API.Order.Instance.GenerateCouponCodesAsync(id, request, ct);
+            return Ok(result);
+        }
+        catch (Exception ex) when (!(ex is HttpResponseException))
+        {
+            var result = ExceptionHandler.Handle(ex);
+            return result ?? StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
+    /// <summary>
+    /// Export Coupons
+    /// </summary>
+    [HttpGet]
+    [Route("coupon/export/discountId/{id:Guid}")]
+    [UmbracoUserAuthorize]
+    [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+    public async Task<IActionResult> ExportCoupons(Guid id, CancellationToken ct = default)
+    {
+        try
+        {
+            List<CouponData> coupons = await API.Order.Instance.GetCouponsForDiscountAsync(id, ct);
+            var csv = CreateCouponCsv(coupons);
+            var fileName = $"coupons-{id:N}.csv";
+
+            return File(Encoding.UTF8.GetBytes(csv), "text/csv", fileName);
+        }
+        catch (Exception ex) when (!(ex is HttpResponseException))
+        {
+            var result = ExceptionHandler.Handle(ex);
+            return result ?? StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
+    /// <summary>
     /// Remove Coupon
     /// </summary>
     [HttpDelete]
@@ -413,5 +458,39 @@ public class EkomBackofficeApiController : ControllerBase
             var result = ExceptionHandler.Handle(ex);
             return result ?? StatusCode(500, "An unexpected error occurred.");
         }
+    }
+
+    private static string CreateCouponCsv(IEnumerable<CouponData> coupons)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("CouponCode,NumberAvailable,Date");
+
+        foreach (CouponData coupon in coupons)
+        {
+            builder
+                .Append(EscapeCsv(coupon.CouponCode))
+                .Append(',')
+                .Append(coupon.NumberAvailable)
+                .Append(',')
+                .Append(EscapeCsv(coupon.Date.ToString("O")))
+                .AppendLine();
+        }
+
+        return builder.ToString();
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n'))
+        {
+            return value;
+        }
+
+        return $"\"{value.Replace("\"", "\"\"")}\"";
     }
 }
