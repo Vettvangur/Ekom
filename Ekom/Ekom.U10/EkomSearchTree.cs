@@ -18,21 +18,21 @@ class EkomSearchTree : ISearchableTree
         _nodeService = nodeService;
     }
 
-    public Task<EntitySearchResults> SearchAsync(string query, int pageSize, long pageIndex, string? searchFrom = null)
+    public async Task<EntitySearchResults> SearchAsync(string query, int pageSize, long pageIndex, string? searchFrom = null)
     {
         long totalFound = 0;
         var searchResults = new List<Umbraco.Cms.Core.Models.ContentEditing.SearchResultEntity?>();
         if (!string.IsNullOrEmpty(query) && query.Length > 2)
         {
 
-            var results = _searchService.InternalQuery(new SearchRequest() {
+            var (results, _) = await _searchService.InternalQueryAsync(new SearchRequest() {
                 SearchQuery = query,
                 ExamineIndex = "InternalIndex"
-            }, out _);
+            });
 
             if (results == null)
             {
-                return Task.FromResult(new EntitySearchResults(searchResults, totalFound));
+                return new EntitySearchResults(searchResults, totalFound);
             }
 
             foreach (var result in results.Take(30))
@@ -104,6 +104,6 @@ class EkomSearchTree : ISearchableTree
 
         }
 
-        return Task.FromResult(new EntitySearchResults(searchResults, totalFound));
+        return new EntitySearchResults(searchResults, totalFound);
     }
 }

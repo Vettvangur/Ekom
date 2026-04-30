@@ -31,6 +31,21 @@ public class AlgoliaProductIndexMapperTests
             Assert.IsAssignableFrom<IReadOnlyList<string>>(record.Data["category_paths"]));
     }
 
+    [Fact]
+    public void Maps_NodeName_From_Umbraco_Node_Name_Not_Title()
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct(
+            title: "Display Product Title",
+            nodeName: "Actual Umbraco Node Name");
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal("Actual Umbraco Node Name", record!.NodeName);
+        Assert.Equal("Display Product Title", record.Title);
+    }
+
     [Theory]
     [InlineData("0", false)]
     [InlineData("1", true)]
@@ -335,6 +350,8 @@ public class AlgoliaProductIndexMapperTests
         IReadOnlyList<Mock<Ekom.Models.ICategory>>? categories = null,
         IReadOnlyList<Ekom.Models.MetavalueSlim>? metafields = null,
         IReadOnlyDictionary<string, string>? properties = null,
+        string title = "Product",
+        string nodeName = "Product Node",
         string sku = "sku",
         string summary = "Summary",
         string description = "Description",
@@ -349,7 +366,7 @@ public class AlgoliaProductIndexMapperTests
         var product = new Mock<Ekom.Models.IProduct>();
         product.SetupGet(x => x.Key).Returns(Guid.NewGuid());
         product.SetupGet(x => x.SKU).Returns(sku);
-        product.SetupGet(x => x.Title).Returns("Product");
+        product.SetupGet(x => x.Title).Returns(title);
         product.SetupGet(x => x.Summary).Returns(summary);
         product.SetupGet(x => x.Description).Returns(description);
         product.SetupGet(x => x.Url).Returns(url);
@@ -364,9 +381,14 @@ public class AlgoliaProductIndexMapperTests
         product.SetupGet(x => x.Metafields).Returns(metafields?.ToList() ?? []);
         product.SetupGet(x => x.CreateDate).Returns(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc));
         product.SetupGet(x => x.UpdateDate).Returns(new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc));
-        product.Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<string?>(), true)).Returns(string.Empty);
+        product.SetupGet(x => x.Properties).Returns(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["nodeName"] = nodeName
+        });
+        product.Setup(x => x.GetValue("title", It.IsAny<string?>(), true)).Returns(string.Empty);
         product.Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<string?>(), false))
             .Returns((string alias, string? _, bool _) => properties != null && properties.TryGetValue(alias, out var value) ? value : string.Empty);
+        product.Setup(x => x.GetValue("nodeName", It.IsAny<string?>(), It.IsAny<bool>())).Returns(nodeName);
 
         return product;
     }

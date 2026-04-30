@@ -28,6 +28,7 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
     private readonly AlgoliaStoreResolver _storeResolver;
     private readonly IndexNameBuilder _indexNameBuilder;
     private readonly AlgoliaSearchCacheKeyBuilder _cacheKeyBuilder;
+    private readonly IAlgoliaUserTokenProvider _userTokenProvider;
     private readonly ILogger<AlgoliaSearchService> _logger;
 
     public AlgoliaSearchService(
@@ -37,6 +38,7 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         AlgoliaStoreResolver storeResolver,
         IndexNameBuilder indexNameBuilder,
         AlgoliaSearchCacheKeyBuilder cacheKeyBuilder,
+        IAlgoliaUserTokenProvider userTokenProvider,
         ILogger<AlgoliaSearchService> logger)
     {
         _queryClient = queryClient;
@@ -45,6 +47,7 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         _storeResolver = storeResolver;
         _indexNameBuilder = indexNameBuilder;
         _cacheKeyBuilder = cacheKeyBuilder;
+        _userTokenProvider = userTokenProvider;
         _logger = logger;
     }
 
@@ -78,6 +81,8 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         if (_options.Search.MaxHitsPerPage > 0 && query.HitsPerPage > _options.Search.MaxHitsPerPage)
             query.HitsPerPage = _options.Search.MaxHitsPerPage;
 
+        var userToken = PrepareUserTokenForCache(query);
+
         var useCache = _options.Search.Cache.Enabled && !request.BypassCache;
         var cacheKey = _cacheKeyBuilder.BuildProductsKey(request, query, indexName);
 
@@ -86,6 +91,8 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
             _logger.LogDebug("Algolia product search cache hit for store {Store} and index {IndexName}.", request.StoreAlias, indexName);
             return cached;
         }
+
+        ApplyUserToken(query, userToken);
 
         var response = await QueryProductsAsync(query, ct).ConfigureAwait(false);
 
@@ -131,6 +138,8 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         if (_options.Search.MaxHitsPerPage > 0 && query.HitsPerPage > _options.Search.MaxHitsPerPage)
             query.HitsPerPage = _options.Search.MaxHitsPerPage;
 
+        var userToken = PrepareUserTokenForCache(query);
+
         var useCache = _options.Search.Cache.Enabled && !request.BypassCache;
         var cacheKey = _cacheKeyBuilder.BuildCategoriesKey(request, query, indexName);
 
@@ -139,6 +148,8 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
             _logger.LogDebug("Algolia category search cache hit for store {Store} and index {IndexName}.", request.StoreAlias, indexName);
             return cached;
         }
+
+        ApplyUserToken(query, userToken);
 
         var response = await QueryAsync<AlgoliaCategoryRecord>(query, ct).ConfigureAwait(false);
 
@@ -184,6 +195,8 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         if (_options.Search.MaxHitsPerPage > 0 && query.HitsPerPage > _options.Search.MaxHitsPerPage)
             query.HitsPerPage = _options.Search.MaxHitsPerPage;
 
+        var userToken = PrepareUserTokenForCache(query);
+
         var useCache = _options.Search.Cache.Enabled && !request.BypassCache;
         var cacheKey = _cacheKeyBuilder.BuildQuerySuggestionsKey(request, query, indexName);
 
@@ -192,6 +205,8 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
             _logger.LogDebug("Algolia query suggestions cache hit for store {Store} and index {IndexName}.", request.StoreAlias, indexName);
             return cached;
         }
+
+        ApplyUserToken(query, userToken);
 
         AlgoliaSearchResponse<AlgoliaQuerySuggestionRecord> response;
 
@@ -224,6 +239,39 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
 
     private Task<AlgoliaSearchResponse<AlgoliaProductRecord>> QueryProductsAsync(SearchForHits query, CancellationToken ct)
         => QueryAsync<AlgoliaProductRecord>(query, ct);
+
+    private string? PrepareUserTokenForCache(SearchForHits query)
+    {
+        var userToken = query.UserToken;
+
+        if (_options.Search.VaryCacheByUserToken)
+        {
+            ApplyUserToken(query, userToken);
+            return query.UserToken;
+        }
+
+        query.UserToken = null;
+        return userToken;
+    }
+
+    private void ApplyUserToken(SearchForHits query, string? userToken)
+    {
+        if (!string.IsNullOrWhiteSpace(query.UserToken))
+            return;
+
+        if (!string.IsNullOrWhiteSpace(userToken))
+        {
+            query.UserToken = userToken;
+            return;
+        }
+
+        if (!_options.Search.IncludeUserToken)
+            return;
+
+        var resolvedUserToken = _userTokenProvider.GetUserToken();
+        if (!string.IsNullOrWhiteSpace(resolvedUserToken))
+            query.UserToken = resolvedUserToken;
+    }
 
     private async Task<AlgoliaSearchResponse<THit>> QueryAsync<THit>(SearchForHits query, CancellationToken ct)
         where THit : class
