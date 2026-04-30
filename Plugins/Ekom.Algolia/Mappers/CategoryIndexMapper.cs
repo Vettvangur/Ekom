@@ -51,6 +51,7 @@ internal sealed class CategoryIndexMapper : IAlgoliaCategoryIndexMapper
         var record = new AlgoliaCategoryRecord
         {
             ObjectId = category.Key.ToString(),
+            NodeName = NullIfWhiteSpace(GetNodeName(category)),
             Title = title,
             Slug = NullIfWhiteSpace(category.Slug),
             Url = NullIfWhiteSpace(urls.FirstOrDefault() ?? category.Url),
@@ -87,6 +88,19 @@ internal sealed class CategoryIndexMapper : IAlgoliaCategoryIndexMapper
 
         var localized = node.GetValue(propertyAlias, locale, fallback: true);
         return string.IsNullOrWhiteSpace(localized) ? fallbackValue : localized;
+    }
+
+    private static string GetNodeName(INodeEntity node)
+    {
+        var nodeName = node.GetValue("nodeName");
+        if (!string.IsNullOrWhiteSpace(nodeName))
+            return nodeName;
+
+        var properties = node.Properties;
+        if (properties != null && properties.TryGetValue("nodeName", out nodeName) && !string.IsNullOrWhiteSpace(nodeName))
+            return nodeName;
+
+        return node.Title;
     }
 
     private static void RemoveEmptyValues(IDictionary<string, object?> values)

@@ -33,19 +33,6 @@ public class CatalogSearchService : ICatalogSearchService
     }
 
     // =========================
-    // Sync
-    // =========================
-
-    public virtual IEnumerable<int> ProductQuery(SearchRequest req, out long total)
-        => PublicQuery(req, out total).Select(x => x.Id);
-
-    public virtual IEnumerable<SearchResultEntity> PublicQuery(SearchRequest req, out long total)
-        => PublicQueryCore(req, out total, ct: default);
-
-    public virtual IEnumerable<SearchResultEntity> InternalQuery(SearchRequest req, out long total)
-        => InternalQueryCore(req, out total, ct: default);
-
-    // =========================
     // Async
     // =========================
 

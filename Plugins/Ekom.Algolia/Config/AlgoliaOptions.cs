@@ -50,6 +50,8 @@ public sealed class AlgoliaSearchOptions
     public bool Products { get; set; } = true;
     public bool Categories { get; set; } = true;
     public bool QuerySuggestions { get; set; }
+    public bool IncludeUserToken { get; set; } = true;
+    public bool VaryCacheByUserToken { get; set; }
     public int MinimumQueryLength { get; set; } = 2;
     public int MaxHitsPerPage { get; set; } = 100;
     public AlgoliaSearchCacheOptions Cache { get; set; } = new();

@@ -130,7 +130,7 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 
 Ekom resolves catalog search through `ICatalogSearchService`. The default Umbraco implementation is `CatalogSearchService`, registered as scoped by `AddEkom(...)`.
 
-`ICatalogSearchService` exposes three async override points:
+`ICatalogSearchService` is async-only and exposes three override points:
 
 - `ProductQueryAsync(...)`: product search used by product listings and `Catalog.ProductSearchAsync(...)`. Override this when an external product search provider should return matching Ekom product IDs.
 - `PublicQueryAsync(...)`: public-facing search returning `SearchResultEntity` records. Override this for autocomplete, site search, or mixed product/category result cards.
@@ -143,29 +143,15 @@ services.AddEkom(configuration);
 services.AddScoped<ICatalogSearchService, CustomCatalogSearchService>();
 ```
 
-Example implementation using the default `CatalogSearchService` as a base class:
+Example implementation:
 
 ```csharp
-using Ekom;
 using Ekom.Models;
 using Ekom.Services;
-using Ekom.Umb.Services;
-using Examine;
-using Microsoft.Extensions.Logging;
-using Umbraco.Cms.Core;
 
-public sealed class CustomCatalogSearchService : CatalogSearchService
+public sealed class CustomCatalogSearchService : ICatalogSearchService
 {
-    public CustomCatalogSearchService(
-        IPublishedContentQuery query,
-        ILogger<CatalogSearchService> logger,
-        IExamineManager examineManager,
-        Configuration config)
-        : base(query, logger, examineManager, config)
-    {
-    }
-
-    public override async Task<(IEnumerable<int> Ids, long Total)> ProductQueryAsync(
+    public async Task<(IEnumerable<int> Ids, long Total)> ProductQueryAsync(
         SearchRequest req,
         CancellationToken ct = default)
     {
@@ -173,7 +159,7 @@ public sealed class CustomCatalogSearchService : CatalogSearchService
         return (ids, ids.Count());
     }
 
-    public override async Task<(IEnumerable<SearchResultEntity> Results, long Total)> PublicQueryAsync(
+    public async Task<(IEnumerable<SearchResultEntity> Results, long Total)> PublicQueryAsync(
         SearchRequest req,
         CancellationToken ct = default)
     {
@@ -181,7 +167,7 @@ public sealed class CustomCatalogSearchService : CatalogSearchService
         return (results, results.Count());
     }
 
-    public override async Task<(IEnumerable<SearchResultEntity> Results, long Total)> InternalQueryAsync(
+    public async Task<(IEnumerable<SearchResultEntity> Results, long Total)> InternalQueryAsync(
         SearchRequest req,
         CancellationToken ct = default)
     {
@@ -191,7 +177,7 @@ public sealed class CustomCatalogSearchService : CatalogSearchService
 }
 ```
 
-If you only need to customize one path, override only that async method and let the base `CatalogSearchService` handle the rest. Register the derived type for `ICatalogSearchService` after `AddEkom(...)`.
+If you only need to customize part of the default Examine behavior, inherit from `CatalogSearchService` and override the relevant async method. Register the derived type for `ICatalogSearchService` after `AddEkom(...)`.
 
 ### Order discount calculation API
 

@@ -4,9 +4,6 @@ namespace Ekom.Services;
 
 public interface ICatalogSearchService
 {
-    IEnumerable<SearchResultEntity> PublicQuery(SearchRequest req, out long total);
-    IEnumerable<SearchResultEntity> InternalQuery(SearchRequest req, out long total);
-    IEnumerable<int> ProductQuery(SearchRequest req, out long total);
     Task<(IEnumerable<SearchResultEntity> Results, long Total)> PublicQueryAsync(
         SearchRequest req,
         CancellationToken ct = default);

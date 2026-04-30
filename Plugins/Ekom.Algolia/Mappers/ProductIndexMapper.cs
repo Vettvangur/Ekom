@@ -37,6 +37,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var price = ResolvePrice(product, store);
         var locale = store.Locale;
         var categoryLevels = BuildCategoryLevels(product, locale);
+        var nodeName = GetNodeName(product);
         var title = GetLocalizedValue(product, "title", product.Title, locale);
 
         var images = product.Images
@@ -69,7 +70,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         {
             ObjectId = product.Key.ToString(),
             Sku = NullIfWhiteSpace(product.SKU),
-            NodeName = NullIfWhiteSpace(product.Title),
+            NodeName = NullIfWhiteSpace(nodeName),
             Title = title,
             Summary = NullIfWhiteSpace(GetLocalizedValue(product, "summary", product.Summary, locale)),
             Description = NullIfWhiteSpace(GetLocalizedValue(product, "description", product.Description, locale)),
@@ -227,6 +228,19 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
         var localized = node.GetValue(propertyAlias, locale, fallback: true);
         return string.IsNullOrWhiteSpace(localized) ? fallbackValue : localized;
+    }
+
+    private static string GetNodeName(INodeEntity node)
+    {
+        var nodeName = node.GetValue("nodeName");
+        if (!string.IsNullOrWhiteSpace(nodeName))
+            return nodeName;
+
+        var properties = node.Properties;
+        if (properties != null && properties.TryGetValue("nodeName", out nodeName) && !string.IsNullOrWhiteSpace(nodeName))
+            return nodeName;
+
+        return node.Title;
     }
 
 

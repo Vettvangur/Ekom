@@ -24,6 +24,8 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:Search:Products"] = "true",
                 ["Ekom:Algolia:Search:Categories"] = "true",
                 ["Ekom:Algolia:Search:QuerySuggestions"] = "true",
+                ["Ekom:Algolia:Search:IncludeUserToken"] = "true",
+                ["Ekom:Algolia:Search:VaryCacheByUserToken"] = "true",
                 ["Ekom:Algolia:Search:MinimumQueryLength"] = "3",
                 ["Ekom:Algolia:Search:MaxHitsPerPage"] = "50",
                 ["Ekom:Algolia:Search:Cache:Enabled"] = "true",
@@ -41,6 +43,8 @@ public class AlgoliaSearchTests
         Assert.Equal("search-key", options.SearchApiKey);
         Assert.True(options.Search.Categories);
         Assert.True(options.Search.QuerySuggestions);
+        Assert.True(options.Search.IncludeUserToken);
+        Assert.True(options.Search.VaryCacheByUserToken);
         Assert.Equal(3, options.Search.MinimumQueryLength);
         Assert.Equal(50, options.Search.MaxHitsPerPage);
         Assert.Equal(15, options.Search.Cache.DurationMinutes);
@@ -116,6 +120,47 @@ public class AlgoliaSearchTests
                 Query = "table",
                 HitsPerPage = 20,
                 Page = 0
+            },
+            "primary.store.products");
+
+        Assert.NotEqual(first, second);
+    }
+
+    [Fact]
+    public void Cache_Key_Changes_When_Query_User_Token_Changes()
+    {
+        var versions = new AlgoliaSearchCacheVersionProvider();
+        var builder = new AlgoliaSearchCacheKeyBuilder(versions);
+        var request = new AlgoliaSearchRequest
+        {
+            StoreAlias = "Store",
+            Query = new SearchForHits
+            {
+                Query = "chair",
+                HitsPerPage = 20,
+                Page = 0
+            }
+        };
+
+        var first = builder.BuildProductsKey(
+            request,
+            new SearchForHits
+            {
+                Query = "chair",
+                HitsPerPage = 20,
+                Page = 0,
+                UserToken = "user-1"
+            },
+            "primary.store.products");
+
+        var second = builder.BuildProductsKey(
+            request,
+            new SearchForHits
+            {
+                Query = "chair",
+                HitsPerPage = 20,
+                Page = 0,
+                UserToken = "user-2"
             },
             "primary.store.products");
 
