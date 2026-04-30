@@ -125,57 +125,23 @@ public class CatalogSearchService : ICatalogSearchService
 
             var searcher = index.Searcher ?? throw new Exception("Searcher not found. " + examineIndex);
 
-            // Build terms: stopwords -> diacritics -> tokenize -> escape
+            // Build terms: stopwords -> tokenize. Normalized terms target *_normalized fields.
             var withoutStopWords = req.SearchQuery.RemoveStopWords();
             var baseQuery = string.IsNullOrWhiteSpace(withoutStopWords) ? req.SearchQuery : withoutStopWords;
-            var cleanQuery = SearchHelper.RemoveDiacritics(baseQuery);
-
-            var searchTerms = cleanQuery
-                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(t => t.Trim())
-                .Where(t => !string.IsNullOrWhiteSpace(t))
-                .Select(QueryParser.Escape)
-                .ToList();
+            var searchTerms = ExamineSearchTextNormalizer.Tokenize(baseQuery, normalize: false);
+            var normalizedSearchTerms = ExamineSearchTextNormalizer.Tokenize(baseQuery, normalize: true);
 
             // No usable tokens => no results (prevents empty query / weird parse)
-            if (searchTerms.Count == 0)
+            if (searchTerms.Count == 0 && normalizedSearchTerms.Count == 0)
                 return Array.Empty<SearchResultEntity>();
 
             ct.ThrowIfCancellationRequested();
 
-            // Each term is required (+) and must match at least one of the fields (OR across fields)
-            for (var i = 0; i < searchTerms.Count; i++)
-            {
-                var term = searchTerms[i];
+            var normalizedFieldNames = GetNormalizedFieldNames();
+            luceneQuery.Append(BuildLuceneQuery(req.SearchFields, searchTerms, normalizedSearchTerms, normalizedFieldNames));
 
-                if (i > 0)
-                    luceneQuery.Append(" AND ");
-
-                // Require each term-group
-                luceneQuery.Append("+(");
-
-                var wroteAnyFieldClause = false;
-
-                foreach (var field in req.SearchFields)
-                {
-                    var clause = BuildFieldClause(field, term);
-                    if (string.IsNullOrWhiteSpace(clause))
-                        continue;
-
-                    // OR across fields within a term-group
-                    if (wroteAnyFieldClause)
-                        luceneQuery.Append(" OR ");
-
-                    luceneQuery.Append(clause);
-                    wroteAnyFieldClause = true;
-                }
-
-                luceneQuery.Append(")");
-
-                // Safety: never allow "+()" to escape
-                if (!wroteAnyFieldClause)
-                    return Array.Empty<SearchResultEntity>();
-            }
+            if (luceneQuery.Length == 0)
+                return Array.Empty<SearchResultEntity>();
 
             ct.ThrowIfCancellationRequested();
 
@@ -243,34 +209,6 @@ public class CatalogSearchService : ICatalogSearchService
             total = 0;
             return Array.Empty<SearchResultEntity>();
         }
-
-        static string BuildFieldClause(EkomSearchField field, string term)
-        {
-            // Lucene classic syntax: field:value (no space after ':')
-            // Wrap term-values with parentheses only where needed; keep it simple and valid.
-
-            var booster = string.IsNullOrWhiteSpace(field.Booster) ? "" : field.Booster;
-
-            return field.SearchType switch
-            {
-                EkomSearchType.Wildcard =>
-                    $"{field.Name}:*{term}*{booster}",
-
-                EkomSearchType.Fuzzy =>
-                    $"{field.Name}:{term}~{field.FuzzyConfiguration}{booster}",
-
-                EkomSearchType.FuzzyAndWilcard =>
-                    // (wild OR fuzzy) inside a single field-clause
-                    $"({field.Name}:*{term}* OR {field.Name}:{term}~{field.FuzzyConfiguration}){booster}",
-
-                EkomSearchType.Exact =>
-                    $"{field.Name}:{term}{booster}",
-
-                _ =>
-                    // Default to exact if unknown
-                    $"{field.Name}:{term}{booster}"
-            };
-        }
     }
 
     private IEnumerable<SearchResultEntity> InternalQueryCore(SearchRequest req, out long total, CancellationToken ct)
@@ -313,45 +251,20 @@ public class CatalogSearchService : ICatalogSearchService
             var searcher = index.Searcher ?? throw new Exception("Searcher not found. " + examineIndex);
 
             var queryWithOutStopWords = req.SearchQuery.RemoveStopWords();
-            var cleanQuery = SearchHelper.RemoveDiacritics(string.IsNullOrEmpty(queryWithOutStopWords) ? req.SearchQuery : queryWithOutStopWords);
+            var baseQuery = string.IsNullOrEmpty(queryWithOutStopWords) ? req.SearchQuery : queryWithOutStopWords;
+            var searchTerms = ExamineSearchTextNormalizer.Tokenize(baseQuery, normalize: false);
+            var normalizedSearchTerms = ExamineSearchTextNormalizer.Tokenize(baseQuery, normalize: true);
 
-            var searchTerms = cleanQuery
-                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(QueryParser.Escape)
-                .ToList();
+            if (searchTerms.Count == 0 && normalizedSearchTerms.Count == 0)
+                return Array.Empty<SearchResultEntity>();
 
             ct.ThrowIfCancellationRequested();
 
-            for (var i = 0; i < searchTerms.Count; i++)
-            {
-                var term = searchTerms[i];
+            var normalizedFieldNames = GetNormalizedFieldNames();
+            luceneQuery.Append(BuildLuceneQuery(req.SearchFields, searchTerms, normalizedSearchTerms, normalizedFieldNames));
 
-                if (i != 0)
-                    luceneQuery.Append(" AND ");
-
-                if (i == 0)
-                    luceneQuery.Append("+");
-
-                luceneQuery.Append(" (");
-
-                foreach (var field in req.SearchFields)
-                {
-                    luceneQuery.Append(" (");
-
-                    if (field.SearchType == EkomSearchType.Wildcard || field.SearchType == EkomSearchType.FuzzyAndWilcard)
-                        luceneQuery.Append("(" + field.Name + ": " + "*" + term + "*" + ")" + (string.IsNullOrEmpty(field.Booster) ? "" : field.Booster));
-
-                    if (field.SearchType == EkomSearchType.Fuzzy || field.SearchType == EkomSearchType.FuzzyAndWilcard)
-                        luceneQuery.Append(" (" + field.Name + ": " + term + "~" + field.FuzzyConfiguration + ")" + (string.IsNullOrEmpty(field.Booster) ? "" : field.Booster));
-
-                    if (field.SearchType == EkomSearchType.Exact)
-                        luceneQuery.Append(" (" + field.Name + ": " + term + ") " + (string.IsNullOrEmpty(field.Booster) ? "" : field.Booster));
-
-                    luceneQuery.Append(")");
-                }
-
-                luceneQuery.Append(")");
-            }
+            if (luceneQuery.Length == 0)
+                return Array.Empty<SearchResultEntity>();
 
             ct.ThrowIfCancellationRequested();
 
@@ -386,5 +299,110 @@ public class CatalogSearchService : ICatalogSearchService
             _logger.LogInformation(luceneQuery.ToString());
             return new List<SearchResultEntity>();
         }
+    }
+
+    private HashSet<string> GetNormalizedFieldNames()
+    {
+        return _config.ExamineSearchNormalizedFields
+            .Where(field => !string.IsNullOrWhiteSpace(field))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string BuildLuceneQuery(
+        IReadOnlyCollection<EkomSearchField> fields,
+        IReadOnlyList<string> searchTerms,
+        IReadOnlyList<string> normalizedSearchTerms,
+        HashSet<string> normalizedFieldNames)
+    {
+        var query = new StringBuilder();
+        var termCount = Math.Max(searchTerms.Count, normalizedSearchTerms.Count);
+
+        for (var i = 0; i < termCount; i++)
+        {
+            var term = i < searchTerms.Count ? QueryParser.Escape(searchTerms[i]) : string.Empty;
+            var normalizedTerm = i < normalizedSearchTerms.Count ? QueryParser.Escape(normalizedSearchTerms[i]) : string.Empty;
+
+            if (string.IsNullOrWhiteSpace(term) && string.IsNullOrWhiteSpace(normalizedTerm))
+                continue;
+
+            if (query.Length > 0)
+                query.Append(" AND ");
+
+            query.Append("+(");
+
+            var wroteAnyFieldClause = false;
+            foreach (var field in fields)
+            {
+                if (string.IsNullOrWhiteSpace(field.Name))
+                    continue;
+
+                if (!string.IsNullOrWhiteSpace(term))
+                    wroteAnyFieldClause = AppendFieldClause(query, field, term, wroteAnyFieldClause);
+
+                if (!string.IsNullOrWhiteSpace(normalizedTerm) && normalizedFieldNames.Contains(field.Name))
+                {
+                    var normalizedField = new EkomSearchField
+                    {
+                        Name = ExamineSearchTextNormalizer.NormalizedFieldName(field.Name),
+                        SearchType = field.SearchType,
+                        FuzzyConfiguration = field.FuzzyConfiguration,
+                        Booster = field.Booster
+                    };
+
+                    wroteAnyFieldClause = AppendFieldClause(query, normalizedField, normalizedTerm, wroteAnyFieldClause);
+                }
+            }
+
+            query.Append(')');
+
+            if (!wroteAnyFieldClause)
+                return string.Empty;
+        }
+
+        return query.ToString();
+    }
+
+    private static bool AppendFieldClause(StringBuilder query, EkomSearchField field, string term, bool wroteAnyFieldClause)
+    {
+        var clause = BuildFieldClause(field, term);
+        if (string.IsNullOrWhiteSpace(clause))
+            return wroteAnyFieldClause;
+
+        if (wroteAnyFieldClause)
+            query.Append(" OR ");
+
+        query.Append(clause);
+        return true;
+    }
+
+    private static string BuildFieldClause(EkomSearchField field, string term)
+    {
+        // Lucene classic syntax: field:value (no space after ':')
+        // Wrap term-values with parentheses only where needed; keep it simple and valid.
+
+        if (string.IsNullOrWhiteSpace(field.Name))
+            return string.Empty;
+
+        var booster = string.IsNullOrWhiteSpace(field.Booster) ? "" : field.Booster;
+
+        return field.SearchType switch
+        {
+            EkomSearchType.Wildcard =>
+                $"{field.Name}:*{term}*{booster}",
+
+            EkomSearchType.Fuzzy =>
+                $"{field.Name}:{term}~{field.FuzzyConfiguration}{booster}",
+
+            EkomSearchType.FuzzyAndWilcard =>
+                // (wild OR fuzzy) inside a single field-clause
+                $"({field.Name}:*{term}* OR {field.Name}:{term}~{field.FuzzyConfiguration}){booster}",
+
+            EkomSearchType.Exact =>
+                $"{field.Name}:{term}{booster}",
+
+            _ =>
+                // Default to exact if unknown
+                $"{field.Name}:{term}{booster}"
+        };
     }
 }

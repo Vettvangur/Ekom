@@ -69,6 +69,7 @@ public class EkomComposer : IComposer
             // Can't use umbraco npoco for this since we use linq2db in core
             .Append<EnsureTablesExist>()
             .Append<EnsureNodesExist>()
+            .Append<Ekom.Umb.Services.ExamineSearchIndexComponent>()
             .Append<EkomStartup>()
             ;
 

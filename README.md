@@ -102,6 +102,7 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 
 - `PerStoreStock` (bool, default `false`): Use per-store stock cache instead of product/variant stock.
 - `ExamineSearchIndex` (string, default `ExternalIndex`): Examine index name used for search.
+- `ExamineSearchNormalizedFields` (list, default `nodeName`, `title`, `pageTitle`, `sku`, `searchTags`, `summary`, `description`): Examine fields duplicated into `*_normalized` fields so catalog search can match diacritics and symbol-separated terms more reliably.
 - `ShareBasket` (bool, default `false`): Share baskets between stores; requires same currencies across stores.
 - `BasketCookieLifetime` (number, days, default `1`): Order cookie lifespan in days.
 - `CustomImage` (string, default `images`): Media folder alias for product images.
@@ -124,6 +125,73 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `Headless:ReValidateApis` (list): Items with `Store`, `Url`, `Secret` for headless revalidation.
 - `OrderDiscountCalculation:ApiKey` (string, required to enable): `POST /ekom/order-discounts/calculate` requires this value in the `X-Ekom-Api-Key` header. When missing or empty, the endpoint always returns unauthorized.
 - `Payments` (object): Provider-specific configuration used by payment providers.
+
+### Catalog search overrides
+
+Ekom resolves catalog search through `ICatalogSearchService`. The default Umbraco implementation is `CatalogSearchService`, registered as scoped by `AddEkom(...)`.
+
+`ICatalogSearchService` exposes three async override points:
+
+- `ProductQueryAsync(...)`: product search used by product listings and `Catalog.ProductSearchAsync(...)`. Override this when an external product search provider should return matching Ekom product IDs.
+- `PublicQueryAsync(...)`: public-facing search returning `SearchResultEntity` records. Override this for autocomplete, site search, or mixed product/category result cards.
+- `InternalQueryAsync(...)`: backoffice/internal search, including the Umbraco searchable tree. Override this when internal CMS search should use a custom provider/index.
+
+To replace search completely, register your implementation after `AddEkom(...)`:
+
+```csharp
+services.AddEkom(configuration);
+services.AddScoped<ICatalogSearchService, CustomCatalogSearchService>();
+```
+
+Example implementation using the default `CatalogSearchService` as a base class:
+
+```csharp
+using Ekom;
+using Ekom.Models;
+using Ekom.Services;
+using Ekom.Umb.Services;
+using Examine;
+using Microsoft.Extensions.Logging;
+using Umbraco.Cms.Core;
+
+public sealed class CustomCatalogSearchService : CatalogSearchService
+{
+    public CustomCatalogSearchService(
+        IPublishedContentQuery query,
+        ILogger<CatalogSearchService> logger,
+        IExamineManager examineManager,
+        Configuration config)
+        : base(query, logger, examineManager, config)
+    {
+    }
+
+    public override async Task<(IEnumerable<int> Ids, long Total)> ProductQueryAsync(
+        SearchRequest req,
+        CancellationToken ct = default)
+    {
+        var ids = await SearchProductsInExternalIndexAsync(req, ct);
+        return (ids, ids.Count());
+    }
+
+    public override async Task<(IEnumerable<SearchResultEntity> Results, long Total)> PublicQueryAsync(
+        SearchRequest req,
+        CancellationToken ct = default)
+    {
+        var results = await SearchPublicContentAsync(req, ct);
+        return (results, results.Count());
+    }
+
+    public override async Task<(IEnumerable<SearchResultEntity> Results, long Total)> InternalQueryAsync(
+        SearchRequest req,
+        CancellationToken ct = default)
+    {
+        var results = await SearchBackofficeContentAsync(req, ct);
+        return (results, results.Count());
+    }
+}
+```
+
+If you only need to customize one path, override only that async method and let the base `CatalogSearchService` handle the rest. Register the derived type for `ICatalogSearchService` after `AddEkom(...)`.
 
 ### Order discount calculation API
 
