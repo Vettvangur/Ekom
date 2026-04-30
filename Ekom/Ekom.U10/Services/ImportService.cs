@@ -113,13 +113,14 @@ public class ImportService : IImportService
             var rootUmbracoMediafolder = _importMediaService.GetRootMedia(data.MediaRootKey);
 
             var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+            var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
 
             var recycleBinNode = data.RecycleBinKey.HasValue ? _contentService.GetById(data.RecycleBinKey.Value) : null;
             var productProcessNode = data.ProductProcessKey.HasValue ? _contentService.GetById(data.ProductProcessKey.Value) : null;
 
             var stopwatch = Stopwatch.StartNew();
 
-            IterateCategoryTree(data.Categories, GetAllCategories(data), allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser);
+            IterateCategoryTree(data.Categories, GetAllCategories(data), allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser);
 
             _logger.LogInformation("IterateCategoryTree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
 
@@ -127,7 +128,7 @@ public class ImportService : IImportService
 
             stopwatch.Restart();
 
-            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, syncUser, true, recycleBinNode, productProcessNode);
+            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, true, recycleBinNode, productProcessNode);
 
             _logger.LogInformation("IterateProductTree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
 
@@ -259,15 +260,16 @@ public class ImportService : IImportService
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(data.MediaRootKey);
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
 
         var recycleBinNode = data.RecycleBinKey.HasValue ? _contentService.GetById(data.RecycleBinKey.Value) : null;
         var productProcessNode = data.ProductProcessKey.HasValue ? _contentService.GetById(data.ProductProcessKey.Value) : null;
 
-        IterateCategoryTree(data.Categories, new List<ImportCategory>(), allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser, false);
+        IterateCategoryTree(data.Categories, new List<ImportCategory>(), allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser, false);
 
         if (data.Products != null && data.Products.Any())
         {
-            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, syncUser, true, recycleBinNode, productProcessNode);
+            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, true, recycleBinNode, productProcessNode);
         }
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.CategorySync)).GetAwaiter().GetResult();
@@ -298,8 +300,9 @@ public class ImportService : IImportService
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
 
-        IterateProductTree(new List<ImportProduct> { importProduct }, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, syncUser, false, forceUpdate: forceUpdate);
+        IterateProductTree(new List<ImportProduct> { importProduct }, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, false, forceUpdate: forceUpdate);
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductSync)).GetAwaiter().GetResult();
 
@@ -319,10 +322,11 @@ public class ImportService : IImportService
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
 
         var allEkomNodes = GetAllEkomNodes();
 
-        IterateVariantGroups(new List<ImportVariantGroup> { importVariantGroup }, umbracoRootContent, allEkomNodes, allUmbracoMedia, syncUser);
+        IterateVariantGroups(new List<ImportVariantGroup> { importVariantGroup }, umbracoRootContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser);
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantGroupSync)).GetAwaiter().GetResult();
 
@@ -342,10 +346,11 @@ public class ImportService : IImportService
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
 
         var allEkomNodes = GetAllEkomNodes();
 
-        IterateVariants(new List<ImportVariant> { importVariant }, umbracoRootContent, allEkomNodes, allUmbracoMedia, syncUser, false);
+        IterateVariants(new List<ImportVariant> { importVariant }, umbracoRootContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, false);
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantSync)).GetAwaiter().GetResult();
 
@@ -376,7 +381,7 @@ public class ImportService : IImportService
             throw new ArgumentNullException(nameof(product), $"Product is null. Identifier: {importProduct.Identifier} SKU: {importProduct.SKU} ParentKey: {parentKey}");
         }
 
-        SaveProduct(product, importProduct, allUmbracoCategories, null, false, syncUser, forceUpdate: forceUpdate);
+        SaveProduct(product, importProduct, allUmbracoCategories, null, null, false, syncUser, forceUpdate: forceUpdate);
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductUpdateSync)).GetAwaiter().GetResult();
 
@@ -403,7 +408,7 @@ public class ImportService : IImportService
             throw new ArgumentNullException(nameof(variant), $"Variant is null. Identifier: {importVariant.Identifier} SKU: {importVariant.SKU} ParentKey: {parentKey}");
         }
 
-        SaveVariant(variant, importVariant, null, false, syncUser);
+        SaveVariant(variant, importVariant, null, null, false, syncUser);
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantUpdateSync)).GetAwaiter().GetResult();
 
@@ -430,7 +435,7 @@ public class ImportService : IImportService
             throw new ArgumentNullException(nameof(category), $"Category is null. Identifier: {importCategory.Identifier} SKU: {importCategory.SKU} ParentKey: {parentKey}");
         }
 
-        SaveCategory(category, importCategory, null, false, syncUser);
+        SaveCategory(category, importCategory, null, null, false, syncUser);
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantUpdateSync)).GetAwaiter().GetResult();
 
@@ -454,7 +459,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        ImportSingleMedia(umbracoProduct, medias, allUmbracoMedia, mediaType, mediaContentType, true, syncUser);
+        ImportSingleMedia(umbracoProduct, medias, allUmbracoMedia, new ImportMediaIndex(allUmbracoMedia), mediaType, mediaContentType, true, syncUser);
     }
     public void SyncVariantMedia(string identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, int syncUser = -1)
     {
@@ -474,7 +479,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        ImportSingleMedia(umbracoVariant, medias, allUmbracoMedia, mediaType, mediaContentType, true, syncUser);
+        ImportSingleMedia(umbracoVariant, medias, allUmbracoMedia, new ImportMediaIndex(allUmbracoMedia), mediaType, mediaContentType, true, syncUser);
     }
     private void MoveCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, IContent? parentContent, int syncUser)
     {
@@ -521,7 +526,7 @@ public class ImportService : IImportService
             MoveCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, content, syncUser);
         }
     }
-    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, int syncUser, bool delete = true)
+    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, IContent? parentContent, int syncUser, bool delete = true)
     {
 
         if (parentContent == null || importCategories == null || allImportCategories == null)
@@ -599,14 +604,14 @@ public class ImportService : IImportService
 
             var save = create;
 
-            SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
+            SaveCategory(content, importCategory, allUmbracoMedia, mediaIndex, create, syncUser);
 
 
-            IterateCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser, delete: delete);
+            IterateCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, content, syncUser, delete: delete);
         }
     }
 
-    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true, IContent? recycleBinNode = null, IContent? productProcessNode = null, bool forceUpdate = false)
+    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, bool delete = true, IContent? recycleBinNode = null, IContent? productProcessNode = null, bool forceUpdate = false)
     {
         ArgumentNullException.ThrowIfNull(categoryContentType);
         ArgumentNullException.ThrowIfNull(productContentType);
@@ -617,6 +622,10 @@ public class ImportService : IImportService
 
         if (importProducts != null && importProducts.Count > 0)
         {
+            var umbracoCategoriesById = allUmbracoCategories.ToDictionary(x => x.Id);
+            var umbracoCategoriesByIdentifier = BuildContentByIdentifier(allUmbracoCategories);
+            var umbracoProductsByParentId = BuildChildrenByParentId(allUmbracoProducts);
+            var ekomNodesByParentId = BuildChildrenByParentId(allEkomNodes);
 
             if (delete)
             {
@@ -634,11 +643,6 @@ public class ImportService : IImportService
                         _logger.LogWarning("Duplicate identifier '{Identifier}' found in importProducts, skipping duplicate", product.Identifier);
                     }
                 }
-
-                var umbracoCategoriesById = allUmbracoCategories.ToDictionary(x => x.Id);
-                var umbracoCategoriesByIdentifier = allUmbracoCategories
-                    .Where(x => x.HasProperty(Configuration.ImportAliasIdentifier) && !string.IsNullOrEmpty(x.GetValue<string>(Configuration.ImportAliasIdentifier)))
-                    .ToDictionary(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "", x => x);
 
                 for (int i = allUmbracoProducts.Count - 1; i >= 0; i--)
                 {
@@ -691,6 +695,8 @@ public class ImportService : IImportService
 
                         if (umbracoCategoriesByIdentifier.TryGetValue(newCategoryIdentifier, out var newCategory))
                         {
+                            var oldParentId = umbracoProduct.ParentId;
+
                             _logger.LogInformation(
                                 $"Product {(isInRecycleBin ? "restored" : "moved")}. " +
                                 $"Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} " +
@@ -698,6 +704,8 @@ public class ImportService : IImportService
                                 $"New Parent Category Identifier: {newCategoryIdentifier}");
 
                             _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
+                            MoveIndexedContent(umbracoProductsByParentId, umbracoProduct, oldParentId, newCategory.Id);
+                            MoveIndexedContent(ekomNodesByParentId, umbracoProduct, oldParentId, newCategory.Id);
 
                             if (isInRecycleBin)
                                 _contentService.SaveAndPublish(umbracoProduct, userId: syncUser);
@@ -713,7 +721,10 @@ public class ImportService : IImportService
                                     $"New Parent Category Identifier: {newCategoryIdentifier}");
 
                                 _contentService.Unpublish(umbracoProduct, userId: syncUser);
+                                var oldParentId = umbracoProduct.ParentId;
                                 _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
+                                MoveIndexedContent(umbracoProductsByParentId, umbracoProduct, oldParentId, recycleBinNode.Id);
+                                MoveIndexedContent(ekomNodesByParentId, umbracoProduct, oldParentId, recycleBinNode.Id);
                             }
                             else
                             {
@@ -743,9 +754,7 @@ public class ImportService : IImportService
 
                     foreach (var categoryIdentifier in importProduct.Categories)
                     {
-                        var primaryCategory = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == categoryIdentifier);
-
-                        if (primaryCategory != null)
+                        if (umbracoCategoriesByIdentifier.TryGetValue(categoryIdentifier, out var primaryCategory))
                         {
                             primaryCategoryContent = primaryCategory;
                             break;
@@ -755,7 +764,7 @@ public class ImportService : IImportService
 
                     if (primaryCategoryContent != null)
                     {
-                        var umbracoChildrenContent = allUmbracoProducts.Where(x => x.ParentId == primaryCategoryContent.Id).ToList();
+                        var umbracoChildrenContent = GetIndexedChildren(umbracoProductsByParentId, primaryCategoryContent.Id);
 
                         var productContent = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, syncUser, out bool create);
 
@@ -767,13 +776,16 @@ public class ImportService : IImportService
                         if (create)
                         {
                             allUmbracoProducts.Add(productContent);
+                            umbracoChildrenContent.Add(productContent);
+                            allEkomNodes.Add(productContent);
+                            GetIndexedChildren(ekomNodesByParentId, primaryCategoryContent.Id).Add(productContent);
                         }
 
                         var save = create;
 
-                        SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser, recycleBinNode, productProcessNode, forceUpdate);
+                        SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, mediaIndex, create, syncUser, recycleBinNode, productProcessNode, forceUpdate);
 
-                        IterateVariantGroups(importProduct.VariantGroups, productContent, allEkomNodes, allUmbracoMedia, syncUser, forceUpdate: forceUpdate);
+                        IterateVariantGroups(importProduct.VariantGroups, productContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, ekomNodesByParentId, forceUpdate: forceUpdate);
                     }
                     else
                     {
@@ -790,9 +802,10 @@ public class ImportService : IImportService
 
     }
 
-    private void IterateVariantGroups(List<ImportVariantGroup> importVariantGroups, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser, bool forceUpdate = false)
+    private void IterateVariantGroups(List<ImportVariantGroup> importVariantGroups, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, Dictionary<int, List<IContent>>? ekomNodesByParentId = null, bool forceUpdate = false)
     {
-        var umbracoVariantGroupChildrenContent = allEkomNodes.Where(x => x.ParentId == productContent.Id).ToList();
+        ekomNodesByParentId ??= BuildChildrenByParentId(allEkomNodes);
+        var umbracoVariantGroupChildrenContent = GetIndexedChildren(ekomNodesByParentId, productContent.Id);
 
         // Delete Variant Groups
 
@@ -811,7 +824,7 @@ public class ImportService : IImportService
 
                 _contentService.Delete(umbracoVariantGroup);
                 
-                allEkomNodes.RemoveAt(i);
+                allEkomNodes.Remove(umbracoVariantGroup);
                 umbracoVariantGroupChildrenContent.RemoveAt(i);
                 variantGroupDeleted++;
             }
@@ -829,13 +842,19 @@ public class ImportService : IImportService
 
             var save = create;
 
-            SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, create, syncUser, forceUpdate: forceUpdate);
+            if (create)
+            {
+                allEkomNodes.Add(variantGroupContent);
+                umbracoVariantGroupChildrenContent.Add(variantGroupContent);
+            }
 
-            IterateVariants(importVariantGroup.Variants, variantGroupContent, allEkomNodes, allUmbracoMedia, syncUser, forceUpdate: forceUpdate);
+            SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, mediaIndex, create, syncUser, forceUpdate: forceUpdate);
+
+            IterateVariants(importVariantGroup.Variants, variantGroupContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, ekomNodesByParentId: ekomNodesByParentId, forceUpdate: forceUpdate);
         }
     }
 
-    private void IterateVariants(List<ImportVariant> importVariants, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true, bool forceUpdate = false)
+    private void IterateVariants(List<ImportVariant> importVariants, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, bool delete = true, Dictionary<int, List<IContent>>? ekomNodesByParentId = null, bool forceUpdate = false)
     {
         if (variantGroupContent == null || variantGroupContent.Id == 0)
         {
@@ -843,7 +862,8 @@ public class ImportService : IImportService
             return;
         }
 
-        var umbracoVariantsChildrenContent = allEkomNodes.Where(x => x.ParentId == variantGroupContent.Id).ToList();
+        ekomNodesByParentId ??= BuildChildrenByParentId(allEkomNodes);
+        var umbracoVariantsChildrenContent = GetIndexedChildren(ekomNodesByParentId, variantGroupContent.Id);
 
         if (delete)
         {
@@ -864,7 +884,7 @@ public class ImportService : IImportService
 
                     _contentService.Delete(umbracoVariant);
   
-                    allEkomNodes.RemoveAt(i);
+                    allEkomNodes.Remove(umbracoVariant);
                     umbracoVariantsChildrenContent.RemoveAt(i);
                     variantDeleted++;
                 }
@@ -884,11 +904,17 @@ public class ImportService : IImportService
 
             var save = create;
 
-            SaveVariant(variantContent, importVariant, allUmbracoMedia, create, syncUser, forceUpdate: forceUpdate);
+            if (create)
+            {
+                allEkomNodes.Add(variantContent);
+                umbracoVariantsChildrenContent.Add(variantContent);
+            }
+
+            SaveVariant(variantContent, importVariant, allUmbracoMedia, mediaIndex, create, syncUser, forceUpdate: forceUpdate);
         }
     }
 
-    private void SaveCategory(IContent categoryContent, ImportCategory importCategory, List<IMedia>? allUmbracoMedia, bool create, int syncUser)
+    private void SaveCategory(IContent categoryContent, ImportCategory importCategory, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, bool create, int syncUser)
     {
         try
         {
@@ -896,7 +922,7 @@ public class ImportService : IImportService
 
             OnCategorySaveStarting(this, args).GetAwaiter().GetResult();
 
-            var saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(categoryContent, importCategory.Images, allUmbracoMedia, preserveExistingValues: importCategory.PreserveExistingValues);
+            var saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(categoryContent, importCategory.Images, allUmbracoMedia, mediaIndex, preserveExistingValues: importCategory.PreserveExistingValues);
 
             var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Images", "Products", "EventProperties" });
 
@@ -957,7 +983,7 @@ public class ImportService : IImportService
         }
 
     }
-    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, bool create, int syncUser, IContent? recycleBinNode = null, IContent? productProcessNode = null, bool forceUpdate = false)
+    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, bool create, int syncUser, IContent? recycleBinNode = null, IContent? productProcessNode = null, bool forceUpdate = false)
     {
         try
         {
@@ -996,12 +1022,12 @@ public class ImportService : IImportService
             {
                 if (!args.ImagesHaveNoChanges)
                 {
-                    saveImages = ImportMedia(productContent, importProduct.Images, allUmbracoMedia, preserveExistingValues: importProduct.PreserveExistingValues);
+                    saveImages = ImportMedia(productContent, importProduct.Images, allUmbracoMedia, mediaIndex, preserveExistingValues: importProduct.PreserveExistingValues);
                 }
 
                 if (!args.FilesHaveNoChanges)
                 {
-                    saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files, preserveExistingValues: importProduct.PreserveExistingValues);
+                    saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, mediaIndex, ImportMediaTypes.File, ImportMediaContentTypes.files, preserveExistingValues: importProduct.PreserveExistingValues);
                 }
             }
 
@@ -1104,9 +1130,9 @@ public class ImportService : IImportService
             productsSaved.Add(importProduct);
         }
     }
-    private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser, bool forceUpdate = false)
+    private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, bool create, int syncUser, bool forceUpdate = false)
     {
-        var saveImages = ImportMedia(variantGroupContent, importVariantGroup.Images, allUmbracoMedia, preserveExistingValues: importVariantGroup.PreserveExistingValues);
+        var saveImages = ImportMedia(variantGroupContent, importVariantGroup.Images, allUmbracoMedia, mediaIndex, preserveExistingValues: importVariantGroup.PreserveExistingValues);
 
         var compareValue = importVariantGroup.Comparer ?? ComputeSha256Hash(importVariantGroup, new string[] { "Variants", "Images", "EventProperties" });
 
@@ -1141,7 +1167,7 @@ public class ImportService : IImportService
 
         variantGroupsSaved.Add(importVariantGroup);
     }
-    private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, bool create, int syncUser, bool forceUpdate = false)
+    private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, bool create, int syncUser, bool forceUpdate = false)
     {
         var args = new ImportVariantEventArgs(variantContent, importVariant, create, false, false);
 
@@ -1177,9 +1203,9 @@ public class ImportService : IImportService
 
         if (allUmbracoMedia != null)
         {
-            saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Images, allUmbracoMedia, preserveExistingValues: importVariant.PreserveExistingValues);
+            saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Images, allUmbracoMedia, mediaIndex, preserveExistingValues: importVariant.PreserveExistingValues);
 
-            saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files, preserveExistingValues: importVariant.PreserveExistingValues);
+            saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, mediaIndex, ImportMediaTypes.File, ImportMediaContentTypes.files, preserveExistingValues: importVariant.PreserveExistingValues);
         }
 
         var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files", "Stock" });
@@ -1239,12 +1265,14 @@ public class ImportService : IImportService
         
     }
 
-    private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1, bool preserveExistingValues = false)
+    private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1, bool preserveExistingValues = false)
     {
         if (allUmbracoMedia == null)
         {
             return false;
         }
+
+        mediaIndex ??= new ImportMediaIndex(allUmbracoMedia);
 
         var currentImages = (content.GetValue<string>(contentTypeAlias.ToString()) ?? "").TrimStart(',');
 
@@ -1298,11 +1326,7 @@ public class ImportService : IImportService
             {
                 var compareValue = externalUrlMedia.Comparer ?? ComputeSha256Hash(externalUrlMedia, new string[] { "Action", "SortOrder" });
 
-                var umbMedia = allUmbracoMedia.FirstOrDefault(x =>
-                    x.ContentType.Alias == mediaType.ToString() &&
-                    x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(externalUrlMedia.Identifier)
-                        ? x.GetValue<string>("ekmIdentifier") == externalUrlMedia.Identifier
-                        : x.GetValue<string>("comparer") == compareValue);
+                var umbMedia = mediaIndex.FindByIdentifierOrComparer(mediaType, externalUrlMedia.Identifier, compareValue);
 
                 if (media.Action == ImportMediaAction.Add)
                 {
@@ -1314,6 +1338,7 @@ public class ImportService : IImportService
                         if (umbMedia != null)
                         {
                             allUmbracoMedia.Add(umbMedia);
+                            mediaIndex.Add(umbMedia);
                             AddUdiIfNotExist(newImages, umbMedia.GetUdi().ToString());
                         }
 
@@ -1321,7 +1346,7 @@ public class ImportService : IImportService
                     {   // Update
 
 
-                        umbMedia = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
+                        umbMedia = mediaIndex.FindByComparer(mediaType, compareValue);
 
                         // If the media is not found by comparer we need to create a new media
                         if (umbMedia == null)
@@ -1331,6 +1356,7 @@ public class ImportService : IImportService
                             if (umbMedia != null)
                             {
                                 allUmbracoMedia.Add(umbMedia);
+                                mediaIndex.Add(umbMedia);
                                 AddUdiIfNotExist(newImages, umbMedia.GetUdi().ToString());
                             }
 
@@ -1356,12 +1382,13 @@ public class ImportService : IImportService
             {
                 var compareValue = bytesMedia.Comparer ?? ComputeSha256Hash(bytesMedia, new string[] { "Bytes", "SortOrder" });
 
-                var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(bytesMedia.Identifier) ? x.GetValue<string>("ekmIdentifier") == bytesMedia.Identifier : x.GetValue<string>("comparer") == compareValue);
+                var umbMedia = mediaIndex.FindByIdentifierOrComparer(mediaType, bytesMedia.Identifier, compareValue);
 
                 if (umbMedia == null)
                 {
                     umbMedia = _importMediaService.ImportMediaFromBytes(bytesMedia, compareValue, mediaType, bytesMedia.Identifier, syncUser);
                     allUmbracoMedia.Add(umbMedia);
+                    mediaIndex.Add(umbMedia);
                 }
 
                 AddUdiIfNotExist(newImages, umbMedia.GetUdi().ToString());
@@ -1370,12 +1397,13 @@ public class ImportService : IImportService
             {
                 var compareValue = base64Media.Comparer ?? ComputeSha256Hash(base64Media, new string[] { "Base64", "SortOrder" });
 
-                var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(base64Media.Identifier) ? x.GetValue<string>("ekmIdentifier") == base64Media.Identifier : x.GetValue<string>("comparer") == compareValue);
+                var umbMedia = mediaIndex.FindByIdentifierOrComparer(mediaType, base64Media.Identifier, compareValue);
 
                 if (umbMedia == null)
                 {
                     umbMedia = _importMediaService.ImportMediaFromBase64(base64Media, compareValue, mediaType, base64Media.Identifier, syncUser);
                     allUmbracoMedia.Add(umbMedia);
+                    mediaIndex.Add(umbMedia);
                 }
 
                 AddUdiIfNotExist(newImages, umbMedia.GetUdi().ToString());
@@ -1387,7 +1415,7 @@ public class ImportService : IImportService
             return false;
         }
 
-        var importedImages = SortImages(newImages.DistinctBy(x => x).ToList(), allUmbracoMedia);
+        var importedImages = SortImages(newImages.DistinctBy(x => x).ToList(), allUmbracoMedia, mediaIndex);
 
         if (currentImages != importedImages)
         {
@@ -1410,13 +1438,15 @@ public class ImportService : IImportService
         }
         return false;
     }
-    private bool ImportSingleMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1)
+    private bool ImportSingleMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1)
     {
 
         if (allUmbracoMedia == null)
         {
             return false;
         }
+
+        mediaIndex ??= new ImportMediaIndex(allUmbracoMedia);
 
         var currentImages = (content.GetValue<string>(contentTypeAlias.ToString()) ?? "").TrimStart(',');
 
@@ -1471,11 +1501,7 @@ public class ImportService : IImportService
             {
                 var compareValue = externalUrlMedia.Comparer ?? ComputeSha256Hash(externalUrlMedia, new string[] { "Action", "SortOrder" });
 
-                var umbMedia = allUmbracoMedia.FirstOrDefault(x =>
-                    x.ContentType.Alias == mediaType.ToString() &&
-                    x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(externalUrlMedia.Identifier)
-                        ? x.GetValue<string>("ekmIdentifier") == externalUrlMedia.Identifier
-                        : x.GetValue<string>("comparer") == compareValue);
+                var umbMedia = mediaIndex.FindByIdentifierOrComparer(mediaType, externalUrlMedia.Identifier, compareValue);
 
                 if (media.Action == ImportMediaAction.Add)
                 {
@@ -1487,6 +1513,7 @@ public class ImportService : IImportService
                         if (umbMedia != null)
                         {
                             allUmbracoMedia.Add(umbMedia);
+                            mediaIndex.Add(umbMedia);
                             AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
                         }
 
@@ -1497,7 +1524,7 @@ public class ImportService : IImportService
                         // Remove media
                         RemoveUdiIfExist(currentImagesUdi, umbMedia.GetUdi().ToString());
 
-                        umbMedia = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
+                        umbMedia = mediaIndex.FindByComparer(mediaType, compareValue);
 
                         // If the media is not found by comparer we need to create a new media
                         if (umbMedia == null)
@@ -1507,6 +1534,7 @@ public class ImportService : IImportService
                             if (umbMedia != null)
                             {
                                 allUmbracoMedia.Add(umbMedia);
+                                mediaIndex.Add(umbMedia);
                                 AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
                             }
 
@@ -1535,12 +1563,13 @@ public class ImportService : IImportService
             {
                 var compareValue = bytesMedia.Comparer ?? ComputeSha256Hash(bytesMedia, new string[] { "Bytes" });
 
-                var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(bytesMedia.Identifier) ? x.GetValue<string>("ekmIdentifier") == bytesMedia.Identifier : x.GetValue<string>("comparer") == compareValue);
+                var umbMedia = mediaIndex.FindByIdentifierOrComparer(mediaType, bytesMedia.Identifier, compareValue);
 
                 if (umbMedia == null)
                 {
                     umbMedia = _importMediaService.ImportMediaFromBytes(bytesMedia, compareValue, mediaType, bytesMedia.Identifier, syncUser);
                     allUmbracoMedia.Add(umbMedia);
+                    mediaIndex.Add(umbMedia);
                 }
 
                 AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
@@ -1549,12 +1578,13 @@ public class ImportService : IImportService
             {
                 var compareValue = base64Media.Comparer ?? ComputeSha256Hash(base64Media, new string[] { "Base64" });
 
-                var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(base64Media.Identifier) ? x.GetValue<string>("ekmIdentifier") == base64Media.Identifier : x.GetValue<string>("comparer") == compareValue);
+                var umbMedia = mediaIndex.FindByIdentifierOrComparer(mediaType, base64Media.Identifier, compareValue);
 
                 if (umbMedia == null)
                 {
                     umbMedia = _importMediaService.ImportMediaFromBase64(base64Media, compareValue, mediaType, base64Media.Identifier, syncUser);
                     allUmbracoMedia.Add(umbMedia);
+                    mediaIndex.Add(umbMedia);
                 }
 
                 AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
@@ -1566,7 +1596,7 @@ public class ImportService : IImportService
             return false;
         }
 
-        var importedImages = SortImages(currentImagesUdi.DistinctBy(x => x).ToList(), allUmbracoMedia);
+        var importedImages = SortImages(currentImagesUdi.DistinctBy(x => x).ToList(), allUmbracoMedia, mediaIndex);
 
         if (currentImages != importedImages)
         {
@@ -1590,19 +1620,24 @@ public class ImportService : IImportService
         }
         return false;
     }
-    private string SortImages(List<string> imagesUdi, List<IMedia> allUmbracoMedia)
+    private string SortImages(List<string> imagesUdi, List<IMedia> allUmbracoMedia, ImportMediaIndex? mediaIndex = null)
     {
-        // Convert allUmbracoMedia to a dictionary for fast lookup
-        var mediaDictionary = allUmbracoMedia.ToDictionary(
-            media => "umb://media/" + media.Key.ToString().Replace("-", "", StringComparison.InvariantCultureIgnoreCase)
-        );
+        Dictionary<string, IMedia>? mediaDictionary = null;
+        if (mediaIndex == null)
+        {
+            // Convert allUmbracoMedia to a dictionary for fast lookup
+            mediaDictionary = allUmbracoMedia.ToDictionary(
+                media => "umb://media/" + media.Key.ToString().Replace("-", "", StringComparison.InvariantCultureIgnoreCase)
+            );
+        }
 
         var images = new List<(IMedia Media, int SortOrder)>();
 
         // Populate images list with media and sort order
         foreach (var imageUdi in imagesUdi)
         {
-            if (mediaDictionary.TryGetValue(imageUdi, out var imageNode))
+            var imageNode = mediaIndex?.FindByUdi(imageUdi);
+            if (imageNode != null || mediaDictionary?.TryGetValue(imageUdi, out imageNode) == true)
             {
                 int sortOrder = imageNode.HasProperty("ekmSortOrder") &&
                                 int.TryParse(imageNode.GetValue<string>("ekmSortOrder"), out var parsedOrder)
@@ -1746,6 +1781,58 @@ public class ImportService : IImportService
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
     }
 
+    private static Dictionary<string, IContent> BuildContentByIdentifier(IEnumerable<IContent> contents)
+    {
+        var indexed = new Dictionary<string, IContent>();
+
+        foreach (var content in contents)
+        {
+            if (!content.HasProperty(Configuration.ImportAliasIdentifier))
+                continue;
+
+            var identifier = content.GetValue<string>(Configuration.ImportAliasIdentifier);
+            if (string.IsNullOrEmpty(identifier))
+                continue;
+
+            indexed.TryAdd(identifier, content);
+        }
+
+        return indexed;
+    }
+
+    private static Dictionary<int, List<IContent>> BuildChildrenByParentId(IEnumerable<IContent> contents)
+    {
+        var indexed = new Dictionary<int, List<IContent>>();
+
+        foreach (var content in contents)
+        {
+            GetIndexedChildren(indexed, content.ParentId).Add(content);
+        }
+
+        return indexed;
+    }
+
+    private static List<IContent> GetIndexedChildren(Dictionary<int, List<IContent>> indexed, int parentId)
+    {
+        if (!indexed.TryGetValue(parentId, out var children))
+        {
+            children = new List<IContent>();
+            indexed[parentId] = children;
+        }
+
+        return children;
+    }
+
+    private static void MoveIndexedContent(Dictionary<int, List<IContent>> indexed, IContent content, int oldParentId, int newParentId)
+    {
+        if (indexed.TryGetValue(oldParentId, out var oldChildren))
+        {
+            oldChildren.Remove(content);
+        }
+
+        GetIndexedChildren(indexed, newParentId).Add(content);
+    }
+
     /// <summary>
     /// Gets an existing content item from a list of Umbraco content by its identifier or creates a new one if it doesn't exist.
     /// </summary>
@@ -1859,11 +1946,14 @@ public class ImportService : IImportService
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
         var all = new List<IContent>(capacity: pageSize * 2);
+        if (!umbracoRootContent.Trashed && !umbracoRootContent.GetValue<bool>("ekmDisableSync"))
+            all.Add(umbracoRootContent);
 
         var filter = new Query<IContent>(_scopeProvider.SqlContext)
             .Where(x => !x.Trashed);
 
         long pageIndex = 0;
+        long descendantCount = 0;
 
         while (true)
         {
@@ -1878,15 +1968,81 @@ public class ImportService : IImportService
             if (list.Count == 0)
                 break;
 
+            descendantCount += list.Count;
             all.AddRange(list.Where(x => !x.GetValue<bool>("ekmDisableSync")));
 
-            if (all.Count >= totalRecords)
+            if (descendantCount >= totalRecords)
                 break;
 
             pageIndex++;
         }
 
         return all;
+    }
+
+    private sealed class ImportMediaIndex
+    {
+        private readonly Dictionary<(string MediaType, string Identifier), IMedia> _mediaByIdentifier = new();
+        private readonly Dictionary<(string MediaType, string Comparer), IMedia> _mediaByComparer = new();
+        private readonly Dictionary<string, IMedia> _mediaByUdi = new();
+
+        public ImportMediaIndex(IEnumerable<IMedia> mediaItems)
+        {
+            foreach (var media in mediaItems)
+            {
+                Add(media);
+            }
+        }
+
+        public void Add(IMedia media)
+        {
+            var mediaType = media.ContentType.Alias;
+            _mediaByUdi.TryAdd(media.GetUdi().ToString(), media);
+
+            if (media.HasProperty("ekmIdentifier"))
+            {
+                var identifier = media.GetValue<string>("ekmIdentifier");
+                if (!string.IsNullOrEmpty(identifier))
+                {
+                    _mediaByIdentifier.TryAdd((mediaType, identifier), media);
+                }
+            }
+
+            if (media.HasProperty("comparer"))
+            {
+                var comparer = media.GetValue<string>("comparer");
+                if (!string.IsNullOrEmpty(comparer))
+                {
+                    _mediaByComparer.TryAdd((mediaType, comparer), media);
+                }
+            }
+        }
+
+        public IMedia? FindByIdentifierOrComparer(ImportMediaTypes mediaType, string? identifier, string comparer)
+        {
+            var mediaTypeAlias = mediaType.ToString();
+
+            if (!string.IsNullOrEmpty(identifier) && _mediaByIdentifier.TryGetValue((mediaTypeAlias, identifier), out var mediaByIdentifier))
+            {
+                return mediaByIdentifier;
+            }
+
+            return FindByComparer(mediaType, comparer);
+        }
+
+        public IMedia? FindByComparer(ImportMediaTypes mediaType, string comparer)
+        {
+            return _mediaByComparer.TryGetValue((mediaType.ToString(), comparer), out var media)
+                ? media
+                : null;
+        }
+
+        public IMedia? FindByUdi(string udi)
+        {
+            return _mediaByUdi.TryGetValue(udi, out var media)
+                ? media
+                : null;
+        }
     }
 
     public class MediaObject

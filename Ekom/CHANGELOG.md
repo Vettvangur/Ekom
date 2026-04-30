@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.132](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.131...Ekom-v0.2.132) (2026-04-28)
+
+
+### Features
+
+* **coupons:** add discount calculation and coupon tools ([#515](https://github.com/Vettvangur/Ekom/issues/515)) ([db114df](https://github.com/Vettvangur/Ekom/commit/db114dfcb7e962f37911210a28b880dad81d4105))
+
+## [0.2.131](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.130...Ekom-v0.2.131) (2026-04-28)
+
+
+### Bug Fixes
+
+* restore order updates and sample variants ([#513](https://github.com/Vettvangur/Ekom/issues/513)) ([fd1fe1d](https://github.com/Vettvangur/Ekom/commit/fd1fe1da75a05ed94dde1b45f0a0359787eec00e))
+
+## [0.2.130](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.129...Ekom-v0.2.130) (2026-04-27)
+
+
+### Bug Fixes
+
+* **import:** improve category import performance ([#511](https://github.com/Vettvangur/Ekom/issues/511)) ([caa5f2c](https://github.com/Vettvangur/Ekom/commit/caa5f2c8f5a9725e1067ce2065028b88f54f9b87))
+
 ## [0.2.129](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.128...Ekom-v0.2.129) (2026-04-27)
 
 
