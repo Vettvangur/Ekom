@@ -7,6 +7,9 @@ public sealed class AlgoliaCategoryRecord
     [JsonPropertyName("objectID")]
     public required string ObjectId { get; init; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? NodeName { get; init; }
+
     public required string Title { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

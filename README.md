@@ -125,6 +125,59 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `OrderDiscountCalculation:ApiKey` (string, required to enable): `POST /ekom/order-discounts/calculate` requires this value in the `X-Ekom-Api-Key` header. When missing or empty, the endpoint always returns unauthorized.
 - `Payments` (object): Provider-specific configuration used by payment providers.
 
+### Catalog search overrides
+
+Ekom resolves catalog search through `ICatalogSearchService`. The default Umbraco implementation is `CatalogSearchService`, registered as scoped by `AddEkom(...)`.
+
+`ICatalogSearchService` is async-only and exposes three override points:
+
+- `ProductQueryAsync(...)`: product search used by product listings and `Catalog.ProductSearchAsync(...)`. Override this when an external product search provider should return matching Ekom product IDs.
+- `PublicQueryAsync(...)`: public-facing search returning `SearchResultEntity` records. Override this for autocomplete, site search, or mixed product/category result cards.
+- `InternalQueryAsync(...)`: backoffice/internal search, including the Umbraco searchable tree. Override this when internal CMS search should use a custom provider/index.
+
+To replace search completely, register your implementation after `AddEkom(...)`:
+
+```csharp
+services.AddEkom(configuration);
+services.AddScoped<ICatalogSearchService, CustomCatalogSearchService>();
+```
+
+Example implementation:
+
+```csharp
+using Ekom.Models;
+using Ekom.Services;
+
+public sealed class CustomCatalogSearchService : ICatalogSearchService
+{
+    public async Task<(IEnumerable<int> Ids, long Total)> ProductQueryAsync(
+        SearchRequest req,
+        CancellationToken ct = default)
+    {
+        var ids = await SearchProductsInExternalIndexAsync(req, ct);
+        return (ids, ids.Count());
+    }
+
+    public async Task<(IEnumerable<SearchResultEntity> Results, long Total)> PublicQueryAsync(
+        SearchRequest req,
+        CancellationToken ct = default)
+    {
+        var results = await SearchPublicContentAsync(req, ct);
+        return (results, results.Count());
+    }
+
+    public async Task<(IEnumerable<SearchResultEntity> Results, long Total)> InternalQueryAsync(
+        SearchRequest req,
+        CancellationToken ct = default)
+    {
+        var results = await SearchBackofficeContentAsync(req, ct);
+        return (results, results.Count());
+    }
+}
+```
+
+If you only need to customize part of the default Examine behavior, inherit from `CatalogSearchService` and override the relevant async method. Register the derived type for `ICatalogSearchService` after `AddEkom(...)`.
+
 ### Order discount calculation API
 
 Use the order discount calculation API to quote an order-level coupon discount without creating or loading an order. The public API accepts a coupon code only; Ekom resolves the linked discount internally.

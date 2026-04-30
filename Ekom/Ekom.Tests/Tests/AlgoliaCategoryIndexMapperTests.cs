@@ -13,13 +13,15 @@ public class AlgoliaCategoryIndexMapperTests
         var mapper = CreateMapper();
         var category = CreateCategory(
             title: "Chocolate",
+            nodeName: "Chocolate Node",
             slug: "chocolate",
             ancestors: [CreateCategory("Candy")]);
 
         var record = mapper.Map(category.Object, CreateStore("en-US"), "categories");
 
         Assert.NotNull(record);
-        Assert.Equal("Chocolate", record!.Title);
+        Assert.Equal("Chocolate Node", record!.NodeName);
+        Assert.Equal("Chocolate", record.Title);
         Assert.Equal("chocolate", record.Slug);
         Assert.Equal("/candy/chocolate", record.Url);
         Assert.Equal("Candy", record.Data["hierarchical_categories.lvl0"]);
@@ -33,12 +35,14 @@ public class AlgoliaCategoryIndexMapperTests
         var mapper = CreateMapper();
         var category = CreateCategory(
             title: "Chocolate",
+            nodeName: "Chocolate Node",
             localizedTitle: "Súkkulaði");
 
         var record = mapper.Map(category.Object, CreateStore("is-IS"), "categories");
 
         Assert.NotNull(record);
-        Assert.Equal("Súkkulaði", record!.Title);
+        Assert.Equal("Chocolate Node", record!.NodeName);
+        Assert.Equal("Súkkulaði", record.Title);
         Assert.Equal("Súkkulaði", record.Data["category_path"]);
     }
 
@@ -53,6 +57,7 @@ public class AlgoliaCategoryIndexMapperTests
 
     private static Mock<Ekom.Models.ICategory> CreateCategory(
         string title,
+        string? nodeName = null,
         string slug = "slug",
         string? localizedTitle = null,
         IReadOnlyList<Mock<Ekom.Models.ICategory>>? ancestors = null)
@@ -60,6 +65,10 @@ public class AlgoliaCategoryIndexMapperTests
         var category = new Mock<Ekom.Models.ICategory>();
         category.SetupGet(x => x.Key).Returns(Guid.NewGuid());
         category.SetupGet(x => x.Title).Returns(title);
+        category.SetupGet(x => x.Properties).Returns(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["nodeName"] = nodeName ?? title
+        });
         category.SetupGet(x => x.Slug).Returns(slug);
         category.SetupGet(x => x.Url).Returns($"/{slug}");
         category.SetupGet(x => x.Urls).Returns([$"/{slug}"]);
@@ -80,6 +89,7 @@ public class AlgoliaCategoryIndexMapperTests
         category.SetupGet(x => x.CreateDate).Returns(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc));
         category.SetupGet(x => x.UpdateDate).Returns(new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc));
         category.SetupGet(x => x.Ancestors).Returns((ancestors ?? []).Select(x => x.Object));
+        category.Setup(x => x.GetValue("nodeName", It.IsAny<string?>(), It.IsAny<bool>())).Returns(nodeName ?? title);
         category.Setup(x => x.GetValue("title", It.IsAny<string?>(), true))
             .Returns((string _, string? locale, bool _) =>
                 string.Equals(locale, "is-IS", StringComparison.OrdinalIgnoreCase) ? localizedTitle ?? string.Empty : string.Empty);
