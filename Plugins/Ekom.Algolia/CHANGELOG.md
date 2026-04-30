@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.22](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.21...Ekom.Algolia-v0.2.22) (2026-04-30)
+
+
+### Bug Fixes
+
+* make catalog search async and improve algolia search ([#517](https://github.com/Vettvangur/Ekom/issues/517)) ([9e7048e](https://github.com/Vettvangur/Ekom/commit/9e7048e755ab931b7100304e98d4cc5842b51e00))
+
 ## [0.2.21](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.20...Ekom.Algolia-v0.2.21) (2026-04-23)
 
 

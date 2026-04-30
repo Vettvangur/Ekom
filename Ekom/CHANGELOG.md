@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.133](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.132...Ekom-v0.2.133) (2026-04-30)
+
+
+### Bug Fixes
+
+* make catalog search async and improve algolia search ([#517](https://github.com/Vettvangur/Ekom/issues/517)) ([9e7048e](https://github.com/Vettvangur/Ekom/commit/9e7048e755ab931b7100304e98d4cc5842b51e00))
+
 ## [0.2.132](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.131...Ekom-v0.2.132) (2026-04-28)
 
 
