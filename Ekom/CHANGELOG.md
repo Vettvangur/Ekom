@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.134](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.133...Ekom-v0.2.134) (2026-04-30)
+
+
+### Features
+
+* **search:** normalize Examine catalog search ([#519](https://github.com/Vettvangur/Ekom/issues/519)) ([f0410c1](https://github.com/Vettvangur/Ekom/commit/f0410c1b9d374c5fd7b9904c6476cdeca757fa75))
+
 ## [0.2.133](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.132...Ekom-v0.2.133) (2026-04-30)
 
 
