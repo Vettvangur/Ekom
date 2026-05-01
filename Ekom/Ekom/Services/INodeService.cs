@@ -12,9 +12,9 @@ public interface INodeService
     UmbracoContent? NodeById(Guid t, bool preview = false);
     UmbracoContent? NodeById(int t, bool preview = false);
     UmbracoContent? NodeById(string t, bool preview = false);
-    UmbracoContent MediaById(Guid t);
-    UmbracoContent MediaById(int t);
-    UmbracoContent MediaById(string t);
+    UmbracoContent? MediaById(Guid t);
+    UmbracoContent? MediaById(int t);
+    UmbracoContent? MediaById(string t);
     string GetUrl(string t, string url = null);
     IEnumerable<UmbracoContent> GetAllCatalogAncestors(UmbracoContent item);
 }

@@ -34,6 +34,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Klaviyo", "Plugins\Eko
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.AspNetCore", "Ekom\Ekom.AspNetCore\Ekom.AspNetCore.csproj", "{595795DF-4BB4-B114-3C46-CF51BDFFE117}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.U17", "Ekom\Ekom.U17\Ekom.U17.csproj", "{76ABCBF4-F824-4C64-8CA1-429B39EFE0DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -74,6 +76,10 @@ Global
 		{595795DF-4BB4-B114-3C46-CF51BDFFE117}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{595795DF-4BB4-B114-3C46-CF51BDFFE117}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{595795DF-4BB4-B114-3C46-CF51BDFFE117}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76ABCBF4-F824-4C64-8CA1-429B39EFE0DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76ABCBF4-F824-4C64-8CA1-429B39EFE0DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76ABCBF4-F824-4C64-8CA1-429B39EFE0DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76ABCBF4-F824-4C64-8CA1-429B39EFE0DD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -88,6 +94,7 @@ Global
 		{19E60BBF-2FDE-4212-A8A2-8866EECD7EF2} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{6A48AF16-80A0-49F3-A75E-11592435419B} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{595795DF-4BB4-B114-3C46-CF51BDFFE117} = {B5C9BAF3-857C-4182-B0E3-E11236D8C6F4}
+		{76ABCBF4-F824-4C64-8CA1-429B39EFE0DD} = {B5C9BAF3-857C-4182-B0E3-E11236D8C6F4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {411ECB7B-B382-43CA-8534-05EA8ED2F48D}

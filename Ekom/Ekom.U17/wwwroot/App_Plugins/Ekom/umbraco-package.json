@@ -1,0 +1,13 @@
+{
+  "$schema": "../../umbraco-package-schema.json",
+  "id": "Ekom.U17",
+  "name": "Ekom",
+  "extensions": [
+    {
+      "type": "bundle",
+      "alias": "Ekom.Bundle",
+      "name": "Ekom Bundle",
+      "js": "/App_Plugins/Ekom/dist/manifests.js"
+    }
+  ]
+}
