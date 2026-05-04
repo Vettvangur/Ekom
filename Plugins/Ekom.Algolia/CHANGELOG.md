@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.23](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.22...Ekom.Algolia-v0.2.23) (2026-05-04)
+
+
+### Features
+
+* **algolia:** add product ranking fields ([#521](https://github.com/Vettvangur/Ekom/issues/521)) ([319ff13](https://github.com/Vettvangur/Ekom/commit/319ff13a5fbd6461130afbdc2556c2da40ed61ef))
+
 ## [0.2.22](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.21...Ekom.Algolia-v0.2.22) (2026-04-30)
 
 
