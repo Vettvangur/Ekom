@@ -81,7 +81,9 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             PriceWithVat = price?.WithVat.Value,
             PriceWithoutVat = price?.WithoutVat.Value,
             Currency = NullIfWhiteSpace(price?.Currency.ISOCurrencySymbol ?? store.Currency),
-            Available = product.Available,
+            Available = product.Available ? 1 : 0,
+            ProductRanking = ResolveRank(product, store.Alias),
+            CategoryRanking = ResolveCategoryRank(product, store.Alias),
             Stock = store.IncludeStock ? product.Stock : null,
             StoreAlias = NullIfWhiteSpace(store.Alias),
             Locale = NullIfWhiteSpace(store.Locale),
@@ -177,6 +179,23 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             return null;
 
         return NormalizePropertyValue(raw, configuredField.ValueType);
+    }
+
+    private static int ResolveCategoryRank(IProduct product, string? storeAlias)
+    {
+        var primaryCategory = product.Categories.FirstOrDefault();
+        return primaryCategory is null ? 0 : ResolveRank(primaryCategory, storeAlias);
+    }
+
+    private static int ResolveRank(INodeEntity node, string? storeAlias)
+    {
+        var raw = node.GetValue("ekmAlgoliaRank", storeAlias);
+        if (string.IsNullOrWhiteSpace(raw))
+            return 0;
+
+        return int.TryParse(raw.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var rank)
+            ? rank
+            : 0;
     }
 
     private static object? ResolveMetafieldValue(IProduct product, string alias, string? locale, AlgoliaFieldValueType valueType)

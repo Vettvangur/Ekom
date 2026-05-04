@@ -43,7 +43,11 @@ public sealed class AlgoliaProductRecord
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Currency { get; init; }
 
-    public bool Available { get; init; }
+    public int Available { get; init; }
+
+    public int ProductRanking { get; init; }
+
+    public int CategoryRanking { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public decimal? Stock { get; init; }
