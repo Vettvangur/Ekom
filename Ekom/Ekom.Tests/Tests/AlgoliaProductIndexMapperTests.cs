@@ -329,14 +329,15 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Fact]
-    public void Maps_Product_And_Primary_Category_Ranking()
+    public void Maps_Product_And_Highest_Category_Ranking()
     {
         var mapper = CreateMapper();
         var product = CreateProduct(
             categories:
             [
                 CreateCategory("Primary", algoliaRank: "5"),
-                CreateCategory("Secondary", algoliaRank: "9")
+                CreateCategory("Secondary", algoliaRank: "9"),
+                CreateCategory("Third", algoliaRank: "2")
             ],
             properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -347,7 +348,29 @@ public class AlgoliaProductIndexMapperTests
 
         Assert.NotNull(record);
         Assert.Equal(12, record!.ProductRanking);
-        Assert.Equal(5, record.CategoryRanking);
+        Assert.Equal(9, record.CategoryRanking);
+    }
+
+    [Fact]
+    public void Allows_Negative_Product_And_Category_Ranking()
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct(
+            categories:
+            [
+                CreateCategory("Primary", algoliaRank: "-10"),
+                CreateCategory("Secondary")
+            ],
+            properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["ekmAlgoliaRank"] = "-4"
+            });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(-4, record!.ProductRanking);
+        Assert.Equal(-10, record.CategoryRanking);
     }
 
     [Fact]
