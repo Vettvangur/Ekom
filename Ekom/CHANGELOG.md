@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.136](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.135...Ekom-v0.2.136) (2026-05-04)
+
+
+### Bug Fixes
+
+* **algolia:** use highest category ranking ([#523](https://github.com/Vettvangur/Ekom/issues/523)) ([760d9d1](https://github.com/Vettvangur/Ekom/commit/760d9d107cd299a3966028e041de02c8b6a7d71e))
+
 ## [0.2.135](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.134...Ekom-v0.2.135) (2026-05-04)
 
 
