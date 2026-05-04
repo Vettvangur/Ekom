@@ -201,7 +201,7 @@ public sealed class ProductSearchController
 - Request and order context decide which culture and currency suffix is used; background indexing falls back to the store's default culture/currency.
 - `Title` is always indexed as a top-level field, and `NodeName` contains the Umbraco node name.
 - `Available` is indexed as `1` for available products and `0` for unavailable products, so it can be used for numeric ranking.
-- Product records always include top-level `ProductRanking` and `CategoryRanking` integer fields. Both default to `0`. `ProductRanking` reads the product `ekmAlgoliaRank` property, and `CategoryRanking` reads `ekmAlgoliaRank` from the product's primary category.
+- Product records always include top-level `ProductRanking` and `CategoryRanking` integer fields. Both support negative values. `ProductRanking` reads the product `ekmAlgoliaRank` property and defaults to `0` when missing or invalid. `CategoryRanking` uses the highest valid `ekmAlgoliaRank` value across the product's categories and defaults to `0` when no category has a valid rank.
 - Variants are not indexed by default.
 - `Indexing.ProductProperties` supports one optional modifier per property: `|array`, `|int`, `|decimal`, `|unix`, or `|unixms`.
 - Metafields can be indexed explicitly with `metafield:<alias>`, for example `metafield:material`, `metafield:color|array`, or `metafield:releaseDate|unix`.
