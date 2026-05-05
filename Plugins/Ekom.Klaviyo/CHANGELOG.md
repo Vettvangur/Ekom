@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.73](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.72...Ekom.Klaviyo-v0.2.73) (2026-05-05)
+
+
+### Features
+
+* **klaviyo:** add generic event service ([#525](https://github.com/Vettvangur/Ekom/issues/525)) ([15ec145](https://github.com/Vettvangur/Ekom/commit/15ec145cb23e46f22d5b29dc278896727173ea46))
+
 ## [0.2.72](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.71...Ekom.Klaviyo-v0.2.72) (2026-04-17)
 
 
