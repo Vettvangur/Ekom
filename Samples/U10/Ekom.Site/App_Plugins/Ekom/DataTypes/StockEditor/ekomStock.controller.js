@@ -1,4 +1,11 @@
-angular.module('umbraco').controller('Ekom.Stock', function ($scope, $routeParams, $http, contentResource, $q) {
+angular.module('umbraco').controller('Ekom.Stock', [
+  '$scope',
+  '$routeParams',
+  '$http',
+  'contentResource',
+  '$q',
+  'Ekom.Resources',
+  function ($scope, $routeParams, $http, contentResource, $q, ekmResources) {
 
   if ($routeParams.section !== 'content') { return; }
 
@@ -13,26 +20,17 @@ angular.module('umbraco').controller('Ekom.Stock', function ($scope, $routeParam
     if ($scope.perStoreStock) {
 
 
-      $http.get(Umbraco.Sys.ServerVariables.ekom.apiEndpoint + 'Stores').then(function (results) {
+      ekmResources.getStoresByNode($routeParams.id).then(function (stores) {
 
-        if (results.data.length > 1) {
-          results.data.forEach(function (store) {
+        stores.forEach(function (store) {
 
-            getStockValue(store.alias).then(function (stockValue) {
-              $scope.stocks.push({
-                storeAlias: store.alias,
-                value: stockValue
-              });
-            })
-          });
-        } else {
-          getStockValue('').then(function (stockValue) {
+          getStockValue(store.alias).then(function (stockValue) {
             $scope.stocks.push({
-              storeAlias: '',
+              storeAlias: store.alias,
               value: stockValue
             });
           })
-        }
+        });
       });
 
     } else {
@@ -97,4 +95,5 @@ angular.module('umbraco').controller('Ekom.Stock', function ($scope, $routeParam
     $scope.model.value = $scope.stocks;
   });
 
-});
+  }
+]);
