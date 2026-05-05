@@ -53,6 +53,7 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddSingleton<IKlaviyoOrdersClient, KlaviyoOrdersClient>();
         services.AddSingleton<IKlaviyoProfilesClient, KlaviyoProfilesClient>();
         services.AddSingleton<IKlaviyoTrackingClient, KlaviyoTrackingClient>();
+        services.AddSingleton<IKlaviyoEventsClient, KlaviyoEventsClient>();
 
         // Dispatchers (singleton hosted services)
         services.AddSingleton<KlaviyoCatalogDispatcher>();
@@ -74,6 +75,7 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddScoped<IKlaviyoOrderService, KlaviyoOrderService>();
         services.AddScoped<IKlaviyoProfilesService, KlaviyoProfilesService>();
         services.AddScoped<IKlaviyoTrackingService, KlaviyoTrackingService>();
+        services.AddScoped<IKlaviyoEventService, KlaviyoEventService>();
 
         // Enrichers
         services.AddSingleton<KlaviyoProductEnrichmentPipeline>();

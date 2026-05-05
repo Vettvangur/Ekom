@@ -193,6 +193,49 @@ If none are set, profiles are not added to a list.
 | `Dispatching` | `object` | Background dispatching settings. |
 
 
+## Generic Events
+
+Use `IKlaviyoEventService` to send project-specific events that are not built into the package. Generic events require a store alias and only depend on the global `Klaviyo:Enabled` setting; they do not require `Tracking:Enabled` to be enabled.
+
+```csharp
+using Ekom.Klaviyo.Models.Events;
+using Ekom.Klaviyo.Services;
+
+public sealed class AccountEmails
+{
+    private readonly IKlaviyoEventService _events;
+
+    public AccountEmails(IKlaviyoEventService events)
+    {
+        _events = events;
+    }
+
+    public Task VerifyEmailAsync(
+        string storeAlias,
+        string email,
+        string name,
+        string tokenUrl,
+        CancellationToken ct)
+        => _events.SendEventAsync(
+            storeAlias,
+            "Verify Email Requested",
+            new { activate_url = tokenUrl },
+            new KlaviyoEventProfile
+            {
+                Email = email,
+                FirstName = name
+            },
+            ct: ct);
+}
+```
+
+If you need full control over the Klaviyo request body, send the complete `/api/events` envelope with `SendRawEventAsync`:
+
+```csharp
+await events.SendRawEventAsync(storeAlias, payload, ct);
+```
+
+
 ## Tracking Enrichers
 
 Tracking events can be enriched before being mapped and dispatched. Implement `IKlaviyoTrackingEnricher` and register it with DI to add or modify properties on the tracking payload.
