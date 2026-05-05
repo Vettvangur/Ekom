@@ -159,9 +159,9 @@ public static class OrderMapper
             ["value"] = o.Value,
             ["value_formatted"] = o.ValueFormatted,
             ["currency"] = o.Currency,
-            ["placed_at"] = o.PlacedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
-            ["created_at"] = o.CreatedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
-            ["paid_at"] = o.PaidAt?.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
+            ["placed_at"] = o.PlacedAt.ToKlaviyoDateTime(),
+            ["created_at"] = o.CreatedAt.ToKlaviyoDateTime(),
+            ["paid_at"] = o.PaidAt.ToKlaviyoDateTime(),
             ["checkout_url"] = o.CheckoutUrl,
             ["payment_method"] = o.PaymentProvider?.ToPaymentProviderEvent() ?? null,
             ["discount_value"] = o.DiscountValue,
@@ -203,7 +203,7 @@ public static class OrderMapper
                     }
                 },
 
-                time = o.PlacedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
+                time = o.PlacedAt.ToKlaviyoDateTime(),
                 properties
             }
         };

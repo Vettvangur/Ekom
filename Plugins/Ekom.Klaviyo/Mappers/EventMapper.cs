@@ -1,3 +1,4 @@
+using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Models.Events;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -42,7 +43,7 @@ internal static class EventMapper
                             ["attributes"] = e.Profile.ToProfileAttributes()
                         }
                     },
-                    ["time"] = occurredAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
+                    ["time"] = occurredAt.ToKlaviyoDateTime(),
                     ["properties"] = ToPropertiesObject(e.Properties)
                 }
             }
