@@ -147,7 +147,7 @@ internal static class TrackingMapper
         var properties = new JsonObject
         {
             ["store_alias"] = e.StoreAlias,
-            ["occurred_at"] = e.OccurredAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'")
+            ["occurred_at"] = e.OccurredAt.ToKlaviyoDateTime()
         };
 
         if (!string.IsNullOrWhiteSpace(e.OrderId))
@@ -181,7 +181,7 @@ internal static class TrackingMapper
         var properties = new JsonObject
         {
             ["store_alias"] = e.StoreAlias,
-            ["occurred_at"] = e.OccurredAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'")
+            ["occurred_at"] = e.OccurredAt.ToKlaviyoDateTime()
         };
 
         if (!string.IsNullOrWhiteSpace(e.OrderId))
@@ -238,7 +238,7 @@ internal static class TrackingMapper
                         attributes = customer.ToProfileAttributes()
                     }
                 },
-                time = occurredAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
+                time = occurredAt.ToKlaviyoDateTime(),
                 properties
             }
         };
