@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.74](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.73...Ekom.Klaviyo-v0.2.74) (2026-05-05)
+
+
+### Bug Fixes
+
+* **klaviyo:** format event dates invariantly ([#529](https://github.com/Vettvangur/Ekom/issues/529)) ([d0d1db5](https://github.com/Vettvangur/Ekom/commit/d0d1db5da8b8bd8366698acd8e6a9d741fff3f5f))
+
 ## [0.2.73](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.72...Ekom.Klaviyo-v0.2.73) (2026-05-05)
 
 
