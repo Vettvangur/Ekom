@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.137](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.136...Ekom-v0.2.137) (2026-05-05)
+
+
+### Bug Fixes
+
+* **stock:** filter editor stores by product ([#527](https://github.com/Vettvangur/Ekom/issues/527)) ([d68b1bc](https://github.com/Vettvangur/Ekom/commit/d68b1bc045d70236bb68fc48d0a92d8e9781ca92))
+
 ## [0.2.136](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.135...Ekom-v0.2.136) (2026-05-04)
 
 
