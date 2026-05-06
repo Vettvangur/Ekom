@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.138](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.137...Ekom-v0.2.138) (2026-05-06)
+
+
+### Bug Fixes
+
+* **shipping:** validate ranges after discounts ([#533](https://github.com/Vettvangur/Ekom/issues/533)) ([43b0ebb](https://github.com/Vettvangur/Ekom/commit/43b0ebb25fa3eb9d363067cf16446b2e6e93141d))
+
 ## [0.2.137](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.136...Ekom-v0.2.137) (2026-05-05)
 
 
