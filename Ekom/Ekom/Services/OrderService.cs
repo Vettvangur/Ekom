@@ -1292,9 +1292,9 @@ partial class OrderService
         {
             _logger.LogDebug("Update Order with new OrderInfo");
 
-            VerifyProviders(orderInfo);
             VerifyDiscounts(orderInfo);
             AddGlobalDiscounts(orderInfo);
+            VerifyProviders(orderInfo);
 
             orderInfo.Culture = CultureInfo.CurrentCulture.Name;
 
@@ -2018,7 +2018,7 @@ partial class OrderService
     {
         if (orderInfo.PaymentProvider == null && orderInfo.ShippingProvider == null) return;
 
-        decimal total = orderInfo.GrandTotal.Value;
+        decimal total = GetProviderConstraintAmount(orderInfo);
         string countryCode = orderInfo.CustomerInformation.Customer.Country;
         string shippingCountry = orderInfo.CustomerInformation.Shipping.Country ?? countryCode;
 
@@ -2071,6 +2071,23 @@ partial class OrderService
             orderInfo.ShippingProvider.Key,
             orderInfo.UniqueId);
         orderInfo.ShippingProvider = null;
+    }
+
+    private static decimal GetProviderConstraintAmount(OrderInfo orderInfo)
+    {
+        decimal amount = orderInfo.ChargedAmount.Value;
+
+        if (orderInfo.ShippingProvider != null)
+        {
+            amount -= orderInfo.ShippingProvider.Price.Value;
+        }
+
+        if (orderInfo.PaymentProvider != null)
+        {
+            amount -= orderInfo.PaymentProvider.Price.Value;
+        }
+
+        return Math.Max(0, amount);
     }
 
     protected virtual async Task<IOrderInfo> UpdateCustomerInformationInProvidersAsync(Dictionary<string, string>? collection, IOrderInfo order, CancellationToken ct = default)
