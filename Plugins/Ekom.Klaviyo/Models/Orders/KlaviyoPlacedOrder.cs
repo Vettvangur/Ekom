@@ -18,6 +18,7 @@ public sealed record KlaviyoPlacedOrder
     public string StoreAlias { get; set; } = default!;
     public string? CheckoutUrl { get; set; }
     public decimal? DiscountValue { get; set; }
+    public string? DiscountValueFormatted { get; set; }
     public KlaviyoShippingProvider? ShippingProvider { get; set; } = null;
     public KlaviyoPaymentProvider? PaymentProvider { get; set; } = null;
     public decimal? TaxValue { get; set; }
