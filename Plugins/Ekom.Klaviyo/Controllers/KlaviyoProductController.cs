@@ -1,5 +1,6 @@
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Catalog;
+using Ekom.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
@@ -43,7 +44,7 @@ internal class KlaviyoProductController : ControllerBase
         if (string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest("Missing storeAlias and no default store is configured.");
 
-        var cacheKey = $"klaviyo:feed:v1:{storeAlias}";
+        var cacheKey = $"klaviyo:feed:v2:{storeAlias}";
 
         var json = await _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
@@ -55,7 +56,10 @@ internal class KlaviyoProductController : ControllerBase
 
             var feed = products is null
                 ? new List<KlaviyoProductFeedItem>()
-                : products.ToKlaviyoProductFeedItems(_opt).ToList();
+                : products
+                    .Where(HasProductImage)
+                    .ToKlaviyoProductFeedItems(_opt)
+                    .ToList();
 
             var jsonOptions = new JsonSerializerOptions
             {
@@ -73,6 +77,11 @@ internal class KlaviyoProductController : ControllerBase
         }
           
         return Content(json ?? "", "application/json");
+    }
+
+    private static bool HasProductImage(IProduct product)
+    {
+        return !string.IsNullOrWhiteSpace(product.Images?.FirstOrDefault()?.Url);
     }
 
     private bool IsAuthorized(HttpRequest request, string expectedUser, string expectedPassword)
