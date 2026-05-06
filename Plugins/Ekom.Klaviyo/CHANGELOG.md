@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.76](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.75...Ekom.Klaviyo-v0.2.76) (2026-05-06)
+
+
+### Bug Fixes
+
+* **klaviyo:** exclude feed products without images ([#535](https://github.com/Vettvangur/Ekom/issues/535)) ([a5ee422](https://github.com/Vettvangur/Ekom/commit/a5ee422c9f21868104d383bd9ac99e030c33efad))
+
 ## [0.2.75](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.74...Ekom.Klaviyo-v0.2.75) (2026-05-06)
 
 
