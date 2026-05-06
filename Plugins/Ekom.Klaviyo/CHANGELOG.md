@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.75](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.74...Ekom.Klaviyo-v0.2.75) (2026-05-06)
+
+
+### Bug Fixes
+
+* **klaviyo:** add formatted discount value ([#531](https://github.com/Vettvangur/Ekom/issues/531)) ([8c03a56](https://github.com/Vettvangur/Ekom/commit/8c03a5659777497266e39b582332bee6ce80d921))
+
 ## [0.2.74](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.73...Ekom.Klaviyo-v0.2.74) (2026-05-05)
 
 
