@@ -2,35 +2,36 @@ using System.Text.Json.Serialization;
 
 namespace Ekom.Klaviyo.Models.Catalog;
 
-internal sealed record KlaviyoProductFeedItem(
-    [property: JsonPropertyName("id")]
-    string Id,
+public sealed class KlaviyoProductFeedItem
+{
+    [JsonPropertyName("id")]
+    public required string Id { get; set; }
 
-    [property: JsonPropertyName("title")]
-    string Title,
+    [JsonPropertyName("title")]
+    public required string Title { get; set; }
 
-    [property: JsonPropertyName("link")]
-    string Link,
+    [JsonPropertyName("link")]
+    public required string Link { get; set; }
 
-    [property: JsonPropertyName("description")]
-    string? Description,
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
 
-    [property: JsonPropertyName("price")]
-    decimal? Price,
+    [JsonPropertyName("price")]
+    public decimal? Price { get; set; }
 
-    [property: JsonPropertyName("image_link")]
-    string? ImageLink,
+    [JsonPropertyName("image_link")]
+    public string? ImageLink { get; set; }
 
-    [property: JsonPropertyName("categories")]
-    IReadOnlyList<string>? Categories,
+    [JsonPropertyName("categories")]
+    public IReadOnlyList<string>? Categories { get; set; }
 
-    [property: JsonPropertyName("inventory_quantity")]
-    decimal? InventoryQuantity,
+    [JsonPropertyName("inventory_quantity")]
+    public decimal? InventoryQuantity { get; set; }
 
-    [property: JsonPropertyName("inventory_policy")]
-    int? InventoryPolicy,
+    [JsonPropertyName("inventory_policy")]
+    public int? InventoryPolicy { get; set; }
 
     // Arbitrary additional fields
-    [property: JsonPropertyName("custom_attributes")]
-    IReadOnlyDictionary<string, object?>? CustomAttributes
-);
+    [JsonPropertyName("custom_attributes")]
+    public Dictionary<string, object?>? CustomAttributes { get; set; }
+}

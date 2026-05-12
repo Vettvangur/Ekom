@@ -18,7 +18,7 @@ internal static class ProductFeedMapper
             ? null
             : UrlBuilder.Combine(options.SiteBaseUrl, imageUrl + options.Catalog.ImageCrop);
 
-        var price = options.Catalog.ShowPrice ? product.OriginalPrice?.Value : null;
+        var price = options.Catalog.ShowPrice ? product.Price?.Value : null;
 
         IReadOnlyList<string>? categories = product.Categories.Select(x => x.Title).ToList();
 
@@ -40,18 +40,19 @@ internal static class ProductFeedMapper
         var description = !string.IsNullOrEmpty(product.Description) ? product.Description :
                           !string.IsNullOrEmpty(product.Summary) ? product.Summary : product.Title;
 
-        return new KlaviyoProductFeedItem(
-            Id: $"{product.Store.Alias}:{product.Key.ToString()}",
-            Title: product.Title ?? string.Empty,
-            Link: link,
-            Description: description,
-            Price: price,
-            ImageLink: imageLink,
-            Categories: categories,
-            InventoryQuantity: inventoryQty,
-            InventoryPolicy: inventoryPolicy,
-            CustomAttributes: mergedCustom
-        );
+        return new KlaviyoProductFeedItem
+        {
+            Id = $"{product.Store.Alias}:{product.Key.ToString()}",
+            Title = product.Title ?? string.Empty,
+            Link = link,
+            Description = description,
+            Price = price,
+            ImageLink = imageLink,
+            Categories = categories,
+            InventoryQuantity = inventoryQty,
+            InventoryPolicy = inventoryPolicy,
+            CustomAttributes = mergedCustom
+        };
     }
 
     public static IEnumerable<KlaviyoProductFeedItem> ToKlaviyoProductFeedItems(
@@ -70,7 +71,11 @@ internal static class ProductFeedMapper
         {
             ["sku"] = product.SKU,
             ["store_alias"] = product.Store?.Alias,
-            ["currency"] = product.OriginalPrice?.Currency?.ISOCurrencySymbol,
+            ["currency"] = product.Price?.Currency?.ISOCurrencySymbol ?? product.OriginalPrice?.Currency?.ISOCurrencySymbol,
+            ["original_price"] = product.OriginalPrice?.Value,
+            ["discount_price"] = product.Price?.Value,
+            ["discount_amount"] = product.Price?.DiscountAmount?.Value,
+            ["has_discount"] = product.Price?.HasDiscount ?? false,
             ["published"] = true,
             ["summary"] = product.Summary
         };
