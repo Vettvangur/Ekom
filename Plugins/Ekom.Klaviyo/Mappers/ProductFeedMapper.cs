@@ -18,8 +18,9 @@ internal static class ProductFeedMapper
             ? null
             : UrlBuilder.Combine(options.SiteBaseUrl, imageUrl + options.Catalog.ImageCrop);
 
-        var price = options.Catalog.ShowPrice ? product.Price?.Value : null;
-
+        var price = options.Catalog.ShowPrice ? product.Price?.WithVat.Value : null;
+        var vat = options.Catalog.ShowPrice ? product?.Vat : null;
+        
         IReadOnlyList<string>? categories = product.Categories.Select(x => x.Title).ToList();
 
         // Inventory: adapt to your model. If not available, leave null.
@@ -47,6 +48,7 @@ internal static class ProductFeedMapper
             Link = link,
             Description = description,
             Price = price,
+            Vat = vat,
             ImageLink = imageLink,
             Categories = categories,
             InventoryQuantity = inventoryQty,
@@ -66,16 +68,17 @@ internal static class ProductFeedMapper
 
     private static Dictionary<string, object?> BuildDefaultCustomAttributes(IProduct product)
     {
+        var productPrice = product.Price;
+        
         // Keep these stable and useful for downstream segmentation
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["sku"] = product.SKU,
             ["store_alias"] = product.Store?.Alias,
-            ["currency"] = product.Price?.Currency?.ISOCurrencySymbol ?? product.OriginalPrice?.Currency?.ISOCurrencySymbol,
+            ["currency"] = productPrice?.Currency?.ISOCurrencySymbol,
             ["original_price"] = product.OriginalPrice?.Value,
-            ["discount_price"] = product.Price?.Value,
-            ["discount_amount"] = product.Price?.DiscountAmount?.Value,
-            ["has_discount"] = product.Price?.HasDiscount ?? false,
+            ["discount_amount"] = productPrice?.DiscountAmount?.Value,
+            ["has_discount"] = productPrice?.HasDiscount ?? false,
             ["published"] = true,
             ["summary"] = product.Summary
         };

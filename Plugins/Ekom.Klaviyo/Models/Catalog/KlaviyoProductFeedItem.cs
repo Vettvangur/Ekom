@@ -18,6 +18,8 @@ public sealed class KlaviyoProductFeedItem
 
     [JsonPropertyName("price")]
     public decimal? Price { get; set; }
+    [JsonPropertyName("vat")]
+    public decimal? Vat { get; set; }
 
     [JsonPropertyName("image_link")]
     public string? ImageLink { get; set; }
