@@ -1,3 +1,4 @@
+using Ekom.Klaviyo.Enrichers.ProductFeedEnricher;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Catalog;
 using Ekom.Models;
@@ -17,13 +18,16 @@ internal class KlaviyoProductController : ControllerBase
 {
     private readonly KlaviyoOptions _opt;
     private readonly IMemoryCache _cache;
+    private readonly KlaviyoProductFeedEnrichmentPipeline _pipeline;
 
     public KlaviyoProductController(
         IOptions<KlaviyoOptions> opt,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        KlaviyoProductFeedEnrichmentPipeline pipeline)
     {
         _opt = opt.Value;
         _cache = cache;
+        _pipeline = pipeline;
     }
 
     [HttpGet("feed")]
@@ -54,12 +58,28 @@ internal class KlaviyoProductController : ControllerBase
             var productsResponse = await API.Catalog.Instance.GetAllProductsAsync(storeAlias, ct: ct);
             var products = productsResponse?.Products;
 
-            var feed = products is null
-                ? new List<KlaviyoProductFeedItem>()
-                : products
-                    .Where(HasProductImage)
-                    .ToKlaviyoProductFeedItems(_opt)
-                    .ToList();
+            var feed = new List<KlaviyoProductFeedItem>();
+
+            if (products is not null)
+            {
+                foreach (var product in products.Where(HasProductImage))
+                {
+                    var item = product.ToKlaviyoProductFeedItem(_opt);
+
+                    await _pipeline.ApplyAsync(
+                        item,
+                        new KlaviyoProductFeedEnrichmentContext
+                        {
+                            StoreAlias = storeAlias,
+                            Product = product,
+                            FeedItem = item,
+                            Options = _opt
+                        },
+                        ct);
+
+                    feed.Add(item);
+                }
+            }
 
             var jsonOptions = new JsonSerializerOptions
             {

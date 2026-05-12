@@ -5,6 +5,7 @@ using Ekom.Klaviyo.Dispatching.Profiles;
 using Ekom.Klaviyo.Dispatching.Tracking;
 using Ekom.Klaviyo.Enrichers.TrackingEnricher;
 using Ekom.Klaviyo.Enrichers.OrderEnricher;
+using Ekom.Klaviyo.Enrichers.ProductFeedEnricher;
 using Ekom.Klaviyo.Enrichers.ProductEnricher;
 using Ekom.Klaviyo.Enrichers.ProfilesEnricher;
 using Ekom.Klaviyo.Http;
@@ -79,6 +80,7 @@ public static class KlaviyoServiceCollectionExtensions
 
         // Enrichers
         services.AddSingleton<KlaviyoProductEnrichmentPipeline>();
+        services.AddSingleton<KlaviyoProductFeedEnrichmentPipeline>();
         services.AddSingleton<KlaviyoProfilesEnrichmentPipeline>();
         services.AddSingleton<KlaviyoPlacedOrderEnrichmentPipeline>();
 
