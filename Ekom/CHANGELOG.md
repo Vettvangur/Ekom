@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.139](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.138...Ekom-v0.2.139) (2026-05-15)
+
+
+### Bug Fixes
+
+* **umbraco:** use decimal VAT fields ([#541](https://github.com/Vettvangur/Ekom/issues/541)) ([c7f9647](https://github.com/Vettvangur/Ekom/commit/c7f96478f18fb6e3d0bd6507c10b03eaca01a8fd))
+
 ## [0.2.138](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.137...Ekom-v0.2.138) (2026-05-06)
 
 
