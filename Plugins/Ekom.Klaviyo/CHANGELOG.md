@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.77](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.76...Ekom.Klaviyo-v0.2.77) (2026-05-12)
+
+
+### Features
+
+* **klaviyo:** enrich product feed pricing ([#537](https://github.com/Vettvangur/Ekom/issues/537)) ([7a75957](https://github.com/Vettvangur/Ekom/commit/7a759573f6fa5a031d4aeac3f94eb901e20500af))
+
 ## [0.2.76](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.75...Ekom.Klaviyo-v0.2.76) (2026-05-06)
 
 

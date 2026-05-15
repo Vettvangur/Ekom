@@ -20,7 +20,6 @@ internal static class ProductFeedMapper
 
         var price = options.Catalog.ShowPrice ? product.Price?.WithVat.Value : null;
         var vat = options.Catalog.ShowPrice ? product?.Vat : null;
-        
         IReadOnlyList<string>? categories = product.Categories.Select(x => x.Title).ToList();
 
         // Inventory: adapt to your model. If not available, leave null.
