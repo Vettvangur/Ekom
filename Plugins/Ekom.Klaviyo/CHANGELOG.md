@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.79](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.78...Ekom.Klaviyo-v0.2.79) (2026-05-15)
+
+
+### Bug Fixes
+
+* **vat:** parse rates using invariant culture ([#543](https://github.com/Vettvangur/Ekom/issues/543)) ([f567af6](https://github.com/Vettvangur/Ekom/commit/f567af695342bb8a984a731b0ac27294f3dbac06))
+
 ## [0.2.78](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.77...Ekom.Klaviyo-v0.2.78) (2026-05-15)
 
 

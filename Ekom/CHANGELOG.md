@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.140](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.139...Ekom-v0.2.140) (2026-05-15)
+
+
+### Bug Fixes
+
+* **vat:** parse rates using invariant culture ([#543](https://github.com/Vettvangur/Ekom/issues/543)) ([f567af6](https://github.com/Vettvangur/Ekom/commit/f567af695342bb8a984a731b0ac27294f3dbac06))
+
 ## [0.2.139](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.138...Ekom-v0.2.139) (2026-05-15)
 
 
