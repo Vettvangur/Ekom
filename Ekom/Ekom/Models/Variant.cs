@@ -217,7 +217,12 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         {
             if (Properties.HasPropertyValue("vat", Store.Alias))
             {
-                return Convert.ToDecimal(GetValue("vat", Store.Alias)) / 100;
+                string value = GetValue("vat", Store.Alias);
+
+                if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal _val))
+                {
+                    return _val / 100;
+                }
             }
 
             return Product?.Vat ?? 0;
