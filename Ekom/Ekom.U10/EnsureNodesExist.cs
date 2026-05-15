@@ -154,6 +154,11 @@ class EnsureNodesExist : IComponent
                     throw new EnsureNodesException(
                         "Unable to find Umbraco.MultipleTextstring property editor, failed creating Ekom nodes.");
                 }
+                if (!_propertyEditorCollection.TryGet("Umbraco.Decimal", out IDataEditor? decimalEditor))
+                {
+                    throw new EnsureNodesException(
+                        "Unable to find Umbraco.Decimal property editor, failed creating Ekom nodes.");
+                }
 
 
                 #endregion
@@ -246,6 +251,11 @@ class EnsureNodesExist : IComponent
                         useLanguages = false,
                         HideLabel = false
                     },
+                });
+
+                var decimalDt = EnsureDataTypeExists(new DataType(decimalEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
+                {
+                    Name = "Ekom Decimal",
                 });
 
                 var propertyRteDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
@@ -596,7 +606,7 @@ class EnsureNodesExist : IComponent
                                         Description = "If set then the variant can be sold indefinitely",
                                         SortOrder = 6
                                     },
-                                    new PropertyType(_shortStringHelper, numericDt, "vat")
+                                    new PropertyType(_shortStringHelper, decimalDt, "vat")
                                     {
                                         Name = "VAT",
                                         Description = "%, override store VAT.",
@@ -712,7 +722,7 @@ class EnsureNodesExist : IComponent
                                         Name = "Enable Backorder",
                                         Description = "If set then the product can be sold indefinitely"
                                     },
-                                    new PropertyType(_shortStringHelper, numericDt, "vat")
+                                    new PropertyType(_shortStringHelper, decimalDt, "vat")
                                     {
                                         Name = "VAT",
                                         Description = "%, override store VAT."
@@ -1182,7 +1192,7 @@ class EnsureNodesExist : IComponent
                                     Name = "Store Root Node",
                                     Mandatory = true,
                                 },
-                                new PropertyType(_shortStringHelper, numericDt, "vat")
+                                new PropertyType(_shortStringHelper, decimalDt, "vat")
                                 {
                                     Name = "Vat",
                                     Mandatory = true,
