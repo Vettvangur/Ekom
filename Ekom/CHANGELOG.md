@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.141](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.140...Ekom-v0.2.141) (2026-05-18)
+
+
+### Features
+
+* **manager:** edit order customer information ([#545](https://github.com/Vettvangur/Ekom/issues/545)) ([8c8c827](https://github.com/Vettvangur/Ekom/commit/8c8c8278d3bf7d55c981367792cadecf315d210e))
+
 ## [0.2.140](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.139...Ekom-v0.2.140) (2026-05-15)
 
 
