@@ -255,6 +255,60 @@ public class EkomManagerController : ControllerBase
         }
     }
 
+    [HttpPost]
+    [Route("UpdateCustomerInformation")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> UpdateCustomerInformationAsync([FromBody] OrderCustomerInformationUpdateRequest? request, CancellationToken ct = default)
+    {
+        if (request == null || request.OrderId == Guid.Empty)
+        {
+            return BadRequest("Invalid customer information update request.");
+        }
+
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(request.OrderId, ct);
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            var order = await _repo.GetOrderInfoAsync(request.OrderId, ct);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            var form = new Dictionary<string, string>
+            {
+                ["storeAlias"] = orderData.StoreAlias
+            };
+
+            AddFormValues(form, request.Customer);
+            AddFormValues(form, request.Shipping);
+
+            var updatedOrder = await Order.Instance.UpdateCustomerInformationAsync(form, new OrderSettings
+            {
+                FireEvents = false,
+                OrderInfo = order
+            }, ct).ConfigureAwait(false);
+
+            return Ok(updatedOrder);
+        }
+        catch (FormatException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update customer information. {OrderId}", request.OrderId);
+
+            return StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
     [HttpGet]
     [Route("charts")]
     [UmbracoUserAuthorize]
@@ -321,6 +375,14 @@ public class EkomManagerController : ControllerBase
     {
         _logger.LogWarning("Manager access denied for store {StoreAlias}", storeAlias);
         return Forbid();
+    }
+
+    private static void AddFormValues(Dictionary<string, string> form, Dictionary<string, string?> values)
+    {
+        foreach (var value in values)
+        {
+            form[value.Key] = value.Value ?? string.Empty;
+        }
     }
 
     public class ChartData
