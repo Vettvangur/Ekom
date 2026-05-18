@@ -23,6 +23,31 @@
     $scope.executingOrderActionKey = null;
     $scope.ga4TrackingData = [];
     $scope.metaTrackingData = [];
+    $scope.customerInformationEditorOpen = false;
+    $scope.customerInformationSaving = false;
+    $scope.customerInformationEditModel = null;
+
+    var customerFields = [
+      { key: "customerName", label: "Name", property: "name" },
+      { key: "customerEmail", label: "Email", property: "email" },
+      { key: "customerAddress", label: "Address", property: "address" },
+      { key: "customerApartment", label: "Apartment", property: "apartment" },
+      { key: "customerCity", label: "City", property: "city" },
+      { key: "customerCountry", label: "Country", property: "country" },
+      { key: "customerZipCode", label: "Zipcode", property: "zipCode" },
+      { key: "customerPhone", label: "Phone", property: "phone" }
+    ];
+
+    var shippingFields = [
+      { key: "shippingName", label: "Name", property: "name" },
+      { key: "shippingEmail", label: "Email", property: "email" },
+      { key: "shippingAddress", label: "Address", property: "address" },
+      { key: "shippingApartment", label: "Apartment", property: "apartment" },
+      { key: "shippingCity", label: "City", property: "city" },
+      { key: "shippingCountry", label: "Country", property: "country" },
+      { key: "shippingZipCode", label: "Zipcode", property: "zipCode" },
+      { key: "shippingPhone", label: "Phone", property: "phone" }
+    ];
 
     $scope.toggleDropdown = function (dropdownId) {
       $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
@@ -99,11 +124,14 @@
         "shippingaddress",
         "shippingcity",
         "shippingcountry",
+        "shippingemail",
+        "shippingapartment",
         "shippingzipcode",
         "shippingphone",
         "customeremail",
         "customername",
         "customeraddress",
+        "customerapartment",
         "customercity",
         "customercountry",
         "customerzipcode",
@@ -169,6 +197,62 @@
         .filter(function (entry) {
           return !!entry.key;
         });
+    }
+
+    function getCustomerInformationValue(information, field) {
+      var properties = information && information.properties ? information.properties : {};
+      var value = information && information[field.property] ? information[field.property] : properties[field.key];
+
+      return value ? htmlDecode(value) : "";
+    }
+
+    function mapStandardFields(information, fields) {
+      return fields.map(function (field) {
+        return {
+          key: field.key,
+          label: field.label,
+          value: getCustomerInformationValue(information, field),
+          isExtra: false
+        };
+      });
+    }
+
+    function mapExtraFields(properties, prefix) {
+      return Object.entries(properties || {})
+        .filter(function (entry) {
+          var key = entry[0];
+          var value = entry[1];
+          var normalisedKey = (key || "").toLowerCase();
+
+          return !!value && normalisedKey.startsWith(prefix) && !$scope.isDefaultKey(normalisedKey);
+        })
+        .map(function (entry) {
+          return {
+            key: entry[0],
+            label: cleanExtraFieldLabel(entry[0]),
+            value: htmlDecode(entry[1]),
+            isExtra: true
+          };
+        });
+    }
+
+    function cleanExtraFieldLabel(key) {
+      var label = $scope.cleanKey(key)
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .replace(/[_-]+/g, " ")
+        .trim();
+
+      return label || key;
+    }
+
+    function buildCustomerInformationPayload(fields) {
+      var payload = {};
+
+      fields.forEach(function (field) {
+        payload[field.key] = field.value || "";
+      });
+
+      return payload;
     }
 
     function applyOrderData(order) {
@@ -352,6 +436,53 @@
         })
         .finally(function () {
           $scope.executingOrderActionKey = null;
+        });
+    };
+
+    $scope.openCustomerInformationEditor = function () {
+      var order = $scope.model.editModel.order;
+      var customer = order.customerInformation.customer || {};
+      var shipping = order.customerInformation.shipping || {};
+
+      $scope.customerInformationEditModel = {
+        customer: mapStandardFields(customer, customerFields).concat(mapExtraFields(customer.properties, "customer")),
+        shipping: mapStandardFields(shipping, shippingFields).concat(mapExtraFields(shipping.properties, "shipping"))
+      };
+      $scope.customerInformationEditorOpen = true;
+    };
+
+    $scope.closeCustomerInformationEditor = function () {
+      if ($scope.customerInformationSaving) {
+        return;
+      }
+
+      $scope.customerInformationEditorOpen = false;
+      $scope.customerInformationEditModel = null;
+    };
+
+    $scope.saveCustomerInformation = function () {
+      if (!$scope.customerInformationEditModel || $scope.customerInformationSaving) {
+        return;
+      }
+
+      $scope.customerInformationSaving = true;
+
+      resources.UpdateCustomerInformation({
+        orderId: orderId,
+        customer: buildCustomerInformationPayload($scope.customerInformationEditModel.customer),
+        shipping: buildCustomerInformationPayload($scope.customerInformationEditModel.shipping)
+      })
+        .then(function (result) {
+          applyOrderData(result.data);
+          $scope.customerInformationEditorOpen = false;
+          $scope.customerInformationEditModel = null;
+          notificationsService.success("Success", "Customer information updated.");
+          eventsService.emit("order.changed", {});
+        }, function (error) {
+          notificationsService.error("Error", getErrorMessage(error, "Error updating customer information."));
+        })
+        .finally(function () {
+          $scope.customerInformationSaving = false;
         });
     };
 
