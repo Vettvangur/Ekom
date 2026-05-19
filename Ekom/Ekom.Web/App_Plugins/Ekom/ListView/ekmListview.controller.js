@@ -159,7 +159,6 @@
     $scope.LoadStores();
   }
 
-
   angular.module("umbraco").controller("Ekom.Listview", [
     "$scope",
     "Ekom.Listview.Resources",
