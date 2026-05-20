@@ -153,7 +153,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         var json = await TryGetByIdAsync(profileId, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(json)) return null;
 
-        return await ParseProfileResponseAsync(json, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
+        return ParseProfileResponse(json);
     }
 
     public async ValueTask<KlaviyoProfileLookupResult?> GetProfileByEmailAsync(
@@ -168,7 +168,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         var json = await TryGetByEmailAsync(email, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(json)) return null;
 
-        return await ParseProfileResponseAsync(json, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
+        return ParseProfileResponse(json);
     }
 
     public async ValueTask<IReadOnlyList<string>?> GetProfileListIdsByProfileIdAsync(
@@ -261,11 +261,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         }
     }
 
-    private async ValueTask<KlaviyoProfileLookupResult?> ParseProfileResponseAsync(
-        string json,
-        string? storeAlias,
-        bool includeSubscriptions,
-        CancellationToken ct)
+    private static KlaviyoProfileLookupResult? ParseProfileResponse(string json)
     {
         using var doc = JsonDocument.Parse(json);
 
@@ -274,12 +270,10 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
 
         var attributes = GetAttributes(profileData);
         var channels = new HashSet<KlaviyoProfileConsentChannel>();
-        var hasConsentData = TryParseSubscriptions(attributes, channels);
+        if (!TryParseSubscriptions(attributes, channels))
+            TryParseConsentProperties(attributes, channels);
 
-        if (!hasConsentData && TryParseConsentProperties(attributes, channels))
-            hasConsentData = true;
-
-        var result = new KlaviyoProfileLookupResult
+        return new KlaviyoProfileLookupResult
         {
             ProfileId = GetString(profileData, "id"),
             Email = GetString(attributes, "email"),
@@ -289,38 +283,6 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
             ExternalId = GetString(attributes, "external_id"),
             SubscribedChannels = channels.ToArray()
         };
-
-        if (!includeSubscriptions || hasConsentData || string.IsNullOrWhiteSpace(result.ProfileId))
-            return result;
-
-        var fallback = await TryGetSubscriptionsAsync(result.ProfileId, storeAlias, ct).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(fallback))
-            return result;
-
-        if (TryParseSubscriptionResponse(fallback, channels))
-            result.SubscribedChannels = channels.ToArray();
-
-        return result;
-    }
-
-    private async Task<string?> TryGetSubscriptionsAsync(
-        string profileId,
-        string? storeAlias,
-        CancellationToken ct)
-    {
-        try
-        {
-            return await _client.GetSubscriptionsAsync(profileId, storeAlias, ct).ConfigureAwait(false);
-        }
-        catch (KlaviyoApiException ex)
-        {
-            _logger.LogDebug(
-                "Klaviyo: subscriptions fallback failed. Store={StoreAlias} Status={Status}",
-                storeAlias,
-                ex.StatusCode);
-
-            return null;
-        }
     }
 
     private bool IsEnabled()
@@ -528,65 +490,6 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         }
 
         return hasAnyConsent;
-    }
-
-    private static bool TryParseSubscriptionResponse(string json, ISet<KlaviyoProfileConsentChannel> channels)
-    {
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-
-        if (!root.TryGetProperty("data", out var data))
-            return false;
-
-        var hasAnyConsent = false;
-
-        if (data.ValueKind == JsonValueKind.Object)
-        {
-            if (TryParseSubscriptionData(data, channels))
-                hasAnyConsent = true;
-        }
-        else if (data.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var item in data.EnumerateArray())
-            {
-                if (TryParseSubscriptionData(item, channels))
-                    hasAnyConsent = true;
-            }
-        }
-
-        return hasAnyConsent;
-    }
-
-    private static bool TryParseSubscriptionData(JsonElement data, ISet<KlaviyoProfileConsentChannel> channels)
-    {
-        if (data.ValueKind != JsonValueKind.Object)
-            return false;
-
-        var attributes = data.TryGetProperty("attributes", out var attrs)
-            ? attrs
-            : default;
-
-        if (attributes.ValueKind == JsonValueKind.Object)
-        {
-            if (attributes.TryGetProperty("subscriptions", out var subs) &&
-                TryParseSubscriptionsObject(subs, channels))
-            {
-                return true;
-            }
-
-            var channelValue = GetString(attributes, "channel");
-            var channel = ParseChannel(channelValue);
-
-            if (channel is not null && TryGetConsentState(attributes, out var isSubscribed))
-            {
-                if (isSubscribed)
-                    channels.Add(channel.Value);
-
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static KlaviyoProfileConsentChannel? ParseChannel(string? channel)
