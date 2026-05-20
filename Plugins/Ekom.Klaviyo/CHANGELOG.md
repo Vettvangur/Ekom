@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.80](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.79...Ekom.Klaviyo-v0.2.80) (2026-05-20)
+
+
+### Bug Fixes
+
+* **klaviyo:** request profile subscriptions correctly ([#547](https://github.com/Vettvangur/Ekom/issues/547)) ([4994a87](https://github.com/Vettvangur/Ekom/commit/4994a87b1be0e740b827fea7398533150f0a5fd6))
+
 ## [0.2.79](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.78...Ekom.Klaviyo-v0.2.79) (2026-05-15)
 
 
