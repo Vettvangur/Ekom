@@ -3,7 +3,7 @@ using Ekom.Klaviyo.Enrichers.ProductFeedEnricher;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Catalog;
 using Ekom.Models;
-using Ekom.Services;
+using EkomStoreApi = Ekom.API.Store;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,18 +23,18 @@ internal class KlaviyoProductController : ControllerBase
     private readonly KlaviyoOptions _opt;
     private readonly IMemoryCache _cache;
     private readonly KlaviyoProductFeedEnrichmentPipeline _pipeline;
-    private readonly IStoreService _storeService;
+    private readonly EkomStoreApi _storeApi;
 
     public KlaviyoProductController(
         IOptions<KlaviyoOptions> opt,
         IMemoryCache cache,
         KlaviyoProductFeedEnrichmentPipeline pipeline,
-        IStoreService storeService)
+        EkomStoreApi storeApi)
     {
         _opt = opt.Value;
         _cache = cache;
         _pipeline = pipeline;
-        _storeService = storeService;
+        _storeApi = storeApi;
     }
 
     [HttpGet("feed")]
@@ -61,7 +61,7 @@ internal class KlaviyoProductController : ControllerBase
         IStore? store;
         try
         {
-            store = _storeService.GetStoreByAlias(storeAlias);
+            store = _storeApi.GetStore(storeAlias);
         }
         catch (StoreNotFoundException)
         {
