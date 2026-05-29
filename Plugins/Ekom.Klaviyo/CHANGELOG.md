@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.83](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.82...Ekom.Klaviyo-v0.2.83) (2026-05-29)
+
+
+### Bug Fixes
+
+* **klaviyo:** scope feed ids by language ([#555](https://github.com/Vettvangur/Ekom/issues/555)) ([88d8e16](https://github.com/Vettvangur/Ekom/commit/88d8e1658e55393e1534ec1c68e7de37a7485297))
+
 ## [0.2.82](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.81...Ekom.Klaviyo-v0.2.82) (2026-05-29)
 
 
