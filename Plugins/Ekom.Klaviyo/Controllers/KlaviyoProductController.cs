@@ -99,7 +99,7 @@ internal class KlaviyoProductController : ControllerBase
                 {
                     foreach (var product in products.Where(HasProductImage))
                     {
-                        var item = product.ToKlaviyoProductFeedItem(_opt);
+                        var item = product.ToKlaviyoProductFeedItem(_opt, culture: resolvedCulture);
 
                         await _pipeline.ApplyAsync(
                             item,
