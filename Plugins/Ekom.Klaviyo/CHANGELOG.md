@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.82](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.81...Ekom.Klaviyo-v0.2.82) (2026-05-29)
+
+
+### Bug Fixes
+
+* **klaviyo:** use public store API for feed ([#553](https://github.com/Vettvangur/Ekom/issues/553)) ([bf6890c](https://github.com/Vettvangur/Ekom/commit/bf6890c961c9d7ec18b1a64d7c58dd0c4d1b5164))
+
 ## [0.2.81](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.80...Ekom.Klaviyo-v0.2.81) (2026-05-29)
 
 
