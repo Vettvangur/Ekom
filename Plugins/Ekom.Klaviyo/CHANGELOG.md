@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.81](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.80...Ekom.Klaviyo-v0.2.81) (2026-05-29)
+
+
+### Bug Fixes
+
+* Fix Klaviyo feed culture context ([#551](https://github.com/Vettvangur/Ekom/issues/551)) ([586534d](https://github.com/Vettvangur/Ekom/commit/586534d99545e2d172b923715d825d1c0e1bac67))
+
 ## [0.2.80](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.79...Ekom.Klaviyo-v0.2.80) (2026-05-20)
 
 
