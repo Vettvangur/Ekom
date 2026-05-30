@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.84](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.83...Ekom.Klaviyo-v0.2.84) (2026-05-30)
+
+
+### Bug Fixes
+
+* **klaviyo:** include language on placed orders ([#557](https://github.com/Vettvangur/Ekom/issues/557)) ([0acb728](https://github.com/Vettvangur/Ekom/commit/0acb728393cecb1613aa8dd286ebd3646e1986d2))
+
 ## [0.2.83](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.82...Ekom.Klaviyo-v0.2.83) (2026-05-29)
 
 
