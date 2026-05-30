@@ -88,6 +88,7 @@ public static class OrderMapper
             Customer = order.ToKlaviyoProfile(opt),
             ShipTo = klaviyoShipTo,
             StoreAlias = order.StoreInfo.Alias,
+            Language = NullIfWhiteSpace(order.Culture) ?? order.StoreInfo.Culture,
             Items = order.OrderLines.ToKlaviyoOrderLines(opt).ToList(),
             TaxValue = order.Vat.Value,
             DiscountValue = order.DiscountAmount.Value,
@@ -174,7 +175,8 @@ public static class OrderMapper
             ["item_skus_text"] = string.Join("|", itemSkus),
             ["item_names_text"] = string.Join("|", itemNames),
             ["item_count"] = itemCount,
-            ["store_alias"] = o.StoreAlias
+            ["store_alias"] = o.StoreAlias,
+            ["language"] = o.Language
         };
 
         CustomPropertiesMerger.MergeCustomProperties(properties, o.CustomProperties);
@@ -210,4 +212,7 @@ public static class OrderMapper
             }
         };
     }
+
+    private static string? NullIfWhiteSpace(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

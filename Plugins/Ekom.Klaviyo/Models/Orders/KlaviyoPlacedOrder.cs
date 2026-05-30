@@ -16,6 +16,7 @@ public sealed record KlaviyoPlacedOrder
     public KlaviyoShipTo? ShipTo { get; set; }
     public IReadOnlyList<KlaviyoOrderLine> Items { get; set; } = [];
     public string StoreAlias { get; set; } = default!;
+    public string? Language { get; set; }
     public string? CheckoutUrl { get; set; }
     public decimal? DiscountValue { get; set; }
     public string? DiscountValueFormatted { get; set; }
