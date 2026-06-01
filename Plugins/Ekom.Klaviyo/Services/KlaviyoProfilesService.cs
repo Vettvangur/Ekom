@@ -332,7 +332,8 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
     {
         if (string.IsNullOrWhiteSpace(payload.FirstName) &&
             string.IsNullOrWhiteSpace(payload.LastName) &&
-            string.IsNullOrWhiteSpace(payload.FullName))
+            string.IsNullOrWhiteSpace(payload.FullName) &&
+            (payload.CustomProperties is null || payload.CustomProperties.Count == 0))
         {
             return;
         }
@@ -350,7 +351,8 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
                 {
                     FullName = payload.FullName,
                     FirstName = payload.FirstName,
-                    LastName = payload.LastName
+                    LastName = payload.LastName,
+                    CustomProperties = payload.CustomProperties
                 }
             });
 

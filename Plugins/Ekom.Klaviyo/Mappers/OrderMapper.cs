@@ -45,6 +45,7 @@ public static class OrderMapper
 
         var shippingProvider = order.ShippingProvider?.ToKlaviyoShippingProvider() ?? null;
         var paymentProvider = order.PaymentProvider?.ToKlaviyoPaymentProvider() ?? null;
+        var locale = NullIfWhiteSpace(order.Culture) ?? NullIfWhiteSpace(order.StoreInfo.Culture);
 
         KlaviyoProfileSubscribeRequest? consent = null;
 
@@ -71,7 +72,13 @@ public static class OrderMapper
                         TimestampUtc: DateTimeOffset.UtcNow,
                         ConsentTextVersion: "checkout-v1",
                         Ip: order.CustomerInformation.CustomerIpAddress)
-                }
+                },
+                CustomProperties: string.IsNullOrWhiteSpace(locale)
+                    ? null
+                    : new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["locale"] = locale
+                    }
             );
         }
 
@@ -88,7 +95,7 @@ public static class OrderMapper
             Customer = order.ToKlaviyoProfile(opt),
             ShipTo = klaviyoShipTo,
             StoreAlias = order.StoreInfo.Alias,
-            Language = NullIfWhiteSpace(order.Culture) ?? order.StoreInfo.Culture,
+            Language = locale,
             Items = order.OrderLines.ToKlaviyoOrderLines(opt).ToList(),
             TaxValue = order.Vat.Value,
             DiscountValue = order.DiscountAmount.Value,

@@ -17,7 +17,8 @@ public sealed record KlaviyoProfileSubscribeRequest(
     string? PhoneNumber = null,
     string? FullName = null,
     string? FirstName = null,
-    string? LastName = null);
+    string? LastName = null,
+    IDictionary<string, object?>? CustomProperties = null);
 
 public sealed record KlaviyoProfileUnsubscribeRequest(
     string StoreAlias,
