@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.144](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.143...Ekom-v0.2.144) (2026-06-01)
+
+
+### Bug Fixes
+
+* **checkout:** resolve payment return URLs by culture ([#559](https://github.com/Vettvangur/Ekom/issues/559)) ([dc446d1](https://github.com/Vettvangur/Ekom/commit/dc446d16e61989bd4310a344d7097018fcb4aee1))
+
 ## [0.2.143](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.142...Ekom-v0.2.143) (2026-05-29)
 
 
