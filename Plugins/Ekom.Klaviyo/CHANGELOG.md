@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.85](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.84...Ekom.Klaviyo-v0.2.85) (2026-06-01)
+
+
+### Bug Fixes
+
+* **klaviyo:** include locale on profile updates ([#561](https://github.com/Vettvangur/Ekom/issues/561)) ([417b0f7](https://github.com/Vettvangur/Ekom/commit/417b0f7e787936087a284aa70872f7b1f6a67753))
+
 ## [0.2.84](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.83...Ekom.Klaviyo-v0.2.84) (2026-05-30)
 
 
