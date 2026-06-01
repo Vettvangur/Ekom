@@ -167,8 +167,8 @@ public class EkomCheckoutApiController : ControllerBase
         API.Order.Instance.EnsureOrderCookie(orderId, order.StoreInfo.Alias);
 
         string redirectUrlSetting = outcome == "cancel"
-            ? paymentProvider.GetValue("cancelUrl", order.StoreInfo.Alias)
-            : paymentProvider.GetValue("errorUrl", order.StoreInfo.Alias);
+            ? _checkoutControllerService.ResolvePaymentProviderUrl(paymentProvider, "cancelUrl", order)
+            : _checkoutControllerService.ResolvePaymentProviderUrl(paymentProvider, "errorUrl", order);
 
         string redirectUrl = Ekom.Utilities.UriHelper.EnsureFullUri(
             redirectUrlSetting,
