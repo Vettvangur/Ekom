@@ -85,7 +85,7 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
 
         var listId = _opt.ResolveSubscriptionListId(payload.StoreAlias, payload.ListId);
 
-        var email = payload?.Customer?.Email;
+        var email = payload.Customer.Email;
         if (string.IsNullOrWhiteSpace(email))
         {
             _logger.LogDebug(
@@ -100,13 +100,14 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
             {
                 Customer = new KlaviyoCustomer
                 {
-                    Email = payload?.Customer?.Email,
-                    PhoneNumber = payload?.Customer?.PhoneNumber
+                    Email = payload.Customer.Email,
+                    PhoneNumber = payload.Customer.PhoneNumber
                 },
                 Attributes = new KlaviyoProfileAttributes
                 {
-                    FirstName = payload?.Customer?.FirstName,
-                    LastName = payload?.Customer?.LastName
+                    FirstName = payload.Customer.FirstName,
+                    LastName = payload.Customer.LastName,
+                    CustomProperties = payload.Customer.CustomProperties
                 }
             },
             ListId: listId);
