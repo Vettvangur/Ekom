@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.150](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.149...Ekom-v0.2.150) (2026-06-02)
+
+
+### Features
+
+* **manager:** export order lines ([#573](https://github.com/Vettvangur/Ekom/issues/573)) ([0d1dfa2](https://github.com/Vettvangur/Ekom/commit/0d1dfa20b9e5b598106bcebfbf7d964eba129696))
+
 ## [0.2.149](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.148...Ekom-v0.2.149) (2026-06-02)
 
 
