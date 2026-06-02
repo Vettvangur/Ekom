@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.147](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.146...Ekom-v0.2.147) (2026-06-02)
+
+
+### Bug Fixes
+
+* **catalog:** make categories filterable ([#567](https://github.com/Vettvangur/Ekom/issues/567)) ([f7ca722](https://github.com/Vettvangur/Ekom/commit/f7ca7223d5ebca716b81287ae828386ef3c1acad))
+
 ## [0.2.146](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.145...Ekom-v0.2.146) (2026-06-02)
 
 
