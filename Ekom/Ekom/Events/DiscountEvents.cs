@@ -5,13 +5,23 @@ namespace Ekom.Events;
 public class DiscountEvents
 {
     public event EventHandler<ProductDiscountEvaluationEventArgs>? BeforeEvaluateDiscounts;
-    public event EventHandler<ProductDiscountApplicableEventArgs>? AfterApplicableDiscounts;
+    public event Func<object?, ProductDiscountApplicableEventArgs, Task>? AfterApplicableDiscounts;
 
     public void RaiseBeforeEvaluateDiscounts(object sender, ProductDiscountEvaluationEventArgs e)
         => BeforeEvaluateDiscounts?.Invoke(sender, e);
 
-    public void RaiseAfterApplicableDiscounts(object sender, ProductDiscountApplicableEventArgs e)
-        => AfterApplicableDiscounts?.Invoke(sender, e);
+    public async Task RaiseAfterApplicableDiscountsAsync(object sender, ProductDiscountApplicableEventArgs e)
+    {
+        if (AfterApplicableDiscounts == null)
+            return;
+
+        foreach (var handler in AfterApplicableDiscounts
+            .GetInvocationList()
+            .Cast<Func<object?, ProductDiscountApplicableEventArgs, Task>>())
+        {
+            await handler(sender, e).ConfigureAwait(false);
+        }
+    }
 
     public class ProductDiscountEvaluationEventArgs : EventArgs
     {
@@ -45,5 +55,4 @@ public class DiscountEvents
     }
 
 }
-
 

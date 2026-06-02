@@ -1,6 +1,7 @@
 using Ekom.API;
 using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -271,7 +272,13 @@ public class OrderedProduct
             Prices = product.Prices.ToList();
         }
 
-        IDiscount productDiscount = product.ProductDiscount(Price.Value.ToString());
+        IDiscount? productDiscount = Configuration.Resolver.GetService<ProductDiscountService>()?
+            .GetProductDiscount(
+                product.Path,
+                product.Store.Alias,
+                Price.Value.ToString(CultureInfo.InvariantCulture),
+                product.Categories.Select(x => x.Id.ToString()).ToArray()
+            );
 
         ProductDiscount = productDiscount != null ? new OrderedDiscount(productDiscount) : null;
 
