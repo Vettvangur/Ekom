@@ -18,6 +18,10 @@
     $scope.averageAmount = 0;
     $scope.page = 1;
     $scope.pageMostSoldProducts = 1;
+    $scope.exportOptions = {
+      includeOrderLines: false,
+      exporting: false
+    };
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
     $scope.filters = managerState.filters;
@@ -294,6 +298,28 @@
       };
     };
 
+    $scope.OpenExport = function () {
+      $scope.exportOptions = {
+        includeOrderLines: false,
+        exporting: false
+      };
+
+      $scope.overlay = {
+        title: "Export orders",
+        view: "/App_Plugins/Ekom/Manager/views/overlays/ekmExport.html",
+        editModel: {
+          options: $scope.exportOptions
+        },
+        show: true,
+        submit: function () {
+          $scope.ExportCsv(null, $scope.exportOptions.includeOrderLines);
+        },
+        close: function () {
+          $scope.CloseModal();
+        }
+      };
+    };
+
     $scope.ViewOrder = function (order) {
       resources.OrderInfo(order.uniqueId)
         .then(function (result) {
@@ -524,37 +550,30 @@
         });
     };
 
-    $scope.ExportCsv = function (filename) {
-      var orders = $scope.result.orders;
+    function escapeCsvValue(value) {
+      var escapedValue = value;
 
-      if (!orders || !orders.length) {
-        return;
+      if (escapedValue == null) {
+        return "";
       }
 
-      var keys = Object.keys(orders[0]);
+      if (typeof escapedValue === "object") {
+        escapedValue = JSON.stringify(escapedValue);
+      }
+
+      escapedValue = String(escapedValue);
+
+      return /[",\r\n]/.test(escapedValue)
+        ? '"' + escapedValue.replace(/"/g, '""') + '"'
+        : escapedValue;
+    }
+
+    function downloadCsv(keys, rows, filename) {
       var lines = [keys.join(",")];
 
-      function escapeValue(value) {
-        var escapedValue = value;
-
-        if (escapedValue == null) {
-          return "";
-        }
-
-        if (typeof escapedValue === "object") {
-          escapedValue = JSON.stringify(escapedValue);
-        }
-
-        escapedValue = String(escapedValue);
-
-        return /[",\r\n]/.test(escapedValue)
-          ? '"' + escapedValue.replace(/"/g, '""') + '"'
-          : escapedValue;
-      }
-
-      orders.forEach(function (order) {
+      rows.forEach(function (row) {
         lines.push(keys.map(function (key) {
-          return escapeValue(order[key]);
+          return escapeCsvValue(row[key]);
         }).join(","));
       });
 
@@ -566,11 +585,116 @@
       anchor.download = filename || "orders.csv";
       document.body.appendChild(anchor);
 
-      $timeout(function () {
+      return $timeout(function () {
         anchor.click();
         document.body.removeChild(anchor);
         URL.revokeObjectURL(url);
       }, 0, false);
+    }
+
+    function getOrderLineExportKeys(orders) {
+      return ["rowType"].concat(Object.keys(orders[0]), [
+        "orderLineKey",
+        "productSku",
+        "productTitle",
+        "variantSku",
+        "variantTitle",
+        "quantity",
+        "unitPrice",
+        "vat",
+        "discount",
+        "lineTotal"
+      ]);
+    }
+
+    function getEmptyOrderLineExportData() {
+      return {
+        orderLineKey: "",
+        productSku: "",
+        productTitle: "",
+        variantSku: "",
+        variantTitle: "",
+        quantity: "",
+        unitPrice: "",
+        vat: "",
+        discount: "",
+        lineTotal: ""
+      };
+    }
+
+    function getOrderLineExportData(orderLine) {
+      return {
+        orderLineKey: orderLine.key,
+        productSku: orderLine.product && orderLine.product.sku,
+        productTitle: orderLine.product && orderLine.product.title,
+        variantSku: orderLine.variant && orderLine.variant.sku,
+        variantTitle: orderLine.variant && orderLine.variant.title,
+        quantity: orderLine.quantity,
+        unitPrice: orderLine.product && orderLine.product.price && orderLine.product.price.withVat && orderLine.product.price.withVat.currencyString,
+        vat: orderLine.amount && orderLine.amount.vat && orderLine.amount.vat.currencyString,
+        discount: orderLine.amount && orderLine.amount.discountAmount && orderLine.amount.discountAmount.currencyString,
+        lineTotal: orderLine.amount && orderLine.amount.withVat && orderLine.amount.withVat.currencyString
+      };
+    }
+
+    function getOrderLineRow(order, orderLine) {
+      return angular.extend({
+        rowType: "OrderLine",
+        referenceId: order.referenceId,
+        uniqueId: order.uniqueId
+      }, getEmptyOrderLineExportData(), getOrderLineExportData(orderLine));
+    }
+
+    function getOrderLineExportRows(orders) {
+      return $q.all(orders.map(function (order) {
+        return resources.OrderInfo(order.uniqueId)
+          .then(function (result) {
+            var orderInfo = result.data || {};
+            var orderLines = orderInfo.orderLines || [];
+            var rows = [angular.extend({ rowType: "Order" }, order, getEmptyOrderLineExportData())];
+
+            orderLines.forEach(function (orderLine) {
+              rows.push(getOrderLineRow(order, orderLine));
+            });
+
+            return rows;
+          });
+      })).then(function (orderLineRows) {
+        return [].concat.apply([], orderLineRows);
+      });
+    }
+
+    $scope.ExportCsv = function (filename, includeOrderLines) {
+      var orders = $scope.result.orders;
+
+      if (!orders || !orders.length) {
+        return;
+      }
+
+      $scope.exportOptions.exporting = true;
+
+      if (!includeOrderLines) {
+        return downloadCsv(Object.keys(orders[0]), orders, filename)
+          .then(function () {
+            $scope.CloseModal();
+          })
+          .finally(function () {
+            $scope.exportOptions.exporting = false;
+          });
+      }
+
+      return getOrderLineExportRows(orders)
+        .then(function (rows) {
+          return downloadCsv(getOrderLineExportKeys(orders), rows, filename || "orders-with-orderlines.csv");
+        })
+        .then(function () {
+          $scope.CloseModal();
+        }, function () {
+          notificationsService.error("Error", "Error exporting order lines.");
+        })
+        .finally(function () {
+          $scope.exportOptions.exporting = false;
+        });
     };
 
     $scope.$on("$destroy", function () {
