@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.149](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.148...Ekom-v0.2.149) (2026-06-02)
+
+
+### Bug Fixes
+
+* **events:** run async hooks from sync paths ([#571](https://github.com/Vettvangur/Ekom/issues/571)) ([ac298be](https://github.com/Vettvangur/Ekom/commit/ac298bea4c40203d9483350c78a580055443cf74))
+
 ## [0.2.148](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.147...Ekom-v0.2.148) (2026-06-02)
 
 
