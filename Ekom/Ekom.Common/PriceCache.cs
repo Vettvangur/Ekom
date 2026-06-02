@@ -34,7 +34,7 @@ public static class PriceCache
     {
         var gen = _itemGenerations.GetOrAdd(itemKey, _ => Guid.NewGuid().ToString("N"));
 
-        gen = RaiseGenerationCreated(itemKey, gen);
+        gen = RaiseGenerationCreatedAsync(itemKey, gen, CancellationToken.None).GetAwaiter().GetResult();
 
         return gen;
     }
@@ -76,16 +76,8 @@ public static class PriceCache
         (Cache as MemoryCache)?.Compact(1.0);
     }
 
-    public static event EventHandler<PriceGenerationEventArgs>? OnGenerationCreated;
     public static event Func<PriceGenerationEventArgs, CancellationToken, ValueTask>? OnGenerationCreatedAsync;
     public static event EventHandler<PriceGenerationEventArgs>? OnGenerationInvalidated;
-
-    private static string RaiseGenerationCreated(string itemKey, string gen)
-    {
-        var args = new PriceGenerationEventArgs(itemKey, gen);
-        OnGenerationCreated?.Invoke(null, args);
-        return args.Generation;
-    }
 
     private static async ValueTask<string> RaiseGenerationCreatedAsync(string itemKey, string gen, CancellationToken ct)
     {

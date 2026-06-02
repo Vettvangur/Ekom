@@ -24,7 +24,6 @@ class ProductDiscountService
             storeAlias,
             inputPrice,
             categories,
-            raiseAfterApplicableDiscounts: true,
             CancellationToken.None).GetAwaiter().GetResult();
 
     public virtual Task<IProductDiscount?> GetProductDiscountAsync(
@@ -38,7 +37,6 @@ class ProductDiscountService
             storeAlias,
             inputPrice,
             categories,
-            raiseAfterApplicableDiscounts: true,
             ct);
 
     private async Task<IProductDiscount?> GetProductDiscountCoreAsync(
@@ -46,7 +44,6 @@ class ProductDiscountService
         string? storeAlias,
         string inputPrice,
         string[]? categories = null,
-        bool raiseAfterApplicableDiscounts = true,
         CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -69,7 +66,7 @@ class ProductDiscountService
             Categories = categories
         };
 
-        _discountEvents.RaiseBeforeEvaluateDiscounts(this, evalArgs);
+        await _discountEvents.RaiseBeforeEvaluateDiscountsAsync(this, evalArgs, ct).ConfigureAwait(false);
 
         // use possibly modified values from event args
         path = evalArgs.Path;
@@ -139,10 +136,7 @@ class ProductDiscountService
             categories,
             applicableDiscounts);
 
-        if (raiseAfterApplicableDiscounts)
-        {
-            await _discountEvents.RaiseAfterApplicableDiscountsAsync(this, applicableArgs).ConfigureAwait(false);
-        }
+        await _discountEvents.RaiseAfterApplicableDiscountsAsync(this, applicableArgs, ct).ConfigureAwait(false);
 
         ct.ThrowIfCancellationRequested();
 
