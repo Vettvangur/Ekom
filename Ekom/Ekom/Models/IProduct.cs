@@ -155,7 +155,7 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// <summary>
     /// A discount specific to this product populated after product discount cache is filled.
     /// </summary>
-    IDiscount ProductDiscount(string? price = null);
+    Task<IDiscount?> ProductDiscountAsync(string? price = null, CancellationToken ct = default);
 
     /// <summary>
     /// Get related products

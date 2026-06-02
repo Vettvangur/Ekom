@@ -35,7 +35,7 @@ public static class PriceBuilder
 
         var discountSvc = Configuration.Resolver.GetService<ProductDiscountService>();
 
-        bool isArray = priceJson.AsSpan().TrimStart().StartsWith("[");
+        var isArray = priceJson.AsSpan().TrimStart().StartsWith("[");
         if (!isArray)
         {
             IDiscount? disc = (!string.IsNullOrEmpty(path) && discountSvc != null)

@@ -26,17 +26,34 @@ public class Product : PerStoreNodeEntity, IProduct
 
     private readonly ConcurrentDictionary<string, Lazy<object>> _cache = new();
 
-    public virtual IDiscount ProductDiscount(string? price = null)
+    public virtual IDiscount? ProductDiscount(string? price = null)
     {
-        price = string.IsNullOrEmpty(price) ? Price.OriginalValue.ToString() : price;
+        price = string.IsNullOrEmpty(price) ? OriginalPrice.OriginalValue.ToString() : price;
 
         return Configuration.Resolver.GetService<ProductDiscountService>()?
-                .GetProductDiscount(
-                    Path,
-                    Store.Alias,
-                    price,
-                    categories.Select(x => x.Id.ToString())?.ToArray()
-                );
+            .GetProductDiscount(
+                Path,
+                Store.Alias,
+                price,
+                categories.Select(x => x.Id.ToString()).ToArray()
+            );
+    }
+
+    public virtual async Task<IDiscount?> ProductDiscountAsync(string? price = null, CancellationToken ct = default)
+    {
+        price = string.IsNullOrEmpty(price) ? OriginalPrice.OriginalValue.ToString() : price;
+
+        var discountService = Configuration.Resolver.GetService<ProductDiscountService>();
+        if (discountService == null)
+            return null;
+
+        return await discountService.GetProductDiscountAsync(
+            Path,
+            Store.Alias,
+            price,
+            categories.Select(x => x.Id.ToString()).ToArray(),
+            ct: ct
+        ).ConfigureAwait(false);
     }
 
     /// <summary>

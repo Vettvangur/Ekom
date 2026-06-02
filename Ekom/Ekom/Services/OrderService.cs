@@ -1216,7 +1216,7 @@ partial class OrderService
                 isNewOrderLine = true;
             }
 
-            var productDiscount = product.ProductDiscount();
+            var productDiscount = await product.ProductDiscountAsync(ct: ct);
 
             // Product discounts do not contain constraints that change with quantity updates or order modifications
             // It's therefore enough to only check on OrderLine creation
