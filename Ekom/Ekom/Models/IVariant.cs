@@ -62,7 +62,7 @@ public interface IVariant : IPerStoreNodeEntity
     /// <summary>
     /// Product Stock Keeping Unit.
     /// </summary>
-    IProductDiscount ProductDiscount(string price);
+    Task<IProductDiscount?> ProductDiscountAsync(string price, CancellationToken ct = default);
 
     /// <summary>
     /// Get SKU

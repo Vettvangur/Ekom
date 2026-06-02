@@ -3,7 +3,6 @@ using Ekom.Cache;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Xml.Serialization;
@@ -124,6 +123,21 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
                 price,
                 Product?.Categories.Select(x => x.Id.ToString()).ToArray()
             );
+    }
+
+    public virtual async Task<IProductDiscount?> ProductDiscountAsync(string price, CancellationToken ct = default)
+    {
+        var discountService = Configuration.Resolver.GetService<ProductDiscountService>();
+        if (discountService == null)
+            return null;
+
+        return await discountService.GetProductDiscountAsync(
+            Path,
+            Store.Alias,
+            price,
+            Product?.Categories.Select(x => x.Id.ToString()).ToArray(),
+            ct: ct
+        ).ConfigureAwait(false);
     }
 
     /// <summary>

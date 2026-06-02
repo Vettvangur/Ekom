@@ -16,10 +16,44 @@ class ProductDiscountService
 
     public virtual IProductDiscount? GetProductDiscount(
         string path,
-        string storeAlias,
+        string? storeAlias,
         string inputPrice,
         string[]? categories = null)
+        => GetProductDiscountCoreAsync(
+            path,
+            storeAlias,
+            inputPrice,
+            categories,
+            raiseAfterApplicableDiscounts: false,
+            CancellationToken.None).GetAwaiter().GetResult();
+
+    public virtual Task<IProductDiscount?> GetProductDiscountAsync(
+        string path,
+        string? storeAlias,
+        string inputPrice,
+        string[]? categories = null,
+        CancellationToken ct = default)
+        => GetProductDiscountCoreAsync(
+            path,
+            storeAlias,
+            inputPrice,
+            categories,
+            raiseAfterApplicableDiscounts: true,
+            ct);
+
+    private async Task<IProductDiscount?> GetProductDiscountCoreAsync(
+        string path,
+        string? storeAlias,
+        string inputPrice,
+        string[]? categories = null,
+        bool raiseAfterApplicableDiscounts = true,
+        CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
+        if (string.IsNullOrWhiteSpace(storeAlias))
+            return null;
+
         inputPrice = string.IsNullOrEmpty(inputPrice)
             ? "0"
             : inputPrice.Replace(',', '.');
@@ -105,7 +139,12 @@ class ProductDiscountService
             categories,
             applicableDiscounts);
 
-        _discountEvents.RaiseAfterApplicableDiscounts(this, applicableArgs);
+        if (raiseAfterApplicableDiscounts)
+        {
+            await _discountEvents.RaiseAfterApplicableDiscountsAsync(this, applicableArgs).ConfigureAwait(false);
+        }
+
+        ct.ThrowIfCancellationRequested();
 
         if (applicableArgs.ApplicableDiscounts.Count == 0)
             return null;
