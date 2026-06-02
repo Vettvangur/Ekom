@@ -71,7 +71,7 @@ public class ProductResponse
     public int TotalProductCount { get; set; }
     public IEnumerable<MetafieldGrouped> Filters { get; set; } = new List<MetafieldGrouped>();
 
-    public Dictionary<string, List<(string, int)>> PropertySelectors { get; } = new();
+    public Dictionary<string, List<PropertySelectorValue>> PropertySelectors { get; } = new();
 
     // =========================
     // Single shared pipeline
@@ -145,6 +145,12 @@ public class ProductResponse
 
         foreach (var selector in query.PropertySelectors.Where(s => !string.IsNullOrEmpty(s.Key)))
         {
+            if (selector.Key.Equals("category", StringComparison.OrdinalIgnoreCase))
+            {
+                PropertySelectors[selector.Key] = BuildCategorySelectorValues(working);
+                continue;
+            }
+
             var sep = query.PropertySelectorsSeparator ?? string.Empty;
 
             var values = working
@@ -154,13 +160,42 @@ public class ProductResponse
                     ?? Array.Empty<string>())
                 .Where(v => !string.IsNullOrEmpty(v))
                 .GroupBy(v => v)
-                .Select(g => (g.Key, g.Count()))
+                .Select(g => new PropertySelectorValue
+                {
+                    Value = g.Key,
+                    Title = g.Key,
+                    Count = g.Count(),
+                })
                 .ToList();
 
             PropertySelectors[selector.Key] = values;
         }
 
         return working;
+    }
+
+    private static List<PropertySelectorValue> BuildCategorySelectorValues(IEnumerable<IProduct> products)
+    {
+        return products
+            .SelectMany(product => product.Categories
+                .Concat(product.CategoryAncestors)
+                .GroupBy(category => category.Id)
+                .Select(group => group.First()))
+            .GroupBy(category => category.Id)
+            .Select(group =>
+            {
+                var category = group.First();
+
+                return new PropertySelectorValue
+                {
+                    Id = category.Id,
+                    Value = category.Id.ToString(),
+                    Title = category.Title,
+                    Count = group.Count(),
+                };
+            })
+            .OrderBy(x => x.Title, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
     }
 
     private IEnumerable<IProduct> StepFiltersVisibleAll(IEnumerable<IProduct> working, ProductQuery query)
@@ -361,4 +396,12 @@ public class ProductResponse
 
         return products.OrderBy(x => x.SortOrder);
     }
+}
+
+public class PropertySelectorValue
+{
+    public int? Id { get; set; }
+    public string Value { get; set; } = string.Empty;
+    public string? Title { get; set; }
+    public int Count { get; set; }
 }

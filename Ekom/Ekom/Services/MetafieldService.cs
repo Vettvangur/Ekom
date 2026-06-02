@@ -436,6 +436,7 @@ internal class MetafieldService : IMetafieldService
         {
 
             products = FilterByPrice(products, query);
+            products = FilterByCategory(products, query);
 
             var filters = query.PropertyFilters
                 .Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && kv.Value is { } vs && vs.Any())
@@ -505,6 +506,28 @@ internal class MetafieldService : IMetafieldService
         return products;
     }
 
+    private IEnumerable<IProduct> FilterByCategory(IEnumerable<IProduct> products, ProductQuery query)
+    {
+        var categoryFilter = query.PropertyFilters.FirstOrDefault(x => x.Key.Equals("category", StringComparison.OrdinalIgnoreCase));
+        if (categoryFilter.Value == null || !categoryFilter.Value.Any())
+            return products;
+
+        var categoryIds = categoryFilter.Value
+            .SelectMany(x => x.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Where(x => int.TryParse(x, out _))
+            .Select(int.Parse)
+            .ToHashSet();
+
+        RemovePropertyFilter(query, "category");
+
+        if (categoryIds.Count == 0)
+            return products;
+
+        return products.Where(product => product.Categories
+            .Concat(product.CategoryAncestors)
+            .Any(category => categoryIds.Contains(category.Id)));
+    }
+
     private IEnumerable<IProduct> FilterByPrice(IEnumerable<IProduct> products, ProductQuery query)
     {
 
@@ -553,9 +576,16 @@ internal class MetafieldService : IMetafieldService
             });
         }
 
-        query.PropertyFilters.Remove("priceFrom");
-        query.PropertyFilters.Remove("priceTo");
+        RemovePropertyFilter(query, "priceFrom");
+        RemovePropertyFilter(query, "priceTo");
 
         return products;
+    }
+
+    private static void RemovePropertyFilter(ProductQuery query, string key)
+    {
+        var matchingKey = query.PropertyFilters.Keys.FirstOrDefault(x => x.Equals(key, StringComparison.OrdinalIgnoreCase));
+        if (matchingKey != null)
+            query.PropertyFilters.Remove(matchingKey);
     }
 }
