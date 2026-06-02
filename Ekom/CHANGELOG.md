@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.146](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.145...Ekom-v0.2.146) (2026-06-02)
+
+
+### Bug Fixes
+
+* **discounts:** support async applicable discount events ([#565](https://github.com/Vettvangur/Ekom/issues/565)) ([0291560](https://github.com/Vettvangur/Ekom/commit/0291560901485e97433ec0abf7d8d9161e6d7eba))
+
 ## [0.2.145](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.144...Ekom-v0.2.145) (2026-06-02)
 
 
