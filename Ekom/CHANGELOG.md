@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.145](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.144...Ekom-v0.2.145) (2026-06-02)
+
+
+### Bug Fixes
+
+* **catalog:** extract product query filters ([#563](https://github.com/Vettvangur/Ekom/issues/563)) ([39c1f70](https://github.com/Vettvangur/Ekom/commit/39c1f70811cfc8c52e3f015260e1369e188e3128))
+
 ## [0.2.144](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.143...Ekom-v0.2.144) (2026-06-01)
 
 
