@@ -24,7 +24,7 @@ class ProductDiscountService
             storeAlias,
             inputPrice,
             categories,
-            raiseAfterApplicableDiscounts: false,
+            raiseAfterApplicableDiscounts: true,
             CancellationToken.None).GetAwaiter().GetResult();
 
     public virtual Task<IProductDiscount?> GetProductDiscountAsync(
