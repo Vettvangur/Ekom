@@ -23,8 +23,8 @@ public class ProductQuery : ProductQueryBase
 
         _query = query;
 
-        MetaFilters = MetaFilters ?? ExtractFilters(query, FilterPrefix);
-        PropertyFilters = PropertyFilters ?? ExtractFilters(query, PropertyPrefix);
+        MetaFilters = ExtractFilters(query, FilterPrefix);
+        PropertyFilters = ExtractFilters(query, PropertyPrefix);
 
         SearchQuery = !string.IsNullOrEmpty(SearchQuery) ?
             SearchQuery :
