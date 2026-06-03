@@ -80,7 +80,7 @@
     <ItemGroup>
         <PackageReference Include="Azure.Identity" Version="1.17.1" />
         <PackageReference Include="CommonServiceLocator" Version="2.0.7" />
-        <PackageReference Include="Ekom.Payments.Core" Version="0.2.59" />
+        <PackageReference Include="Ekom.Payments.Core" Version="0.2.71" />
         <PackageReference Include="Hangfire" Version="1.8.18" />
         <PackageReference Include="linq2db" Version="5.4.1" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.9" />

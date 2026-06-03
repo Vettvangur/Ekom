@@ -167,7 +167,7 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        return await PayAsync(paymentRequest, culture, order);
+        return await PayAsync(paymentRequest, culture, order, ct: ct).ConfigureAwait(false);
     }
 
     public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, IOrderInfo order, CancellationToken ct = default)
@@ -558,7 +558,7 @@ public class CheckoutControllerService
 
         string storeAlias = order.StoreInfo.Alias;
 
-        Models.IPaymentProvider? ekomPP = Providers.Instance.GetPaymentProvider(order.PaymentProvider.Key, storeAlias);
+        var ekomPP = await Providers.Instance.GetPaymentProviderAsync(order.PaymentProvider.Key, storeAlias, ct: ct);
 
         if (ekomPP == null)
         {
@@ -586,13 +586,13 @@ public class CheckoutControllerService
             ekomPP.Name,
             isOfflinePayment);
 
-        string paymentErrorUrl = ResolvePaymentProviderUrl(ekomPP, "errorUrl", order, paymentRequest.Culture);
+        var paymentErrorUrl = ResolvePaymentProviderUrl(ekomPP, "errorUrl", order, paymentRequest.Culture);
 
-        string paymentSuccessUrl = ResolvePaymentProviderUrl(ekomPP, "successUrl", order, paymentRequest.Culture);
+        var paymentSuccessUrl = ResolvePaymentProviderUrl(ekomPP, "successUrl", order, paymentRequest.Culture);
 
-        string GetEncodedUrl = _httpCtx.Request.GetEncodedUrl();
+        var GetEncodedUrl = _httpCtx.Request.GetEncodedUrl();
 
-        string errorUrl = Utilities.UriHelper.EnsureFullUri(
+        var errorUrl = Utilities.UriHelper.EnsureFullUri(
         paymentErrorUrl,
         new Uri(GetEncodedUrl));
 
@@ -610,7 +610,7 @@ public class CheckoutControllerService
                     OrderStatus.OfflinePayment,
                     order.UniqueId, ct: ct).ConfigureAwait(false);
 
-                string? memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember().Result?.Key.ToString() : "" : "";
+                string? memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? (await MemberService.GetCurrentMember())?.Key.ToString() : "" : "";
 
                 PayEventArgs eventsArgs = new PayEventArgs
                 {
@@ -675,11 +675,11 @@ public class CheckoutControllerService
                 "?orderId=" + order.UniqueId
             );
 
-            string basePaymentProvider = string.IsNullOrEmpty(ekomPP.GetValue("basePaymentProvider")) ? ekomPP.Name : ekomPP.GetValue("basePaymentProvider");
+            var basePaymentProvider = string.IsNullOrEmpty(ekomPP.GetValue("basePaymentProvider")) ? ekomPP.Name : ekomPP.GetValue("basePaymentProvider");
 
             Payments.IPaymentProvider pp = ekomPayments.GetPaymentProvider(basePaymentProvider);
 
-            string language = !string.IsNullOrEmpty(ekomPP.GetValue("language", order.StoreInfo.Alias))
+            var language = !string.IsNullOrEmpty(ekomPP.GetValue("language", order.StoreInfo.Alias))
                 ? ekomPP.GetValue("language", order.StoreInfo.Alias)
                 : "is-IS";
 
