@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.151](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.150...Ekom-v0.2.151) (2026-06-03)
+
+
+### Bug Fixes
+
+* **stock:** use explicit store stock lookups ([#575](https://github.com/Vettvangur/Ekom/issues/575)) ([3cdf627](https://github.com/Vettvangur/Ekom/commit/3cdf62793c7e9499f3c15999d96344a01903ffc4))
+
 ## [0.2.150](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.149...Ekom-v0.2.150) (2026-06-02)
 
 
