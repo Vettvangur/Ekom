@@ -72,9 +72,9 @@ public partial class Stock
     /// <returns></returns>
     public decimal GetStock(Guid key, string storeAlias)
     {
-        if (string.IsNullOrEmpty(storeAlias))
+        if (string.IsNullOrWhiteSpace(storeAlias) || !_config.PerStoreStock)
         {
-            throw new ArgumentException("StoreAlias empty, did you mean to use GetStock(key) instead?", nameof(storeAlias));
+            return GetStock(key);
         }
 
         return GetStockData(key, storeAlias).Stock;
@@ -118,6 +118,10 @@ public partial class Stock
     /// <returns></returns>
     public StockData GetStockData(Guid key, string storeAlias)
     {
+        if (string.IsNullOrWhiteSpace(storeAlias) || !_config.PerStoreStock)
+        {
+            return GetStockData(key);
+        }
 
         return _stockPerStoreCache.Cache.ContainsKey(storeAlias) && _stockPerStoreCache.Cache[storeAlias].ContainsKey(key)
         ? _stockPerStoreCache.Cache[storeAlias][key]
@@ -151,7 +155,7 @@ public partial class Stock
             {
                 foreach (OrderedVariant? orderedVariant in orderLine.Product.VariantGroups.SelectMany(x => x.Variants))
                 {
-                    IVariant? variant = Catalog.Instance.GetVariant(orderedVariant.Key, orderInfo.StoreInfo.Alias);
+                    IVariant? variant = await Catalog.Instance.GetVariantAsync(orderedVariant.Key, orderInfo.StoreInfo.Alias, ct: ct);
 
                     if (variant == null)
                     {

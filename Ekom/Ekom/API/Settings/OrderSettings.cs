@@ -42,7 +42,7 @@ public class OrderSettings
     /// This allows callers to supporting methods to provide a completed order, 
     /// circumventing our IsOrderFinal logic
     /// </summary>
-    public IOrderInfo OrderInfo { get; set; }
+    public IOrderInfo? OrderInfo { get; set; }
 
     public OrderDynamicRequest OrderDynamicRequest { get; set; }
     public Dictionary<string, string> CustomData { get; set; } = [];

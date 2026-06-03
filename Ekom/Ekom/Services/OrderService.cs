@@ -497,7 +497,7 @@ partial class OrderService
         OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(store).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(store, ct: ct).ConfigureAwait(false);
         }
         else
         {
@@ -540,15 +540,15 @@ partial class OrderService
 
                 ArgumentNullException.ThrowIfNull(orderedVariant, "Ordered Variant is null");
 
-                variant = Catalog.Instance.GetVariant(orderedVariant.Key, storeAlias);
+                variant = await Catalog.Instance.GetVariantAsync(orderedVariant.Key, storeAlias, ct: ct);
 
                 ArgumentNullException.ThrowIfNull(variant, "Variant is null");
 
-                existingStock = variant.Stock;
+                existingStock = Stock.Instance.GetStock(variant.Key, store.Alias);
             }
             else
             {
-                existingStock = product.Stock;
+                existingStock = Stock.Instance.GetStock(product.Key, store.Alias);
             }
 
             VerifyStock(quantity, existingStock, product, variant);
