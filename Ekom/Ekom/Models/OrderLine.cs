@@ -166,7 +166,7 @@ public class OrderLine : IOrderLine
         OrderInfo = orderInfo;
         OrderLineInfo = orderLineInfo;
         Product = new OrderedProduct(productJson, orderInfo.StoreInfo);
-        Discount = discount;
+        Discount = discount ?? Variant?.Price.Discount ?? Product.Price.Discount;
         Settings = settings;
     }
 
@@ -186,7 +186,7 @@ public class OrderLine : IOrderLine
         Quantity = quantity;
         Key = lineId;
         Product = new OrderedProduct(product, variant, orderInfo.StoreInfo, orderDynamic);
-        Discount = product.Price.Discount;
+        Discount = Variant?.Price.Discount ?? Product.Price.Discount;
         OrderLineInfo = new OrderLineInfo()
         {
             Properties = orderLineData
