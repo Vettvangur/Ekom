@@ -2004,7 +2004,7 @@ partial class OrderService
         && existingStock < quantity)
         {
             throw new NotEnoughStockException(
-                $"Stock not available for product {product.Key} and variant {variant?.Key}");
+                $"Stock not available for product {product.Key} and variant {variant?.Key}. ExistingStock: {existingStock}. Quantity: {quantity} BufferStock: {bufferStock}");
         }
     }
 
