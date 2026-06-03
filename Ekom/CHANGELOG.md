@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.154](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.153...Ekom-v0.2.154) (2026-06-03)
+
+
+### Bug Fixes
+
+* **stock:** use store alias for stock checks ([#581](https://github.com/Vettvangur/Ekom/issues/581)) ([6b82770](https://github.com/Vettvangur/Ekom/commit/6b8277082981707064a9b611bbbab82573fcda8e))
+
 ## [0.2.153](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.152...Ekom-v0.2.153) (2026-06-03)
 
 
