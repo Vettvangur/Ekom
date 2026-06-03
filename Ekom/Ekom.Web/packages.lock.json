@@ -29,8 +29,8 @@
       },
       "Ekom.Payments.Core": {
         "type": "Transitive",
-        "resolved": "0.2.59",
-        "contentHash": "SN+M5JKLyo0Hgo0wbcqBozBAY6ENCTiW8a9erpTRvsrjF4tWhZlkD2mjvCnpHB28YcRbMIu2EsrfFLKKOUcWBg==",
+        "resolved": "0.2.71",
+        "contentHash": "z+bbU068GeYTSSkrm7dqfmNi7IwCD+LhP9dT/eNC5YNa8L+aEjxh/vgRcHwRTGYR+RMSFd+9V8Do1O2defJY1w==",
         "dependencies": {
           "Azure.Core": "1.51.0",
           "Azure.Identity": "1.17.1",
@@ -1025,8 +1025,8 @@
         "dependencies": {
           "Azure.Identity": "[1.17.1, )",
           "CommonServiceLocator": "[2.0.7, )",
-          "Ekom.Common": "[0.2.120, )",
-          "Ekom.Payments.Core": "[0.2.59, )",
+          "Ekom.Common": "[0.2.151, )",
+          "Ekom.Payments.Core": "[0.2.71, )",
           "Hangfire": "[1.8.18, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.3.0, )",
           "Microsoft.AspNetCore.Mvc.Abstractions": "[2.3.0, )",
