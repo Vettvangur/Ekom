@@ -93,10 +93,21 @@
       $document.on("click", unbindDocumentClick);
     }
 
+    function formatDateQueryValue(value) {
+      if (!angular.isDate(value)) {
+        return value;
+      }
+
+      var month = ("0" + (value.getMonth() + 1)).slice(-2);
+      var day = ("0" + value.getDate()).slice(-2);
+
+      return value.getFullYear() + "-" + month + "-" + day;
+    }
+
     function buildOrdersQuery() {
       return {
-        start: $scope.filters.dateFrom,
-        end: $scope.filters.dateTo,
+        start: formatDateQueryValue($scope.filters.dateFrom),
+        end: formatDateQueryValue($scope.filters.dateTo),
         orderStatus: $scope.filters.orderStatus,
         page: $scope.page,
         pageSize: 20,
@@ -115,8 +126,8 @@
 
     function buildChartQuery() {
       return {
-        start: $scope.filters.dateFrom,
-        end: $scope.filters.dateTo,
+        start: formatDateQueryValue($scope.filters.dateFrom),
+        end: formatDateQueryValue($scope.filters.dateTo),
         orderStatus: $scope.filters.orderStatus,
         store: $scope.filters.store
       };
@@ -124,8 +135,8 @@
 
     function buildMostSoldProductsQuery() {
       return {
-        start: $scope.filters.dateFrom,
-        end: $scope.filters.dateTo,
+        start: formatDateQueryValue($scope.filters.dateFrom),
+        end: formatDateQueryValue($scope.filters.dateTo),
         orderStatus: $scope.filters.orderStatus,
         store: $scope.filters.store,
         page: $scope.pageMostSoldProducts,
