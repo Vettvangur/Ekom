@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.156](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.155...Ekom-v0.2.156) (2026-06-03)
+
+
+### Bug Fixes
+
+* **order:** use variant discounts on order lines ([#585](https://github.com/Vettvangur/Ekom/issues/585)) ([c12be0d](https://github.com/Vettvangur/Ekom/commit/c12be0dad69fa373a575623fa8f89855d1981e24))
+
 ## [0.2.155](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.154...Ekom-v0.2.155) (2026-06-03)
 
 
