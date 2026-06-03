@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.155](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.154...Ekom-v0.2.155) (2026-06-03)
+
+
+### Bug Fixes
+
+* **manager:** format date filter queries ([#583](https://github.com/Vettvangur/Ekom/issues/583)) ([3a937b6](https://github.com/Vettvangur/Ekom/commit/3a937b634a929a9d765a5d98970b2476fa03f874))
+
 ## [0.2.154](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.153...Ekom-v0.2.154) (2026-06-03)
 
 
