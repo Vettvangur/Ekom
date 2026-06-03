@@ -83,7 +83,7 @@ public class Product : PerStoreNodeEntity, IProduct
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual decimal Stock => API.Stock.Instance.GetStock(Key);
+    public virtual decimal Stock => API.Stock.Instance.GetStock(Key, Store.Alias);
 
     /// <summary>
     /// Get the current product Stock
