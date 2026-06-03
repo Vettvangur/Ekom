@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.153](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.152...Ekom-v0.2.153) (2026-06-03)
+
+
+### Bug Fixes
+
+* **stock:** include details in stock exception ([#579](https://github.com/Vettvangur/Ekom/issues/579)) ([c816343](https://github.com/Vettvangur/Ekom/commit/c8163430f3a07bde422eea05a2e628022c24fe9f))
+
 ## [0.2.152](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.151...Ekom-v0.2.152) (2026-06-03)
 
 
