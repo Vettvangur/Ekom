@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.161](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.160...Ekom-v0.2.161) (2026-06-04)
+
+
+### Bug Fixes
+
+* **manager:** export order lines server-side ([#596](https://github.com/Vettvangur/Ekom/issues/596)) ([f9823fd](https://github.com/Vettvangur/Ekom/commit/f9823fd914a6727db1a26b0c2fcc1025247d33b0))
+* **manager:** use order list currencies ([#595](https://github.com/Vettvangur/Ekom/issues/595)) ([f8d68a1](https://github.com/Vettvangur/Ekom/commit/f8d68a18aaba7d2ad5c22ecbdd030afbf9892eb7))
+
 ## [0.2.160](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.159...Ekom-v0.2.160) (2026-06-04)
 
 
