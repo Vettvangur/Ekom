@@ -54,6 +54,13 @@ angular.module("umbraco.resources").factory("Ekom.Manager.Resources", [
       SearchOrders: function (query) {
         return get(backofficeBaseUrl + "SearchOrders", query);
       },
+      ExportOrders: function (query) {
+        return $http({
+          method: "GET",
+          url: backofficeBaseUrl + "ExportOrders" + buildQueryString(query),
+          responseType: "blob"
+        });
+      },
       StatusList: function () {
         return get(backofficeBaseUrl + "StatusList");
       },
