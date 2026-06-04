@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.160](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.159...Ekom-v0.2.160) (2026-06-04)
+
+
+### Bug Fixes
+
+* **manager:** export all filtered orders ([#593](https://github.com/Vettvangur/Ekom/issues/593)) ([be30b01](https://github.com/Vettvangur/Ekom/commit/be30b011742ea10a43307e998b38b3af2da1d2cd))
+
 ## [0.2.159](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.158...Ekom-v0.2.159) (2026-06-04)
 
 
