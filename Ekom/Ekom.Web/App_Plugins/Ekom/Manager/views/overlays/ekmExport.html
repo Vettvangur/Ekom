@@ -1,5 +1,5 @@
 <article class="ekmExport">
-  <p>Choose how to export the currently loaded orders.</p>
+  <p>Choose how to export the orders matching the current filters.</p>
 
   <label style="display:block; margin-top:15px;">
     <input type="checkbox" no-dirty-check ng-model="model.editModel.options.includeOrderLines" ng-disabled="model.editModel.options.exporting" />
@@ -7,7 +7,7 @@
   </label>
 
   <p style="margin-top:10px;" ng-if="model.editModel.options.includeOrderLines">
-    Including order lines can take longer because each order needs to be loaded before the CSV is created.
+    Including order lines can take longer because each matching order needs to be loaded before the CSV is created.
   </p>
 
   <p style="margin-top:15px;" ng-if="model.editModel.options.exporting">

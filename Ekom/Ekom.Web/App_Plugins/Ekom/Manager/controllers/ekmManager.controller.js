@@ -124,6 +124,15 @@
       };
     }
 
+    function buildExportOrdersQuery() {
+      var query = buildOrdersQuery();
+
+      query.page = 1;
+      query.pageSize = $scope.result.count || 0;
+
+      return query;
+    }
+
     function buildChartQuery() {
       return {
         start: formatDateQueryValue($scope.filters.dateFrom),
@@ -675,33 +684,45 @@
       });
     }
 
-    $scope.ExportCsv = function (filename, includeOrderLines) {
-      var orders = $scope.result.orders;
+    function getExportOrders() {
+      if (!$scope.result.count) {
+        return $q.when([]);
+      }
 
-      if (!orders || !orders.length) {
+      return resources.SearchOrders(buildExportOrdersQuery())
+        .then(function (result) {
+          var data = result.data || {};
+
+          return data.orders || [];
+        });
+    }
+
+    $scope.ExportCsv = function (filename, includeOrderLines) {
+      if (!$scope.result.count) {
         return;
       }
 
       $scope.exportOptions.exporting = true;
 
-      if (!includeOrderLines) {
-        return downloadCsv(Object.keys(orders[0]), orders, filename)
-          .then(function () {
-            $scope.CloseModal();
-          })
-          .finally(function () {
-            $scope.exportOptions.exporting = false;
-          });
-      }
+      return getExportOrders()
+        .then(function (orders) {
+          if (!orders.length) {
+            return;
+          }
 
-      return getOrderLineExportRows(orders)
-        .then(function (rows) {
-          return downloadCsv(getOrderLineExportKeys(orders), rows, filename || "orders-with-orderlines.csv");
+          if (!includeOrderLines) {
+            return downloadCsv(Object.keys(orders[0]), orders, filename);
+          }
+
+          return getOrderLineExportRows(orders)
+            .then(function (rows) {
+              return downloadCsv(getOrderLineExportKeys(orders), rows, filename || "orders-with-orderlines.csv");
+            });
         })
         .then(function () {
           $scope.CloseModal();
         }, function () {
-          notificationsService.error("Error", "Error exporting order lines.");
+          notificationsService.error("Error", "Error exporting orders.");
         })
         .finally(function () {
           $scope.exportOptions.exporting = false;
