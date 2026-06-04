@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.157](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.156...Ekom-v0.2.157) (2026-06-04)
+
+
+### Bug Fixes
+
+* **order:** use provided order for coupon code ([#587](https://github.com/Vettvangur/Ekom/issues/587)) ([2819a21](https://github.com/Vettvangur/Ekom/commit/2819a21b440e9a1dd685fac6d05d263bb8c5e029))
+
 ## [0.2.156](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.155...Ekom-v0.2.156) (2026-06-03)
 
 
