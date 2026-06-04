@@ -106,11 +106,16 @@ public partial class Order
     }
 
 
-    public async Task SetCouponCodeAsync(string coupon, DiscountOrderSettings? discountOrderSettings = null, CancellationToken ct = default)
+    public async Task<IOrderInfo?> SetCouponCodeAsync(string coupon, DiscountOrderSettings? discountOrderSettings = null, CancellationToken ct = default)
     {
-        var storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
+        return await SetCouponCodeAsync(coupon, null, discountOrderSettings, ct).ConfigureAwait(false);
+    }
 
-        await _orderService.SetCouponCodeAsync(coupon, storeAlias, discountOrderSettings, ct: ct).ConfigureAwait(false);
+    public async Task<IOrderInfo?> SetCouponCodeAsync(string coupon, string? storeAlias, DiscountOrderSettings? discountOrderSettings = null, CancellationToken ct = default)
+    {
+        storeAlias = storeAlias ?? _storeSvc.GetStoreFromCache()?.Alias;
+
+        return await _orderService.SetCouponCodeAsync(coupon, storeAlias, discountOrderSettings, ct: ct).ConfigureAwait(false);
     }
 
     

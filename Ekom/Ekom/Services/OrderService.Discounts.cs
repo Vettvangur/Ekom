@@ -254,26 +254,33 @@ partial class OrderService
     /// <summary>
     /// Manually set coupon code on order, does not validate coupon or use other discount functionality
     /// </summary>
-    public async Task SetCouponCodeAsync(string couponCode, string? storeAlias, DiscountOrderSettings? settings = null, CancellationToken ct = default)
+    public async Task<IOrderInfo?> SetCouponCodeAsync(string couponCode, string? storeAlias, DiscountOrderSettings? settings = null, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(couponCode))
-        {
-            return;
-        }
-
-        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+        var orderInfo = settings?.OrderInfo as OrderInfo;
 
         if (orderInfo == null)
         {
-            return;
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+        }
+
+        if (string.IsNullOrEmpty(couponCode))
+        {
+            return orderInfo;
+        }
+
+        if (orderInfo == null)
+        {
+            return orderInfo;
         }
 
         if (orderInfo.Coupon != couponCode)
         {
             orderInfo.Coupon = couponCode;
 
-            await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true, ct: ct).ConfigureAwait(false);
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true, ct: ct).ConfigureAwait(false);
         }
+
+        return orderInfo;
     }
 
 
