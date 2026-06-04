@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.159](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.158...Ekom-v0.2.159) (2026-06-04)
+
+
+### Bug Fixes
+
+* **stock:** use order store in checkout ([#591](https://github.com/Vettvangur/Ekom/issues/591)) ([9bb6fa2](https://github.com/Vettvangur/Ekom/commit/9bb6fa2379777bf7973198a69212bcd985621826))
+
 ## [0.2.158](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.157...Ekom-v0.2.158) (2026-06-04)
 
 
