@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.158](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.157...Ekom-v0.2.158) (2026-06-04)
+
+
+### Bug Fixes
+
+* **order:** respect event flag on line updates ([#589](https://github.com/Vettvangur/Ekom/issues/589)) ([12461a7](https://github.com/Vettvangur/Ekom/commit/12461a76414c99682fd4dc645db2d7a268c17b4e))
+
 ## [0.2.157](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.156...Ekom-v0.2.157) (2026-06-04)
 
 
