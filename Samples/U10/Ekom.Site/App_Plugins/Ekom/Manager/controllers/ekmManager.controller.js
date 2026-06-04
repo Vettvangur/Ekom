@@ -570,34 +570,7 @@
         });
     };
 
-    function escapeCsvValue(value) {
-      var escapedValue = value;
-
-      if (escapedValue == null) {
-        return "";
-      }
-
-      if (typeof escapedValue === "object") {
-        escapedValue = JSON.stringify(escapedValue);
-      }
-
-      escapedValue = String(escapedValue);
-
-      return /[",\r\n]/.test(escapedValue)
-        ? '"' + escapedValue.replace(/"/g, '""') + '"'
-        : escapedValue;
-    }
-
-    function downloadCsv(keys, rows, filename) {
-      var lines = [keys.join(",")];
-
-      rows.forEach(function (row) {
-        lines.push(keys.map(function (key) {
-          return escapeCsvValue(row[key]);
-        }).join(","));
-      });
-
-      var blob = new Blob(["\uFEFF", lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    function downloadBlob(blob, filename) {
       var url = URL.createObjectURL(blob);
       var anchor = document.createElement("a");
 
@@ -612,112 +585,21 @@
       }, 0, false);
     }
 
-    function getOrderLineExportKeys(orders) {
-      return ["rowType"].concat(Object.keys(orders[0]), [
-        "orderLineKey",
-        "productSku",
-        "productTitle",
-        "variantSku",
-        "variantTitle",
-        "quantity",
-        "unitPrice",
-        "vat",
-        "discount",
-        "lineTotal"
-      ]);
-    }
-
-    function getEmptyOrderLineExportData() {
-      return {
-        orderLineKey: "",
-        productSku: "",
-        productTitle: "",
-        variantSku: "",
-        variantTitle: "",
-        quantity: "",
-        unitPrice: "",
-        vat: "",
-        discount: "",
-        lineTotal: ""
-      };
-    }
-
-    function getOrderLineExportData(orderLine) {
-      return {
-        orderLineKey: orderLine.key,
-        productSku: orderLine.product && orderLine.product.sku,
-        productTitle: orderLine.product && orderLine.product.title,
-        variantSku: orderLine.variant && orderLine.variant.sku,
-        variantTitle: orderLine.variant && orderLine.variant.title,
-        quantity: orderLine.quantity,
-        unitPrice: orderLine.product && orderLine.product.price && orderLine.product.price.withVat && orderLine.product.price.withVat.currencyString,
-        vat: orderLine.amount && orderLine.amount.vat && orderLine.amount.vat.currencyString,
-        discount: orderLine.amount && orderLine.amount.discountAmount && orderLine.amount.discountAmount.currencyString,
-        lineTotal: orderLine.amount && orderLine.amount.withVat && orderLine.amount.withVat.currencyString
-      };
-    }
-
-    function getOrderLineRow(order, orderLine) {
-      return angular.extend({
-        rowType: "OrderLine",
-        referenceId: order.referenceId,
-        uniqueId: order.uniqueId
-      }, getEmptyOrderLineExportData(), getOrderLineExportData(orderLine));
-    }
-
-    function getOrderLineExportRows(orders) {
-      return $q.all(orders.map(function (order) {
-        return resources.OrderInfo(order.uniqueId)
-          .then(function (result) {
-            var orderInfo = result.data || {};
-            var orderLines = orderInfo.orderLines || [];
-            var rows = [angular.extend({ rowType: "Order" }, order, getEmptyOrderLineExportData())];
-
-            orderLines.forEach(function (orderLine) {
-              rows.push(getOrderLineRow(order, orderLine));
-            });
-
-            return rows;
-          });
-      })).then(function (orderLineRows) {
-        return [].concat.apply([], orderLineRows);
-      });
-    }
-
-    function getExportOrders() {
-      if (!$scope.result.count) {
-        return $q.when([]);
-      }
-
-      return resources.SearchOrders(buildExportOrdersQuery())
-        .then(function (result) {
-          var data = result.data || {};
-
-          return data.orders || [];
-        });
-    }
-
     $scope.ExportCsv = function (filename, includeOrderLines) {
       if (!$scope.result.count) {
         return;
       }
 
+      var query = buildExportOrdersQuery();
+      query.includeOrderLines = !!includeOrderLines;
+
       $scope.exportOptions.exporting = true;
 
-      return getExportOrders()
-        .then(function (orders) {
-          if (!orders.length) {
-            return;
-          }
+      return resources.ExportOrders(query)
+        .then(function (result) {
+          var exportFilename = filename || (includeOrderLines ? "orders-with-orderlines.csv" : "orders.csv");
 
-          if (!includeOrderLines) {
-            return downloadCsv(Object.keys(orders[0]), orders, filename);
-          }
-
-          return getOrderLineExportRows(orders)
-            .then(function (rows) {
-              return downloadCsv(getOrderLineExportKeys(orders), rows, filename || "orders-with-orderlines.csv");
-            });
+          return downloadBlob(result.data, exportFilename);
         })
         .then(function () {
           $scope.CloseModal();
