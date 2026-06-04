@@ -13,6 +13,7 @@ public class ManagerRepository
     readonly ILogger _logger;
     readonly Configuration _config;
     readonly DatabaseFactory _databaseFactory;
+    readonly IStoreService _storeService;
 
     /// <summary>
     /// ctor
@@ -20,11 +21,13 @@ public class ManagerRepository
     public ManagerRepository(
         ILogger<ManagerRepository> logger,
         Configuration config,
-        DatabaseFactory databaseFactory)
+        DatabaseFactory databaseFactory,
+        IStoreService storeService)
     {
         _logger = logger;
         _config = config;
         _databaseFactory = databaseFactory;
+        _storeService = storeService;
     }
 
     public async Task<IEnumerable<OrderData>> GetOrdersAsync(IReadOnlyCollection<string> allowedStoreAliases)
@@ -119,7 +122,7 @@ public class ManagerRepository
 
         var totals = db.Execute<OrderListDataTotals>(sqlTotalQuery, param);
 
-        var orderListData = new OrderListData(orders, totals)
+        var orderListData = new OrderListData(orders, totals, GetStoreCurrency(store))
         {
             Page = _page,
             PageSize = _pageSize
@@ -128,6 +131,11 @@ public class ManagerRepository
         return orderListData;
     }
 
+    private string? GetStoreCurrency(string storeAlias)
+    {
+        return _storeService.GetStoreByAlias(storeAlias)?.Currency.CurrencyValue;
+    }
+  
     public async Task<List<OrderData>> GetOrdersForExportAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderInfo)
     {
         string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId);
@@ -160,6 +168,7 @@ public class ManagerRepository
         await using DbContext db = _databaseFactory.GetDatabase();
 
         return await db.QueryToListAsync<OrderData>(sqlQuery, param).ConfigureAwait(false);
+
     }
 
     public async Task<List<ChartAggregateRow>> GetChartAggregatesAsync(DateTime start, DateTime end, string store, string orderStatus)
