@@ -13,6 +13,7 @@ public class ManagerRepository
     readonly ILogger _logger;
     readonly Configuration _config;
     readonly DatabaseFactory _databaseFactory;
+    readonly IStoreService _storeService;
 
     /// <summary>
     /// ctor
@@ -20,11 +21,13 @@ public class ManagerRepository
     public ManagerRepository(
         ILogger<ManagerRepository> logger,
         Configuration config,
-        DatabaseFactory databaseFactory)
+        DatabaseFactory databaseFactory,
+        IStoreService storeService)
     {
         _logger = logger;
         _config = config;
         _databaseFactory = databaseFactory;
+        _storeService = storeService;
     }
 
     public async Task<IEnumerable<OrderData>> GetOrdersAsync(IReadOnlyCollection<string> allowedStoreAliases)
@@ -119,13 +122,18 @@ public class ManagerRepository
 
         var totals = db.Execute<OrderListDataTotals>(sqlTotalQuery, param);
 
-        var orderListData = new OrderListData(orders, totals)
+        var orderListData = new OrderListData(orders, totals, GetStoreCurrency(store))
         {
             Page = _page,
             PageSize = _pageSize
         };
 
         return orderListData;
+    }
+
+    private string? GetStoreCurrency(string storeAlias)
+    {
+        return _storeService.GetStoreByAlias(storeAlias)?.Currency.CurrencyValue;
     }
 
     public async Task<List<ChartAggregateRow>> GetChartAggregatesAsync(DateTime start, DateTime end, string store, string orderStatus)
