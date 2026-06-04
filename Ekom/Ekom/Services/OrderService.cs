@@ -555,13 +555,17 @@ partial class OrderService
 
             orderline.Quantity = quantity;
 
-            var updatedEventArgs = new UpdatedOrderlineEventArgs()
+            if (settings.FireEvents)
             {
-                OrderInfo = orderInfo
-            };
+                var updatedEventArgs = new UpdatedOrderlineEventArgs()
+                {
+                    OrderInfo = orderInfo
+                };
 
-            OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+                OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
+                await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+            }
+
 
             return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
