@@ -97,11 +97,16 @@ public class ManagerRepository
             paymentProviderValue = parsedPaymentProvider.ToString();
         }
 
+        Guid? queryUniqueId = Guid.TryParse(query?.Trim(), out Guid parsedQueryUniqueId)
+            ? parsedQueryUniqueId
+            : null;
+
         var param = new
         {
             startDate = start.Date,
             endDate = end.Date.AddDays(1).AddTicks(-1),
             query = "%" + query + "%",
+            queryUniqueId,
             orderStatus,
             store,
             paymentProvider = paymentProviderValue,
@@ -148,11 +153,16 @@ public class ManagerRepository
             paymentProviderValue = parsedPaymentProvider.ToString();
         }
 
+        Guid? queryUniqueId = Guid.TryParse(query?.Trim(), out Guid parsedQueryUniqueId)
+            ? parsedQueryUniqueId
+            : null;
+
         var param = new
         {
             startDate = start.Date,
             endDate = end.Date.AddDays(1).AddTicks(-1),
             query = "%" + query + "%",
+            queryUniqueId,
             orderStatus,
             store,
             paymentProvider = paymentProviderValue,
@@ -217,7 +227,14 @@ ORDER BY {bucketDateExpression}";
 
         if (!string.IsNullOrEmpty(query))
         {
-            whereClause.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query)");
+            whereClause.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query");
+
+            if (Guid.TryParse(query.Trim(), out _))
+            {
+                whereClause.Append(" OR UniqueId = @queryUniqueId");
+            }
+
+            whereClause.Append(")");
         }
 
         if (!string.IsNullOrEmpty(paymentProvider) && Guid.TryParse(paymentProvider, out _))
