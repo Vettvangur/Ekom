@@ -580,6 +580,17 @@ public class CheckoutControllerService
             }
         };
 
+        var orderItemsPreparingEventArgs = new PaymentOrderItemsPreparingEventArgs
+        {
+            OrderInfo = order,
+            PaymentRequest = paymentRequest,
+            OrderItems = new System.Collections.ObjectModel.Collection<OrderItem>(orderItems),
+        };
+
+        CheckoutEvents.OnPaymentOrderItemsPreparing(this, orderItemsPreparingEventArgs);
+        await CheckoutEvents.OnPaymentOrderItemsPreparingAsync(this, orderItemsPreparingEventArgs, ct);
+        orderItems = orderItemsPreparingEventArgs.OrderItems.ToList();
+
         Logger.LogInformation(
             "Payment Provider: {PaymentProvider}, {Name} offline: {isOfflinePayment}",
             order.PaymentProvider.Key,
