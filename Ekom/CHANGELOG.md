@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.164](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.163...Ekom-v0.2.164) (2026-06-05)
+
+
+### Bug Fixes
+
+* **product:** use variants for availability ([#603](https://github.com/Vettvangur/Ekom/issues/603)) ([27f0242](https://github.com/Vettvangur/Ekom/commit/27f02420dcff67cddf5ca5ed95101ad0b5c1176f))
+
 ## [0.2.163](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.162...Ekom-v0.2.163) (2026-06-05)
 
 
