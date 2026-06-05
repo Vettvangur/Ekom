@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.162](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.161...Ekom-v0.2.162) (2026-06-05)
+
+
+### Bug Fixes
+
+* **import:** preserve product category picker ([#599](https://github.com/Vettvangur/Ekom/issues/599)) ([1c1a609](https://github.com/Vettvangur/Ekom/commit/1c1a609c59cec73799fbd3e841d73fc4ef01b9e1))
+
 ## [0.2.161](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.160...Ekom-v0.2.161) (2026-06-04)
 
 
