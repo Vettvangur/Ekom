@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.167](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.166...Ekom-v0.2.167) (2026-06-05)
+
+
+### Features
+
+* **checkout:** add payment order items event ([#610](https://github.com/Vettvangur/Ekom/issues/610)) ([5dcccc2](https://github.com/Vettvangur/Ekom/commit/5dcccc259e32775744af8ff3da804826521766e2))
+
 ## [0.2.166](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.165...Ekom-v0.2.166) (2026-06-05)
 
 
