@@ -96,7 +96,29 @@ public class Product : PerStoreNodeEntity, IProduct
     /// <summary>
     /// Get the availability of the product and the variants
     /// </summary>
-    public virtual bool Available => Stock > 0 || Backorder || AllVariants.Any(x => x.Available);
+    public virtual bool Available
+    {
+        get
+        {
+            if (Backorder)
+            {
+                return true;
+            }
+
+            bool hasVariants = false;
+            foreach (IVariant variant in AllVariants)
+            {
+                hasVariants = true;
+
+                if (variant.Available)
+                {
+                    return true;
+                }
+            }
+
+            return !hasVariants && Stock > 0;
+        }
+    }
 
     private string _backorderValue = "";
     /// <summary>
