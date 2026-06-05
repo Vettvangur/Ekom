@@ -8,6 +8,30 @@ namespace Ekom.Tests.Tests;
 public class OrderInfoTests
 {
     [Fact]
+    public void Constructor_PreservesLegacyTopLevelDiscountObjectAmountValue()
+    {
+        JObject orderInfoJson = new JObject
+        {
+            [nameof(OrderInfo.Culture)] = "en-US",
+            [nameof(OrderInfo.OrderLines)] = new JArray(),
+            [nameof(OrderInfo.Discount)] = CreateDiscountJson(),
+        };
+        ((JObject)orderInfoJson[nameof(OrderInfo.Discount)]!)[nameof(OrderedDiscount.Amount)] = new JObject
+        {
+            ["Value"] = 12.34m,
+        };
+        var orderData = new OrderData
+        {
+            OrderInfo = orderInfoJson.ToString(),
+        };
+
+        var orderInfo = new OrderInfo(orderData);
+
+        Assert.NotNull(orderInfo.Discount);
+        Assert.Equal(12.34m, orderInfo.Discount.Amount);
+    }
+
+    [Fact]
     public void CreateOrderedDiscountFromJson_PreservesDecimalAmount()
     {
         JObject discountJson = CreateDiscountJson();

@@ -45,7 +45,7 @@ public class OrderInfo : IOrderInfo
             CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
             Consent = CreateConsentFromJson(orderInfoJObject);
             Tracking = CreateTrackingFromJson(orderInfoJObject);
-            Discount = orderInfoJObject[nameof(Discount)]?.ToObject<OrderedDiscount>();
+            Discount = CreateOrderedDiscountFromJson(orderInfoJObject[nameof(Discount)]);
             Coupon = orderInfoJObject[nameof(Coupon)]?.ToObject<string>();
             _hangfireJobs = orderInfoJObject[nameof(HangfireJobs)]?.ToObject<List<string>>();
         }
