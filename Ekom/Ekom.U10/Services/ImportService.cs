@@ -1086,22 +1086,25 @@ public class ImportService : IImportService
                 }
             }
 
-            if (importProduct.Categories.Count > 1 && allUmbracoCategories != null)
+            if (!importProduct.PreserveExistingValues || create)
             {
-                var categoryIdentifiers = new HashSet<string>(importProduct.Categories.Skip(1));
+                if (importProduct.Categories.Count > 1 && allUmbracoCategories != null)
+                {
+                    var categoryIdentifiers = new HashSet<string>(importProduct.Categories.Skip(1));
 
-                var umbracoCategories = allUmbracoCategories
-                    .Where(x => categoryIdentifiers.Contains(x.GetValue<string>(Configuration.ImportAliasIdentifier) ?? ""))
-                    .ToList();
+                    var umbracoCategories = allUmbracoCategories
+                        .Where(x => categoryIdentifiers.Contains(x.GetValue<string>(Configuration.ImportAliasIdentifier) ?? ""))
+                        .ToList();
 
-                var udis = umbracoCategories.Select(x => x.GetUdi());
+                    var udis = umbracoCategories.Select(x => x.GetUdi());
 
-                var stringUdis = string.Join(",", udis.Select(x => x.ToString()));
+                    var stringUdis = string.Join(",", udis.Select(x => x.ToString()));
 
-                productContent.SetValue("categories", stringUdis);
-            } else
-            {
-                productContent.SetValue("categories", "");
+                    productContent.SetValue("categories", stringUdis);
+                } else
+                {
+                    productContent.SetValue("categories", "");
+                }
             }
 
             if (importProduct.EnableBackorder)
