@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.165](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.164...Ekom-v0.2.165) (2026-06-05)
+
+
+### Bug Fixes
+
+* **order:** deserialize top-level discount amounts ([#605](https://github.com/Vettvangur/Ekom/issues/605)) ([f3462c4](https://github.com/Vettvangur/Ekom/commit/f3462c44f4f9a99372a7a0e2c169ad37dc0d5f5c))
+
 ## [0.2.164](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.163...Ekom-v0.2.164) (2026-06-05)
 
 
