@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.87](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.86...Ekom.Klaviyo-v0.2.87) (2026-06-05)
+
+
+### Bug Fixes
+
+* **klaviyo:** add orderline VAT fields ([#608](https://github.com/Vettvangur/Ekom/issues/608)) ([e4df6b1](https://github.com/Vettvangur/Ekom/commit/e4df6b104fe7d613b0ca0b731861510c7020c1a9))
+
 ## [0.2.86](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.85...Ekom.Klaviyo-v0.2.86) (2026-06-03)
 
 

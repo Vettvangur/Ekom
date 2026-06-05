@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.166](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.165...Ekom-v0.2.166) (2026-06-05)
+
+
+### Bug Fixes
+
+* **manager:** refresh order actions on order switch ([#607](https://github.com/Vettvangur/Ekom/issues/607)) ([d9cb9f6](https://github.com/Vettvangur/Ekom/commit/d9cb9f690a247bef35a3be8575424649f97c9689))
+
 ## [0.2.165](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.164...Ekom-v0.2.165) (2026-06-05)
 
 
