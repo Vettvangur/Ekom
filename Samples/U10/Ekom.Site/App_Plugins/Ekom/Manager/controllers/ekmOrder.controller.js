@@ -7,7 +7,9 @@
     var activityLogTypeInfo = 0;
     var activityLogTypeSuccess = 1;
     var activityLogTypeAlert = 2;
-    var orderId = $scope.model && $scope.model.editModel && $scope.model.editModel.order && $scope.model.editModel.order.uniqueId;
+    function getCurrentOrderId() {
+      return $scope.model && $scope.model.editModel && $scope.model.editModel.order && $scope.model.editModel.order.uniqueId;
+    }
 
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
@@ -102,7 +104,7 @@
         var notify = document.getElementById("notifyOrderStatus");
 
         resources.ChangeOrderStatus({
-          orderId: changeOrderStatusButton.getAttribute("data-orderId"),
+          orderId: getCurrentOrderId(),
           orderStatus: $scope.orderChangeStatus.value,
           notify: notify.checked
         })
@@ -293,20 +295,34 @@
     }
 
     function loadOrder() {
+      var orderId = getCurrentOrderId();
+
       if (!orderId) {
         return Promise.resolve();
       }
 
       return resources.OrderInfo(orderId)
         .then(function (result) {
+          if (orderId !== getCurrentOrderId()) {
+            return;
+          }
+
           applyOrderData(result.data);
         }, function (error) {
+          if (orderId !== getCurrentOrderId()) {
+            return;
+          }
+
           window.alert(getErrorMessage(error, "Failed to reload order."));
         });
     }
 
     function loadOrderActions() {
+      var orderId = getCurrentOrderId();
+
       if (!orderId) {
+        $scope.orderActions = [];
+        $scope.orderActionsLoading = false;
         return Promise.resolve();
       }
 
@@ -314,12 +330,24 @@
 
       return resources.OrderActions(orderId)
         .then(function (result) {
+          if (orderId !== getCurrentOrderId()) {
+            return;
+          }
+
           $scope.orderActions = result.data || [];
         }, function (error) {
+          if (orderId !== getCurrentOrderId()) {
+            return;
+          }
+
           $scope.orderActions = [];
           window.alert(getErrorMessage(error, "Failed to load order actions."));
         })
         .finally(function () {
+          if (orderId !== getCurrentOrderId()) {
+            return;
+          }
+
           $scope.orderActionsLoading = false;
         });
     }
@@ -400,6 +428,12 @@
 
     $scope.executeOrderAction = function (action) {
       if (!action || !action.key || $scope.executingOrderActionKey) {
+        return;
+      }
+
+      var orderId = getCurrentOrderId();
+
+      if (!orderId) {
         return;
       }
 
@@ -610,27 +644,66 @@
     };
 
     function loadActivityLogs() {
-      var order = $scope.model && $scope.model.editModel && $scope.model.editModel.order;
+      var orderId = getCurrentOrderId();
 
-      if (!order || !order.uniqueId) {
+      if (!orderId) {
+        $scope.activityLogs = [];
+        $scope.activityLogsLoading = false;
         return;
       }
 
       $scope.activityLogsLoading = true;
       $scope.activityLogsError = false;
 
-      resources.OrderLogs(order.uniqueId)
+      resources.OrderLogs(orderId)
         .then(function (result) {
+          if (orderId !== getCurrentOrderId()) {
+            return;
+          }
+
           $scope.activityLogs = result.data || [];
           $scope.activityLogExpandedStates = {};
         }, function () {
+          if (orderId !== getCurrentOrderId()) {
+            return;
+          }
+
           $scope.activityLogs = [];
           $scope.activityLogsError = true;
         })
         .finally(function () {
+          if (orderId !== getCurrentOrderId()) {
+            return;
+          }
+
           $scope.activityLogsLoading = false;
         });
     }
+
+    $scope.$watch(getCurrentOrderId, function (newOrderId, oldOrderId) {
+      if (newOrderId === oldOrderId) {
+        return;
+      }
+
+      $scope.visibleDropdowns = {};
+      $scope.labelDropdowns = {};
+      $scope.activityLogs = [];
+      $scope.activityLogsError = false;
+      $scope.activityLogsLoading = false;
+      $scope.activityLogExpandedStates = {};
+      $scope.orderActions = [];
+      $scope.orderActionsLoading = false;
+      $scope.executingOrderActionKey = null;
+
+      if (!newOrderId) {
+        return;
+      }
+
+      $scope.orderChangeStatus = $scope.getStatus($scope.model.editModel.order.orderStatus);
+
+      loadActivityLogs();
+      loadOrderActions();
+    });
 
     loadActivityLogs();
     loadOrderActions();
