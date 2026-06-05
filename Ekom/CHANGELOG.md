@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.163](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.162...Ekom-v0.2.163) (2026-06-05)
+
+
+### Bug Fixes
+
+* **manager:** handle legacy order discount data ([#601](https://github.com/Vettvangur/Ekom/issues/601)) ([ee049c1](https://github.com/Vettvangur/Ekom/commit/ee049c135eae365a4191b937e699fb6f177bb484))
+
 ## [0.2.162](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.161...Ekom-v0.2.162) (2026-06-05)
 
 
