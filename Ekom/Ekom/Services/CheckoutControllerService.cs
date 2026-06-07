@@ -575,6 +575,7 @@ public class CheckoutControllerService
             {
                 GrandTotal = amount,
                 Price = amount,
+                VAT = order.Vat.Value,
                 Title = orderTitle,
                 Quantity = 1,
             }
