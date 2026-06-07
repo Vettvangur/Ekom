@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.88](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.87...Ekom.Klaviyo-v0.2.88) (2026-06-07)
+
+
+### Bug Fixes
+
+* **klaviyo:** add formatted order VAT total ([#612](https://github.com/Vettvangur/Ekom/issues/612)) ([6113c21](https://github.com/Vettvangur/Ekom/commit/6113c21aed762c1ff46b282ff5a012a06a8c6408))
+
 ## [0.2.87](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.86...Ekom.Klaviyo-v0.2.87) (2026-06-05)
 
 
