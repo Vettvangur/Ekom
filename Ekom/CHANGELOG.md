@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.170](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.169...Ekom-v0.2.170) (2026-06-07)
+
+
+### Bug Fixes
+
+* **checkout:** add VAT to payment order item ([#616](https://github.com/Vettvangur/Ekom/issues/616)) ([2bd8950](https://github.com/Vettvangur/Ekom/commit/2bd8950a7c95e52de95e4a7da9eb7cfc22b126fa))
+
 ## [0.2.169](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.168...Ekom-v0.2.169) (2026-06-07)
 
 
