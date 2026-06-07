@@ -23,6 +23,7 @@ public sealed record KlaviyoPlacedOrder
     public KlaviyoShippingProvider? ShippingProvider { get; set; } = null;
     public KlaviyoPaymentProvider? PaymentProvider { get; set; } = null;
     public decimal? TaxValue { get; set; }
+    public string? TaxValueFormatted { get; set; }
     public Dictionary<string, object?> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public KlaviyoProfileSubscribeRequest? Consent { get; set; }
 }
