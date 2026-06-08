@@ -600,17 +600,23 @@ class EnsureNodesExist : IComponent
                                         Name = "Stock",
                                         SortOrder = 5
                                     },
+                                    new PropertyType(_shortStringHelper, propertyNumericDt, "ekmStockBuffer")
+                                    {
+                                        Name = "Stock Buffer",
+                                        Description = "Reduces the available stock by this amount",
+                                        SortOrder = 6
+                                    },
                                     new PropertyType(_shortStringHelper, booleanDt, "enableBackorder")
                                     {
                                         Name = "Enable Backorder",
                                         Description = "If set then the variant can be sold indefinitely",
-                                        SortOrder = 6
+                                        SortOrder = 7
                                     },
                                     new PropertyType(_shortStringHelper, decimalDt, "vat")
                                     {
                                         Name = "VAT",
                                         Description = "%, override store VAT.",
-                                        SortOrder = 7
+                                        SortOrder = 8
                                     },
                                 }))
                             {
