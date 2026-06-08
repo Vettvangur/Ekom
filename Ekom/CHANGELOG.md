@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.172](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.171...Ekom-v0.2.172) (2026-06-08)
+
+
+### Bug Fixes
+
+* **stock:** resolve buffer values dynamically ([#620](https://github.com/Vettvangur/Ekom/issues/620)) ([620177f](https://github.com/Vettvangur/Ekom/commit/620177f055a5ad18ea8b69d4f54a7a8bae4c33f4))
+
 ## [0.2.171](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.170...Ekom-v0.2.171) (2026-06-08)
 
 
