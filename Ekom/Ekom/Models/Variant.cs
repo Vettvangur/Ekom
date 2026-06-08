@@ -33,7 +33,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     public virtual decimal Stock => API.Stock.Instance.GetStock(Key, Store.Alias);
 
     /// <summary>
-    /// Get the current product Stock
+    /// Get the current variant Stock Buffer
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]

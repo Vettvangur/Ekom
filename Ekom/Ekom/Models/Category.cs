@@ -188,7 +188,10 @@ public class Category : PerStoreNodeEntity, ICategory
         var products = await ProductsRecursiveAsync(ct: ct);
         return products.Products.Filters();
     }
-
+    
+    /// <summary>
+    /// Get the current category Stock Buffer
+    /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
