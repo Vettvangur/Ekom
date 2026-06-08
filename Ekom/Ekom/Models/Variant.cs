@@ -33,12 +33,27 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     public virtual decimal Stock => API.Stock.Instance.GetStock(Key, Store.Alias);
 
     /// <summary>
-    /// Get the current product Stock
+    /// Get the current variant Stock Buffer
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public decimal? StockBuffer { get; set; }
+    public decimal? StockBuffer {
+        get
+        {
+            if (decimal.TryParse(GetValue("ekmStockBuffer", Store.Alias), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var stockBuffer))
+            {
+                if (stockBuffer <= 0)
+                {
+                    return null;
+                }
+                
+                return stockBuffer;
+            }
+
+            return null;
+        }
+    }
     
     /// <summary>
     /// Get the backorder status

@@ -83,9 +83,8 @@ public interface IVariant : IPerStoreNodeEntity
     decimal Stock { get; }
     
     /// <summary>
-    /// Sets the stock buffer for the product
+    /// Gets the configured stock buffer for the variant.
     /// </summary>
-    /// <returns></returns>
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [System.Xml.Serialization.XmlIgnore]

@@ -86,12 +86,27 @@ public class Product : PerStoreNodeEntity, IProduct
     public virtual decimal Stock => API.Stock.Instance.GetStock(Key, Store.Alias);
 
     /// <summary>
-    /// Get the current product Stock
+    /// Get the current product Stock Buffer
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public decimal? StockBuffer { get; set; }
+    public decimal? StockBuffer {
+        get
+        {
+            if (decimal.TryParse(GetValue("ekmStockBuffer", Store.Alias), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var stockBuffer))
+            {
+                if (stockBuffer <= 0)
+                {
+                    return null;
+                }
+                
+                return stockBuffer;
+            }
+
+            return null;
+        }
+    }
 
     /// <summary>
     /// Get the availability of the product and the variants
@@ -556,11 +571,6 @@ public class Product : PerStoreNodeEntity, IProduct
 
         OriginalPrice = CreateOriginalPrice();
         SKU = GetValue("sku");
-
-        if (decimal.TryParse(GetValue("ekmStockBuffer", store.Alias), out var stockBuffer))
-        {
-            StockBuffer = stockBuffer;
-        }
     }
 
     public void InvalidateCache()
