@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.175](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.174...Ekom-v0.2.175) (2026-06-08)
+
+
+### Bug Fixes
+
+* **coupons:** allow event settings when removing coupon ([#626](https://github.com/Vettvangur/Ekom/issues/626)) ([9ab6028](https://github.com/Vettvangur/Ekom/commit/9ab6028db013788ce651e5f01ffa996a1f028c19))
+
 ## [0.2.174](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.173...Ekom-v0.2.174) (2026-06-08)
 
 
