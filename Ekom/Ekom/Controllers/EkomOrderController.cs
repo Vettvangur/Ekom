@@ -563,7 +563,7 @@ public partial class EkomOrderController : ControllerBase
     [EnableRateLimiting("order-coupon")]
     public async Task<IActionResult> RemoveCouponFromOrder(string storeAlias, CancellationToken ct = default)
     {
-        await Order.Instance.RemoveCouponFromOrderAsync(storeAlias, ct);
+        await Order.Instance.RemoveCouponFromOrderAsync(storeAlias, null, ct);
 
         return Ok();
     }
