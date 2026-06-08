@@ -144,6 +144,7 @@ partial class OrderService
         try
         {
             RemoveDiscountFromOrder(orderInfo);
+            
             if (settings.UpdateOrder)
             {
                 await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
@@ -174,10 +175,10 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+        var orderInfo = settings.OrderInfo as OrderInfo ?? await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler)   
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
@@ -509,9 +510,12 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = settings.OrderInfo as OrderInfo ?? await GetOrderAsync(storeAlias, ct: ct).ConfigureAwait(false);
 
+        ArgumentNullException.ThrowIfNull(orderInfo);
+        
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
+        
         if (!settings.IsEventHandler)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
