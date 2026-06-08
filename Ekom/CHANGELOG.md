@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.171](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.170...Ekom-v0.2.171) (2026-06-08)
+
+
+### Bug Fixes
+
+* **stock:** use configured stock buffer fallback ([#618](https://github.com/Vettvangur/Ekom/issues/618)) ([2fdac21](https://github.com/Vettvangur/Ekom/commit/2fdac2140b7610de2d003db4e659e9b456e4b06e))
+
 ## [0.2.170](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.169...Ekom-v0.2.170) (2026-06-07)
 
 
