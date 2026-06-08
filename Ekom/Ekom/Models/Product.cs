@@ -91,7 +91,7 @@ public class Product : PerStoreNodeEntity, IProduct
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual decimal? StockBuffer { get; set; }
+    public decimal? StockBuffer { get; set; }
 
     /// <summary>
     /// Get the availability of the product and the variants

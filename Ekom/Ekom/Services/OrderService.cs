@@ -1995,8 +1995,11 @@ partial class OrderService
     private void VerifyStock(decimal quantity, decimal existingStock, IProduct product, IVariant? variant = null)
     {
         var bufferStock =
-            product.StockBuffer
-            ?? product.CategoryAncestors?.FirstOrDefault(c => c.StockBuffer.HasValue)?.StockBuffer
+            GetConfiguredStockBuffer(variant?.StockBuffer)
+            ?? GetConfiguredStockBuffer(product.StockBuffer)
+            ?? product.CategoryAncestors?
+                .Select(c => GetConfiguredStockBuffer(c.StockBuffer))
+                .FirstOrDefault(x => x.HasValue)
             ?? 0;
 
         existingStock -= bufferStock;
@@ -2010,6 +2013,11 @@ partial class OrderService
             throw new NotEnoughStockException(
                 $"Stock not available for product {product.Key} and variant {variant?.Key}. ExistingStock: {existingStock}. Quantity: {quantity} BufferStock: {bufferStock}");
         }
+    }
+
+    private static decimal? GetConfiguredStockBuffer(decimal? stockBuffer)
+    {
+        return stockBuffer > 0 ? stockBuffer : null;
     }
 
     /// <summary>

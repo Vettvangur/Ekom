@@ -27,7 +27,7 @@ public interface IVariant : IPerStoreNodeEntity
     /// Gets the Vat.
     /// </summary>
     /// <value>
-    /// The stock.
+    /// The vat.
     /// </value>
     decimal Vat { get; }
 
@@ -81,6 +81,15 @@ public interface IVariant : IPerStoreNodeEntity
     /// The stock.
     /// </value>
     decimal Stock { get; }
+    
+    /// <summary>
+    /// Sets the stock buffer for the product
+    /// </summary>
+    /// <returns></returns>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
+    decimal? StockBuffer { get; }
 
     /// <summary>
     /// 
