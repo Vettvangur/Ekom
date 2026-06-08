@@ -192,7 +192,22 @@ public class Category : PerStoreNodeEntity, ICategory
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public decimal? StockBuffer { get; set; }
+    public decimal? StockBuffer {
+        get
+        {
+            if (decimal.TryParse(GetValue("ekmStockBuffer", Store.Alias), out var stockBuffer))
+            {
+                if (stockBuffer <= 0)
+                {
+                    return null;
+                }
+                
+                return stockBuffer;
+            }
+
+            return null;
+        }
+    }
 
 
     /// <summary>
@@ -218,11 +233,6 @@ public class Category : PerStoreNodeEntity, ICategory
         Urls = urls.Select(x => x.Url);
 
         VirtualUrl = GetValue("ekmVirtualUrl").IsBoolean();
-
-        if (decimal.TryParse(GetValue("ekmStockBuffer", store.Alias), out var stockBuffer))
-        {
-            StockBuffer = stockBuffer;
-        }
 
         var ancestorCategories = new List<ICategory>();
 

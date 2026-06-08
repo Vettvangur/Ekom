@@ -21,9 +21,9 @@
       },
       "Ekom.Payments.Core": {
         "type": "Direct",
-        "requested": "[0.2.73, )",
-        "resolved": "0.2.73",
-        "contentHash": "QqUBQGl9ft3qIP6liJMXJbt18ZTvYBBn89FRPgOsDF2aWJUT2KKym8i7IQK87xneTA/5KSzl34h9vXZeZAGu+A==",
+        "requested": "[0.2.74, )",
+        "resolved": "0.2.74",
+        "contentHash": "qbhnRiW2dNW7qtZBoDsOTdlUYCMLduT6/lrcmVGcS1eb7Os/nceGIFhUQT15DHOLtVVBMJVwOAyLho3FD531HA==",
         "dependencies": {
           "Azure.Core": "1.51.0",
           "Azure.Identity": "1.17.1",

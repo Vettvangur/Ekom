@@ -38,7 +38,22 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public decimal? StockBuffer { get; set; }
+    public decimal? StockBuffer {
+        get
+        {
+            if (decimal.TryParse(GetValue("ekmStockBuffer", Store.Alias), out var stockBuffer))
+            {
+                if (stockBuffer <= 0)
+                {
+                    return null;
+                }
+                
+                return stockBuffer;
+            }
+
+            return null;
+        }
+    }
     
     /// <summary>
     /// Get the backorder status
@@ -330,11 +345,6 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         OriginalPrice = CreateOriginalPrice();
 
         SKU = string.IsNullOrEmpty(GetValue("sku")) ? Product?.SKU ?? "" : GetValue("sku");
-        
-        if (decimal.TryParse(GetValue("ekmStockBuffer", store.Alias), out var stockBuffer))
-        {
-            StockBuffer = stockBuffer;
-        }
     }
 
     private IPrice CreateOriginalPrice()
