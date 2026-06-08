@@ -2017,7 +2017,7 @@ partial class OrderService
 
     private static decimal? GetConfiguredStockBuffer(decimal? stockBuffer)
     {
-        return stockBuffer > 0 ? stockBuffer : null;
+        return stockBuffer is > 0 ? stockBuffer : null;
     }
 
     /// <summary>
