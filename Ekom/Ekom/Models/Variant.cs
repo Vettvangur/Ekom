@@ -345,6 +345,11 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         OriginalPrice = CreateOriginalPrice();
 
         SKU = string.IsNullOrEmpty(GetValue("sku")) ? Product?.SKU ?? "" : GetValue("sku");
+        
+        if (decimal.TryParse(GetValue("ekmStockBuffer", store.Alias), out var stockBuffer))
+        {
+            StockBuffer = stockBuffer;
+        }
     }
 
     private IPrice CreateOriginalPrice()
