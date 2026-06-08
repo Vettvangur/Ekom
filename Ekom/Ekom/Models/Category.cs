@@ -198,7 +198,7 @@ public class Category : PerStoreNodeEntity, ICategory
     public decimal? StockBuffer {
         get
         {
-            if (decimal.TryParse(GetValue("ekmStockBuffer", Store.Alias), out var stockBuffer))
+            if (decimal.TryParse(GetValue("ekmStockBuffer", Store.Alias), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var stockBuffer))
             {
                 if (stockBuffer <= 0)
                 {
