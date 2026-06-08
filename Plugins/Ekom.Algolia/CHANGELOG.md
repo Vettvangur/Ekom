@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.28](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.27...Ekom.Algolia-v0.2.28) (2026-06-08)
+
+
+### Bug Fixes
+
+* stock buffer fallback ([#622](https://github.com/Vettvangur/Ekom/issues/622)) ([ea14a8d](https://github.com/Vettvangur/Ekom/commit/ea14a8dc60df30ae450bc49dd2cf19213a351a7e))
+
 ## [0.2.27](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.26...Ekom.Algolia-v0.2.27) (2026-06-08)
 
 
