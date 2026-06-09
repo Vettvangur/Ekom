@@ -880,14 +880,16 @@ partial class OrderService
                 throw new OrderLineNotFoundException("Could not find order line with key: " + lineId);
             }
 
-            var updatedEventArgs = new UpdatedOrderlineEventArgs()
+            if (settings.FireEvents)
             {
-                OrderInfo = orderInfo
-            };
+                var updatedEventArgs = new UpdatedOrderlineEventArgs()
+                {
+                    OrderInfo = orderInfo
+                };
 
-            OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
-
+                OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
+                await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+            }
 
             return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
@@ -1088,10 +1090,13 @@ partial class OrderService
             OrderInfo = orderInfo
         };
 
-        OrderEvents.OnAddingOrderline(this, addingOrderlineEventArgs);
-        await OrderEvents.OnAddingOrderlineAsync(this, addingOrderlineEventArgs, ct);
+        if (settings.FireEvents)
+        {
+            OrderEvents.OnAddingOrderline(this, addingOrderlineEventArgs);
+            await OrderEvents.OnAddingOrderlineAsync(this, addingOrderlineEventArgs, ct);
+        }
 
-        if (settings != null && settings.CustomData != null)
+        if (settings.CustomData.Any())
         {
             orderInfo = (OrderInfo)(await UpdateCustomerInformationInProvidersAsync(settings.CustomData, orderInfo, ct));
         }
@@ -1252,16 +1257,21 @@ partial class OrderService
                 OrderLine = orderLine
             };
 
-            OrderEvents.OnAddedOrderline(this, addedEventArgs);
-            await OrderEvents.OnAddedOrderlineAsync(this, addedEventArgs,ct);
-
-            var updatedEventArgs = new UpdatedOrderlineEventArgs()
+            if (settings.FireEvents)
             {
-                OrderInfo = orderInfo
-            };
+                OrderEvents.OnAddedOrderline(this, addedEventArgs);
+                await OrderEvents.OnAddedOrderlineAsync(this, addedEventArgs, ct);
 
-            OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+                var updatedEventArgs = new UpdatedOrderlineEventArgs()
+                {
+                    OrderInfo = addedEventArgs.OrderInfo
+                };
+
+                OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
+                await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+
+                addedEventArgs.OrderInfo = updatedEventArgs.OrderInfo;
+            }
 
             var updatedOrderInfo = await UpdateOrderAndOrderInfoAsync(addedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
