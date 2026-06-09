@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.176](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.175...Ekom-v0.2.176) (2026-06-09)
+
+
+### Bug Fixes
+
+* **order:** preserve orderline event order info ([#628](https://github.com/Vettvangur/Ekom/issues/628)) ([da51987](https://github.com/Vettvangur/Ekom/commit/da51987df853b28ae274677332c4a2e1eea3c5d2))
+
 ## [0.2.175](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.174...Ekom-v0.2.175) (2026-06-08)
 
 
