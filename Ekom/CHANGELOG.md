@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.178](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.177...Ekom-v0.2.178) (2026-06-09)
+
+
+### Bug Fixes
+
+* **order:** validate order culture by store ([#632](https://github.com/Vettvangur/Ekom/issues/632)) ([d52ddbe](https://github.com/Vettvangur/Ekom/commit/d52ddbe4187df9b7b5e1efbd029c1dbc6222c7fc))
+
 ## [0.2.177](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.176...Ekom-v0.2.177) (2026-06-09)
 
 
