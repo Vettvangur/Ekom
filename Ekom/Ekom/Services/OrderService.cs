@@ -880,18 +880,18 @@ partial class OrderService
                 throw new OrderLineNotFoundException("Could not find order line with key: " + lineId);
             }
 
+            var updatedEventArgs = new UpdatedOrderlineEventArgs()
+            {
+                OrderInfo = orderInfo
+            };
+
             if (settings.FireEvents)
             {
-                var updatedEventArgs = new UpdatedOrderlineEventArgs()
-                {
-                    OrderInfo = orderInfo
-                };
-
                 OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
                 await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
             }
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+            return await UpdateOrderAndOrderInfoAsync(updatedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
         }
         finally
