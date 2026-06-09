@@ -392,7 +392,7 @@
       searchDebouncePromise = $timeout(function () {
         searchDebouncePromise = null;
         $scope.GetData();
-      }, 300);
+      }, 700);
     };
 
     $scope.onDateRangeChanged = function () {

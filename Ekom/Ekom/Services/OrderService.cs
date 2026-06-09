@@ -1310,7 +1310,7 @@ partial class OrderService
             AddGlobalDiscounts(orderInfo);
             VerifyProviders(orderInfo);
 
-            orderInfo.Culture = CultureInfo.CurrentCulture.Name;
+            orderInfo.Culture = ResolveOrderCulture(orderInfo);
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest?.IPAddress ?? "";
 
@@ -1418,6 +1418,31 @@ partial class OrderService
             throw;
         }
 
+    }
+
+    private string ResolveOrderCulture(OrderInfo orderInfo)
+    {
+        var store = _storeSvc.GetStoreByAlias(orderInfo.StoreInfo.Alias);
+        var storeCultures = store?.Cultures ?? [];
+        var currentCulture = CultureInfo.CurrentCulture.Name;
+
+        if (IsStoreCulture(currentCulture, storeCultures))
+        {
+            return currentCulture;
+        }
+
+        if (IsStoreCulture(orderInfo.Culture, storeCultures))
+        {
+            return orderInfo.Culture;
+        }
+
+        return store?.Culture.Name ?? orderInfo.StoreInfo.Culture;
+    }
+
+    private static bool IsStoreCulture(string? culture, IEnumerable<CultureInfoDto> storeCultures)
+    {
+        return !string.IsNullOrWhiteSpace(culture)
+            && storeCultures.Any(x => string.Equals(x.Name, culture, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
