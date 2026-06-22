@@ -256,9 +256,9 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
             {
                 string value = GetValue("vat", Store.Alias);
 
-                if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal _val))
+                if (VatParser.TryParsePercentageRate(value, out decimal _val))
                 {
-                    return _val / 100;
+                    return _val;
                 }
             }
 
