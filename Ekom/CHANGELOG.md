@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.179](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.178...Ekom-v0.2.179) (2026-06-22)
+
+
+### Bug Fixes
+
+* **order:** parse comma decimal vat rates ([#634](https://github.com/Vettvangur/Ekom/issues/634)) ([52adffc](https://github.com/Vettvangur/Ekom/commit/52adffc000d851fc971126e83ad60d06d3d0b43a))
+
 ## [0.2.178](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.177...Ekom-v0.2.178) (2026-06-09)
 
 
