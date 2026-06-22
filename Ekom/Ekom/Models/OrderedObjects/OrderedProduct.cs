@@ -117,9 +117,9 @@ public class OrderedProduct
             {
                 string value = Properties.GetPropertyValue("vat", StoreInfo.Alias);
 
-                if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal _val))
+                if (VatParser.TryParsePercentageRate(value, out decimal _val))
                 {
-                    return _val / 100;
+                    return _val;
                 }
             }
 

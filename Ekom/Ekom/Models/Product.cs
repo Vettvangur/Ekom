@@ -424,9 +424,9 @@ public class Product : PerStoreNodeEntity, IProduct
                     if (Properties.HasPropertyValue("vat", storeAlias))
                     {
                         string value = GetValue("vat", storeAlias);
-                        if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal _val))
+                        if (VatParser.TryParsePercentageRate(value, out decimal _val))
                         {
-                            return _val / 100;
+                            return _val;
                         }
                     }
 

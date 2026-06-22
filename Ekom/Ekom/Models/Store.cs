@@ -203,8 +203,8 @@ public class Store : NodeEntity, IStore
         {
             var value = Properties.GetPropertyValue("vat");
 
-            return decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var vat)
-                ? vat / 100
+            return VatParser.TryParsePercentageRate(value, out var vat)
+                ? vat
                 : 0;
         }
     }

@@ -2,7 +2,6 @@ using Ekom.API;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
-using System.Globalization;
 using System.Xml.Serialization;
 
 namespace Ekom.Models;
@@ -140,12 +139,13 @@ public class OrderLine : IOrderLine
             if (variantGroup != null && !string.IsNullOrEmpty(variantGroup.Properties.GetPropertyValue("vat", OrderInfo.StoreInfo.Alias)))
             {
                 string vatVal = variantGroup.Properties.GetPropertyValue("vat", OrderInfo.StoreInfo.Alias);
-                return Convert.ToDecimal(vatVal, CultureInfo.InvariantCulture) / 100;
+                if (VatParser.TryParsePercentageRate(vatVal, out var vat))
+                {
+                    return vat;
+                }
             }
-            else
-            {
-                return Product.Vat;
-            }
+
+            return Product.Vat;
         }
     }
 

@@ -8,9 +8,11 @@ public class StoreVatTests
 {
     [Theory]
     [InlineData("25.5", "0.255")]
+    [InlineData("25,5", "0.255")]
     [InlineData("25", "0.25")]
     [InlineData("", "0")]
-    [InlineData("25,5", "0")]
+    [InlineData("1,000", "0.01")]
+    [InlineData("1,000.5", "0")]
     public void Vat_Parses_With_Invariant_Culture(string vatValue, string expectedValue)
     {
         var store = new TestStore(vatValue);
