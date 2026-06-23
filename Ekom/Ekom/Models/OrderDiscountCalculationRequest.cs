@@ -14,3 +14,10 @@ public class OrderDiscountCalculationLineRequest
     public Guid? VariantKey { get; set; }
     public decimal Quantity { get; set; } = 1;
 }
+
+public class OrderDiscountStockUpdateRequest
+{
+    public Guid Key { get; set; }
+    public int Value { get; set; }
+    public string? Coupon { get; set; }
+}

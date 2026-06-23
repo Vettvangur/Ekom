@@ -47,6 +47,33 @@ public class EkomOrderDiscountsController : ControllerBase
 
         return Ok(result);
     }
+    
+    [HttpPost]
+    [Route("update-stock")]
+    public async Task<IActionResult> UpdateStock(
+        [FromBody] OrderDiscountStockUpdateRequest request,
+        CancellationToken ct = default)
+    {
+        if (request == null)
+        {
+            return BadRequest();
+        }
+
+        if (!IsAuthorized())
+        {
+            return Unauthorized();
+        }
+
+        if (request.Value == 0)
+        {
+            return BadRequest("Value can not be 0");
+        }
+
+        await API.Stock.Instance.UpdateDiscountStockAsync(request.Key, request.Value, request.Coupon)
+            .ConfigureAwait(false);
+
+        return Ok();
+    }
 
     private bool IsAuthorized()
     {
