@@ -18,4 +18,8 @@ public sealed class KlaviyoProfileLookupResult
 
     public bool IsEmailSubscribed
         => SubscribedChannels.Contains(KlaviyoProfileConsentChannel.Email);
+    public bool IsSmsSubscribed
+        => SubscribedChannels.Contains(KlaviyoProfileConsentChannel.Sms);
+    public bool IsPushSubscribed
+        => SubscribedChannels.Contains(KlaviyoProfileConsentChannel.Push);
 }
