@@ -23,5 +23,5 @@ internal sealed class KlaviyoProfilesEnricherRunner : IKlaviyoProfilesEnricherRu
         => _pipeline.ApplyAsync(update.Profile.Customer.Email ?? string.Empty, consents: null, ct);
 
     public ValueTask ApplyAsync(KlaviyoProfileSubscribeRequest update, CancellationToken ct)
-        => _pipeline.ApplyAsync(update.Email, update.Consents, ct);
+        => _pipeline.ApplyAsync(update.Email ?? string.Empty, update.Consents, ct);
 }

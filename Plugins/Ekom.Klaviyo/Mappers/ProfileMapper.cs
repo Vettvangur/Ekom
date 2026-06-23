@@ -140,7 +140,8 @@ public static class ProfileMapper
     {
         var profileAttributes = new JsonObject();
 
-        profileAttributes["email"] = u.Email;
+        if (!string.IsNullOrWhiteSpace(u.Email))
+            profileAttributes["email"] = u.Email;
 
         if (!string.IsNullOrWhiteSpace(u.PhoneNumber))
             profileAttributes["phone_number"] = u.PhoneNumber;

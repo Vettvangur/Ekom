@@ -11,7 +11,7 @@ public sealed record KlaviyoProfileConsentRequest(
 
 public sealed record KlaviyoProfileSubscribeRequest(
     string StoreAlias,
-    string Email,
+    string? Email = null,
     IReadOnlyList<KlaviyoProfileConsentChange>? Consents = null,
     string? ListId = null,
     string? PhoneNumber = null,
