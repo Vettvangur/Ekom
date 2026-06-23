@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.93](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.92...Ekom.Klaviyo-v0.2.93) (2026-06-23)
+
+
+### Bug Fixes
+
+* **klaviyo:** support phone-only sms subscriptions ([#642](https://github.com/Vettvangur/Ekom/issues/642)) ([65c106a](https://github.com/Vettvangur/Ekom/commit/65c106ac20290f31be07f15a887b598b890e1dc6))
+
 ## [0.2.92](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.91...Ekom.Klaviyo-v0.2.92) (2026-06-23)
 
 
