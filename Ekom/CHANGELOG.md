@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.180](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.179...Ekom-v0.2.180) (2026-06-23)
+
+
+### Bug Fixes
+
+* **discounts:** add discount stock update action ([#636](https://github.com/Vettvangur/Ekom/issues/636)) ([c349a10](https://github.com/Vettvangur/Ekom/commit/c349a105b372c721fb1240725d2476c5a1f87f84))
+
 ## [0.2.179](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.178...Ekom-v0.2.179) (2026-06-22)
 
 
