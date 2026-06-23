@@ -1,4 +1,5 @@
 using Ekom.Models;
+using Ekom.Repositories;
 using Ekom.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -14,13 +15,16 @@ public class EkomOrderDiscountsController : ControllerBase
 {
     private const string ApiKeyHeaderName = "X-Ekom-Api-Key";
 
+    private readonly CouponRepository _couponRepository;
     private readonly IOrderDiscountCalculationService _orderDiscountCalculationService;
     private readonly IOptions<OrderDiscountCalculationOptions> _options;
 
     public EkomOrderDiscountsController(
+        CouponRepository couponRepository,
         IOrderDiscountCalculationService orderDiscountCalculationService,
         IOptions<OrderDiscountCalculationOptions> options)
     {
+        _couponRepository = couponRepository;
         _orderDiscountCalculationService = orderDiscountCalculationService;
         _options = options;
     }
@@ -70,6 +74,27 @@ public class EkomOrderDiscountsController : ControllerBase
         }
 
         await API.Stock.Instance.UpdateDiscountStockAsync(request.Key, request.Value, request.Coupon)
+            .ConfigureAwait(false);
+
+        return Ok();
+    }
+
+    [HttpPost]
+    [Route("coupon/mark-used")]
+    [EnableRateLimiting("order-coupon")]
+    public async Task<IActionResult> MarkCouponUsedAsync([FromBody] CouponRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.coupon))
+        {
+            return BadRequest("Coupon code can not be empty");
+        }
+
+        if (!IsAuthorized())
+        {
+            return Unauthorized();
+        }
+
+        await _couponRepository.MarkUsedAsync(request.coupon)
             .ConfigureAwait(false);
 
         return Ok();
