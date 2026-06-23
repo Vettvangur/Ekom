@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.181](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.180...Ekom-v0.2.181) (2026-06-23)
+
+
+### Bug Fixes
+
+* **coupons:** add mark used action ([#640](https://github.com/Vettvangur/Ekom/issues/640)) ([ac23a94](https://github.com/Vettvangur/Ekom/commit/ac23a9412d97a62ec5fa5f29195f7324152ba4d0))
+
 ## [0.2.180](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.179...Ekom-v0.2.180) (2026-06-23)
 
 
