@@ -37,6 +37,12 @@ public interface IKlaviyoProfilesService
         bool includeSubscriptions = false,
         CancellationToken ct = default);
 
+    ValueTask<KlaviyoProfileLookupResult?> GetProfileByPhoneNumberAsync(
+        string phoneNumber,
+        string? storeAlias,
+        bool includeSubscriptions = false,
+        CancellationToken ct = default);
+
     ValueTask<IReadOnlyList<string>?> GetProfileListIdsByProfileIdAsync(
         string profileId,
         string? storeAlias,
@@ -171,6 +177,21 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         return ParseProfileResponse(json);
     }
 
+    public async ValueTask<KlaviyoProfileLookupResult?> GetProfileByPhoneNumberAsync(
+        string phoneNumber,
+        string? storeAlias,
+        bool includeSubscriptions = false,
+        CancellationToken ct = default)
+    {
+        if (!IsEnabled()) return null;
+        if (string.IsNullOrWhiteSpace(phoneNumber)) return null;
+
+        var json = await TryGetByPhoneNumberAsync(phoneNumber, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(json)) return null;
+
+        return ParseProfileResponse(json);
+    }
+
     public async ValueTask<IReadOnlyList<string>?> GetProfileListIdsByProfileIdAsync(
         string profileId,
         string? storeAlias,
@@ -261,6 +282,37 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         }
     }
 
+    private async Task<string?> TryGetByPhoneNumberAsync(
+        string phoneNumber,
+        string? storeAlias,
+        bool includeSubscriptions,
+        CancellationToken ct)
+    {
+        if (!includeSubscriptions)
+            return await _client.GetByPhoneNumberAsync(phoneNumber, storeAlias, includeSubscriptions: false, ct).ConfigureAwait(false);
+
+        try
+        {
+            return await _client.GetByPhoneNumberAsync(
+                phoneNumber,
+                storeAlias,
+                includeSubscriptions: true,
+                ct).ConfigureAwait(false);
+        }
+        catch (KlaviyoApiException ex) when (ex.StatusCode == 400)
+        {
+            _logger.LogDebug(
+                "Klaviyo: retrying profile fetch without subscriptions fields. Store={StoreAlias}",
+                storeAlias);
+
+            return await _client.GetByPhoneNumberAsync(
+                phoneNumber,
+                storeAlias,
+                includeSubscriptions: false,
+                ct).ConfigureAwait(false);
+        }
+    }
+
     private static KlaviyoProfileLookupResult? ParseProfileResponse(string json)
     {
         using var doc = JsonDocument.Parse(json);
@@ -292,10 +344,10 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
     {
         if (!IsEnabled() || !_opt.Subscriptions.Enabled) return;
 
-        if (string.IsNullOrWhiteSpace(payload.Email))
+        if (string.IsNullOrWhiteSpace(payload.Email) && string.IsNullOrWhiteSpace(payload.PhoneNumber))
         {
             _logger.LogWarning(
-                "Klaviyo: skipping {Type} because no email was provided. Store={StoreAlias}",
+                "Klaviyo: skipping {Type} because no email or phone number was provided. Store={StoreAlias}",
                 KlaviyoProfilesEventType.Subscribe, payload.StoreAlias);
             return;
         }
@@ -323,9 +375,18 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
             Payload: request,
             OccurredAt: DateTimeOffset.UtcNow,
             StoreAlias: payload.StoreAlias,
-            CustomerIdentifier: KlaviyoCustomerLoggingExtensions.MaskEmailForLogs(payload.Email));
+            CustomerIdentifier: GetSubscribeIdentifierForLogs(payload));
 
         await _dispatcher.EnqueueAsync(work, ct);
+    }
+
+    private static string GetSubscribeIdentifierForLogs(KlaviyoProfileSubscribeRequest payload)
+    {
+        return new KlaviyoCustomer
+        {
+            Email = payload.Email,
+            PhoneNumber = payload.PhoneNumber
+        }.IdentifierForLogs();
     }
 
     private async ValueTask TryUpsertProfileForSubscribeAsync(KlaviyoProfileSubscribeRequest payload, CancellationToken ct)

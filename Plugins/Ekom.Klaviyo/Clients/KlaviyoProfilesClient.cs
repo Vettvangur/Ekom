@@ -19,6 +19,12 @@ internal interface IKlaviyoProfilesClient
         bool includeSubscriptions,
         CancellationToken ct = default);
 
+    Task<string?> GetByPhoneNumberAsync(
+        string phoneNumber,
+        string? storeAlias,
+        bool includeSubscriptions,
+        CancellationToken ct = default);
+
     Task<string?> GetListIdsAsync(
         string profileId,
         string? storeAlias,
@@ -90,6 +96,28 @@ internal sealed class KlaviyoProfilesClient : IKlaviyoProfilesClient
         var path = $"/api/profiles{query}";
 
         _logger.LogDebug("Klaviyo: profiles GET by email for store {StoreAlias}", storeAlias);
+
+        return await _http.GetAsync(path, storeAlias, ct).ConfigureAwait(false);
+    }
+
+    public async Task<string?> GetByPhoneNumberAsync(
+        string phoneNumber,
+        string? storeAlias,
+        bool includeSubscriptions,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber)) return null;
+        if (!_opt.Enabled) return null;
+
+        var sanitizedPhoneNumber = phoneNumber.Replace("\"", "\\\"", StringComparison.Ordinal);
+        var filter = $"equals(phone_number,\"{sanitizedPhoneNumber}\")";
+        var query = $"?filter={Uri.EscapeDataString(filter)}";
+        if (includeSubscriptions)
+            query = $"{query}&{ProfileSubscriptionsAdditionalField}";
+
+        var path = $"/api/profiles{query}";
+
+        _logger.LogDebug("Klaviyo: profiles GET by phone number for store {StoreAlias}", storeAlias);
 
         return await _http.GetAsync(path, storeAlias, ct).ConfigureAwait(false);
     }
