@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Ekom.Repositories;
 
-class CouponRepository
+public class CouponRepository
 {
     readonly ILogger _logger;
     readonly DatabaseFactory _databaseFactory;
