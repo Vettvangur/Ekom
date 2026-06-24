@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.182](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.181...Ekom-v0.2.182) (2026-06-24)
+
+
+### Bug Fixes
+
+* **import:** skip recycle bin products ([#644](https://github.com/Vettvangur/Ekom/issues/644)) ([857d523](https://github.com/Vettvangur/Ekom/commit/857d523b7cbb604feff58d1fdc6ad5346e0e2a01))
+
 ## [0.2.181](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.180...Ekom-v0.2.181) (2026-06-23)
 
 
