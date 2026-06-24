@@ -647,10 +647,16 @@ public class ImportService : IImportService
                 for (int i = allUmbracoProducts.Count - 1; i >= 0; i--)
                 {
                     var umbracoProduct = allUmbracoProducts[i];
-                    if (umbracoProduct.HasProperty("ekmDisableSync") && umbracoProduct.GetValue<bool>("ekmDisableSync"))
+
+                    if (recycleBinNode != null && recycleBinNode.Id == umbracoProduct.ParentId)
+                    {
                         continue;
+                    }
 
                     var productIdentifier = umbracoProduct.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
+
+                    if (umbracoProduct.HasProperty("ekmDisableSync") && umbracoProduct.GetValue<bool>("ekmDisableSync"))
+                        continue;
 
                     // Not in import? Delete.
                     if (!importProductIdentifiers.Contains(productIdentifier))
