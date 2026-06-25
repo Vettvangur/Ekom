@@ -14,13 +14,16 @@ class NodeService : INodeService
 {
     readonly ILogger<NodeService> _logger;
     readonly IUmbracoContextFactory _context;
+    readonly IEkomRichTextResolver _richTextResolver;
     public NodeService(
         IUmbracoContextFactory context,
-        ILogger<NodeService> logger
+        ILogger<NodeService> logger,
+        IEkomRichTextResolver richTextResolver
         )
     {
         _context = context;
         _logger = logger;
+        _richTextResolver = richTextResolver;
     }
 
     public IEnumerable<UmbracoContent> NodesByTypes(string contentTypeAlias)
@@ -43,7 +46,7 @@ class NodeService : INodeService
 
             var results = rootNode.DescendantsOfType(contentTypeAlias).ToList();
 
-            var content = results.Select(x => new Umbraco10Content(x)).ToList();
+            var content = results.Select(CreateContent).ToList();
 
             return content;
         }
@@ -59,7 +62,7 @@ class NodeService : INodeService
 
             var results = cache.GetByContentType(contentType);
 
-            var content = results.Select(x => new Umbraco10Content(x));
+            var content = results.Select(CreateContent);
 
             return content;
         }
@@ -76,7 +79,7 @@ class NodeService : INodeService
                 return null;
             }
 
-            var ancestors = node.Ancestors().Select(x => new Umbraco10Content(x)).ToList();
+            var ancestors = node.Ancestors().Select(CreateContent).ToList();
 
             return ancestors;
         }
@@ -92,7 +95,7 @@ class NodeService : INodeService
                 throw new ArgumentNullException(nameof(node));
             }
 
-            var ancestors = node.AncestorsOrSelf().Where(x => x.IsDocumentType("ekmCategory") || x.IsDocumentType("ekmProduct")).Select(x => new Umbraco10Content(x));
+            var ancestors = node.AncestorsOrSelf().Where(x => x.IsDocumentType("ekmCategory") || x.IsDocumentType("ekmProduct")).Select(CreateContent);
 
             ancestors.Reverse();
 
@@ -110,7 +113,7 @@ class NodeService : INodeService
                 throw new ArgumentNullException(nameof(node));
             }
 
-            var ancestors = node.Children.Select(x => new Umbraco10Content(x)).ToList();
+            var ancestors = node.Children.Select(CreateContent).ToList();
 
             return ancestors;
         }
@@ -154,7 +157,7 @@ class NodeService : INodeService
 
             ancestors.Reverse();
 
-            return ancestors.Select(x => new Umbraco10Content(x)).ToList();
+            return ancestors.Select(CreateContent).ToList();
         }
 
     }
@@ -225,7 +228,7 @@ class NodeService : INodeService
 
             if (node != null)
             {
-                return new Umbraco10Content(node);
+                return CreateContent(node);
             }
         }
 
@@ -248,7 +251,7 @@ class NodeService : INodeService
 
             if (node != null)
             {
-                return new Umbraco10Content(node);
+                return CreateContent(node);
             }
             
         }
@@ -273,7 +276,7 @@ class NodeService : INodeService
 
             if (node != null)
             {
-                return new Umbraco10Content(node);
+                return CreateContent(node);
             } 
         }
 
@@ -448,6 +451,11 @@ class NodeService : INodeService
             return "#";
         }
 
+    }
+
+    private Umbraco10Content CreateContent(IPublishedContent content)
+    {
+        return new Umbraco10Content(content, richTextResolver: _richTextResolver);
     }
 
 
