@@ -28,6 +28,7 @@ public static class ApplicationBuilderExtensions
         services.AddTransient<IImportService, ImportService>();
         services.AddTransient<ImportMediaService>();
         services.AddTransient<NodeService>();
+        services.AddTransient<IEkomRichTextResolver, EkomRichTextResolver>();
         services.AddTransient<IMetafieldService, MetafieldService>();
         services.AddTransient<IUmbracoService, UmbracoService>();
         services.AddTransient<IUrlService, UrlService>();

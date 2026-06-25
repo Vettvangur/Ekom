@@ -1,5 +1,7 @@
 using Ekom.Models;
+using Ekom.Umb.Services;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;
@@ -8,7 +10,7 @@ namespace Ekom.Umb.Models;
 
 class Umbraco10Content : UmbracoContent
 {
-    public Umbraco10Content(IPublishedContent content, string? urlOverride = null)
+    public Umbraco10Content(IPublishedContent content, string? urlOverride = null, IEkomRichTextResolver? richTextResolver = null)
         : base(
             new Dictionary<string, string>
             {
@@ -26,11 +28,11 @@ class Umbraco10Content : UmbracoContent
                 ["__VariesByCulture"] = content.Cultures.Count > 1 ? "y" : "n",
                 ["url"] = urlOverride ?? "#"
             },
-            GetContentProperties(content)
+            GetContentProperties(content, richTextResolver)
         )
     { }
 
-    private static Dictionary<string, string> GetContentProperties(IPublishedContent content)
+    private static Dictionary<string, string> GetContentProperties(IPublishedContent content, IEkomRichTextResolver? richTextResolver)
     {
         string? firstCulture = content.Cultures.FirstOrDefault().Value?.Culture;
 
@@ -56,7 +58,7 @@ class Umbraco10Content : UmbracoContent
                                 ? prop.GetSourceValue(firstCulture)?.ToString() ?? string.Empty
                                 : prop.GetSourceValue()?.ToString() ?? string.Empty;
                             
-                            return value;
+                            return ResolveLocalLinks(value, richTextResolver);
                         }
                     }
                     catch (Exception ex)
@@ -69,7 +71,7 @@ class Umbraco10Content : UmbracoContent
 
 
 
-    public Umbraco10Content(IContent content, Guid parentKey)
+    public Umbraco10Content(IContent content, Guid parentKey, IEkomRichTextResolver? richTextResolver = null)
         : base(
             new Dictionary<string, string>
             {
@@ -89,12 +91,12 @@ class Umbraco10Content : UmbracoContent
             },
             content.Properties.ToDictionary(
                 x => x.Alias,
-                x => TransformPropertyValue(content, x.Alias)
+                x => TransformPropertyValue(content, x.Alias, richTextResolver)
             )
         )
     { }
 
-    private static string TransformPropertyValue(IContent content, string alias)
+    private static string TransformPropertyValue(IContent content, string alias, IEkomRichTextResolver? richTextResolver)
     {
         var prop = content.Properties.FirstOrDefault(x => x.Alias == alias);
 
@@ -109,15 +111,95 @@ class Umbraco10Content : UmbracoContent
                 // Extract the "markup" value
                 string markup = doc.RootElement.GetProperty("markup").GetString() ?? "";
 
-                return markup;
+                return ResolveLocalLinks(markup, richTextResolver);
             } else
             {
-                return rteValue;
+                return ResolveLocalLinks(rteValue, richTextResolver);
             }
 
         }
 
-        return content.GetValue<string>(alias) ?? string.Empty;
+        return ResolveLocalLinks(content.GetValue<string>(alias) ?? string.Empty, richTextResolver);
 
+    }
+
+    private static string ResolveLocalLinks(string value, IEkomRichTextResolver? richTextResolver)
+    {
+        if (richTextResolver == null || string.IsNullOrEmpty(value) || !value.Contains("{localLink:", StringComparison.OrdinalIgnoreCase))
+        {
+            return value;
+        }
+
+        var trimmed = value.TrimStart();
+
+        if (trimmed.StartsWith('{') || trimmed.StartsWith('['))
+        {
+            return ResolveJsonLocalLinks(value, richTextResolver);
+        }
+
+        return richTextResolver.ResolveLocalLinks(value);
+    }
+
+    private static string ResolveJsonLocalLinks(string value, IEkomRichTextResolver richTextResolver)
+    {
+        try
+        {
+            var node = JsonNode.Parse(value);
+
+            if (node == null)
+            {
+                return value;
+            }
+
+            ResolveJsonNodeLocalLinks(node, richTextResolver);
+
+            return node.ToJsonString();
+        }
+        catch (JsonException)
+        {
+            return value;
+        }
+    }
+
+    private static void ResolveJsonNodeLocalLinks(JsonNode node, IEkomRichTextResolver richTextResolver)
+    {
+        if (node is JsonObject jsonObject)
+        {
+            foreach (var property in jsonObject.ToList())
+            {
+                if (property.Value is JsonValue jsonValue
+                    && jsonValue.TryGetValue<string>(out var stringValue)
+                    && stringValue.Contains("{localLink:", StringComparison.OrdinalIgnoreCase))
+                {
+                    jsonObject[property.Key] = richTextResolver.ResolveLocalLinks(stringValue);
+                    continue;
+                }
+
+                if (property.Value != null)
+                {
+                    ResolveJsonNodeLocalLinks(property.Value, richTextResolver);
+                }
+            }
+        }
+        else if (node is JsonArray jsonArray)
+        {
+            for (var i = 0; i < jsonArray.Count; i++)
+            {
+                var item = jsonArray[i];
+
+                if (item is JsonValue jsonValue
+                    && jsonValue.TryGetValue<string>(out var stringValue)
+                    && stringValue.Contains("{localLink:", StringComparison.OrdinalIgnoreCase))
+                {
+                    jsonArray[i] = richTextResolver.ResolveLocalLinks(stringValue);
+                    continue;
+                }
+
+                if (item != null)
+                {
+                    ResolveJsonNodeLocalLinks(item, richTextResolver);
+                }
+            }
+        }
     }
 }
