@@ -648,11 +648,6 @@ public class ImportService : IImportService
                 {
                     var umbracoProduct = allUmbracoProducts[i];
 
-                    if (recycleBinNode != null && recycleBinNode.Id == umbracoProduct.ParentId)
-                    {
-                        continue;
-                    }
-
                     var productIdentifier = umbracoProduct.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
 
                     if (umbracoProduct.HasProperty("ekmDisableSync") && umbracoProduct.GetValue<bool>("ekmDisableSync"))
@@ -661,6 +656,11 @@ public class ImportService : IImportService
                     // Not in import? Delete.
                     if (!importProductIdentifiers.Contains(productIdentifier))
                     {
+                        if (recycleBinNode != null && recycleBinNode.Id == umbracoProduct.ParentId)
+                        {
+                            continue;
+                        }
+
                         _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
 
                         if (recycleBinNode != null)
@@ -686,6 +686,12 @@ public class ImportService : IImportService
                             continue;
 
                         var isInRecycleBin = recycleBinNode != null && umbracoProduct.ParentId == recycleBinNode.Id;
+                        var recycleBinIdentifier = recycleBinNode?.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
+
+                        if (newCategoryIdentifier.InvariantEquals(recycleBinIdentifier))
+                        {
+                            continue;
+                        }
 
                         // Only read current category identifier if parent is actually a category (not recycle bin)
                         var currentCategoryIdentifier = "";
