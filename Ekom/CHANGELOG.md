@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.184](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.183...Ekom-v0.2.184) (2026-06-25)
+
+
+### Bug Fixes
+
+* **umbraco:** resolve wrapped rte local links ([#648](https://github.com/Vettvangur/Ekom/issues/648)) ([0940610](https://github.com/Vettvangur/Ekom/commit/09406104ef98c8189832962a309a98b9c0754333))
+
 ## [0.2.183](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.182...Ekom-v0.2.183) (2026-06-25)
 
 
