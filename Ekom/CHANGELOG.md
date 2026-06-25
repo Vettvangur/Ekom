@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.183](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.182...Ekom-v0.2.183) (2026-06-25)
+
+
+### Bug Fixes
+
+* **import:** handle recycle bin product sync ([#646](https://github.com/Vettvangur/Ekom/issues/646)) ([6bf5bfe](https://github.com/Vettvangur/Ekom/commit/6bf5bfea1213e9a028cf4f2e04ae82ffb5d1547c))
+
 ## [0.2.182](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.181...Ekom-v0.2.182) (2026-06-24)
 
 
