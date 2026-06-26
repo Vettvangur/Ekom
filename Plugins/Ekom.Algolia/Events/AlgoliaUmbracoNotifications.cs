@@ -6,6 +6,7 @@ using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Core.Sync;
 
 namespace Ekom.Algolia.Events;
 
@@ -31,17 +32,23 @@ internal sealed class AlgoliaUmbracoNotifications :
 
     private readonly IAlgoliaProductIndexService _productIndexer;
     private readonly IAlgoliaCategoryIndexService _categoryIndexer;
+    private readonly IAlgoliaContentIndexService _contentIndexer;
+    private readonly IServerRoleAccessor _serverRoleAccessor;
     private readonly AlgoliaOptions _options;
     private readonly ILogger<AlgoliaUmbracoNotifications> _logger;
 
     public AlgoliaUmbracoNotifications(
         IAlgoliaProductIndexService productIndexer,
         IAlgoliaCategoryIndexService categoryIndexer,
+        IAlgoliaContentIndexService contentIndexer,
+        IServerRoleAccessor serverRoleAccessor,
         IOptions<AlgoliaOptions> options,
         ILogger<AlgoliaUmbracoNotifications> logger)
     {
         _productIndexer = productIndexer;
         _categoryIndexer = categoryIndexer;
+        _contentIndexer = contentIndexer;
+        _serverRoleAccessor = serverRoleAccessor;
         _options = options.Value;
         _logger = logger;
     }
@@ -85,6 +92,9 @@ internal sealed class AlgoliaUmbracoNotifications :
 
         if (string.Equals(entity.ContentType.Alias, CategoryAlias, StringComparison.OrdinalIgnoreCase))
             return EnqueueCategoryAsync(entity, isPublished, ct);
+
+        if (IsConfiguredContentType(entity.ContentType.Alias))
+            return EnqueueContentAsync(entity, isPublished, ct);
 
         _logger.LogDebug(
             "Algolia skipping content {Id} because alias {Alias} is not supported.",
@@ -169,4 +179,28 @@ internal sealed class AlgoliaUmbracoNotifications :
             }
         }
     }
+
+    private Task EnqueueContentAsync(IContent entity, bool isPublished, CancellationToken ct)
+    {
+        if (!_options.Enabled || !_options.ContentIndexing.Enabled)
+        {
+            _logger.LogDebug("Algolia disabled; skipping standard content {Id}.", entity.Id);
+            return Task.CompletedTask;
+        }
+
+        if (_options.ContentIndexing.EnforcePublisherOnly && _serverRoleAccessor.CurrentServerRole is ServerRole.Subscriber or ServerRole.Unknown)
+        {
+            _logger.LogDebug("Algolia standard content indexing skipped on server role {ServerRole}.", _serverRoleAccessor.CurrentServerRole);
+            return Task.CompletedTask;
+        }
+
+        return isPublished
+            ? _contentIndexer.UpdateByIdsAsync([entity.Id], ct)
+            : _contentIndexer.DeleteByKeysAsync([entity.Key], ct);
+    }
+
+    private bool IsConfiguredContentType(string alias)
+        => _options.ContentIndexing.Indexes
+            .SelectMany(x => x.ContentTypes)
+            .Any(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
 }

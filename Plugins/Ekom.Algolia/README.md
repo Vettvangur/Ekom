@@ -8,8 +8,10 @@ Algolia integration plugin for Ekom (Umbraco).
 ## Features
 - Product indexing with background queue/worker.
 - Category indexing with background queue/worker.
+- Standard Umbraco content indexing with background queue/worker.
 - Product search service with Algolia SDK `SearchForHits` requests.
 - Category search service with Algolia SDK `SearchForHits` requests.
+- Standard content search and federated multi-index search.
 - Algolia Insights events for view, add-to-cart, checkout, purchase.
 - In-memory search result caching with store-scoped invalidation after reindex/update/delete.
 - Index naming convention: `{primary|replica|query_suggestions}.ENVIRONMENT.STORE.ENTITY[_sorted_by_{asc|desc}_ATTRIBUTE][.Locale][.Currency]`.
@@ -96,6 +98,26 @@ public sealed class ProductSearchController
           "MaxConcurrency": 2
         }
       },
+      "ContentIndexing": {
+        "Enabled": true,
+        "EnforcePublisherOnly": true,
+        "BatchSize": 1000,
+        "Indexes": [
+          {
+            "IndexName": "SearchIndex",
+            "ContentTypes": [
+              {
+                "Alias": "article",
+                "Properties": [
+                  "title",
+                  "summary",
+                  "publishedAt|unix"
+                ]
+              }
+            ]
+          }
+        ]
+      },
       "Search": {
         "Enabled": true,
         "Products": true,
@@ -158,6 +180,11 @@ public sealed class ProductSearchController
 | `Indexing:Dispatching:FlushIntervalSeconds` | `int` | `2` | Worker delay between queue flushes. |
 | `Indexing:Dispatching:MaxQueueSize` | `int` | `10000` | Maximum in-memory queue size. |
 | `Indexing:Dispatching:MaxConcurrency` | `int` | `2` | Maximum indexing worker concurrency. |
+| `ContentIndexing:Enabled` | `bool` | `false` | Enables standard Umbraco content indexing. |
+| `ContentIndexing:BatchSize` | `int` | `1000` | Batch size for content index rebuild operations. |
+| `ContentIndexing:Indexes` | `object[]` | `[]` | Content indexes to maintain. Index names resolve as `{IndexName}.{Environment}.{Culture}`. |
+| `ContentIndexing:Indexes[*]:ContentTypes[*]:Alias` | `string` | required | Umbraco content type alias to include in the content index. |
+| `ContentIndexing:Indexes[*]:ContentTypes[*]:Properties` | `string[]` | `[]` | Property aliases to index. Use `|unix` or `|unixms` to add numeric date fields. |
 | `Search:Enabled` | `bool` | `true` | Enables Algolia search services. |
 | `Search:Products` | `bool` | `true` | Enables product search. |
 | `Search:Categories` | `bool` | `true` | Enables category search. |
@@ -192,6 +219,8 @@ public sealed class ProductSearchController
 - Set `AnalyticsRegion` to `us` or `eu` if you know your Algolia analytics region; if omitted, the plugin tries `us` and then `eu`.
 - `IAlgoliaSearchService.SearchProductsAsync(...)` returns hits together with paging metadata, query text, processing time, and raw facets.
 - `IAlgoliaSearchService.SearchCategoriesAsync(...)` searches a dedicated category index scoped by store alias and locale.
+- `IAlgoliaSearchService.SearchContentAsync(...)` searches configured standard content indexes. Content index names resolve as `{IndexName}.{Environment}.{Culture}`.
+- `IAlgoliaSearchService.FederatedSearchAsync(...)` executes products, categories, query suggestions, and content searches in one Algolia multi-search request and returns typed product/category/suggestion results plus keyed content results.
 - The plugin always resolves and sets the Algolia index name from Ekom store alias, locale, and currency; callers should not set `IndexName` themselves.
 - Category indexes omit the currency suffix because category records are scoped by store alias and locale only.
 - Search cache keys include the resolved index name and serialized Algolia query payload so all SDK options affect caching.

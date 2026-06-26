@@ -175,6 +175,34 @@ public sealed class SearchController : ControllerBase
             ct);
     }
 
+    [HttpPost("federated")]
+    public Task<ActionResult<AlgoliaFederatedSearchResponse>> SearchFederatedAsync(
+        [FromBody] AlgoliaFederatedSearchRequest request,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.StoreAlias))
+            return Task.FromResult<ActionResult<AlgoliaFederatedSearchResponse>>(BadRequest("Store alias is required."));
+
+        if (request.Targets.Count == 0)
+            return Task.FromResult<ActionResult<AlgoliaFederatedSearchResponse>>(BadRequest("At least one search target is required."));
+
+        foreach (var target in request.Targets)
+        {
+            if (string.IsNullOrWhiteSpace(target.Key))
+                return Task.FromResult<ActionResult<AlgoliaFederatedSearchResponse>>(BadRequest("Each search target requires a key."));
+
+            if (target.Query is null)
+                return Task.FromResult<ActionResult<AlgoliaFederatedSearchResponse>>(BadRequest("Each search target requires a query."));
+
+            if (target.Kind == AlgoliaFederatedSearchTargetKind.Content && string.IsNullOrWhiteSpace(target.ContentIndexName))
+                return Task.FromResult<ActionResult<AlgoliaFederatedSearchResponse>>(BadRequest("Content targets require a content index name."));
+        }
+
+        return SearchFederatedCoreAsync(request, ct);
+    }
+
     private async Task<ActionResult<AlgoliaSearchResponse<AlgoliaProductRecord>>> SearchCoreAsync(
         AlgoliaSearchRequest request,
         CancellationToken ct)
@@ -196,6 +224,14 @@ public sealed class SearchController : ControllerBase
         CancellationToken ct)
     {
         var response = await _algoliaSearchService.SearchQuerySuggestionsAsync(request, ct).ConfigureAwait(false);
+        return Ok(response);
+    }
+
+    private async Task<ActionResult<AlgoliaFederatedSearchResponse>> SearchFederatedCoreAsync(
+        AlgoliaFederatedSearchRequest request,
+        CancellationToken ct)
+    {
+        var response = await _algoliaSearchService.FederatedSearchAsync(request, ct).ConfigureAwait(false);
         return Ok(response);
     }
 }

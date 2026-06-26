@@ -11,6 +11,7 @@
     var searchStoreAlias = currentStore?.Alias ?? "Store";
     var searchLocale = currentStore?.Culture?.Name ?? string.Empty;
     var searchCurrency = currentStore?.GetCurrentCurrency()?.CurrencyValue ?? currentStore?.Currency?.CurrencyValue ?? string.Empty;
+    var searchContentIndexName = "SearchIndex";
 }
 <!-- Top navigation -->
 <nav aria-label="Top" class="relative z-20 bg-white bg-opacity-90 backdrop-blur-xl backdrop-filter">
@@ -76,7 +77,7 @@
 
                 <div class="ml-4 hidden lg:block lg:w-full lg:max-w-md">
                     <div class="relative"
-                         x-data="searchAutocomplete('@searchStoreAlias', '@searchLocale', '@searchCurrency')"
+                         x-data="searchAutocomplete('@searchStoreAlias', '@searchLocale', '@searchCurrency', '@searchContentIndexName')"
                          @@click.outside="close()"
                          @@keydown.escape.window="close()">
                         <div class="relative">
@@ -84,7 +85,7 @@
                                    x-model="term"
                                    @@input="queueSearch()"
                                    @@focus="openPanel()"
-                                   placeholder="Search products"
+                                    placeholder="Search products, categories and content"
                                    class="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pl-11 pr-4 text-sm text-gray-900 shadow-sm outline-none transition focus:border-gray-300 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                                    autocomplete="off">
                             <svg class="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
@@ -106,7 +107,7 @@
                                 <div class="px-4 py-3 text-sm text-gray-500">Searching...</div>
                             </template>
 
-                            <div class="max-h-[32rem] overflow-y-auto" x-show="!isLoading && (suggestions.length || products.length)">
+                            <div class="max-h-[32rem] overflow-y-auto" x-show="!isLoading && (suggestions.length || products.length || categories.length || contentResults.length)">
                                 <template x-if="suggestions.length">
                                     <div class="border-b border-gray-100 p-4">
                                         <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Suggestions</div>
@@ -122,8 +123,22 @@
                                     </div>
                                 </template>
 
+                                <template x-if="categories.length">
+                                    <div class="border-b border-gray-100 p-4">
+                                        <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Categories</div>
+                                        <div class="space-y-2">
+                                            <template x-for="category in categories" :key="category.objectId">
+                                                <a :href="category.url || '#'" class="block rounded-2xl border border-transparent p-2 transition hover:border-gray-200 hover:bg-gray-50">
+                                                    <div class="truncate text-sm font-semibold text-gray-900" x-text="category.title || category.name"></div>
+                                                    <div class="truncate text-sm text-gray-500" x-text="category.summary || 'Category result'"></div>
+                                                </a>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
                                 <template x-if="products.length">
-                                    <div class="p-4">
+                                    <div class="border-b border-gray-100 p-4">
                                         <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Products</div>
                                         <div class="space-y-3">
                                             <template x-for="product in products" :key="product.objectId">
@@ -144,6 +159,20 @@
                                                         <div class="font-semibold text-gray-900" x-text="formatPrice(product)"></div>
                                                         <div class="text-xs uppercase tracking-[0.2em] text-gray-400" x-text="product.available ? 'In stock' : 'View' "></div>
                                                     </div>
+                                                </a>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <template x-if="contentResults.length">
+                                    <div class="p-4">
+                                        <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Content</div>
+                                        <div class="space-y-2">
+                                            <template x-for="content in contentResults" :key="content.objectId">
+                                                <a :href="content.url || '#'" class="block rounded-2xl border border-transparent p-2 transition hover:border-gray-200 hover:bg-gray-50">
+                                                    <div class="truncate text-sm font-semibold text-gray-900" x-text="content.name || content.title"></div>
+                                                    <div class="truncate text-sm text-gray-500" x-text="content.contentTypeAlias || 'Content result'"></div>
                                                 </a>
                                             </template>
                                         </div>
@@ -175,17 +204,20 @@
 </nav>
 
 <script>
-    function searchAutocomplete(storeAlias, locale, currency) {
+    function searchAutocomplete(storeAlias, locale, currency, contentIndexName) {
         return {
             storeAlias,
             locale,
             currency,
+            contentIndexName,
             term: '',
             suggestions: [],
             products: [],
+            categories: [],
+            contentResults: [],
             isLoading: false,
             isOpen: false,
-            message: 'Start typing to query suggestions and product matches.',
+            message: 'Start typing to search suggestions, products, categories and content.',
             debounceHandle: null,
 
             openPanel() {
@@ -206,8 +238,7 @@
                 const term = this.term.trim();
 
                 if (term.length < 2) {
-                    this.suggestions = [];
-                    this.products = [];
+                    this.clearResults();
                     this.isLoading = false;
                     this.message = 'Type at least 2 characters to search.';
                     return;
@@ -217,24 +248,83 @@
                 this.message = '';
 
                 try {
-                    const [suggestionsResponse, productsResponse] = await Promise.all([
-                        this.fetchJson('/ekom/search/suggestions', { query: term, hitsPerPage: 6 }),
-                        this.fetchJson('/ekom/search/products', { query: term, hitsPerPage: 4 })
-                    ]);
-
-                    this.suggestions = suggestionsResponse.hits || [];
-                    this.products = productsResponse.hits || [];
-                    this.message = this.suggestions.length || this.products.length
+                    const response = await this.fetchFederated(term);
+                    this.suggestions = this.hits(response.suggestions).map((hit) => this.normalizeSuggestion(hit));
+                    this.products = this.hits(response.products).map((hit) => this.normalizeProduct(hit));
+                    this.categories = this.hits(response.categories).map((hit) => this.normalizeCategory(hit));
+                    this.contentResults = this.contentHits(response.content).map((hit) => this.normalizeContent(hit));
+                    this.message = this.suggestions.length || this.products.length || this.categories.length || this.contentResults.length
                         ? ''
-                        : 'No suggestions or products matched that search.';
+                        : 'No suggestions, products, categories or content matched that search.';
                 } catch (error) {
                     console.error(error);
-                    this.suggestions = [];
-                    this.products = [];
+                    this.clearResults();
                     this.message = 'Search is unavailable right now.';
                 } finally {
                     this.isLoading = false;
                 }
+            },
+
+            async fetchFederated(term) {
+                const targets = [
+                    {
+                        key: 'suggestions',
+                        kind: 2,
+                        query: {
+                            query: term,
+                            hitsPerPage: 6
+                        }
+                    },
+                    {
+                        key: 'products',
+                        kind: 0,
+                        query: {
+                            query: term,
+                            hitsPerPage: 4
+                        }
+                    },
+                    {
+                        key: 'categories',
+                        kind: 1,
+                        query: {
+                            query: term,
+                            hitsPerPage: 4
+                        }
+                    }
+                ];
+
+                if (this.contentIndexName && this.locale) {
+                    targets.push({
+                        key: 'content',
+                        kind: 3,
+                        contentIndexName: this.contentIndexName,
+                        culture: this.locale,
+                        query: {
+                            query: term,
+                            hitsPerPage: 4
+                        }
+                    });
+                }
+
+                const response = await fetch('/ekom/search/federated', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        storeAlias: this.storeAlias,
+                        locale: this.locale || null,
+                        currency: this.currency || null,
+                        targets
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Federated search request failed.');
+                }
+
+                return await response.json();
             },
 
             async fetchJson(endpoint, params) {
@@ -266,6 +356,77 @@
                 }
 
                 return await response.json();
+            },
+
+            clearResults() {
+                this.suggestions = [];
+                this.products = [];
+                this.categories = [];
+                this.contentResults = [];
+            },
+
+            hits(result) {
+                return result && Array.isArray(result.hits) ? result.hits : [];
+            },
+
+            contentHits(content) {
+                if (!content) {
+                    return [];
+                }
+
+                return Object.values(content).flatMap((result) => this.hits(result));
+            },
+
+            get(hit, ...keys) {
+                for (const key of keys) {
+                    if (hit && hit[key] !== undefined && hit[key] !== null) {
+                        return hit[key];
+                    }
+                }
+
+                return null;
+            },
+
+            normalizeSuggestion(hit) {
+                return {
+                    objectId: this.get(hit, 'objectId', 'objectID'),
+                    query: this.get(hit, 'query') || ''
+                };
+            },
+
+            normalizeProduct(hit) {
+                return {
+                    objectId: this.get(hit, 'objectId', 'objectID'),
+                    title: this.get(hit, 'title', 'name') || '',
+                    summary: this.get(hit, 'summary'),
+                    sku: this.get(hit, 'sku'),
+                    url: this.get(hit, 'url'),
+                    imageUrl: this.get(hit, 'imageUrl'),
+                    priceWithVat: this.get(hit, 'priceWithVat'),
+                    price: this.get(hit, 'price'),
+                    currency: this.get(hit, 'currency'),
+                    available: this.get(hit, 'available')
+                };
+            },
+
+            normalizeCategory(hit) {
+                return {
+                    objectId: this.get(hit, 'objectId', 'objectID'),
+                    title: this.get(hit, 'title', 'name') || '',
+                    name: this.get(hit, 'name'),
+                    summary: this.get(hit, 'summary'),
+                    url: this.get(hit, 'url')
+                };
+            },
+
+            normalizeContent(hit) {
+                return {
+                    objectId: this.get(hit, 'objectId', 'objectID'),
+                    name: this.get(hit, 'name') || '',
+                    title: this.get(hit, 'title'),
+                    url: this.get(hit, 'url'),
+                    contentTypeAlias: this.get(hit, 'contentTypeAlias')
+                };
             },
 
             applySuggestion(query) {
