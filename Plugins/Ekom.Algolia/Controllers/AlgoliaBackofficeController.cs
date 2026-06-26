@@ -9,15 +9,18 @@ public class EkomAlgoliaBackofficeController : UmbracoAuthorizedApiController
 {
     private readonly IAlgoliaProductIndexService _algoliaProductIndexService;
     private readonly IAlgoliaCategoryIndexService _algoliaCategoryIndexService;
+    private readonly IAlgoliaContentIndexService _algoliaContentIndexService;
     private readonly ILogger<EkomAlgoliaBackofficeController> _logger;
 
     public EkomAlgoliaBackofficeController(
         IAlgoliaProductIndexService algoliaProductIndexService,
         IAlgoliaCategoryIndexService algoliaCategoryIndexService,
+        IAlgoliaContentIndexService algoliaContentIndexService,
         ILogger<EkomAlgoliaBackofficeController> logger)
     {
         _algoliaProductIndexService = algoliaProductIndexService;
         _algoliaCategoryIndexService = algoliaCategoryIndexService;
+        _algoliaContentIndexService = algoliaContentIndexService;
         _logger = logger;
     }
 
@@ -27,10 +30,11 @@ public class EkomAlgoliaBackofficeController : UmbracoAuthorizedApiController
     {
         await _algoliaProductIndexService.RebuildAllAsync(ct).ConfigureAwait(false);
         await _algoliaCategoryIndexService.RebuildAllAsync(ct).ConfigureAwait(false);
+        await _algoliaContentIndexService.RebuildAsync(ct: ct).ConfigureAwait(false);
 
-        _logger.LogInformation("Algolia manual reindex requested for all configured stores.");
+        _logger.LogInformation("Algolia manual reindex requested for all configured stores and content indexes.");
 
-        return Ok(new { message = "Algolia product and category reindex initiated for all configured stores." });
+        return Ok(new { message = "Algolia product, category, and content reindex initiated." });
     }
 
     [HttpGet]
