@@ -39,8 +39,7 @@ internal sealed class AlgoliaContentIndexQueue : IAlgoliaContentIndexQueue
     {
         var accepted = _channel.Writer.TryWrite(job);
         if (!accepted)
-            _logger.LogWarning("Algolia content index queue full. Dropped {Type} job with {Count} nodes.", job.Type, job.NodeIds.Count + job.NodeKeys.Count);
-
+            _logger.LogWarning("Algolia content index queue full. TryEnqueue failed for {Type} job with {Count} nodes.", job.Type, job.NodeIds.Count + job.NodeKeys.Count);
         return accepted;
     }
 
