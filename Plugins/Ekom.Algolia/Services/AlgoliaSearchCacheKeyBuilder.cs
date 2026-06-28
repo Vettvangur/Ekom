@@ -26,6 +26,23 @@ internal sealed class AlgoliaSearchCacheKeyBuilder
     public string BuildQuerySuggestionsKey(AlgoliaSearchRequest request, SearchForHits query, string indexName)
         => BuildKey("query-suggestions", request, query, indexName);
 
+    public string BuildContentKey(AlgoliaContentSearchRequest request, SearchForHits query, string indexName)
+    {
+        var payload = JsonSerializer.Serialize(query, JsonOptions);
+        var version = _cacheVersions.GetVersion("content");
+
+        var raw = string.Join(
+            '|',
+            "content",
+            version.ToString(),
+            request.IndexName.Trim().ToLowerInvariant(),
+            indexName.Trim().ToLowerInvariant(),
+            request.Culture.Trim().ToLowerInvariant(),
+            ComputeHash(payload));
+
+        return "algolia-search:" + raw;
+    }
+
     private string BuildKey(string entity, AlgoliaSearchRequest request, SearchForHits query, string indexName)
     {
         var payload = JsonSerializer.Serialize(query, JsonOptions);

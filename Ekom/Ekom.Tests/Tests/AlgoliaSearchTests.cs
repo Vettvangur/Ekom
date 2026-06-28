@@ -30,7 +30,12 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:Search:MaxHitsPerPage"] = "50",
                 ["Ekom:Algolia:Search:Cache:Enabled"] = "true",
                 ["Ekom:Algolia:Search:Cache:DurationMinutes"] = "15",
-                ["Ekom:Algolia:Search:Cache:CacheEmptyResults"] = "false"
+                ["Ekom:Algolia:Search:Cache:CacheEmptyResults"] = "false",
+                ["Ekom:Algolia:ContentIndexing:Enabled"] = "true",
+                ["Ekom:Algolia:ContentIndexing:Indexes:0:IndexName"] = "SearchIndex",
+                ["Ekom:Algolia:ContentIndexing:Indexes:0:ContentTypes:0:Alias"] = "article",
+                ["Ekom:Algolia:ContentIndexing:Indexes:0:ContentTypes:0:Properties:0"] = "title",
+                ["Ekom:Algolia:ContentIndexing:Indexes:0:ContentTypes:0:Properties:1"] = "publishedAt|unix"
             })
             .Build();
 
@@ -49,6 +54,10 @@ public class AlgoliaSearchTests
         Assert.Equal(50, options.Search.MaxHitsPerPage);
         Assert.Equal(15, options.Search.Cache.DurationMinutes);
         Assert.False(options.Search.Cache.CacheEmptyResults);
+        Assert.True(options.ContentIndexing.Enabled);
+        Assert.Equal("SearchIndex", options.ContentIndexing.Indexes.Single().IndexName);
+        Assert.Equal("article", options.ContentIndexing.Indexes.Single().ContentTypes.Single().Alias);
+        Assert.Equal(["title", "publishedAt|unix"], options.ContentIndexing.Indexes.Single().ContentTypes.Single().Properties);
     }
 
     [Fact]
@@ -187,5 +196,70 @@ public class AlgoliaSearchTests
         var key = builder.BuildCategoriesKey(request, request.Query, "primary.store.categories.en-us");
 
         Assert.Contains("categories", key);
+    }
+
+    [Fact]
+    public void Content_Cache_Key_Changes_When_Query_Changes()
+    {
+        var versions = new AlgoliaSearchCacheVersionProvider();
+        var builder = new AlgoliaSearchCacheKeyBuilder(versions);
+
+        var first = builder.BuildContentKey(
+            new AlgoliaContentSearchRequest
+            {
+                IndexName = "SearchIndex",
+                Culture = "en-US",
+                Query = new SearchForHits
+                {
+                    Query = "chair",
+                    HitsPerPage = 20,
+                    Page = 0
+                }
+            },
+            new SearchForHits
+            {
+                Query = "chair",
+                HitsPerPage = 20,
+                Page = 0
+            },
+            "searchindex.prod.en-us");
+
+        var second = builder.BuildContentKey(
+            new AlgoliaContentSearchRequest
+            {
+                IndexName = "SearchIndex",
+                Culture = "en-US",
+                Query = new SearchForHits
+                {
+                    Query = "table",
+                    HitsPerPage = 20,
+                    Page = 0
+                }
+            },
+            new SearchForHits
+            {
+                Query = "table",
+                HitsPerPage = 20,
+                Page = 0
+            },
+            "searchindex.prod.en-us");
+
+        Assert.NotEqual(first, second);
+    }
+
+    [Fact]
+    public void Content_Index_Name_Uses_Base_Environment_And_Culture()
+    {
+        var resolver = new ContentIndexNameResolver(Options.Create(new AlgoliaOptions
+        {
+            ApplicationId = "app-id",
+            AdminApiKey = "admin-key",
+            SearchApiKey = "search-key",
+            Environment = "Staging"
+        }));
+
+        var indexName = resolver.Resolve("SearchIndex", "en-US");
+
+        Assert.Equal("searchindex.staging.en-us", indexName);
     }
 }
