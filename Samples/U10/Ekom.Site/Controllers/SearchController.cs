@@ -185,7 +185,7 @@ public sealed class SearchController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.StoreAlias))
             return Task.FromResult<ActionResult<AlgoliaFederatedSearchResponse>>(BadRequest("Store alias is required."));
 
-        if (request.Targets.Count == 0)
+        if (request.Targets is null || request.Targets.Count == 0)
             return Task.FromResult<ActionResult<AlgoliaFederatedSearchResponse>>(BadRequest("At least one search target is required."));
 
         foreach (var target in request.Targets)
