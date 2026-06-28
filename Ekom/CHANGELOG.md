@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.185](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.184...Ekom-v0.2.185) (2026-06-28)
+
+
+### Features
+
+* **algolia:** add federated search ([#650](https://github.com/Vettvangur/Ekom/issues/650)) ([320ad43](https://github.com/Vettvangur/Ekom/commit/320ad43f18ac775cc147089d1ca39de74d3b575b))
+
 ## [0.2.184](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.183...Ekom-v0.2.184) (2026-06-25)
 
 
