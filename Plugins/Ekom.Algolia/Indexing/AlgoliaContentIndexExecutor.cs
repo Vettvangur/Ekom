@@ -344,7 +344,11 @@ internal sealed class AlgoliaContentIndexExecutor
             return null;
 
         var indexValues = propertyEditor.PropertyIndexValueFactory.GetIndexValues(property, culture, null, true, availableCultures, contentTypes);
-        return indexValues?.FirstOrDefault().Value.FirstOrDefault()?.ToString() ?? string.Empty;
+        var firstValue = indexValues?
+            .SelectMany(x => x.Value ?? [])
+            .FirstOrDefault();
+
+        return firstValue?.ToString() ?? string.Empty;
     }
 
     private Dictionary<string, AlgoliaContentFieldTransform> GetAllowedProperties(AlgoliaContentIndexOptions index, IContent content)
