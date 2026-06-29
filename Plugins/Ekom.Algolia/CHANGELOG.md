@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.30](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.29...Ekom.Algolia-v0.2.30) (2026-06-29)
+
+
+### Features
+
+* **algolia:** add federated search ([#652](https://github.com/Vettvangur/Ekom/issues/652)) ([8a309be](https://github.com/Vettvangur/Ekom/commit/8a309be790b177b63189c6414b9a8e66ff62136d))
+
 ## [0.2.29](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.28...Ekom.Algolia-v0.2.29) (2026-06-28)
 
 
