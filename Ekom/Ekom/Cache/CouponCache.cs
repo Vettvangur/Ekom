@@ -15,8 +15,8 @@ class CouponCache : ICouponCache
     readonly ILogger _logger;
     readonly DatabaseFactory _databaseFactory;
     protected IServiceProvider _serviceProvider;
+    protected IServiceScopeFactory _serviceScopeFactory;
 
-    protected INodeService nodeService => _serviceProvider.GetService<INodeService>();
     public GlobalCouponCache Cache { get; } = new GlobalCouponCache();
 
     public CouponCache(
@@ -26,6 +26,7 @@ class CouponCache : ICouponCache
         _logger = logger;
         _databaseFactory = databaseFactory;
         _serviceProvider = serviceProvider;
+        _serviceScopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
     }
 
     /// <inheritdoc />
@@ -36,6 +37,8 @@ class CouponCache : ICouponCache
 
         _logger.LogInformation("Starting to fill coupon cache...");
 
+        using var scope = _serviceScopeFactory.CreateScope();
+        var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
         List<UmbracoContent> orderDiscountNodes = nodeService.NodesByTypes("ekmOrderDiscount").ToList();
 
         List<CouponData> allCoupons;

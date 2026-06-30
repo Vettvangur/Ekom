@@ -15,9 +15,6 @@ namespace Ekom.Models;
 /// </summary>
 public class Store : NodeEntity, IStore
 {
-    private INodeService? nodeService => Configuration.Resolver.GetService<INodeService>();
-    private IStoreDomainCache? storeDomainCache => Configuration.Resolver.GetService<IStoreDomainCache>();
-    private Services.IUmbracoService? umbracoService => Configuration.Resolver.GetService<Services.IUmbracoService>();
     /// <summary>
     /// Usually a two letter code, f.x. EU/IS/DK
     /// </summary>
@@ -211,6 +208,11 @@ public class Store : NodeEntity, IStore
     /// <param name="item"></param>
     internal protected Store(UmbracoContent item) : base(item)
     {
+        using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var nodeService = scope.ServiceProvider.GetService<INodeService>();
+        var storeDomainCache = scope.ServiceProvider.GetService<IStoreDomainCache>();
+        var umbracoService = scope.ServiceProvider.GetService<Services.IUmbracoService>();
+
         if (item.Properties.HasPropertyValue("storeRootNode"))
         {
             string storeRootNodeUdi = item.GetValue("storeRootNode");
@@ -228,9 +230,9 @@ public class Store : NodeEntity, IStore
             }
         }
 
-        if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNodeId))
+        if (storeDomainCache?.Cache.Any(x => x.Value.RootContentId == StoreRootNodeId) == true)
         {
-            var defaultLanguageCode = umbracoService.DefaultLanguage();
+            var defaultLanguageCode = umbracoService?.DefaultLanguage();
 
             Domains = storeDomainCache.Cache
                 .Where(x => x.Value.RootContentId == StoreRootNodeId)

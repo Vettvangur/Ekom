@@ -1,0 +1,99 @@
+@inherits UmbracoViewPage
+
+@{
+    Layout = "Master.cshtml";
+    var order = await _order.GetOrderAsync();
+}
+
+@section Main {
+    <main class="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Shopping Cart</h1>
+
+        @if (order == null || order.TotalQuantity <= 0)
+        {
+            <partial name="ekom/components/noCartResult" />
+            return;
+        }
+
+        <div class="mt-12 lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12 xl:gap-x-16">
+            <section aria-labelledby="cart-heading" class="lg:col-span-7">
+                <h2 id="cart-heading" class="sr-only">Items in your shopping cart</h2>
+
+                <ul role="list" class="divide-y divide-gray-200 border-b border-t border-gray-200">
+                    @foreach (var orderline in order.OrderLines)
+                    {
+                        var images = orderline.Product.Images.ToList();
+                        var ekmProduct = await _catalog.GetProductAsync(orderline.ProductKey);
+
+                        <li class="flex py-6 sm:py-10">
+                            <div class="flex-shrink-0">
+                                @if (images.Any())
+                                {
+                                    <img src="@images.First().Url" alt="@orderline.Product.Title" class="h-24 w-24 rounded-md object-cover object-center sm:h-48 sm:w-48" loading="lazy">
+                                }
+                            </div>
+
+                            <div class="ml-4 flex flex-1 flex-col justify-between sm:ml-6">
+                                <div class="relative pr-9 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:pr-0">
+                                    <div>
+                                        <h3 class="text-sm">
+                                            @if (ekmProduct != null)
+                                            {
+                                                <a href="@ekmProduct.Url" class="font-medium text-gray-700 hover:text-gray-800">@orderline.Product.Title</a>
+                                            }
+                                            else
+                                            {
+                                                <span class="font-medium text-gray-700">@orderline.Product.Title</span>
+                                            }
+                                        </h3>
+                                        <p class="mt-1 text-sm font-medium text-gray-900">@orderline.Amount.WithVat.CurrencyString</p>
+                                    </div>
+
+                                    <div class="mt-4 sm:mt-0 sm:pr-9">
+                                        @using (Html.BeginEkomForm(FormType.UpdateOrderLineQuantity, htmlAttributes: new Dictionary<string, object> { { "class", "cart__update-orderline" } }))
+                                        {
+                                            <input type="hidden" name="lineId" value="@orderline.Key" />
+                                            <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+
+                                            <label for="quantity-@orderline.Key" class="block text-sm font-medium leading-6 text-gray-900">Quantity</label>
+                                            <div class="mt-2 flex gap-2">
+                                                <input type="number" name="quantity" id="quantity-@orderline.Key" class="block w-24 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm" value="@orderline.Quantity" min="1">
+                                                <button type="submit" class="rounded-md bg-gray-200 px-3 text-sm font-medium text-gray-700 hover:bg-gray-300">Update</button>
+                                            </div>
+                                        }
+
+                                        <div class="absolute right-0 top-0">
+                                            @using (Html.BeginEkomForm(FormType.RemoveOrderLine, htmlAttributes: new Dictionary<string, object> { { "class", "cart__remove-orderline" } }))
+                                            {
+                                                <input type="hidden" name="lineId" value="@orderline.Key" />
+                                                <input type="hidden" name="storeAlias" value="@orderline.OrderInfo.StoreInfo.Alias" />
+                                                <button type="submit" class="-m-2 inline-flex p-2 text-gray-400 hover:text-gray-500">
+                                                    <span class="sr-only">Remove</span>
+                                                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" /></svg>
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </section>
+
+            <section aria-labelledby="summary-heading" class="mt-16 rounded-lg bg-gray-50 px-4 py-6 sm:p-6 lg:col-span-5 lg:mt-0 lg:p-8">
+                <h2 id="summary-heading" class="text-lg font-medium text-gray-900">Order summary</h2>
+                <dl class="mt-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <dt class="text-sm text-gray-600">Subtotal</dt>
+                        <dd class="text-sm font-medium text-gray-900">@order.SubTotal.WithVat.CurrencyString</dd>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-gray-200 pt-4">
+                        <dt class="text-base font-medium text-gray-900">Order total</dt>
+                        <dd class="text-base font-medium text-gray-900">@order.ChargedAmount.CurrencyString</dd>
+                    </div>
+                </dl>
+            </section>
+        </div>
+    </main>
+}

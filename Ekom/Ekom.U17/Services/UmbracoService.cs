@@ -1,41 +1,170 @@
 using Ekom.Models.Umbraco;
 using Ekom.Services;
+using Ekom.Umb.Models;
+using Ekom.Utilities;
+using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using System.Globalization;
+using System.Net;
+using Umbraco.Cms.Core.Cache;
+using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Strings;
+using Umbraco.Extensions;
 
 namespace Ekom.Umb.Services;
 
 internal sealed class UmbracoService : IUmbracoService
 {
-    private readonly IDomainService _domainService;
-    private readonly ILocalizationService _localizationService;
+    private const string LanguagesCacheKey = "ekmLanguages";
+    private static readonly ConcurrentDictionary<string, Lazy<IReadOnlyList<UmbracoLanguage>>> LanguageLocks = new();
 
-    public UmbracoService(IDomainService domainService, ILocalizationService localizationService)
+    private readonly IDataTypeService _dataTypeService;
+    private readonly IDomainService _domainService;
+    private readonly INodeService _nodeService;
+    private readonly ILocalizationService _localizationService;
+    private readonly PropertyEditorCollection _propertyEditorCollection;
+    private readonly IContentTypeService _contentTypeService;
+    private readonly IAppPolicyCache _runtimeCache;
+    private readonly IShortStringHelper _shortStringHelper;
+    private readonly IMemoryCache _cache;
+
+    public UmbracoService(
+        IDomainService domainService,
+        IDataTypeService dataTypeService,
+        ILocalizationService localizationService,
+        PropertyEditorCollection propertyEditorCollection,
+        IContentTypeService contentTypeService,
+        AppCaches appCaches,
+        IShortStringHelper shortStringHelper,
+        INodeService nodeService,
+        IMemoryCache cache)
     {
         _domainService = domainService;
+        _dataTypeService = dataTypeService;
         _localizationService = localizationService;
+        _propertyEditorCollection = propertyEditorCollection;
+        _contentTypeService = contentTypeService;
+        _runtimeCache = appCaches.RuntimeCache;
+        _shortStringHelper = shortStringHelper;
+        _nodeService = nodeService;
+        _cache = cache;
     }
 
     public IEnumerable<Ekom.Models.UmbracoDomain> GetDomains(bool includeWildcards = false)
     {
-        return _domainService.GetAll(includeWildcards)
-            .Select(x => new Ekom.Models.UmbracoDomain(new Dictionary<string, string>
-            {
-                ["DomainName"] = x.DomainName,
-                ["Key"] = x.Key.ToString(),
-                ["LanguageIsoCode"] = x.LanguageIsoCode ?? string.Empty,
-                ["Id"] = x.Id.ToString(),
-                ["RootContentId"] = x.RootContentId?.ToString() ?? string.Empty,
-            }));
+        return _domainService.GetAll(includeWildcards).Select(x => new Umbraco17Domain(x));
     }
 
     public string GetDictionaryValue(string key) => string.Empty;
 
-    public string GetDataType(string typeValue) => typeValue;
+    public string GetDataType(string typeValue)
+    {
+        if (int.TryParse(typeValue, out var typeValueInt))
+        {
+            var dataType = GetDataTypeCached(typeValueInt);
 
-    public IEnumerable<string> GetContent(string guid) => Array.Empty<string>();
+            if (dataType == null)
+            {
+                return string.Empty;
+            }
+
+            typeValue = dataType.ConfigurationAs<string>();
+        }
+
+        return typeValue.Contains('[', StringComparison.Ordinal)
+            ? JsonConvert.DeserializeObject<string[]>(typeValue)?.FirstOrDefault() ?? string.Empty
+            : typeValue;
+    }
+
+    public IEnumerable<string> GetContent(string guid)
+    {
+        var nodes = guid?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => _nodeService.NodeById(GuidUdiHelper.GetGuid(x)))
+            .Where(x => x != null)
+            .ToList();
+
+        return nodes?.Select(x => x!.Id.ToString(CultureInfo.InvariantCulture)) ?? Array.Empty<string>();
+    }
 
     public IEnumerable<UmbracoLanguage> GetLanguages()
+    {
+        return _runtimeCache.GetCacheItem(LanguagesCacheKey, () =>
+        {
+            var lazy = LanguageLocks.GetOrAdd(LanguagesCacheKey, _ =>
+                new Lazy<IReadOnlyList<UmbracoLanguage>>(LoadLanguages, LazyThreadSafetyMode.ExecutionAndPublication));
+
+            try
+            {
+                return lazy.Value;
+            }
+            catch
+            {
+                LanguageLocks.TryRemove(LanguagesCacheKey, out _);
+                throw;
+            }
+            finally
+            {
+                if (lazy.IsValueCreated)
+                {
+                    LanguageLocks.TryRemove(LanguagesCacheKey, out _);
+                }
+            }
+        }, TimeSpan.FromHours(6)) ?? Array.Empty<UmbracoLanguage>();
+    }
+
+    public string DefaultLanguage()
+    {
+        return _runtimeCache.GetCacheItem(
+            "ekmDefaultLanguage",
+            () => _localizationService.GetDefaultLanguageIsoCode(),
+            TimeSpan.FromHours(6)) ?? string.Empty;
+    }
+
+    public object? GetDataTypeByAlias(string contentTypeAlias, string propertyAlias)
+    {
+        return _runtimeCache.GetCacheItem(
+            "ekmDataTypeAlias" + contentTypeAlias + propertyAlias,
+            () => GetDataTypeAliasValue(contentTypeAlias, propertyAlias),
+            TimeSpan.FromMinutes(60));
+    }
+
+    public object GetDataTypeById(Guid id)
+    {
+        var dataType = _dataTypeService.GetAsync(id).GetAwaiter().GetResult();
+        return FormatDataType(dataType);
+    }
+
+    public IEnumerable<object> GetNonEkomDataTypes()
+    {
+        return _dataTypeService.GetAll()
+            .Where(x => !x.EditorAlias.StartsWith("Ekom", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(x => x.SortOrder)
+            .Select(x => new
+            {
+                guid = x.Key,
+                name = x.Name,
+                editorAlias = x.EditorAlias,
+            });
+    }
+
+    public string UrlSegment(string value) => value.ToUrlSegment(_shortStringHelper);
+
+    private IDataType? GetDataTypeCached(int typeId)
+    {
+        var cacheKey = $"ekm_dt_{typeId}";
+
+        return _cache.GetOrCreate(cacheKey, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+            return _dataTypeService.GetDataType(typeId);
+        });
+    }
+
+    private IReadOnlyList<UmbracoLanguage> LoadLanguages()
     {
         return _localizationService.GetAllLanguages()
             .OrderByDescending(x => x.IsDefault)
@@ -46,16 +175,38 @@ internal sealed class UmbracoService : IUmbracoService
                 CultureName = x.CultureName ?? string.Empty,
                 IsoCode = x.IsoCode,
             })
-            .ToArray();
+            .ToList();
     }
 
-    public string DefaultLanguage() => _localizationService.GetDefaultLanguageIsoCode() ?? string.Empty;
+    private object? GetDataTypeAliasValue(string contentTypeAlias, string propertyAlias)
+    {
+        var contentType = _contentTypeService.Get(contentTypeAlias);
+        var property = contentType?.CompositionPropertyTypes.FirstOrDefault(x => x.Alias == propertyAlias);
 
-    public object? GetDataTypeByAlias(string contentTypeAlias, string propertyAlias) => null;
+        if (property == null)
+        {
+            return null;
+        }
 
-    public object GetDataTypeById(Guid id) => throw new NotSupportedException("Data type lookup has not been ported to Umbraco 17 yet.");
+        var dataType = _dataTypeService.GetAsync(property.DataTypeKey).GetAwaiter().GetResult();
+        return FormatDataType(dataType);
+    }
 
-    public IEnumerable<object> GetNonEkomDataTypes() => Array.Empty<object>();
+    private object FormatDataType(IDataType? dataType)
+    {
+        if (dataType == null)
+        {
+            throw new Exceptions.HttpResponseException(HttpStatusCode.NotFound);
+        }
 
-    public string UrlSegment(string value) => value;
+        var propertyEditor = _propertyEditorCollection.FirstOrDefault(x => x.Alias == dataType.EditorAlias);
+
+        return new
+        {
+            guid = dataType.Key,
+            propertyEditorAlias = dataType.EditorAlias,
+            preValues = dataType.ConfigurationData,
+            view = dataType.EditorUiAlias ?? propertyEditor?.Alias,
+        };
+    }
 }

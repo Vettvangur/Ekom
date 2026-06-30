@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ContentTargetFolders>.</ContentTargetFolders>
+
+        <PackageId>Ekom.Web.U17</PackageId>
+        <Title>Ekom.Web.U17</Title>
+        <Authors>Vettvangur</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+        <PackageIcon>images/VV_Logo.png</PackageIcon>
+        <Description>Ekom Web assets for Umbraco 17.</Description>
+        <PackageReleaseNotes>Create NuGet package</PackageReleaseNotes>
+        <Copyright>Copyright 2026</Copyright>
+        <PackageTags>umbraco;ecommerce;ekom</PackageTags>
+
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../../VV_Logo.png" Pack="true" PackagePath="images/" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="App_Plugins\Ekom\**" ExcludeFromSingleFile="true" CopyToPublishDirectory="Always" />
+        <None Include="buildTransitive\**" Pack="true" PackagePath="buildTransitive" />
+        <None Include="Client\**" Pack="false" />
+    </ItemGroup>
+
+    <Target Name="NpmInstallEkomWebU17" BeforeTargets="Build" Condition="!Exists('Client/node_modules')">
+        <Exec WorkingDirectory="Client" Command="npm ci" />
+    </Target>
+
+    <Target Name="BuildEkomWebU17Assets" BeforeTargets="Build">
+        <Exec WorkingDirectory="Client" Command="npm run build" />
+    </Target>
+
+</Project>

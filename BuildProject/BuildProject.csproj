@@ -57,6 +57,7 @@
 
 dotnet pack $(SolutionDir)Ekom -t:Build,Pack -p:Configuration=Release --include-symbols -o $(ProjectDir)NuGet
 dotnet pack $(SolutionDir)Ekom.Web -t:Build,Pack -p:Configuration=Release --include-symbols -o $(ProjectDir)NuGet
+dotnet pack $(SolutionDir)Ekom.Web.U17 -t:Build,Pack -p:Configuration=Release --include-symbols -o $(ProjectDir)NuGet
 dotnet pack $(SolutionDir)Ekom.Extensions -t:Build,Pack -p:Configuration=Release --include-symbols -o $(ProjectDir)NuGet
 </PostBuildEvent>
   </PropertyGroup>

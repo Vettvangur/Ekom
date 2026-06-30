@@ -1,0 +1,51 @@
+@inherits UmbracoViewPage
+
+@{
+    var productResponse = (ProductResponse?)ViewData["productResponse"];
+    var rootCategoryNode = Model.AncestorOrSelf(3);
+
+    if (rootCategoryNode == null)
+    {
+        return;
+    }
+
+    var category = _catalog.GetCategory(rootCategoryNode.Id);
+
+    if (category == null)
+    {
+        return;
+    }
+}
+
+<aside>
+    <div class="hidden lg:block">
+        @if (category.SubCategories.Any())
+        {
+            <h3 class="sr-only">Categories</h3>
+            <ul role="list" class="space-y-4 text-sm font-medium text-gray-900">
+                @foreach (var subCategory in category.SubCategories)
+                {
+                    <li>
+                        <a href="@subCategory.Url" class="@(subCategory.IsCurrent(Model.Path) ? "text-indigo-600 hover:text-indigo-500" : string.Empty)">@subCategory.Title</a>
+                    </li>
+                }
+            </ul>
+        }
+
+        @if (productResponse != null && productResponse.Filters.Any())
+        {
+            <h2 class="sr-only">Filters</h2>
+            <div class="space-y-10 divide-y divide-gray-200">
+                <div>
+                    <label for="property_priceFrom" class="block pt-6 text-sm font-medium leading-6 text-gray-900">Price From</label>
+                    <input type="number" value="@(Context.Request.Query["property_priceFrom"])" name="property_priceFrom" id="property_priceFrom" class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm">
+                </div>
+
+                <div>
+                    <label for="property_priceTo" class="block pt-6 text-sm font-medium leading-6 text-gray-900">Price To</label>
+                    <input type="number" value="@(Context.Request.Query["property_priceTo"])" name="property_priceTo" id="property_priceTo" class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm">
+                </div>
+            </div>
+        }
+    </div>
+</aside>

@@ -6,6 +6,7 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
@@ -33,14 +34,16 @@ public class EkomBackofficeApiController : ControllerBase
     private readonly IMetafieldService _metafieldService;
     private readonly INodeService _nodeService;
     private readonly IMemoryCache _memoryCache;
+    private readonly IServiceProvider _serviceProvider;
 
-    public EkomBackofficeApiController(Configuration config, IUmbracoService umbracoService, IMetafieldService metafieldService, INodeService nodeService, IMemoryCache memoryCache)
+    public EkomBackofficeApiController(Configuration config, IUmbracoService umbracoService, IMetafieldService metafieldService, INodeService nodeService, IMemoryCache memoryCache, IServiceProvider serviceProvider)
     {
         _config = config;
         _umbracoService = umbracoService;
         _metafieldService = metafieldService;
         _nodeService = nodeService;
         _memoryCache = memoryCache;
+        _serviceProvider = serviceProvider;
     }
 
 
@@ -359,7 +362,7 @@ public class EkomBackofficeApiController : ControllerBase
     {
         try
         {
-            await API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, id, ct: ct);
+            await _serviceProvider.GetRequiredService<OrderService>().InsertCouponCodeAsync(couponCode, numberAvailable, id, ct: ct);
             return Ok();
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
@@ -384,7 +387,7 @@ public class EkomBackofficeApiController : ControllerBase
     {
         try
         {
-            CouponGenerationResult result = await API.Order.Instance.GenerateCouponCodesAsync(id, request, ct);
+            CouponGenerationResult result = await _serviceProvider.GetRequiredService<OrderService>().GenerateCouponCodesAsync(id, request, ct);
             return Ok(result);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
@@ -405,7 +408,7 @@ public class EkomBackofficeApiController : ControllerBase
     {
         try
         {
-            List<CouponData> coupons = await API.Order.Instance.GetCouponsForDiscountAsync(id, ct);
+            List<CouponData> coupons = await _serviceProvider.GetRequiredService<OrderService>().GetCouponsForDiscountAsync(id, ct);
             var csv = CreateCouponCsv(coupons);
             var fileName = $"coupons-{id:N}.csv";
 
@@ -428,7 +431,7 @@ public class EkomBackofficeApiController : ControllerBase
     {
         try
         {
-            await API.Order.Instance.RemoveCouponCodeAsync(couponCode, id);
+            await _serviceProvider.GetRequiredService<OrderService>().RemoveCouponCodeAsync(couponCode, id);
 
             return Ok();
         }
@@ -450,7 +453,7 @@ public class EkomBackofficeApiController : ControllerBase
     {
         try
         {
-            (List<CouponData> Data, int TotalPages) items = await API.Order.Instance.GetCouponsForDiscountAsync(id, query, page, pageSize, ct);
+            (List<CouponData> Data, int TotalPages) items = await _serviceProvider.GetRequiredService<OrderService>().GetCouponsForDiscountAsync(id, query, page, pageSize, ct);
             return Ok(items);
         }
         catch (Exception ex)

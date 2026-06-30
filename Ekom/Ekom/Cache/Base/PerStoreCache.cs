@@ -25,8 +25,7 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     protected readonly IBaseCache<IStore> _storeCache;
     protected readonly IPerStoreFactory<TItem> _objFac;
     protected readonly IServiceProvider _serviceProvider;
-
-    protected INodeService nodeService => _serviceProvider.GetService<INodeService>();
+    protected readonly IServiceScopeFactory _serviceScopeFactory;
 
     protected PerStoreCache(
         Configuration config,
@@ -40,6 +39,7 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
         _storeCache = storeCache;
         _objFac = objFac;
         _serviceProvider = serviceProvider;
+        _serviceScopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
     }
 
     /// <summary>
@@ -190,6 +190,9 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
 
         try
         {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
+
             List<UmbracoContent> results = nodeService.NodesByTypes(NodeAlias).ToList();
             _logger.LogInformation("Filling per store cache for {NodeAlias}... Nodes: {Count}", NodeAlias, results.Count);
 
@@ -399,6 +402,9 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
 
     public void AddOrReplaceFromAllCaches(UmbracoContent node)
     {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
+
         IEnumerable<UmbracoContent> ancestors = nodeService.NodeAncestors(node.Id.ToString());
 
         foreach (KeyValuePair<Guid, IStore> store in _storeCache.Cache)

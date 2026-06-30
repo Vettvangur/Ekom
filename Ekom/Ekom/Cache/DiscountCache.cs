@@ -1,6 +1,8 @@
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
@@ -35,6 +37,9 @@ class DiscountCache : PerStoreCache<IDiscount>
 
         ConcurrentDictionary<Guid, IDiscount> curStoreCache
             = Cache[store.Alias] = new ConcurrentDictionary<Guid, IDiscount>();
+
+        using var scope = _serviceScopeFactory.CreateScope();
+        var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
 
         foreach (UmbracoContent r in results)
         {

@@ -1,5 +1,7 @@
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
@@ -32,6 +34,9 @@ class PaymentProviderCache : PerStoreCache<IPaymentProvider>
 
             try
             {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
+
                 UmbracoContent? paymentProviderRoot = nodeService.NodesByTypes("ekmPaymentProviders").FirstOrDefault();
 
                 if (paymentProviderRoot == null)

@@ -2,6 +2,7 @@ using Ekom.Repositories;
 using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using System.Data.Common;
 using System.Reflection;
 
@@ -12,11 +13,11 @@ public class DatabaseFactory
     readonly string _connectionString;
     readonly string _linqToDbProviderName;
 
-    public DatabaseFactory(IConfiguration configuration)
+    public DatabaseFactory(IConfiguration configuration, IHostEnvironment hostEnvironment)
     {
         const string connectionStringName = "umbracoDbDSN";
         const string providerNameKey = "umbracoDbDSN_ProviderName";
-        _connectionString = configuration.GetConnectionString(connectionStringName);
+        var connectionString = configuration.GetConnectionString(connectionStringName);
         string? providerName = configuration.GetConnectionString(providerNameKey);
         if (string.IsNullOrWhiteSpace(providerName))
         {
@@ -28,7 +29,10 @@ public class DatabaseFactory
             providerName = configuration[$"Umbraco:CMS:Global:ConnectionStrings:{providerNameKey}"];
         }
 
-        _linqToDbProviderName = ResolveLinqToDbProviderName(providerName, _connectionString);
+        _linqToDbProviderName = ResolveLinqToDbProviderName(providerName, connectionString);
+        _connectionString = IsSqliteProviderName(_linqToDbProviderName)
+            ? ExpandDataDirectory(connectionString, hostEnvironment.ContentRootPath)
+            : connectionString;
     }
 
     public DbContext GetDatabase() => new(_linqToDbProviderName, _connectionString);
@@ -127,5 +131,20 @@ public class DatabaseFactory
         }
 
         return false;
+    }
+
+    static string ExpandDataDirectory(string connectionString, string contentRootPath)
+    {
+        const string dataDirectoryToken = "|DataDirectory|";
+
+        if (!connectionString.Contains(dataDirectoryToken, StringComparison.OrdinalIgnoreCase))
+        {
+            return connectionString;
+        }
+
+        var dataDirectory = Path.Combine(contentRootPath, "umbraco", "Data");
+        Directory.CreateDirectory(dataDirectory);
+
+        return connectionString.Replace(dataDirectoryToken, dataDirectory, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -1,0 +1,19 @@
+{
+  "name": "ekom-web-u17",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.17.1",
+    "npm": ">=10.9.2"
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@umbraco-cms/backoffice": "17.3.5",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.21"
+  }
+}

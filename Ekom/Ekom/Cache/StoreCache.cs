@@ -1,5 +1,7 @@
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
@@ -28,6 +30,8 @@ class StoreCache : BaseCache<IStore>
         _logger.LogDebug("Starting to fill store cache...");
         int count = 0;
 
+        using var scope = _serviceScopeFactory.CreateScope();
+        var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
         IEnumerable<UmbracoContent> results = nodeService.NodesByTypes(NodeAlias);
 
         foreach (UmbracoContent r in results)

@@ -2,6 +2,7 @@ using Ekom.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Globalization;
@@ -10,13 +11,14 @@ namespace Ekom;
 
 public class EkomCultureRequestLocalizationOptions : IConfigureOptions<RequestLocalizationOptions>
 {
-    private readonly IUmbracoService _umbracoService;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<EkomCultureRequestLocalizationOptions> _logger;
+
     public EkomCultureRequestLocalizationOptions(
-        IUmbracoService umbracoService,
+        IServiceScopeFactory serviceScopeFactory,
         ILogger<EkomCultureRequestLocalizationOptions> logger)
     {
-        _umbracoService = umbracoService;
+        _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
     }
 
@@ -24,8 +26,17 @@ public class EkomCultureRequestLocalizationOptions : IConfigureOptions<RequestLo
     {
         try
         {
-            var cultures = _umbracoService.GetLanguages();
-            var defaultCulture = _umbracoService.DefaultLanguage();
+            using var scope = _serviceScopeFactory.CreateScope();
+
+            if (!IsUmbracoRuntimeReady(scope.ServiceProvider))
+            {
+                return;
+            }
+
+            var umbracoService = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
+
+            var cultures = umbracoService.GetLanguages();
+            var defaultCulture = umbracoService.DefaultLanguage();
 
             var supportedCultures = cultures.Select(culture => new CultureInfo(culture.IsoCode)).ToList();
 
@@ -40,6 +51,30 @@ public class EkomCultureRequestLocalizationOptions : IConfigureOptions<RequestLo
         {
             _logger.LogWarning(ex, "Failed configuring Ekom localization.");
         }
+    }
+
+    private static bool IsUmbracoRuntimeReady(IServiceProvider serviceProvider)
+    {
+        var runtimeStateType = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .Select(assembly => assembly.GetType("Umbraco.Cms.Core.Runtime.IRuntimeState"))
+            .FirstOrDefault(type => type != null);
+
+        if (runtimeStateType == null)
+        {
+            return false;
+        }
+
+        var runtimeState = serviceProvider.GetService(runtimeStateType);
+
+        if (runtimeState == null)
+        {
+            return false;
+        }
+
+        var level = runtimeStateType.GetProperty("Level")?.GetValue(runtimeState)?.ToString();
+
+        return string.Equals(level, "Run", StringComparison.Ordinal);
     }
 
 }

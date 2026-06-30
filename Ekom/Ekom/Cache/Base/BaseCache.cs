@@ -22,8 +22,7 @@ abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
     protected readonly ILogger _logger;
     protected readonly IObjectFactory<TItem>? _objFac;
     protected readonly IServiceProvider _serviceProvider;
-
-    protected INodeService nodeService => _serviceProvider.GetService<INodeService>();
+    protected readonly IServiceScopeFactory _serviceScopeFactory;
 
     protected BaseCache(
         Configuration config,
@@ -35,6 +34,7 @@ abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
         _logger = logger;
         _objFac = objectFactory;
         _serviceProvider = serviceProvider;
+        _serviceScopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
     }
 
     /// <summary>
@@ -182,6 +182,8 @@ abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
         _logger.LogDebug("Starting to fill base cache for {NodeAlias}...", NodeAlias);
 
         int count = 0;
+        using var scope = _serviceScopeFactory.CreateScope();
+        var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
         IEnumerable<UmbracoContent> results = nodeService.NodesByTypes(NodeAlias);
 
         foreach (UmbracoContent r in results)
@@ -218,6 +220,9 @@ abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
 
     public virtual void AddReplace(UmbracoContent content)
     {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
+
         if (!nodeService.IsItemUnpublished(content))
         {
             TItem? item =

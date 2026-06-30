@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <UserSecretsId>c8c2f3c0-0b6d-4a8f-b5b3-d09b04882187</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Umbraco.Cms" Version="[17.0.0,18.0.0)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\Ekom\Ekom.U17\Ekom.U17.csproj" />
+        <ProjectReference Include="..\..\..\Ekom\Ekom.Web.U17\Ekom.Web.U17.csproj" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <Import Project="..\..\..\Ekom\Ekom.Web.U17\buildTransitive\Ekom.Web.U17.targets" Condition="Exists('..\..\..\Ekom\Ekom.Web.U17\buildTransitive\Ekom.Web.U17.targets')" />
+
+</Project>

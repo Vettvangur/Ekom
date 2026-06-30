@@ -216,7 +216,23 @@ class EnsureNodesExist : IComponent
                     },
                 });
 
-                var propertyBoolDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
+                var propertyBoolStoreDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
+                {
+                    Name = "Ekom Property Editor - Boolean - Stores",
+                    Configuration = new EkomPropertyEditorConfiguration
+                    {
+                        DataType = new
+                        {
+                            guid = booleanDt.Key,
+                            name = booleanDt.Name,
+                            propertyEditorAlias = booleanDt.EditorAlias,
+                        },
+                        useLanguages = false,
+                        HideLabel = false
+                    },
+                });
+
+                EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Property Editor - Boolean",
                     Configuration = new EkomPropertyEditorConfiguration
@@ -450,7 +466,7 @@ class EnsureNodesExist : IComponent
                                     {
                                         Name = "Title",
                                     },
-                                    new PropertyType(_shortStringHelper, propertyTextareaDt, "description")
+                                    new PropertyType(_shortStringHelper, propertyRteDt, "description")
                                     {
                                         Name = "Description",
                                     },
@@ -464,7 +480,7 @@ class EnsureNodesExist : IComponent
                                 true,
                                 new List<PropertyType>
                                 {
-                                    new PropertyType(_shortStringHelper, propertyBoolDt, "disable")
+                                    new PropertyType(_shortStringHelper, propertyBoolStoreDt, "disable")
                                     {
                                         Name = "Disable",
                                     },
@@ -744,7 +760,7 @@ class EnsureNodesExist : IComponent
                                 true,
                                 new List<PropertyType>
                                 {
-                                    new PropertyType(_shortStringHelper, propertyBoolDt, "disable")
+                                    new PropertyType(_shortStringHelper, propertyBoolStoreDt, "disable")
                                     {
                                         Name = "Disable",
                                     },
@@ -807,7 +823,7 @@ class EnsureNodesExist : IComponent
                                     {
                                         Name = "SKU",
                                     },
-                                    new PropertyType(_shortStringHelper, propertyTextareaDt, "description")
+                                    new PropertyType(_shortStringHelper, propertyRteDt, "description")
                                     {
                                         Name = "Description",
                                     },
@@ -834,7 +850,7 @@ class EnsureNodesExist : IComponent
                                 true,
                                 new List<PropertyType>
                                 {
-                                    new PropertyType(_shortStringHelper, propertyBoolDt, "disable")
+                                    new PropertyType(_shortStringHelper, propertyBoolStoreDt, "disable")
                                     {
                                         Name = "Disable",
                                     },

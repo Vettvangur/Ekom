@@ -1,0 +1,54 @@
+@inherits UmbracoViewPage
+@using Microsoft.Extensions.Primitives
+
+@{
+    var productResponse = (ProductResponse?)ViewData["productResponse"];
+
+    if (productResponse == null || !productResponse.PageCount.HasValue || productResponse.PageCount.Value <= 1)
+    {
+        return;
+    }
+
+    var currentPage = PaginationHelper.GetCurrentPage(Context);
+    var helper = new PaginationHelper(currentPage, productResponse.PageCount.Value);
+    var pageRange = helper.PageRange();
+}
+
+<nav aria-label="Pagination" class="mx-auto mt-6 flex max-w-7xl justify-between text-sm font-medium text-gray-700">
+    <div class="min-w-0 flex-1">
+        <a href="@GetQueryValue((currentPage - 1).ToString())" class="@(currentPage == 1 ? "pointer-events-none opacity-50" : string.Empty) inline-flex h-10 items-center rounded-md border border-gray-300 bg-white px-4 hover:bg-gray-100">Previous</a>
+    </div>
+    <div class="hidden space-x-2 sm:flex">
+        @foreach (var item in pageRange)
+        {
+            if (item == "...")
+            {
+                <span class="inline-flex h-10 items-center px-1.5 text-gray-500">...</span>
+            }
+            else
+            {
+                <a href="@GetQueryValue(item)" class="inline-flex h-10 items-center rounded-md border @(item == currentPage.ToString() ? "border-indigo-600 ring-1 ring-indigo-600" : "border-gray-300") bg-white px-4 hover:bg-gray-100">@item</a>
+            }
+        }
+    </div>
+    <div class="flex min-w-0 flex-1 justify-end">
+        <a href="@GetQueryValue((currentPage + 1).ToString())" class="@(pageRange.Last() == currentPage.ToString() ? "pointer-events-none opacity-50" : string.Empty) inline-flex h-10 items-center rounded-md border border-gray-300 bg-white px-4 hover:bg-gray-100">Next</a>
+    </div>
+</nav>
+
+@{
+    string GetQueryValue(string page)
+    {
+        var queryCollection = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(Context.Request.QueryString.Value);
+        var modifiedQuery = queryCollection.ToDictionary(
+            p => p.Key,
+            p => p.Key == "p" ? new StringValues(page) : p.Value);
+
+        if (!modifiedQuery.ContainsKey("p"))
+        {
+            modifiedQuery.Add("p", page);
+        }
+
+        return Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(string.Empty, modifiedQuery);
+    }
+}

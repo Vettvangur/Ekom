@@ -1,0 +1,9 @@
+umbraco/Data/
+umbraco/Logs/
+wwwroot/media/*
+!wwwroot/media/.gitkeep
+wwwroot/App_Plugins/Ekom/
+appsettings-schema*.json
+umbraco-package-schema.json
+bin/
+obj/

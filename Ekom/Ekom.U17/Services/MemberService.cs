@@ -1,39 +1,86 @@
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Umb.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Umbraco.Cms.Core.Security;
 
 namespace Ekom.Umb.Services;
 
 internal sealed class MemberService : IMemberService
 {
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<MemberService> _logger;
 
-    public MemberService(ILogger<MemberService> logger)
+    public MemberService(
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<MemberService> logger)
     {
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
-    public Task<UmbracoMember> GetCurrentMember()
+    public async Task<UmbracoMember> GetCurrentMember()
     {
-        _logger.LogDebug("Umbraco 17 member lookup is not ported yet.");
+        var memberManager = _httpContextAccessor.HttpContext?.RequestServices.GetService<IMemberManager>();
 
-        return Task.FromResult<UmbracoMember>(null!);
+        if (memberManager == null)
+        {
+            return null!;
+        }
+
+        var member = await memberManager.GetCurrentMemberAsync();
+        var publishedMember = memberManager.AsPublishedMember(member);
+
+        return publishedMember == null ? null! : new Umbraco17Member(publishedMember, member!.UserName!);
     }
 
-    public UmbracoMember GetByUsername(string t)
+    public UmbracoMember GetByUsername(string userName)
     {
-        _logger.LogDebug("Umbraco 17 member lookup by username is not ported yet. Username: {Username}", t);
+        try
+        {
+            var memberService = _httpContextAccessor.HttpContext?.RequestServices.GetService<Umbraco.Cms.Core.Services.IMemberService>();
+            var member = memberService?.GetByUsername(userName);
 
-        return null!;
+            return member == null ? null! : new Umbraco17Member(member);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get member by username: {Username}", userName);
+
+            return null!;
+        }
     }
 
-    public void Save(Dictionary<string, object> t, UmbracoMember member)
+    public void Save(Dictionary<string, object> data, UmbracoMember member)
     {
-        _logger.LogDebug("Umbraco 17 member save is not ported yet.");
+        Save(data, member.UserName);
     }
 
-    public void Save(Dictionary<string, object> t, string? userSsn)
+    public void Save(Dictionary<string, object> data, string? userName)
     {
-        _logger.LogDebug("Umbraco 17 member save by username is not ported yet. Username: {Username}", userSsn);
+        if (string.IsNullOrEmpty(userName))
+        {
+            return;
+        }
+
+        var memberService = _httpContextAccessor.HttpContext?.RequestServices.GetService<Umbraco.Cms.Core.Services.IMemberService>();
+        var member = memberService?.GetByUsername(userName);
+
+        if (member == null)
+        {
+            return;
+        }
+
+        foreach (var item in data)
+        {
+            if (member.HasProperty(item.Key))
+            {
+                member.SetValue(item.Key, item.Value);
+            }
+        }
+
+        memberService?.Save(member);
     }
 }

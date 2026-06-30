@@ -1,0 +1,40 @@
+@inherits UmbracoViewPage
+
+@{
+    var root = Model.GetRootNode();
+    var companyName = root.Value<string>("companyName") ?? "Ekom";
+    var pageTitle = Model.GetTitle();
+    var description = Model.HasValue("metaDescription") ? Model.Value<string>("metaDescription") : string.Empty;
+
+    if (Model.IsDocumentType("ekmProduct"))
+    {
+        var product = await _catalog.GetProductAsync();
+        if (product != null)
+        {
+            pageTitle = product.Title;
+        }
+    }
+
+    if (Model.IsDocumentType("ekmCategory"))
+    {
+        var category = _catalog.GetCategory();
+        if (category != null)
+        {
+            pageTitle = category.Title;
+        }
+    }
+}
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>@pageTitle - @companyName</title>
+<meta name="description" content="@description">
+<meta name="author" content="@companyName">
+
+@if (env.EnvironmentName != "Production" || Model.Value<bool>("disableCrawling"))
+{
+    <meta name="robots" content="noindex, nofollow">
+}
+
+<partial name="ekom/utility/fav" />
