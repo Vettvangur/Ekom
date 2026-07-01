@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.186](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.185...Ekom-v0.2.186) (2026-07-01)
+
+
+### Bug Fixes
+
+* **stock:** apply buffer to non-variant products ([#654](https://github.com/Vettvangur/Ekom/issues/654)) ([6d0dd90](https://github.com/Vettvangur/Ekom/commit/6d0dd9031b1434df6eb617c8e4a1a2a223e20f61))
+
 ## [0.2.185](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.184...Ekom-v0.2.185) (2026-06-28)
 
 
