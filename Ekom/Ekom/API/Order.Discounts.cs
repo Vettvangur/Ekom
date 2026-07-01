@@ -66,27 +66,28 @@ public partial class Order
     /// 
     /// </summary>
     /// <exception cref="ArgumentException"></exception>
-    public async Task RemoveCouponFromOrderAsync(CancellationToken ct = default)
+    public async Task RemoveCouponFromOrderAsync(DiscountOrderSettings? settings = null, CancellationToken ct = default)
     {
         var storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
 
-        await RemoveCouponFromOrderAsync(storeAlias, ct).ConfigureAwait(false);
+        await RemoveCouponFromOrderAsync(storeAlias, settings, ct).ConfigureAwait(false);
     }
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="storeAlias"></param>
+    /// <param name="settings"></param>
     /// <param name="ct">CancellationToken</param>
     /// <exception cref="ArgumentException"></exception>
-    public async Task RemoveCouponFromOrderAsync(string? storeAlias, CancellationToken ct = default)
+    public async Task RemoveCouponFromOrderAsync(string? storeAlias, DiscountOrderSettings? settings, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        await _orderService.RemoveCouponFromOrderAsync(storeAlias, ct: ct)
+        await _orderService.RemoveCouponFromOrderAsync(storeAlias, settings: settings, ct: ct)
             .ConfigureAwait(false);
     }
 
@@ -106,11 +107,16 @@ public partial class Order
     }
 
 
-    public async Task SetCouponCodeAsync(string coupon, DiscountOrderSettings? discountOrderSettings = null, CancellationToken ct = default)
+    public async Task<IOrderInfo?> SetCouponCodeAsync(string coupon, DiscountOrderSettings? discountOrderSettings = null, CancellationToken ct = default)
     {
-        var storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
+        return await SetCouponCodeAsync(coupon, null, discountOrderSettings, ct).ConfigureAwait(false);
+    }
 
-        await _orderService.SetCouponCodeAsync(coupon, storeAlias, discountOrderSettings, ct: ct).ConfigureAwait(false);
+    public async Task<IOrderInfo?> SetCouponCodeAsync(string coupon, string? storeAlias, DiscountOrderSettings? discountOrderSettings = null, CancellationToken ct = default)
+    {
+        storeAlias = storeAlias ?? _storeSvc.GetStoreFromCache()?.Alias;
+
+        return await _orderService.SetCouponCodeAsync(coupon, storeAlias, discountOrderSettings, ct: ct).ConfigureAwait(false);
     }
 
     

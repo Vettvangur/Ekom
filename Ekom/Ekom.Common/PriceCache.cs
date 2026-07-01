@@ -34,7 +34,18 @@ public static class PriceCache
     {
         var gen = _itemGenerations.GetOrAdd(itemKey, _ => Guid.NewGuid().ToString("N"));
 
-        gen = RaiseGenerationCreated(itemKey, gen);
+        gen = RaiseGenerationCreatedAsync(itemKey, gen, CancellationToken.None).GetAwaiter().GetResult();
+
+        return gen;
+    }
+
+    public static async ValueTask<string> GetItemGenerationAsync(string itemKey, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var gen = _itemGenerations.GetOrAdd(itemKey, _ => Guid.NewGuid().ToString("N"));
+
+        gen = await RaiseGenerationCreatedAsync(itemKey, gen, ct).ConfigureAwait(false);
 
         return gen;
     }
@@ -65,13 +76,23 @@ public static class PriceCache
         (Cache as MemoryCache)?.Compact(1.0);
     }
 
-    public static event EventHandler<PriceGenerationEventArgs>? OnGenerationCreated;
+    public static event Func<PriceGenerationEventArgs, CancellationToken, ValueTask>? OnGenerationCreatedAsync;
     public static event EventHandler<PriceGenerationEventArgs>? OnGenerationInvalidated;
 
-    private static string RaiseGenerationCreated(string itemKey, string gen)
+    private static async ValueTask<string> RaiseGenerationCreatedAsync(string itemKey, string gen, CancellationToken ct)
     {
         var args = new PriceGenerationEventArgs(itemKey, gen);
-        OnGenerationCreated?.Invoke(null, args);
+        var handlers = OnGenerationCreatedAsync;
+
+        if (handlers is null)
+            return args.Generation;
+
+        foreach (var handler in handlers.GetInvocationList())
+        {
+            ct.ThrowIfCancellationRequested();
+            await ((Func<PriceGenerationEventArgs, CancellationToken, ValueTask>)handler)(args, ct).ConfigureAwait(false);
+        }
+
         return args.Generation;
     }
 

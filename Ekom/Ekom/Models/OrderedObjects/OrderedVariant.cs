@@ -3,7 +3,6 @@ using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Xml.Serialization;
 
 namespace Ekom.Models;
@@ -112,9 +111,9 @@ public class OrderedVariant
             {
                 string value = Properties.GetPropertyValue("vat", StoreInfo.Alias);
 
-                if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal _val))
+                if (VatParser.TryParsePercentageRate(value, out decimal _val))
                 {
-                    return _val / 100;
+                    return _val;
                 }
             }
 

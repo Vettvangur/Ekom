@@ -1,5 +1,152 @@
 # Changelog
 
+## [0.2.93](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.92...Ekom.Klaviyo-v0.2.93) (2026-06-23)
+
+
+### Bug Fixes
+
+* **klaviyo:** support phone-only sms subscriptions ([#642](https://github.com/Vettvangur/Ekom/issues/642)) ([65c106a](https://github.com/Vettvangur/Ekom/commit/65c106ac20290f31be07f15a887b598b890e1dc6))
+
+## [0.2.92](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.91...Ekom.Klaviyo-v0.2.92) (2026-06-23)
+
+
+### Bug Fixes
+
+* **klaviyo:** add sms and push subscription helpers ([#638](https://github.com/Vettvangur/Ekom/issues/638)) ([7a5a191](https://github.com/Vettvangur/Ekom/commit/7a5a191e6dd785bbab473a670aa9dd840529b636))
+
+## [0.2.91](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.90...Ekom.Klaviyo-v0.2.91) (2026-06-08)
+
+
+### Bug Fixes
+
+* stock buffer fallback ([#622](https://github.com/Vettvangur/Ekom/issues/622)) ([ea14a8d](https://github.com/Vettvangur/Ekom/commit/ea14a8dc60df30ae450bc49dd2cf19213a351a7e))
+
+## [0.2.90](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.89...Ekom.Klaviyo-v0.2.90) (2026-06-08)
+
+
+### Bug Fixes
+
+* **stock:** resolve buffer values dynamically ([#620](https://github.com/Vettvangur/Ekom/issues/620)) ([620177f](https://github.com/Vettvangur/Ekom/commit/620177f055a5ad18ea8b69d4f54a7a8bae4c33f4))
+
+## [0.2.89](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.88...Ekom.Klaviyo-v0.2.89) (2026-06-07)
+
+
+### Bug Fixes
+
+* **payments:** update package versions ([#614](https://github.com/Vettvangur/Ekom/issues/614)) ([21800dc](https://github.com/Vettvangur/Ekom/commit/21800dcf499aeb20b42990e14d0e2e51c87d880c))
+
+## [0.2.88](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.87...Ekom.Klaviyo-v0.2.88) (2026-06-07)
+
+
+### Bug Fixes
+
+* **klaviyo:** add formatted order VAT total ([#612](https://github.com/Vettvangur/Ekom/issues/612)) ([6113c21](https://github.com/Vettvangur/Ekom/commit/6113c21aed762c1ff46b282ff5a012a06a8c6408))
+
+## [0.2.87](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.86...Ekom.Klaviyo-v0.2.87) (2026-06-05)
+
+
+### Bug Fixes
+
+* **klaviyo:** add orderline VAT fields ([#608](https://github.com/Vettvangur/Ekom/issues/608)) ([e4df6b1](https://github.com/Vettvangur/Ekom/commit/e4df6b104fe7d613b0ca0b731861510c7020c1a9))
+
+## [0.2.86](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.85...Ekom.Klaviyo-v0.2.86) (2026-06-03)
+
+
+### Bug Fixes
+
+* **payments:** update payment packages ([#577](https://github.com/Vettvangur/Ekom/issues/577)) ([acc9adb](https://github.com/Vettvangur/Ekom/commit/acc9adb1ce51a1bdc1bc9c88253b6fda7ca6e8de))
+
+## [0.2.85](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.84...Ekom.Klaviyo-v0.2.85) (2026-06-01)
+
+
+### Bug Fixes
+
+* **klaviyo:** include locale on profile updates ([#561](https://github.com/Vettvangur/Ekom/issues/561)) ([417b0f7](https://github.com/Vettvangur/Ekom/commit/417b0f7e787936087a284aa70872f7b1f6a67753))
+
+## [0.2.84](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.83...Ekom.Klaviyo-v0.2.84) (2026-05-30)
+
+
+### Bug Fixes
+
+* **klaviyo:** include language on placed orders ([#557](https://github.com/Vettvangur/Ekom/issues/557)) ([0acb728](https://github.com/Vettvangur/Ekom/commit/0acb728393cecb1613aa8dd286ebd3646e1986d2))
+
+## [0.2.83](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.82...Ekom.Klaviyo-v0.2.83) (2026-05-29)
+
+
+### Bug Fixes
+
+* **klaviyo:** scope feed ids by language ([#555](https://github.com/Vettvangur/Ekom/issues/555)) ([88d8e16](https://github.com/Vettvangur/Ekom/commit/88d8e1658e55393e1534ec1c68e7de37a7485297))
+
+## [0.2.82](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.81...Ekom.Klaviyo-v0.2.82) (2026-05-29)
+
+
+### Bug Fixes
+
+* **klaviyo:** use public store API for feed ([#553](https://github.com/Vettvangur/Ekom/issues/553)) ([bf6890c](https://github.com/Vettvangur/Ekom/commit/bf6890c961c9d7ec18b1a64d7c58dd0c4d1b5164))
+
+## [0.2.81](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.80...Ekom.Klaviyo-v0.2.81) (2026-05-29)
+
+
+### Bug Fixes
+
+* Fix Klaviyo feed culture context ([#551](https://github.com/Vettvangur/Ekom/issues/551)) ([586534d](https://github.com/Vettvangur/Ekom/commit/586534d99545e2d172b923715d825d1c0e1bac67))
+
+## [0.2.80](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.79...Ekom.Klaviyo-v0.2.80) (2026-05-20)
+
+
+### Bug Fixes
+
+* **klaviyo:** request profile subscriptions correctly ([#547](https://github.com/Vettvangur/Ekom/issues/547)) ([4994a87](https://github.com/Vettvangur/Ekom/commit/4994a87b1be0e740b827fea7398533150f0a5fd6))
+
+## [0.2.79](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.78...Ekom.Klaviyo-v0.2.79) (2026-05-15)
+
+
+### Bug Fixes
+
+* **vat:** parse rates using invariant culture ([#543](https://github.com/Vettvangur/Ekom/issues/543)) ([f567af6](https://github.com/Vettvangur/Ekom/commit/f567af695342bb8a984a731b0ac27294f3dbac06))
+
+## [0.2.78](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.77...Ekom.Klaviyo-v0.2.78) (2026-05-15)
+
+
+### Bug Fixes
+
+* **umbraco:** use decimal VAT fields ([#541](https://github.com/Vettvangur/Ekom/issues/541)) ([c7f9647](https://github.com/Vettvangur/Ekom/commit/c7f96478f18fb6e3d0bd6507c10b03eaca01a8fd))
+
+## [0.2.77](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.76...Ekom.Klaviyo-v0.2.77) (2026-05-12)
+
+
+### Features
+
+* **klaviyo:** enrich product feed pricing ([#537](https://github.com/Vettvangur/Ekom/issues/537)) ([7a75957](https://github.com/Vettvangur/Ekom/commit/7a759573f6fa5a031d4aeac3f94eb901e20500af))
+
+## [0.2.76](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.75...Ekom.Klaviyo-v0.2.76) (2026-05-06)
+
+
+### Bug Fixes
+
+* **klaviyo:** exclude feed products without images ([#535](https://github.com/Vettvangur/Ekom/issues/535)) ([a5ee422](https://github.com/Vettvangur/Ekom/commit/a5ee422c9f21868104d383bd9ac99e030c33efad))
+
+## [0.2.75](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.74...Ekom.Klaviyo-v0.2.75) (2026-05-06)
+
+
+### Bug Fixes
+
+* **klaviyo:** add formatted discount value ([#531](https://github.com/Vettvangur/Ekom/issues/531)) ([8c03a56](https://github.com/Vettvangur/Ekom/commit/8c03a5659777497266e39b582332bee6ce80d921))
+
+## [0.2.74](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.73...Ekom.Klaviyo-v0.2.74) (2026-05-05)
+
+
+### Bug Fixes
+
+* **klaviyo:** format event dates invariantly ([#529](https://github.com/Vettvangur/Ekom/issues/529)) ([d0d1db5](https://github.com/Vettvangur/Ekom/commit/d0d1db5da8b8bd8366698acd8e6a9d741fff3f5f))
+
+## [0.2.73](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.72...Ekom.Klaviyo-v0.2.73) (2026-05-05)
+
+
+### Features
+
+* **klaviyo:** add generic event service ([#525](https://github.com/Vettvangur/Ekom/issues/525)) ([15ec145](https://github.com/Vettvangur/Ekom/commit/15ec145cb23e46f22d5b29dc278896727173ea46))
+
 ## [0.2.72](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.71...Ekom.Klaviyo-v0.2.72) (2026-04-17)
 
 

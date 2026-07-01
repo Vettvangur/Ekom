@@ -18,6 +18,10 @@
     $scope.averageAmount = 0;
     $scope.page = 1;
     $scope.pageMostSoldProducts = 1;
+    $scope.exportOptions = {
+      includeOrderLines: false,
+      exporting: false
+    };
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
     $scope.filters = managerState.filters;
@@ -89,10 +93,21 @@
       $document.on("click", unbindDocumentClick);
     }
 
+    function formatDateQueryValue(value) {
+      if (!angular.isDate(value)) {
+        return value;
+      }
+
+      var month = ("0" + (value.getMonth() + 1)).slice(-2);
+      var day = ("0" + value.getDate()).slice(-2);
+
+      return value.getFullYear() + "-" + month + "-" + day;
+    }
+
     function buildOrdersQuery() {
       return {
-        start: $scope.filters.dateFrom,
-        end: $scope.filters.dateTo,
+        start: formatDateQueryValue($scope.filters.dateFrom),
+        end: formatDateQueryValue($scope.filters.dateTo),
         orderStatus: $scope.filters.orderStatus,
         page: $scope.page,
         pageSize: 20,
@@ -109,10 +124,19 @@
       };
     }
 
+    function buildExportOrdersQuery() {
+      var query = buildOrdersQuery();
+
+      query.page = 1;
+      query.pageSize = $scope.result.count || 0;
+
+      return query;
+    }
+
     function buildChartQuery() {
       return {
-        start: $scope.filters.dateFrom,
-        end: $scope.filters.dateTo,
+        start: formatDateQueryValue($scope.filters.dateFrom),
+        end: formatDateQueryValue($scope.filters.dateTo),
         orderStatus: $scope.filters.orderStatus,
         store: $scope.filters.store
       };
@@ -120,8 +144,8 @@
 
     function buildMostSoldProductsQuery() {
       return {
-        start: $scope.filters.dateFrom,
-        end: $scope.filters.dateTo,
+        start: formatDateQueryValue($scope.filters.dateFrom),
+        end: formatDateQueryValue($scope.filters.dateTo),
         orderStatus: $scope.filters.orderStatus,
         store: $scope.filters.store,
         page: $scope.pageMostSoldProducts,
@@ -294,6 +318,28 @@
       };
     };
 
+    $scope.OpenExport = function () {
+      $scope.exportOptions = {
+        includeOrderLines: false,
+        exporting: false
+      };
+
+      $scope.overlay = {
+        title: "Export orders",
+        view: "/App_Plugins/Ekom/Manager/views/overlays/ekmExport.html",
+        editModel: {
+          options: $scope.exportOptions
+        },
+        show: true,
+        submit: function () {
+          $scope.ExportCsv(null, $scope.exportOptions.includeOrderLines);
+        },
+        close: function () {
+          $scope.CloseModal();
+        }
+      };
+    };
+
     $scope.ViewOrder = function (order) {
       resources.OrderInfo(order.uniqueId)
         .then(function (result) {
@@ -346,7 +392,7 @@
       searchDebouncePromise = $timeout(function () {
         searchDebouncePromise = null;
         $scope.GetData();
-      }, 300);
+      }, 700);
     };
 
     $scope.onDateRangeChanged = function () {
@@ -524,41 +570,7 @@
         });
     };
 
-    $scope.ExportCsv = function (filename) {
-      var orders = $scope.result.orders;
-
-      if (!orders || !orders.length) {
-        return;
-      }
-
-      var keys = Object.keys(orders[0]);
-      var lines = [keys.join(",")];
-
-      function escapeValue(value) {
-        var escapedValue = value;
-
-        if (escapedValue == null) {
-          return "";
-        }
-
-        if (typeof escapedValue === "object") {
-          escapedValue = JSON.stringify(escapedValue);
-        }
-
-        escapedValue = String(escapedValue);
-
-        return /[",\r\n]/.test(escapedValue)
-          ? '"' + escapedValue.replace(/"/g, '""') + '"'
-          : escapedValue;
-      }
-
-      orders.forEach(function (order) {
-        lines.push(keys.map(function (key) {
-          return escapeValue(order[key]);
-        }).join(","));
-      });
-
-      var blob = new Blob(["\uFEFF", lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    function downloadBlob(blob, filename) {
       var url = URL.createObjectURL(blob);
       var anchor = document.createElement("a");
 
@@ -566,11 +578,37 @@
       anchor.download = filename || "orders.csv";
       document.body.appendChild(anchor);
 
-      $timeout(function () {
+      return $timeout(function () {
         anchor.click();
         document.body.removeChild(anchor);
         URL.revokeObjectURL(url);
       }, 0, false);
+    }
+
+    $scope.ExportCsv = function (filename, includeOrderLines) {
+      if (!$scope.result.count) {
+        return;
+      }
+
+      var query = buildExportOrdersQuery();
+      query.includeOrderLines = !!includeOrderLines;
+
+      $scope.exportOptions.exporting = true;
+
+      return resources.ExportOrders(query)
+        .then(function (result) {
+          var exportFilename = filename || (includeOrderLines ? "orders-with-orderlines.csv" : "orders.csv");
+
+          return downloadBlob(result.data, exportFilename);
+        })
+        .then(function () {
+          $scope.CloseModal();
+        }, function () {
+          notificationsService.error("Error", "Error exporting orders.");
+        })
+        .finally(function () {
+          $scope.exportOptions.exporting = false;
+        });
     };
 
     $scope.$on("$destroy", function () {

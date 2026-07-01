@@ -102,6 +102,7 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 
 - `PerStoreStock` (bool, default `false`): Use per-store stock cache instead of product/variant stock.
 - `ExamineSearchIndex` (string, default `ExternalIndex`): Examine index name used for search.
+- `ExamineSearchNormalizedFields` (list, default `nodeName`, `title`, `pageTitle`, `sku`, `searchTags`, `summary`, `description`): Examine fields duplicated into `*_normalized` fields so catalog search can match diacritics and symbol-separated terms more reliably.
 - `ShareBasket` (bool, default `false`): Share baskets between stores; requires same currencies across stores.
 - `BasketCookieLifetime` (number, days, default `1`): Order cookie lifespan in days.
 - `CustomImage` (string, default `images`): Media folder alias for product images.

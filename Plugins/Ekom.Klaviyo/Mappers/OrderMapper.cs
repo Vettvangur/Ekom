@@ -45,6 +45,7 @@ public static class OrderMapper
 
         var shippingProvider = order.ShippingProvider?.ToKlaviyoShippingProvider() ?? null;
         var paymentProvider = order.PaymentProvider?.ToKlaviyoPaymentProvider() ?? null;
+        var locale = NullIfWhiteSpace(order.Culture) ?? NullIfWhiteSpace(order.StoreInfo.Culture);
 
         KlaviyoProfileSubscribeRequest? consent = null;
 
@@ -71,7 +72,13 @@ public static class OrderMapper
                         TimestampUtc: DateTimeOffset.UtcNow,
                         ConsentTextVersion: "checkout-v1",
                         Ip: order.CustomerInformation.CustomerIpAddress)
-                }
+                },
+                CustomProperties: string.IsNullOrWhiteSpace(locale)
+                    ? null
+                    : new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["locale"] = locale
+                    }
             );
         }
 
@@ -88,9 +95,12 @@ public static class OrderMapper
             Customer = order.ToKlaviyoProfile(opt),
             ShipTo = klaviyoShipTo,
             StoreAlias = order.StoreInfo.Alias,
+            Language = locale,
             Items = order.OrderLines.ToKlaviyoOrderLines(opt).ToList(),
             TaxValue = order.Vat.Value,
+            TaxValueFormatted = order.Vat.CurrencyString,
             DiscountValue = order.DiscountAmount.Value,
+            DiscountValueFormatted = order.DiscountAmount.CurrencyString,
             CheckoutUrl = storeOptions?.CheckoutUrl,
             ShippingProvider = shippingProvider,
             PaymentProvider = paymentProvider,
@@ -159,20 +169,23 @@ public static class OrderMapper
             ["value"] = o.Value,
             ["value_formatted"] = o.ValueFormatted,
             ["currency"] = o.Currency,
-            ["placed_at"] = o.PlacedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
-            ["created_at"] = o.CreatedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
-            ["paid_at"] = o.PaidAt?.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
+            ["placed_at"] = o.PlacedAt.ToKlaviyoDateTime(),
+            ["created_at"] = o.CreatedAt.ToKlaviyoDateTime(),
+            ["paid_at"] = o.PaidAt.ToKlaviyoDateTime(),
             ["checkout_url"] = o.CheckoutUrl,
             ["payment_method"] = o.PaymentProvider?.ToPaymentProviderEvent() ?? null,
             ["discount_value"] = o.DiscountValue,
+            ["discount_value_formatted"] = o.DiscountValueFormatted,
             ["shipping_method"] = o.ShippingProvider?.ToShippingProviderEvent() ?? null,
             ["tax_value"] = o.TaxValue,
+            ["tax_value_formatted"] = o.TaxValueFormatted,
             ["shipping_to"] = shippingTo,
             ["items"] = o.Items.ToOrderLinesEvent(),
             ["item_skus_text"] = string.Join("|", itemSkus),
             ["item_names_text"] = string.Join("|", itemNames),
             ["item_count"] = itemCount,
-            ["store_alias"] = o.StoreAlias
+            ["store_alias"] = o.StoreAlias,
+            ["language"] = o.Language
         };
 
         CustomPropertiesMerger.MergeCustomProperties(properties, o.CustomProperties);
@@ -203,9 +216,12 @@ public static class OrderMapper
                     }
                 },
 
-                time = o.PlacedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
+                time = o.PlacedAt.ToKlaviyoDateTime(),
                 properties
             }
         };
     }
+
+    private static string? NullIfWhiteSpace(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

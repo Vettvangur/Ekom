@@ -4,14 +4,36 @@ namespace Ekom.Events;
 
 public class DiscountEvents
 {
-    public event EventHandler<ProductDiscountEvaluationEventArgs>? BeforeEvaluateDiscounts;
-    public event EventHandler<ProductDiscountApplicableEventArgs>? AfterApplicableDiscounts;
+    public event Func<object?, ProductDiscountEvaluationEventArgs, Task>? BeforeEvaluateDiscountsAsync;
+    public event Func<object?, ProductDiscountApplicableEventArgs, Task>? AfterApplicableDiscountsAsync;
 
-    public void RaiseBeforeEvaluateDiscounts(object sender, ProductDiscountEvaluationEventArgs e)
-        => BeforeEvaluateDiscounts?.Invoke(sender, e);
+    public async Task RaiseBeforeEvaluateDiscountsAsync(object sender, ProductDiscountEvaluationEventArgs e, CancellationToken ct)
+    {
+        if (BeforeEvaluateDiscountsAsync == null)
+            return;
 
-    public void RaiseAfterApplicableDiscounts(object sender, ProductDiscountApplicableEventArgs e)
-        => AfterApplicableDiscounts?.Invoke(sender, e);
+        foreach (var handler in BeforeEvaluateDiscountsAsync
+            .GetInvocationList()
+            .Cast<Func<object?, ProductDiscountEvaluationEventArgs, Task>>())
+        {
+            ct.ThrowIfCancellationRequested();
+            await handler(sender, e).ConfigureAwait(false);
+        }
+    }
+
+    public async Task RaiseAfterApplicableDiscountsAsync(object sender, ProductDiscountApplicableEventArgs e, CancellationToken ct)
+    {
+        if (AfterApplicableDiscountsAsync == null)
+            return;
+
+        foreach (var handler in AfterApplicableDiscountsAsync
+            .GetInvocationList()
+            .Cast<Func<object?, ProductDiscountApplicableEventArgs, Task>>())
+        {
+            ct.ThrowIfCancellationRequested();
+            await handler(sender, e).ConfigureAwait(false);
+        }
+    }
 
     public class ProductDiscountEvaluationEventArgs : EventArgs
     {
@@ -45,5 +67,3 @@ public class DiscountEvents
     }
 
 }
-
-

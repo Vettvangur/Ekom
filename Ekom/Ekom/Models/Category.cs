@@ -188,11 +188,29 @@ public class Category : PerStoreNodeEntity, ICategory
         var products = await ProductsRecursiveAsync(ct: ct);
         return products.Products.Filters();
     }
-
+    
+    /// <summary>
+    /// Get the current category Stock Buffer
+    /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public decimal? StockBuffer { get; set; }
+    public decimal? StockBuffer {
+        get
+        {
+            if (decimal.TryParse(GetValue("ekmStockBuffer", Store.Alias), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var stockBuffer))
+            {
+                if (stockBuffer <= 0)
+                {
+                    return null;
+                }
+                
+                return stockBuffer;
+            }
+
+            return null;
+        }
+    }
 
 
     /// <summary>
@@ -219,11 +237,6 @@ public class Category : PerStoreNodeEntity, ICategory
         Urls = urls.Select(x => x.Url);
 
         VirtualUrl = GetValue("ekmVirtualUrl").IsBoolean();
-
-        if (decimal.TryParse(GetValue("ekmStockBuffer", store.Alias), out var stockBuffer))
-        {
-            StockBuffer = stockBuffer;
-        }
 
         var ancestorCategories = new List<ICategory>();
 

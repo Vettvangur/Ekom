@@ -1,6 +1,7 @@
 using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Models.Orders;
 using Ekom.Models;
+using System.Globalization;
 using System.Text.Json.Nodes;
 
 namespace Ekom.Klaviyo.Mappers;
@@ -29,6 +30,9 @@ public static class OrderLineMapper
             UnitPriceWithOutVat = productPrice?.WithoutVat.Value ?? 0,
             LineTotalWithOutVatFormatted = orderlineAmount.WithoutVat.CurrencyString,
             UnitPriceWithOutVatFormatted = productPrice?.WithoutVat.CurrencyString ?? "",
+            VatValue = orderlineAmount.Vat.Value,
+            VatValueFormatted = orderlineAmount.Vat.CurrencyString,
+            VatPercentage = FormatVatPercentage(ol.Vat),
             Discount = ol.Amount.DiscountAmount.Value,
             DiscountFormatted = ol.Amount.DiscountAmount.CurrencyString,
             Quantity = ol.Quantity,
@@ -73,6 +77,9 @@ public static class OrderLineMapper
                 ["line_total_without_vat"] = i.LineTotalWithOutVat,
                 ["unit_price_without_vat_formatted"] = i.UnitPriceWithOutVatFormatted,
                 ["line_total_without_vat_formatted"] = i.LineTotalWithOutVatFormatted,
+                ["vat_value"] = i.VatValue,
+                ["vat_value_formatted"] = i.VatValueFormatted,
+                ["vat_percentage"] = i.VatPercentage,
                 ["quantity"] = i.Quantity,
                 ["product_url"] = i.ProductUrl,
                 ["image_url"] = i.ImageUrl,
@@ -100,6 +107,13 @@ public static class OrderLineMapper
         }
 
         return arr;
+    }
+
+    private static string FormatVatPercentage(decimal vat)
+    {
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"{vat * 100m:0.##}%");
     }
 
 }

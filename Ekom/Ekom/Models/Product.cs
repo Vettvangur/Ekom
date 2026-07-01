@@ -26,17 +26,34 @@ public class Product : PerStoreNodeEntity, IProduct
 
     private readonly ConcurrentDictionary<string, Lazy<object>> _cache = new();
 
-    public virtual IDiscount ProductDiscount(string? price = null)
+    public virtual IDiscount? ProductDiscount(string? price = null)
     {
-        price = string.IsNullOrEmpty(price) ? Price.OriginalValue.ToString() : price;
+        price = string.IsNullOrEmpty(price) ? OriginalPrice.OriginalValue.ToString() : price;
 
         return Configuration.Resolver.GetService<ProductDiscountService>()?
-                .GetProductDiscount(
-                    Path,
-                    Store.Alias,
-                    price,
-                    categories.Select(x => x.Id.ToString())?.ToArray()
-                );
+            .GetProductDiscount(
+                Path,
+                Store.Alias,
+                price,
+                categories.Select(x => x.Id.ToString()).ToArray()
+            );
+    }
+
+    public virtual async Task<IDiscount?> ProductDiscountAsync(string? price = null, CancellationToken ct = default)
+    {
+        price = string.IsNullOrEmpty(price) ? OriginalPrice.OriginalValue.ToString() : price;
+
+        var discountService = Configuration.Resolver.GetService<ProductDiscountService>();
+        if (discountService == null)
+            return null;
+
+        return await discountService.GetProductDiscountAsync(
+            Path,
+            Store.Alias,
+            price,
+            categories.Select(x => x.Id.ToString()).ToArray(),
+            ct: ct
+        ).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -66,20 +83,57 @@ public class Product : PerStoreNodeEntity, IProduct
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual decimal Stock => API.Stock.Instance.GetStock(Key);
+    public virtual decimal Stock => API.Stock.Instance.GetStock(Key, Store.Alias);
 
     /// <summary>
-    /// Get the current product Stock
+    /// Get the current product Stock Buffer
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual decimal? StockBuffer { get; set; }
+    public decimal? StockBuffer {
+        get
+        {
+            if (decimal.TryParse(GetValue("ekmStockBuffer", Store.Alias), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var stockBuffer))
+            {
+                if (stockBuffer <= 0)
+                {
+                    return null;
+                }
+                
+                return stockBuffer;
+            }
+
+            return null;
+        }
+    }
 
     /// <summary>
     /// Get the availability of the product and the variants
     /// </summary>
-    public virtual bool Available => Stock > 0 || Backorder || AllVariants.Any(x => x.Available);
+    public virtual bool Available
+    {
+        get
+        {
+            if (Backorder)
+            {
+                return true;
+            }
+
+            bool hasVariants = false;
+            foreach (IVariant variant in AllVariants)
+            {
+                hasVariants = true;
+
+                if (variant.Available)
+                {
+                    return true;
+                }
+            }
+
+            return !hasVariants && StockBufferHelper.GetEffectiveStock(Stock, this) > 0;
+        }
+    }
 
     private string _backorderValue = "";
     /// <summary>
@@ -372,9 +426,9 @@ public class Product : PerStoreNodeEntity, IProduct
                     if (Properties.HasPropertyValue("vat", storeAlias))
                     {
                         string value = GetValue("vat", storeAlias);
-                        if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
+                        if (VatParser.TryParsePercentageRate(value, out decimal _val))
                         {
-                            return _val / 100;
+                            return _val;
                         }
                     }
 
@@ -519,11 +573,6 @@ public class Product : PerStoreNodeEntity, IProduct
 
         OriginalPrice = CreateOriginalPrice();
         SKU = GetValue("sku");
-
-        if (decimal.TryParse(GetValue("ekmStockBuffer", store.Alias), out var stockBuffer))
-        {
-            StockBuffer = stockBuffer;
-        }
     }
 
     public void InvalidateCache()

@@ -16,11 +16,14 @@ public sealed record KlaviyoPlacedOrder
     public KlaviyoShipTo? ShipTo { get; set; }
     public IReadOnlyList<KlaviyoOrderLine> Items { get; set; } = [];
     public string StoreAlias { get; set; } = default!;
+    public string? Language { get; set; }
     public string? CheckoutUrl { get; set; }
     public decimal? DiscountValue { get; set; }
+    public string? DiscountValueFormatted { get; set; }
     public KlaviyoShippingProvider? ShippingProvider { get; set; } = null;
     public KlaviyoPaymentProvider? PaymentProvider { get; set; } = null;
     public decimal? TaxValue { get; set; }
+    public string? TaxValueFormatted { get; set; }
     public Dictionary<string, object?> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public KlaviyoProfileSubscribeRequest? Consent { get; set; }
 }

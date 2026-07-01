@@ -61,10 +61,7 @@ namespace Ekom.Models
         {
             get
             {
-
-                string currencyCode = "ISK";
-
-                CultureInfo cultureInfo = CultureHelper.GetCultureInfoByCurrencyCode(currencyCode);
+                CultureInfo? cultureInfo = CultureHelper.GetCultureInfo(Currency);
 
                 if (cultureInfo != null)
                 {

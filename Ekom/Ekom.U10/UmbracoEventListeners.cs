@@ -4,6 +4,7 @@ using Ekom.Models;
 using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Umb.Models;
+using Ekom.Umb.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -46,6 +47,7 @@ class UmbracoEventListeners :
     private CouponRepository _couponRepository;
     private INodeService _nodeService;
     private RevalidateService _revalidateService;
+    private IEkomRichTextResolver _richTextResolver;
     /// <summary>
     /// Initializes a new instance of the <see cref="UmbracoEventListeners"/> class.
     /// </summary>
@@ -62,7 +64,8 @@ class UmbracoEventListeners :
         AppCaches appCaches,
         CouponRepository couponRepository,
         INodeService nodeService,
-        RevalidateService revalidateService)
+        RevalidateService revalidateService,
+        IEkomRichTextResolver richTextResolver)
     {
         _logger = logger;
         _config = config;
@@ -77,6 +80,7 @@ class UmbracoEventListeners :
         _couponRepository = couponRepository;
         _nodeService = nodeService;
         _revalidateService = revalidateService;
+        _richTextResolver = richTextResolver;
     }
     public async Task HandleAsync(ContentSavingNotification e, CancellationToken ct)
     {
@@ -158,7 +162,7 @@ class UmbracoEventListeners :
 
                 if (parentNode == null) { continue; }
 
-                cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode.Key));
+                cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode.Key, _richTextResolver));
                 //Fire and forget
                 RevalidateAsync(node, cancellationToken).ConfigureAwait(false);
 
@@ -194,7 +198,7 @@ class UmbracoEventListeners :
 
                 var parentNode = _nodeService.NodeById(node.Id);
 
-                cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode != null ? parentNode.Key : Guid.Empty));
+                cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode != null ? parentNode.Key : Guid.Empty, _richTextResolver));
 
                 if (node.ContentType.Alias == "ekmCategory")
                 {
@@ -402,7 +406,7 @@ class UmbracoEventListeners :
         if (ekmStoreContent != null)
         {
             // Update cached IStore
-            _storeCache.AddReplace(new Umbraco10Content(ekmStoreContent, Guid.Empty));
+            _storeCache.AddReplace(new Umbraco10Content(ekmStoreContent, Guid.Empty, _richTextResolver));
         }
     }
 
@@ -487,7 +491,7 @@ class UmbracoEventListeners :
             }
             else
             {
-                cacheEntryForDesc?.AddReplace(new Umbraco10Content(descendant));
+                cacheEntryForDesc?.AddReplace(new Umbraco10Content(descendant, richTextResolver: _richTextResolver));
             }
 
         }
@@ -496,7 +500,7 @@ class UmbracoEventListeners :
         {
             var cacheEntryForDesc = FindMatchingCache(ancestor.ContentType.Alias);
 
-            cacheEntryForDesc?.AddReplace(new Umbraco10Content(ancestor));
+            cacheEntryForDesc?.AddReplace(new Umbraco10Content(ancestor, richTextResolver: _richTextResolver));
         }
     }
     

@@ -5,6 +5,7 @@ using Ekom.Klaviyo.Dispatching.Profiles;
 using Ekom.Klaviyo.Dispatching.Tracking;
 using Ekom.Klaviyo.Enrichers.TrackingEnricher;
 using Ekom.Klaviyo.Enrichers.OrderEnricher;
+using Ekom.Klaviyo.Enrichers.ProductFeedEnricher;
 using Ekom.Klaviyo.Enrichers.ProductEnricher;
 using Ekom.Klaviyo.Enrichers.ProfilesEnricher;
 using Ekom.Klaviyo.Http;
@@ -53,6 +54,7 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddSingleton<IKlaviyoOrdersClient, KlaviyoOrdersClient>();
         services.AddSingleton<IKlaviyoProfilesClient, KlaviyoProfilesClient>();
         services.AddSingleton<IKlaviyoTrackingClient, KlaviyoTrackingClient>();
+        services.AddSingleton<IKlaviyoEventsClient, KlaviyoEventsClient>();
 
         // Dispatchers (singleton hosted services)
         services.AddSingleton<KlaviyoCatalogDispatcher>();
@@ -74,9 +76,11 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddScoped<IKlaviyoOrderService, KlaviyoOrderService>();
         services.AddScoped<IKlaviyoProfilesService, KlaviyoProfilesService>();
         services.AddScoped<IKlaviyoTrackingService, KlaviyoTrackingService>();
+        services.AddScoped<IKlaviyoEventService, KlaviyoEventService>();
 
         // Enrichers
         services.AddSingleton<KlaviyoProductEnrichmentPipeline>();
+        services.AddSingleton<KlaviyoProductFeedEnrichmentPipeline>();
         services.AddSingleton<KlaviyoProfilesEnrichmentPipeline>();
         services.AddSingleton<KlaviyoPlacedOrderEnrichmentPipeline>();
 

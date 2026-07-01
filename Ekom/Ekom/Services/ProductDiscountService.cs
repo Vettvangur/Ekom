@@ -16,10 +16,41 @@ class ProductDiscountService
 
     public virtual IProductDiscount? GetProductDiscount(
         string path,
-        string storeAlias,
+        string? storeAlias,
         string inputPrice,
         string[]? categories = null)
+        => GetProductDiscountCoreAsync(
+            path,
+            storeAlias,
+            inputPrice,
+            categories,
+            CancellationToken.None).GetAwaiter().GetResult();
+
+    public virtual Task<IProductDiscount?> GetProductDiscountAsync(
+        string path,
+        string? storeAlias,
+        string inputPrice,
+        string[]? categories = null,
+        CancellationToken ct = default)
+        => GetProductDiscountCoreAsync(
+            path,
+            storeAlias,
+            inputPrice,
+            categories,
+            ct);
+
+    private async Task<IProductDiscount?> GetProductDiscountCoreAsync(
+        string path,
+        string? storeAlias,
+        string inputPrice,
+        string[]? categories = null,
+        CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
+        if (string.IsNullOrWhiteSpace(storeAlias))
+            return null;
+
         inputPrice = string.IsNullOrEmpty(inputPrice)
             ? "0"
             : inputPrice.Replace(',', '.');
@@ -35,7 +66,7 @@ class ProductDiscountService
             Categories = categories
         };
 
-        _discountEvents.RaiseBeforeEvaluateDiscounts(this, evalArgs);
+        await _discountEvents.RaiseBeforeEvaluateDiscountsAsync(this, evalArgs, ct).ConfigureAwait(false);
 
         // use possibly modified values from event args
         path = evalArgs.Path;
@@ -105,7 +136,9 @@ class ProductDiscountService
             categories,
             applicableDiscounts);
 
-        _discountEvents.RaiseAfterApplicableDiscounts(this, applicableArgs);
+        await _discountEvents.RaiseAfterApplicableDiscountsAsync(this, applicableArgs, ct).ConfigureAwait(false);
+
+        ct.ThrowIfCancellationRequested();
 
         if (applicableArgs.ApplicableDiscounts.Count == 0)
             return null;

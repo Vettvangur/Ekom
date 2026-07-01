@@ -144,6 +144,7 @@ partial class OrderService
         try
         {
             RemoveDiscountFromOrder(orderInfo);
+            
             if (settings.UpdateOrder)
             {
                 await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
@@ -174,10 +175,10 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+        var orderInfo = settings.OrderInfo as OrderInfo ?? await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler)   
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
@@ -254,26 +255,33 @@ partial class OrderService
     /// <summary>
     /// Manually set coupon code on order, does not validate coupon or use other discount functionality
     /// </summary>
-    public async Task SetCouponCodeAsync(string couponCode, string? storeAlias, DiscountOrderSettings? settings = null, CancellationToken ct = default)
+    public async Task<IOrderInfo?> SetCouponCodeAsync(string couponCode, string? storeAlias, DiscountOrderSettings? settings = null, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(couponCode))
-        {
-            return;
-        }
-
-        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+        var orderInfo = settings?.OrderInfo as OrderInfo;
 
         if (orderInfo == null)
         {
-            return;
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+        }
+
+        if (string.IsNullOrEmpty(couponCode))
+        {
+            return orderInfo;
+        }
+
+        if (orderInfo == null)
+        {
+            return orderInfo;
         }
 
         if (orderInfo.Coupon != couponCode)
         {
             orderInfo.Coupon = couponCode;
 
-            await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true, ct: ct).ConfigureAwait(false);
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true, ct: ct).ConfigureAwait(false);
         }
+
+        return orderInfo;
     }
 
 
@@ -502,9 +510,12 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = settings.OrderInfo as OrderInfo ?? await GetOrderAsync(storeAlias, ct: ct).ConfigureAwait(false);
 
+        ArgumentNullException.ThrowIfNull(orderInfo);
+        
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
+        
         if (!settings.IsEventHandler)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);

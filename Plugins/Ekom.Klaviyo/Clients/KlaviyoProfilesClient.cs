@@ -19,9 +19,10 @@ internal interface IKlaviyoProfilesClient
         bool includeSubscriptions,
         CancellationToken ct = default);
 
-    Task<string?> GetSubscriptionsAsync(
-        string profileId,
+    Task<string?> GetByPhoneNumberAsync(
+        string phoneNumber,
         string? storeAlias,
+        bool includeSubscriptions,
         CancellationToken ct = default);
 
     Task<string?> GetListIdsAsync(
@@ -36,6 +37,8 @@ internal interface IKlaviyoProfilesClient
 
 internal sealed class KlaviyoProfilesClient : IKlaviyoProfilesClient
 {
+    private const string ProfileSubscriptionsAdditionalField = "additional-fields%5Bprofile%5D=subscriptions";
+
     private readonly KlaviyoHttpClient _http;
     private readonly KlaviyoOptions _opt;
     private readonly ILogger<KlaviyoProfilesClient> _logger;
@@ -60,6 +63,8 @@ internal sealed class KlaviyoProfilesClient : IKlaviyoProfilesClient
         if (!_opt.Enabled) return null;
 
         var path = $"/api/profiles/{Uri.EscapeDataString(profileId)}";
+        if (includeSubscriptions)
+            path = $"{path}?{ProfileSubscriptionsAdditionalField}";
 
         _logger.LogDebug("Klaviyo: profiles GET by id for store {StoreAlias}", storeAlias);
 
@@ -82,9 +87,11 @@ internal sealed class KlaviyoProfilesClient : IKlaviyoProfilesClient
         if (string.IsNullOrWhiteSpace(email)) return null;
         if (!_opt.Enabled) return null;
 
-        var sanitizedEmail = email.Replace("\"", "\\\"");
+        var sanitizedEmail = email.Replace("\"", "\\\"", StringComparison.Ordinal);
         var filter = $"equals(email,\"{sanitizedEmail}\")";
         var query = $"?filter={Uri.EscapeDataString(filter)}";
+        if (includeSubscriptions)
+            query = $"{query}&{ProfileSubscriptionsAdditionalField}";
 
         var path = $"/api/profiles{query}";
 
@@ -93,27 +100,26 @@ internal sealed class KlaviyoProfilesClient : IKlaviyoProfilesClient
         return await _http.GetAsync(path, storeAlias, ct).ConfigureAwait(false);
     }
 
-    public async Task<string?> GetSubscriptionsAsync(
-        string profileId,
+    public async Task<string?> GetByPhoneNumberAsync(
+        string phoneNumber,
         string? storeAlias,
+        bool includeSubscriptions,
         CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(profileId)) return null;
+        if (string.IsNullOrWhiteSpace(phoneNumber)) return null;
         if (!_opt.Enabled) return null;
 
-        var filter = $"equals(profile_id,\"{profileId.Replace("\"", "\\\"")}\")";
-        var path = $"/api/profile-subscriptions?filter={Uri.EscapeDataString(filter)}";
+        var sanitizedPhoneNumber = phoneNumber.Replace("\"", "\\\"", StringComparison.Ordinal);
+        var filter = $"equals(phone_number,\"{sanitizedPhoneNumber}\")";
+        var query = $"?filter={Uri.EscapeDataString(filter)}";
+        if (includeSubscriptions)
+            query = $"{query}&{ProfileSubscriptionsAdditionalField}";
 
-        _logger.LogDebug("Klaviyo: profile-subscriptions GET for store {StoreAlias}", storeAlias);
+        var path = $"/api/profiles{query}";
 
-        try
-        {
-            return await _http.GetAsync(path, storeAlias, ct).ConfigureAwait(false);
-        }
-        catch (KlaviyoApiException ex) when (ex.StatusCode == 404)
-        {
-            return null;
-        }
+        _logger.LogDebug("Klaviyo: profiles GET by phone number for store {StoreAlias}", storeAlias);
+
+        return await _http.GetAsync(path, storeAlias, ct).ConfigureAwait(false);
     }
 
     public async Task<string?> GetListIdsAsync(

@@ -13,6 +13,7 @@ public class ManagerRepository
     readonly ILogger _logger;
     readonly Configuration _config;
     readonly DatabaseFactory _databaseFactory;
+    readonly IStoreService _storeService;
 
     /// <summary>
     /// ctor
@@ -20,11 +21,13 @@ public class ManagerRepository
     public ManagerRepository(
         ILogger<ManagerRepository> logger,
         Configuration config,
-        DatabaseFactory databaseFactory)
+        DatabaseFactory databaseFactory,
+        IStoreService storeService)
     {
         _logger = logger;
         _config = config;
         _databaseFactory = databaseFactory;
+        _storeService = storeService;
     }
 
     public async Task<IEnumerable<OrderData>> GetOrdersAsync(IReadOnlyCollection<string> allowedStoreAliases)
@@ -94,11 +97,16 @@ public class ManagerRepository
             paymentProviderValue = parsedPaymentProvider.ToString();
         }
 
+        Guid? queryUniqueId = Guid.TryParse(query?.Trim(), out Guid parsedQueryUniqueId)
+            ? parsedQueryUniqueId
+            : null;
+
         var param = new
         {
             startDate = start.Date,
             endDate = end.Date.AddDays(1).AddTicks(-1),
             query = "%" + query + "%",
+            queryUniqueId,
             orderStatus,
             store,
             paymentProvider = paymentProviderValue,
@@ -119,13 +127,58 @@ public class ManagerRepository
 
         var totals = db.Execute<OrderListDataTotals>(sqlTotalQuery, param);
 
-        var orderListData = new OrderListData(orders, totals)
+        var orderListData = new OrderListData(orders, totals, GetStoreCurrency(store))
         {
             Page = _page,
             PageSize = _pageSize
         };
 
         return orderListData;
+    }
+
+    private string? GetStoreCurrency(string storeAlias)
+    {
+        return _storeService.GetStoreByAlias(storeAlias)?.Currency.CurrencyValue;
+    }
+  
+    public async Task<List<OrderData>> GetOrdersForExportAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderInfo)
+    {
+        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId);
+        string orderInfoColumn = includeOrderInfo ? ",OrderInfo" : string.Empty;
+        string sqlQuery = $"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate{orderInfoColumn} FROM EkomOrders {whereClause} ORDER BY ReferenceId desc";
+
+        string? paymentProviderValue = null;
+        if (!string.IsNullOrEmpty(paymentProvider) && Guid.TryParse(paymentProvider, out Guid parsedPaymentProvider))
+        {
+            paymentProviderValue = parsedPaymentProvider.ToString();
+        }
+
+        Guid? queryUniqueId = Guid.TryParse(query?.Trim(), out Guid parsedQueryUniqueId)
+            ? parsedQueryUniqueId
+            : null;
+
+        var param = new
+        {
+            startDate = start.Date,
+            endDate = end.Date.AddDays(1).AddTicks(-1),
+            query = "%" + query + "%",
+            queryUniqueId,
+            orderStatus,
+            store,
+            paymentProvider = paymentProviderValue,
+            productSku = string.IsNullOrWhiteSpace(productSku) ? null : productSku.Trim(),
+            trackingSource = string.IsNullOrWhiteSpace(trackingSource) ? null : trackingSource.Trim(),
+            trackingMedium = string.IsNullOrWhiteSpace(trackingMedium) ? null : trackingMedium.Trim(),
+            trackingCampaign = string.IsNullOrWhiteSpace(trackingCampaign) ? null : trackingCampaign.Trim(),
+            trackingTerm = string.IsNullOrWhiteSpace(trackingTerm) ? null : trackingTerm.Trim(),
+            trackingContent = string.IsNullOrWhiteSpace(trackingContent) ? null : trackingContent.Trim(),
+            trackingClickId = string.IsNullOrWhiteSpace(trackingClickId) ? null : trackingClickId.Trim()
+        };
+
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        return await db.QueryToListAsync<OrderData>(sqlQuery, param).ConfigureAwait(false);
+
     }
 
     public async Task<List<ChartAggregateRow>> GetChartAggregatesAsync(DateTime start, DateTime end, string store, string orderStatus)
@@ -174,7 +227,14 @@ ORDER BY {bucketDateExpression}";
 
         if (!string.IsNullOrEmpty(query))
         {
-            whereClause.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query)");
+            whereClause.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query");
+
+            if (Guid.TryParse(query.Trim(), out _))
+            {
+                whereClause.Append(" OR UniqueId = @queryUniqueId");
+            }
+
+            whereClause.Append(")");
         }
 
         if (!string.IsNullOrEmpty(paymentProvider) && Guid.TryParse(paymentProvider, out _))

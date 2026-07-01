@@ -42,9 +42,24 @@ angular.module("umbraco.resources").factory("Ekom.Manager.Resources", [
       });
     }
 
+    function postJson(url, data) {
+      return $http({
+        method: "POST",
+        url: url,
+        data: data
+      });
+    }
+
     return {
       SearchOrders: function (query) {
         return get(backofficeBaseUrl + "SearchOrders", query);
+      },
+      ExportOrders: function (query) {
+        return $http({
+          method: "GET",
+          url: backofficeBaseUrl + "ExportOrders" + buildQueryString(query),
+          responseType: "blob"
+        });
       },
       StatusList: function () {
         return get(backofficeBaseUrl + "StatusList");
@@ -76,6 +91,9 @@ angular.module("umbraco.resources").factory("Ekom.Manager.Resources", [
       },
       ChangeOrderStatus: function (query) {
         return post(backofficeBaseUrl + "ChangeOrderStatus", query);
+      },
+      UpdateCustomerInformation: function (data) {
+        return postJson(backofficeBaseUrl + "UpdateCustomerInformation", data);
       },
       PaymentProviders: function (storeAlias) {
         return get(baseUrl + "provider/paymentsproviders/" + storeAlias);

@@ -1,6 +1,62 @@
 # Changelog
 
 
+## [0.2.30](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.29...Ekom.Algolia-v0.2.30) (2026-06-29)
+
+
+### Features
+
+* **algolia:** add federated search ([#652](https://github.com/Vettvangur/Ekom/issues/652)) ([8a309be](https://github.com/Vettvangur/Ekom/commit/8a309be790b177b63189c6414b9a8e66ff62136d))
+
+## [0.2.29](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.28...Ekom.Algolia-v0.2.29) (2026-06-28)
+
+
+### Features
+
+* **algolia:** add federated search ([#650](https://github.com/Vettvangur/Ekom/issues/650)) ([320ad43](https://github.com/Vettvangur/Ekom/commit/320ad43f18ac775cc147089d1ca39de74d3b575b))
+
+## [0.2.28](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.27...Ekom.Algolia-v0.2.28) (2026-06-08)
+
+
+### Bug Fixes
+
+* stock buffer fallback ([#622](https://github.com/Vettvangur/Ekom/issues/622)) ([ea14a8d](https://github.com/Vettvangur/Ekom/commit/ea14a8dc60df30ae450bc49dd2cf19213a351a7e))
+
+## [0.2.27](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.26...Ekom.Algolia-v0.2.27) (2026-06-08)
+
+
+### Bug Fixes
+
+* **stock:** resolve buffer values dynamically ([#620](https://github.com/Vettvangur/Ekom/issues/620)) ([620177f](https://github.com/Vettvangur/Ekom/commit/620177f055a5ad18ea8b69d4f54a7a8bae4c33f4))
+
+## [0.2.26](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.25...Ekom.Algolia-v0.2.26) (2026-06-07)
+
+
+### Bug Fixes
+
+* **payments:** update package versions ([#614](https://github.com/Vettvangur/Ekom/issues/614)) ([21800dc](https://github.com/Vettvangur/Ekom/commit/21800dcf499aeb20b42990e14d0e2e51c87d880c))
+
+## [0.2.25](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.24...Ekom.Algolia-v0.2.25) (2026-06-03)
+
+
+### Bug Fixes
+
+* **payments:** update payment packages ([#577](https://github.com/Vettvangur/Ekom/issues/577)) ([acc9adb](https://github.com/Vettvangur/Ekom/commit/acc9adb1ce51a1bdc1bc9c88253b6fda7ca6e8de))
+
+## [0.2.24](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.23...Ekom.Algolia-v0.2.24) (2026-05-04)
+
+
+### Bug Fixes
+
+* **algolia:** use highest category ranking ([#523](https://github.com/Vettvangur/Ekom/issues/523)) ([760d9d1](https://github.com/Vettvangur/Ekom/commit/760d9d107cd299a3966028e041de02c8b6a7d71e))
+
+## [0.2.23](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.22...Ekom.Algolia-v0.2.23) (2026-05-04)
+
+
+### Features
+
+* **algolia:** add product ranking fields ([#521](https://github.com/Vettvangur/Ekom/issues/521)) ([319ff13](https://github.com/Vettvangur/Ekom/commit/319ff13a5fbd6461130afbdc2556c2da40ed61ef))
+
 ## [0.2.22](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.21...Ekom.Algolia-v0.2.22) (2026-04-30)
 
 

@@ -194,24 +194,41 @@ class CheckoutService
     /// <returns></returns>
     private async Task ProcessOrderLinesStockAsync(IOrderInfo order)
     {
+        string storeAlias = order.StoreInfo.Alias;
+
         foreach (IOrderLine line in order.OrderLines)
         {
             if (!line.Product.Backorder)
             {
+                IProduct? product = await Catalog.Instance.GetProductAsync(line.ProductKey, storeAlias, raiseEvent: false)
+                    .ConfigureAwait(false);
+
+                if (product == null)
+                {
+                    throw new ArgumentNullException(nameof(product));
+                }
+
                 if (line.Product.VariantGroups.Any())
                 {
                     foreach (OrderedVariant? variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        decimal variantStock = Stock.Instance.GetStock(variant.Key);
+                        IVariant? catalogVariant = Catalog.Instance.GetVariant(variant.Key, storeAlias);
+
+                        if (catalogVariant == null)
+                        {
+                            throw new ArgumentNullException(nameof(catalogVariant));
+                        }
+
+                        decimal variantStock = StockBufferHelper.GetEffectiveStock(Stock.Instance.GetStock(variant.Key, storeAlias), product, catalogVariant);
 
                         if (variantStock >= line.Quantity)
                         {
-                            await Stock.Instance.IncrementStockAsync(variant.Key, (line.Quantity * -1))
+                            await Stock.Instance.IncrementStockAsync(variant.Key, storeAlias, (line.Quantity * -1))
                                 .ConfigureAwait(false);
                         }
                         else
                         {
-                            _logger.LogError($"Variant Stock error on line {line.Key} with variant {variant.Key}");
+                            _logger.LogError("Variant Stock error on line {OrderLineKey} with variant {VariantKey} in store {StoreAlias}. Stock: {Stock}. Quantity: {Quantity}", line.Key, variant.Key, storeAlias, variantStock, line.Quantity);
                             throw new NotEnoughLineStockException("Stock error ")
                             {
                                 OrderLineKey = line.Key,
@@ -222,7 +239,7 @@ class CheckoutService
                 }
                 else
                 {
-                    decimal productStock = Stock.Instance.GetStock(line.ProductKey);
+                    decimal productStock = StockBufferHelper.GetEffectiveStock(Stock.Instance.GetStock(line.ProductKey, storeAlias), product);
 
                     if (productStock >= line.Quantity)
                     {
@@ -234,12 +251,12 @@ class CheckoutService
                         //{
                         //    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
                         //}
-                        await Stock.Instance.IncrementStockAsync(line.ProductKey, (line.Quantity * -1))
+                        await Stock.Instance.IncrementStockAsync(line.ProductKey, storeAlias, (line.Quantity * -1))
                             .ConfigureAwait(false);
                     }
                     else
                     {
-                        _logger.LogError($"Product Stock error one line {line.Key} with product {line.ProductKey}");
+                        _logger.LogError("Product Stock error on line {OrderLineKey} with product {ProductKey} in store {StoreAlias}. Stock: {Stock}. Quantity: {Quantity}", line.Key, line.ProductKey, storeAlias, productStock, line.Quantity);
                         throw new NotEnoughLineStockException("Stock error ")
                         {
                             OrderLineKey = line.Key,

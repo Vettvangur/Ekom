@@ -15,6 +15,7 @@ public sealed class AlgoliaOptions
     public string Environment { get; init; } = "prod";
 
     public AlgoliaIndexingOptions Indexing { get; set; } = new();
+    public AlgoliaContentIndexingOptions ContentIndexing { get; set; } = new();
     public AlgoliaEventsOptions Events { get; set; } = new();
     public AlgoliaSearchOptions Search { get; set; } = new();
 
@@ -33,6 +34,34 @@ public sealed class AlgoliaIndexingOptions
     public IReadOnlyCollection<AlgoliaSortedReplicaOptions> SortedReplicas { get; init; } = [];
 
     public AlgoliaDispatcherOptions Dispatching { get; init; } = new();
+}
+
+public sealed class AlgoliaContentIndexingOptions
+{
+    public bool Enabled { get; set; }
+    public bool EnforcePublisherOnly { get; set; } = true;
+    public int BatchSize { get; set; } = 1000;
+    public AlgoliaDispatcherOptions Dispatching { get; init; } = new();
+    public IReadOnlyCollection<AlgoliaContentIndexOptions> Indexes { get; init; } = [];
+}
+
+public sealed class AlgoliaContentIndexOptions
+{
+    public required string IndexName { get; set; }
+    public IReadOnlyCollection<AlgoliaContentTypeOptions> ContentTypes { get; init; } = [];
+}
+
+public sealed class AlgoliaContentTypeOptions
+{
+    public required string Alias { get; set; }
+    public IReadOnlyCollection<string> Properties { get; init; } = [];
+}
+
+public enum AlgoliaContentFieldTransform
+{
+    None,
+    UnixSeconds,
+    UnixMilliseconds
 }
 
 public sealed class AlgoliaEventsOptions

@@ -37,6 +37,12 @@ public interface IKlaviyoProfilesService
         bool includeSubscriptions = false,
         CancellationToken ct = default);
 
+    ValueTask<KlaviyoProfileLookupResult?> GetProfileByPhoneNumberAsync(
+        string phoneNumber,
+        string? storeAlias,
+        bool includeSubscriptions = false,
+        CancellationToken ct = default);
+
     ValueTask<IReadOnlyList<string>?> GetProfileListIdsByProfileIdAsync(
         string profileId,
         string? storeAlias,
@@ -153,7 +159,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         var json = await TryGetByIdAsync(profileId, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(json)) return null;
 
-        return await ParseProfileResponseAsync(json, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
+        return ParseProfileResponse(json);
     }
 
     public async ValueTask<KlaviyoProfileLookupResult?> GetProfileByEmailAsync(
@@ -168,7 +174,22 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         var json = await TryGetByEmailAsync(email, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(json)) return null;
 
-        return await ParseProfileResponseAsync(json, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
+        return ParseProfileResponse(json);
+    }
+
+    public async ValueTask<KlaviyoProfileLookupResult?> GetProfileByPhoneNumberAsync(
+        string phoneNumber,
+        string? storeAlias,
+        bool includeSubscriptions = false,
+        CancellationToken ct = default)
+    {
+        if (!IsEnabled()) return null;
+        if (string.IsNullOrWhiteSpace(phoneNumber)) return null;
+
+        var json = await TryGetByPhoneNumberAsync(phoneNumber, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(json)) return null;
+
+        return ParseProfileResponse(json);
     }
 
     public async ValueTask<IReadOnlyList<string>?> GetProfileListIdsByProfileIdAsync(
@@ -261,11 +282,38 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         }
     }
 
-    private async ValueTask<KlaviyoProfileLookupResult?> ParseProfileResponseAsync(
-        string json,
+    private async Task<string?> TryGetByPhoneNumberAsync(
+        string phoneNumber,
         string? storeAlias,
         bool includeSubscriptions,
         CancellationToken ct)
+    {
+        if (!includeSubscriptions)
+            return await _client.GetByPhoneNumberAsync(phoneNumber, storeAlias, includeSubscriptions: false, ct).ConfigureAwait(false);
+
+        try
+        {
+            return await _client.GetByPhoneNumberAsync(
+                phoneNumber,
+                storeAlias,
+                includeSubscriptions: true,
+                ct).ConfigureAwait(false);
+        }
+        catch (KlaviyoApiException ex) when (ex.StatusCode == 400)
+        {
+            _logger.LogDebug(
+                "Klaviyo: retrying profile fetch without subscriptions fields. Store={StoreAlias}",
+                storeAlias);
+
+            return await _client.GetByPhoneNumberAsync(
+                phoneNumber,
+                storeAlias,
+                includeSubscriptions: false,
+                ct).ConfigureAwait(false);
+        }
+    }
+
+    private static KlaviyoProfileLookupResult? ParseProfileResponse(string json)
     {
         using var doc = JsonDocument.Parse(json);
 
@@ -274,12 +322,10 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
 
         var attributes = GetAttributes(profileData);
         var channels = new HashSet<KlaviyoProfileConsentChannel>();
-        var hasConsentData = TryParseSubscriptions(attributes, channels);
+        if (!TryParseSubscriptions(attributes, channels))
+            TryParseConsentProperties(attributes, channels);
 
-        if (!hasConsentData && TryParseConsentProperties(attributes, channels))
-            hasConsentData = true;
-
-        var result = new KlaviyoProfileLookupResult
+        return new KlaviyoProfileLookupResult
         {
             ProfileId = GetString(profileData, "id"),
             Email = GetString(attributes, "email"),
@@ -289,38 +335,6 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
             ExternalId = GetString(attributes, "external_id"),
             SubscribedChannels = channels.ToArray()
         };
-
-        if (!includeSubscriptions || hasConsentData || string.IsNullOrWhiteSpace(result.ProfileId))
-            return result;
-
-        var fallback = await TryGetSubscriptionsAsync(result.ProfileId, storeAlias, ct).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(fallback))
-            return result;
-
-        if (TryParseSubscriptionResponse(fallback, channels))
-            result.SubscribedChannels = channels.ToArray();
-
-        return result;
-    }
-
-    private async Task<string?> TryGetSubscriptionsAsync(
-        string profileId,
-        string? storeAlias,
-        CancellationToken ct)
-    {
-        try
-        {
-            return await _client.GetSubscriptionsAsync(profileId, storeAlias, ct).ConfigureAwait(false);
-        }
-        catch (KlaviyoApiException ex)
-        {
-            _logger.LogDebug(
-                "Klaviyo: subscriptions fallback failed. Store={StoreAlias} Status={Status}",
-                storeAlias,
-                ex.StatusCode);
-
-            return null;
-        }
     }
 
     private bool IsEnabled()
@@ -330,10 +344,10 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
     {
         if (!IsEnabled() || !_opt.Subscriptions.Enabled) return;
 
-        if (string.IsNullOrWhiteSpace(payload.Email))
+        if (string.IsNullOrWhiteSpace(payload.Email) && string.IsNullOrWhiteSpace(payload.PhoneNumber))
         {
             _logger.LogWarning(
-                "Klaviyo: skipping {Type} because no email was provided. Store={StoreAlias}",
+                "Klaviyo: skipping {Type} because no email or phone number was provided. Store={StoreAlias}",
                 KlaviyoProfilesEventType.Subscribe, payload.StoreAlias);
             return;
         }
@@ -361,16 +375,26 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
             Payload: request,
             OccurredAt: DateTimeOffset.UtcNow,
             StoreAlias: payload.StoreAlias,
-            CustomerIdentifier: KlaviyoCustomerLoggingExtensions.MaskEmailForLogs(payload.Email));
+            CustomerIdentifier: GetSubscribeIdentifierForLogs(payload));
 
         await _dispatcher.EnqueueAsync(work, ct);
+    }
+
+    private static string GetSubscribeIdentifierForLogs(KlaviyoProfileSubscribeRequest payload)
+    {
+        return new KlaviyoCustomer
+        {
+            Email = payload.Email,
+            PhoneNumber = payload.PhoneNumber
+        }.IdentifierForLogs();
     }
 
     private async ValueTask TryUpsertProfileForSubscribeAsync(KlaviyoProfileSubscribeRequest payload, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(payload.FirstName) &&
             string.IsNullOrWhiteSpace(payload.LastName) &&
-            string.IsNullOrWhiteSpace(payload.FullName))
+            string.IsNullOrWhiteSpace(payload.FullName) &&
+            (payload.CustomProperties is null || payload.CustomProperties.Count == 0))
         {
             return;
         }
@@ -388,7 +412,8 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
                 {
                     FullName = payload.FullName,
                     FirstName = payload.FirstName,
-                    LastName = payload.LastName
+                    LastName = payload.LastName,
+                    CustomProperties = payload.CustomProperties
                 }
             });
 
@@ -528,65 +553,6 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         }
 
         return hasAnyConsent;
-    }
-
-    private static bool TryParseSubscriptionResponse(string json, ISet<KlaviyoProfileConsentChannel> channels)
-    {
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-
-        if (!root.TryGetProperty("data", out var data))
-            return false;
-
-        var hasAnyConsent = false;
-
-        if (data.ValueKind == JsonValueKind.Object)
-        {
-            if (TryParseSubscriptionData(data, channels))
-                hasAnyConsent = true;
-        }
-        else if (data.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var item in data.EnumerateArray())
-            {
-                if (TryParseSubscriptionData(item, channels))
-                    hasAnyConsent = true;
-            }
-        }
-
-        return hasAnyConsent;
-    }
-
-    private static bool TryParseSubscriptionData(JsonElement data, ISet<KlaviyoProfileConsentChannel> channels)
-    {
-        if (data.ValueKind != JsonValueKind.Object)
-            return false;
-
-        var attributes = data.TryGetProperty("attributes", out var attrs)
-            ? attrs
-            : default;
-
-        if (attributes.ValueKind == JsonValueKind.Object)
-        {
-            if (attributes.TryGetProperty("subscriptions", out var subs) &&
-                TryParseSubscriptionsObject(subs, channels))
-            {
-                return true;
-            }
-
-            var channelValue = GetString(attributes, "channel");
-            var channel = ParseChannel(channelValue);
-
-            if (channel is not null && TryGetConsentState(attributes, out var isSubscribed))
-            {
-                if (isSubscribed)
-                    channels.Add(channel.Value);
-
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static KlaviyoProfileConsentChannel? ParseChannel(string? channel)

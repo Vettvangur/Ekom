@@ -10,6 +10,8 @@ public static class ProfileMapper
 {
     public static KlaviyoOrderProfile ToKlaviyoProfile(this IOrderInfo order, KlaviyoOptions opt)
     {
+        var locale = NullIfWhiteSpace(order.Culture) ?? NullIfWhiteSpace(order.StoreInfo.Culture);
+
         return new KlaviyoOrderProfile()
         {
             Email = order.CustomerInformation.Customer.Email,
@@ -22,7 +24,13 @@ public static class ProfileMapper
             ZipCode = order.CustomerInformation.Customer.ZipCode,
             City = order.CustomerInformation.Customer.City,
             Country = order.CustomerInformation.Customer.Country,
-            Organisation = order.CustomerInformation.Customer.Company
+            Organisation = order.CustomerInformation.Customer.Company,
+            CustomProperties = string.IsNullOrWhiteSpace(locale)
+                ? null
+                : new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["locale"] = locale
+                }
         };
     }
 
@@ -132,7 +140,8 @@ public static class ProfileMapper
     {
         var profileAttributes = new JsonObject();
 
-        profileAttributes["email"] = u.Email;
+        if (!string.IsNullOrWhiteSpace(u.Email))
+            profileAttributes["email"] = u.Email;
 
         if (!string.IsNullOrWhiteSpace(u.PhoneNumber))
             profileAttributes["phone_number"] = u.PhoneNumber;
@@ -326,6 +335,9 @@ private static (string? FirstName, string? LastName) GetNameParts(KlaviyoProfile
     var lastName = string.Join(' ', parts, 1, parts.Length - 1);
     return (parts[0], lastName);
 }
+
+private static string? NullIfWhiteSpace(string? value)
+    => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
 internal static JsonObject ToProfileData(this KlaviyoProfile p)
 {

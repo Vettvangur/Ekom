@@ -14,10 +14,14 @@ public interface IAlgoliaSearchService
     Task<AlgoliaSearchResponse<AlgoliaProductRecord>> SearchProductsAsync(AlgoliaSearchRequest request, CancellationToken ct = default);
     Task<AlgoliaSearchResponse<AlgoliaCategoryRecord>> SearchCategoriesAsync(AlgoliaSearchRequest request, CancellationToken ct = default);
     Task<AlgoliaSearchResponse<AlgoliaQuerySuggestionRecord>> SearchQuerySuggestionsAsync(AlgoliaSearchRequest request, CancellationToken ct = default);
+    Task<AlgoliaSearchResponse<AlgoliaContentRecord>> SearchContentAsync(AlgoliaContentSearchRequest request, CancellationToken ct = default);
+    Task<AlgoliaFederatedSearchResponse> FederatedSearchAsync(AlgoliaFederatedSearchRequest request, CancellationToken ct = default);
 }
 
 internal sealed class AlgoliaSearchService : IAlgoliaSearchService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     private const string ProductsEntity = "products";
     private const string CategoriesEntity = "categories";
     private const string QuerySuggestionsEntity = "products";
@@ -27,6 +31,7 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
     private readonly AlgoliaOptions _options;
     private readonly AlgoliaStoreResolver _storeResolver;
     private readonly IndexNameBuilder _indexNameBuilder;
+    private readonly ContentIndexNameResolver _contentIndexNameResolver;
     private readonly AlgoliaSearchCacheKeyBuilder _cacheKeyBuilder;
     private readonly IAlgoliaUserTokenProvider _userTokenProvider;
     private readonly ILogger<AlgoliaSearchService> _logger;
@@ -37,6 +42,7 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         IOptions<AlgoliaOptions> options,
         AlgoliaStoreResolver storeResolver,
         IndexNameBuilder indexNameBuilder,
+        ContentIndexNameResolver contentIndexNameResolver,
         AlgoliaSearchCacheKeyBuilder cacheKeyBuilder,
         IAlgoliaUserTokenProvider userTokenProvider,
         ILogger<AlgoliaSearchService> logger)
@@ -46,6 +52,7 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         _options = options.Value;
         _storeResolver = storeResolver;
         _indexNameBuilder = indexNameBuilder;
+        _contentIndexNameResolver = contentIndexNameResolver;
         _cacheKeyBuilder = cacheKeyBuilder;
         _userTokenProvider = userTokenProvider;
         _logger = logger;
@@ -237,8 +244,179 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         return response;
     }
 
+    public async Task<AlgoliaSearchResponse<AlgoliaContentRecord>> SearchContentAsync(AlgoliaContentSearchRequest request, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.IndexName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Culture);
+        ArgumentNullException.ThrowIfNull(request.Query);
+
+        if (!_options.Enabled || !_options.Search.Enabled || !_options.ContentIndexing.Enabled)
+        {
+            _logger.LogDebug("Algolia content search skipped because search or content indexing is disabled. Index={IndexName}", request.IndexName);
+            return EmptyResponse<AlgoliaContentRecord>(request.Query.Query, request.Query.Page, request.Query.HitsPerPage);
+        }
+
+        var query = CloneQuery(request.Query);
+        var trimmedQuery = query.Query?.Trim();
+
+        if (_options.Search.MinimumQueryLength > 0 && string.IsNullOrWhiteSpace(trimmedQuery))
+            return EmptyResponse<AlgoliaContentRecord>(trimmedQuery, query.Page, query.HitsPerPage);
+
+        if (_options.Search.MinimumQueryLength > 0 && trimmedQuery!.Length < _options.Search.MinimumQueryLength)
+            return EmptyResponse<AlgoliaContentRecord>(trimmedQuery, query.Page, query.HitsPerPage);
+
+        var indexName = _contentIndexNameResolver.Resolve(request.IndexName, request.Culture);
+        query.IndexName = indexName;
+
+        if (_options.Search.MaxHitsPerPage > 0 && query.HitsPerPage > _options.Search.MaxHitsPerPage)
+            query.HitsPerPage = _options.Search.MaxHitsPerPage;
+
+        var userToken = PrepareUserTokenForCache(query);
+        var useCache = _options.Search.Cache.Enabled && !request.BypassCache;
+        var cacheKey = _cacheKeyBuilder.BuildContentKey(request, query, indexName);
+
+        if (useCache && _cache.TryGetValue(cacheKey, out AlgoliaSearchResponse<AlgoliaContentRecord>? cached) && cached is not null)
+        {
+            _logger.LogDebug("Algolia content search cache hit for index {IndexName}.", indexName);
+            return cached;
+        }
+
+        ApplyUserToken(query, userToken);
+
+        var response = await QueryAsync<AlgoliaContentRecord>(query, ct).ConfigureAwait(false);
+
+        if (!useCache)
+            return response;
+
+        if (response.Hits.Count == 0 && !_options.Search.Cache.CacheEmptyResults)
+            return response;
+
+        var ttlMinutes = _options.Search.Cache.DurationMinutes <= 0 ? 60 : _options.Search.Cache.DurationMinutes;
+        _cache.Set(cacheKey, response, TimeSpan.FromMinutes(ttlMinutes));
+
+        return response;
+    }
+
+    public async Task<AlgoliaFederatedSearchResponse> FederatedSearchAsync(AlgoliaFederatedSearchRequest request, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.StoreAlias);
+
+        if (request.Targets.Count == 0 || !_options.Enabled || !_options.Search.Enabled)
+            return new AlgoliaFederatedSearchResponse();
+
+        var store = _storeResolver.Resolve(request.StoreAlias);
+        var preparedTargets = new List<(AlgoliaFederatedSearchTarget Target, SearchForHits Query, string IndexName)>();
+
+        foreach (var target in request.Targets)
+        {
+            ct.ThrowIfCancellationRequested();
+            ArgumentException.ThrowIfNullOrWhiteSpace(target.Key);
+            ArgumentNullException.ThrowIfNull(target.Query);
+
+            if (!TryPrepareFederatedTarget(request, store, target, out var query, out var indexName))
+                continue;
+
+            preparedTargets.Add((target, query, indexName));
+        }
+
+        if (preparedTargets.Count == 0)
+            return new AlgoliaFederatedSearchResponse();
+
+        var response = await _queryClient.SearchAsync<Dictionary<string, object?>>(
+            new SearchMethodParams
+            {
+                Requests = preparedTargets.Select(x => new SearchQuery(x.Query)).ToList()
+            },
+            ct).ConfigureAwait(false);
+
+        AlgoliaSearchResponse<AlgoliaQuerySuggestionRecord>? suggestions = null;
+        AlgoliaSearchResponse<AlgoliaProductRecord>? products = null;
+        AlgoliaSearchResponse<AlgoliaCategoryRecord>? categories = null;
+        var content = new Dictionary<string, AlgoliaSearchResponse<AlgoliaContentRecord>>(StringComparer.OrdinalIgnoreCase);
+        var resultList = response.Results.Select(x => x.AsSearchResponse()).ToList();
+
+        for (var i = 0; i < preparedTargets.Count; i++)
+        {
+            var (target, query, _) = preparedTargets[i];
+            var result = i < resultList.Count ? resultList[i] : null;
+
+            switch (target.Kind)
+            {
+                case AlgoliaFederatedSearchTargetKind.QuerySuggestions:
+                    suggestions = result is null
+                        ? EmptyResponse<AlgoliaQuerySuggestionRecord>(query.Query, query.Page, query.HitsPerPage)
+                        : ToSearchResponse<AlgoliaQuerySuggestionRecord>(result);
+                    break;
+                case AlgoliaFederatedSearchTargetKind.Products:
+                    products = result is null
+                        ? EmptyResponse<AlgoliaProductRecord>(query.Query, query.Page, query.HitsPerPage)
+                        : ToSearchResponse<AlgoliaProductRecord>(result);
+                    break;
+                case AlgoliaFederatedSearchTargetKind.Categories:
+                    categories = result is null
+                        ? EmptyResponse<AlgoliaCategoryRecord>(query.Query, query.Page, query.HitsPerPage)
+                        : ToSearchResponse<AlgoliaCategoryRecord>(result);
+                    break;
+                case AlgoliaFederatedSearchTargetKind.Content:
+                    content[target.Key] = result is null
+                        ? EmptyResponse<AlgoliaContentRecord>(query.Query, query.Page, query.HitsPerPage)
+                        : ToSearchResponse<AlgoliaContentRecord>(result);
+                    break;
+            }
+        }
+
+        return new AlgoliaFederatedSearchResponse
+        {
+            Suggestions = suggestions,
+            Products = products,
+            Categories = categories,
+            Content = content
+        };
+    }
+
     private Task<AlgoliaSearchResponse<AlgoliaProductRecord>> QueryProductsAsync(SearchForHits query, CancellationToken ct)
         => QueryAsync<AlgoliaProductRecord>(query, ct);
+
+    private bool TryPrepareFederatedTarget(
+        AlgoliaFederatedSearchRequest request,
+        AlgoliaResolvedStore store,
+        AlgoliaFederatedSearchTarget target,
+        out SearchForHits query,
+        out string indexName)
+    {
+        query = CloneQuery(target.Query);
+        indexName = string.Empty;
+        var trimmedQuery = query.Query?.Trim();
+
+        if (_options.Search.MinimumQueryLength > 0 && string.IsNullOrWhiteSpace(trimmedQuery))
+            return false;
+
+        if (_options.Search.MinimumQueryLength > 0 && trimmedQuery!.Length < _options.Search.MinimumQueryLength)
+            return false;
+
+        if (_options.Search.MaxHitsPerPage > 0 && query.HitsPerPage > _options.Search.MaxHitsPerPage)
+            query.HitsPerPage = _options.Search.MaxHitsPerPage;
+
+        var contentCulture = target.Culture ?? request.Locale ?? store.Locale;
+        indexName = target.Kind switch
+        {
+            AlgoliaFederatedSearchTargetKind.Products when _options.Search.Products => _indexNameBuilder.BuildPrimary(ProductsEntity, store.WithSelection(request.Locale ?? store.Locale, request.Currency ?? store.Currency)),
+            AlgoliaFederatedSearchTargetKind.Categories when _options.Search.Categories => _indexNameBuilder.BuildPrimary(CategoriesEntity, store.WithSelection(request.Locale ?? store.Locale, currency: null), currencyOverride: string.Empty),
+            AlgoliaFederatedSearchTargetKind.QuerySuggestions when _options.Search.QuerySuggestions => _indexNameBuilder.BuildQuerySuggestions(QuerySuggestionsEntity, store.WithSelection(request.Locale ?? store.Locale, request.Currency ?? store.Currency)),
+            AlgoliaFederatedSearchTargetKind.Content when _options.ContentIndexing.Enabled && !string.IsNullOrWhiteSpace(target.ContentIndexName) && !string.IsNullOrWhiteSpace(contentCulture) => _contentIndexNameResolver.Resolve(target.ContentIndexName, contentCulture),
+            _ => string.Empty
+        };
+
+        if (string.IsNullOrWhiteSpace(indexName))
+            return false;
+
+        query.IndexName = indexName;
+        var userToken = PrepareUserTokenForCache(query);
+        ApplyUserToken(query, userToken);
+        return true;
+    }
 
     private string? PrepareUserTokenForCache(SearchForHits query)
     {
@@ -304,6 +482,46 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
             Query = result.Query,
             Facets = ToFacets(result.Facets)
         };
+    }
+
+    private static AlgoliaSearchResponse<THit> ToSearchResponse<THit>(dynamic result)
+        where THit : class
+    {
+        var hits = new List<THit>();
+        if (result.Hits is not null)
+        {
+            foreach (var hit in result.Hits)
+            {
+                var mapped = MapHit<THit>(hit);
+                if (mapped is not null)
+                    hits.Add(mapped);
+            }
+        }
+
+        return new AlgoliaSearchResponse<THit>
+        {
+            Hits = hits,
+            Page = result.Page ?? 0,
+            HitsPerPage = result.HitsPerPage ?? 0,
+            TotalHits = result.NbHits ?? 0,
+            TotalPages = result.NbPages ?? 0,
+            ProcessingTimeMs = result.ProcessingTimeMS ?? 0,
+            Query = result.Query,
+            Facets = ToFacets(result.Facets)
+        };
+    }
+
+    private static THit? MapHit<THit>(object hit)
+        where THit : class
+    {
+        if (hit is THit typedHit)
+            return typedHit;
+
+        if (hit is JsonElement element)
+            return element.Deserialize<THit>(JsonOptions);
+
+        var json = JsonSerializer.Serialize(hit, JsonOptions);
+        return JsonSerializer.Deserialize<THit>(json, JsonOptions);
     }
 
     private static AlgoliaSearchResponse<THit> EmptyResponse<THit>(string? query, int? page, int? hitsPerPage)

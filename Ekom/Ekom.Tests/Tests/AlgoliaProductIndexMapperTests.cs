@@ -47,6 +47,20 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Theory]
+    [InlineData(true, 1)]
+    [InlineData(false, 0)]
+    public void Maps_Availability_As_Numeric_Ranking_Value(bool available, int expected)
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct(available: available);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(expected, record!.Available);
+    }
+
+    [Theory]
     [InlineData("0", false)]
     [InlineData("1", true)]
     public void Maps_Boolean_Product_Properties_From_Umbraco_Flags(string rawValue, bool expected)
@@ -314,6 +328,69 @@ public class AlgoliaProductIndexMapperTests
         Assert.DoesNotContain("material", record!.Data.Keys);
     }
 
+    [Fact]
+    public void Maps_Product_And_Highest_Category_Ranking()
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct(
+            categories:
+            [
+                CreateCategory("Primary", algoliaRank: "5"),
+                CreateCategory("Secondary", algoliaRank: "9"),
+                CreateCategory("Third", algoliaRank: "2")
+            ],
+            properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["ekmAlgoliaRank"] = "12"
+            });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(12, record!.ProductRanking);
+        Assert.Equal(9, record.CategoryRanking);
+    }
+
+    [Fact]
+    public void Allows_Negative_Product_And_Category_Ranking()
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct(
+            categories:
+            [
+                CreateCategory("Primary", algoliaRank: "-10"),
+                CreateCategory("Secondary")
+            ],
+            properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["ekmAlgoliaRank"] = "-4"
+            });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(-4, record!.ProductRanking);
+        Assert.Equal(-10, record.CategoryRanking);
+    }
+
+    [Fact]
+    public void Defaults_Product_And_Category_Ranking_To_Zero_When_Missing_Or_Invalid()
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct(
+            categories: [CreateCategory("Primary", algoliaRank: "invalid")],
+            properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["ekmAlgoliaRank"] = "invalid"
+            });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(0, record!.ProductRanking);
+        Assert.Equal(0, record.CategoryRanking);
+    }
+
     private static ProductIndexMapper CreateMapper(IReadOnlyCollection<string>? productProperties = null)
     {
         var options = Options.Create(new AlgoliaOptions
@@ -336,12 +413,16 @@ public class AlgoliaProductIndexMapperTests
         Locale = locale
     };
 
-    private static Mock<Ekom.Models.ICategory> CreateCategory(string title, IReadOnlyList<Mock<Ekom.Models.ICategory>>? ancestors = null)
+    private static Mock<Ekom.Models.ICategory> CreateCategory(
+        string title,
+        IReadOnlyList<Mock<Ekom.Models.ICategory>>? ancestors = null,
+        string? algoliaRank = null)
     {
         var category = new Mock<Ekom.Models.ICategory>();
         category.SetupGet(x => x.Title).Returns(title);
         category.SetupGet(x => x.Ancestors).Returns((ancestors ?? []).Select(x => x.Object));
         category.Setup(x => x.GetValue("title", It.IsAny<string?>(), true)).Returns(string.Empty);
+        category.Setup(x => x.GetValue("ekmAlgoliaRank", It.IsAny<string?>(), false)).Returns(algoliaRank ?? string.Empty);
 
         return category;
     }
@@ -355,7 +436,8 @@ public class AlgoliaProductIndexMapperTests
         string sku = "sku",
         string summary = "Summary",
         string description = "Description",
-        string url = "/product")
+        string url = "/product",
+        bool available = true)
     {
         var price = new Mock<Ekom.Models.IPrice>();
         price.SetupGet(x => x.Value).Returns(100m);
@@ -373,7 +455,7 @@ public class AlgoliaProductIndexMapperTests
         product.SetupGet(x => x.Images).Returns([]);
         product.SetupGet(x => x.UrlsWithContext).Returns([]);
         product.SetupGet(x => x.Urls).Returns([]);
-        product.SetupGet(x => x.Available).Returns(true);
+        product.SetupGet(x => x.Available).Returns(available);
         product.SetupGet(x => x.Stock).Returns(10m);
         product.SetupGet(x => x.Price).Returns(price.Object);
         product.SetupGet(x => x.Prices).Returns([price.Object]);

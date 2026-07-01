@@ -3,7 +3,6 @@ using Ekom.Cache;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Xml.Serialization;
@@ -31,8 +30,31 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual decimal Stock => API.Stock.Instance.GetStock(Key);
+    public virtual decimal Stock => API.Stock.Instance.GetStock(Key, Store.Alias);
 
+    /// <summary>
+    /// Get the current variant Stock Buffer
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
+    public decimal? StockBuffer {
+        get
+        {
+            if (decimal.TryParse(GetValue("ekmStockBuffer", Store.Alias), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var stockBuffer))
+            {
+                if (stockBuffer <= 0)
+                {
+                    return null;
+                }
+                
+                return stockBuffer;
+            }
+
+            return null;
+        }
+    }
+    
     /// <summary>
     /// Get the backorder status
     /// </summary>
@@ -54,7 +76,22 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// <summary>
     /// Get the availability of the variant
     /// </summary>
-    public virtual bool Available => Stock > 0 || Backorder;
+    public virtual bool Available
+    {
+        get
+        {
+            if (Backorder)
+            {
+                return true;
+            }
+
+            IProduct? product = Product;
+
+            return product != null
+                ? StockBufferHelper.GetEffectiveStock(Stock, product, this) > 0
+                : Stock - (StockBuffer ?? 0) > 0;
+        }
+    }
 
     /// <summary>
     /// Parent <see cref="IProduct"/> of Variant
@@ -124,6 +161,21 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
                 price,
                 Product?.Categories.Select(x => x.Id.ToString()).ToArray()
             );
+    }
+
+    public virtual async Task<IProductDiscount?> ProductDiscountAsync(string price, CancellationToken ct = default)
+    {
+        var discountService = Configuration.Resolver.GetService<ProductDiscountService>();
+        if (discountService == null)
+            return null;
+
+        return await discountService.GetProductDiscountAsync(
+            Path,
+            Store.Alias,
+            price,
+            Product?.Categories.Select(x => x.Id.ToString()).ToArray(),
+            ct: ct
+        ).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -217,7 +269,12 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         {
             if (Properties.HasPropertyValue("vat", Store.Alias))
             {
-                return Convert.ToDecimal(GetValue("vat", Store.Alias)) / 100;
+                string value = GetValue("vat", Store.Alias);
+
+                if (VatParser.TryParsePercentageRate(value, out decimal _val))
+                {
+                    return _val;
+                }
             }
 
             return Product?.Vat ?? 0;

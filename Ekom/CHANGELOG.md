@@ -1,5 +1,377 @@
 # Changelog
 
+## [0.2.186](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.185...Ekom-v0.2.186) (2026-07-01)
+
+
+### Bug Fixes
+
+* **stock:** apply buffer to non-variant products ([#654](https://github.com/Vettvangur/Ekom/issues/654)) ([6d0dd90](https://github.com/Vettvangur/Ekom/commit/6d0dd9031b1434df6eb617c8e4a1a2a223e20f61))
+
+## [0.2.185](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.184...Ekom-v0.2.185) (2026-06-28)
+
+
+### Features
+
+* **algolia:** add federated search ([#650](https://github.com/Vettvangur/Ekom/issues/650)) ([320ad43](https://github.com/Vettvangur/Ekom/commit/320ad43f18ac775cc147089d1ca39de74d3b575b))
+
+## [0.2.184](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.183...Ekom-v0.2.184) (2026-06-25)
+
+
+### Bug Fixes
+
+* **umbraco:** resolve wrapped rte local links ([#648](https://github.com/Vettvangur/Ekom/issues/648)) ([0940610](https://github.com/Vettvangur/Ekom/commit/09406104ef98c8189832962a309a98b9c0754333))
+
+## [0.2.183](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.182...Ekom-v0.2.183) (2026-06-25)
+
+
+### Bug Fixes
+
+* **import:** handle recycle bin product sync ([#646](https://github.com/Vettvangur/Ekom/issues/646)) ([6bf5bfe](https://github.com/Vettvangur/Ekom/commit/6bf5bfea1213e9a028cf4f2e04ae82ffb5d1547c))
+
+## [0.2.182](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.181...Ekom-v0.2.182) (2026-06-24)
+
+
+### Bug Fixes
+
+* **import:** skip recycle bin products ([#644](https://github.com/Vettvangur/Ekom/issues/644)) ([857d523](https://github.com/Vettvangur/Ekom/commit/857d523b7cbb604feff58d1fdc6ad5346e0e2a01))
+
+## [0.2.181](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.180...Ekom-v0.2.181) (2026-06-23)
+
+
+### Bug Fixes
+
+* **coupons:** add mark used action ([#640](https://github.com/Vettvangur/Ekom/issues/640)) ([ac23a94](https://github.com/Vettvangur/Ekom/commit/ac23a9412d97a62ec5fa5f29195f7324152ba4d0))
+
+## [0.2.180](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.179...Ekom-v0.2.180) (2026-06-23)
+
+
+### Bug Fixes
+
+* **discounts:** add discount stock update action ([#636](https://github.com/Vettvangur/Ekom/issues/636)) ([c349a10](https://github.com/Vettvangur/Ekom/commit/c349a105b372c721fb1240725d2476c5a1f87f84))
+
+## [0.2.179](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.178...Ekom-v0.2.179) (2026-06-22)
+
+
+### Bug Fixes
+
+* **order:** parse comma decimal vat rates ([#634](https://github.com/Vettvangur/Ekom/issues/634)) ([52adffc](https://github.com/Vettvangur/Ekom/commit/52adffc000d851fc971126e83ad60d06d3d0b43a))
+
+## [0.2.178](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.177...Ekom-v0.2.178) (2026-06-09)
+
+
+### Bug Fixes
+
+* **order:** validate order culture by store ([#632](https://github.com/Vettvangur/Ekom/issues/632)) ([d52ddbe](https://github.com/Vettvangur/Ekom/commit/d52ddbe4187df9b7b5e1efbd029c1dbc6222c7fc))
+
+## [0.2.177](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.176...Ekom-v0.2.177) (2026-06-09)
+
+
+### Bug Fixes
+
+* **order:** preserve updated orderline event changes ([#630](https://github.com/Vettvangur/Ekom/issues/630)) ([8434414](https://github.com/Vettvangur/Ekom/commit/84344148dcb21d89f8169b95bc7320385c560ccd))
+
+## [0.2.176](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.175...Ekom-v0.2.176) (2026-06-09)
+
+
+### Bug Fixes
+
+* **order:** preserve orderline event order info ([#628](https://github.com/Vettvangur/Ekom/issues/628)) ([da51987](https://github.com/Vettvangur/Ekom/commit/da51987df853b28ae274677332c4a2e1eea3c5d2))
+
+## [0.2.175](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.174...Ekom-v0.2.175) (2026-06-08)
+
+
+### Bug Fixes
+
+* **coupons:** allow event settings when removing coupon ([#626](https://github.com/Vettvangur/Ekom/issues/626)) ([9ab6028](https://github.com/Vettvangur/Ekom/commit/9ab6028db013788ce651e5f01ffa996a1f028c19))
+
+## [0.2.174](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.173...Ekom-v0.2.174) (2026-06-08)
+
+
+### Bug Fixes
+
+* **payments:** update provider packages ([#624](https://github.com/Vettvangur/Ekom/issues/624)) ([d6d3c59](https://github.com/Vettvangur/Ekom/commit/d6d3c59308fb852cd70bd353f87299caefc456a8))
+
+## [0.2.173](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.172...Ekom-v0.2.173) (2026-06-08)
+
+
+### Bug Fixes
+
+* stock buffer fallback ([#622](https://github.com/Vettvangur/Ekom/issues/622)) ([ea14a8d](https://github.com/Vettvangur/Ekom/commit/ea14a8dc60df30ae450bc49dd2cf19213a351a7e))
+
+## [0.2.172](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.171...Ekom-v0.2.172) (2026-06-08)
+
+
+### Bug Fixes
+
+* **stock:** resolve buffer values dynamically ([#620](https://github.com/Vettvangur/Ekom/issues/620)) ([620177f](https://github.com/Vettvangur/Ekom/commit/620177f055a5ad18ea8b69d4f54a7a8bae4c33f4))
+
+## [0.2.171](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.170...Ekom-v0.2.171) (2026-06-08)
+
+
+### Bug Fixes
+
+* **stock:** use configured stock buffer fallback ([#618](https://github.com/Vettvangur/Ekom/issues/618)) ([2fdac21](https://github.com/Vettvangur/Ekom/commit/2fdac2140b7610de2d003db4e659e9b456e4b06e))
+
+## [0.2.170](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.169...Ekom-v0.2.170) (2026-06-07)
+
+
+### Bug Fixes
+
+* **checkout:** add VAT to payment order item ([#616](https://github.com/Vettvangur/Ekom/issues/616)) ([2bd8950](https://github.com/Vettvangur/Ekom/commit/2bd8950a7c95e52de95e4a7da9eb7cfc22b126fa))
+
+## [0.2.169](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.168...Ekom-v0.2.169) (2026-06-07)
+
+
+### Bug Fixes
+
+* **payments:** update package versions ([#614](https://github.com/Vettvangur/Ekom/issues/614)) ([21800dc](https://github.com/Vettvangur/Ekom/commit/21800dcf499aeb20b42990e14d0e2e51c87d880c))
+
+## [0.2.168](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.167...Ekom-v0.2.168) (2026-06-07)
+
+
+### Bug Fixes
+
+* **klaviyo:** add formatted order VAT total ([#612](https://github.com/Vettvangur/Ekom/issues/612)) ([6113c21](https://github.com/Vettvangur/Ekom/commit/6113c21aed762c1ff46b282ff5a012a06a8c6408))
+
+## [0.2.167](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.166...Ekom-v0.2.167) (2026-06-05)
+
+
+### Features
+
+* **checkout:** add payment order items event ([#610](https://github.com/Vettvangur/Ekom/issues/610)) ([5dcccc2](https://github.com/Vettvangur/Ekom/commit/5dcccc259e32775744af8ff3da804826521766e2))
+
+## [0.2.166](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.165...Ekom-v0.2.166) (2026-06-05)
+
+
+### Bug Fixes
+
+* **manager:** refresh order actions on order switch ([#607](https://github.com/Vettvangur/Ekom/issues/607)) ([d9cb9f6](https://github.com/Vettvangur/Ekom/commit/d9cb9f690a247bef35a3be8575424649f97c9689))
+
+## [0.2.165](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.164...Ekom-v0.2.165) (2026-06-05)
+
+
+### Bug Fixes
+
+* **order:** deserialize top-level discount amounts ([#605](https://github.com/Vettvangur/Ekom/issues/605)) ([f3462c4](https://github.com/Vettvangur/Ekom/commit/f3462c44f4f9a99372a7a0e2c169ad37dc0d5f5c))
+
+## [0.2.164](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.163...Ekom-v0.2.164) (2026-06-05)
+
+
+### Bug Fixes
+
+* **product:** use variants for availability ([#603](https://github.com/Vettvangur/Ekom/issues/603)) ([27f0242](https://github.com/Vettvangur/Ekom/commit/27f02420dcff67cddf5ca5ed95101ad0b5c1176f))
+
+## [0.2.163](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.162...Ekom-v0.2.163) (2026-06-05)
+
+
+### Bug Fixes
+
+* **manager:** handle legacy order discount data ([#601](https://github.com/Vettvangur/Ekom/issues/601)) ([ee049c1](https://github.com/Vettvangur/Ekom/commit/ee049c135eae365a4191b937e699fb6f177bb484))
+
+## [0.2.162](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.161...Ekom-v0.2.162) (2026-06-05)
+
+
+### Bug Fixes
+
+* **import:** preserve product category picker ([#599](https://github.com/Vettvangur/Ekom/issues/599)) ([1c1a609](https://github.com/Vettvangur/Ekom/commit/1c1a609c59cec73799fbd3e841d73fc4ef01b9e1))
+
+## [0.2.161](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.160...Ekom-v0.2.161) (2026-06-04)
+
+
+### Bug Fixes
+
+* **manager:** export order lines server-side ([#596](https://github.com/Vettvangur/Ekom/issues/596)) ([f9823fd](https://github.com/Vettvangur/Ekom/commit/f9823fd914a6727db1a26b0c2fcc1025247d33b0))
+* **manager:** use order list currencies ([#595](https://github.com/Vettvangur/Ekom/issues/595)) ([f8d68a1](https://github.com/Vettvangur/Ekom/commit/f8d68a18aaba7d2ad5c22ecbdd030afbf9892eb7))
+
+## [0.2.160](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.159...Ekom-v0.2.160) (2026-06-04)
+
+
+### Bug Fixes
+
+* **manager:** export all filtered orders ([#593](https://github.com/Vettvangur/Ekom/issues/593)) ([be30b01](https://github.com/Vettvangur/Ekom/commit/be30b011742ea10a43307e998b38b3af2da1d2cd))
+
+## [0.2.159](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.158...Ekom-v0.2.159) (2026-06-04)
+
+
+### Bug Fixes
+
+* **stock:** use order store in checkout ([#591](https://github.com/Vettvangur/Ekom/issues/591)) ([9bb6fa2](https://github.com/Vettvangur/Ekom/commit/9bb6fa2379777bf7973198a69212bcd985621826))
+
+## [0.2.158](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.157...Ekom-v0.2.158) (2026-06-04)
+
+
+### Bug Fixes
+
+* **order:** respect event flag on line updates ([#589](https://github.com/Vettvangur/Ekom/issues/589)) ([12461a7](https://github.com/Vettvangur/Ekom/commit/12461a76414c99682fd4dc645db2d7a268c17b4e))
+
+## [0.2.157](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.156...Ekom-v0.2.157) (2026-06-04)
+
+
+### Bug Fixes
+
+* **order:** use provided order for coupon code ([#587](https://github.com/Vettvangur/Ekom/issues/587)) ([2819a21](https://github.com/Vettvangur/Ekom/commit/2819a21b440e9a1dd685fac6d05d263bb8c5e029))
+
+## [0.2.156](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.155...Ekom-v0.2.156) (2026-06-03)
+
+
+### Bug Fixes
+
+* **order:** use variant discounts on order lines ([#585](https://github.com/Vettvangur/Ekom/issues/585)) ([c12be0d](https://github.com/Vettvangur/Ekom/commit/c12be0dad69fa373a575623fa8f89855d1981e24))
+
+## [0.2.155](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.154...Ekom-v0.2.155) (2026-06-03)
+
+
+### Bug Fixes
+
+* **manager:** format date filter queries ([#583](https://github.com/Vettvangur/Ekom/issues/583)) ([3a937b6](https://github.com/Vettvangur/Ekom/commit/3a937b634a929a9d765a5d98970b2476fa03f874))
+
+## [0.2.154](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.153...Ekom-v0.2.154) (2026-06-03)
+
+
+### Bug Fixes
+
+* **stock:** use store alias for stock checks ([#581](https://github.com/Vettvangur/Ekom/issues/581)) ([6b82770](https://github.com/Vettvangur/Ekom/commit/6b8277082981707064a9b611bbbab82573fcda8e))
+
+## [0.2.153](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.152...Ekom-v0.2.153) (2026-06-03)
+
+
+### Bug Fixes
+
+* **stock:** include details in stock exception ([#579](https://github.com/Vettvangur/Ekom/issues/579)) ([c816343](https://github.com/Vettvangur/Ekom/commit/c8163430f3a07bde422eea05a2e628022c24fe9f))
+
+## [0.2.152](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.151...Ekom-v0.2.152) (2026-06-03)
+
+
+### Bug Fixes
+
+* **payments:** update payment packages ([#577](https://github.com/Vettvangur/Ekom/issues/577)) ([acc9adb](https://github.com/Vettvangur/Ekom/commit/acc9adb1ce51a1bdc1bc9c88253b6fda7ca6e8de))
+
+## [0.2.151](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.150...Ekom-v0.2.151) (2026-06-03)
+
+
+### Bug Fixes
+
+* **stock:** use explicit store stock lookups ([#575](https://github.com/Vettvangur/Ekom/issues/575)) ([3cdf627](https://github.com/Vettvangur/Ekom/commit/3cdf62793c7e9499f3c15999d96344a01903ffc4))
+
+## [0.2.150](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.149...Ekom-v0.2.150) (2026-06-02)
+
+
+### Features
+
+* **manager:** export order lines ([#573](https://github.com/Vettvangur/Ekom/issues/573)) ([0d1dfa2](https://github.com/Vettvangur/Ekom/commit/0d1dfa20b9e5b598106bcebfbf7d964eba129696))
+
+## [0.2.149](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.148...Ekom-v0.2.149) (2026-06-02)
+
+
+### Bug Fixes
+
+* **events:** run async hooks from sync paths ([#571](https://github.com/Vettvangur/Ekom/issues/571)) ([ac298be](https://github.com/Vettvangur/Ekom/commit/ac298bea4c40203d9483350c78a580055443cf74))
+
+## [0.2.148](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.147...Ekom-v0.2.148) (2026-06-02)
+
+
+### Bug Fixes
+
+* **discounts:** run async event from sync path ([#569](https://github.com/Vettvangur/Ekom/issues/569)) ([3ba3a06](https://github.com/Vettvangur/Ekom/commit/3ba3a06581544873746a6ec5a93d4ce94d7773d2))
+
+## [0.2.147](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.146...Ekom-v0.2.147) (2026-06-02)
+
+
+### Bug Fixes
+
+* **catalog:** make categories filterable ([#567](https://github.com/Vettvangur/Ekom/issues/567)) ([f7ca722](https://github.com/Vettvangur/Ekom/commit/f7ca7223d5ebca716b81287ae828386ef3c1acad))
+
+## [0.2.146](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.145...Ekom-v0.2.146) (2026-06-02)
+
+
+### Bug Fixes
+
+* **discounts:** support async applicable discount events ([#565](https://github.com/Vettvangur/Ekom/issues/565)) ([0291560](https://github.com/Vettvangur/Ekom/commit/0291560901485e97433ec0abf7d8d9161e6d7eba))
+
+## [0.2.145](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.144...Ekom-v0.2.145) (2026-06-02)
+
+
+### Bug Fixes
+
+* **catalog:** extract product query filters ([#563](https://github.com/Vettvangur/Ekom/issues/563)) ([39c1f70](https://github.com/Vettvangur/Ekom/commit/39c1f70811cfc8c52e3f015260e1369e188e3128))
+
+## [0.2.144](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.143...Ekom-v0.2.144) (2026-06-01)
+
+
+### Bug Fixes
+
+* **checkout:** resolve payment return URLs by culture ([#559](https://github.com/Vettvangur/Ekom/issues/559)) ([dc446d1](https://github.com/Vettvangur/Ekom/commit/dc446d16e61989bd4310a344d7097018fcb4aee1))
+
+## [0.2.143](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.142...Ekom-v0.2.143) (2026-05-29)
+
+
+### Bug Fixes
+
+* Fix Klaviyo feed culture context ([#551](https://github.com/Vettvangur/Ekom/issues/551)) ([586534d](https://github.com/Vettvangur/Ekom/commit/586534d99545e2d172b923715d825d1c0e1bac67))
+
+## [0.2.142](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.141...Ekom-v0.2.142) (2026-05-28)
+
+
+### Bug Fixes
+
+* **price-cache:** add async generation event ([#549](https://github.com/Vettvangur/Ekom/issues/549)) ([38f313e](https://github.com/Vettvangur/Ekom/commit/38f313e371369b8e11c97c1e83e9b04636bbeced))
+
+## [0.2.141](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.140...Ekom-v0.2.141) (2026-05-18)
+
+
+### Features
+
+* **manager:** edit order customer information ([#545](https://github.com/Vettvangur/Ekom/issues/545)) ([8c8c827](https://github.com/Vettvangur/Ekom/commit/8c8c8278d3bf7d55c981367792cadecf315d210e))
+
+## [0.2.140](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.139...Ekom-v0.2.140) (2026-05-15)
+
+
+### Bug Fixes
+
+* **vat:** parse rates using invariant culture ([#543](https://github.com/Vettvangur/Ekom/issues/543)) ([f567af6](https://github.com/Vettvangur/Ekom/commit/f567af695342bb8a984a731b0ac27294f3dbac06))
+
+## [0.2.139](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.138...Ekom-v0.2.139) (2026-05-15)
+
+
+### Bug Fixes
+
+* **umbraco:** use decimal VAT fields ([#541](https://github.com/Vettvangur/Ekom/issues/541)) ([c7f9647](https://github.com/Vettvangur/Ekom/commit/c7f96478f18fb6e3d0bd6507c10b03eaca01a8fd))
+
+## [0.2.138](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.137...Ekom-v0.2.138) (2026-05-06)
+
+
+### Bug Fixes
+
+* **shipping:** validate ranges after discounts ([#533](https://github.com/Vettvangur/Ekom/issues/533)) ([43b0ebb](https://github.com/Vettvangur/Ekom/commit/43b0ebb25fa3eb9d363067cf16446b2e6e93141d))
+
+## [0.2.137](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.136...Ekom-v0.2.137) (2026-05-05)
+
+
+### Bug Fixes
+
+* **stock:** filter editor stores by product ([#527](https://github.com/Vettvangur/Ekom/issues/527)) ([d68b1bc](https://github.com/Vettvangur/Ekom/commit/d68b1bc045d70236bb68fc48d0a92d8e9781ca92))
+
+## [0.2.136](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.135...Ekom-v0.2.136) (2026-05-04)
+
+
+### Bug Fixes
+
+* **algolia:** use highest category ranking ([#523](https://github.com/Vettvangur/Ekom/issues/523)) ([760d9d1](https://github.com/Vettvangur/Ekom/commit/760d9d107cd299a3966028e041de02c8b6a7d71e))
+
+## [0.2.135](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.134...Ekom-v0.2.135) (2026-05-04)
+
+
+### Features
+
+* **algolia:** add product ranking fields ([#521](https://github.com/Vettvangur/Ekom/issues/521)) ([319ff13](https://github.com/Vettvangur/Ekom/commit/319ff13a5fbd6461130afbdc2556c2da40ed61ef))
+
+## [0.2.134](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.133...Ekom-v0.2.134) (2026-04-30)
+
+
+### Features
+
+* **search:** normalize Examine catalog search ([#519](https://github.com/Vettvangur/Ekom/issues/519)) ([f0410c1](https://github.com/Vettvangur/Ekom/commit/f0410c1b9d374c5fd7b9904c6476cdeca757fa75))
+
 ## [0.2.133](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.132...Ekom-v0.2.133) (2026-04-30)
 
 

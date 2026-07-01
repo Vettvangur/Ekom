@@ -11,13 +11,14 @@ public sealed record KlaviyoProfileConsentRequest(
 
 public sealed record KlaviyoProfileSubscribeRequest(
     string StoreAlias,
-    string Email,
+    string? Email = null,
     IReadOnlyList<KlaviyoProfileConsentChange>? Consents = null,
     string? ListId = null,
     string? PhoneNumber = null,
     string? FullName = null,
     string? FirstName = null,
-    string? LastName = null);
+    string? LastName = null,
+    IDictionary<string, object?>? CustomProperties = null);
 
 public sealed record KlaviyoProfileUnsubscribeRequest(
     string StoreAlias,

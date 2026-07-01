@@ -3,6 +3,7 @@ using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Repositories;
 using Ekom.Services;
+using Ekom.Utilities;
 using Hangfire.States;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -72,9 +73,9 @@ public partial class Stock
     /// <returns></returns>
     public decimal GetStock(Guid key, string storeAlias)
     {
-        if (string.IsNullOrEmpty(storeAlias))
+        if (string.IsNullOrWhiteSpace(storeAlias) || !_config.PerStoreStock)
         {
-            throw new ArgumentException("StoreAlias empty, did you mean to use GetStock(key) instead?", nameof(storeAlias));
+            return GetStock(key);
         }
 
         return GetStockData(key, storeAlias).Stock;
@@ -118,6 +119,10 @@ public partial class Stock
     /// <returns></returns>
     public StockData GetStockData(Guid key, string storeAlias)
     {
+        if (string.IsNullOrWhiteSpace(storeAlias) || !_config.PerStoreStock)
+        {
+            return GetStockData(key);
+        }
 
         return _stockPerStoreCache.Cache.ContainsKey(storeAlias) && _stockPerStoreCache.Cache[storeAlias].ContainsKey(key)
         ? _stockPerStoreCache.Cache[storeAlias][key]
@@ -147,18 +152,25 @@ public partial class Stock
                 continue;
             }
 
+            IProduct? product = await Catalog.Instance.GetProductAsync(orderLine.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false, ct: ct);
+
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
             if (orderLine.Product.VariantGroups.Any())
             {
                 foreach (OrderedVariant? orderedVariant in orderLine.Product.VariantGroups.SelectMany(x => x.Variants))
                 {
-                    IVariant? variant = Catalog.Instance.GetVariant(orderedVariant.Key, orderInfo.StoreInfo.Alias);
+                    IVariant? variant = await Catalog.Instance.GetVariantAsync(orderedVariant.Key, orderInfo.StoreInfo.Alias, ct: ct);
 
                     if (variant == null)
                     {
                         throw new ArgumentNullException(nameof(variant));
                     }
 
-                    decimal variantStock = variant.Stock;
+                    decimal variantStock = StockBufferHelper.GetEffectiveStock(variant.Stock, product, variant);
 
                     if (variantStock < orderLine.Quantity)
                     {
@@ -172,14 +184,7 @@ public partial class Stock
             }
             else
             {
-                IProduct? product = await  Catalog.Instance.GetProductAsync(orderLine.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false, ct: ct);
-
-                if (product == null)
-                {
-                    throw new ArgumentNullException(nameof(product));
-                }
-
-                decimal productStock = product.Stock;
+                decimal productStock = StockBufferHelper.GetEffectiveStock(product.Stock, product);
 
                 if (productStock < orderLine.Quantity)
                 {

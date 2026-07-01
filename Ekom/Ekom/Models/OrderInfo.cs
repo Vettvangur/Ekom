@@ -1,5 +1,6 @@
 using Ekom.Services;
 using Ekom.Utilities;
+using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -44,7 +45,7 @@ public class OrderInfo : IOrderInfo
             CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
             Consent = CreateConsentFromJson(orderInfoJObject);
             Tracking = CreateTrackingFromJson(orderInfoJObject);
-            Discount = orderInfoJObject[nameof(Discount)]?.ToObject<OrderedDiscount>();
+            Discount = CreateOrderedDiscountFromJson(orderInfoJObject[nameof(Discount)]);
             Coupon = orderInfoJObject[nameof(Coupon)]?.ToObject<string>();
             _hangfireJobs = orderInfoJObject[nameof(HangfireJobs)]?.ToObject<List<string>>();
         }
@@ -376,7 +377,7 @@ public class OrderInfo : IOrderInfo
             var quantity = (decimal)line[nameof(OrderLine.Quantity)];
             OrderLineSettings? settings = line[nameof(OrderLine.Settings)]?.ToObject<OrderLineSettings>();
             string productJson = line[nameof(OrderLine.Product)].ToString();
-            OrderedDiscount? discount = line[nameof(OrderLine.Discount)]?.ToObject<OrderedDiscount>();
+            OrderedDiscount? discount = CreateOrderedDiscountFromJson(line[nameof(OrderLine.Discount)]);
             OrderLineInfo? orderLineInfo = line[nameof(OrderLine.OrderLineInfo)]?.ToObject<OrderLineInfo>();
             OrderLine orderLine = new OrderLine(
                 lineId,
@@ -391,6 +392,67 @@ public class OrderInfo : IOrderInfo
         }
 
         return orderLines;
+    }
+
+    private static OrderedDiscount? CreateOrderedDiscountFromJson(JToken? discountToken)
+    {
+        if (discountToken == null || discountToken.Type == JTokenType.Null)
+        {
+            return null;
+        }
+
+        JToken? amountToken = discountToken.Type == JTokenType.Object
+            ? discountToken[nameof(OrderedDiscount.Amount)]
+            : null;
+        if (amountToken?.Type == JTokenType.Object
+            && TryGetDecimalAmount(amountToken, out decimal amount))
+        {
+            JObject discountObject = (JObject)discountToken.DeepClone();
+            discountObject[nameof(OrderedDiscount.Amount)] = amount;
+
+            discountToken = discountObject;
+        }
+
+        try
+        {
+            return discountToken.ToObject<OrderedDiscount>();
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static bool TryGetDecimalAmount(JToken amountToken, out decimal amount)
+    {
+        foreach (string propertyName in new[] { "Value", "Amount", "value", "amount" })
+        {
+            if (TryReadDecimal(amountToken[propertyName], out amount))
+            {
+                return true;
+            }
+        }
+
+        amount = 0;
+        return false;
+    }
+
+    private static bool TryReadDecimal(JToken? token, out decimal amount)
+    {
+        if (token?.Type == JTokenType.Integer || token?.Type == JTokenType.Float)
+        {
+            amount = token.Value<decimal>();
+            return true;
+        }
+
+        if (token?.Type == JTokenType.String
+            && decimal.TryParse(token.Value<string>(), NumberStyles.Number, CultureInfo.InvariantCulture, out amount))
+        {
+            return true;
+        }
+
+        amount = 0;
+        return false;
     }
 
     private OrderedShippingProvider? CreateShippingProviderFromJson(JObject orderInfoJObject)

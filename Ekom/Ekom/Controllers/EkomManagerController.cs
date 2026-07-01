@@ -8,6 +8,8 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
+using System.Text;
 
 namespace Ekom.Controllers;
 
@@ -192,6 +194,32 @@ public class EkomManagerController : ControllerBase
     }
 
     [HttpGet]
+    [Route("ExportOrders")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> ExportOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderLines, CancellationToken ct = default)
+    {
+        if (!CanAccessStore(store))
+        {
+            return ForbidStore(store);
+        }
+
+        try
+        {
+            List<OrderData> orders = await _repo.GetOrdersForExportAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, includeOrderLines).ConfigureAwait(false);
+            string csv = CreateOrderCsv(orders, includeOrderLines);
+            string fileName = includeOrderLines ? "orders-with-orderlines.csv" : "orders.csv";
+
+            return File(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray(), "text/csv", fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to export orders for store {StoreAlias}.", store);
+
+            return StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
+    [HttpGet]
     [Route("MostSoldProducts")]
     [UmbracoUserAuthorize]
     [ResponseCache(Duration = 60 * 60 * 24)]
@@ -252,6 +280,60 @@ public class EkomManagerController : ControllerBase
         else
         {
             return BadRequest("Invalid order status.");
+        }
+    }
+
+    [HttpPost]
+    [Route("UpdateCustomerInformation")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> UpdateCustomerInformationAsync([FromBody] OrderCustomerInformationUpdateRequest? request, CancellationToken ct = default)
+    {
+        if (request == null || request.OrderId == Guid.Empty)
+        {
+            return BadRequest("Invalid customer information update request.");
+        }
+
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(request.OrderId, ct);
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            var order = await _repo.GetOrderInfoAsync(request.OrderId, ct);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            var form = new Dictionary<string, string>
+            {
+                ["storeAlias"] = orderData.StoreAlias
+            };
+
+            AddFormValues(form, request.Customer);
+            AddFormValues(form, request.Shipping);
+
+            var updatedOrder = await Order.Instance.UpdateCustomerInformationAsync(form, new OrderSettings
+            {
+                FireEvents = false,
+                OrderInfo = order
+            }, ct).ConfigureAwait(false);
+
+            return Ok(updatedOrder);
+        }
+        catch (FormatException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update customer information. {OrderId}", request.OrderId);
+
+            return StatusCode(500, "An unexpected error occurred.");
         }
     }
 
@@ -321,6 +403,161 @@ public class EkomManagerController : ControllerBase
     {
         _logger.LogWarning("Manager access denied for store {StoreAlias}", storeAlias);
         return Forbid();
+    }
+
+    private static void AddFormValues(Dictionary<string, string> form, Dictionary<string, string?> values)
+    {
+        foreach (var value in values)
+        {
+            form[value.Key] = value.Value ?? string.Empty;
+        }
+    }
+
+    private static string CreateOrderCsv(IReadOnlyCollection<OrderData> orders, bool includeOrderLines)
+    {
+        string[] headers = includeOrderLines
+            ? OrderExportHeaders.LineExportHeaders
+            : OrderExportHeaders.OrderHeaders;
+
+        var csv = new StringBuilder();
+        csv.AppendLine(string.Join(',', headers));
+
+        foreach (OrderData order in orders)
+        {
+            AppendCsvRow(csv, headers, CreateOrderExportRow(order));
+
+            if (!includeOrderLines || string.IsNullOrWhiteSpace(order.OrderInfo))
+            {
+                continue;
+            }
+
+            var orderInfo = new OrderInfo(order);
+
+            foreach (IOrderLine orderLine in orderInfo.OrderLines)
+            {
+                AppendCsvRow(csv, headers, CreateOrderLineExportRow(order, orderLine));
+            }
+        }
+
+        return csv.ToString();
+    }
+
+    private static Dictionary<string, string?> CreateOrderExportRow(OrderData order)
+    {
+        return new Dictionary<string, string?>
+        {
+            ["rowType"] = "Order",
+            ["uniqueId"] = order.UniqueId.ToString(),
+            ["referenceId"] = order.ReferenceId.ToString(CultureInfo.InvariantCulture),
+            ["orderInfo"] = string.Empty,
+            ["orderNumber"] = order.OrderNumber,
+            ["orderStatusCol"] = order.OrderStatusCol,
+            ["orderStatus"] = order.OrderStatus.ToString(),
+            ["formattedTotal"] = order.FormattedTotal,
+            ["customerEmail"] = order.CustomerEmail,
+            ["customerName"] = order.CustomerName,
+            ["customerId"] = order.CustomerId.ToString(CultureInfo.InvariantCulture),
+            ["customerUsername"] = order.CustomerUsername,
+            ["shippingCountry"] = order.ShippingCountry,
+            ["totalAmount"] = order.TotalAmount.ToString(CultureInfo.InvariantCulture),
+            ["currency"] = order.Currency,
+            ["storeAlias"] = order.StoreAlias,
+            ["createDate"] = FormatDate(order.CreateDate),
+            ["updateDate"] = FormatDate(order.UpdateDate),
+            ["paidDate"] = FormatDate(order.PaidDate),
+            ["orderLineKey"] = string.Empty,
+            ["productSku"] = string.Empty,
+            ["productTitle"] = string.Empty,
+            ["variantSku"] = string.Empty,
+            ["variantTitle"] = string.Empty,
+            ["quantity"] = string.Empty,
+            ["unitPrice"] = string.Empty,
+            ["vat"] = string.Empty,
+            ["discount"] = string.Empty,
+            ["lineTotal"] = string.Empty
+        };
+    }
+
+    private static Dictionary<string, string?> CreateOrderLineExportRow(OrderData order, IOrderLine orderLine)
+    {
+        Dictionary<string, string?> row = CreateOrderExportRow(order);
+
+        row["rowType"] = "OrderLine";
+        row["orderLineKey"] = orderLine.Key.ToString();
+        row["productSku"] = orderLine.Product?.SKU;
+        row["productTitle"] = orderLine.Product?.Title;
+        row["variantSku"] = orderLine.Variant?.SKU;
+        row["variantTitle"] = orderLine.Variant?.Title;
+        row["quantity"] = orderLine.Quantity.ToString(CultureInfo.InvariantCulture);
+        row["unitPrice"] = orderLine.Product?.Price?.WithVat?.CurrencyString;
+        row["vat"] = orderLine.Amount?.Vat?.CurrencyString;
+        row["discount"] = orderLine.Amount?.DiscountAmount?.CurrencyString;
+        row["lineTotal"] = orderLine.Amount?.WithVat?.CurrencyString;
+
+        return row;
+    }
+
+    private static void AppendCsvRow(StringBuilder csv, IReadOnlyList<string> headers, IReadOnlyDictionary<string, string?> row)
+    {
+        csv.AppendLine(string.Join(',', headers.Select(header => EscapeCsvValue(row.TryGetValue(header, out string? value) ? value : string.Empty))));
+    }
+
+    private static string EscapeCsvValue(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        return value.IndexOfAny(new[] { '"', ',', '\r', '\n' }) >= 0
+            ? '"' + value.Replace("\"", "\"\"", StringComparison.Ordinal) + '"'
+            : value;
+    }
+
+    private static string FormatDate(DateTime date) => date.ToString("O", CultureInfo.InvariantCulture);
+
+    private static string FormatDate(DateTime? date) => date?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty;
+
+    private static class OrderExportHeaders
+    {
+        public static readonly string[] OrderHeaders =
+        {
+            "uniqueId",
+            "referenceId",
+            "orderInfo",
+            "orderNumber",
+            "orderStatusCol",
+            "orderStatus",
+            "formattedTotal",
+            "customerEmail",
+            "customerName",
+            "customerId",
+            "customerUsername",
+            "shippingCountry",
+            "totalAmount",
+            "currency",
+            "storeAlias",
+            "createDate",
+            "updateDate",
+            "paidDate"
+        };
+
+        public static readonly string[] LineExportHeaders = new[] { "rowType" }
+            .Concat(OrderHeaders)
+            .Concat(new[]
+            {
+                "orderLineKey",
+                "productSku",
+                "productTitle",
+                "variantSku",
+                "variantTitle",
+                "quantity",
+                "unitPrice",
+                "vat",
+                "discount",
+                "lineTotal"
+            })
+            .ToArray();
     }
 
     public class ChartData

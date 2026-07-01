@@ -89,7 +89,7 @@ public static class StringExtension
             }
             else
             {
-                return (value == "1" || value.ToLower() == "y");
+                return value == "1" || value.Equals("y", StringComparison.OrdinalIgnoreCase);
             }
         }
 
@@ -101,9 +101,10 @@ public static class StringExtension
             return false;
         }
 
-        input = input.Trim();
-        return input.StartsWith("{") && input.EndsWith("}")
-               || input.StartsWith("[") && input.EndsWith("]");
+        var span = input.AsSpan().Trim();
+        return span.Length > 1
+            && ((span[0] == '{' && span[^1] == '}')
+                || (span[0] == '[' && span[^1] == ']'));
     }
 
     internal static bool IsBoolean(this string? value)
@@ -219,36 +220,32 @@ public static class StringExtension
 
     internal static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)
     {
-        List<IPrice> prices = new List<IPrice>();
-
-
         if (priceJson.IsJson())
         {
             JArray _prices = JArray.Parse(priceJson);
+            var prices = new List<IPrice>(_prices.Count);
 
             foreach (JToken price in _prices)
             {
-                CurrencyModel? currency = price[KeyExists(price, "Currency") ? "Currency" : "currency"].ToObject<CurrencyModel>(EkomJsonDotNet.Serializer);
+                CurrencyModel? currency = GetPropertyIgnoreCase(price, "Currency")?.ToObject<CurrencyModel>(EkomJsonDotNet.Serializer);
 
                 prices.Add(new Price(price, currency, vat, vatIncludedInPrice));
             }
+
+            return prices;
         }
-        else
+
+        if (fallbackCurrency == null)
         {
-            if (fallbackCurrency == null)
-            {
-                IStore? store = API.Store.Instance.GetStore();
+            IStore? store = API.Store.Instance.GetStore();
 
-                fallbackCurrency = store.Currency;
-            }
-
-            prices = new List<IPrice>
-            {
-                new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice)
-            };
+            fallbackCurrency = store.Currency;
         }
 
-        return prices;
+        return new List<IPrice>(1)
+        {
+            new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice)
+        };
     }
 
     public static List<IPrice> GetPriceValues(
@@ -262,29 +259,31 @@ public static class StringExtension
         string[]? categories = null
         )
     {
-        var prices = new List<IPrice>();
+        var discountService = Configuration.Resolver.GetService<ProductDiscountService>();
 
         if (priceJson.IsJson())
         {
             var _prices = JArray.Parse(priceJson);
+            var prices = new List<IPrice>(_prices.Count);
 
             foreach (JToken price in _prices)
             {
-                string? currencyValue = price[KeyExists(price, "Currency") ? "Currency" : "currency"].Value<string>();
+                string? currencyValue = GetPropertyIgnoreCase(price, "Currency")?.Value<string>();
                 CurrencyModel? currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
+                string? priceValue = GetPropertyIgnoreCase(price, "Price")?.Value<string>();
 
-                IDiscount? productDiscount = !string.IsNullOrEmpty(path)
-                    ? Configuration.Resolver.GetService<ProductDiscountService>()
+                IDiscount? productDiscount = !string.IsNullOrEmpty(path) && discountService != null
+                    ? discountService
                         .GetProductDiscount(
                             path,
                             storeAlias,
-                            price[KeyExists(price, "Price") ? "Price" : "price"].Value<string>(),
+                            priceValue,
                             categories
                         )
                     : null;
 
                 prices.Add(new Price(
-                    price[KeyExists(price, "Price") ? "Price" : "price"].Value<string>(),
+                    priceValue,
                     currency,
                     vat,
                     vatIncludedInPrice,
@@ -293,40 +292,38 @@ public static class StringExtension
                         : null)
                 );
             }
+
+            return prices;
         }
-        else
+
+        if (fallbackCurrency == null)
         {
-            if (fallbackCurrency == null)
-            {
-                IStore? store = API.Store.Instance.GetStore();
+            IStore? store = API.Store.Instance.GetStore();
 
-                fallbackCurrency = store.Currency;
-            }
-
-            IDiscount? productDiscount = !string.IsNullOrEmpty(path)
-                ? Configuration.Resolver.GetService<ProductDiscountService>()?
-                    .GetProductDiscount(
-                        path,
-                        storeAlias,
-                        priceJson,
-                        categories
-                    )
-                : null;
-
-            prices = new List<IPrice>
-            {
-                new Price(
-                    priceJson,
-                    fallbackCurrency,
-                    vat,
-                    vatIncludedInPrice,
-                    productDiscount != null
-                        ? new OrderedDiscount(productDiscount)
-                        : null)
-            };
+            fallbackCurrency = store.Currency;
         }
 
-        return prices;
+        IDiscount? singleProductDiscount = !string.IsNullOrEmpty(path) && discountService != null
+            ? discountService
+                .GetProductDiscount(
+                    path,
+                    storeAlias,
+                    priceJson,
+                    categories
+                )
+            : null;
+
+        return new List<IPrice>(1)
+        {
+            new Price(
+                priceJson,
+                fallbackCurrency,
+                vat,
+                vatIncludedInPrice,
+                singleProductDiscount != null
+                    ? new OrderedDiscount(singleProductDiscount)
+                    : null)
+        };
     }
     public static List<CurrencyValue> GetCurrencyValues(this string priceJson, string? storeAlias = null)
     {
@@ -513,6 +510,13 @@ public static class StringExtension
         return obj?.ContainsKey(key) ?? false;
     }
 
+    private static JToken? GetPropertyIgnoreCase(JToken token, string key)
+    {
+        return token is JObject obj && obj.TryGetValue(key, StringComparison.OrdinalIgnoreCase, out var value)
+            ? value
+            : null;
+    }
+
     internal static List<CurrencyPrice> GetCurrencyPrices(this string priceJson)
     {
         List<CurrencyPrice>? values = new List<CurrencyPrice>();
@@ -544,11 +548,15 @@ public static class StringExtension
         if (!string.IsNullOrEmpty(nodeIds))
         {
             using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
+            var nodeService = scope.ServiceProvider.GetService<INodeService>();
+            if (nodeService == null)
+                return Enumerable.Empty<Image>();
 
             if (nodeIds.StartsWith("[") && nodeIds.IndexOf("mediakey", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 List<MediaCropImage>? imageList = JsonConvert.DeserializeObject<List<MediaCropImage>>(nodeIds);
+                if (imageList == null)
+                    return Enumerable.Empty<Image>();
 
                 foreach (MediaCropImage image in imageList)
                 {

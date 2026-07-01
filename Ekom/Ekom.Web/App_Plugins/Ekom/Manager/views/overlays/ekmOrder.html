@@ -49,6 +49,9 @@
 
     <div class="ekmOrder__shipping ekmSplit__column">
       <h4>Billing</h4>
+      <button type="button" class="btn btn-outline umb-outline" style="margin-bottom:10px;" ng-click="openCustomerInformationEditor()">
+        Edit customer information
+      </button>
 
       <p>Name: {{ model.editModel.order.customerInformation.customer.name }}</p>
       <p>Email: {{ model.editModel.order.customerInformation.customer.email }}</p>
@@ -341,6 +344,52 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="ekmCustomerInformationModal" ng-if="customerInformationEditorOpen" style="position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#fff; width:100%; max-width:760px; max-height:90vh; overflow:auto; border-radius:3px; box-shadow:0 10px 30px rgba(0,0,0,.25);">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:20px; border-bottom:1px solid #d8d7d9;">
+        <h3 style="margin:0;">Edit customer information</h3>
+        <button type="button" class="btn-reset" ng-click="closeCustomerInformationEditor()" ng-disabled="customerInformationSaving" aria-label="Close">&times;</button>
+      </div>
+
+      <form name="customerInformationForm" ng-submit="saveCustomerInformation()" style="padding:20px;">
+        <div class="ekmSplit">
+          <div class="ekmSplit__column">
+            <h4>Billing</h4>
+            <div class="control-group umb-control-group" ng-repeat="field in customerInformationEditModel.customer track by field.key">
+              <label class="control-label">
+                {{ field.label }}
+                <small ng-if="field.isExtra">({{ field.key }})</small>
+              </label>
+              <div class="umb-property-editor">
+                <input type="text" class="umb-editor umb-textstring" ng-model="field.value" ng-disabled="customerInformationSaving" />
+              </div>
+            </div>
+          </div>
+
+          <div class="ekmSplit__column">
+            <h4>Shipping</h4>
+            <div class="control-group umb-control-group" ng-repeat="field in customerInformationEditModel.shipping track by field.key">
+              <label class="control-label">
+                {{ field.label }}
+                <small ng-if="field.isExtra">({{ field.key }})</small>
+              </label>
+              <div class="umb-property-editor">
+                <input type="text" class="umb-editor umb-textstring" ng-model="field.value" ng-disabled="customerInformationSaving" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;">
+          <button type="button" class="btn btn-outline umb-outline" ng-click="closeCustomerInformationEditor()" ng-disabled="customerInformationSaving">Cancel</button>
+          <button type="submit" class="btn btn-success" ng-disabled="customerInformationSaving">
+            {{ customerInformationSaving ? 'Saving...' : 'Save customer information' }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </article>

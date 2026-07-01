@@ -127,6 +127,8 @@ class EnsureTablesExist : IComponent
             _dbService.CreateTables();
         }
 
+        _dbService.EnsureOrderActivityLogTypeColumn();
+
         logger.LogDebug("Done");
     }
 

@@ -194,9 +194,17 @@ public class Store : NodeEntity, IStore
     /// Stored VAT value: 0.285<para></para>
     /// Effective VAT value: 28.5%<para></para>
     /// </summary>
-    public virtual decimal Vat => string.IsNullOrEmpty(Properties.GetPropertyValue("vat"))
-        ? 0
-        : Convert.ToDecimal(Properties["vat"]) / 100;
+    public virtual decimal Vat
+    {
+        get
+        {
+            var value = Properties.GetPropertyValue("vat");
+
+            return VatParser.TryParsePercentageRate(value, out var vat)
+                ? vat
+                : 0;
+        }
+    }
 
     /// <summary>
     /// Used by Ekom extensions

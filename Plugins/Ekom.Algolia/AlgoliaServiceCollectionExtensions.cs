@@ -51,6 +51,7 @@ public static class AlgoliaServiceCollectionExtensions
         });
 
         services.AddSingleton<IndexNameBuilder>();
+        services.AddSingleton<ContentIndexNameResolver>();
         services.AddSingleton<AlgoliaStoreResolver>();
         services.AddSingleton<AlgoliaSearchCacheVersionProvider>();
         services.AddSingleton<AlgoliaSearchCacheKeyBuilder>();
@@ -68,6 +69,12 @@ public static class AlgoliaServiceCollectionExtensions
         services.AddSingleton<IAlgoliaCategoryIndexService, AlgoliaCategoryIndexService>();
         services.AddSingleton<AlgoliaCategoryIndexWorker>();
         services.AddHostedService(sp => sp.GetRequiredService<AlgoliaCategoryIndexWorker>());
+
+        services.AddSingleton<IAlgoliaContentIndexQueue, AlgoliaContentIndexQueue>();
+        services.AddSingleton<AlgoliaContentIndexExecutor>();
+        services.AddSingleton<IAlgoliaContentIndexService, AlgoliaContentIndexService>();
+        services.AddSingleton<AlgoliaContentIndexWorker>();
+        services.AddHostedService(sp => sp.GetRequiredService<AlgoliaContentIndexWorker>());
 
         services.AddSingleton<IAlgoliaUserTokenProvider, DefaultAlgoliaUserTokenProvider>();
         services.AddSingleton<IAlgoliaEventService, AlgoliaEventService>();

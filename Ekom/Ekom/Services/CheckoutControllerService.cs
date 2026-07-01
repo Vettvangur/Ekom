@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using OrderStatus = Ekom.Utilities.OrderStatus;
 
 namespace Ekom.Services;
@@ -165,7 +167,7 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        return await PayAsync(paymentRequest, culture, order);
+        return await PayAsync(paymentRequest, culture, order, ct: ct).ConfigureAwait(false);
     }
 
     public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, IOrderInfo order, CancellationToken ct = default)
@@ -558,7 +560,7 @@ public class CheckoutControllerService
 
         string storeAlias = order.StoreInfo.Alias;
 
-        Models.IPaymentProvider? ekomPP = Providers.Instance.GetPaymentProvider(order.PaymentProvider.Key, storeAlias);
+        var ekomPP = await Providers.Instance.GetPaymentProviderAsync(order.PaymentProvider.Key, storeAlias, ct: ct);
 
         if (ekomPP == null)
         {
@@ -575,10 +577,22 @@ public class CheckoutControllerService
             {
                 GrandTotal = amount,
                 Price = amount,
+                VAT = order.Vat.Value,
                 Title = orderTitle,
                 Quantity = 1,
             }
         };
+
+        var orderItemsPreparingEventArgs = new PaymentOrderItemsPreparingEventArgs
+        {
+            OrderInfo = order,
+            PaymentRequest = paymentRequest,
+            OrderItems = new System.Collections.ObjectModel.Collection<OrderItem>(orderItems),
+        };
+
+        CheckoutEvents.OnPaymentOrderItemsPreparing(this, orderItemsPreparingEventArgs);
+        await CheckoutEvents.OnPaymentOrderItemsPreparingAsync(this, orderItemsPreparingEventArgs, ct);
+        orderItems = orderItemsPreparingEventArgs.OrderItems.ToList();
 
         Logger.LogInformation(
             "Payment Provider: {PaymentProvider}, {Name} offline: {isOfflinePayment}",
@@ -586,13 +600,13 @@ public class CheckoutControllerService
             ekomPP.Name,
             isOfflinePayment);
 
-        string paymentErrorUrl = ekomPP.GetValue("errorUrl", storeAlias);
+        var paymentErrorUrl = ResolvePaymentProviderUrl(ekomPP, "errorUrl", order, paymentRequest.Culture);
 
-        string paymentSuccessUrl = ekomPP.GetValue("successUrl", storeAlias);
+        var paymentSuccessUrl = ResolvePaymentProviderUrl(ekomPP, "successUrl", order, paymentRequest.Culture);
 
-        string GetEncodedUrl = _httpCtx.Request.GetEncodedUrl();
+        var GetEncodedUrl = _httpCtx.Request.GetEncodedUrl();
 
-        string errorUrl = Utilities.UriHelper.EnsureFullUri(
+        var errorUrl = Utilities.UriHelper.EnsureFullUri(
         paymentErrorUrl,
         new Uri(GetEncodedUrl));
 
@@ -610,7 +624,7 @@ public class CheckoutControllerService
                     OrderStatus.OfflinePayment,
                     order.UniqueId, ct: ct).ConfigureAwait(false);
 
-                string? memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember().Result?.Key.ToString() : "" : "";
+                string? memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? (await MemberService.GetCurrentMember())?.Key.ToString() : "" : "";
 
                 PayEventArgs eventsArgs = new PayEventArgs
                 {
@@ -668,18 +682,18 @@ public class CheckoutControllerService
             Uri paymentReturnCancelUrl = new(BuildPaymentReturnUrl(order.UniqueId, "cancel"));
 
             Uri successUrl = PaymentsUriHelper.EnsureFullUri(
-                ekomPP.GetValue("successUrl", storeAlias),
+                ResolvePaymentProviderUrl(ekomPP, "successUrl", order, paymentRequest.Culture),
                 _httpCtx.Request);
             successUrl = PaymentsUriHelper.AddQueryString(
                 successUrl,
                 "?orderId=" + order.UniqueId
             );
 
-            string basePaymentProvider = string.IsNullOrEmpty(ekomPP.GetValue("basePaymentProvider")) ? ekomPP.Name : ekomPP.GetValue("basePaymentProvider");
+            var basePaymentProvider = string.IsNullOrEmpty(ekomPP.GetValue("basePaymentProvider")) ? ekomPP.Name : ekomPP.GetValue("basePaymentProvider");
 
             Payments.IPaymentProvider pp = ekomPayments.GetPaymentProvider(basePaymentProvider);
 
-            string language = !string.IsNullOrEmpty(ekomPP.GetValue("language", order.StoreInfo.Alias))
+            var language = !string.IsNullOrEmpty(ekomPP.GetValue("language", order.StoreInfo.Alias))
                 ? ekomPP.GetValue("language", order.StoreInfo.Alias)
                 : "is-IS";
 
@@ -743,6 +757,162 @@ public class CheckoutControllerService
             };
         }
     }
+
+    internal virtual string ResolvePaymentProviderUrl(
+        Models.IPaymentProvider paymentProvider,
+        string propertyAlias,
+        IOrderInfo order,
+        string? culture = null)
+    {
+        ArgumentNullException.ThrowIfNull(paymentProvider);
+        ArgumentNullException.ThrowIfNull(order);
+
+        var resolvedCulture = NullIfWhiteSpace(culture)
+            ?? NullIfWhiteSpace(order.Culture)
+            ?? NullIfWhiteSpace(order.StoreInfo.Culture);
+        var storeAlias = order.StoreInfo.Alias;
+
+        var value = ResolvePaymentProviderPropertyValue(
+            paymentProvider,
+            propertyAlias,
+            resolvedCulture,
+            storeAlias);
+
+        return ResolveContentPickerUrl(value, resolvedCulture);
+    }
+
+    private static string ResolvePaymentProviderPropertyValue(
+        Models.IPaymentProvider paymentProvider,
+        string propertyAlias,
+        string? culture,
+        string storeAlias)
+    {
+        var rawValue = paymentProvider.GetRawValue(propertyAlias);
+        var editorType = TryGetPropertyEditorType(rawValue);
+
+        if (editorType == PropertyEditorType.Language)
+        {
+            return ResolvePropertyValue(rawValue, culture)
+                ?? ResolvePropertyValue(rawValue, storeAlias)
+                ?? ResolvePropertyValue(rawValue, null, fallback: true)
+                ?? string.Empty;
+        }
+
+        if (editorType == PropertyEditorType.Store)
+        {
+            return ResolvePropertyValue(rawValue, storeAlias)
+                ?? ResolvePropertyValue(rawValue, culture)
+                ?? ResolvePropertyValue(rawValue, null, fallback: true)
+                ?? string.Empty;
+        }
+
+        return ResolvePropertyValue(rawValue, culture)
+            ?? ResolvePropertyValue(rawValue, storeAlias)
+            ?? ResolvePropertyValue(rawValue, null, fallback: true)
+            ?? string.Empty;
+    }
+
+    private static PropertyEditorType? TryGetPropertyEditorType(string? rawValue)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue) || !rawValue.IsJson())
+            return null;
+
+        try
+        {
+            var node = JsonNode.Parse(rawValue);
+            var type = node?["type"]?.GetValue<string>();
+
+            return Enum.TryParse<PropertyEditorType>(type, ignoreCase: true, out var editorType)
+                ? editorType
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string? ResolvePropertyValue(string? rawValue, string? alias, bool fallback = false)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue))
+            return null;
+
+        var value = rawValue.GetEkomPropertyEditorValue(alias ?? string.Empty, fallback);
+
+        return NullIfWhiteSpace(value);
+    }
+
+    private string ResolveContentPickerUrl(string value, string? culture)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var pickerValue = TryGetContentPickerValue(value) ?? value;
+
+        if (!LooksLikeContentPickerValue(pickerValue))
+            return value;
+
+        var nodeService = _factory.GetService<INodeService>();
+        var url = nodeService?.GetUrl(pickerValue, culture ?? string.Empty);
+
+        return !string.IsNullOrWhiteSpace(url) && url != "#"
+            ? url
+            : value;
+    }
+
+    private static string? TryGetContentPickerValue(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || !value.IsJson())
+            return null;
+
+        try
+        {
+            var node = JsonNode.Parse(value);
+
+            if (node is JsonArray array)
+                return array.Select(TryGetContentPickerValue).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+
+            return TryGetContentPickerValue(node);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string? TryGetContentPickerValue(JsonNode? node)
+    {
+        if (node is null)
+            return null;
+
+        if (node is JsonValue jsonValue && jsonValue.TryGetValue<string>(out var value))
+            return NullIfWhiteSpace(value);
+
+        if (node is not JsonObject obj)
+            return null;
+
+        foreach (var key in new[] { "udi", "value", "key", "id" })
+        {
+            if (obj.TryGetPropertyValue(key, out var propertyValue))
+            {
+                var propertyStringValue = TryGetContentPickerValue(propertyValue);
+                if (!string.IsNullOrWhiteSpace(propertyStringValue))
+                    return propertyStringValue;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool LooksLikeContentPickerValue(string value)
+    {
+        return value.StartsWith("umb://document/", StringComparison.OrdinalIgnoreCase)
+            || Guid.TryParse(value, out _)
+            || int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _);
+    }
+
+    private static string? NullIfWhiteSpace(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private string BuildPaymentReturnUrl(Guid orderId, string outcome)
     {

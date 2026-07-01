@@ -61,6 +61,19 @@ public class Configuration
     }
 
     /// <summary>
+    /// Ekom:ExamineSearchNormalizedFields
+    /// Fields that should be duplicated into normalized Examine fields for more forgiving search.
+    /// </summary>
+    public virtual IReadOnlyList<string> ExamineSearchNormalizedFields
+    {
+        get
+        {
+            return _configuration.GetSection("Ekom:ExamineSearchNormalizedFields").Get<string[]>()
+                ?? ["nodeName", "title", "pageTitle", "sku", "searchTags", "summary", "description"];
+        }
+    }
+
+    /// <summary>
     /// Umbraco:CMS:RequestHandler:CharCollection
     /// Gets the Umbraco CharCollection
     /// </summary>

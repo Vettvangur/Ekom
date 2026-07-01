@@ -497,7 +497,7 @@ partial class OrderService
         OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(store).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(store, ct: ct).ConfigureAwait(false);
         }
         else
         {
@@ -540,28 +540,32 @@ partial class OrderService
 
                 ArgumentNullException.ThrowIfNull(orderedVariant, "Ordered Variant is null");
 
-                variant = Catalog.Instance.GetVariant(orderedVariant.Key, storeAlias);
+                variant = await Catalog.Instance.GetVariantAsync(orderedVariant.Key, storeAlias, ct: ct);
 
                 ArgumentNullException.ThrowIfNull(variant, "Variant is null");
 
-                existingStock = variant.Stock;
+                existingStock = Stock.Instance.GetStock(variant.Key, store.Alias);
             }
             else
             {
-                existingStock = product.Stock;
+                existingStock = Stock.Instance.GetStock(product.Key, store.Alias);
             }
 
             VerifyStock(quantity, existingStock, product, variant);
 
             orderline.Quantity = quantity;
 
-            var updatedEventArgs = new UpdatedOrderlineEventArgs()
+            if (settings.FireEvents)
             {
-                OrderInfo = orderInfo
-            };
+                var updatedEventArgs = new UpdatedOrderlineEventArgs()
+                {
+                    OrderInfo = orderInfo
+                };
 
-            OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+                OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
+                await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+            }
+
 
             return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
@@ -881,11 +885,13 @@ partial class OrderService
                 OrderInfo = orderInfo
             };
 
-            OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+            if (settings.FireEvents)
+            {
+                OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
+                await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+            }
 
-
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+            return await UpdateOrderAndOrderInfoAsync(updatedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -1084,10 +1090,13 @@ partial class OrderService
             OrderInfo = orderInfo
         };
 
-        OrderEvents.OnAddingOrderline(this, addingOrderlineEventArgs);
-        await OrderEvents.OnAddingOrderlineAsync(this, addingOrderlineEventArgs, ct);
+        if (settings.FireEvents)
+        {
+            OrderEvents.OnAddingOrderline(this, addingOrderlineEventArgs);
+            await OrderEvents.OnAddingOrderlineAsync(this, addingOrderlineEventArgs, ct);
+        }
 
-        if (settings != null && settings.CustomData != null)
+        if (settings.CustomData.Any())
         {
             orderInfo = (OrderInfo)(await UpdateCustomerInformationInProvidersAsync(settings.CustomData, orderInfo, ct));
         }
@@ -1216,7 +1225,7 @@ partial class OrderService
                 isNewOrderLine = true;
             }
 
-            var productDiscount = product.ProductDiscount();
+            var productDiscount = await product.ProductDiscountAsync(ct: ct);
 
             // Product discounts do not contain constraints that change with quantity updates or order modifications
             // It's therefore enough to only check on OrderLine creation
@@ -1248,16 +1257,21 @@ partial class OrderService
                 OrderLine = orderLine
             };
 
-            OrderEvents.OnAddedOrderline(this, addedEventArgs);
-            await OrderEvents.OnAddedOrderlineAsync(this, addedEventArgs,ct);
-
-            var updatedEventArgs = new UpdatedOrderlineEventArgs()
+            if (settings.FireEvents)
             {
-                OrderInfo = orderInfo
-            };
+                OrderEvents.OnAddedOrderline(this, addedEventArgs);
+                await OrderEvents.OnAddedOrderlineAsync(this, addedEventArgs, ct);
 
-            OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+                var updatedEventArgs = new UpdatedOrderlineEventArgs()
+                {
+                    OrderInfo = addedEventArgs.OrderInfo
+                };
+
+                OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
+                await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+
+                addedEventArgs.OrderInfo = updatedEventArgs.OrderInfo;
+            }
 
             var updatedOrderInfo = await UpdateOrderAndOrderInfoAsync(addedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
@@ -1292,11 +1306,11 @@ partial class OrderService
         {
             _logger.LogDebug("Update Order with new OrderInfo");
 
-            VerifyProviders(orderInfo);
             VerifyDiscounts(orderInfo);
             AddGlobalDiscounts(orderInfo);
+            VerifyProviders(orderInfo);
 
-            orderInfo.Culture = CultureInfo.CurrentCulture.Name;
+            orderInfo.Culture = ResolveOrderCulture(orderInfo);
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest?.IPAddress ?? "";
 
@@ -1404,6 +1418,31 @@ partial class OrderService
             throw;
         }
 
+    }
+
+    private string ResolveOrderCulture(OrderInfo orderInfo)
+    {
+        var store = _storeSvc.GetStoreByAlias(orderInfo.StoreInfo.Alias);
+        var storeCultures = store?.Cultures ?? [];
+        var currentCulture = CultureInfo.CurrentCulture.Name;
+
+        if (IsStoreCulture(currentCulture, storeCultures))
+        {
+            return currentCulture;
+        }
+
+        if (IsStoreCulture(orderInfo.Culture, storeCultures))
+        {
+            return orderInfo.Culture;
+        }
+
+        return store?.Culture.Name ?? orderInfo.StoreInfo.Culture;
+    }
+
+    private static bool IsStoreCulture(string? culture, IEnumerable<CultureInfoDto> storeCultures)
+    {
+        return !string.IsNullOrWhiteSpace(culture)
+            && storeCultures.Any(x => string.Equals(x.Name, culture, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -1963,9 +2002,26 @@ partial class OrderService
             {
                 if (line.Product.VariantGroups.Any())
                 {
+                    IProduct? product = Catalog.Instance.GetProduct(line.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false);
+
+                    if (product == null)
+                    {
+                        return false;
+                    }
+
                     foreach (OrderedVariant? variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        decimal variantStock = Stock.Instance.GetStock(variant.Key);
+                        IVariant? catalogVariant = Catalog.Instance.GetVariant(variant.Key, orderInfo.StoreInfo.Alias);
+
+                        if (catalogVariant == null)
+                        {
+                            return false;
+                        }
+
+                        decimal variantStock = StockBufferHelper.GetEffectiveStock(
+                            Stock.Instance.GetStock(variant.Key, orderInfo.StoreInfo.Alias),
+                            product,
+                            catalogVariant);
 
                         if (variantStock < line.Quantity)
                         {
@@ -1975,7 +2031,16 @@ partial class OrderService
                 }
                 else
                 {
-                    decimal productStock = Stock.Instance.GetStock(line.ProductKey);
+                    IProduct? product = Catalog.Instance.GetProduct(line.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false);
+
+                    if (product == null)
+                    {
+                        return false;
+                    }
+
+                    decimal productStock = StockBufferHelper.GetEffectiveStock(
+                        Stock.Instance.GetStock(line.ProductKey, orderInfo.StoreInfo.Alias),
+                        product);
 
                     if (productStock < line.Quantity)
                     {
@@ -1990,21 +2055,15 @@ partial class OrderService
 
     private void VerifyStock(decimal quantity, decimal existingStock, IProduct product, IVariant? variant = null)
     {
-        var bufferStock =
-            product.StockBuffer
-            ?? product.CategoryAncestors?.FirstOrDefault(c => c.StockBuffer.HasValue)?.StockBuffer
-            ?? 0;
-
-        existingStock -= bufferStock;
-
-        existingStock = Math.Max(0, existingStock);
+        var bufferStock = StockBufferHelper.GetConfiguredStockBuffer(product, variant);
+        existingStock = StockBufferHelper.GetEffectiveStock(existingStock, product, variant);
 
         if (!_config.DisableStock
         && !product.Backorder
         && existingStock < quantity)
         {
             throw new NotEnoughStockException(
-                $"Stock not available for product {product.Key} and variant {variant?.Key}");
+                $"Stock not available for product {product.Key} and variant {variant?.Key}. ExistingStock: {existingStock}. Quantity: {quantity} BufferStock: {bufferStock}");
         }
     }
 
@@ -2018,7 +2077,7 @@ partial class OrderService
     {
         if (orderInfo.PaymentProvider == null && orderInfo.ShippingProvider == null) return;
 
-        decimal total = orderInfo.GrandTotal.Value;
+        decimal total = GetProviderConstraintAmount(orderInfo);
         string countryCode = orderInfo.CustomerInformation.Customer.Country;
         string shippingCountry = orderInfo.CustomerInformation.Shipping.Country ?? countryCode;
 
@@ -2071,6 +2130,23 @@ partial class OrderService
             orderInfo.ShippingProvider.Key,
             orderInfo.UniqueId);
         orderInfo.ShippingProvider = null;
+    }
+
+    private static decimal GetProviderConstraintAmount(OrderInfo orderInfo)
+    {
+        decimal amount = orderInfo.ChargedAmount.Value;
+
+        if (orderInfo.ShippingProvider != null)
+        {
+            amount -= orderInfo.ShippingProvider.Price.Value;
+        }
+
+        if (orderInfo.PaymentProvider != null)
+        {
+            amount -= orderInfo.PaymentProvider.Price.Value;
+        }
+
+        return Math.Max(0, amount);
     }
 
     protected virtual async Task<IOrderInfo> UpdateCustomerInformationInProvidersAsync(Dictionary<string, string>? collection, IOrderInfo order, CancellationToken ct = default)
