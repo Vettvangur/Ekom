@@ -2,7 +2,7 @@
 @{
     Layout = "Master.cshtml";
 
-    var rootNode = Model.GetRootNode();
+    var rootNode = Model.GetSite();
 
     var product = await _catalog.GetProductAsync();
 

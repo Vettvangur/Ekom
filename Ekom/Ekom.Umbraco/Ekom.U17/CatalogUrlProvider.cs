@@ -16,12 +16,14 @@ namespace Ekom.Umb;
 internal sealed class CatalogUrlProvider : IUrlProvider
 {
     private const string CacheKey = "EkomUrlProvider-GetOtherUrls-";
+    private const string ProviderAlias = "Ekom.CatalogUrlProvider";
 
-    public string Alias => "Ekom.CatalogUrlProvider";
+    public string Alias => ProviderAlias;
 
     private readonly ILogger<CatalogUrlProvider> _logger;
     private readonly IAppCache _requestCache;
     private readonly IUmbracoContextAccessor _umbracoContextAccessor;
+    private readonly IUmbracoContextFactory _umbracoContextFactory;
     private readonly IConfiguration _configuration;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
@@ -29,12 +31,14 @@ internal sealed class CatalogUrlProvider : IUrlProvider
         ILogger<CatalogUrlProvider> logger,
         AppCaches appCaches,
         IUmbracoContextAccessor umbracoContextAccessor,
+        IUmbracoContextFactory umbracoContextFactory,
         IConfiguration configuration,
         IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _requestCache = appCaches.RequestCache;
         _umbracoContextAccessor = umbracoContextAccessor;
+        _umbracoContextFactory = umbracoContextFactory;
         _configuration = configuration;
         _serviceScopeFactory = serviceScopeFactory;
     }
@@ -79,56 +83,62 @@ internal sealed class CatalogUrlProvider : IUrlProvider
         {
             if (!_umbracoContextAccessor.TryGetUmbracoContext(out var context))
             {
-                return Enumerable.Empty<UrlInfo>();
+                using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+                return GetUrls(id, current, contextReference.UmbracoContext);
             }
 
-            var content = context.Content?.GetById(id);
-
-            if (content == null || (!content.IsDocumentType("ekmProduct") && !content.IsDocumentType("ekmCategory")))
-            {
-                return Enumerable.Empty<UrlInfo>();
-            }
-
-            if (content.ContentType.Alias == "ekmCategory" && content.Value<bool>("ekmVirtualUrl"))
-            {
-                return Enumerable.Empty<UrlInfo>();
-            }
-
-            using var scope = _serviceScopeFactory.CreateScope();
-            var storeApi = scope.ServiceProvider.GetRequiredService<API.Store>();
-            var catalogApi = scope.ServiceProvider.GetRequiredService<API.Catalog>();
-
-            var stores = storeApi.GetAllStores().ToList();
-            if (!stores.Any())
-            {
-                return Enumerable.Empty<UrlInfo>();
-            }
-
-            var absoluteUrls = _configuration["Ekom:AbsoluteUrls"].IsBoolean();
-            var urls = new HashSet<UrlInfo>();
-
-            foreach (var store in stores)
-            {
-                try
-                {
-                    INodeEntityWithUrl? node = content.ContentType.Alias == "ekmProduct"
-                        ? catalogApi.GetProduct(content.Key, store.Alias, raiseEvent: false)
-                        : catalogApi.GetCategory(content.Key, store.Alias, raiseEvent: false);
-
-                    if (node != null)
-                    {
-                        PopulateUrls(node, store, urls, current, absoluteUrls);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "{CacheKey} Failed.", CacheKey);
-                    return Enumerable.Empty<UrlInfo>();
-                }
-            }
-
-            return urls;
+            return GetUrls(id, current, context);
         });
+    }
+
+    private IEnumerable<UrlInfo> GetUrls(int id, Uri current, IUmbracoContext context)
+    {
+        var content = context.Content?.GetById(id);
+
+        if (content == null || (!content.IsDocumentType("ekmProduct") && !content.IsDocumentType("ekmCategory")))
+        {
+            return Enumerable.Empty<UrlInfo>();
+        }
+
+        if (content.ContentType.Alias == "ekmCategory" && content.Value<bool>("ekmVirtualUrl"))
+        {
+            return Enumerable.Empty<UrlInfo>();
+        }
+
+        using var scope = _serviceScopeFactory.CreateScope();
+        var storeApi = scope.ServiceProvider.GetRequiredService<API.Store>();
+        var catalogApi = scope.ServiceProvider.GetRequiredService<API.Catalog>();
+
+        var stores = storeApi.GetAllStores().ToList();
+        if (!stores.Any())
+        {
+            return Enumerable.Empty<UrlInfo>();
+        }
+
+        var absoluteUrls = _configuration["Ekom:AbsoluteUrls"].IsBoolean();
+        var urls = new HashSet<UrlInfo>();
+
+        foreach (var store in stores)
+        {
+            try
+            {
+                INodeEntityWithUrl? node = content.ContentType.Alias == "ekmProduct"
+                    ? catalogApi.GetProduct(content.Key, store.Alias, raiseEvent: false)
+                    : catalogApi.GetCategory(content.Key, store.Alias, raiseEvent: false);
+
+                if (node != null)
+                {
+                    PopulateUrls(node, store, urls, current, absoluteUrls);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "{CacheKey} Failed.", CacheKey);
+                return Enumerable.Empty<UrlInfo>();
+            }
+        }
+
+        return urls;
     }
 
     private static void PopulateUrls(INodeEntityWithUrl node, IStore store, HashSet<UrlInfo> urls, Uri current, bool absoluteUrls)
@@ -164,7 +174,8 @@ internal sealed class CatalogUrlProvider : IUrlProvider
 
     private static UrlInfo CreateUrlInfo(string url, string culture)
     {
-        return new UrlInfo(new Uri(url, UriKind.RelativeOrAbsolute), culture, null);
+        var uri = new Uri(url, UriKind.RelativeOrAbsolute);
+        return new UrlInfo(uri, culture, null, ProviderAlias, uri.IsAbsoluteUri);
     }
 
     private static string UrlModifier(string url, bool absoluteUrls, Uri current, Ekom.Models.UmbracoDomain domain)

@@ -25,7 +25,7 @@ public class Catalog
     readonly ILogger<Catalog> _logger;
     readonly HttpContext? _httpContext;
     readonly IStoreService _storeSvc;
-    readonly IMetafieldService _metafieldService;
+    readonly IServiceScopeFactory _serviceScopeFactory;
     readonly IPerStoreCache<IProductDiscount> _productDiscountCache; // must be before product cache
     readonly IPerStoreIndexedCache<IProduct> _productCache;
     readonly IPerStoreIndexedCache<ICategory> _categoryCache;
@@ -38,7 +38,7 @@ public class Catalog
     internal Catalog(
         ILogger<Catalog> logger,
         Configuration config,
-        IMetafieldService metafieldService,
+        IServiceScopeFactory serviceScopeFactory,
         IPerStoreIndexedCache<IProduct> productCache,
         IPerStoreIndexedCache<ICategory> categoryCache,
         IPerStoreCache<IProductDiscount> productDiscountCache,
@@ -56,7 +56,7 @@ public class Catalog
         _variantGroupCache = variantGroupCache;
         _productDiscountCache = productDiscountCache;
         _storeSvc = storeService;
-        _metafieldService = metafieldService;
+        _serviceScopeFactory = serviceScopeFactory;
         _httpContext = httpContextAccessor?.HttpContext;
         _productFilterService = productFilterService;
     }
@@ -1409,7 +1409,8 @@ public class Catalog
 
     public IEnumerable<Metafield> GetMetafields()
     {
-        return _metafieldService.GetMetafields();
+        using var scope = _serviceScopeFactory.CreateScope();
+        return scope.ServiceProvider.GetRequiredService<IMetafieldService>().GetMetafields().ToList();
     }
 
     /// <summary>

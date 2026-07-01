@@ -1,7 +1,7 @@
 @inherits UmbracoViewPage
 
 @{
-    var root = Model.GetRootNode();
+    var root = Model.GetSite();
     var companyName = root.Value<string>("companyName") ?? "Ekom";
     var pageTitle = Model.GetTitle();
     var description = Model.HasValue("metaDescription") ? Model.Value<string>("metaDescription") : string.Empty;

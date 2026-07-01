@@ -8,7 +8,7 @@
 
     var order = await _order.GetOrderAsync();
 
-    var rootNode = Model.GetRootNode();
+    var rootNode = Model.GetSite();
 
     var signInNode = rootNode.FirstChildOfType("signIn");
 

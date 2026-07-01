@@ -41,6 +41,7 @@ static class Registrations
         services.AddSingleton(sp => new Configuration(config));
         services.AddSingleton<IStartupFilter, EkomAspNetCoreStartupFilter>();
         services.AddSingleton<IAuthorizationHandler, UmbracoUserAuthorizationHandler>();
+        services.AddSingleton<PaymentsConfiguration>();
 
         services.AddSingleton<IStoreDomainCache, StoreDomainCache>();
         services.AddSingleton<IBaseCache<IStore>, StoreCache>();
@@ -95,6 +96,7 @@ static class Registrations
         services.AddSingleton<IMetaTrackingDispatcher>(sp => sp.GetRequiredService<MetaTrackingDispatcher>());
         services.AddHostedService(sp => sp.GetRequiredService<MetaTrackingDispatcher>());
         services.AddTransient<Ekom.Services.IMailService, MailService>();
+        services.AddTransient<EkomPayments>();
         services.AddTransient<DatabaseService>();
 
         services.AddTransient<CountriesRepository>();
@@ -131,7 +133,7 @@ static class Registrations
             new Catalog(
                 sp.GetRequiredService<ILogger<Catalog>>(),
                 sp.GetRequiredService<Configuration>(),
-                sp.GetRequiredService<IMetafieldService>(),
+                sp.GetRequiredService<IServiceScopeFactory>(),
                 sp.GetRequiredService<IPerStoreIndexedCache<IProduct>>(),
                 sp.GetRequiredService<IPerStoreIndexedCache<ICategory>>(),
                 sp.GetRequiredService<IPerStoreCache<IProductDiscount>>(),

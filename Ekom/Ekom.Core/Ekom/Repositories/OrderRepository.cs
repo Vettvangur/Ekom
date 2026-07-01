@@ -46,9 +46,9 @@ class OrderRepository
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        decimal referenceId = (decimal)await db.InsertWithIdentityAsync(orderData, token: ct).ConfigureAwait(false);
+        var referenceId = await db.InsertWithIdentityAsync(orderData, token: ct).ConfigureAwait(false);
 
-        orderData.ReferenceId = (int)referenceId;
+        orderData.ReferenceId = Convert.ToInt32(referenceId, System.Globalization.CultureInfo.InvariantCulture);
     }
 
     public async Task UpdateOrderAsync(OrderData orderData, CancellationToken ct = default)

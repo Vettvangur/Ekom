@@ -1,4 +1,6 @@
-using Ekom.Utilities;namespace Ekom.Models;
+using Ekom.Utilities;
+
+namespace Ekom.Models;
 
 public class OrderRequest
 {
@@ -6,6 +8,7 @@ public class OrderRequest
     public Guid? VariantId { get; set; }
     public string StoreAlias { get; set; } = string.Empty;
     public decimal Quantity { get; set; } = 1;
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     public OrderAction? Action { get; set; } = OrderAction.AddOrUpdate;
     public OrderConsent? Consent { get; set; }
     public OrderTracking? Tracking { get; set; }

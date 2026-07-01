@@ -230,16 +230,24 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
 
   private setPrice(storeAlias: string, currency: string, rawPrice: string): void {
     const price = this.parsePrice(rawPrice);
-    const prices = [...(this.internalValue[storeAlias] ?? [])];
-    const existing = prices.find(item => item.Currency === currency);
+    let updatedExisting = false;
+    const prices = (this.internalValue[storeAlias] ?? []).map(item => {
+      if (item.Currency !== currency) {
+        return item;
+      }
 
-    if (existing == null) {
+      updatedExisting = true;
+      return {
+        ...item,
+        Price: price,
+      };
+    });
+
+    if (!updatedExisting) {
       prices.push({
         Currency: currency,
         Price: price,
       });
-    } else {
-      existing.Price = price;
     }
 
     this.internalValue = {

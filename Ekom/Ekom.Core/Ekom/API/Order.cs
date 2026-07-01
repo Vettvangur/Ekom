@@ -5,6 +5,7 @@ using Ekom.Models;
 using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -18,7 +19,15 @@ public partial class Order
     /// <summary>
     /// Order Instance
     /// </summary>
-    public static Order Instance => Configuration.Resolver.GetService<Order>();
+    public static Order Instance
+    {
+        get
+        {
+            var requestServices = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext?.RequestServices;
+
+            return requestServices?.GetService<Order>() ?? Configuration.Resolver.GetService<Order>();
+        }
+    }
 
     readonly ILogger<Order> _logger;
     readonly Configuration _config;

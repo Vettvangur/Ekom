@@ -26,6 +26,8 @@ internal sealed class UmbracoEventListeners :
     INotificationAsyncHandler<ContentDeletedNotification>,
     INotificationHandler<ContentMovedToRecycleBinNotification>,
     INotificationHandler<ContentMovedNotification>,
+    INotificationHandler<DomainSavedNotification>,
+    INotificationHandler<DomainDeletedNotification>,
     INotificationHandler<ServerVariablesParsingNotification>,
     INotificationHandler<LanguageSavedNotification>,
     INotificationHandler<LanguageDeletedNotification>
@@ -33,6 +35,7 @@ internal sealed class UmbracoEventListeners :
     private readonly ILogger<UmbracoEventListeners> _logger;
     private readonly Configuration _config;
     private readonly IBaseCache<IStore> _storeCache;
+    private readonly IStoreDomainCache _storeDomainCache;
     private readonly IContentService _contentService;
     private readonly IUmbracoContextFactory _context;
     private readonly IAppPolicyCache _runtimeCache;
@@ -45,6 +48,7 @@ internal sealed class UmbracoEventListeners :
         ILogger<UmbracoEventListeners> logger,
         Configuration config,
         IBaseCache<IStore> storeCache,
+        IStoreDomainCache storeDomainCache,
         IContentService contentService,
         IUmbracoContextFactory context,
         IMemoryCache cache,
@@ -56,6 +60,7 @@ internal sealed class UmbracoEventListeners :
         _logger = logger;
         _config = config;
         _storeCache = storeCache;
+        _storeDomainCache = storeDomainCache;
         _contentService = contentService;
         _context = context;
         _runtimeCache = appCaches.RuntimeCache;
@@ -200,6 +205,24 @@ internal sealed class UmbracoEventListeners :
         }
     }
 
+    public void Handle(DomainSavedNotification notification)
+    {
+        foreach (var domain in notification.SavedEntities)
+        {
+            _storeDomainCache.AddReplace(new Umbraco17Domain(domain));
+            RefreshStoreForDomainRoot(domain.RootContentId);
+        }
+    }
+
+    public void Handle(DomainDeletedNotification notification)
+    {
+        foreach (var domain in notification.DeletedEntities)
+        {
+            _storeDomainCache.Remove(domain.Key);
+            RefreshStoreForDomainRoot(domain.RootContentId);
+        }
+    }
+
     public void Handle(ServerVariablesParsingNotification notification)
     {
         notification.ServerVariables.Add("ekom", new
@@ -227,6 +250,32 @@ internal sealed class UmbracoEventListeners :
         return _config.CacheList.Value.FirstOrDefault(x =>
             !string.IsNullOrEmpty(x.NodeAlias)
             && contentTypeAlias.Equals(x.NodeAlias, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void RefreshStoreForDomainRoot(int? rootContentId)
+    {
+        if (rootContentId == null)
+        {
+            return;
+        }
+
+        var rootContent = _contentService.GetById(rootContentId.Value);
+        if (rootContent == null)
+        {
+            return;
+        }
+
+        var store = _storeCache.Cache.Values.FirstOrDefault(x => x.StoreRootNodeId == rootContent.Id);
+        if (store == null)
+        {
+            return;
+        }
+
+        var storeContent = _contentService.GetById(store.Id);
+        if (storeContent != null)
+        {
+            _storeCache.AddReplace(new Umbraco17Content(storeContent, Guid.Empty));
+        }
     }
 
     private async Task UpdateStockAsync(IContent content, CancellationToken cancellationToken)

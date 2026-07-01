@@ -1,4 +1,6 @@
+using Ekom.Cache;
 using Ekom.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Ekom.Utilities;
 
@@ -140,14 +142,13 @@ public static class ContentExtensions
             if (takeCountByAlias.TryGetValue(item.ContentTypeAlias, out int takeCount))
             {
                 var paths = pathArray.Skip(skipCount).Take(takeCount);
+                var categoryCache = Configuration.Resolver.GetService<IPerStoreIndexedCache<ICategory>>();
 
                 foreach (var pathId in paths)
                 {
                     if (!int.TryParse(pathId, out int id)) continue;
 
-                    var category = API.Catalog.Instance.GetCategory(id, store.Alias, raiseEvent: false);
-
-                    if (category == null)
+                    if (categoryCache == null || !categoryCache.TryGetById(store.Alias, id, out var category) || category == null)
                     {
                         return true;
                     }

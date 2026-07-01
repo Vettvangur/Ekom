@@ -1,7 +1,7 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 
 @{
-    var rootNode = Model.GetRootNode();
+    var rootNode = Model.GetSite();
     var rootCategories = _catalog.GetRootCategories();
     var order = await _order.GetOrderAsync();
     var currentStore = _store.GetStore();

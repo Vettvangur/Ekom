@@ -21,12 +21,14 @@ public partial class EkomOrderController : ControllerBase
     /// <summary>
     /// ctor
     /// </summary>
-    public EkomOrderController(ILogger<EkomOrderController> logger)
+    public EkomOrderController(ILogger<EkomOrderController> logger, Order order)
     {
         _logger = logger;
+        _order = order;
     }
 
     readonly ILogger _logger;
+    readonly Order _order;
 
     /// <summary>
     /// Add product to order, also for updating or setting quantity of orderlines
@@ -107,7 +109,7 @@ public partial class EkomOrderController : ControllerBase
             }
         }
 
-        IOrderInfo orderInfo = await Order.Instance.AddOrderLineAsync(
+        IOrderInfo orderInfo = await _order.AddOrderLineAsync(
             request.ProductId,
             request.Quantity,
             request.StoreAlias,
@@ -143,7 +145,7 @@ public partial class EkomOrderController : ControllerBase
     [Route("{orderId}")]
     public async Task<IActionResult> GetOrder(Guid orderId, CancellationToken ct = default)
     {
-        var order = await Order.Instance.GetOrderAsync(orderId, ct);
+        var order = await _order.GetOrderAsync(orderId, ct);
 
         if (order == null)
         {
@@ -162,7 +164,7 @@ public partial class EkomOrderController : ControllerBase
     [Route("")]
     public async Task<IActionResult> GetOrder([FromRoute] string? storeAlias = null, CancellationToken ct = default)
     {
-        var order = await Order.Instance.GetOrderAsync(storeAlias, ct);
+        var order = await _order.GetOrderAsync(storeAlias, ct);
 
         if (order == null)
         {
@@ -181,7 +183,7 @@ public partial class EkomOrderController : ControllerBase
     [Route("relatedproducts/{count:Int}")]
     public async Task<IActionResult> GetRelatedProducts([FromRoute] string? storeAlias = null, int count = 4, CancellationToken ct = default)
     {
-        var order = await Order.Instance.GetOrderAsync(storeAlias, ct);
+        var order = await _order.GetOrderAsync(storeAlias, ct);
 
         if (order == null)
         {
@@ -303,7 +305,7 @@ public partial class EkomOrderController : ControllerBase
             return BadRequest("Unsupported content type. Only application/json or form data is supported.");
         }
 
-        var orderInfo = await Order.Instance.UpdateCustomerInformationAsync(customerData, new OrderSettings
+        var orderInfo = await _order.UpdateCustomerInformationAsync(customerData, new OrderSettings
         {
             Consent = consent,
             Tracking = tracking
@@ -321,7 +323,7 @@ public partial class EkomOrderController : ControllerBase
             return BadRequest("Missing storeAlias or tracking.");
         }
 
-        var orderInfo = await Order.Instance.UpdateTrackingAsync(request.StoreAlias, request.Tracking, new API.OrderSettings
+        var orderInfo = await _order.UpdateTrackingAsync(request.StoreAlias, request.Tracking, new API.OrderSettings
         {
             Consent = request.Consent
         }, ct: ct);
@@ -344,7 +346,7 @@ public partial class EkomOrderController : ControllerBase
         if (shippingProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest("Missing required ShippingProvider or storeAlias.");
 
-        var orderInfo = await Order.Instance.UpdateShippingInformationAsync(shippingProvider, storeAlias, allData, ct: ct);
+        var orderInfo = await _order.UpdateShippingInformationAsync(shippingProvider, storeAlias, allData, ct: ct);
         return Ok(orderInfo);
     }
 
@@ -363,7 +365,7 @@ public partial class EkomOrderController : ControllerBase
         if (paymentProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest("Missing required PaymentProvider or storeAlias.");
 
-        var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(paymentProvider, storeAlias, allData, ct: ct);
+        var orderInfo = await _order.UpdatePaymentInformationAsync(paymentProvider, storeAlias, allData, ct: ct);
         return Ok(orderInfo);
     }
 
@@ -457,7 +459,7 @@ public partial class EkomOrderController : ControllerBase
             return BadRequest("StoreAlias is missing");
         }
 
-        IOrderInfo orderInfo = await Order.Instance.RemoveOrderLineAsync(model.lineId, model.storeAlias, ct: ct);
+        IOrderInfo orderInfo = await _order.RemoveOrderLineAsync(model.lineId, model.storeAlias, ct: ct);
 
         return Ok(orderInfo);
     }
@@ -482,7 +484,7 @@ public partial class EkomOrderController : ControllerBase
         }
 
 
-        IOrderInfo orderInfo = await Order.Instance.UpdateOrderlineQuantityAsync(model.lineId, model.quantity, model.storeAlias, ct: ct);
+        IOrderInfo orderInfo = await _order.UpdateOrderlineQuantityAsync(model.lineId, model.quantity, model.storeAlias, ct: ct);
 
         return Ok(orderInfo);
     }
@@ -504,11 +506,11 @@ public partial class EkomOrderController : ControllerBase
             return NotFound("Store not found.");
         }
 
-        IOrderInfo? orderInfo = await Order.Instance.GetOrderAsync(store.Alias, ct);
+        IOrderInfo? orderInfo = await _order.GetOrderAsync(store.Alias, ct);
 
         if (orderInfo != null)
         {
-            orderInfo = await Order.Instance.UpdateCurrencyAsync(currency, orderInfo.UniqueId, store.Alias, ct).ConfigureAwait(false);
+            orderInfo = await _order.UpdateCurrencyAsync(currency, orderInfo.UniqueId, store.Alias, ct).ConfigureAwait(false);
         }
 
         Response.Cookies.Append(
@@ -546,7 +548,7 @@ public partial class EkomOrderController : ControllerBase
             return BadRequest("Coupon code can not be empty");
         }
 
-        if (await Order.Instance.ApplyCouponToOrderAsync(model.coupon, model.storeAlias, ct))
+        if (await _order.ApplyCouponToOrderAsync(model.coupon, model.storeAlias, ct))
         {
             return Ok();
         }
@@ -563,7 +565,7 @@ public partial class EkomOrderController : ControllerBase
     [EnableRateLimiting("order-coupon")]
     public async Task<IActionResult> RemoveCouponFromOrder(string storeAlias, CancellationToken ct = default)
     {
-        await Order.Instance.RemoveCouponFromOrderAsync(storeAlias, null, ct);
+        await _order.RemoveCouponFromOrderAsync(storeAlias, null, ct);
 
         return Ok();
     }

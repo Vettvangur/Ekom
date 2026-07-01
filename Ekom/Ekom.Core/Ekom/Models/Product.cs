@@ -3,6 +3,7 @@ using Ekom.Cache;
 using Ekom.Models.Umbraco;
 using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
@@ -453,11 +454,10 @@ public class Product : PerStoreNodeEntity, IProduct
                 return _metafieldsCache = [];
 
             var value = GetValue("metafields");
-            var metafieldService = Configuration.Resolver.GetService<IMetafieldService>();
-            if (metafieldService is null)
-                return _metafieldsCache = [];
-
-            var metafields = metafieldService.SerializeMetafields(value, Id);
+            var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+            var metafields = httpContext != null
+                ? httpContext.RequestServices.GetRequiredService<IMetafieldService>().SerializeMetafields(value, Id)
+                : SerializeMetafieldsInScope(value, Id);
 
             _metafieldsCache = metafields.Select(m => new MetavalueSlim
             {
@@ -481,6 +481,12 @@ public class Product : PerStoreNodeEntity, IProduct
 
             return _metafieldsCache;
         }
+    }
+
+    private static List<Metavalue> SerializeMetafieldsInScope(string value, int id)
+    {
+        using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        return scope.ServiceProvider.GetRequiredService<IMetafieldService>().SerializeMetafields(value, id);
     }
 
     /// <summary>

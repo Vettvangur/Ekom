@@ -141,13 +141,18 @@ class y extends HTMLElement {
     return c.textContent = t.currencySymbol ?? "", i.append(o, s, c), i;
   }
   setPrice(e, t, r) {
-    const i = this.parsePrice(r), n = [...this.internalValue[e] ?? []], o = n.find((s) => s.Currency === t);
-    o == null ? n.push({
+    const i = this.parsePrice(r);
+    let n = !1;
+    const o = (this.internalValue[e] ?? []).map((s) => s.Currency !== t ? s : (n = !0, {
+      ...s,
+      Price: i
+    }));
+    n || o.push({
       Currency: t,
       Price: i
-    }) : o.Price = i, this.internalValue = {
+    }), this.internalValue = {
       ...this.internalValue,
-      [e]: n
+      [e]: o
     }, this.emitChange();
   }
   getPrice(e, t) {

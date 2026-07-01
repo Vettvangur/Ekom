@@ -1,7 +1,7 @@
 @inherits UmbracoViewPage
 
 @{
-    var rootNode = Model.GetRootNode();
+    var rootNode = Model.GetSite();
     var rootCategories = _catalog.GetRootCategories();
     var order = await _order.GetOrderAsync();
     var checkoutNode = rootNode.DescendantsOrSelf().FirstOrDefault(x => x.IsDocumentType("checkout"));
