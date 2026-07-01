@@ -200,11 +200,26 @@ class CheckoutService
         {
             if (!line.Product.Backorder)
             {
+                IProduct? product = await Catalog.Instance.GetProductAsync(line.ProductKey, storeAlias, raiseEvent: false)
+                    .ConfigureAwait(false);
+
+                if (product == null)
+                {
+                    throw new ArgumentNullException(nameof(product));
+                }
+
                 if (line.Product.VariantGroups.Any())
                 {
                     foreach (OrderedVariant? variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        decimal variantStock = Stock.Instance.GetStock(variant.Key, storeAlias);
+                        IVariant? catalogVariant = Catalog.Instance.GetVariant(variant.Key, storeAlias);
+
+                        if (catalogVariant == null)
+                        {
+                            throw new ArgumentNullException(nameof(catalogVariant));
+                        }
+
+                        decimal variantStock = StockBufferHelper.GetEffectiveStock(Stock.Instance.GetStock(variant.Key, storeAlias), product, catalogVariant);
 
                         if (variantStock >= line.Quantity)
                         {
@@ -224,7 +239,7 @@ class CheckoutService
                 }
                 else
                 {
-                    decimal productStock = Stock.Instance.GetStock(line.ProductKey, storeAlias);
+                    decimal productStock = StockBufferHelper.GetEffectiveStock(Stock.Instance.GetStock(line.ProductKey, storeAlias), product);
 
                     if (productStock >= line.Quantity)
                     {

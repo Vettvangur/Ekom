@@ -76,7 +76,22 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// <summary>
     /// Get the availability of the variant
     /// </summary>
-    public virtual bool Available => Stock > 0 || Backorder;
+    public virtual bool Available
+    {
+        get
+        {
+            if (Backorder)
+            {
+                return true;
+            }
+
+            IProduct? product = Product;
+
+            return product != null
+                ? StockBufferHelper.GetEffectiveStock(Stock, product, this) > 0
+                : Stock - (StockBuffer ?? 0) > 0;
+        }
+    }
 
     /// <summary>
     /// Parent <see cref="IProduct"/> of Variant

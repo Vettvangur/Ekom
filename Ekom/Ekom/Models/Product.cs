@@ -131,7 +131,7 @@ public class Product : PerStoreNodeEntity, IProduct
                 }
             }
 
-            return !hasVariants && Stock > 0;
+            return !hasVariants && StockBufferHelper.GetEffectiveStock(Stock, this) > 0;
         }
     }
 

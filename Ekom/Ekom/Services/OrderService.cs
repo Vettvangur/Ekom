@@ -2002,9 +2002,26 @@ partial class OrderService
             {
                 if (line.Product.VariantGroups.Any())
                 {
+                    IProduct? product = Catalog.Instance.GetProduct(line.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false);
+
+                    if (product == null)
+                    {
+                        return false;
+                    }
+
                     foreach (OrderedVariant? variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        decimal variantStock = Stock.Instance.GetStock(variant.Key);
+                        IVariant? catalogVariant = Catalog.Instance.GetVariant(variant.Key, orderInfo.StoreInfo.Alias);
+
+                        if (catalogVariant == null)
+                        {
+                            return false;
+                        }
+
+                        decimal variantStock = StockBufferHelper.GetEffectiveStock(
+                            Stock.Instance.GetStock(variant.Key, orderInfo.StoreInfo.Alias),
+                            product,
+                            catalogVariant);
 
                         if (variantStock < line.Quantity)
                         {
@@ -2014,7 +2031,16 @@ partial class OrderService
                 }
                 else
                 {
-                    decimal productStock = Stock.Instance.GetStock(line.ProductKey);
+                    IProduct? product = Catalog.Instance.GetProduct(line.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false);
+
+                    if (product == null)
+                    {
+                        return false;
+                    }
+
+                    decimal productStock = StockBufferHelper.GetEffectiveStock(
+                        Stock.Instance.GetStock(line.ProductKey, orderInfo.StoreInfo.Alias),
+                        product);
 
                     if (productStock < line.Quantity)
                     {
@@ -2029,17 +2055,8 @@ partial class OrderService
 
     private void VerifyStock(decimal quantity, decimal existingStock, IProduct product, IVariant? variant = null)
     {
-        var bufferStock =
-            GetConfiguredStockBuffer(variant?.StockBuffer)
-            ?? GetConfiguredStockBuffer(product.StockBuffer)
-            ?? product.CategoryAncestors?
-                .Select(c => GetConfiguredStockBuffer(c.StockBuffer))
-                .FirstOrDefault(x => x.HasValue)
-            ?? 0;
-
-        existingStock -= bufferStock;
-
-        existingStock = Math.Max(0, existingStock);
+        var bufferStock = StockBufferHelper.GetConfiguredStockBuffer(product, variant);
+        existingStock = StockBufferHelper.GetEffectiveStock(existingStock, product, variant);
 
         if (!_config.DisableStock
         && !product.Backorder
@@ -2048,11 +2065,6 @@ partial class OrderService
             throw new NotEnoughStockException(
                 $"Stock not available for product {product.Key} and variant {variant?.Key}. ExistingStock: {existingStock}. Quantity: {quantity} BufferStock: {bufferStock}");
         }
-    }
-
-    private static decimal? GetConfiguredStockBuffer(decimal? stockBuffer)
-    {
-        return stockBuffer is > 0 ? stockBuffer : null;
     }
 
     /// <summary>

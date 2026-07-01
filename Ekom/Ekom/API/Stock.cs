@@ -3,6 +3,7 @@ using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Repositories;
 using Ekom.Services;
+using Ekom.Utilities;
 using Hangfire.States;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -151,6 +152,13 @@ public partial class Stock
                 continue;
             }
 
+            IProduct? product = await Catalog.Instance.GetProductAsync(orderLine.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false, ct: ct);
+
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
             if (orderLine.Product.VariantGroups.Any())
             {
                 foreach (OrderedVariant? orderedVariant in orderLine.Product.VariantGroups.SelectMany(x => x.Variants))
@@ -162,7 +170,7 @@ public partial class Stock
                         throw new ArgumentNullException(nameof(variant));
                     }
 
-                    decimal variantStock = variant.Stock;
+                    decimal variantStock = StockBufferHelper.GetEffectiveStock(variant.Stock, product, variant);
 
                     if (variantStock < orderLine.Quantity)
                     {
@@ -176,14 +184,7 @@ public partial class Stock
             }
             else
             {
-                IProduct? product = await  Catalog.Instance.GetProductAsync(orderLine.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false, ct: ct);
-
-                if (product == null)
-                {
-                    throw new ArgumentNullException(nameof(product));
-                }
-
-                decimal productStock = product.Stock;
+                decimal productStock = StockBufferHelper.GetEffectiveStock(product.Stock, product);
 
                 if (productStock < orderLine.Quantity)
                 {
