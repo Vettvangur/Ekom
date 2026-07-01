@@ -55,13 +55,13 @@
         <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.2" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-        <!--<ProjectReference Include="..\..\Ekom\Ekom.U10\Ekom.U10.csproj" />
+        <!--<ProjectReference Include="..\..\Ekom\Ekom.Umbraco\Ekom.U10\Ekom.U10.csproj" />
       <PackageReference Update="Ekom.U10" ExcludeAssets="all" />-->
     </ItemGroup>
 
     <!-- Local dev: flip this to true (Directory.Build.props) -->
     <ItemGroup Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\Ekom\Ekom.U10\Ekom.U10.csproj" />
+        <ProjectReference Include="..\..\Ekom\Ekom.Umbraco\Ekom.U10\Ekom.U10.csproj" />
     </ItemGroup>
 
     <!-- CI / normal: use NuGet packages -->

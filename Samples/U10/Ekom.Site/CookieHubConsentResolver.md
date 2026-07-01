@@ -28,7 +28,7 @@ public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
 }
 ```
 
-The built-in implementation lives in `Ekom/Ekom/Tracking/Resolvers/CookieHubTrackingConsentResolver.cs` and runs before the default cookie/header resolver.
+The built-in implementation lives in `Ekom/Ekom.Core/Ekom/Tracking/Resolvers/CookieHubTrackingConsentResolver.cs` and runs before the default cookie/header resolver.
 
 ## Sample Appsettings
 

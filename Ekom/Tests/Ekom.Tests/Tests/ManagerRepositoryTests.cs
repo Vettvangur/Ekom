@@ -2,6 +2,7 @@ using Ekom;
 using Ekom.Repositories;
 using Ekom.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Reflection;
 using Moq;
@@ -67,7 +68,7 @@ public class ManagerRepositoryTests
         return new ManagerRepository(
             NullLogger<ManagerRepository>.Instance,
             new Configuration(configuration),
-            new DatabaseFactory(configuration),
+            new DatabaseFactory(configuration, Mock.Of<IHostEnvironment>(x => x.ContentRootPath == AppContext.BaseDirectory)),
             Mock.Of<IStoreService>());
     }
 }

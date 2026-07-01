@@ -49,7 +49,7 @@
 
   <!-- Local dev: flip this to true (Directory.Build.props) -->
   <ItemGroup Condition="'$(UseProjectReferences)' == 'true'">
-    <ProjectReference Include="..\..\Ekom\Ekom.U10\Ekom.U10.csproj" />
+    <ProjectReference Include="..\..\Ekom\Ekom.Umbraco\Ekom.U10\Ekom.U10.csproj" />
   </ItemGroup>
 
   <!-- CI / normal: use NuGet packages -->

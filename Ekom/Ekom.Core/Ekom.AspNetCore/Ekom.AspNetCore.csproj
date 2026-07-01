@@ -1,19 +1,24 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-      <TargetFrameworks>net8.0</TargetFrameworks>
-      <ContentTargetFolders>.</ContentTargetFolders>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+      <AssemblyName>Ekom.AspNetCore</AssemblyName>
+      <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+
+      <ImplicitUsings>enable</ImplicitUsings>
+      <Nullable>enable</Nullable>
 
       <!-- Package properties -->
-      <PackageId>Ekom.Web</PackageId>
-      <Title>Ekom.Web</Title>
+      <PackageId>Ekom.AspNetCore</PackageId>
+      <Title>Ekom AspNetCore</Title>
       <Authors>Vettvangur</Authors>
       <PackageLicenseExpression>MIT</PackageLicenseExpression>
       <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
       <PackageIcon>images\VV_Logo.png</PackageIcon>
-      <Description>Ekom Web. This Package has all the web files that Ekom requires.</Description>
-      <PackageReleaseNotes>Create nuget package</PackageReleaseNotes>
+      <Description>Ekom ASP.NET Core - Vettvangur E-Commerce solution</Description>
+      <PackageReleaseNotes></PackageReleaseNotes>
       <Copyright>Copyright 2022</Copyright>
-      <PackageTags>umbraco</PackageTags>
+      <PackageTags></PackageTags>
 
       <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
       <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -38,17 +43,22 @@
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     </PropertyGroup>
 
-    <!-- Package icon -->
     <ItemGroup>
-        <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
+        <!-- Package icon -->
+        <None Include="..\..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
     </ItemGroup>
 
-  <ItemGroup>
-      <Content Include="App_Plugins\Ekom\**" ExcludeFromSingleFile="true" CopyToPublishDirectory="Always" />
-      <None Include="buildTransitive\**" Pack="true" PackagePath="buildTransitive" />
-  </ItemGroup>
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Ekom.U10</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Ekom.U17</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Ekom\Ekom.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Ekom\Ekom.csproj" />
+    </ItemGroup>
+
 </Project>
