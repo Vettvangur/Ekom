@@ -797,7 +797,8 @@ partial class OrderService
             : orderLine.Product.Path.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         // Collect category IDs (mapped via INodeService)
-        var nodeSvc = Configuration.Resolver.GetService<INodeService>();
+        using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var nodeSvc = scope.ServiceProvider.GetRequiredService<INodeService>();
         var categoryIds = ((orderLine.Product.Properties.GetPropertyValue("categories") as string) ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(x => nodeSvc.NodeById(x)?.Id.ToString())

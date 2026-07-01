@@ -90,6 +90,11 @@ public class EkomBackofficeApiController : ControllerBase
     [UmbracoUserAuthorize]
     public IEnumerable<object> GetLanguagesByNode([FromRoute] int id)
     {
+        if (id <= 0)
+        {
+            return _umbracoService.GetLanguages();
+        }
+
         var stores = LoadStores(id);
         var supportedCultures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

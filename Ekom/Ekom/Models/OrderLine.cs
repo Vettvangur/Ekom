@@ -72,9 +72,10 @@ public class OrderLine : IOrderLine
         var paths = new HashSet<string>(Product.Path.Split(','));
         var categoriesUdi = Product.Properties.GetValue("categories").Split(',');
 
-        var nodeService = Configuration.Resolver.GetService<INodeService>();
+        using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
 
-        if (nodeService != null && categoriesUdi.Any())
+        if (categoriesUdi.Any())
         {
             foreach (var categoryUdi in categoriesUdi)
             {

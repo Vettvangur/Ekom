@@ -543,13 +543,16 @@ public static class StringExtension
 
         if (!string.IsNullOrEmpty(nodeIds))
         {
+            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
+
             if (nodeIds.StartsWith("[") && nodeIds.IndexOf("mediakey", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 List<MediaCropImage>? imageList = JsonConvert.DeserializeObject<List<MediaCropImage>>(nodeIds);
 
                 foreach (MediaCropImage image in imageList)
                 {
-                    UmbracoContent? node = Configuration.Resolver.GetService<INodeService>()?.MediaById(image.MediaKey);
+                    UmbracoContent? node = nodeService.MediaById(image.MediaKey);
 
                     if (node != null)
                     {
@@ -564,7 +567,7 @@ public static class StringExtension
                 foreach (string imgId in imageIds)
                 {
 
-                    UmbracoContent? node = Configuration.Resolver.GetService<INodeService>()?.MediaById(imgId);
+                    UmbracoContent? node = nodeService.MediaById(imgId);
 
                     if (node != null)
                     {

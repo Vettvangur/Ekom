@@ -127,6 +127,48 @@ export const manifests: Array<UmbExtensionManifest> = [
   },
   {
     type: 'propertyEditorSchema',
+    alias: 'Ekom.Country',
+    name: 'Ekom Country Picker',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Country',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Country',
+    name: 'Ekom Country Picker UI',
+    element: '/App_Plugins/Ekom/dist/country-picker.element.js',
+    meta: {
+      label: 'Ekom Country',
+      propertyEditorSchemaAlias: 'Ekom.Country',
+      icon: 'icon-globe',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Zone',
+    name: 'Ekom Zone Picker',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Zone',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Zone',
+    name: 'Ekom Zone Picker UI',
+    element: '/App_Plugins/Ekom/dist/zone-picker.element.js',
+    meta: {
+      label: 'Ekom Zone',
+      propertyEditorSchemaAlias: 'Ekom.Zone',
+      icon: 'icon-globe-alt',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
     alias: 'Ekom.Metafield',
     name: 'Ekom Metafield Picker',
     meta: {

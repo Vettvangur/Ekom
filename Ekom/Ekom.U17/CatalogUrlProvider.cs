@@ -1,6 +1,7 @@
 using Ekom.Models;
 using Ekom.Utilities;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Umbraco.Cms.Core.Cache;
@@ -22,17 +23,20 @@ internal sealed class CatalogUrlProvider : IUrlProvider
     private readonly IAppCache _requestCache;
     private readonly IUmbracoContextAccessor _umbracoContextAccessor;
     private readonly IConfiguration _configuration;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public CatalogUrlProvider(
         ILogger<CatalogUrlProvider> logger,
         AppCaches appCaches,
         IUmbracoContextAccessor umbracoContextAccessor,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _requestCache = appCaches.RequestCache;
         _umbracoContextAccessor = umbracoContextAccessor;
         _configuration = configuration;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     public UrlInfo? GetUrl(IPublishedContent content, UrlMode mode, string? culture, Uri current)
@@ -90,7 +94,11 @@ internal sealed class CatalogUrlProvider : IUrlProvider
                 return Enumerable.Empty<UrlInfo>();
             }
 
-            var stores = API.Store.Instance.GetAllStores().ToList();
+            using var scope = _serviceScopeFactory.CreateScope();
+            var storeApi = scope.ServiceProvider.GetRequiredService<API.Store>();
+            var catalogApi = scope.ServiceProvider.GetRequiredService<API.Catalog>();
+
+            var stores = storeApi.GetAllStores().ToList();
             if (!stores.Any())
             {
                 return Enumerable.Empty<UrlInfo>();
@@ -104,8 +112,8 @@ internal sealed class CatalogUrlProvider : IUrlProvider
                 try
                 {
                     INodeEntityWithUrl? node = content.ContentType.Alias == "ekmProduct"
-                        ? API.Catalog.Instance.GetProduct(content.Key, store.Alias, raiseEvent: false)
-                        : API.Catalog.Instance.GetCategory(content.Key, store.Alias, raiseEvent: false);
+                        ? catalogApi.GetProduct(content.Key, store.Alias, raiseEvent: false)
+                        : catalogApi.GetCategory(content.Key, store.Alias, raiseEvent: false);
 
                     if (node != null)
                     {

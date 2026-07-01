@@ -8,6 +8,7 @@ export default defineConfig({
       entry: {
         manifests: 'src/manifests.ts',
         'cache-editor.element': 'src/property-editors/cache-editor.element.ts',
+        'country-picker.element': 'src/property-editors/country-picker.element.ts',
         'coupon-editor.element': 'src/property-editors/coupon-editor.element.ts',
         'currency-picker.element': 'src/property-editors/currency-picker.element.ts',
         'data-type-picker.element': 'src/property-editors/data-type-picker.element.ts',
@@ -17,6 +18,7 @@ export default defineConfig({
         'property-editor.element': 'src/property-editors/property-editor.element.ts',
         'range-editor.element': 'src/property-editors/range-editor.element.ts',
         'stock-editor.element': 'src/property-editors/stock-editor.element.ts',
+        'zone-picker.element': 'src/property-editors/zone-picker.element.ts',
       },
       formats: ['es'],
     },

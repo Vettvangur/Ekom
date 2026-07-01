@@ -47,8 +47,9 @@ internal static class ImportContentExtensions
             throw new ArgumentException("Slug can only be set on ekom product or category");
         }
 
-        var umbracoService = Configuration.Resolver.GetService<IUmbracoService>();
-        var slugs = values.ToDictionary(x => x.Key, x => (object)(umbracoService?.UrlSegment(x.Value?.ToString() ?? string.Empty) ?? string.Empty));
+        using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var umbracoService = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
+        var slugs = values.ToDictionary(x => x.Key, x => (object)umbracoService.UrlSegment(x.Value?.ToString() ?? string.Empty));
 
         content.SetProperty("slug", slugs, type);
     }

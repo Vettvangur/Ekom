@@ -3,6 +3,7 @@ using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Routing;
@@ -18,6 +19,7 @@ internal sealed class CatalogContentFinder : IContentFinder
     private readonly AppCaches _appCaches;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUmbracoContextAccessor _umbracoContextAccessor;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public CatalogContentFinder(
         ILogger<CatalogContentFinder> logger,
@@ -27,13 +29,15 @@ internal sealed class CatalogContentFinder : IContentFinder
         IPerStoreIndexedCache<IProduct> productCache,
         AppCaches appCaches,
         IHttpContextAccessor httpContextAccessor,
-        IUmbracoContextAccessor umbracoContextAccessor)
+        IUmbracoContextAccessor umbracoContextAccessor,
+        IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger;
         _storeService = storeService;
         _appCaches = appCaches;
         _httpContextAccessor = httpContextAccessor;
         _umbracoContextAccessor = umbracoContextAccessor;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     public Task<bool> TryFindContent(IPublishedRequestBuilder contentRequest)
@@ -53,8 +57,10 @@ internal sealed class CatalogContentFinder : IContentFinder
             }
 
             var store = GetStore(contentRequest);
+            using var scope = _serviceScopeFactory.CreateScope();
+            var catalogApi = scope.ServiceProvider.GetRequiredService<API.Catalog>();
 
-            var product = API.Catalog.Instance.GetProductByRoute(path, store?.Alias);
+            var product = catalogApi.GetProductByRoute(path, store?.Alias);
             var contentId = 0;
             ICategory? category;
 
@@ -65,11 +71,11 @@ internal sealed class CatalogContentFinder : IContentFinder
                 var categoryUrlArray = urlArray.Take(urlArray.Length - 2);
                 var categoryUrl = string.Join("/", categoryUrlArray).AddTrailing();
 
-                category = API.Catalog.Instance.GetCategoryByRoute(categoryUrl, store?.Alias);
+                category = catalogApi.GetCategoryByRoute(categoryUrl, store?.Alias);
             }
             else
             {
-                category = API.Catalog.Instance.GetCategoryByRoute(path, store?.Alias);
+                category = catalogApi.GetCategoryByRoute(path, store?.Alias);
 
                 if (category != null && !string.IsNullOrEmpty(category.GetValue("slug", fallback: true)))
                 {

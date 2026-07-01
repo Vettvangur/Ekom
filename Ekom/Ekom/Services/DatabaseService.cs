@@ -27,27 +27,27 @@ internal class DatabaseService
 
             if (!dbSchema.Tables.Any(x => x.TableName == "EkomStock"))
             {
-                db.CreateTable<StockData>();
+                db.CreateTable<StockData>(tableOptions: TableOptions.CreateIfNotExists);
             }
 
             if (!dbSchema.Tables.Any(x => x.TableName == "EkomOrdersActivityLog"))
             {
-                db.CreateTable<OrderActivityLog>();
+                db.CreateTable<OrderActivityLog>(tableOptions: TableOptions.CreateIfNotExists);
             }
 
             if (!dbSchema.Tables.Any(x => x.TableName == "EkomCoupon"))
             {
-                db.CreateTable<CouponData>();
+                db.CreateTable<CouponData>(tableOptions: TableOptions.CreateIfNotExists);
             }
 
             if (!dbSchema.Tables.Any(x => x.TableName == Configuration.DiscountStockTableName))
             {
-                db.CreateTable<DiscountStockData>();
+                db.CreateTable<DiscountStockData>(tableOptions: TableOptions.CreateIfNotExists);
             }
 
             if (!dbSchema.Tables.Any(x => x.TableName == "EkomOrders"))
             {
-                db.CreateTable<OrderData>();
+                db.CreateTable<OrderData>(tableOptions: TableOptions.CreateIfNotExists);
 
                 if (_databaseFactory.IsSqlServer)
                 {

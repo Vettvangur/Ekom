@@ -199,7 +199,10 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
   }
 
   private async loadLanguageTabs(nodeId: number): Promise<EkomTab[]> {
-    const languages = await this.fetchJson<EkomLanguage[]>(`/ekom/backoffice/Languages/${nodeId}`);
+    const url = nodeId > 0
+      ? `/ekom/backoffice/Languages/${nodeId}`
+      : '/ekom/backoffice/Languages';
+    const languages = await this.fetchJson<EkomLanguage[]>(url);
 
     return languages
       .filter(language => language.isoCode != null)

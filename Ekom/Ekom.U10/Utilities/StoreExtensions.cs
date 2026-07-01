@@ -9,7 +9,8 @@ namespace Ekom.Utilities
     {
         public static IPublishedContent GetRootNode(this IStore store)
         {
-            var r = Configuration.Resolver.GetService<NodeService>();
+            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var r = scope.ServiceProvider.GetRequiredService<NodeService>();
 
             return r.GetNodeById(store.StoreRootNodeId);
         }

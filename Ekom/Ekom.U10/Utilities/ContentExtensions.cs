@@ -141,7 +141,8 @@ public static class ContentExtensions
         var dict = new Dictionary<string, object>();
 
 
-        var _umbService = Configuration.Resolver.GetService<IUmbracoService>();
+        using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var _umbService = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
 
         foreach (var value in values)
         {

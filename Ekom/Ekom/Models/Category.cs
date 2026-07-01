@@ -207,8 +207,9 @@ public class Category : PerStoreNodeEntity, ICategory
     /// <param name="store"></param>
     internal protected Category(UmbracoContent item, IStore store) : base(item, store)
     {
-        IUrlService? urlSvc = Configuration.Resolver.GetService<IUrlService>();
-        INodeService? nodeSvc = Configuration.Resolver.GetService<INodeService>();
+        using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var urlSvc = scope.ServiceProvider.GetRequiredService<IUrlService>();
+        var nodeSvc = scope.ServiceProvider.GetRequiredService<INodeService>();
 
         var ancestors = nodeSvc.GetAllCatalogAncestors(item).ToList();
 

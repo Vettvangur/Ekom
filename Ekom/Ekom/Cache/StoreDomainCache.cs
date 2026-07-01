@@ -11,8 +11,6 @@ class StoreDomainCache : BaseCache<UmbracoDomain>, IStoreDomainCache
     // This cache is not filled via NodesByTypes, so leave NodeAlias empty.
     public override string NodeAlias { get; } = "";
 
-    protected IUmbracoService umbracoService => _serviceProvider.GetService<IUmbracoService>();
-
     public StoreDomainCache(
         Configuration config,
         ILogger<BaseCache<UmbracoDomain>> logger,
@@ -24,6 +22,8 @@ class StoreDomainCache : BaseCache<UmbracoDomain>, IStoreDomainCache
     {
         try
         {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var umbracoService = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
             List<UmbracoDomain> domains = umbracoService.GetDomains().ToList();
 
             var stopwatch = Stopwatch.StartNew();

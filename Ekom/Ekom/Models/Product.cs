@@ -158,10 +158,11 @@ public class Product : PerStoreNodeEntity, IProduct
 
                         if (!string.IsNullOrEmpty(primaryGroupValue))
                         {
-                            var nodeService = Configuration.Resolver?.GetService<INodeService>();
+                            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+                            var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
                             var variantGroupCache = _variantGroupCache;
 
-                            UmbracoContent? node = nodeService?.NodeById(primaryGroupValue);
+                            UmbracoContent? node = nodeService.NodeById(primaryGroupValue);
 
                             if (node != null && node.ContentTypeAlias == "ekmProductVariantGroup")
                             {
@@ -199,10 +200,11 @@ public class Product : PerStoreNodeEntity, IProduct
 
                         if (!string.IsNullOrEmpty(primaryVariantValue))
                         {
-                            var nodeService = Configuration.Resolver?.GetService<INodeService>();
+                            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+                            var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
                             var variantCache = _variantCache;
 
-                            UmbracoContent? node = nodeService?.NodeById(primaryVariantValue);
+                            UmbracoContent? node = nodeService.NodeById(primaryVariantValue);
 
                             if (node != null && node.ContentTypeAlias == "ekmProductVariant")
                             {

@@ -152,14 +152,14 @@ static class Registrations
 
         services.AddTransient<CheckoutControllerService>(f =>
             new CheckoutControllerService(
-                f.GetService<ILogger<CheckoutControllerService>>(),
-                f.GetService<Configuration>(),
-                f.GetService<DatabaseFactory>(),
-                f.GetService<Ekom.Services.IUmbracoService>(),
-                f.GetService<IMemberService>(),
-                f.GetService<IHttpContextAccessor>(),
-                f.GetService<EkomPayments>(),
-                f.GetService<IServiceProvider>()
+                f.GetRequiredService<ILogger<CheckoutControllerService>>(),
+                f.GetRequiredService<Configuration>(),
+                f.GetRequiredService<DatabaseFactory>(),
+                f.GetRequiredService<IMemberService>(),
+                f.GetRequiredService<IHttpContextAccessor>(),
+                f.GetRequiredService<EkomPayments>(),
+                f.GetRequiredService<IServiceScopeFactory>(),
+                f.GetRequiredService<IServiceProvider>()
 
             )
         );

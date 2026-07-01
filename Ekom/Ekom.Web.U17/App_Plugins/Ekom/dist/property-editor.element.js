@@ -1,14 +1,14 @@
-var f = Object.defineProperty;
-var b = (o, s, t) => s in o ? f(o, s, { enumerable: !0, configurable: !0, writable: !0, value: t }) : o[s] = t;
+var m = Object.defineProperty;
+var b = (o, s, t) => s in o ? m(o, s, { enumerable: !0, configurable: !0, writable: !0, value: t }) : o[s] = t;
 var i = (o, s, t) => b(o, typeof s != "symbol" ? s + "" : s, t);
 import { UmbChangeEvent as y } from "@umbraco-cms/backoffice/event";
 import { createExtensionElement as C } from "@umbraco-cms/backoffice/extension-api";
 import { umbExtensionsRegistry as v } from "@umbraco-cms/backoffice/extension-registry";
 import { UmbLitElement as T } from "@umbraco-cms/backoffice/lit-element";
 import { UMB_PROPERTY_CONTEXT as w, UMB_PROPERTY_DATASET_CONTEXT as E } from "@umbraco-cms/backoffice/property";
-import { UmbPropertyEditorConfigCollection as S } from "@umbraco-cms/backoffice/property-editor";
-const c = "00000000-0000-0000-0000-000000000000", m = "ekomCurrentTab", p = "ekom-property-title-changed", g = "ekom-property-tab-changed";
-class k extends T {
+import { UmbPropertyEditorConfigCollection as k } from "@umbraco-cms/backoffice/property-editor";
+const c = "00000000-0000-0000-0000-000000000000", f = "ekomCurrentTab", p = "ekom-property-title-changed", g = "ekom-property-tab-changed";
+class S extends T {
   constructor() {
     super(...arguments);
     i(this, "manifest");
@@ -89,9 +89,10 @@ class k extends T {
     }
   }
   async loadLanguageTabs(t) {
-    return (await this.fetchJson(`/ekom/backoffice/Languages/${t}`)).filter((r) => r.isoCode != null).map((r) => ({
-      value: r.isoCode ?? "",
-      text: r.cultureName ?? r.isoCode ?? ""
+    const e = t > 0 ? `/ekom/backoffice/Languages/${t}` : "/ekom/backoffice/Languages";
+    return (await this.fetchJson(e)).filter((a) => a.isoCode != null).map((a) => ({
+      value: a.isoCode ?? "",
+      text: a.cultureName ?? a.isoCode ?? ""
     }));
   }
   async loadStoreTabs(t) {
@@ -115,7 +116,7 @@ class k extends T {
     const r = await C(e);
     if (r == null)
       throw new Error(`Could not create property editor UI "${t}".`);
-    r.manifest = e, r.name = `${this.name ?? this.propertyAlias}.${this.currentTab.value}`, r.value = (u = this.internalValue.values) == null ? void 0 : u[this.currentTab.value], r.config = new S(this.getWrappedConfig()), r.readonly = this.readonly, r.mandatory = !1, this.stringIsNullOrWhiteSpace(this.mandatoryMessage) || (r.mandatoryMessage = this.mandatoryMessage), r.toggleAttribute("readonly", this.readonly), r.addEventListener("change", (l) => this.onWrappedEditorChange(l)), r.addEventListener("property-value-change", (l) => this.onWrappedEditorChange(l)), this.editor = r, this.editorContainer.append(r), this.tryAutofillFromNodeName((d = this.propertyDatasetContext) == null ? void 0 : d.getName());
+    r.manifest = e, r.name = `${this.name ?? this.propertyAlias}.${this.currentTab.value}`, r.value = (u = this.internalValue.values) == null ? void 0 : u[this.currentTab.value], r.config = new k(this.getWrappedConfig()), r.readonly = this.readonly, r.mandatory = !1, this.stringIsNullOrWhiteSpace(this.mandatoryMessage) || (r.mandatoryMessage = this.mandatoryMessage), r.toggleAttribute("readonly", this.readonly), r.addEventListener("change", (l) => this.onWrappedEditorChange(l)), r.addEventListener("property-value-change", (l) => this.onWrappedEditorChange(l)), this.editor = r, this.editorContainer.append(r), this.tryAutofillFromNodeName((d = this.propertyDatasetContext) == null ? void 0 : d.getName());
   }
   onWrappedEditorChange(t) {
     t.stopPropagation(), !(this.currentTab == null || this.editor == null) && (this.propertyAlias === "slug" && this.manuallyEditedSlugTabs.add(this.currentTab.value), this.internalValue = {
@@ -146,7 +147,7 @@ class k extends T {
     }));
   }
   setCurrentTab(t) {
-    localStorage.setItem(m, JSON.stringify(t.value)), this.selectTab(t.value), window.dispatchEvent(new CustomEvent(g, {
+    localStorage.setItem(f, JSON.stringify(t.value)), this.selectTab(t.value), window.dispatchEvent(new CustomEvent(g, {
       detail: t.value
     }));
   }
@@ -291,7 +292,7 @@ class k extends T {
     }));
   }
   getStoredTab() {
-    const t = localStorage.getItem(m);
+    const t = localStorage.getItem(f);
     if (t != null)
       try {
         const e = JSON.parse(t);
@@ -350,8 +351,8 @@ class k extends T {
     return await e.json();
   }
 }
-customElements.define("ekom-property-editor", k);
+customElements.define("ekom-property-editor", S);
 export {
-  k as EkomPropertyEditorElement,
-  k as default
+  S as EkomPropertyEditorElement,
+  S as default
 };

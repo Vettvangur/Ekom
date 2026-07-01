@@ -173,7 +173,8 @@ public static class NodeEntityExtensions
 
         if (!string.IsNullOrEmpty(value) && value.InvariantStartsWith("umb"))
         {
-            var r = Configuration.Resolver.GetService<NodeService>();
+            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var r = scope.ServiceProvider.GetRequiredService<NodeService>();
 
             if (value.InvariantContains("document"))
             {
@@ -201,7 +202,8 @@ public static class NodeEntityExtensions
 
             if (medias != null && medias.Any())
             {
-                var r = Configuration.Resolver.GetService<NodeService>();
+                using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+                var r = scope.ServiceProvider.GetRequiredService<NodeService>();
 
                 var media = r.GetMediaById(medias.FirstOrDefault().MediaKey.ToString());
 
@@ -224,7 +226,8 @@ public static class NodeEntityExtensions
     {
         if (!string.IsNullOrEmpty(value) && value.InvariantStartsWith("umb"))
         {
-            var r = Configuration.Resolver.GetService<NodeService>();
+            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var r = scope.ServiceProvider.GetRequiredService<NodeService>();
 
             var result = new List<IPublishedContent>();
 
@@ -260,7 +263,10 @@ public static class NodeEntityExtensions
 
             if (medias != null && medias.Any())
             {
-                return medias.Select(x => x.MediaKey).Select(x => Configuration.Resolver.GetService<NodeService>()?.GetMediaById(x.ToString()));
+                using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+                var nodeService = scope.ServiceProvider.GetRequiredService<NodeService>();
+
+                return medias.Select(x => x.MediaKey).Select(x => nodeService.GetMediaById(x.ToString())).ToList();
             }
 
         }
@@ -294,9 +300,10 @@ public static class NodeEntityExtensions
             return null;
         }
 
-        var nodeService = Configuration.Resolver.GetService<NodeService>();
+        using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var nodeService = scope.ServiceProvider.GetRequiredService<NodeService>();
 
-        var node = nodeService?.GetNodeById(nodeId.ToString(), false);
+        var node = nodeService.GetNodeById(nodeId.ToString(), false);
 
         if (node != null)
         {

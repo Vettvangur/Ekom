@@ -209,9 +209,9 @@ public class Store : NodeEntity, IStore
     internal protected Store(UmbracoContent item) : base(item)
     {
         using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        var nodeService = scope.ServiceProvider.GetService<INodeService>();
-        var storeDomainCache = scope.ServiceProvider.GetService<IStoreDomainCache>();
-        var umbracoService = scope.ServiceProvider.GetService<Services.IUmbracoService>();
+        var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
+        var storeDomainCache = scope.ServiceProvider.GetRequiredService<IStoreDomainCache>();
+        var umbracoService = scope.ServiceProvider.GetRequiredService<Services.IUmbracoService>();
 
         if (item.Properties.HasPropertyValue("storeRootNode"))
         {

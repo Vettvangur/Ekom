@@ -29,11 +29,11 @@ public class CheckoutControllerService
     protected virtual string ErrorQueryString { get; set; } = "serverError";
 
     protected readonly DatabaseFactory DatabaseFactory;
-    protected readonly IUmbracoService UmbracoService;
     protected readonly IMemberService MemberService;
     protected readonly ILogger Logger;
     protected readonly Configuration Config;
     protected readonly EkomPayments ekomPayments;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     readonly HttpContext _httpCtx;
     protected string Culture;
@@ -43,10 +43,10 @@ public class CheckoutControllerService
         ILogger logger,
         Configuration config,
         DatabaseFactory databaseFactory,
-        IUmbracoService umbracoService,
         IMemberService memberService,
         IHttpContextAccessor httpContextAccessor,
         EkomPayments ekomPayments,
+        IServiceScopeFactory serviceScopeFactory,
 
         IServiceProvider factory)
     {
@@ -55,9 +55,9 @@ public class CheckoutControllerService
         Logger = logger;
         Config = config;
         DatabaseFactory = databaseFactory;
-        UmbracoService = umbracoService;
         MemberService = memberService;
         this.ekomPayments = ekomPayments;
+        _serviceScopeFactory = serviceScopeFactory;
         _factory = factory;
         //HttpContext = httpContext;
     }
@@ -512,8 +512,10 @@ public class CheckoutControllerService
 
         if (paymentOrderTitle.Substring(0, 1) == "#")
         {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var umbracoService = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
             string dictionaryValue
-                = UmbracoService.GetDictionaryValue(paymentOrderTitle.Substring(1));
+                = umbracoService.GetDictionaryValue(paymentOrderTitle.Substring(1));
 
             if (!string.IsNullOrEmpty(dictionaryValue))
             {

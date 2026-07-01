@@ -17,8 +17,9 @@ public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNo
         {
             var typeValue = Properties.GetPropertyValue("type");
 
-            IUmbracoService? umbSvc = Configuration.Resolver.GetService<IUmbracoService>();
-            var dt = umbSvc?.GetDataType(typeValue);
+            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var umbSvc = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
+            var dt = umbSvc.GetDataType(typeValue);
 
             if (dt == null)
             {
@@ -65,7 +66,8 @@ public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNo
             // Im returning INT instead of GUID if we would like to query by Path that is stored as comma seperate int
             List<string> returnList = new List<string>();
 
-            IUmbracoService? umbSvc = Configuration.Resolver.GetService<IUmbracoService>();
+            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var umbSvc = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
 
             string nodes = Properties.GetPropertyValue("discountItems");
 
@@ -92,9 +94,10 @@ public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNo
     {
         get
         {
-           var returnList = new List<string>();
+            var returnList = new List<string>();
 
-            var umbSvc = Configuration.Resolver.GetService<IUmbracoService>();
+            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var umbSvc = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
 
             string nodes = Properties.GetPropertyValue("excludeDiscountItems");
 

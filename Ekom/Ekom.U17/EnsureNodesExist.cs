@@ -28,6 +28,18 @@ class EnsureNodesExist : IComponent
     private readonly IConfigurationEditorJsonSerializer _configurationEditorJsonSerializer;
     private readonly IRuntimeState _runtimeState;
     private const string ContentPickerEditorUiAlias = "Umb.PropertyEditorUi.ContentPicker";
+    private const string MultipleTextStringEditorUiAlias = "Umb.PropertyEditorUi.MultipleTextString";
+    private const string EkomCacheEditorUiAlias = "Ekom.PropertyEditorUi.Cache";
+    private const string EkomCountryEditorUiAlias = "Ekom.PropertyEditorUi.Country";
+    private const string EkomCurrencyEditorUiAlias = "Ekom.PropertyEditorUi.Currency";
+    private const string EkomPriceEditorUiAlias = "Ekom.PropertyEditorUi.Price";
+    private const string EkomPropertyEditorUiAlias = "Ekom.PropertyEditorUi.Property";
+    private const string EkomStockEditorUiAlias = "Ekom.PropertyEditorUi.Stock";
+    private const string EkomZoneEditorUiAlias = "Ekom.PropertyEditorUi.Zone";
+    private static readonly JsonSerializerOptions ConfigurationSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
 
     public EnsureNodesExist(
         ILogger<EnsureNodesExist> logger,
@@ -67,6 +79,8 @@ class EnsureNodesExist : IComponent
 
         try
         {
+            ConfigureExistingEkomEditorUis();
+
             // Test for existence of Ekom root node
             if (!_contentService.GetRootContent().Any(x => x.ContentType.Alias == "ekom" && !x.Trashed))
             {
@@ -193,11 +207,13 @@ class EnsureNodesExist : IComponent
                 var multipleTextstringDt = EnsureDataTypeExists(new DataType(multipleTextstringEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Repeatable Textstrings",
+                    EditorUiAlias = MultipleTextStringEditorUiAlias,
                 });
 
                 var propertyTextDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Property Editor - Textstring",
+                    EditorUiAlias = EkomPropertyEditorUiAlias,
                     ConfigurationData = ToConfigurationData(new
                     {
                         dataType = new
@@ -214,6 +230,7 @@ class EnsureNodesExist : IComponent
                 var propertyBoolStoreDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Property Editor - Boolean - Stores",
+                    EditorUiAlias = EkomPropertyEditorUiAlias,
                     ConfigurationData = ToConfigurationData(new
                     {
                         dataType = new
@@ -230,6 +247,7 @@ class EnsureNodesExist : IComponent
                 EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Property Editor - Boolean",
+                    EditorUiAlias = EkomPropertyEditorUiAlias,
                     ConfigurationData = ToConfigurationData(new
                     {
                         dataType = new
@@ -246,6 +264,7 @@ class EnsureNodesExist : IComponent
                 var propertyNumericDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Property Editor - Numeric - Stores",
+                    EditorUiAlias = EkomPropertyEditorUiAlias,
                     ConfigurationData = ToConfigurationData(new
                     {
                         dataType = new
@@ -262,6 +281,7 @@ class EnsureNodesExist : IComponent
                 var propertyRteDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Property Editor - Richtext Editor",
+                    EditorUiAlias = EkomPropertyEditorUiAlias,
                     ConfigurationData = ToConfigurationData(new
                     {
                         dataType = new
@@ -278,6 +298,7 @@ class EnsureNodesExist : IComponent
                 var propertyContentPickerDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Property Editor - Content Picker",
+                    EditorUiAlias = EkomPropertyEditorUiAlias,
                     ConfigurationData = ToConfigurationData(new
                     {
                         dataType = new
@@ -294,6 +315,7 @@ class EnsureNodesExist : IComponent
                 var propertyTextareaDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Property Editor - Textarea",
+                    EditorUiAlias = EkomPropertyEditorUiAlias,
                     ConfigurationData = ToConfigurationData(new
                     {
                         dataType = new
@@ -310,10 +332,12 @@ class EnsureNodesExist : IComponent
                 var stockDt = EnsureDataTypeExists(new DataType(stockEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Stock Editor",
+                    EditorUiAlias = EkomStockEditorUiAlias,
                 });
                 var cacheDt = EnsureDataTypeExists(new DataType(cacheEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Cache Editor",
+                    EditorUiAlias = EkomCacheEditorUiAlias,
                 });
                 var couponDt = EnsureDataTypeExists(new DataType(couponEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
@@ -323,18 +347,22 @@ class EnsureNodesExist : IComponent
                 var currencyDt = EnsureDataTypeExists(new DataType(currencyPicker, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Currency Picker",
+                    EditorUiAlias = EkomCurrencyEditorUiAlias,
                 });
                 var zoneDt = EnsureDataTypeExists(new DataType(zonePicker, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Zone Picker",
+                    EditorUiAlias = EkomZoneEditorUiAlias,
                 });
                 var countryDt = EnsureDataTypeExists(new DataType(countryPicker, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Country Picker",
+                    EditorUiAlias = EkomCountryEditorUiAlias,
                 });
                 var priceDt = EnsureDataTypeExists(new DataType(priceEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Price Editor",
+                    EditorUiAlias = EkomPriceEditorUiAlias,
                 });
                 var rangeDt = EnsureDataTypeExists(new DataType(rangeEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
@@ -891,10 +919,10 @@ class EnsureNodesExist : IComponent
                     Icon = "icon-books",
                 });
 
-                ConfigureCatalogContentPicker(multinodeCatalogDt, catalogCt, "ekmProduct, ekmProductVariant, ekmCategory", originAlias: "Root", queryStepAlias: "NearestDescendantOrSelf");
-                ConfigureCatalogContentPicker(multinodeProductDt, catalogCt, "ekmProduct");
-                ConfigureCatalogContentPicker(multinodeCategoryDt, catalogCt, "ekmCategory");
-                ConfigureCatalogContentPicker(variantGroupDt, catalogCt, "ekmProductVariantGroup", maxNumber: 1);
+                ConfigureCatalogContentPicker(multinodeCatalogDt, catalogCt, BuildContentTypeFilter(productCt, productVariantCt, categoryCt), originAlias: "Root", queryStepAlias: "NearestDescendantOrSelf");
+                ConfigureCatalogContentPicker(multinodeProductDt, catalogCt, BuildContentTypeFilter(productCt));
+                ConfigureCatalogContentPicker(multinodeCategoryDt, catalogCt, BuildContentTypeFilter(categoryCt));
+                ConfigureVariantGroupContentPicker(variantGroupDt, BuildContentTypeFilter(productVariantGroupCt));
                 #endregion
 
                 #region Discounts
@@ -1496,10 +1524,15 @@ class EnsureNodesExist : IComponent
         return new ContentTypeSort(contentType.Key, sortOrder, contentType.Alias);
     }
 
+    private static string BuildContentTypeFilter(params IContentType[] contentTypes)
+    {
+        return string.Join(",", contentTypes.Select(contentType => contentType.Key));
+    }
+
     private void ConfigureCatalogContentPicker(
         IDataType dataType,
         IContentType catalogContentType,
-        string allowedContentTypes,
+        string allowedContentTypeFilter,
         int maxNumber = 0,
         string originAlias = "Current",
         string queryStepAlias = "NearestAncestorOrSelf")
@@ -1507,7 +1540,7 @@ class EnsureNodesExist : IComponent
         dataType.EditorUiAlias = ContentPickerEditorUiAlias;
         dataType.ConfigurationData = ToConfigurationData(new MultiNodePickerConfiguration
         {
-            Filter = allowedContentTypes,
+            Filter = allowedContentTypeFilter,
             MaxNumber = maxNumber,
             TreeSource = new MultiNodePickerConfigurationTreeSource
             {
@@ -1526,6 +1559,26 @@ class EnsureNodesExist : IComponent
                             },
                         },
                     },
+                },
+            },
+        });
+
+        _dataTypeService.Save(dataType);
+    }
+
+    private void ConfigureVariantGroupContentPicker(IDataType dataType, string variantGroupContentTypeFilter)
+    {
+        dataType.EditorUiAlias = ContentPickerEditorUiAlias;
+        dataType.ConfigurationData = ToConfigurationData(new MultiNodePickerConfiguration
+        {
+            Filter = variantGroupContentTypeFilter,
+            MaxNumber = 1,
+            TreeSource = new MultiNodePickerConfigurationTreeSource
+            {
+                ObjectType = "content",
+                DynamicRoot = new DynamicRoot
+                {
+                    OriginAlias = "Current",
                 },
             },
         });
@@ -1569,6 +1622,39 @@ class EnsureNodesExist : IComponent
         _dataTypeService.Save(dataType);
     }
 
+    private void ConfigureExistingEkomEditorUis()
+    {
+        var editorUiAliases = new Dictionary<string, string>
+        {
+            ["Ekom Repeatable Textstrings"] = MultipleTextStringEditorUiAlias,
+            ["Ekom Property Editor - Textstring"] = EkomPropertyEditorUiAlias,
+            ["Ekom Property Editor - Boolean - Stores"] = EkomPropertyEditorUiAlias,
+            ["Ekom Property Editor - Boolean"] = EkomPropertyEditorUiAlias,
+            ["Ekom Property Editor - Numeric - Stores"] = EkomPropertyEditorUiAlias,
+            ["Ekom Property Editor - Richtext Editor"] = EkomPropertyEditorUiAlias,
+            ["Ekom Property Editor - Content Picker"] = EkomPropertyEditorUiAlias,
+            ["Ekom Property Editor - Textarea"] = EkomPropertyEditorUiAlias,
+            ["Ekom Stock Editor"] = EkomStockEditorUiAlias,
+            ["Ekom Cache Editor"] = EkomCacheEditorUiAlias,
+            ["Ekom Currency Picker"] = EkomCurrencyEditorUiAlias,
+            ["Ekom Country Picker"] = EkomCountryEditorUiAlias,
+            ["Ekom Price Editor"] = EkomPriceEditorUiAlias,
+            ["Ekom Zone Picker"] = EkomZoneEditorUiAlias,
+        };
+
+        foreach (var (name, editorUiAlias) in editorUiAliases)
+        {
+            var dataType = _dataTypeService.GetDataType(name);
+
+            if (dataType == null || dataType.EditorUiAlias == editorUiAlias)
+            {
+                continue;
+            }
+
+            ConfigureEditorUi(dataType, editorUiAlias);
+        }
+    }
+
     private void ConfigurePropertyDataType(IContentType contentType, string propertyAlias, IDataType dataType)
     {
         var propertyType = contentType.PropertyTypes.FirstOrDefault(property => property.Alias == propertyAlias);
@@ -1584,7 +1670,7 @@ class EnsureNodesExist : IComponent
 
     private static Dictionary<string, object> ToConfigurationData<TConfiguration>(TConfiguration configuration)
     {
-        var json = JsonSerializer.Serialize(configuration);
+        var json = JsonSerializer.Serialize(configuration, ConfigurationSerializerOptions);
         return JsonSerializer.Deserialize<Dictionary<string, object>>(json) ?? new Dictionary<string, object>();
     }
 
@@ -1600,6 +1686,16 @@ class EnsureNodesExist : IComponent
                 "Created Data Type {Name}, editor alias {EditorAlias}",
                 dt.Name,
                 dt.EditorAlias
+            );
+        }
+        else if (!string.IsNullOrWhiteSpace(dt.EditorUiAlias) && textDt.EditorUiAlias != dt.EditorUiAlias)
+        {
+            textDt.EditorUiAlias = dt.EditorUiAlias;
+            _dataTypeService.Save(textDt);
+            _logger.LogInformation(
+                "Updated Data Type {Name}, editor UI alias {EditorUiAlias}",
+                dt.Name,
+                dt.EditorUiAlias
             );
         }
 
