@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.187](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.186...Ekom-v0.2.187) (2026-07-02)
+
+
+### Bug Fixes
+
+* **payments:** update provider packages ([#656](https://github.com/Vettvangur/Ekom/issues/656)) ([ceab137](https://github.com/Vettvangur/Ekom/commit/ceab137d52bdd52fb4d094053f143a3dc2a3b252))
+
 ## [0.2.186](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.185...Ekom-v0.2.186) (2026-07-01)
 
 
