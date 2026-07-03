@@ -1,8 +1,8 @@
-@inherits UmbracoViewPage
+﻿@inherits UmbracoViewPage
 
 @{
     Layout = "Master.cshtml";
-
+    
     var rootNode = Model.GetSite();
     var checkoutNode = rootNode.FirstChildOfType("checkout");
     var product = await _catalog.GetProductAsync();

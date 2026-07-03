@@ -216,16 +216,24 @@ export class EkomStockEditorElement extends HTMLElement implements UmbPropertyEd
 
   private setStock(storeAlias: string, rawValue: string): void {
     const value = this.parseStock(rawValue);
-    const stocks = [...this.stocks];
-    const existing = stocks.find(item => item.storeAlias === storeAlias);
+    let updatedExisting = false;
+    const stocks = this.stocks.map(item => {
+      if (item.storeAlias !== storeAlias) {
+        return item;
+      }
 
-    if (existing == null) {
+      updatedExisting = true;
+      return {
+        ...item,
+        value,
+      };
+    });
+
+    if (!updatedExisting) {
       stocks.push({
         storeAlias,
         value,
       });
-    } else {
-      existing.value = value;
     }
 
     this.stocks = stocks;

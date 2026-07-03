@@ -1,0 +1,192 @@
+﻿@inherits UmbracoViewPage
+
+@{
+    Layout = "Master.cshtml";
+
+    var order = await _order.GetOrderAsync();
+    if (order == null || order.TotalQuantity <= 0)
+    {
+        <main class="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">
+            <partial name="ekom/components/noCartResult" />
+        </main>
+
+        return;
+    }
+
+    var currentMember = await _memberManager.GetCurrentMemberAsync();
+    var memberAsContent = currentMember != null ? _memberManager.AsPublishedMember(currentMember) : null;
+    var rootNode = Model.GetSite();
+    var signInNode = rootNode.FirstChildOfType("signIn");
+    var siblings = Model.Siblings()?.Where(x => x.IsDocumentType("checkout"));
+    var nextUrl = siblings?.FirstOrDefault(x => x.SortOrder > Model.SortOrder)?.Url() ?? rootNode.Url();
+
+    var customerName = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Name) ? order.CustomerInformation.Customer.Name : memberAsContent?.Name ?? string.Empty;
+    var customerEmail = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Email) ? order.CustomerInformation.Customer.Email : currentMember?.Email ?? string.Empty;
+    var customerAddress = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Address) ? order.CustomerInformation.Customer.Address : memberAsContent?.Value<string>("address") ?? string.Empty;
+    var customerApartment = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Apartment) ? order.CustomerInformation.Customer.Apartment : memberAsContent?.Value<string>("apartment") ?? string.Empty;
+    var customerCity = !string.IsNullOrEmpty(order.CustomerInformation.Customer.City) ? order.CustomerInformation.Customer.City : memberAsContent?.Value<string>("city") ?? string.Empty;
+    var customerCountry = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Country) ? order.CustomerInformation.Customer.Country : memberAsContent?.Value<string>("country") ?? string.Empty;
+    var customerRegion = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Region) ? order.CustomerInformation.Customer.Region : memberAsContent?.Value<string>("region") ?? string.Empty;
+    var customerZipCode = !string.IsNullOrEmpty(order.CustomerInformation.Customer.ZipCode) ? order.CustomerInformation.Customer.ZipCode : memberAsContent?.Value<string>("zipCode") ?? string.Empty;
+    var customerPhone = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Phone) ? order.CustomerInformation.Customer.Phone : memberAsContent?.Value<string>("phone") ?? string.Empty;
+
+    var shippingAddress = order.CustomerInformation.Shipping.Address;
+    var shippingApartment = order.CustomerInformation.Shipping.Apartment;
+    var shippingCity = order.CustomerInformation.Shipping.City;
+    var shippingZipCode = order.CustomerInformation.Shipping.ZipCode;
+}
+
+@section Main {
+    <main class="mx-auto max-w-7xl px-4 pb-24 pt-16 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-2xl lg:max-w-none">
+            <h1 class="sr-only">Checkout</h1>
+
+            @using (Html.BeginEkomForm(FormType.UpdateCustomerInformation, htmlAttributes: new Dictionary<string, object>
+            {
+                { "class", "lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16" },
+                { "x-data", "updateCustomerInformation" },
+                { "x-on:submit.prevent", "post" },
+            }))
+            {
+                <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900 flex items-center justify-between">
+                        <span>Shipping information</span>
+                        @if (signInNode != null)
+                        {
+                            <a href="@signInNode.Url()" class="text-sm font-semibold leading-6 text-indigo-400">Already have an account? Login</a>
+                        }
+                    </h2>
+
+                    <div class="mt-4">
+                        <label for="email-address" class="block text-sm font-medium text-gray-700">Email address *</label>
+                        <div class="mt-1">
+                            <input type="email" id="email-address" name="customerEmail" autocomplete="email" value="@customerEmail" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                        <div class="sm:col-span-2">
+                            <label for="full-name" class="block text-sm font-medium text-gray-700">Full name *</label>
+                            <input type="text" id="full-name" name="customerName" autocomplete="given-name" value="@customerName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label for="address" class="block text-sm font-medium text-gray-700">Address *</label>
+                            <input type="text" name="customerAddress" id="address" autocomplete="street-address" value="@customerAddress" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label for="apartment" class="block text-sm font-medium text-gray-700">Apartment, suite, etc.</label>
+                            <input type="text" name="customerApartment" id="apartment" value="@customerApartment" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="city" class="block text-sm font-medium text-gray-700">City *</label>
+                            <input type="text" name="customerCity" id="city" autocomplete="address-level2" value="@customerCity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        </div>
+
+                        <div>
+                            <label for="country" class="block text-sm font-medium text-gray-700">Country *</label>
+                            <select id="country" name="customerCountry" autocomplete="country-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                                <!option value="US" @(customerCountry == "US" ? "selected='selected'" : "")>United States</!option>
+                                <!option value="CA" @(customerCountry == "CA" ? "selected='selected'" : "")>Canada</!option>
+                                <!option value="IS" @(customerCountry == "IS" ? "selected='selected'" : "")>Iceland</!option>
+                                <!option value="MX" @(customerCountry == "MX" ? "selected='selected'" : "")>Mexico</!option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="region" class="block text-sm font-medium text-gray-700">State / Province *</label>
+                            <input type="text" name="customerRegion" id="region" autocomplete="address-level1" value="@customerRegion" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        </div>
+
+                        <div>
+                            <label for="zip-code" class="block text-sm font-medium text-gray-700">Postal code *</label>
+                            <input type="text" name="customerZipCode" id="zip-code" autocomplete="postal-code" value="@customerZipCode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label for="phone" class="block text-sm font-medium text-gray-700">Phone *</label>
+                            <input type="text" name="customerPhone" id="phone" autocomplete="tel" value="@customerPhone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        </div>
+                    </div>
+
+                    <section aria-labelledby="billing-heading" class="mt-10">
+                        <h2 id="billing-heading" class="text-lg font-medium text-gray-900">Billing information</h2>
+                        <div class="mt-6 flex items-center">
+                            <input id="same-as-shipping" name="same-as-shipping" type="checkbox" @(order.CustomerInformation.IsBillingSameAsShipping ? "checked" : "") class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="same-as-shipping" class="ml-2 text-sm font-medium text-gray-900">Same as shipping information</label>
+                        </div>
+                    </section>
+
+                    <div class="mt-6 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                        <div class="sm:col-span-2">
+                            <label for="shippingAddress" class="block text-sm font-medium text-gray-700">Shipping address</label>
+                            <input type="text" name="shippingAddress" id="shippingAddress" autocomplete="street-address" value="@shippingAddress" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label for="shippingApartment" class="block text-sm font-medium text-gray-700">Apartment, suite, etc.</label>
+                            <input type="text" name="shippingApartment" id="shippingApartment" value="@shippingApartment" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="shippingCity" class="block text-sm font-medium text-gray-700">City</label>
+                            <input type="text" name="shippingCity" id="shippingCity" autocomplete="address-level2" value="@shippingCity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="shippingZipCode" class="block text-sm font-medium text-gray-700">Postal code</label>
+                            <input type="text" name="shippingZipCode" id="shippingZipCode" autocomplete="postal-code" value="@shippingZipCode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <partial name="ekom/components/orderSummary" view-data="@(new ViewDataDictionary(ViewData)
+                {
+                    { "order", order },
+                    { "buttonText", "Continue to delivery options" },
+                })" />
+            }
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener("alpine:init", () => {
+            Alpine.data("updateCustomerInformation", () => ({
+                data() {
+                    const formData = new FormData(this.$el);
+                    const params = new URLSearchParams();
+                    formData.forEach((value, key) => params.append(key, value));
+                    return params.toString();
+                },
+                async post() {
+                    let message = '';
+
+                    return await (await fetch(this.$el.getAttribute('action'), {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: this.data(),
+                    }).then((response) => {
+                        if (response.ok) {
+                            window.location = '@nextUrl';
+                        } else {
+                            throw new Error();
+                        }
+                    }).catch(() => {
+                        message = `<div class="rounded-md mt-5 bg-red-50 p-4 message"><h3 class="text-sm font-medium text-red-800">Invalid data</h3><p class="mt-2 text-sm text-red-700">Please ensure all fields are filled out correctly.</p></div>`;
+                    }).finally(() => {
+                        const messageElement = this.$el.querySelector('.message');
+                        if (messageElement) {
+                            messageElement.outerHTML = message;
+                        } else {
+                            this.$el.insertAdjacentHTML('beforeend', message);
+                        }
+                    }));
+                },
+            }));
+        });
+    </script>
+}

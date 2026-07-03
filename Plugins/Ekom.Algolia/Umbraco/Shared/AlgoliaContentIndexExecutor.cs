@@ -117,12 +117,11 @@ internal sealed class AlgoliaContentIndexExecutor
             {
                 ct.ThrowIfCancellationRequested();
 
-                using var ctx = _umbracoContextFactory.EnsureUmbracoContext();
-                var publishedContentType = ctx.UmbracoContext.Content?.GetContentType(contentTypeAlias);
-                if (publishedContentType is null)
+                var contentType = _contentTypeService.Get(contentTypeAlias);
+                if (contentType is null)
                     continue;
 
-                var entities = GetAllOfType(publishedContentType.Id);
+                var entities = GetAllOfType(contentType.Id);
                 var (upsertsByCulture, _) = BuildPerCultureBuckets(entities, allCultures);
 
                 foreach (var (culture, content) in upsertsByCulture)
@@ -345,7 +344,11 @@ internal sealed class AlgoliaContentIndexExecutor
 
         var indexValues = propertyEditor.PropertyIndexValueFactory.GetIndexValues(property, culture, null, true, availableCultures, contentTypes);
         var firstValue = indexValues?
+#if UMBRACO_17
+            .SelectMany(x => x.Values ?? [])
+#else
             .SelectMany(x => x.Value ?? [])
+#endif
             .FirstOrDefault();
 
         return firstValue?.ToString() ?? string.Empty;

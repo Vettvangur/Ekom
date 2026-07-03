@@ -14,9 +14,9 @@ Ekom
 Open Source Ecommerce package for Umbraco
 </h2>
 
-Supports Umbraco version 10+
+Supports Umbraco version 13+
 
-Ekom is a versatile and fully customizable eCommerce solution that is free to use forever. This package has been built with ASP NET Core, focusing on performance and security, and is compatible with Umbraco versions 10 and above.
+Ekom is a versatile and fully customizable eCommerce solution that is free to use forever. This package has been built with ASP NET Core, focusing on performance and security, and is compatible with Umbraco versions 13 and above.
 
 ## Installation
 Install the appropriate Umbraco versioned package to your solution (f.x. Ekom.U10)

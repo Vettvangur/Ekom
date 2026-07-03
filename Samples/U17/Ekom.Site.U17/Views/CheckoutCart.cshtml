@@ -1,8 +1,10 @@
-@inherits UmbracoViewPage
+﻿@inherits UmbracoViewPage
 
 @{
     Layout = "Master.cshtml";
     var order = await _order.GetOrderAsync();
+    var siblings = Model.Siblings()?.Where(x => x.IsDocumentType("checkout"));
+    var nextUrl = siblings?.FirstOrDefault(x => x.SortOrder > Model.SortOrder)?.Url();
 }
 
 @section Main {
@@ -22,7 +24,7 @@
                 <ul role="list" class="divide-y divide-gray-200 border-b border-t border-gray-200">
                     @foreach (var orderline in order.OrderLines)
                     {
-                        var images = orderline.Product.Images.ToList();
+                        var images = orderline.Product?.Images.ToList() ?? new List<Ekom.Models.Image>();
                         var ekmProduct = await _catalog.GetProductAsync(orderline.ProductKey);
 
                         <li class="flex py-6 sm:py-10">
@@ -50,10 +52,20 @@
                                     </div>
 
                                     <div class="mt-4 sm:mt-0 sm:pr-9">
-                                        @using (Html.BeginEkomForm(FormType.UpdateOrderLineQuantity, htmlAttributes: new Dictionary<string, object> { { "class", "cart__update-orderline" } }))
+                                        @using (Html.BeginEkomForm(FormType.UpdateOrderLineQuantity, htmlAttributes: new Dictionary<string, object>
+                                        {
+                                            { "class", "cart__update-orderline" },
+                                            { "x-data", "updateOrderline" },
+                                            { "x-on:submit.prevent", "post" },
+                                        }))
                                         {
                                             <input type="hidden" name="lineId" value="@orderline.Key" />
                                             <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+
+                                            @if (orderline.Product?.VariantGroups?.FirstOrDefault()?.Variants?.FirstOrDefault() != null)
+                                            {
+                                                <input type="hidden" name="variantId" value="@orderline.Product.VariantGroups?.FirstOrDefault()?.Variants?.FirstOrDefault()?.Key" />
+                                            }
 
                                             <label for="quantity-@orderline.Key" class="block text-sm font-medium leading-6 text-gray-900">Quantity</label>
                                             <div class="mt-2 flex gap-2">
@@ -63,7 +75,12 @@
                                         }
 
                                         <div class="absolute right-0 top-0">
-                                            @using (Html.BeginEkomForm(FormType.RemoveOrderLine, htmlAttributes: new Dictionary<string, object> { { "class", "cart__remove-orderline" } }))
+                                            @using (Html.BeginEkomForm(FormType.RemoveOrderLine, htmlAttributes: new Dictionary<string, object>
+                                            {
+                                                { "class", "cart__remove-orderline" },
+                                                { "x-data", "removeOrderline" },
+                                                { "x-on:submit.prevent", "post" },
+                                            }))
                                             {
                                                 <input type="hidden" name="lineId" value="@orderline.Key" />
                                                 <input type="hidden" name="storeAlias" value="@orderline.OrderInfo.StoreInfo.Alias" />
@@ -82,18 +99,155 @@
             </section>
 
             <section aria-labelledby="summary-heading" class="mt-16 rounded-lg bg-gray-50 px-4 py-6 sm:p-6 lg:col-span-5 lg:mt-0 lg:p-8">
+                @using (Html.BeginEkomForm(FormType.ApplyCouponToOrder, htmlAttributes: new Dictionary<string, object>
+                {
+                    { "class", "cart__add-coupon mb-6" },
+                    { "x-data", "addCoupon" },
+                    { "x-on:submit.prevent", "post" },
+                }))
+                {
+                    <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+                    <label for="discount-code" class="block text-sm font-medium text-gray-700">Discount code</label>
+                    <div class="mt-1 flex space-x-4">
+                        <input type="text" id="discount-code" name="coupon" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <button type="submit" class="rounded-md bg-gray-200 px-4 text-sm font-medium text-gray-600 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50">Apply</button>
+                    </div>
+                }
+
                 <h2 id="summary-heading" class="text-lg font-medium text-gray-900">Order summary</h2>
                 <dl class="mt-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <dt class="text-sm text-gray-600">Subtotal</dt>
-                        <dd class="text-sm font-medium text-gray-900">@order.SubTotal.WithVat.CurrencyString</dd>
+                        <dt class="text-sm text-gray-600">Subtotal (without VAT, before discounts)</dt>
+                        <dd class="text-sm font-medium text-gray-900">@order.SubTotal.WithoutVat.CurrencyString</dd>
                     </div>
+
+                    @if (order.ProductDiscountAmount.Value > 0)
+                    {
+                        <div class="flex items-center justify-between">
+                            <dt class="text-sm text-gray-600">Product Discount</dt>
+                            <dd class="text-sm font-medium text-gray-900">-@order.ProductDiscountAmountWithOutVat.CurrencyString</dd>
+                        </div>
+                    }
+
+                    @if (order.Discount != null)
+                    {
+                        <div class="flex items-center justify-between">
+                            <dt class="text-sm text-gray-600">
+                                Order Discount
+                                @if (!string.IsNullOrEmpty(order.Coupon))
+                                {
+                                    <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs tracking-wide text-gray-600">@order.Coupon</span>
+                                }
+                            </dt>
+                            <dd class="text-sm font-medium text-gray-900">-@order.DiscountAmountWithOutVat.CurrencyString</dd>
+                        </div>
+                    }
+
+                    @if (order.ShippingProvider != null)
+                    {
+                        <div class="flex items-center justify-between">
+                            <dt class="text-sm text-gray-600">
+                                Shipping cost
+                                <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs tracking-wide text-gray-600">@order.ShippingProvider.Title</span>
+                            </dt>
+                            <dd class="text-sm font-medium text-gray-900">@order.ShippingProvider.Price.WithVat.CurrencyString</dd>
+                        </div>
+                    }
+
+                    <div class="flex items-center justify-between">
+                        <dt class="text-sm text-gray-600">VAT</dt>
+                        <dd class="text-sm font-medium text-gray-900">@order.Vat.CurrencyString</dd>
+                    </div>
+
                     <div class="flex items-center justify-between border-t border-gray-200 pt-4">
-                        <dt class="text-base font-medium text-gray-900">Order total</dt>
+                        <dt class="text-base font-medium text-gray-900">Grand Total (incl. VAT)</dt>
                         <dd class="text-base font-medium text-gray-900">@order.ChargedAmount.CurrencyString</dd>
                     </div>
                 </dl>
+
+                @if (!string.IsNullOrEmpty(nextUrl))
+                {
+                    <div class="mt-6">
+                        <a href="@nextUrl" class="w-full block text-center rounded-md border border-transparent bg-indigo-600 px-4 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50">Checkout</a>
+                    </div>
+                }
             </section>
         </div>
     </main>
+
+    <script>
+        document.addEventListener("alpine:init", () => {
+            const toJson = (form) => {
+                const formData = new FormData(form);
+                const jsonObject = {};
+                formData.forEach((value, key) => {
+                    jsonObject[key] = key === 'quantity' ? Number(value) : value;
+                });
+                return JSON.stringify(jsonObject);
+            };
+
+            Alpine.data("updateOrderline", () => ({
+                async post() {
+                    return await (await fetch(this.$el.getAttribute('action'), {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: toJson(this.$el),
+                    }).then((response) => {
+                        if (response.ok) {
+                            window.location.reload();
+                        } else if (response.status === 409) {
+                            alert('stock error');
+                        } else {
+                            throw new Error('Something went wrong.');
+                        }
+                    }).catch(() => alert('error')));
+                },
+            }));
+
+            Alpine.data("removeOrderline", () => ({
+                async post() {
+                    return await (await fetch(this.$el.getAttribute('action'), {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: toJson(this.$el),
+                    }).then((response) => {
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            throw new Error('Something went wrong.');
+                        }
+                    }).catch(() => alert('error')));
+                },
+            }));
+
+            Alpine.data("addCoupon", () => ({
+                async post() {
+                    let message = '';
+
+                    return await (await fetch(this.$el.getAttribute('action'), {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: toJson(this.$el),
+                    }).then((response) => {
+                        if (response.ok) {
+                            window.location.reload();
+                        } else if (response.status === 450) {
+                            throw new Error("Coupon not added, better discount found on order.");
+                        } else {
+                            throw new Error();
+                        }
+                    }).catch(() => {
+                        message = `<div class="rounded-md mt-5 bg-red-50 p-4 message"><h3 class="text-sm font-medium text-red-800">Invalid discount code</h3><p class="mt-2 text-sm text-red-700">Please double-check the code and try again.</p></div>`;
+                    }).finally(() => {
+                        const messageElement = this.$el.querySelector('.message');
+                        if (messageElement) {
+                            messageElement.outerHTML = message;
+                        } else {
+                            this.$el.insertAdjacentHTML('beforeend', message);
+                        }
+                    }));
+                },
+            }));
+        });
+    </script>
 }

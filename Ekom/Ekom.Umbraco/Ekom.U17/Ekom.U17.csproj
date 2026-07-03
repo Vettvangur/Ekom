@@ -50,7 +50,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ekom.Payments.U17" Version="0.2.80" />
+        <PackageReference Include="Ekom.Payments.U17" Version="0.2.83" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="Umbraco.Cms.Api.Common" Version="[17.0.0,18.0.0)" />
         <PackageReference Include="Umbraco.Cms.Core" Version="[17.0.0,18.0.0)" />

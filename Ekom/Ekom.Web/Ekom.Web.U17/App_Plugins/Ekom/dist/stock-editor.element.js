@@ -1,19 +1,19 @@
 var u = Object.defineProperty;
 var l = (a, o, t) => o in a ? u(a, o, { enumerable: !0, configurable: !0, writable: !0, value: t }) : a[o] = t;
-var r = (a, o, t) => l(a, typeof o != "symbol" ? o + "" : o, t);
+var i = (a, o, t) => l(a, typeof o != "symbol" ? o + "" : o, t);
 import { UmbChangeEvent as d } from "@umbraco-cms/backoffice/event";
 class h extends HTMLElement {
   constructor() {
     super(...arguments);
-    r(this, "manifest");
-    r(this, "name");
-    r(this, "dataSourceAlias");
-    r(this, "config");
-    r(this, "mandatory");
-    r(this, "mandatoryMessage");
-    r(this, "editor");
-    r(this, "status");
-    r(this, "stocks", []);
+    i(this, "manifest");
+    i(this, "name");
+    i(this, "dataSourceAlias");
+    i(this, "config");
+    i(this, "mandatory");
+    i(this, "mandatoryMessage");
+    i(this, "editor");
+    i(this, "status");
+    i(this, "stocks", []);
   }
   get value() {
     return this.stocks;
@@ -45,8 +45,8 @@ class h extends HTMLElement {
     if (e.length <= 1)
       return [await this.loadStockItem(t, "")];
     const s = [];
-    for (const i of e)
-      i.alias != null && s.push(await this.loadStockItem(t, i.alias));
+    for (const r of e)
+      r.alias != null && s.push(await this.loadStockItem(t, r.alias));
     return s;
   }
   async loadStockItem(t, e) {
@@ -57,10 +57,10 @@ class h extends HTMLElement {
       };
     const s = e.length > 0 ? `/ekom/backoffice/Stock/${t}/StoreAlias/${e}` : `/ekom/backoffice/Stock/${t}`;
     try {
-      const i = await this.fetchJson(s);
+      const r = await this.fetchJson(s);
       return {
         storeAlias: e,
-        value: this.parseStock(i)
+        value: this.parseStock(r)
       };
     } catch {
       return {
@@ -128,8 +128,8 @@ class h extends HTMLElement {
         t.append(this.createStockInput(e));
         continue;
       }
-      const s = document.createElement("fieldset"), i = document.createElement("legend");
-      i.textContent = e.storeAlias, s.append(i, this.createStockInput(e)), t.append(s);
+      const s = document.createElement("fieldset"), r = document.createElement("legend");
+      r.textContent = e.storeAlias, s.append(r, this.createStockInput(e)), t.append(s);
     }
     this.editor.replaceChildren(t), this.syncDisabledState();
   }
@@ -138,11 +138,16 @@ class h extends HTMLElement {
     return e.type = "number", e.min = "0", e.step = "any", e.id = `stock_${t.storeAlias}`, e.dataset.store = t.storeAlias, e.value = String(t.value), e.addEventListener("input", () => this.setStock(t.storeAlias, e.value)), e;
   }
   setStock(t, e) {
-    const s = this.parseStock(e), i = [...this.stocks], n = i.find((c) => c.storeAlias === t);
-    n == null ? i.push({
+    const s = this.parseStock(e);
+    let r = !1;
+    const c = this.stocks.map((n) => n.storeAlias !== t ? n : (r = !0, {
+      ...n,
+      value: s
+    }));
+    r || c.push({
       storeAlias: t,
       value: s
-    }) : n.value = s, this.stocks = i, this.emitChange();
+    }), this.stocks = c, this.emitChange();
   }
   getExistingValue(t) {
     var e;
@@ -178,11 +183,11 @@ class h extends HTMLElement {
   getNodeId() {
     const t = new URL(window.location.href), e = t.searchParams.get("id");
     if (e != null) {
-      const i = Number.parseInt(e, 10);
-      if (!Number.isNaN(i))
-        return i;
+      const r = Number.parseInt(e, 10);
+      if (!Number.isNaN(r))
+        return r;
     }
-    const s = t.pathname.split("/").reverse().find((i) => /^\d+$/.test(i));
+    const s = t.pathname.split("/").reverse().find((r) => /^\d+$/.test(r));
     return s == null ? 0 : Number.parseInt(s, 10);
   }
   parseStock(t) {

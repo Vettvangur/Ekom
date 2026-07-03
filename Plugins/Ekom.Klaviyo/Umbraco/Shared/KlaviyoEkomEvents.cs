@@ -11,7 +11,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
-using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Events;
 
@@ -164,7 +163,7 @@ internal sealed class KlaviyoEkomEvents : IComponent
 
     private KlaviyoStartedCheckoutEvent CreateStartedCheckoutEvent(IOrderInfo orderInfo, bool useCartFingerprint)
     {
-        var storeOptions = _opt.Stores.FirstOrDefault(x => x.Alias.InvariantEquals(orderInfo.StoreInfo.Alias));
+        var storeOptions = _opt.Stores.FirstOrDefault(x => string.Equals(x.Alias, orderInfo.StoreInfo.Alias, StringComparison.OrdinalIgnoreCase));
 
         return new KlaviyoStartedCheckoutEvent
         {
