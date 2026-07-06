@@ -112,6 +112,9 @@ internal class KlaviyoProductController : ControllerBase
                             },
                             ct);
 
+                        if (!HasProductLink(item))
+                            continue;
+
                         feed.Add(item);
                     }
                 }
@@ -289,6 +292,11 @@ internal class KlaviyoProductController : ControllerBase
     private static bool HasProductImage(IProduct product)
     {
         return !string.IsNullOrWhiteSpace(product.Images?.FirstOrDefault()?.Url);
+    }
+
+    private static bool HasProductLink(KlaviyoProductFeedItem item)
+    {
+        return !string.IsNullOrWhiteSpace(item.Link);
     }
 
     private bool IsAuthorized(HttpRequest request, string expectedUser, string expectedPassword)
