@@ -140,7 +140,7 @@ internal sealed class KlaviyoCatalogDispatcher : BackgroundService, IKlaviyoCata
                         }
                         else
                         {
-                            item = product?.ToKlaviyoCatalogItem(w.IsPublished, _opt.SiteBaseUrl);
+                            item = product?.ToKlaviyoCatalogItem(w.IsPublished, _opt.SiteBaseUrl, _opt.ImageBaseUrl);
                         }
 
                         if (item is null)
