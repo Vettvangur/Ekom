@@ -38,7 +38,7 @@ internal class KlaviyoBackofficeController : UmbracoAuthorizedApiController
 
             var productsResponse = await API.Catalog.Instance.GetAllProductsAsync(store.Alias,ct: ct);
 
-            var products = productsResponse.Products.ToKlaviyoCatalogItems(true, _opt.SiteBaseUrl).ToList();
+            var products = productsResponse.Products.ToKlaviyoCatalogItems(true, _opt.SiteBaseUrl, _opt.ImageBaseUrl).ToList();
 
             await _klaviyoClient.BulkCreateCatalogItemsAsync(products, store.Alias, ct);
 

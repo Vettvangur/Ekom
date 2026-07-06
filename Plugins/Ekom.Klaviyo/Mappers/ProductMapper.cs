@@ -6,8 +6,10 @@ namespace Ekom.Klaviyo.Mappers;
 
 public static class ProductMapper
 {
-    public static KlaviyoProductItem ToKlaviyoCatalogItem(this IProduct product, bool isPublished, string host)
+    public static KlaviyoProductItem ToKlaviyoCatalogItem(this IProduct product, bool isPublished, string host, string? imageHost = null)
     {
+        var effectiveImageHost = string.IsNullOrWhiteSpace(imageHost) ? host : imageHost;
+
         return new KlaviyoProductItem
         {
             Id = product.Key,
@@ -19,13 +21,13 @@ public static class ProductMapper
             Url = UrlBuilder.Combine(host, product.Url),
             Description = product.Description,
             Summary = product.Summary,
-            ImageFullUrl = UrlBuilder.Combine(host, product.Images.FirstOrDefault()?.Url ?? ""),
+            ImageFullUrl = UrlBuilder.Combine(effectiveImageHost, product.Images.FirstOrDefault()?.Url ?? ""),
             Published = isPublished,
         };
     }
 
-    public static IEnumerable<KlaviyoProductItem> ToKlaviyoCatalogItems(this IEnumerable<IProduct> products, bool isPublished, string host)
+    public static IEnumerable<KlaviyoProductItem> ToKlaviyoCatalogItems(this IEnumerable<IProduct> products, bool isPublished, string host, string? imageHost = null)
     {
-        return products.Select(x => x.ToKlaviyoCatalogItem(isPublished, host));
+        return products.Select(x => x.ToKlaviyoCatalogItem(isPublished, host, imageHost));
     }
 }

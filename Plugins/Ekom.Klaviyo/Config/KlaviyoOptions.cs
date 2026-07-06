@@ -20,6 +20,7 @@ public sealed class KlaviyoOptions
 
     public IReadOnlyCollection<KlaviyoStoreOptions> Stores { get; init; } = [];
     public required string SiteBaseUrl { get; init; } = "";
+    public string? ImageBaseUrl { get; init; }
     public bool Testing { get; init; } = false;
 }
 
