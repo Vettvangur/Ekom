@@ -15,11 +15,12 @@ internal static class ProductFeedMapper
         var storeAlias = product.Store?.Alias;
         var language = NullIfWhiteSpace(culture) ?? product.Store?.Culture?.Name ?? "default";
         var link = UrlBuilder.Combine(options.SiteBaseUrl, product.Url);
+        var imageBaseUrl = string.IsNullOrWhiteSpace(options.ImageBaseUrl) ? options.SiteBaseUrl : options.ImageBaseUrl;
 
         var imageUrl = product.Images?.FirstOrDefault()?.Url;
         var imageLink = string.IsNullOrWhiteSpace(imageUrl)
             ? null
-            : UrlBuilder.Combine(options.SiteBaseUrl, imageUrl + options.Catalog.ImageCrop);
+            : UrlBuilder.Combine(imageBaseUrl, imageUrl + options.Catalog.ImageCrop);
 
         var price = options.Catalog.ShowPrice ? product.Price?.WithVat.Value : null;
         var vat = options.Catalog.ShowPrice ? product.Vat : (decimal?)null;

@@ -16,6 +16,7 @@ public static class OrderLineMapper
 
         var orderlineAmount = ol.Amount;
         var productPrice = ol.Product?.Price;
+        var imageBaseUrl = string.IsNullOrWhiteSpace(opt.ImageBaseUrl) ? opt.SiteBaseUrl : opt.ImageBaseUrl;
 
         var orderLine = new KlaviyoOrderLine
         {
@@ -37,7 +38,7 @@ public static class OrderLineMapper
             DiscountFormatted = ol.Amount.DiscountAmount.CurrencyString,
             Quantity = ol.Quantity,
             ProductUrl = string.IsNullOrWhiteSpace(ol.Product?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Product.Url),
-            ImageUrl = string.IsNullOrWhiteSpace(ol.Product?.Images.FirstOrDefault()?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Product.Images.FirstOrDefault()?.Url ?? ""),
+            ImageUrl = string.IsNullOrWhiteSpace(ol.Product?.Images.FirstOrDefault()?.Url) ? null : UrlBuilder.Combine(imageBaseUrl, ol.Product.Images.FirstOrDefault()?.Url ?? ""),
             Categories = categories
         };
 
@@ -47,7 +48,7 @@ public static class OrderLineMapper
             {
                 Sku = ol.Variant.SKU,
                 Name = ol.Variant.Title,
-                ImageUrl = string.IsNullOrWhiteSpace(ol.Variant?.Images.FirstOrDefault()?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Variant.Images.FirstOrDefault()?.Url ?? ""),
+                ImageUrl = string.IsNullOrWhiteSpace(ol.Variant?.Images.FirstOrDefault()?.Url) ? null : UrlBuilder.Combine(imageBaseUrl, ol.Variant.Images.FirstOrDefault()?.Url ?? ""),
             };
         }
 
