@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.94](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.93...Ekom.Klaviyo-v0.2.94) (2026-07-06)
+
+
+### Bug Fixes
+
+* **klaviyo:** support separate image base URL ([#658](https://github.com/Vettvangur/Ekom/issues/658)) ([981dc41](https://github.com/Vettvangur/Ekom/commit/981dc4107fb7f0ebc0c1ccf7d1d2d2ce683b59ad))
+
 ## [0.2.93](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.92...Ekom.Klaviyo-v0.2.93) (2026-06-23)
 
 
