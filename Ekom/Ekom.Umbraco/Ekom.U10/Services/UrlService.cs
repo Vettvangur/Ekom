@@ -3,6 +3,7 @@ using Ekom.Models.Umbraco;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Globalization;
@@ -335,7 +336,13 @@ class UrlService : IUrlService
         using var cref = _context.EnsureUmbracoContext();
         var pubReq = cref.UmbracoContext.PublishedRequest;
 
-        var culture = pubReq?.Culture ?? CultureInfo.CurrentCulture.Name;
+        var requestCulture = _httpContextAccessor.HttpContext?
+            .Features.Get<IRequestCultureFeature>()?
+            .RequestCulture
+            .Culture
+            .Name;
+
+        var culture = requestCulture ?? pubReq?.Culture ?? CultureInfo.CurrentCulture.Name;
         var uri = pubReq?.Domain?.Uri ?? CookieHelper.GetUmbracoDomain(_httpContextAccessor?.HttpContext?.Request.Cookies);
 
         var urlsWithContext = node.UrlsWithContext;

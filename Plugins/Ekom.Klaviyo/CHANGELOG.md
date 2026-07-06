@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.95](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.94...Ekom.Klaviyo-v0.2.95) (2026-07-06)
+
+
+### Bug Fixes
+
+* **klaviyo:** resolve feed URLs by request culture ([#660](https://github.com/Vettvangur/Ekom/issues/660)) ([27052d7](https://github.com/Vettvangur/Ekom/commit/27052d7b381861fd4ccd13bc0f8fc8ee2891bb19))
+
 ## [0.2.94](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.93...Ekom.Klaviyo-v0.2.94) (2026-07-06)
 
 
