@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.188](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.187...Ekom-v0.2.188) (2026-07-06)
+
+
+### Bug Fixes
+
+* **klaviyo:** resolve feed URLs by request culture ([#660](https://github.com/Vettvangur/Ekom/issues/660)) ([27052d7](https://github.com/Vettvangur/Ekom/commit/27052d7b381861fd4ccd13bc0f8fc8ee2891bb19))
+
 ## [0.2.187](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.186...Ekom-v0.2.187) (2026-07-02)
 
 
