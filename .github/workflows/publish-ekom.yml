@@ -23,13 +23,39 @@ jobs:
             8.0.x
             10.0.x
 
-      - name: Restore
-        run: dotnet restore "./Ekom Build.sln"
+      - name: Restore shared packages
+        shell: pwsh
+        run: |
+          dotnet restore "Ekom/Ekom.Core/Ekom.AspNetCore/Ekom.AspNetCore.csproj"
 
-      - name: Build (Release)
-        run: dotnet build "./Ekom Build.sln" -c Release --no-restore
+      - name: Build shared packages (Release)
+        run: dotnet build "Ekom/Ekom.Core/Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release --no-restore
 
-      - name: Pack (Ekom core)
+      - name: Restore U10 packages
+        shell: pwsh
+        run: |
+          dotnet restore "Ekom/Ekom.Umbraco/Ekom.U10/Ekom.U10.csproj" -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
+          dotnet restore "Ekom/Ekom.Web/Ekom.Web/Ekom.Web.csproj" -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
+
+      - name: Build U10 packages (Release)
+        shell: pwsh
+        run: |
+          dotnet build "Ekom/Ekom.Umbraco/Ekom.U10/Ekom.U10.csproj" -c Release --no-restore -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
+          dotnet build "Ekom/Ekom.Web/Ekom.Web/Ekom.Web.csproj" -c Release --no-restore -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
+
+      - name: Restore U17 packages
+        shell: pwsh
+        run: |
+          dotnet restore "Ekom/Ekom.Umbraco/Ekom.U17/Ekom.U17.csproj" -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
+          dotnet restore "Ekom/Ekom.Web/Ekom.Web.U17/Ekom.Web.U17.csproj" -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
+
+      - name: Build U17 packages (Release)
+        shell: pwsh
+        run: |
+          dotnet build "Ekom/Ekom.Umbraco/Ekom.U17/Ekom.U17.csproj" -c Release --no-restore -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
+          dotnet build "Ekom/Ekom.Web/Ekom.Web.U17/Ekom.Web.U17.csproj" -c Release --no-restore -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
+
+      - name: Pack Ekom packages
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -47,13 +73,20 @@ jobs:
 
           Write-Host "Packing Ekom packages with PackageVersion=$version (tag $tag)"
 
-          dotnet pack "Ekom/Ekom.Core/Ekom/Ekom.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet restore "Ekom/Ekom.Core/Ekom.AspNetCore/Ekom.AspNetCore.csproj"
           dotnet pack "Ekom/Ekom.Core/Ekom.Common/Ekom.Common.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom/Ekom.Core/Ekom/Ekom.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
           dotnet pack "Ekom/Ekom.Core/Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U10/Ekom.U10.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U17/Ekom.U17.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom/Ekom.Web/Ekom.Web/Ekom.Web.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom/Ekom.Web/Ekom.Web.U17/Ekom.Web.U17.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+
+          dotnet restore "Ekom/Ekom.Umbraco/Ekom.U10/Ekom.U10.csproj" -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
+          dotnet restore "Ekom/Ekom.Web/Ekom.Web/Ekom.Web.csproj" -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
+          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U10/Ekom.U10.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
+          dotnet pack "Ekom/Ekom.Web/Ekom.Web/Ekom.Web.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
+
+          dotnet restore "Ekom/Ekom.Umbraco/Ekom.U17/Ekom.U17.csproj" -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
+          dotnet restore "Ekom/Ekom.Web/Ekom.Web.U17/Ekom.Web.U17.csproj" -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
+          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U17/Ekom.U17.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
+          dotnet pack "Ekom/Ekom.Web/Ekom.Web.U17/Ekom.Web.U17.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
 
           Get-ChildItem -Path artifacts -Filter *.nupkg -File | Format-Table Name,Length
 
