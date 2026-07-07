@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.96](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.95...Ekom.Klaviyo-v0.2.96) (2026-07-07)
+
+
+### Bug Fixes
+
+* **payments:** update provider packages ([#662](https://github.com/Vettvangur/Ekom/issues/662)) ([bc63e58](https://github.com/Vettvangur/Ekom/commit/bc63e58bcdf27ec29472ba55e4678e4084ad6896))
+
 ## [0.2.95](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.94...Ekom.Klaviyo-v0.2.95) (2026-07-06)
 
 
