@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.190](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.189...Ekom-v0.2.190) (2026-07-07)
+
+
+### Features
+
+* **umbraco:** add Umbraco 17 support ([#664](https://github.com/Vettvangur/Ekom/issues/664)) ([c757fa5](https://github.com/Vettvangur/Ekom/commit/c757fa5686b851d3c58eb80237c7afdeb74bcc71))
+
 ## [0.2.189](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.188...Ekom-v0.2.189) (2026-07-07)
 
 
