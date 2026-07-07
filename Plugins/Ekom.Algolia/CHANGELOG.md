@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.31](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.30...Ekom.Algolia-v0.2.31) (2026-07-07)
+
+
+### Bug Fixes
+
+* **payments:** update provider packages ([#662](https://github.com/Vettvangur/Ekom/issues/662)) ([bc63e58](https://github.com/Vettvangur/Ekom/commit/bc63e58bcdf27ec29472ba55e4678e4084ad6896))
+
 ## [0.2.30](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.29...Ekom.Algolia-v0.2.30) (2026-06-29)
 
 
