@@ -238,5 +238,5 @@ public sealed class ProductSearchController
 - `|array` parses JSON arrays such as checkbox-list values like `["Web","Store"]` into Algolia string arrays.
 - `|decimal` accepts either comma or dot decimal separators, so values like `0,1` and `0.0` are indexed as decimals.
 - Invalid `|array`, `|int`, and `|decimal` values are skipped instead of being indexed as strings.
-- Manual reindex all endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildIndexesAsync`.
-- Manual reindex store endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildStoreIndexesAsync?storeAlias=Store`.
+- Manual reindex all endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildIndexes`.
+- Manual reindex store endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildStoreIndexes?storeAlias=Store`.

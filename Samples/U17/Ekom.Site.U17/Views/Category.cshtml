@@ -1,0 +1,69 @@
+﻿@inherits UmbracoViewPage
+
+@{
+    Layout = "Master.cshtml";
+
+    var category = await _catalog.GetCategoryAsync();
+    if (category == null)
+    {
+        return;
+    }
+
+    var orderBy = Context.Request.Query["orderby"];
+    var currentPage = PaginationHelper.GetCurrentPage(Context);
+    var productResponse = await category.ProductsRecursiveAsync(new ProductQuery(Context.Request.Query)
+    {
+        Page = currentPage,
+        PageSize = 6,
+        AllFiltersVisible = true
+    });
+}
+
+@section Main {
+    <main class="mx-auto max-w-2xl px-4 lg:max-w-7xl lg:px-8" x-data>
+        <form method="get" action="@category.Url">
+            <div class="flex items-baseline justify-between border-b border-gray-200 pb-6 pt-24">
+                <h1 class="text-4xl font-bold tracking-tight text-gray-900">@category.Title</h1>
+
+                @if (productResponse.ProductCount > 0)
+                {
+                    <div class="flex items-center">
+                        <label for="orderby" class="sr-only">Sort</label>
+                        <select id="orderby" name="orderby" class="rounded-md border-gray-300 text-sm" onchange="this.form.submit()">
+                            <option value="TitleAsc" selected="@(orderBy == "TitleAsc" || string.IsNullOrEmpty(orderBy))">Title: Low to High</option>
+                            <option value="TitleDesc" selected="@(orderBy == "TitleDesc")">Title: High to Low</option>
+                            <option value="PriceAsc" selected="@(orderBy == "PriceAsc")">Price: Low to High</option>
+                            <option value="PriceDesc" selected="@(orderBy == "PriceDesc")">Price: High to Low</option>
+                            <option value="DateAsc" selected="@(orderBy == "DateAsc")">Date: Low to High</option>
+                            <option value="DateDesc" selected="@(orderBy == "DateDesc")">Date: High to Low</option>
+                        </select>
+                    </div>
+                }
+            </div>
+
+            <div class="pb-24 pt-12 lg:grid lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4">
+                <partial name="ekom/components/categoryNavigation" view-data="@(new ViewDataDictionary(ViewData) { { "productResponse", productResponse } })" />
+
+                <section aria-labelledby="product-heading" class="mt-6 lg:col-span-2 lg:mt-0 xl:col-span-3">
+                    <h2 id="product-heading" class="sr-only">Products</h2>
+
+                    @if (productResponse.ProductCount <= 0)
+                    {
+                        <partial name="ekom/components/noProductResult" />
+                    }
+                    else
+                    {
+                        <div class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:gap-x-8 xl:grid-cols-3">
+                            @foreach (var product in productResponse.Products)
+                            {
+                                <partial name="ekom/components/cards/productCard" view-data="@(new ViewDataDictionary(ViewData) { { "product", product } })" />
+                            }
+                        </div>
+
+                        <partial name="ekom/components/pagination" view-data="@(new ViewDataDictionary(ViewData) { { "productResponse", productResponse } })" />
+                    }
+                </section>
+            </div>
+        </form>
+    </main>
+}

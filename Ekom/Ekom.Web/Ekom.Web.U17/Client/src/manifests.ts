@@ -1,0 +1,267 @@
+export const manifests: Array<UmbExtensionManifest> = [
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Cache',
+    name: 'Ekom Cache Editor',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Cache',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Cache',
+    name: 'Ekom Cache Editor UI',
+    element: '/App_Plugins/Ekom/dist/cache-editor.element.js',
+    meta: {
+      label: 'Ekom Cache',
+      propertyEditorSchemaAlias: 'Ekom.Cache',
+      icon: 'icon-time',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Price',
+    name: 'Ekom Price Editor',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Price',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Price',
+    name: 'Ekom Price Editor UI',
+    element: '/App_Plugins/Ekom/dist/price-editor.element.js',
+    meta: {
+      label: 'Ekom Price',
+      propertyEditorSchemaAlias: 'Ekom.Price',
+      icon: 'icon-bill-dollar',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Coupon',
+    name: 'Ekom Coupon Editor',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Coupon',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Coupon',
+    name: 'Ekom Coupon Editor UI',
+    element: '/App_Plugins/Ekom/dist/coupon-editor.element.js',
+    meta: {
+      label: 'Ekom Coupon',
+      propertyEditorSchemaAlias: 'Ekom.Coupon',
+      icon: 'icon-ticket',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Stock',
+    name: 'Ekom Stock Editor',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Stock',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Stock',
+    name: 'Ekom Stock Editor UI',
+    element: '/App_Plugins/Ekom/dist/stock-editor.element.js',
+    meta: {
+      label: 'Ekom Stock',
+      propertyEditorSchemaAlias: 'Ekom.Stock',
+      icon: 'icon-box',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Range',
+    name: 'Ekom Range Editor',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Range',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Range',
+    name: 'Ekom Range Editor UI',
+    element: '/App_Plugins/Ekom/dist/range-editor.element.js',
+    meta: {
+      label: 'Ekom Range',
+      propertyEditorSchemaAlias: 'Ekom.Range',
+      icon: 'icon-navigation-horizontal',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Currency',
+    name: 'Ekom Currency Picker',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Currency',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Currency',
+    name: 'Ekom Currency Picker UI',
+    element: '/App_Plugins/Ekom/dist/currency-picker.element.js',
+    meta: {
+      label: 'Ekom Currency',
+      propertyEditorSchemaAlias: 'Ekom.Currency',
+      icon: 'icon-coins-dollar-alt',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Country',
+    name: 'Ekom Country Picker',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Country',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Country',
+    name: 'Ekom Country Picker UI',
+    element: '/App_Plugins/Ekom/dist/country-picker.element.js',
+    meta: {
+      label: 'Ekom Country',
+      propertyEditorSchemaAlias: 'Ekom.Country',
+      icon: 'icon-globe',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Zone',
+    name: 'Ekom Zone Picker',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Zone',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Zone',
+    name: 'Ekom Zone Picker UI',
+    element: '/App_Plugins/Ekom/dist/zone-picker.element.js',
+    meta: {
+      label: 'Ekom Zone',
+      propertyEditorSchemaAlias: 'Ekom.Zone',
+      icon: 'icon-globe-alt',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Metafield',
+    name: 'Ekom Metafield Picker',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Metafield',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Metafield',
+    name: 'Ekom Metafield Picker UI',
+    element: '/App_Plugins/Ekom/dist/metafield-picker.element.js',
+    meta: {
+      label: 'Ekom Metafield',
+      propertyEditorSchemaAlias: 'Ekom.Metafield',
+      icon: 'icon-tags',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Metavalue',
+    name: 'Ekom Metavalue Editor',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Metavalue',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Metavalue',
+    name: 'Ekom Metavalue Editor UI',
+    element: '/App_Plugins/Ekom/dist/metavalue-editor.element.js',
+    meta: {
+      label: 'Ekom Metavalue',
+      propertyEditorSchemaAlias: 'Ekom.Metavalue',
+      icon: 'icon-ordered-list',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
+    alias: 'Ekom.Property',
+    name: 'Ekom Property Editor',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.Property',
+      settings: {
+        properties: [
+          {
+            alias: 'dataType',
+            label: 'Data Type',
+            description: 'Select the data type to wrap.',
+            propertyEditorUiAlias: 'Ekom.PropertyEditorUi.DataTypePicker',
+          },
+          {
+            alias: 'useLanguages',
+            label: 'Use Languages',
+            description: 'Defaults to stores. Select this to use languages instead.',
+            propertyEditorUiAlias: 'Umb.PropertyEditorUi.Toggle',
+          },
+          {
+            alias: 'hideLabel',
+            label: 'Hide Label',
+            description: 'Hide the Umbraco property title and description.',
+            propertyEditorUiAlias: 'Umb.PropertyEditorUi.Toggle',
+          },
+        ],
+      },
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.DataTypePicker',
+    name: 'Ekom Data Type Picker UI',
+    element: '/App_Plugins/Ekom/dist/data-type-picker.element.js',
+    meta: {
+      label: 'Ekom Data Type Picker',
+      icon: 'icon-autofill',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.Property',
+    name: 'Ekom Property Editor UI',
+    element: '/App_Plugins/Ekom/dist/property-editor.element.js',
+    meta: {
+      label: 'Ekom Property',
+      propertyEditorSchemaAlias: 'Ekom.Property',
+      icon: 'icon-autofill',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+];

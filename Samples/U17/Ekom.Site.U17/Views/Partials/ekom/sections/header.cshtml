@@ -1,0 +1,49 @@
+@inherits UmbracoViewPage
+
+@{
+    var rootNode = Model.GetSite();
+    var rootCategories = _catalog.GetRootCategories();
+    var order = await _order.GetOrderAsync();
+    var checkoutNode = rootNode.DescendantsOrSelf().FirstOrDefault(x => x.IsDocumentType("checkout"));
+}
+
+<nav aria-label="Top" class="relative z-20 bg-white bg-opacity-90 backdrop-blur-xl backdrop-filter">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center">
+            <div class="flex lg:ml-0">
+                <a href="@rootNode.Url()">
+                    <span class="sr-only">Ekom</span>
+                    <img class="h-5 w-auto" src="/content/ekomlogo.svg" alt="Ekom">
+                </a>
+            </div>
+
+            <div class="hidden lg:ml-8 lg:block lg:self-stretch">
+                <div class="flex h-full space-x-8">
+                    @foreach (var rootCategory in rootCategories)
+                    {
+                        <div class="flex">
+                            <div class="relative flex">
+                                <a href="@rootCategory.Url" class="@(rootCategory.IsCurrent(Model.Path) ? "text-indigo-600 hover:text-indigo-500" : "text-gray-700 hover:text-gray-800") border-transparent relative z-10 -mb-px flex items-center border-b-2 pt-px text-sm font-medium transition-colors duration-200 ease-out">@rootCategory.Title</a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="ml-auto flex items-center">
+                @if (checkoutNode != null)
+                {
+                    <div class="ml-4 flow-root lg:ml-6">
+                        <a href="@checkoutNode.Url()" class="group -m-2 flex items-center p-2">
+                            <svg class="h-6 w-6 flex-shrink-0 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
+                            </svg>
+                            <span class="ml-2 text-sm font-medium text-gray-700 group-hover:text-gray-800">@(order != null ? order.TotalQuantity : 0)</span>
+                            <span class="sr-only">items in cart, view bag</span>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</nav>

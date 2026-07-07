@@ -2,7 +2,6 @@ using Ekom.Klaviyo.Models.Orders;
 using Ekom.Klaviyo.Models.Profiles;
 using Ekom.Models;
 using System.Text.Json.Nodes;
-using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Mappers;
 
@@ -36,16 +35,16 @@ public static class ProfileMapper
 
     public static string ToProfileExternalId(IOrderInfo order, KlaviyoOptions opt)
     {
-        if (opt.ProfileExternalIdProperty.InvariantEquals("email"))
+        if (string.Equals(opt.ProfileExternalIdProperty, "email", StringComparison.OrdinalIgnoreCase))
             return order.CustomerInformation.Customer.Email!;
 
-        if (opt.ProfileExternalIdProperty.InvariantEquals("phone"))
+        if (string.Equals(opt.ProfileExternalIdProperty, "phone", StringComparison.OrdinalIgnoreCase))
             return order.CustomerInformation.Customer.Phone!;
 
-        if (opt.ProfileExternalIdProperty.InvariantEquals("username"))
+        if (string.Equals(opt.ProfileExternalIdProperty, "username", StringComparison.OrdinalIgnoreCase))
             return order.CustomerInformation.Customer.UserName!;
 
-        var customValue = order.CustomerInformation.Customer.Properties.GetValue(opt.ProfileExternalIdProperty);
+        order.CustomerInformation.Customer.Properties.TryGetValue(opt.ProfileExternalIdProperty, out var customValue);
         if (!string.IsNullOrEmpty(customValue))
             return customValue;
 

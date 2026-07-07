@@ -1,7 +1,7 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 
 @{
-    var root = Model.GetRootNode();
+    var root = Model.GetSite();
 
     string companyName = root.Value<string>("companyName");
     string companyTagline = root.Value<string>("companyTagline");

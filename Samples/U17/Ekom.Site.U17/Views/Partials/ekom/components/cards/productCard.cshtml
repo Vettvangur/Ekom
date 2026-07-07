@@ -1,0 +1,43 @@
+@inherits UmbracoViewPage
+
+@{
+    var product = (IProduct?)ViewData["product"];
+
+    if (product == null)
+    {
+        return;
+    }
+
+    var images = product.Images;
+}
+
+<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div class="aspect-h-4 aspect-w-3 bg-gray-200 sm:aspect-none group-hover:opacity-75 sm:h-96">
+        @if (images.Any())
+        {
+            <picture class="h-full w-full object-cover object-center sm:h-full sm:w-full">
+                <source media="(max-width: 576px)" srcset="@(images.First().Url)?width=278&height=384&rmode=BoxPad&bgcolor=f7f7f7 x1, @(images.First().Url)?width=556&height=768&rmode=BoxPad&bgcolor=f7f7f7 x2">
+                <img alt="@product.Title" loading="lazy" src="@(images.First().Url)?width=278&height=384&rmode=BoxPad&bgcolor=f7f7f7" srcset="@(images.First().Url)?width=278&height=384&rmode=BoxPad&bgcolor=f7f7f7 x1, @(images.First().Url)?width=556&height=768&rmode=BoxPad&bgcolor=f7f7f7 x2">
+            </picture>
+        }
+    </div>
+    <div class="flex flex-1 flex-col space-y-2 p-4">
+        <h3 class="text-sm font-medium text-gray-900">
+            <a href="@product.Url">
+                <span aria-hidden="true" class="absolute inset-0"></span>
+                @product.Title
+            </a>
+        </h3>
+        <p class="text-sm text-gray-500">@product.Summary</p>
+        <div class="flex flex-1 flex-col justify-end">
+            @if (product.Price.HasDiscount)
+            {
+                <p class="text-base font-medium text-gray-900"><span class="line-through">@product.Price.BeforeDiscount.CurrencyString</span> @product.Price.WithVat.CurrencyString</p>
+            }
+            else
+            {
+                <p class="text-base font-medium text-gray-900">@product.Price.WithVat.CurrencyString</p>
+            }
+        </div>
+    </div>
+</div>

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -32,13 +32,41 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <DefineConstants>$(DefineConstants);UMBRACO_17</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Algolia.Search" Version="7.40.0" />
+    <Compile Remove="Umbraco\U10\**\*.cs" />
+    <Compile Remove="Umbraco\U17\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <Compile Include="Umbraco\U10\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <Compile Include="Umbraco\U17\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Umbraco.Cms.Api.Management" Version="[17.0.0,18.0.0)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Algolia.Search" Version="7.40.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,13 +76,21 @@
   </ItemGroup>
 
   <!-- Local dev: flip this to true (Directory.Build.props) -->
-  <ItemGroup Condition="'$(UseProjectReferences)' == 'true'">
-    <ProjectReference Include="..\..\Ekom\Ekom.U10\Ekom.U10.csproj" />
+  <ItemGroup Condition="'$(UseProjectReferences)' == 'true' and '$(TargetFramework)' == 'net8.0'">
+    <ProjectReference Include="..\..\Ekom\Ekom.Umbraco\Ekom.U10\Ekom.U10.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseProjectReferences)' == 'true' and '$(TargetFramework)' == 'net10.0'">
+    <ProjectReference Include="..\..\Ekom\Ekom.Umbraco\Ekom.U17\Ekom.U17.csproj" />
   </ItemGroup>
 
   <!-- CI / normal: use NuGet packages -->
-  <ItemGroup Condition="'$(UseProjectReferences)' != 'true'">
+  <ItemGroup Condition="'$(UseProjectReferences)' != 'true' and '$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="Ekom.U10" Version="0.2.87" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseProjectReferences)' != 'true' and '$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Ekom.U17" Version="0.2.187" />
   </ItemGroup>
 
 </Project>

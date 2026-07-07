@@ -1,5 +1,3 @@
-using Umbraco.Extensions;
-
 namespace Ekom.Klaviyo.Helpers;
 
 internal static class KlaviyoListIdResolver
@@ -10,7 +8,7 @@ internal static class KlaviyoListIdResolver
             return listId;
 
         var storeListId = options.Stores
-            .FirstOrDefault(x => x.Alias.InvariantEquals(storeAlias))
+            .FirstOrDefault(x => string.Equals(x.Alias, storeAlias, StringComparison.OrdinalIgnoreCase))
             ?.ListId;
 
         if (!string.IsNullOrWhiteSpace(storeListId))

@@ -19,7 +19,9 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Restore
         run: dotnet restore "./Ekom Build.sln"
@@ -45,11 +47,12 @@ jobs:
 
           Write-Host "Packing Ekom packages with PackageVersion=$version (tag $tag)"
 
-          dotnet pack "Ekom/Ekom/Ekom.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom/Ekom.Common/Ekom.Common.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom/Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom/Ekom.U10/Ekom.U10.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom/Ekom.Web/Ekom.Web.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom/Ekom.Core/Ekom/Ekom.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom/Ekom.Core/Ekom.Common/Ekom.Common.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom/Ekom.Core/Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U10/Ekom.U10.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U17/Ekom.U17.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom/Ekom.Web/Ekom.Web/Ekom.Web.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
 
           Get-ChildItem -Path artifacts -Filter *.nupkg -File | Format-Table Name,Length
 

@@ -3,7 +3,6 @@ using Ekom.Klaviyo.Models.Orders;
 using Ekom.Klaviyo.Models.Profiles;
 using Ekom.Models;
 using System.Text.Json.Nodes;
-using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Mappers;
 
@@ -12,7 +11,7 @@ public static class OrderMapper
     public static KlaviyoPlacedOrder ToKlaviyoPlacedOrder(this IOrderInfo order, KlaviyoOptions opt, DateTimeOffset placedAt)
     {
 
-        var storeOptions = opt.Stores.FirstOrDefault(x => x.Alias.InvariantEquals(order.StoreInfo.Alias));
+        var storeOptions = opt.Stores.FirstOrDefault(x => string.Equals(x.Alias, order.StoreInfo.Alias, StringComparison.OrdinalIgnoreCase));
 
         var klaviyoShipTo = new KlaviyoShipTo()
         {
