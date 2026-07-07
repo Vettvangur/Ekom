@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.99](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.98...Ekom.Klaviyo-v0.2.99) (2026-07-07)
+
+
+### Bug Fixes
+
+* **ci:** build Ekom packages before plugins ([#668](https://github.com/Vettvangur/Ekom/issues/668)) ([1d536ac](https://github.com/Vettvangur/Ekom/commit/1d536ac5ba503e220060dee82f7d7e8d3779441e))
+
 ## [0.2.98](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.97...Ekom.Klaviyo-v0.2.98) (2026-07-07)
 
 

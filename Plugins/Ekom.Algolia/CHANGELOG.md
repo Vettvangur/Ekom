@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.33](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.32...Ekom.Algolia-v0.2.33) (2026-07-07)
+
+
+### Bug Fixes
+
+* **ci:** build Ekom packages before plugins ([#668](https://github.com/Vettvangur/Ekom/issues/668)) ([1d536ac](https://github.com/Vettvangur/Ekom/commit/1d536ac5ba503e220060dee82f7d7e8d3779441e))
+
 ## [0.2.32](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.31...Ekom.Algolia-v0.2.32) (2026-07-07)
 
 
