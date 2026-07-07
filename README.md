@@ -2,6 +2,7 @@
 Ekom
  
 [![Nuget](https://img.shields.io/nuget/vpre/Ekom.U10?color=ed0f0f)](https://www.nuget.org/packages/Ekom.U10/)
+[![Nuget](https://img.shields.io/nuget/vpre/Ekom.U17?color=ed0f0f)](https://www.nuget.org/packages/Ekom.U17/)
 [![Nuget](https://img.shields.io/nuget/vpre/Ekom.Klaviyo?color=ed0f0f)](https://www.nuget.org/packages/Ekom.Klaviyo/)
 [![Nuget](https://img.shields.io/nuget/vpre/Ekom.Algolia?color=ed0f0f)](https://www.nuget.org/packages/Ekom.Algolia/)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
@@ -14,25 +15,40 @@ Ekom
 Open Source Ecommerce package for Umbraco
 </h2>
 
-Supports Umbraco version 13+
+Supports Umbraco 13 and Umbraco 17.
 
-Ekom is a versatile and fully customizable eCommerce solution that is free to use forever. This package has been built with ASP NET Core, focusing on performance and security, and is compatible with Umbraco versions 13 and above.
+Ekom is a versatile and fully customizable eCommerce solution that is free to use forever. This package has been built with ASP NET Core, focusing on performance and security, and is compatible with Umbraco 13 and Umbraco 17.
 
 ## Installation
-Install the appropriate Umbraco versioned package to your solution (f.x. Ekom.U10)
-Install the Ekom.Web package into your sites main project (contains wwwroot)
+Install the package that matches your Umbraco version, then install the matching Ekom web assets package into your site's main project (the project containing `wwwroot`).
+
+### Umbraco 17
+
+**NuGet:** [https://www.nuget.org/packages/Ekom.U17](https://www.nuget.org/packages/Ekom.U17)
+
+```bash
+dotnet add package Ekom.U17
+dotnet add package Ekom.Web.U17
+```
+
+```powershell
+PM> Install-Package Ekom.U17
+PM> Install-Package Ekom.Web.U17
+```
+
+### Umbraco 13
 
 **NuGet:** [https://www.nuget.org/packages/Ekom.U10](https://www.nuget.org/packages/Ekom.U10)
 
-`dotnet add package Ekom.U10`
+```bash
+dotnet add package Ekom.U10
+dotnet add package Ekom.Web
+```
 
-`PM> Install-Package Ekom.U10`
-
-##### Ekom.Web
-
-`dotnet add package Ekom.Web`
-
-`PM> Install-Package Ekom.Web`
+```powershell
+PM> Install-Package Ekom.U10
+PM> Install-Package Ekom.Web
+```
 
 ## Some of the key featured of Ekom includes:
 
