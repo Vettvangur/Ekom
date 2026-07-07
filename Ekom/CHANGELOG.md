@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.192](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.191...Ekom-v0.2.192) (2026-07-07)
+
+
+### Bug Fixes
+
+* **ekom:** trigger package release for CI dependencies ([#670](https://github.com/Vettvangur/Ekom/issues/670)) ([15dfd63](https://github.com/Vettvangur/Ekom/commit/15dfd6369a53518dc48f8db2894fd7733cce99ac))
+
 ## [0.2.191](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.190...Ekom-v0.2.191) (2026-07-07)
 
 
