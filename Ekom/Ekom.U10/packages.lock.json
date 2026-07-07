@@ -4,11 +4,11 @@
     "net8.0": {
       "Ekom.Payments.U10": {
         "type": "Direct",
-        "requested": "[0.2.80, )",
-        "resolved": "0.2.80",
-        "contentHash": "X4HaJUe9KeeGSp1wnAyNXOdkdDvotcRewszljkCi72c7v86qwOhLsaZ8yF8SMBW9jeK6lDzdo2rAnLR4ESRXjQ==",
+        "requested": "[0.2.83, )",
+        "resolved": "0.2.83",
+        "contentHash": "YZeLJz9VhcocmzjimRaIK6oLXkv+hNQMdu7CtAVo2qFchi+j0kbRVDQiFyQ2NTDxrqre43/fjcdeFSmyatqKTA==",
         "dependencies": {
-          "Ekom.Payments.AspNetCore": "0.2.80",
+          "Ekom.Payments.AspNetCore": "0.2.83",
           "Umbraco.Cms.Core": "13.13.0",
           "Umbraco.Cms.Web.BackOffice": "13.13.0",
           "Umbraco.Cms.Web.Website": "13.13.0"
@@ -159,22 +159,22 @@
       },
       "Ekom.Payments.AspNetCore": {
         "type": "Transitive",
-        "resolved": "0.2.80",
-        "contentHash": "kjOfqgxbQixNootFd9l4v9i4k2eBSSKE/j4L/+cIXC17LZxOmes2Ye+GGzxxPTvGUiPt35hBG6vzj0BniSIwLw==",
+        "resolved": "0.2.83",
+        "contentHash": "c5FD2xHT2sVY9a1J0Do9VyHEYdAfj5MeiZFtAevnVqn5b9wseMRQ9kxKjVwocbrAeXctk/xA9MRS/sEur0UyeA==",
         "dependencies": {
-          "Ekom.Payments.Core": "0.2.80"
+          "Ekom.Payments.Core": "0.2.83"
         }
       },
       "Ekom.Payments.Core": {
         "type": "Transitive",
-        "resolved": "0.2.80",
-        "contentHash": "7NAV9LZjuj/+YHX+8rSTHg9NE9Dk2PEd6k/tErclwuiAWr0UtvXB6gdkiVyJvwd0D0tIL8/XpEFdLyXIhshZ6Q==",
+        "resolved": "0.2.83",
+        "contentHash": "6c0cHIcQmLBsDIGfOoiKYgZJQ/tEWw37dtB20HyfwesSaS4fhUB6aHlZEmUXKYpHbxyCU1tg0Au+qaI41+Q9xw==",
         "dependencies": {
           "Azure.Core": "1.51.0",
           "Azure.Identity": "1.17.1",
-          "Ekom.Common": "0.2.30",
           "Microsoft.Data.SqlClient": "6.1.2",
           "Microsoft.Data.Sqlite": "8.0.11",
+          "Newtonsoft.Json": "13.0.3",
           "linq2db": "5.4.1"
         }
       },
@@ -2900,7 +2900,7 @@
       "ekom.aspnetcore": {
         "type": "Project",
         "dependencies": {
-          "Ekom.Core": "[0.2.186, )"
+          "Ekom.Core": "[0.2.188, )"
         }
       },
       "ekom.common": {
@@ -2915,8 +2915,8 @@
         "dependencies": {
           "Azure.Identity": "[1.17.1, )",
           "CommonServiceLocator": "[2.0.7, )",
-          "Ekom.Common": "[0.2.186, )",
-          "Ekom.Payments.Core": "[0.2.80, )",
+          "Ekom.Common": "[0.2.188, )",
+          "Ekom.Payments.Core": "[0.2.83, )",
           "Hangfire": "[1.8.18, )",
           "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "[8.0.11, )",
           "Microsoft.Data.SqlClient": "[6.1.2, )",
