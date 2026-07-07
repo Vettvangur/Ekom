@@ -167,6 +167,24 @@ Feed pull uses the current Ekom product price for `price`. When a product discou
 
 Projects can customize feed items by registering one or more `IKlaviyoProductFeedItemEnricher` implementations. Enrichers run before feed serialization and can update the mapped item or its custom attributes.
 
+Projects can also replace the product source for feed pull by subscribing to `KlaviyoProductFeedEvents.ProductFeedProductsLoadingAsync`. The event runs before Ekom fetches all products for `/ekom/klaviyo/product/feed`. Set `Handled = true` and assign `Products` to skip the default `GetAllProductsAsync` call. If `Handled` is not set, the default product fetch still runs.
+
+```csharp
+using Ekom.Klaviyo.Events;
+using Ekom.Models;
+
+KlaviyoProductFeedEvents.ProductFeedProductsLoadingAsync += async (args, ct) =>
+{
+    if (!args.StoreAlias.Equals("Store", StringComparison.OrdinalIgnoreCase))
+        return;
+
+    IEnumerable<IProduct> products = await LoadKlaviyoProductsAsync(args.Store, args.Culture, ct);
+
+    args.Products = products;
+    args.Handled = true;
+};
+```
+
 
 ## Tracking
 

@@ -1,5 +1,6 @@
 using Ekom.Exceptions;
 using Ekom.Klaviyo.Enrichers.ProductFeedEnricher;
+using Ekom.Klaviyo.Events;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Catalog;
 using Ekom.Models;
@@ -90,8 +91,18 @@ internal class KlaviyoProductController : ControllerBase
             using var context = ApplyEkomRequestContext(store, resolvedCulture);
             try
             {
-                var productsResponse = await API.Catalog.Instance.GetAllProductsAsync(storeAlias, ct: ct);
-                var products = productsResponse?.Products;
+                var eventArgs = new KlaviyoProductFeedProductsEventArgs
+                {
+                    StoreAlias = storeAlias,
+                    Culture = resolvedCulture,
+                    Store = store
+                };
+
+                await KlaviyoProductFeedEvents.InvokeProductFeedProductsLoadingAsync(eventArgs, ct);
+
+                var products = eventArgs.Handled
+                    ? eventArgs.Products
+                    : (await API.Catalog.Instance.GetAllProductsAsync(storeAlias, ct: ct))?.Products;
 
                 var feed = new List<KlaviyoProductFeedItem>();
 
