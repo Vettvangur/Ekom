@@ -23,11 +23,38 @@ jobs:
             8.0.x
             10.0.x
 
+      - name: Read Ekom package version
+        id: ekom-version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          [xml]$props = Get-Content "Ekom/Directory.Build.props"
+          $version = $props.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw "Could not read Ekom package version." }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Pack Ekom dependencies locally
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $version = "${{ steps.ekom-version.outputs.version }}"
+
+          if (Test-Path "local-packages") { Remove-Item "local-packages" -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path local-packages | Out-Null
+
+          dotnet pack "Ekom/Ekom.Core/Ekom.Common/Ekom.Common.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
+          dotnet pack "Ekom/Ekom.Core/Ekom/Ekom.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
+          dotnet pack "Ekom/Ekom.Core/Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
+          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U10/Ekom.U10.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
+          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U17/Ekom.U17.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
+
+          dotnet nuget add source "$PWD/local-packages" --name local-ekom
+
       - name: Restore (force NuGet references)
-        run: dotnet restore "Plugins/Ekom.Algolia/Ekom.Algolia.csproj" -p:UseProjectReferences=false
+        run: dotnet restore "Plugins/Ekom.Algolia/Ekom.Algolia.csproj" -p:UseProjectReferences=false -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
 
       - name: Build (Release, force NuGet references)
-        run: dotnet build "Plugins/Ekom.Algolia/Ekom.Algolia.csproj" -c Release --no-restore -p:UseProjectReferences=false
+        run: dotnet build "Plugins/Ekom.Algolia/Ekom.Algolia.csproj" -c Release --no-restore -p:UseProjectReferences=false -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
 
       - name: Pack Ekom.Algolia (force NuGet references)
         shell: pwsh
@@ -52,7 +79,8 @@ jobs:
             --no-build `
             -o artifacts `
             -p:PackageVersion=$version `
-            -p:UseProjectReferences=false
+            -p:UseProjectReferences=false `
+            -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
 
           Get-ChildItem -Path artifacts -Filter "Ekom.Algolia*.nupkg" -File | Format-Table Name,Length
 

@@ -30,6 +30,7 @@
     <!-- Build / docs -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <EkomPackageVersion>0.2.189</EkomPackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
@@ -86,11 +87,11 @@
 
   <!-- CI / normal: use NuGet packages -->
   <ItemGroup Condition="'$(UseProjectReferences)' != 'true' and '$(TargetFramework)' == 'net8.0'">
-    <PackageReference Include="Ekom.U10" Version="0.2.87" />
+    <PackageReference Include="Ekom.U10" Version="$(EkomPackageVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(UseProjectReferences)' != 'true' and '$(TargetFramework)' == 'net10.0'">
-    <PackageReference Include="Ekom.U17" Version="0.2.187" />
+    <PackageReference Include="Ekom.U17" Version="$(EkomPackageVersion)" />
   </ItemGroup>
 
 </Project>
