@@ -1,5 +1,59 @@
 export const manifests: Array<UmbExtensionManifest> = [
   {
+    type: 'section',
+    kind: 'default',
+    alias: 'ekommanager',
+    name: 'Ekom Manager Section',
+    weight: 300,
+    meta: {
+      label: 'Ekom',
+      pathname: 'ekommanager',
+      preventUrlRetention: true,
+    },
+    conditions: [
+      {
+        alias: 'Umb.Condition.SectionUserPermission',
+        match: 'ekommanager',
+      },
+    ],
+  },
+  {
+    type: 'sectionView',
+    alias: 'Ekom.SectionView.Manager.Orders',
+    name: 'Ekom Manager Orders Section View',
+    element: '/App_Plugins/Ekom/dist/orders-section-view.element.js',
+    weight: 200,
+    meta: {
+      label: 'Orders',
+      pathname: 'orders',
+      icon: 'icon-shopping-basket',
+    },
+    conditions: [
+      {
+        alias: 'Umb.Condition.SectionAlias',
+        match: 'ekommanager',
+      },
+    ],
+  },
+  {
+    type: 'sectionView',
+    alias: 'Ekom.SectionView.Manager.Analytics',
+    name: 'Ekom Manager Analytics Section View',
+    element: '/App_Plugins/Ekom/dist/analytics-section-view.element.js',
+    weight: 100,
+    meta: {
+      label: 'Analytics',
+      pathname: 'analytics',
+      icon: 'icon-chart-curve',
+    },
+    conditions: [
+      {
+        alias: 'Umb.Condition.SectionAlias',
+        match: 'ekommanager',
+      },
+    ],
+  },
+  {
     type: 'propertyEditorSchema',
     alias: 'Ekom.Cache',
     name: 'Ekom Cache Editor',
