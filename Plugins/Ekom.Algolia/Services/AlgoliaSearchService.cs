@@ -84,6 +84,7 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         var indexName = _indexNameBuilder.BuildPrimary(ProductsEntity, target);
 
         query.IndexName = indexName;
+        ApplyVariantGrouping(query);
 
         if (_options.Search.MaxHitsPerPage > 0 && query.HitsPerPage > _options.Search.MaxHitsPerPage)
             query.HitsPerPage = _options.Search.MaxHitsPerPage;
@@ -413,9 +414,20 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
             return false;
 
         query.IndexName = indexName;
+        if (target.Kind == AlgoliaFederatedSearchTargetKind.Products)
+            ApplyVariantGrouping(query);
+
         var userToken = PrepareUserTokenForCache(query);
         ApplyUserToken(query, userToken);
         return true;
+    }
+
+    private void ApplyVariantGrouping(SearchForHits query)
+    {
+        if (!_options.Indexing.Variants || !_options.Search.GroupVariantsByProduct)
+            return;
+
+        query.Distinct ??= new Distinct(true);
     }
 
     private string? PrepareUserTokenForCache(SearchForHits query)

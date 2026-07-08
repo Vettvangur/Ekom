@@ -70,6 +70,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         {
             ObjectId = product.Key.ToString(),
             Sku = NullIfWhiteSpace(product.SKU),
+            ProductId = product.Key.ToString(),
             NodeName = NullIfWhiteSpace(nodeName),
             Title = title,
             Summary = NullIfWhiteSpace(GetLocalizedValue(product, "summary", product.Summary, locale)),
@@ -138,6 +139,87 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         RemoveEmptyValues(record.Data);
 
         return record;
+    }
+
+    public IReadOnlyList<AlgoliaProductRecord> MapRecords(IProduct product, AlgoliaResolvedStore store, string baseIndexName)
+    {
+        var productRecord = Map(product, store, baseIndexName);
+        if (productRecord is null)
+            return [];
+
+        if (!_options.Indexing.Variants)
+            return [productRecord];
+
+        var records = new List<AlgoliaProductRecord> { productRecord };
+
+        foreach (var variant in product.AllVariants)
+        {
+            var record = MapVariant(product, variant, productRecord, store);
+            if (record is not null)
+                records.Add(record);
+        }
+
+        return records;
+    }
+
+    private static AlgoliaProductRecord? MapVariant(
+        IProduct product,
+        IVariant variant,
+        AlgoliaProductRecord productRecord,
+        AlgoliaResolvedStore store)
+    {
+        if (string.IsNullOrWhiteSpace(variant.SKU))
+            return null;
+
+        var images = variant.Images
+            .Select(i => i?.Url)
+            .Where(u => !string.IsNullOrWhiteSpace(u))
+            .Select(u => u!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var price = ResolvePrice(variant, store);
+        var data = new Dictionary<string, object?>(productRecord.Data, StringComparer.OrdinalIgnoreCase)
+        {
+            ["variantSku"] = variant.SKU,
+            ["variantTitle"] = NullIfWhiteSpace(variant.Title),
+            ["variantDescription"] = NullIfWhiteSpace(variant.Description),
+            ["variantAvailable"] = variant.Available ? 1 : 0,
+            ["variantStock"] = store.IncludeStock ? variant.Stock : null
+        };
+
+        RemoveEmptyValues(data);
+
+        return new AlgoliaProductRecord
+        {
+            ObjectId = $"{product.Key}_{variant.Key}",
+            Sku = NullIfWhiteSpace(variant.SKU),
+            ProductId = product.Key.ToString(),
+            VariantId = variant.Key.ToString(),
+            ParentSku = NullIfWhiteSpace(product.SKU),
+            IsVariant = true,
+            VariantGroupId = variant.VariantGroupId,
+            NodeName = productRecord.NodeName,
+            Title = productRecord.Title,
+            Summary = productRecord.Summary,
+            Description = NullIfWhiteSpace(variant.Description) ?? productRecord.Description,
+            Url = productRecord.Url,
+            ImageUrl = NullIfWhiteSpace(images.FirstOrDefault()) ?? productRecord.ImageUrl,
+            ImageUrls = images.Count > 0 ? images : productRecord.ImageUrls,
+            Price = price?.Value ?? productRecord.Price,
+            PriceWithVat = price?.WithVat.Value ?? productRecord.PriceWithVat,
+            PriceWithoutVat = price?.WithoutVat.Value ?? productRecord.PriceWithoutVat,
+            Currency = NullIfWhiteSpace(price?.Currency.ISOCurrencySymbol ?? store.Currency) ?? productRecord.Currency,
+            Available = variant.Available ? 1 : 0,
+            ProductRanking = productRecord.ProductRanking,
+            CategoryRanking = productRecord.CategoryRanking,
+            Stock = store.IncludeStock ? variant.Stock : productRecord.Stock,
+            StoreAlias = productRecord.StoreAlias,
+            Locale = productRecord.Locale,
+            CreatedAt = ToUnixTimeSeconds(variant.CreateDate),
+            UpdatedAt = ToUnixTimeSeconds(variant.UpdateDate),
+            Data = data
+        };
     }
 
     private Dictionary<string, ConfiguredField> BuildAllowedProperties(IProduct product, AlgoliaResolvedStore store)
@@ -446,6 +528,15 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
         return product.Prices.FirstOrDefault(x => x.Currency.CurrencyValue.Equals(store.Currency, StringComparison.OrdinalIgnoreCase))
             ?? product.Price;
+    }
+
+    private static IPrice? ResolvePrice(IVariant variant, AlgoliaResolvedStore store)
+    {
+        if (string.IsNullOrWhiteSpace(store.Currency))
+            return variant.Price;
+
+        return variant.Prices.FirstOrDefault(x => x.Currency.CurrencyValue.Equals(store.Currency, StringComparison.OrdinalIgnoreCase))
+            ?? variant.Price;
     }
 
     private static object? TryToUnix(object? value, bool unixMilliseconds)
