@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.193](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.192...Ekom-v0.2.193) (2026-07-08)
+
+
+### Performance Improvements
+
+* **u17:** optimize node cache mapping ([#673](https://github.com/Vettvangur/Ekom/issues/673)) ([e30ba7a](https://github.com/Vettvangur/Ekom/commit/e30ba7a972f3fad66cc3569216c1b689befb3d35))
+
 ## [0.2.192](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.191...Ekom-v0.2.192) (2026-07-07)
 
 
