@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.34](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.33...Ekom.Algolia-v0.2.34) (2026-07-08)
+
+
+### Bug Fixes
+
+* **algolia:** allow U17 browser rebuild trigger ([#678](https://github.com/Vettvangur/Ekom/issues/678)) ([bec36fe](https://github.com/Vettvangur/Ekom/commit/bec36fe475d26b9e6a305fdecb1e789c8d14eece))
+
 ## [0.2.33](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.32...Ekom.Algolia-v0.2.33) (2026-07-07)
 
 
