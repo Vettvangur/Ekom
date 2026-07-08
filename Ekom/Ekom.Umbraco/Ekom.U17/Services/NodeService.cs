@@ -5,6 +5,9 @@ using Ekom.Umb.Models;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.PublishedCache;
+using Umbraco.Cms.Core.Scoping;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
 
@@ -14,15 +17,30 @@ internal sealed class NodeService : INodeService
 {
     private readonly IUmbracoContextFactory _context;
     private readonly IPublishedContentQuery _publishedContentQuery;
+    private readonly IDocumentCacheService _documentCacheService;
+    private readonly IPublishedContentTypeCache _publishedContentTypeCache;
+    private readonly ICoreScopeProvider _scopeProvider;
+    private readonly IDocumentNavigationQueryService _documentNavigationQueryService;
+    private readonly Umbraco17ContentCache _contentCache;
     private readonly ILogger<NodeService> _logger;
 
     public NodeService(
         IUmbracoContextFactory context,
         IPublishedContentQuery publishedContentQuery,
+        IDocumentCacheService documentCacheService,
+        IPublishedContentTypeCache publishedContentTypeCache,
+        ICoreScopeProvider scopeProvider,
+        IDocumentNavigationQueryService documentNavigationQueryService,
+        Umbraco17ContentCache contentCache,
         ILogger<NodeService> logger)
     {
         _context = context;
         _publishedContentQuery = publishedContentQuery;
+        _documentCacheService = documentCacheService;
+        _publishedContentTypeCache = publishedContentTypeCache;
+        _scopeProvider = scopeProvider;
+        _documentNavigationQueryService = documentNavigationQueryService;
+        _contentCache = contentCache;
         _logger = logger;
     }
 
@@ -36,9 +54,153 @@ internal sealed class NodeService : INodeService
             throw new EkomRootNodeException("Ekom root node not found.");
         }
 
-        return rootNode.DescendantsOfType(contentTypeAlias)
-            .Select(x => new Umbraco17Content(x))
+        using var scope = _scopeProvider.CreateCoreScope(autoComplete: true);
+
+        var contentType = _publishedContentTypeCache.Get(PublishedItemType.Content, contentTypeAlias);
+        if (contentType == null)
+        {
+            _logger.LogWarning("Content type {ContentTypeAlias} not found.", contentTypeAlias);
+            return Array.Empty<UmbracoContent>();
+        }
+
+        var nodes = _documentCacheService.GetByContentType(contentType).ToList();
+
+        var metadata = BuildContentMetadata(nodes, rootNode);
+        var rootPathValue = rootNode.Id.ToString();
+        nodes = nodes
+            .Where(x => metadata.TryGetValue(x.Key, out var itemMetadata)
+                && itemMetadata.Path.Split(',').Contains(rootPathValue))
             .ToList();
+
+        var results = nodes
+            .Select(x =>
+            {
+                metadata.TryGetValue(x.Key, out var itemMetadata);
+
+                return new Umbraco17Content(
+                    x,
+                    itemMetadata?.ParentId,
+                    itemMetadata?.ParentKey,
+                    itemMetadata?.Path);
+            })
+            .ToList();
+
+        foreach (var result in results)
+        {
+            _contentCache.AddOrUpdate(result);
+        }
+
+        return results;
+    }
+
+    private Dictionary<Guid, ContentMetadata> BuildContentMetadata(
+        IReadOnlyCollection<IPublishedContent> nodes,
+        IPublishedContent rootNode)
+    {
+        if (nodes.Count == 0)
+        {
+            return new Dictionary<Guid, ContentMetadata>();
+        }
+
+        var pathsByKey = new Dictionary<Guid, List<Guid>>();
+        var pathCache = new Dictionary<Guid, List<Guid>>();
+
+        foreach (var node in nodes)
+        {
+            pathsByKey[node.Key] = GetPathKeys(node.Key, pathCache);
+        }
+
+        var idsByKey = BuildIdsByKey(nodes, rootNode);
+
+        var metadata = new Dictionary<Guid, ContentMetadata>();
+
+        foreach (var node in nodes)
+        {
+            var pathKeys = pathsByKey[node.Key];
+            var parentKey = pathKeys.Count > 1 ? pathKeys[^2] : (Guid?)null;
+            var pathIds = new List<string> { "-1" };
+
+            foreach (var key in pathKeys)
+            {
+                if (idsByKey.TryGetValue(key, out var id))
+                {
+                    pathIds.Add(id.ToString());
+                }
+            }
+
+            metadata[node.Key] = new ContentMetadata(
+                parentKey.HasValue && idsByKey.TryGetValue(parentKey.Value, out var parentId) ? parentId : null,
+                parentKey,
+                string.Join(',', pathIds));
+        }
+
+        return metadata;
+    }
+
+    private Dictionary<Guid, int> BuildIdsByKey(IReadOnlyCollection<IPublishedContent> nodes, IPublishedContent rootNode)
+    {
+        var idsByKey = new Dictionary<Guid, int>
+        {
+            [rootNode.Key] = rootNode.Id,
+        };
+
+        foreach (var item in _contentCache.Values)
+        {
+            idsByKey[item.Key] = item.Id;
+        }
+
+        foreach (var node in nodes)
+        {
+            idsByKey[node.Key] = node.Id;
+        }
+
+        return idsByKey;
+    }
+
+    private List<Guid> GetPathKeys(Guid key, Dictionary<Guid, List<Guid>> pathCache)
+    {
+        if (pathCache.TryGetValue(key, out var cachedPath))
+        {
+            return cachedPath;
+        }
+
+        var descendantKeys = new List<Guid>();
+        List<Guid>? cachedPrefix = null;
+        var currentKey = key;
+
+        while (true)
+        {
+            if (pathCache.TryGetValue(currentKey, out var currentPath))
+            {
+                cachedPrefix = currentPath;
+                break;
+            }
+
+            descendantKeys.Add(currentKey);
+
+            if (!_documentNavigationQueryService.TryGetParentKey(currentKey, out var parentKey) || !parentKey.HasValue)
+            {
+                break;
+            }
+
+            currentKey = parentKey.Value;
+        }
+
+        descendantKeys.Reverse();
+        var path = cachedPrefix == null
+            ? descendantKeys
+            : cachedPrefix.Concat(descendantKeys).ToList();
+
+        foreach (var cacheKey in descendantKeys)
+        {
+            var index = path.IndexOf(cacheKey);
+            if (index >= 0)
+            {
+                pathCache[cacheKey] = path.GetRange(0, index + 1);
+            }
+        }
+
+        return path;
     }
 
     public IEnumerable<UmbracoContent> NodesByTypesFaster(string contentTypeAlias)
@@ -108,6 +270,12 @@ internal sealed class NodeService : INodeService
             return Array.Empty<UmbracoContent>();
         }
 
+        var cachedAncestors = GetCachedCatalogAncestors(item).ToList();
+        if (cachedAncestors.Count > 0)
+        {
+            return cachedAncestors;
+        }
+
         using var cref = _context.EnsureUmbracoContext();
         var node = GetNodeById(item.Id, true);
 
@@ -119,6 +287,32 @@ internal sealed class NodeService : INodeService
         ancestors.Reverse();
 
         return ancestors.Select(x => new Umbraco17Content(x)).ToList();
+    }
+
+    private IEnumerable<UmbracoContent> GetCachedCatalogAncestors(UmbracoContent item)
+    {
+        if (string.IsNullOrWhiteSpace(item.Path))
+        {
+            yield break;
+        }
+
+        foreach (var value in item.Path.Split(','))
+        {
+            if (!int.TryParse(value, out var id))
+            {
+                continue;
+            }
+
+            if (!_contentCache.TryGetById(id, out var content) || content == null)
+            {
+                continue;
+            }
+
+            if (content.IsDocumentType("ekmCategory") || content.IsDocumentType("ekmProduct"))
+            {
+                yield return content;
+            }
+        }
     }
 
     public IPublishedContent? GetNodeById(int id, bool preview = false)
@@ -306,4 +500,6 @@ internal sealed class NodeService : INodeService
         guid = Guid.Empty;
         return false;
     }
+
+    private sealed record ContentMetadata(int? ParentId, Guid? ParentKey, string Path);
 }
