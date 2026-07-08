@@ -1,12 +1,5 @@
 # Changelog
 
-## [0.2.195](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.194...Ekom-v0.2.195) (2026-07-08)
-
-
-### Features
-
-* **algolia:** add variant indexing ([#680](https://github.com/Vettvangur/Ekom/issues/680)) ([9b61bd9](https://github.com/Vettvangur/Ekom/commit/9b61bd9a4864763cd370c629956735ac6a24d4af))
-
 ## [0.2.194](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.193...Ekom-v0.2.194) (2026-07-08)
 
 
