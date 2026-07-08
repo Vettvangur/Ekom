@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.194](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.193...Ekom-v0.2.194) (2026-07-08)
+
+
+### Features
+
+* **u17:** port Ekom manager UI ([#675](https://github.com/Vettvangur/Ekom/issues/675)) ([f6423b1](https://github.com/Vettvangur/Ekom/commit/f6423b123df8ad86e38c82576e255c8c4de87bdd))
+
 ## [0.2.193](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.192...Ekom-v0.2.193) (2026-07-08)
 
 
