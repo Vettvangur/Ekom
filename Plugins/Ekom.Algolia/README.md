@@ -81,6 +81,7 @@ public sealed class ProductSearchController
         "Enabled": true,
         "Products": true,
         "Categories": true,
+        "Variants": false,
         "BatchSize": 1000,
         "ProductProperties": [
           "title",
@@ -122,6 +123,7 @@ public sealed class ProductSearchController
         "Enabled": true,
         "Products": true,
         "Categories": true,
+        "GroupVariantsByProduct": true,
         "QuerySuggestions": true,
         "IncludeUserToken": true,
         "VaryCacheByUserToken": false,
@@ -173,6 +175,7 @@ public sealed class ProductSearchController
 | `Indexing:Enabled` | `bool` | `true` | Enables indexing features. |
 | `Indexing:Products` | `bool` | `true` | Enables product indexing. |
 | `Indexing:Categories` | `bool` | `true` | Enables category indexing. |
+| `Indexing:Variants` | `bool` | `false` | Indexes product variants as separate product records so variant SKUs can be searched directly. |
 | `Indexing:BatchSize` | `int` | `1000` | Batch size for Algolia save/replace/delete operations. |
 | `Indexing:ProductProperties` | `string[]` | `[]` | Additional product properties/metafields to include in product records. Supports modifiers documented below. |
 | `Indexing:SortedReplicas` | `object[]` | `[]` | Replica definitions using `Attribute` and `Direction` (`Asc` or `Desc`). |
@@ -188,6 +191,7 @@ public sealed class ProductSearchController
 | `Search:Enabled` | `bool` | `true` | Enables Algolia search services. |
 | `Search:Products` | `bool` | `true` | Enables product search. |
 | `Search:Categories` | `bool` | `true` | Enables category search. |
+| `Search:GroupVariantsByProduct` | `bool` | `true` | When variant indexing is enabled, applies Algolia `distinct` so product searches group variant records by product. |
 | `Search:QuerySuggestions` | `bool` | `false` | Enables query suggestion search and provisioning. |
 | `Search:IncludeUserToken` | `bool` | `true` | Adds `userToken` to Algolia search requests using `IAlgoliaUserTokenProvider`, unless the query already has a token. |
 | `Search:VaryCacheByUserToken` | `bool` | `false` | Includes `userToken` in search cache keys. Keep `false` for shared cache; set `true` when Algolia personalization changes result order/content per user. |
@@ -212,31 +216,263 @@ public sealed class ProductSearchController
 | `Stores[*]:Alias` | `string` | required | Ekom store alias. |
 | `Stores[*]:IncludeStock` | `bool` | `false` | Includes product stock in indexed records for this store. |
 
-## Notes
-- Indexing triggers from Umbraco content notifications for `ekmProduct` and `ekmCategory`.
-- Search uses the required `SearchApiKey`; indexing and settings operations continue to use `AdminApiKey`.
-- When `Search.QuerySuggestions` is enabled, the plugin provisions the separate `query_suggestions...` index configuration automatically with the Admin API key.
-- Set `AnalyticsRegion` to `us` or `eu` if you know your Algolia analytics region; if omitted, the plugin tries `us` and then `eu`.
-- `IAlgoliaSearchService.SearchProductsAsync(...)` returns hits together with paging metadata, query text, processing time, and raw facets.
-- `IAlgoliaSearchService.SearchCategoriesAsync(...)` searches a dedicated category index scoped by store alias and locale.
-- `IAlgoliaSearchService.SearchContentAsync(...)` searches configured standard content indexes. Content index names resolve as `{IndexName}.{Environment}.{Culture}`.
-- `IAlgoliaSearchService.FederatedSearchAsync(...)` executes products, categories, query suggestions, and content searches in one Algolia multi-search request and returns typed product/category/suggestion results plus keyed content results.
-- The plugin always resolves and sets the Algolia index name from Ekom store alias, locale, and currency; callers should not set `IndexName` themselves.
-- Category indexes omit the currency suffix because category records are scoped by store alias and locale only.
-- Search cache keys include the resolved index name and serialized Algolia query payload so all SDK options affect caching.
-- `Search:IncludeUserToken` sends user context to Algolia search. The default provider uses authenticated username, then session ID, then request trace identifier.
-- `Search:VaryCacheByUserToken` controls whether that token also affects cache keys. Leave it `false` when results are not personalized so users can share cached results.
-- Store `Locale` and `Currency` now come from the Ekom store resolved by alias, so `appsettings.json` only needs the store alias.
-- Request and order context decide which culture and currency suffix is used; background indexing falls back to the store's default culture/currency.
-- `Title` is always indexed as a top-level field, and `NodeName` contains the Umbraco node name.
-- `Available` is indexed as `1` for available products and `0` for unavailable products, so it can be used for numeric ranking.
-- Product records always include top-level `ProductRanking` and `CategoryRanking` integer fields. Both support negative values. `ProductRanking` reads the product `ekmAlgoliaRank` property and defaults to `0` when missing or invalid. `CategoryRanking` uses the highest valid `ekmAlgoliaRank` value across the product's categories and defaults to `0` when no category has a valid rank.
-- Variants are not indexed by default.
-- `Indexing.ProductProperties` supports one optional modifier per property: `|array`, `|int`, `|decimal`, `|unix`, or `|unixms`.
-- Metafields can be indexed explicitly with `metafield:<alias>`, for example `metafield:material`, `metafield:color|array`, or `metafield:releaseDate|unix`.
+## Usage notes
+
+### Indexing triggers and API keys
+
+Product and category indexing is triggered from Umbraco content notifications for `ekmProduct` and `ekmCategory`.
+
+Search requests use `SearchApiKey`. Indexing, settings updates, replicas, delete operations, and query suggestion provisioning use `AdminApiKey`.
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "ApplicationId": "APP_ID",
+      "AdminApiKey": "ADMIN_API_KEY",
+      "SearchApiKey": "SEARCH_API_KEY"
+    }
+  }
+}
+```
+
+When `Search:QuerySuggestions` is enabled, the plugin provisions the separate `query_suggestions...` index configuration automatically. Set `AnalyticsRegion` to `us` or `eu` if you know it; if omitted, the plugin tries `us` and then `eu`.
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "AnalyticsRegion": "eu",
+      "Search": {
+        "QuerySuggestions": true
+      }
+    }
+  }
+}
+```
+
+### Index naming and store context
+
+The plugin resolves Algolia index names from the configured environment, store alias, locale, and currency. Callers should not set `SearchForHits.IndexName`; the search service sets it before executing the request.
+
+Product index names include currency when a currency is resolved:
+
+```text
+primary.prod.Store.products.en-US.USD
+```
+
+Category index names omit currency because category records are scoped by store alias and locale only:
+
+```text
+primary.prod.Store.categories.en-US
+```
+
+Standard content index names resolve as `{IndexName}.{Environment}.{Culture}`:
+
+```text
+SearchIndex.prod.en-US
+```
+
+Only the store alias must be configured in `appsettings.json`. Locale and currency are resolved from the Ekom store and the current request/order context. Background indexing falls back to the store's default culture and currency.
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Stores": [
+        {
+          "Alias": "Store"
+        }
+      ]
+    }
+  }
+}
+```
+
+### Searching
+
+`IAlgoliaSearchService.SearchProductsAsync(...)` returns typed product hits with paging metadata, query text, processing time, and raw facets.
+
+```csharp
+var response = await algoliaSearchService.SearchProductsAsync(
+    new AlgoliaSearchRequest
+    {
+        StoreAlias = "Store",
+        Locale = "en-US",
+        Currency = "USD",
+        Query = new SearchForHits
+        {
+            Query = "shoe",
+            HitsPerPage = 20,
+            Filters = "Available:1"
+        }
+    },
+    ct).ConfigureAwait(false);
+```
+
+Other search methods target their own index types:
+
+- `SearchCategoriesAsync(...)` searches category records scoped by store alias and locale.
+- `SearchContentAsync(...)` searches configured standard content indexes.
+- `FederatedSearchAsync(...)` executes products, categories, query suggestions, and content searches in one Algolia multi-search request.
+
+### Search caching and user tokens
+
+Search cache keys include the resolved index name and serialized Algolia query payload, so SDK options such as filters, facets, page, and hits-per-page affect caching.
+
+`Search:IncludeUserToken` sends user context to Algolia. The default provider uses authenticated username first, then session ID, then request trace identifier.
+
+`Search:VaryCacheByUserToken` controls whether that token also affects cache keys. Leave it `false` for shared cache when results are not personalized. Set it to `true` when Algolia personalization changes result order or content per user.
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Search": {
+        "IncludeUserToken": true,
+        "VaryCacheByUserToken": false,
+        "Cache": {
+          "Enabled": true,
+          "DurationMinutes": 60
+        }
+      }
+    }
+  }
+}
+```
+
+### Product records and ranking fields
+
+Product records always include `Title` as a top-level field. `NodeName` contains the Umbraco node name.
+
+`Available` is indexed as a numeric value so it can be used for ranking:
+
+```json
+{
+  "Title": "Running shoe",
+  "NodeName": "Running shoe - black",
+  "Available": 1
+}
+```
+
+Product records also include `ProductRanking` and `CategoryRanking` integer fields. Both support negative values.
+
+- `ProductRanking` reads the product `ekmAlgoliaRank` property and defaults to `0` when missing or invalid.
+- `CategoryRanking` uses the highest valid `ekmAlgoliaRank` value across the product's categories and defaults to `0` when no category has a valid rank.
+
+```json
+{
+  "ProductRanking": 10,
+  "CategoryRanking": 5
+}
+```
+
+### Variant indexing
+
+Variants are not indexed by default. Enable variant indexing when products use placeholder parent SKUs and the real sellable SKUs live on variants.
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Indexing": {
+        "Variants": true
+      },
+      "Search": {
+        "GroupVariantsByProduct": true
+      }
+    }
+  }
+}
+```
+
+When enabled, the plugin creates one additional product record per variant. Variant records use the variant SKU as top-level `Sku`, preserve the parent product SKU as `ParentSku`, and include `ProductId` and `VariantId` for grouping and selection.
+
+```json
+{
+  "objectID": "product-key_variant-key",
+  "ProductId": "product-key",
+  "VariantId": "variant-key",
+  "Sku": "REAL-VARIANT-SKU",
+  "ParentSku": "PLACEHOLDER-SKU",
+  "IsVariant": true,
+  "variantSku": "REAL-VARIANT-SKU",
+  "variantTitle": "Black / XL"
+}
+```
+
+Product indexes are configured with `AttributeForDistinct = ProductId`. `Search:GroupVariantsByProduct` defaults to `true`, so normal searches return grouped product results while SKU searches can still match variant records. Set it to `false` if you want one hit per matching variant.
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Search": {
+        "GroupVariantsByProduct": false
+      }
+    }
+  }
+}
+```
+
+### Additional product properties and metafields
+
+`Indexing:ProductProperties` adds extra product properties and metafields to product records. Each entry supports one optional modifier: `|array`, `|int`, `|decimal`, `|unix`, or `|unixms`.
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Indexing": {
+        "ProductProperties": [
+          "channels|array",
+          "stockCount|int",
+          "weight|decimal",
+          "publishedAt|unix"
+        ]
+      }
+    }
+  }
+}
+```
+
+Metafields can be indexed explicitly with `metafield:<alias>`:
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Indexing": {
+        "ProductProperties": [
+          "metafield:material",
+          "metafield:color|array",
+          "metafield:releaseDate|unix"
+        ]
+      }
+    }
+  }
+}
+```
+
+Modifier behavior:
+
+- `|array` parses JSON arrays such as `["Web","Store"]` into Algolia string arrays.
+- `|decimal` accepts comma or dot decimal separators, such as `0,1` and `0.0`.
 - Multi-value metafields are skipped unless `|array` is configured.
-- `|array` parses JSON arrays such as checkbox-list values like `["Web","Store"]` into Algolia string arrays.
-- `|decimal` accepts either comma or dot decimal separators, so values like `0,1` and `0.0` are indexed as decimals.
 - Invalid `|array`, `|int`, and `|decimal` values are skipped instead of being indexed as strings.
-- Manual reindex all endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildIndexes`.
-- Manual reindex store endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildStoreIndexes?storeAlias=Store`.
+
+### Manual reindexing
+
+Use the backoffice endpoints to rebuild Algolia indexes manually. Both endpoints support `GET` and `POST`.
+
+Rebuild all configured store indexes:
+
+```http
+POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildIndexes
+```
+
+Rebuild one store:
+
+```http
+POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildStoreIndexes?storeAlias=Store
+```

@@ -6,6 +6,11 @@ namespace Ekom.Algolia.Mappers;
 public interface IAlgoliaProductIndexMapper
 {
     AlgoliaProductRecord? Map(IProduct product, AlgoliaResolvedStore store, string baseIndexName);
+    IReadOnlyList<AlgoliaProductRecord> MapRecords(IProduct product, AlgoliaResolvedStore store, string baseIndexName)
+    {
+        var record = Map(product, store, baseIndexName);
+        return record is null ? [] : [record];
+    }
 }
 
 public interface IAlgoliaProductEnricher

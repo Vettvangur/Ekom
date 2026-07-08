@@ -27,6 +27,7 @@ public sealed class AlgoliaIndexingOptions
     public bool Enabled { get; set; } = true;
     public bool Products { get; set; } = true;
     public bool Categories { get; set; } = true;
+    public bool Variants { get; set; }
 
     public int BatchSize { get; set; } = 1000;
 
@@ -78,6 +79,7 @@ public sealed class AlgoliaSearchOptions
     public bool Enabled { get; set; } = true;
     public bool Products { get; set; } = true;
     public bool Categories { get; set; } = true;
+    public bool GroupVariantsByProduct { get; set; } = true;
     public bool QuerySuggestions { get; set; }
     public bool IncludeUserToken { get; set; } = true;
     public bool VaryCacheByUserToken { get; set; }

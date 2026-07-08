@@ -129,7 +129,7 @@ internal sealed class AlgoliaProductIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
-            await EnsureReplicasAsync(target, indexName, ct).ConfigureAwait(false);
+            await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
 
             var skippedProducts = 0;
@@ -137,9 +137,9 @@ internal sealed class AlgoliaProductIndexExecutor
             foreach (var product in products)
             {
                 ct.ThrowIfCancellationRequested();
-                var record = _mapper.Map(product, target, indexName);
-                if (record != null)
-                    records.Add(record);
+                var mappedRecords = _mapper.MapRecords(product, target, indexName);
+                if (mappedRecords.Count > 0)
+                    records.AddRange(mappedRecords);
                 else
                     skippedProducts++;
             }
@@ -211,7 +211,7 @@ internal sealed class AlgoliaProductIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
-            await EnsureReplicasAsync(target, indexName, ct).ConfigureAwait(false);
+            await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
 
             var skippedProducts = 0;
@@ -219,9 +219,9 @@ internal sealed class AlgoliaProductIndexExecutor
 
             foreach (var product in products)
             {
-                var record = _mapper.Map(product, target, indexName);
-                if (record != null)
-                    records.Add(record);
+                var mappedRecords = _mapper.MapRecords(product, target, indexName);
+                if (mappedRecords.Count > 0)
+                    records.AddRange(mappedRecords);
                 else
                     skippedProducts++;
             }
@@ -251,6 +251,9 @@ internal sealed class AlgoliaProductIndexExecutor
                 indexName,
                 target.Locale,
                 target.Currency);
+
+            if (_options.Indexing.Variants)
+                await DeleteByProductIdsAsync(indexName, products.Select(x => x.Key), waitForTasks: true, ct).ConfigureAwait(false);
 
             await _client.SaveObjectsAsync(
                 indexName: indexName,
@@ -283,7 +286,7 @@ internal sealed class AlgoliaProductIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
-            await EnsureReplicasAsync(target, indexName, ct).ConfigureAwait(false);
+            await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
 
             _logger.LogDebug(
                 "Algolia delete {Count} products from {IndexName} for locale {Locale} currency {Currency}",
@@ -292,13 +295,20 @@ internal sealed class AlgoliaProductIndexExecutor
                 target.Locale,
                 target.Currency);
 
-            await _client.DeleteObjectsAsync(
-                indexName: indexName,
-                objectIDs: ids,
-                batchSize: batchSize,
-                waitForTasks: false,
-                options: null,
-                cancellationToken: ct).ConfigureAwait(false);
+            if (_options.Indexing.Variants)
+            {
+                await DeleteByProductIdsAsync(indexName, keys, waitForTasks: false, ct).ConfigureAwait(false);
+            }
+            else
+            {
+                await _client.DeleteObjectsAsync(
+                    indexName: indexName,
+                    objectIDs: ids,
+                    batchSize: batchSize,
+                    waitForTasks: false,
+                    options: null,
+                    cancellationToken: ct).ConfigureAwait(false);
+            }
 
             await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
         }
@@ -306,9 +316,9 @@ internal sealed class AlgoliaProductIndexExecutor
         _searchCacheVersions.InvalidateStore(store.Alias);
     }
 
-    private async Task EnsureReplicasAsync(AlgoliaResolvedStore store, string primaryIndexName, CancellationToken ct)
+    private async Task EnsureIndexSettingsAsync(AlgoliaResolvedStore store, string primaryIndexName, CancellationToken ct)
     {
-        if (_options.Indexing.SortedReplicas.Count == 0)
+        if (_options.Indexing.SortedReplicas.Count == 0 && !_options.Indexing.Variants)
             return;
 
         var replicas = _options.Indexing.SortedReplicas
@@ -321,7 +331,7 @@ internal sealed class AlgoliaProductIndexExecutor
             .DistinctBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (replicas.Count == 0)
+        if (replicas.Count == 0 && !_options.Indexing.Variants)
             return;
 
         _logger.LogDebug(
@@ -334,7 +344,9 @@ internal sealed class AlgoliaProductIndexExecutor
             primaryIndexName,
             new IndexSettings
             {
-                Replicas = replicas.Select(x => x.Name).ToList()
+                Replicas = replicas.Select(x => x.Name).ToList(),
+                AttributeForDistinct = _options.Indexing.Variants ? "ProductId" : null,
+                AttributesForFaceting = _options.Indexing.Variants ? ["filterOnly(ProductId)"] : null
             },
             forwardToReplicas: false,
             options: null,
@@ -351,6 +363,26 @@ internal sealed class AlgoliaProductIndexExecutor
                 forwardToReplicas: false,
                 options: null,
                 cancellationToken: ct).ConfigureAwait(false);
+        }
+    }
+
+    private async Task DeleteByProductIdsAsync(string indexName, IEnumerable<Guid> productKeys, bool waitForTasks, CancellationToken ct)
+    {
+        foreach (var productKey in productKeys.Distinct())
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var response = await _client.DeleteByAsync(
+                indexName,
+                new DeleteByParams
+                {
+                    Filters = $"ProductId:{productKey}"
+                },
+                options: null,
+                cancellationToken: ct).ConfigureAwait(false);
+
+            if (waitForTasks)
+                await _client.WaitForTaskAsync(indexName, response.TaskID, 100, null, null, ct).ConfigureAwait(false);
         }
     }
 

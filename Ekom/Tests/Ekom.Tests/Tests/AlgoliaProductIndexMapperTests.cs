@@ -210,6 +210,40 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Fact]
+    public void MapRecords_Returns_Only_Product_When_Variant_Indexing_Is_Disabled()
+    {
+        var mapper = CreateMapper(indexVariants: false);
+        var product = CreateProduct(variants: [CreateVariant().Object]);
+
+        var records = mapper.MapRecords(product.Object, CreateStore(), "products");
+
+        Assert.Single(records);
+        Assert.False(records[0].IsVariant);
+        Assert.Equal(product.Object.Key.ToString(), records[0].ProductId);
+    }
+
+    [Fact]
+    public void MapRecords_Maps_Variants_When_Variant_Indexing_Is_Enabled()
+    {
+        var mapper = CreateMapper(indexVariants: true);
+        var variant = CreateVariant(sku: "variant-sku", title: "Variant title");
+        var product = CreateProduct(sku: "placeholder", variants: [variant.Object]);
+
+        var records = mapper.MapRecords(product.Object, CreateStore(), "products");
+
+        Assert.Equal(2, records.Count);
+        var variantRecord = records.Single(x => x.IsVariant);
+
+        Assert.Equal($"{product.Object.Key}_{variant.Object.Key}", variantRecord.ObjectId);
+        Assert.Equal(product.Object.Key.ToString(), variantRecord.ProductId);
+        Assert.Equal(variant.Object.Key.ToString(), variantRecord.VariantId);
+        Assert.Equal("variant-sku", variantRecord.Sku);
+        Assert.Equal("placeholder", variantRecord.ParentSku);
+        Assert.Equal("variant-sku", Assert.IsType<string>(variantRecord.Data["variantSku"]));
+        Assert.Equal("Variant title", Assert.IsType<string>(variantRecord.Data["variantTitle"]));
+    }
+
+    [Fact]
     public void Keeps_Relative_Urls_And_Image_Urls_As_Is()
     {
         var mapper = CreateMapper();
@@ -391,7 +425,7 @@ public class AlgoliaProductIndexMapperTests
         Assert.Equal(0, record.CategoryRanking);
     }
 
-    private static ProductIndexMapper CreateMapper(IReadOnlyCollection<string>? productProperties = null)
+    private static ProductIndexMapper CreateMapper(IReadOnlyCollection<string>? productProperties = null, bool indexVariants = false)
     {
         var options = Options.Create(new AlgoliaOptions
         {
@@ -400,6 +434,7 @@ public class AlgoliaProductIndexMapperTests
             SearchApiKey = "search",
             Indexing = new AlgoliaIndexingOptions
             {
+                Variants = indexVariants,
                 ProductProperties = productProperties ?? []
             }
         });
@@ -437,7 +472,8 @@ public class AlgoliaProductIndexMapperTests
         string summary = "Summary",
         string description = "Description",
         string url = "/product",
-        bool available = true)
+        bool available = true,
+        IReadOnlyList<Ekom.Models.IVariant>? variants = null)
     {
         var price = new Mock<Ekom.Models.IPrice>();
         price.SetupGet(x => x.Value).Returns(100m);
@@ -460,6 +496,7 @@ public class AlgoliaProductIndexMapperTests
         product.SetupGet(x => x.Price).Returns(price.Object);
         product.SetupGet(x => x.Prices).Returns([price.Object]);
         product.SetupGet(x => x.Categories).Returns((categories ?? []).Select(x => x.Object));
+        product.SetupGet(x => x.AllVariants).Returns(variants ?? []);
         product.SetupGet(x => x.Metafields).Returns(metafields?.ToList() ?? []);
         product.SetupGet(x => x.CreateDate).Returns(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc));
         product.SetupGet(x => x.UpdateDate).Returns(new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc));
@@ -473,6 +510,35 @@ public class AlgoliaProductIndexMapperTests
         product.Setup(x => x.GetValue("nodeName", It.IsAny<string?>(), It.IsAny<bool>())).Returns(nodeName);
 
         return product;
+    }
+
+    private static Mock<Ekom.Models.IVariant> CreateVariant(
+        string sku = "variant-sku",
+        string title = "Variant",
+        string description = "Variant description",
+        bool available = true)
+    {
+        var price = new Mock<Ekom.Models.IPrice>();
+        price.SetupGet(x => x.Value).Returns(10m);
+        price.SetupGet(x => x.WithVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 10m));
+        price.SetupGet(x => x.WithoutVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 8m));
+        price.SetupGet(x => x.Currency).Returns(new Ekom.Models.CurrencyModel { CurrencyValue = "ISK", CurrencyFormat = "0" });
+
+        var variant = new Mock<Ekom.Models.IVariant>();
+        variant.SetupGet(x => x.Key).Returns(Guid.NewGuid());
+        variant.SetupGet(x => x.SKU).Returns(sku);
+        variant.SetupGet(x => x.Title).Returns(title);
+        variant.SetupGet(x => x.Description).Returns(description);
+        variant.SetupGet(x => x.Images).Returns([]);
+        variant.SetupGet(x => x.Available).Returns(available);
+        variant.SetupGet(x => x.Stock).Returns(5m);
+        variant.SetupGet(x => x.Price).Returns(price.Object);
+        variant.SetupGet(x => x.Prices).Returns([price.Object]);
+        variant.SetupGet(x => x.VariantGroupId).Returns(123);
+        variant.SetupGet(x => x.CreateDate).Returns(new DateTime(2024, 1, 3, 0, 0, 0, DateTimeKind.Utc));
+        variant.SetupGet(x => x.UpdateDate).Returns(new DateTime(2024, 1, 4, 0, 0, 0, DateTimeKind.Utc));
+
+        return variant;
     }
 
     private static Ekom.Models.MetavalueSlim CreateMetafield(string alias, IReadOnlyList<Dictionary<string, string>> values)

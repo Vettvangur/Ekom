@@ -6,6 +6,7 @@ using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Sync;
 
 namespace Ekom.Algolia.Events;
@@ -28,11 +29,14 @@ internal sealed class AlgoliaUmbracoNotifications :
     INotificationAsyncHandler<ContentDeletedNotification>
 {
     private const string ProductAlias = "ekmProduct";
+    private const string ProductVariantAlias = "ekmProductVariant";
+    private const string ProductVariantGroupAlias = "ekmProductVariantGroup";
     private const string CategoryAlias = "ekmCategory";
 
     private readonly IAlgoliaProductIndexService _productIndexer;
     private readonly IAlgoliaCategoryIndexService _categoryIndexer;
     private readonly IAlgoliaContentIndexService _contentIndexer;
+    private readonly IContentService _contentService;
     private readonly IServerRoleAccessor _serverRoleAccessor;
     private readonly AlgoliaOptions _options;
     private readonly ILogger<AlgoliaUmbracoNotifications> _logger;
@@ -41,6 +45,7 @@ internal sealed class AlgoliaUmbracoNotifications :
         IAlgoliaProductIndexService productIndexer,
         IAlgoliaCategoryIndexService categoryIndexer,
         IAlgoliaContentIndexService contentIndexer,
+        IContentService contentService,
         IServerRoleAccessor serverRoleAccessor,
         IOptions<AlgoliaOptions> options,
         ILogger<AlgoliaUmbracoNotifications> logger)
@@ -48,6 +53,7 @@ internal sealed class AlgoliaUmbracoNotifications :
         _productIndexer = productIndexer;
         _categoryIndexer = categoryIndexer;
         _contentIndexer = contentIndexer;
+        _contentService = contentService;
         _serverRoleAccessor = serverRoleAccessor;
         _options = options.Value;
         _logger = logger;
@@ -89,6 +95,9 @@ internal sealed class AlgoliaUmbracoNotifications :
     {
         if (string.Equals(entity.ContentType.Alias, ProductAlias, StringComparison.OrdinalIgnoreCase))
             return EnqueueProductAsync(entity, isPublished, ct);
+
+        if (_options.Indexing.Variants && IsProductVariantContent(entity.ContentType.Alias))
+            return EnqueueVariantProductAsync(entity, isPublished, ct);
 
         if (string.Equals(entity.ContentType.Alias, CategoryAlias, StringComparison.OrdinalIgnoreCase))
             return EnqueueCategoryAsync(entity, isPublished, ct);
@@ -153,6 +162,21 @@ internal sealed class AlgoliaUmbracoNotifications :
         }
     }
 
+    private async Task EnqueueVariantProductAsync(IContent entity, bool isPublished, CancellationToken ct)
+    {
+        var product = ResolveProductAncestor(entity);
+        if (product is null)
+        {
+            _logger.LogDebug(
+                "Algolia could not resolve parent product for variant content {Id} alias {Alias}.",
+                entity.Id,
+                entity.ContentType.Alias);
+            return;
+        }
+
+        await EnqueueProductAsync(product, isPublished: true, ct).ConfigureAwait(false);
+    }
+
     private async Task EnqueueCategoryAsync(IContent entity, bool isPublished, CancellationToken ct)
     {
         if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Categories)
@@ -203,4 +227,27 @@ internal sealed class AlgoliaUmbracoNotifications :
         => _options.ContentIndexing.Indexes
             .SelectMany(x => x.ContentTypes)
             .Any(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsProductVariantContent(string alias)
+        => string.Equals(alias, ProductVariantAlias, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(alias, ProductVariantGroupAlias, StringComparison.OrdinalIgnoreCase);
+
+    private IContent? ResolveProductAncestor(IContent entity)
+    {
+        var current = entity;
+
+        while (current.ParentId > 0)
+        {
+            var parent = _contentService.GetById(current.ParentId);
+            if (parent is null)
+                return null;
+
+            if (string.Equals(parent.ContentType.Alias, ProductAlias, StringComparison.OrdinalIgnoreCase))
+                return parent;
+
+            current = parent;
+        }
+
+        return null;
+    }
 }
