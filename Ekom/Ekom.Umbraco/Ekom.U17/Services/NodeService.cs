@@ -3,7 +3,6 @@ using Ekom.Models;
 using Ekom.Services;
 using Ekom.Umb.Models;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
@@ -64,17 +63,8 @@ internal sealed class NodeService : INodeService
             return Array.Empty<UmbracoContent>();
         }
 
-        var fetchStopwatch = Stopwatch.StartNew();
         var nodes = _documentCacheService.GetByContentType(contentType).ToList();
-        fetchStopwatch.Stop();
 
-        _logger.LogDebug(
-            "Fetched {Count} Umbraco 17 nodes for {ContentTypeAlias} in {Elapsed}.",
-            nodes.Count,
-            contentTypeAlias,
-            fetchStopwatch.Elapsed);
-
-        var mapStopwatch = Stopwatch.StartNew();
         var metadata = BuildContentMetadata(nodes, rootNode);
         var rootPathValue = rootNode.Id.ToString();
         nodes = nodes
@@ -99,14 +89,6 @@ internal sealed class NodeService : INodeService
         {
             _contentCache.AddOrUpdate(result);
         }
-
-        mapStopwatch.Stop();
-
-        _logger.LogDebug(
-            "Mapped {Count} Umbraco 17 nodes for {ContentTypeAlias} in {Elapsed}.",
-            results.Count,
-            contentTypeAlias,
-            mapStopwatch.Elapsed);
 
         return results;
     }
