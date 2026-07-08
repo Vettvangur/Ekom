@@ -1,27 +1,33 @@
 using Ekom.Algolia.Indexing;
+using Ekom.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Umbraco.Cms.Api.Management.Controllers;
+using Umbraco.Cms.Core;
 
 namespace Ekom.Algolia.Controllers;
 
+[Authorize(AuthenticationSchemes = Constants.Security.BackOfficeAuthenticationType)]
 [Route("umbraco/backoffice/api/Ekom/AlgoliaBackoffice")]
-public class EkomAlgoliaBackofficeController : ManagementApiControllerBase
+public class EkomAlgoliaBackofficeController : ControllerBase
 {
     private readonly IAlgoliaProductIndexService _algoliaProductIndexService;
     private readonly IAlgoliaCategoryIndexService _algoliaCategoryIndexService;
     private readonly IAlgoliaContentIndexService _algoliaContentIndexService;
+    private readonly ISecurityService _securityService;
     private readonly ILogger<EkomAlgoliaBackofficeController> _logger;
 
     public EkomAlgoliaBackofficeController(
         IAlgoliaProductIndexService algoliaProductIndexService,
         IAlgoliaCategoryIndexService algoliaCategoryIndexService,
         IAlgoliaContentIndexService algoliaContentIndexService,
+        ISecurityService securityService,
         ILogger<EkomAlgoliaBackofficeController> logger)
     {
         _algoliaProductIndexService = algoliaProductIndexService;
         _algoliaCategoryIndexService = algoliaCategoryIndexService;
         _algoliaContentIndexService = algoliaContentIndexService;
+        _securityService = securityService;
         _logger = logger;
     }
 
@@ -29,6 +35,9 @@ public class EkomAlgoliaBackofficeController : ManagementApiControllerBase
     [HttpPost("RebuildIndexes")]
     public async Task<IActionResult> RebuildIndexesAsync(CancellationToken ct = default)
     {
+        if (!_securityService.IsCurrentUserAdmin())
+            return Forbid();
+
         await _algoliaProductIndexService.RebuildAllAsync(ct).ConfigureAwait(false);
         await _algoliaCategoryIndexService.RebuildAllAsync(ct).ConfigureAwait(false);
         await _algoliaContentIndexService.RebuildAsync(ct: ct).ConfigureAwait(false);
@@ -42,6 +51,9 @@ public class EkomAlgoliaBackofficeController : ManagementApiControllerBase
     [HttpPost("RebuildStoreIndexes")]
     public async Task<IActionResult> RebuildStoreIndexesAsync([FromQuery] string storeAlias, CancellationToken ct = default)
     {
+        if (!_securityService.IsCurrentUserAdmin())
+            return Forbid();
+
         if (string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest(new { error = "Store alias is required." });
 
