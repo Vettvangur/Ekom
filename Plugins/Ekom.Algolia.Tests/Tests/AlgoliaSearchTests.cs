@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
 
-namespace Ekom.Tests.Tests;
+namespace Ekom.Algolia.Tests.Tests;
 
 public class AlgoliaSearchTests
 {
@@ -195,7 +195,7 @@ public class AlgoliaSearchTests
 
         var key = builder.BuildCategoriesKey(request, request.Query, "primary.store.categories.en-us");
 
-        Assert.Contains("categories", key);
+        Assert.Contains("categories", key, StringComparison.Ordinal);
     }
 
     [Fact]

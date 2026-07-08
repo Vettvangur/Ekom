@@ -3,7 +3,7 @@ using Ekom.Algolia.Mappers;
 using Moq;
 using Xunit;
 
-namespace Ekom.Tests.Tests;
+namespace Ekom.Algolia.Tests.Tests;
 
 public class AlgoliaCategoryIndexMapperTests
 {

@@ -6,7 +6,7 @@ using Moq;
 using System.Text.Json;
 using Xunit;
 
-namespace Ekom.Tests.Tests;
+namespace Ekom.Algolia.Tests.Tests;
 
 public class AlgoliaProductIndexMapperTests
 {
