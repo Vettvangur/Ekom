@@ -6,7 +6,7 @@ namespace Ekom.Umb.Models;
 internal sealed class Umbraco17Media : Umbraco17Content
 {
     public Umbraco17Media(IPublishedContent content)
-        : base(content, content.Url())
+        : base(content, urlOverride: content.Url())
     {
     }
 }

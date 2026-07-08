@@ -22,6 +22,7 @@ public static class ApplicationBuilderExtensions
         services.AddHttpClient();
 
         services.AddTransient<IMemberService, MemberService>();
+        services.AddSingleton<Umbraco17ContentCache>();
         services.AddTransient<INodeService, NodeService>();
         services.AddTransient<IImportService, ImportService>();
         services.AddTransient<ImportMediaService>();
