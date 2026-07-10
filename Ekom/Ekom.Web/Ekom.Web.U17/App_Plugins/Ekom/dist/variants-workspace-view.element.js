@@ -1,12 +1,12 @@
-var T = Object.defineProperty;
-var F = (i, o, t) => o in i ? T(i, o, { enumerable: !0, configurable: !0, writable: !0, value: t }) : i[o] = t;
+var D = Object.defineProperty;
+var F = (i, o, t) => o in i ? D(i, o, { enumerable: !0, configurable: !0, writable: !0, value: t }) : i[o] = t;
 var l = (i, o, t) => F(i, typeof o != "symbol" ? o + "" : o, t);
 import { UmbElementMixin as M } from "@umbraco-cms/backoffice/element-api";
 import { UMB_DOCUMENT_WORKSPACE_CONTEXT as O, UMB_DOCUMENT_PUBLISHING_WORKSPACE_CONTEXT as B } from "@umbraco-cms/backoffice/document";
 import "@umbraco-cms/backoffice/imaging";
 import "@umbraco-cms/backoffice/media";
-import { UMB_NOTIFICATION_CONTEXT as W } from "@umbraco-cms/backoffice/notification";
-import { UMB_WORKSPACE_VIEW_CONTEXT as j } from "@umbraco-cms/backoffice/workspace";
+import { UMB_NOTIFICATION_CONTEXT as j } from "@umbraco-cms/backoffice/notification";
+import { UMB_WORKSPACE_VIEW_CONTEXT as W } from "@umbraco-cms/backoffice/workspace";
 const V = "00000000-0000-0000-0000-000000000000", m = "ekom-variant-count";
 class R extends M(HTMLElement) {
   constructor() {
@@ -40,9 +40,9 @@ class R extends M(HTMLElement) {
     });
   }
   connectedCallback() {
-    super.connectedCallback(), window.addEventListener("keydown", this.onKeydown), this.consumeContext(W, (t) => {
+    super.connectedCallback(), window.addEventListener("keydown", this.onKeydown), this.consumeContext(j, (t) => {
       this.notificationContext = t;
-    }), this.consumeContext(j, (t) => {
+    }), this.consumeContext(W, (t) => {
       this.workspaceViewContext = t, this.updateWorkspaceViewBadge();
     }), this.consumeContext(O, (t) => {
       if (t == null)
@@ -114,7 +114,7 @@ class R extends M(HTMLElement) {
       images: "",
       sortOrder: this.product.groups.length,
       published: !1,
-      customFields: q(this.product.variantGroupFields),
+      customFields: T(this.product.variantGroupFields),
       variants: []
     };
     this.product.groups = [...this.product.groups, e], this.expandedGroupIds.add(t), this.drawer = { type: "group", groupId: t }, this.render();
@@ -134,7 +134,7 @@ class R extends M(HTMLElement) {
       images: "",
       priceValues: {},
       stockValues: this.createEmptyStockValues(),
-      customFields: q(((r = this.product) == null ? void 0 : r.variantFields) ?? []),
+      customFields: T(((r = this.product) == null ? void 0 : r.variantFields) ?? []),
       sortOrder: e.variants.length,
       published: !1
     };
@@ -142,7 +142,7 @@ class R extends M(HTMLElement) {
   }
   async save() {
     var e;
-    if (this.syncMediaPickers(), !this.validateAllCustomFields())
+    if (this.syncMediaPickers(), !this.validateAllTitles() || !this.validateAllCustomFields())
       return;
     if (this.product == null || !this.hasChanges()) {
       this.showNotification("default", "Variants", "No changes to save.");
@@ -197,7 +197,7 @@ class R extends M(HTMLElement) {
   }
   updateGroupTitle(t, e) {
     const a = this.getGroup(t);
-    a != null && (a.titleValues = { ...a.titleValues, [this.activeLanguage]: e }, a.title = y(a.titleValues) || a.name, this.updateSaveButtonState());
+    a != null && (a.titleValues = { ...a.titleValues, [this.activeLanguage]: e }, a.title = y(a.titleValues) || a.name, this.updateActiveLanguageTabMissingState(a.titleValues), this.updateSaveButtonState());
   }
   updateGroupImages(t, e) {
     const a = this.getGroup(t);
@@ -205,7 +205,7 @@ class R extends M(HTMLElement) {
   }
   updateVariantTitle(t, e, a) {
     const s = this.getVariant(t, e);
-    s != null && (s.titleValues = { ...s.titleValues, [this.activeLanguage]: a }, s.title = y(s.titleValues) || s.name, this.updateSaveButtonState());
+    s != null && (s.titleValues = { ...s.titleValues, [this.activeLanguage]: a }, s.title = y(s.titleValues) || s.name, this.updateActiveLanguageTabMissingState(s.titleValues), this.updateSaveButtonState());
   }
   updateVariant(t, e, a, s) {
     const r = this.getVariant(t, e);
@@ -248,7 +248,7 @@ class R extends M(HTMLElement) {
       var s;
       return {
         ...a,
-        priceValues: H(a.priceValues, ((s = this.product) == null ? void 0 : s.stores) ?? []),
+        priceValues: X(a.priceValues, ((s = this.product) == null ? void 0 : s.stores) ?? []),
         changed: !0
       };
     });
@@ -312,7 +312,7 @@ class R extends M(HTMLElement) {
   }
   render() {
     this.innerHTML = `
-      <style>${X}</style>
+      <style>${Y}</style>
       <section class="ekm-variant-editor">
         ${this.renderTopBar()}
         ${this.error ? `<p class="status status--error">${u(this.error)}</p>` : ""}
@@ -413,7 +413,7 @@ class R extends M(HTMLElement) {
       <aside class="drawer">
         ${this.renderDrawerHeader(this.getTitle(t, "New group"), "variant group", t)}
         <div class="drawer-body">
-          ${this.renderTitleField("Group title", ((e = t.titleValues) == null ? void 0 : e[this.activeLanguage]) ?? "", "data-group-title", t.id)}
+          ${this.renderTitleField("Group title", ((e = t.titleValues) == null ? void 0 : e[this.activeLanguage]) ?? "", "data-group-title", t.id, 0, t.titleValues)}
           ${this.renderCustomFields(t.customFields, t.id)}
           ${this.renderMediaPicker("Images", t.images, "data-group-images", t.id)}
           <p class="hint">Group images apply to all variants unless a variant has its own.</p>
@@ -429,7 +429,7 @@ class R extends M(HTMLElement) {
       <aside class="drawer">
         ${this.renderDrawerHeader(this.getTitle(e, "New variant"), `${this.getTitle(t, "Group")} / variant`, e)}
         <div class="drawer-body">
-          ${this.renderTitleField("Title", ((a = e.titleValues) == null ? void 0 : a[this.activeLanguage]) ?? "", "data-variant-title", t.id, e.id)}
+          ${this.renderTitleField("Title", ((a = e.titleValues) == null ? void 0 : a[this.activeLanguage]) ?? "", "data-variant-title", t.id, e.id, e.titleValues)}
           <label>SKU<input data-variant-field="sku" data-group-id="${t.id}" data-variant-id="${e.id}" value="${u(e.sku)}"></label>
           ${this.renderCustomFields(e.customFields, t.id, e.id)}
           ${this.renderPriceTable(t.id, e)}
@@ -468,22 +468,23 @@ class R extends M(HTMLElement) {
       </footer>
     `;
   }
-  renderTitleField(t, e, a, s, r = 0) {
+  renderTitleField(t, e, a, s, r = 0, n = {}) {
     return `
-      <label>${u(t)}
-        ${this.renderLanguageMiniTabs()}
-        <input ${a} data-group-id="${s}" data-variant-id="${r}" value="${u(e)}">
+      <label>${u(t)} *
+        ${this.renderLanguageMiniTabs(n)}
+        <input ${a} data-group-id="${s}" data-variant-id="${r}" value="${u(e)}" required>
       </label>
     `;
   }
-  renderLanguageMiniTabs() {
-    var e;
-    const t = ((e = this.product) == null ? void 0 : e.languages) ?? [];
-    return t.length <= 1 ? "" : `
+  renderLanguageMiniTabs(t) {
+    var a;
+    const e = ((a = this.product) == null ? void 0 : a.languages) ?? [];
+    return e.length <= 1 ? "" : `
       <div class="mini-tabs">
-        ${t.map((a) => {
-      const s = a.isoCode ?? "";
-      return `<button type="button" data-action="set-language" data-tab-value="${u(s)}" class="mini-tab ${s === this.activeLanguage ? "active" : ""}">${u(z(a))}</button>`;
+        ${e.map((s) => {
+      var d, c;
+      const r = s.isoCode ?? "", n = ["mini-tab"];
+      return r === this.activeLanguage && n.push("active"), (d = t[r]) != null && d.trim() || n.push("is-missing"), `<button type="button" data-action="set-language" data-tab-value="${u(r)}" class="${n.join(" ")}" title="${(c = t[r]) != null && c.trim() ? "" : "Missing title value"}">${u(z(s))}</button>`;
     }).join("")}
       </div>
     `;
@@ -505,7 +506,7 @@ class R extends M(HTMLElement) {
           <tbody>
             ${(((a = this.product) == null ? void 0 : a.stores) ?? []).flatMap((s) => (s.currencies ?? []).map((r) => {
       var p, g;
-      const n = s.alias ?? "", d = r.currencyValue ?? "", c = S((g = (p = e.priceValues) == null ? void 0 : p[n]) == null ? void 0 : g.find((D) => v(D) === d));
+      const n = s.alias ?? "", d = r.currencyValue ?? "", c = S((g = (p = e.priceValues) == null ? void 0 : p[n]) == null ? void 0 : g.find((L) => v(L) === d));
       return `<tr><td>${u(s.title ?? n)}</td><td>${u(r.isoCurrencySymbol ?? d)}</td><td><input class="numeric" type="number" min="0" step="any" data-price data-price-store="${u(n)}" data-price-currency="${u(d)}" data-group-id="${t}" data-variant-id="${e.id}" value="${u(c)}"></td></tr>`;
     })).join("")}
           </tbody>
@@ -545,7 +546,7 @@ class R extends M(HTMLElement) {
     this.querySelectorAll('[data-action="create-group"]').forEach((r) => {
       r.addEventListener("click", () => this.addGroup());
     }), (t = this.querySelector('[data-action="save"]')) == null || t.addEventListener("click", () => void this.save()), (e = this.querySelector('[data-action="delete-selected"]')) == null || e.addEventListener("click", () => this.deleteSelected()), (a = this.querySelector('[data-action="delete-drawer-item"]')) == null || a.addEventListener("click", () => this.deleteDrawerItem()), (s = this.querySelector('[data-action="save-drawer"]')) == null || s.addEventListener("click", () => {
-      this.syncMediaPickers(), this.validateDrawerCustomFields() && (this.drawer = void 0, this.render());
+      this.syncMediaPickers(), !(!this.validateDrawerTitle() || !this.validateDrawerCustomFields()) && (this.drawer = void 0, this.render());
     }), this.querySelectorAll('[data-action="close-drawer"]').forEach((r) => {
       r.addEventListener("click", () => {
         this.syncMediaPickers(), this.drawer = void 0, this.render();
@@ -636,14 +637,14 @@ class R extends M(HTMLElement) {
       e.value = s.join(","), e.selection = s, _(e), t.addEventListener("change", async (r) => {
         const n = Number(t.dataset.groupId), d = Number(t.dataset.variantId);
         r.stopPropagation(), await Promise.resolve();
-        const c = P(e);
+        const c = A(e);
         await f(e), d !== 0 ? this.updateVariant(n, d, "images", c) : this.updateGroupImages(n, c);
       });
     });
   }
   syncMediaPickers() {
     this.querySelectorAll("[data-group-images], [data-variant-images]").forEach((t) => {
-      const e = t, a = Number(t.dataset.groupId), s = Number(t.dataset.variantId), r = P(e);
+      const e = t, a = Number(t.dataset.groupId), s = Number(t.dataset.variantId), r = A(e);
       if (s !== 0) {
         const d = this.getVariant(a, s);
         d != null && d.images !== r && (d.images = r);
@@ -657,6 +658,11 @@ class R extends M(HTMLElement) {
     const t = this.querySelector('[data-action="save"]');
     t != null && t.toggleAttribute("disabled", this.saving || !this.hasChanges());
   }
+  updateActiveLanguageTabMissingState(t) {
+    var a;
+    const e = Array.from(this.querySelectorAll('[data-action="set-language"]')).find((s) => s.dataset.tabValue === this.activeLanguage);
+    e == null || e.classList.toggle("is-missing", !((a = t[this.activeLanguage]) != null && a.trim()));
+  }
   updateCustomField(t, e, a, s) {
     var d;
     const r = e !== 0 ? this.getVariant(t, e) : this.getGroup(t), n = (d = r == null ? void 0 : r.customFields) == null ? void 0 : d.find((c) => c.alias === a);
@@ -667,6 +673,26 @@ class R extends M(HTMLElement) {
       return !0;
     const t = this.drawer.type === "group" ? this.getGroup(this.drawer.groupId) : this.getVariant(this.drawer.groupId, this.drawer.variantId);
     return this.validateCustomFields(t == null ? void 0 : t.customFields);
+  }
+  validateDrawerTitle() {
+    if (this.drawer == null)
+      return !0;
+    const t = this.drawer.type === "group" ? this.getGroup(this.drawer.groupId) : this.getVariant(this.drawer.groupId, this.drawer.variantId);
+    return this.validateTitle(t);
+  }
+  validateAllTitles() {
+    var t;
+    for (const e of ((t = this.product) == null ? void 0 : t.groups) ?? []) {
+      if (!this.validateTitle(e))
+        return !1;
+      for (const a of e.variants)
+        if (!this.validateTitle(a))
+          return !1;
+    }
+    return !0;
+  }
+  validateTitle(t) {
+    return H(t == null ? void 0 : t.titleValues) ? !0 : (this.showError("Title is required."), !1);
   }
   validateAllCustomFields() {
     var t;
@@ -687,7 +713,7 @@ class R extends M(HTMLElement) {
     return a == null ? !0 : (this.showError(`${a.label} is required.`), e && this.render(), !1);
   }
   reorderGroup(t, e) {
-    this.product == null || t == null || t === e || (this.product.groups = L(this.product.groups, t, e), this.product.groups.forEach((a, s) => {
+    this.product == null || t == null || t === e || (this.product.groups = q(this.product.groups, t, e), this.product.groups.forEach((a, s) => {
       a.sortOrder = s;
     }), this.render());
   }
@@ -695,7 +721,7 @@ class R extends M(HTMLElement) {
     if (t == null || t.groupId !== e || t.variantId === a)
       return;
     const s = this.getGroup(t.groupId);
-    s != null && (s.variants = L(s.variants, t.variantId, a), s.variants.forEach((r, n) => {
+    s != null && (s.variants = q(s.variants, t.variantId, a), s.variants.forEach((r, n) => {
       r.sortOrder = n;
     }), this.render());
   }
@@ -826,16 +852,16 @@ function x(i) {
   const o = i.match(/umb:\/\/media\/(.+)$/i);
   return (o == null ? void 0 : o[1]) ?? i;
 }
-function P(i) {
+function A(i) {
   return Array.isArray(i.selection) ? K(i.selection).join(",") : I(i.value ?? "").join(",");
 }
-const A = /* @__PURE__ */ new WeakSet();
+const P = /* @__PURE__ */ new WeakSet();
 async function _(i) {
-  if (A.has(i)) {
+  if (P.has(i)) {
     await f(i);
     return;
   }
-  A.add(i), await f(i);
+  P.add(i), await f(i);
   const o = i.shadowRoot;
   if (o == null)
     return;
@@ -889,13 +915,16 @@ function N(i) {
     sortOrder: i.sortOrder
   });
 }
-function q(i) {
+function T(i) {
   return (i ?? []).map((o) => ({
     ...o,
     value: ""
   }));
 }
-function H(i, o) {
+function H(i) {
+  return Object.values(i ?? {}).some((o) => o.trim().length > 0);
+}
+function X(i, o) {
   const t = {};
   for (const e of o) {
     const a = e.alias ?? "", s = /* @__PURE__ */ new Map();
@@ -912,7 +941,7 @@ function H(i, o) {
   }
   return t;
 }
-function L(i, o, t) {
+function q(i, o, t) {
   const e = [...i], a = e.findIndex((n) => n.id === o), s = e.findIndex((n) => n.id === t);
   if (a < 0 || s < 0)
     return i;
@@ -928,7 +957,7 @@ function b(i) {
   }
   return JSON.stringify(i);
 }
-const X = `
+const Y = `
   :host { display: block; padding: var(--uui-size-layout-1, 24px); background: #f4f3f5; color: #1b264f; font-family: Lato, Arial, sans-serif; }
   .ekm-variant-editor { display: grid; gap: 16px; }
   .top-bar, .selection-actions, .main-actions, .group-header, .group-header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -978,6 +1007,8 @@ const X = `
   .mini-tabs { display: inline-flex; gap: 4px; }
   .mini-tab { padding: 4px 8px; border-bottom: 2px solid transparent; color: #686570; font-weight: 700; }
   .mini-tab.active { border-bottom-color: #1b264f; color: #1b264f; }
+  .mini-tab.is-missing { color: #d42054; }
+  .mini-tab.is-missing::after { content: ''; display: inline-block; width: 6px; height: 6px; margin-left: 5px; border-radius: 999px; background: #d42054; vertical-align: middle; }
   table { width: 100%; border-collapse: collapse; }
   th { background: #f8f7fa; color: #8b8994; font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
   th, td { border-bottom: 1px solid #e2e1e6; padding: 8px; }

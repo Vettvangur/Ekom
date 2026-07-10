@@ -89,6 +89,10 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
     };
 
     vm.saveAll = function () {
+        if (!validateAllTitles()) {
+            return;
+        }
+
         if (!validateAllCustomFields()) {
             return;
         }
@@ -157,8 +161,18 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
         vm.drawer = null;
     };
 
+    function onKeyDown(event) {
+        if (event.key !== 'Escape' || !vm.drawer) {
+            return;
+        }
+
+        $scope.$apply(function () {
+            vm.closeDrawer();
+        });
+    }
+
     vm.saveDrawer = function () {
-        if (!validateCustomFields(vm.drawer && vm.drawer.item && vm.drawer.item.customFields)) {
+        if (!validateTitle(vm.drawer && vm.drawer.item) || !validateCustomFields(vm.drawer && vm.drawer.item && vm.drawer.item.customFields)) {
             return;
         }
 
@@ -216,6 +230,11 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
 
     vm.setLanguage = function (value) {
         vm.activeLanguage = value;
+    };
+
+    vm.isLanguageTitleMissing = function (item, language) {
+        ensureTitleValues(item);
+        return !String(item.titleValues[language.isoCode || ''] || '').trim();
     };
 
     vm.getTitleValue = function (item) {
@@ -375,7 +394,7 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
             multiPicker: true,
             selection: splitImages(item.images),
             submit: function (model) {
-                item.images = normalizeMediaSelection(model.selection).join(',');
+                item.images = appendUniqueImages(splitImages(item.images), normalizeMediaSelection(model.selection)).join(',');
                 editorService.close();
             },
             close: function () {
@@ -384,9 +403,33 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
         });
     };
 
+    vm.removeDrawerImage = function (index) {
+        if (!vm.drawer) {
+            return;
+        }
+
+        var images = splitImages(vm.drawer.item.images);
+
+        if (index < 0 || index >= images.length) {
+            return;
+        }
+
+        images.splice(index, 1);
+        vm.drawer.item.images = images.join(',');
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    $scope.$on('$destroy', function () {
+        document.removeEventListener('keydown', onKeyDown);
+    });
+
     bindDragAndDrop();
 
     function saveVariantChanges(options) {
+        if (!validateAllTitles()) {
+            return Promise.resolve();
+        }
+
         if (!validateAllCustomFields()) {
             return Promise.resolve();
         }
@@ -527,6 +570,39 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
         }
 
         return true;
+    }
+
+    function validateAllTitles() {
+        var groups = vm.product ? vm.product.groups || [] : [];
+
+        for (var i = 0; i < groups.length; i++) {
+            if (!validateTitle(groups[i])) {
+                return false;
+            }
+
+            for (var j = 0; j < groups[i].variants.length; j++) {
+                if (!validateTitle(groups[i].variants[j])) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    function validateTitle(item) {
+        if (hasAnyTitleValue(item && item.titleValues)) {
+            return true;
+        }
+
+        notificationsService.error('Variants', 'Title is required.');
+        return false;
+    }
+
+    function hasAnyTitleValue(values) {
+        return Object.keys(values || {}).some(function (key) {
+            return String(values[key] || '').trim();
+        });
     }
 
     function validateCustomFields(fields) {
@@ -791,11 +867,23 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
     function normalizeMediaSelection(selection) {
         return (selection || []).map(function (item) {
             if (typeof item === 'string') {
-                return item;
+                return normalizeMediaIdentifier(item);
             }
 
-            return item.udi || item.key || item.id || '';
+            return normalizeMediaIdentifier(item.udi || item.key || item.id || '');
         }).filter(Boolean);
+    }
+
+    function appendUniqueImages(currentImages, selectedImages) {
+        var images = currentImages.slice();
+
+        selectedImages.forEach(function (image) {
+            if (images.indexOf(image) === -1) {
+                images.push(image);
+            }
+        });
+
+        return images;
     }
 
     function isDraft(id) {

@@ -773,7 +773,12 @@ internal sealed class VariantAppService : IVariantAppService
 
     private static string GetRequiredTitle(string? title, string fallback)
     {
-        return string.IsNullOrWhiteSpace(title) ? fallback : title.Trim();
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new Exceptions.HttpResponseException(HttpStatusCode.BadRequest);
+        }
+
+        return title.Trim();
     }
 
     private IReadOnlyList<UmbracoLanguage> LoadLanguages()
