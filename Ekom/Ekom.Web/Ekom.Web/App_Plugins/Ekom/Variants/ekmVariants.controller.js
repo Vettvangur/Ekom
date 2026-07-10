@@ -161,6 +161,16 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
         vm.drawer = null;
     };
 
+    function onKeyDown(event) {
+        if (event.key !== 'Escape' || !vm.drawer) {
+            return;
+        }
+
+        $scope.$apply(function () {
+            vm.closeDrawer();
+        });
+    }
+
     vm.saveDrawer = function () {
         if (!validateTitle(vm.drawer && vm.drawer.item) || !validateCustomFields(vm.drawer && vm.drawer.item && vm.drawer.item.customFields)) {
             return;
@@ -407,6 +417,11 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
         images.splice(index, 1);
         vm.drawer.item.images = images.join(',');
     };
+
+    document.addEventListener('keydown', onKeyDown);
+    $scope.$on('$destroy', function () {
+        document.removeEventListener('keydown', onKeyDown);
+    });
 
     bindDragAndDrop();
 
