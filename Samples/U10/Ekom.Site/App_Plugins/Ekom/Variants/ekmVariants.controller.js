@@ -222,6 +222,11 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
         vm.activeLanguage = value;
     };
 
+    vm.isLanguageTitleMissing = function (item, language) {
+        ensureTitleValues(item);
+        return !String(item.titleValues[language.isoCode || ''] || '').trim();
+    };
+
     vm.getTitleValue = function (item) {
         ensureTitleValues(item);
         return item.titleValues[vm.activeLanguage] || firstValue(item.titleValues) || item.title || '';
@@ -295,7 +300,8 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
                     storeTitle: store.title || store.alias || '',
                     currencyValue: currency.currencyValue || '',
                     currencyLabel: currency.isoCurrencySymbol || currency.currencyValue || '',
-                    value: getVariantPrice(vm.drawer.item, store.alias || '', currency.currencyValue || '')
+                    value: getVariantPrice(vm.drawer.item, store.alias || '', currency.currencyValue || ''),
+                    missing: !hasVariantPrice(vm.drawer.item, store.alias || '', currency.currencyValue || '')
                 });
             });
         });
@@ -774,6 +780,11 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
         var prices = (variant.priceValues || {})[storeAlias] || [];
         var price = prices.filter(function (item) { return getCurrency(item) === currency; })[0];
         return price ? getPrice(price) : 0;
+    }
+
+    function hasVariantPrice(variant, storeAlias, currency) {
+        var prices = (variant.priceValues || {})[storeAlias] || [];
+        return prices.some(function (item) { return getCurrency(item) === currency; });
     }
 
     function getCurrency(price) {

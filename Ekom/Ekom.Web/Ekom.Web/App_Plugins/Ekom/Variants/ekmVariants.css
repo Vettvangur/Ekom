@@ -182,6 +182,27 @@
     text-align: right;
 }
 
+.ekm-variants-app .ekm-variants-mini-tabs button.is-missing {
+    color: #d42054;
+}
+
+.ekm-variants-app .ekm-variants-mini-tabs button.is-missing::after {
+    background: #d42054;
+    border-radius: 999px;
+    content: '';
+    display: inline-block;
+    height: 6px;
+    margin-left: 5px;
+    vertical-align: middle;
+    width: 6px;
+}
+
+.ekm-variants-app tr.is-missing-value td:first-child,
+.ekm-variants-app tr.is-missing-value td:nth-child(2) {
+    color: #d42054;
+    font-weight: 700;
+}
+
 .ekm-variants-app .ekm-variants-media-list {
     display: flex;
     flex-wrap: wrap;
