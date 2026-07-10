@@ -57,14 +57,16 @@ internal sealed class VariantAppService : IVariantAppService
 
         var product = GetContent(request.ProductId, "ekmProduct");
         var title = GetRequiredTitle(request.Title, "Variant group");
+        var stores = LoadVariantStores(product);
+        var languages = LoadVariantLanguages(stores);
         var group = _contentService.Create(title, product.Id, "ekmProductVariantGroup");
 
-        group.SetProperty("title", CreateTitleValues(title, LoadLanguages()));
+        group.SetProperty("title", CreateTitleValues(title, languages));
         group.SetValue("color", request.Color ?? string.Empty);
         group.SetValue("images", request.Images ?? string.Empty);
         SaveContent(group, request.Publish);
 
-        return MapGroup(group, LoadVariantStores(product));
+        return MapGroup(group, stores, languages);
     }
 
     public async Task<VariantManagerVariant> CreateVariantAsync(VariantManagerVariantRequest request)
@@ -77,12 +79,13 @@ internal sealed class VariantAppService : IVariantAppService
 
         var product = GetContent(group.ParentId.ToString(CultureInfo.InvariantCulture), "ekmProduct");
         var stores = LoadVariantStores(product);
+        var languages = LoadVariantLanguages(stores);
 
-        ApplyVariantValues(variant, request.Title, request.Sku, request.Images, request.Price, request.Stock, stores);
+        ApplyVariantValues(variant, request.Title, request.Sku, request.Images, request.Price, request.Stock, stores, languages);
         SaveContent(variant, request.Publish);
         await ApplyStockValuesAsync(variant.Key, ParseStockValues(request.Stock)).ConfigureAwait(false);
 
-        return MapVariant(variant, stores);
+        return MapVariant(variant, stores, languages);
     }
 
     public async Task<VariantManagerProduct> SaveProductVariantsAsync(VariantManagerSaveRequest request)
@@ -91,38 +94,39 @@ internal sealed class VariantAppService : IVariantAppService
 
         var product = GetContent(request.ProductId, "ekmProduct");
         var stores = LoadVariantStores(product);
+        var languages = LoadVariantLanguages(stores);
+        var groupFieldDefinitions = GetVariantGroupFieldDefinitions();
+        var variantFieldDefinitions = GetVariantFieldDefinitions();
 
         foreach (var groupModel in request.Groups)
         {
-            var group = GetOrCreateVariantGroup(product, groupModel);
+            var group = GetOrCreateVariantGroup(product, groupModel, languages);
 
             if (group.ParentId != product.Id)
             {
                 continue;
             }
 
-                var groupFieldDefinitions = GetVariantGroupFieldDefinitions();
-                if (groupModel.Changed || groupModel.Id <= 0)
-                {
-                    ApplyGroupValues(group, groupModel, groupFieldDefinitions);
-                    group.SortOrder = groupModel.SortOrder;
-                    SaveContent(group, request.Publish);
-                }
+            if (groupModel.Changed || groupModel.Id <= 0)
+            {
+                ApplyGroupValues(group, groupModel, groupFieldDefinitions, languages);
+                group.SortOrder = groupModel.SortOrder;
+                SaveContent(group, request.Publish);
+            }
 
-                var variantFieldDefinitions = GetVariantFieldDefinitions();
-                foreach (var variantModel in groupModel.Variants)
-                {
+            foreach (var variantModel in groupModel.Variants)
+            {
                 var isNewVariant = variantModel.Id <= 0;
-                var variant = GetOrCreateVariant(group, variantModel);
+                var variant = GetOrCreateVariant(group, variantModel, languages);
 
                 if (variant.ParentId != group.Id)
                 {
                     continue;
                 }
 
-                if (isNewVariant || HasVariantContentChanges(variant, variantModel, stores, variantFieldDefinitions))
+                if (isNewVariant || HasVariantContentChanges(variant, variantModel, stores, variantFieldDefinitions, languages))
                 {
-                    ApplyVariantValues(variant, variantModel, stores, variantFieldDefinitions);
+                    ApplyVariantValues(variant, variantModel, stores, variantFieldDefinitions, languages);
                     variant.SortOrder = variantModel.SortOrder;
                     SaveContent(variant, request.Publish);
                 }
@@ -139,17 +143,19 @@ internal sealed class VariantAppService : IVariantAppService
         ArgumentNullException.ThrowIfNull(request);
 
         var product = GetContent(request.ProductId, "ekmProduct");
-        var group = GetOrCreateVariantGroup(product, request.Group);
+        var stores = LoadVariantStores(product);
+        var languages = LoadVariantLanguages(stores);
+        var group = GetOrCreateVariantGroup(product, request.Group, languages);
 
         if (group.ParentId != product.Id)
         {
             throw new Exceptions.HttpResponseException(HttpStatusCode.BadRequest);
         }
 
-        ApplyGroupValues(group, request.Group, GetVariantGroupFieldDefinitions());
+        ApplyGroupValues(group, request.Group, GetVariantGroupFieldDefinitions(), languages);
         SaveContent(group, request.Publish);
 
-        return MapGroup(group, LoadVariantStores(product));
+        return MapGroup(group, stores, languages);
     }
 
     public async Task<VariantManagerVariant> SaveVariantAsync(VariantManagerVariantSaveRequest request)
@@ -157,9 +163,10 @@ internal sealed class VariantAppService : IVariantAppService
         ArgumentNullException.ThrowIfNull(request);
 
         var group = GetContent(request.GroupId, "ekmProductVariantGroup");
-        var variant = GetOrCreateVariant(group, request.Variant);
         var product = GetContent(group.ParentId.ToString(CultureInfo.InvariantCulture), "ekmProduct");
         var stores = LoadVariantStores(product);
+        var languages = LoadVariantLanguages(stores);
+        var variant = GetOrCreateVariant(group, request.Variant, languages);
 
         if (variant.ParentId != group.Id)
         {
@@ -167,15 +174,15 @@ internal sealed class VariantAppService : IVariantAppService
         }
 
         var variantFieldDefinitions = GetVariantFieldDefinitions();
-        if (request.Variant.Id <= 0 || HasVariantContentChanges(variant, request.Variant, stores, variantFieldDefinitions))
+        if (request.Variant.Id <= 0 || HasVariantContentChanges(variant, request.Variant, stores, variantFieldDefinitions, languages))
         {
-            ApplyVariantValues(variant, request.Variant, stores, variantFieldDefinitions);
+            ApplyVariantValues(variant, request.Variant, stores, variantFieldDefinitions, languages);
             SaveContent(variant, request.Publish);
         }
 
         await ApplyStockValuesAsync(variant.Key, request.Variant.StockValues).ConfigureAwait(false);
 
-        return MapVariant(variant, stores);
+        return MapVariant(variant, stores, languages);
     }
 
     public bool DeleteVariantNode(string nodeId)
@@ -238,10 +245,11 @@ internal sealed class VariantAppService : IVariantAppService
     private VariantManagerProduct MapProduct(IContent product)
     {
         var stores = LoadVariantStores(product);
+        var languages = LoadVariantLanguages(stores);
         var groupFieldDefinitions = GetVariantGroupFieldDefinitions();
         var variantFieldDefinitions = GetVariantFieldDefinitions();
         var groups = GetChildren(product.Id, "ekmProductVariantGroup")
-            .Select(group => MapGroup(group, stores, groupFieldDefinitions, variantFieldDefinitions))
+            .Select(group => MapGroup(group, stores, languages, groupFieldDefinitions, variantFieldDefinitions))
             .ToList();
 
         return new VariantManagerProduct
@@ -249,10 +257,10 @@ internal sealed class VariantAppService : IVariantAppService
             Id = product.Id,
             Key = product.Key,
             Name = product.Name ?? string.Empty,
-            Title = GetDisplayTitle(GetTitleValues(product, "title", LoadLanguages()), product.Name ?? string.Empty),
+            Title = GetDisplayTitle(GetTitleValues(product, "title", languages), product.Name ?? string.Empty),
             Sku = GetStringValue(product, "sku"),
             VariantCount = groups.Sum(x => x.Variants.Count),
-            Languages = LoadLanguages(),
+            Languages = languages,
             Stores = stores,
             VariantGroupFields = groupFieldDefinitions,
             VariantFields = variantFieldDefinitions,
@@ -261,42 +269,57 @@ internal sealed class VariantAppService : IVariantAppService
     }
 
     private VariantManagerGroup MapGroup(IContent group, IReadOnlyList<VariantManagerStore> stores)
-        => MapGroup(group, stores, GetVariantGroupFieldDefinitions(), GetVariantFieldDefinitions());
+        => MapGroup(group, stores, LoadVariantLanguages(stores), GetVariantGroupFieldDefinitions(), GetVariantFieldDefinitions());
+
+    private VariantManagerGroup MapGroup(IContent group, IReadOnlyList<VariantManagerStore> stores, IReadOnlyList<UmbracoLanguage> languages)
+        => MapGroup(group, stores, languages, GetVariantGroupFieldDefinitions(), GetVariantFieldDefinitions());
 
     private VariantManagerGroup MapGroup(
         IContent group,
         IReadOnlyList<VariantManagerStore> stores,
+        IReadOnlyList<UmbracoLanguage> languages,
         IReadOnlyList<VariantManagerCustomFieldDefinition> groupFieldDefinitions,
         IReadOnlyList<VariantManagerCustomFieldDefinition> variantFieldDefinitions)
     {
+        var titleValues = GetTitleValues(group, "title", languages);
+
         return new VariantManagerGroup
         {
             Id = group.Id,
             Key = group.Key,
             Name = group.Name ?? string.Empty,
-            Title = GetDisplayTitle(GetTitleValues(group, "title", LoadLanguages()), group.Name ?? string.Empty),
-            TitleValues = GetTitleValues(group, "title", LoadLanguages()),
+            Title = GetDisplayTitle(titleValues, group.Name ?? string.Empty),
+            TitleValues = titleValues,
             Color = GetStringValue(group, "color"),
             Images = GetStringValue(group, "images"),
             SortOrder = group.SortOrder,
             Published = group.Published,
             CustomFields = GetCustomFields(group, groupFieldDefinitions),
-            Variants = GetChildren(group.Id, "ekmProductVariant").Select(variant => MapVariant(variant, stores, variantFieldDefinitions)).ToList(),
+            Variants = GetChildren(group.Id, "ekmProductVariant").Select(variant => MapVariant(variant, stores, languages, variantFieldDefinitions)).ToList(),
         };
     }
 
     private VariantManagerVariant MapVariant(IContent variant, IReadOnlyList<VariantManagerStore> stores)
-        => MapVariant(variant, stores, GetVariantFieldDefinitions());
+        => MapVariant(variant, stores, LoadVariantLanguages(stores), GetVariantFieldDefinitions());
 
-    private VariantManagerVariant MapVariant(IContent variant, IReadOnlyList<VariantManagerStore> stores, IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
+    private VariantManagerVariant MapVariant(IContent variant, IReadOnlyList<VariantManagerStore> stores, IReadOnlyList<UmbracoLanguage> languages)
+        => MapVariant(variant, stores, languages, GetVariantFieldDefinitions());
+
+    private VariantManagerVariant MapVariant(
+        IContent variant,
+        IReadOnlyList<VariantManagerStore> stores,
+        IReadOnlyList<UmbracoLanguage> languages,
+        IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
     {
+        var titleValues = GetTitleValues(variant, "title", languages);
+
         return new VariantManagerVariant
         {
             Id = variant.Id,
             Key = variant.Key,
             Name = variant.Name ?? string.Empty,
-            Title = GetDisplayTitle(GetTitleValues(variant, "title", LoadLanguages()), variant.Name ?? string.Empty),
-            TitleValues = GetTitleValues(variant, "title", LoadLanguages()),
+            Title = GetDisplayTitle(titleValues, variant.Name ?? string.Empty),
+            TitleValues = titleValues,
             Sku = GetStringValue(variant, "sku"),
             Images = GetStringValue(variant, "images"),
             PriceValues = GetPriceValues(variant, stores),
@@ -322,31 +345,36 @@ internal sealed class VariantAppService : IVariantAppService
             .Sum(group => GetChildren(group.Id, "ekmProductVariant").Count);
     }
 
-    private IContent GetOrCreateVariantGroup(IContent product, VariantManagerGroup groupModel)
+    private IContent GetOrCreateVariantGroup(IContent product, VariantManagerGroup groupModel, IReadOnlyList<UmbracoLanguage> languages)
     {
         if (groupModel.Id > 0)
         {
             return GetContent(groupModel.Id.ToString(CultureInfo.InvariantCulture), "ekmProductVariantGroup");
         }
 
-        var title = GetDisplayTitle(NormalizeTitleValues(groupModel.TitleValues, groupModel.Title, "Variant group"), "Variant group");
+        var title = GetDisplayTitle(NormalizeTitleValues(groupModel.TitleValues, groupModel.Title, "Variant group", languages), "Variant group");
         return _contentService.Create(title, product.Id, "ekmProductVariantGroup");
     }
 
-    private IContent GetOrCreateVariant(IContent group, VariantManagerVariant variantModel)
+    private IContent GetOrCreateVariant(IContent group, VariantManagerVariant variantModel, IReadOnlyList<UmbracoLanguage> languages)
     {
         if (variantModel.Id > 0)
         {
             return GetContent(variantModel.Id.ToString(CultureInfo.InvariantCulture), "ekmProductVariant");
         }
 
-        var title = GetDisplayTitle(NormalizeTitleValues(variantModel.TitleValues, variantModel.Title, "Variant"), "Variant");
+        var title = GetDisplayTitle(NormalizeTitleValues(variantModel.TitleValues, variantModel.Title, "Variant", languages), "Variant");
         return _contentService.Create(title, group.Id, "ekmProductVariant");
     }
 
-    private static void ApplyVariantValues(IContent variant, VariantManagerVariant variantModel, IReadOnlyList<VariantManagerStore> stores, IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
+    private static void ApplyVariantValues(
+        IContent variant,
+        VariantManagerVariant variantModel,
+        IReadOnlyList<VariantManagerStore> stores,
+        IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions,
+        IReadOnlyList<UmbracoLanguage> languages)
     {
-        var variantTitleValues = NormalizeTitleValues(variantModel.TitleValues, variantModel.Title, variant.Name ?? "Variant");
+        var variantTitleValues = NormalizeTitleValues(variantModel.TitleValues, variantModel.Title, variant.Name ?? "Variant", languages);
         var variantTitle = GetDisplayTitle(variantTitleValues, variant.Name ?? "Variant");
         variant.Name = variantTitle;
         variant.SetProperty("title", ToObjectDictionary(variantTitleValues));
@@ -369,11 +397,16 @@ internal sealed class VariantAppService : IVariantAppService
         }
     }
 
-    private bool HasVariantContentChanges(IContent variant, VariantManagerVariant variantModel, IReadOnlyList<VariantManagerStore> stores, IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
+    private bool HasVariantContentChanges(
+        IContent variant,
+        VariantManagerVariant variantModel,
+        IReadOnlyList<VariantManagerStore> stores,
+        IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions,
+        IReadOnlyList<UmbracoLanguage> languages)
     {
-        var titleValues = NormalizeTitleValues(variantModel.TitleValues, variantModel.Title, variant.Name ?? "Variant");
+        var titleValues = NormalizeTitleValues(variantModel.TitleValues, variantModel.Title, variant.Name ?? "Variant", languages);
 
-        return !DictionariesEqual(GetTitleValues(variant, "title", LoadLanguages()), titleValues)
+        return !DictionariesEqual(GetTitleValues(variant, "title", languages), titleValues)
             || !string.Equals(GetStringValue(variant, "sku"), variantModel.Sku ?? string.Empty, StringComparison.Ordinal)
             || !string.Equals(GetStringValue(variant, "images"), variantModel.Images ?? string.Empty, StringComparison.Ordinal)
             || variant.SortOrder != variantModel.SortOrder
@@ -407,9 +440,13 @@ internal sealed class VariantAppService : IVariantAppService
         }
     }
 
-    private static void ApplyGroupValues(IContent group, VariantManagerGroup groupModel, IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
+    private static void ApplyGroupValues(
+        IContent group,
+        VariantManagerGroup groupModel,
+        IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions,
+        IReadOnlyList<UmbracoLanguage> languages)
     {
-        var groupTitleValues = NormalizeTitleValues(groupModel.TitleValues, groupModel.Title, group.Name ?? "Variant group");
+        var groupTitleValues = NormalizeTitleValues(groupModel.TitleValues, groupModel.Title, group.Name ?? "Variant group", languages);
         var groupTitle = GetDisplayTitle(groupTitleValues, group.Name ?? "Variant group");
         group.Name = groupTitle;
         group.SetProperty("title", ToObjectDictionary(groupTitleValues));
@@ -418,16 +455,25 @@ internal sealed class VariantAppService : IVariantAppService
         ApplyCustomFields(group, groupModel.CustomFields, fieldDefinitions);
     }
 
-    private void ApplyVariantValues(IContent variant, string title, string sku, string images, string price, string stock, IReadOnlyList<VariantManagerStore> stores)
+    private void ApplyVariantValues(
+        IContent variant,
+        string title,
+        string sku,
+        string images,
+        string price,
+        string stock,
+        IReadOnlyList<VariantManagerStore> stores,
+        IReadOnlyList<UmbracoLanguage> languages)
     {
         ApplyVariantValues(variant, new VariantManagerVariant
         {
             Title = title,
+            TitleValues = CreateTitleValues(title, languages).ToDictionary(x => x.Key, x => x.Value?.ToString() ?? string.Empty),
             Sku = sku,
             Images = images,
             PriceValues = ParsePriceValues(price),
             StockValues = ParseStockValues(stock),
-        }, stores, Array.Empty<VariantManagerCustomFieldDefinition>());
+        }, stores, Array.Empty<VariantManagerCustomFieldDefinition>(), languages);
     }
 
     private IReadOnlyList<VariantManagerCustomFieldDefinition> GetVariantGroupFieldDefinitions()
@@ -560,6 +606,31 @@ internal sealed class VariantAppService : IVariantAppService
         return stores;
     }
 
+    private IReadOnlyList<UmbracoLanguage> LoadVariantLanguages(IReadOnlyList<VariantManagerStore> stores)
+    {
+        var languages = LoadLanguages();
+        var supportedCultures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var storeAliases = stores.Select(x => x.Alias).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var store in API.Store.Instance.GetAllStores().Where(store => storeAliases.Contains(store.Alias)))
+        {
+            foreach (var culture in store.Cultures)
+            {
+                if (!string.IsNullOrWhiteSpace(culture.Name))
+                {
+                    supportedCultures.Add(culture.Name);
+                }
+            }
+        }
+
+        if (supportedCultures.Count == 0)
+        {
+            return languages;
+        }
+
+        return languages.Where(language => supportedCultures.Contains(language.IsoCode)).ToList();
+    }
+
     private static IDictionary<string, string> GetTitleValues(IContent content, string alias, IReadOnlyList<UmbracoLanguage> languages)
     {
         var property = ParsePropertyValue(content.GetValue<string>(alias));
@@ -584,6 +655,14 @@ internal sealed class VariantAppService : IVariantAppService
             {
                 values.TryAdd(language.IsoCode, displayValue);
             }
+        }
+
+        if (languages.Count > 0)
+        {
+            var languageCodes = languages.Select(x => x.IsoCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            values = values
+                .Where(x => languageCodes.Contains(x.Key))
+                .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
         }
 
         return values;
@@ -619,14 +698,30 @@ internal sealed class VariantAppService : IVariantAppService
             : languages.ToDictionary(x => x.IsoCode, _ => (object)title);
     }
 
-    private static IDictionary<string, string> NormalizeTitleValues(IDictionary<string, string>? values, string? title, string fallback)
+    private static IDictionary<string, string> NormalizeTitleValues(IDictionary<string, string>? values, string? title, string fallback, IReadOnlyList<UmbracoLanguage> languages)
     {
         if (values != null && values.Any(x => !string.IsNullOrWhiteSpace(x.Value)))
         {
-            return values.ToDictionary(x => x.Key, x => x.Value ?? string.Empty);
+            var normalized = values.ToDictionary(x => x.Key, x => x.Value ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+
+            if (languages.Count > 0)
+            {
+                var languageCodes = languages.Select(x => x.IsoCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                normalized = normalized
+                    .Where(x => languageCodes.Contains(x.Key))
+                    .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+            }
+
+            if (normalized.Any(x => !string.IsNullOrWhiteSpace(x.Value)))
+            {
+                return normalized;
+            }
         }
 
-        return new Dictionary<string, string> { [string.Empty] = GetRequiredTitle(title, fallback) };
+        var requiredTitle = GetRequiredTitle(title, fallback);
+        return languages.Count == 0
+            ? new Dictionary<string, string> { [string.Empty] = requiredTitle }
+            : languages.ToDictionary(x => x.IsoCode, _ => requiredTitle, StringComparer.OrdinalIgnoreCase);
     }
 
     private static Dictionary<string, object> ToObjectDictionary(IDictionary<string, string> values)
