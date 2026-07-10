@@ -35,7 +35,7 @@ class g extends HTMLElement {
   async loadStores() {
     this.setStatus("Loading ranges...");
     try {
-      this.stores = await this.fetchJson(`/ekom/backoffice/Stores/${this.getNodeId()}`), this.internalValue = this.ensureRangeStructure(this.normalizeValue(this.rawValue)), this.renderRanges(), this.setStatus(""), this.emitChange();
+      this.stores = await this.fetchJson(`/ekom/backoffice/Stores/${this.getNodeId()}`), this.internalValue = this.ensureRangeStructure(this.normalizeValue(this.rawValue)), this.renderRanges(), this.setStatus("");
     } catch (e) {
       const t = e instanceof Error ? e.message : "Could not load ranges.";
       this.setStatus(t, !0);

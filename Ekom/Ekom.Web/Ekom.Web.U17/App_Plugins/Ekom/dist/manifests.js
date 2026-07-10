@@ -54,6 +54,44 @@ const e = [
     ]
   },
   {
+    type: "workspaceView",
+    alias: "Ekom.WorkspaceView.Product.Variants",
+    name: "Ekom Product Variants Workspace View",
+    element: "/App_Plugins/Ekom/dist/variants-workspace-view.element.js",
+    weight: 90,
+    meta: {
+      label: "Variants",
+      pathname: "variants",
+      icon: "icon-layers-alt"
+    },
+    conditions: [
+      {
+        alias: "Umb.Condition.WorkspaceAlias",
+        match: "Umb.Workspace.Document"
+      },
+      {
+        alias: "Umb.Condition.WorkspaceContentTypeAlias",
+        match: "ekmProduct"
+      }
+    ]
+  },
+  {
+    type: "workspaceFooterApp",
+    alias: "Ekom.WorkspaceFooterApp.Product.VariantCount",
+    name: "Ekom Product Variant Count Workspace Footer App",
+    element: "/App_Plugins/Ekom/dist/variant-count-workspace-footer-app.element.js",
+    conditions: [
+      {
+        alias: "Umb.Condition.WorkspaceAlias",
+        match: "Umb.Workspace.Document"
+      },
+      {
+        alias: "Umb.Condition.WorkspaceContentTypeAlias",
+        match: "ekmProduct"
+      }
+    ]
+  },
+  {
     type: "propertyEditorSchema",
     alias: "Ekom.Cache",
     name: "Ekom Cache Editor",

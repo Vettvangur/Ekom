@@ -2,6 +2,7 @@ using Ekom.AspNetCore;
 using Ekom.Services;
 using Ekom.Tracking;
 using Ekom.Umb.Services;
+using Ekom.Umb.VariantApp.Services;
 using EkomCore.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -31,6 +32,7 @@ public static class ApplicationBuilderExtensions
         services.AddTransient<IEkomRichTextResolver, EkomRichTextResolver>();
         services.AddTransient<IMetafieldService, MetafieldService>();
         services.AddTransient<IUmbracoService, UmbracoService>();
+        services.AddTransient<IVariantAppService, VariantAppService>();
         services.AddTransient<IUrlService, UrlService>();
         services.AddScoped<BackofficeUserAccessor>();
         services.AddScoped<ISecurityService, SecurityService>();

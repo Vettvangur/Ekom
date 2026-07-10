@@ -69,7 +69,7 @@ class d extends HTMLElement {
       const o = document.createElement("option");
       o.value = a, o.textContent = this.getCountryLabel(n, a), e.append(o);
     }
-    this.select.replaceChildren(e), this.internalValue.length === 0 && this.select.options.length > 0 && (this.internalValue = ((t = this.select.options[0]) == null ? void 0 : t.value) ?? "", this.emitChange()), this.syncValue();
+    this.select.replaceChildren(e), this.internalValue.length === 0 && this.select.options.length > 0 && (this.internalValue = ((t = this.select.options[0]) == null ? void 0 : t.value) ?? ""), this.syncValue();
   }
   setCountryValue() {
     this.readonly || this.select == null || (this.internalValue = this.select.value, this.emitChange());

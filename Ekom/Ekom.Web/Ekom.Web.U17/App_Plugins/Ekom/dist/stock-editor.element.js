@@ -34,7 +34,7 @@ class h extends HTMLElement {
     this.setStatus("Loading stock...");
     try {
       const t = await this.fetchJson("/ekom/backoffice/Config"), e = this.getContentKey();
-      this.stocks = t.perStoreStock ? await this.loadPerStoreStock(e) : [await this.loadStockItem(e, "")], this.renderStock(), this.setStatus(""), this.emitChange();
+      this.stocks = t.perStoreStock ? await this.loadPerStoreStock(e) : [await this.loadStockItem(e, "")], this.renderStock(), this.setStatus("");
     } catch (t) {
       const e = t instanceof Error ? t.message : "Could not load stock.";
       this.setStatus(e, !0);

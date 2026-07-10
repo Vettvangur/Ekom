@@ -5,6 +5,7 @@ using Ekom.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
 using System.Threading;
 using Umbraco.Cms.Core.Cache;
@@ -219,4 +220,6 @@ class UmbracoService : IUmbracoService
     {
         return value.ToUrlSegment(_shortStringHelper);
     }
+
+
 }

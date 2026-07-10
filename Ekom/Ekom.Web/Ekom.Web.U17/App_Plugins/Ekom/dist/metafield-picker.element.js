@@ -39,7 +39,7 @@ class m extends HTMLElement {
         this.fetchJson("/ekom/backoffice/Languages"),
         this.fetchJson("/ekom/backoffice/Metafields")
       ]);
-      this.languages = e, this.fields = t, this.ensureFieldValues(), this.renderFields(), this.setStatus(""), this.emitChange();
+      this.languages = e, this.fields = t, this.ensureFieldValues(), this.renderFields(), this.setStatus("");
     } catch (e) {
       const t = e instanceof Error ? e.message : "Could not load metafields.";
       this.setStatus(t, !0);

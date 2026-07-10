@@ -100,6 +100,10 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
       "store1": [ "group-a", "group-b" ]
     }
   },
+  "VariantApp": {
+    "VariantGroups": [ "color" ],
+    "Variants": [ "material" ]
+  },
   "Headless": {
     "ReValidateApis": [
       { "Store": "store1", "Url": "https://example.com/api/revalidate", "Secret": "secret" }
@@ -137,6 +141,8 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `CustomerData` (bool, default `false`): Store checkout customer data in `ekmCustomerData` table.
 - `Manager:SectionAccessGroup` (CSV string): Backoffice groups that can access the manager section.
 - `Manager:StoreGroupPermissions` (object): Store alias to allowed group list mapping.
+- `VariantApp:VariantGroups` (list): Textstring property aliases from `ekmProductVariantGroup` to show in the variant group drawer.
+- `VariantApp:Variants` (list): Textstring property aliases from `ekmProductVariant` to show in the variant drawer.
 - `SectionAccessRules` (CSV string, legacy): Backwards-compatible alias for `Manager:SectionAccessGroup`.
 - `Headless:ReValidateApis` (list): Items with `Store`, `Url`, `Secret` for headless revalidation.
 - `OrderDiscountCalculation:ApiKey` (string, required to enable): `POST /ekom/order-discounts/calculate` requires this value in the `X-Ekom-Api-Key` header. When missing or empty, the endpoint always returns unauthorized.
@@ -364,6 +370,19 @@ With this setup:
 - members of `StoreGroup` can access the manager and work only with `Store`
 - members of `Store2Group` can access the manager and work only with `Store2`
 - users without a matching group cannot access the related store
+
+### Variant App custom fields
+
+The backoffice Variant App can expose extra editable textstring properties in the variant group and variant drawers. Configure the property aliases under `Ekom:VariantApp`; labels and required validation come from the Umbraco document type property settings.
+
+```json
+"VariantApp": {
+  "VariantGroups": [ "color" ],
+  "Variants": [ "material", "size" ]
+}
+```
+
+Only Umbraco textstring properties are rendered. See [Variant App custom fields](docs/variant-app.md) for full setup notes.
 
 ## Plugins
 - https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Klaviyo

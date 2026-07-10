@@ -40,7 +40,7 @@ class y extends HTMLElement {
         this.fetchJson("/ekom/backoffice/Config"),
         this.fetchJson(`/ekom/backoffice/Stores/${this.getNodeId()}`)
       ]);
-      this.showStoreFieldsets = e.perStoreStock !== !1, this.stores = t, this.internalValue = this.ensurePriceStructure(this.normalizeValue(this.rawValue)), this.renderPrices(), this.setStatus(""), this.emitChange();
+      this.showStoreFieldsets = e.perStoreStock !== !1, this.stores = t, this.internalValue = this.ensurePriceStructure(this.normalizeValue(this.rawValue)), this.renderPrices(), this.setStatus("");
     } catch (e) {
       const t = e instanceof Error ? e.message : "Could not load prices.";
       this.setStatus(t, !0);

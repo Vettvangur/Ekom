@@ -2,6 +2,11 @@ namespace Ekom.Models;
 
 public class CurrencyPrice
 {
+    public CurrencyPrice()
+    {
+        Currency = string.Empty;
+    }
+
     public CurrencyPrice(decimal price, string currency)
     {
         Currency = currency;
