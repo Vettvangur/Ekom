@@ -94,6 +94,7 @@
                     <div class="ekm-variants-media-card" ng-repeat="image in vm.mediaImages(vm.drawer.item) track by $index" draggable="true" data-media-image-index="{{ $index }}">
                         <span class="ekm-variants-drag-handle" title="Drag to reorder">⋮⋮</span>
                         <img ng-src="{{ vm.getThumbUrl(image) }}" alt="" />
+                        <button type="button" class="ekm-variants-media-remove" ng-click="vm.removeDrawerImage($index)" title="Remove image" aria-label="Remove image">×</button>
                     </div>
                 </div>
             </label>
@@ -144,6 +145,7 @@
                     <div class="ekm-variants-media-card" ng-repeat="image in vm.mediaImages(vm.drawer.item) track by $index" draggable="true" data-media-image-index="{{ $index }}">
                         <span class="ekm-variants-drag-handle" title="Drag to reorder">⋮⋮</span>
                         <img ng-src="{{ vm.getThumbUrl(image) }}" alt="" />
+                        <button type="button" class="ekm-variants-media-remove" ng-click="vm.removeDrawerImage($index)" title="Remove image" aria-label="Remove image">×</button>
                     </div>
                 </div>
             </label>

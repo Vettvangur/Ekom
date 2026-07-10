@@ -385,13 +385,28 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
             multiPicker: true,
             selection: splitImages(item.images),
             submit: function (model) {
-                item.images = normalizeMediaSelection(model.selection).join(',');
+                item.images = appendUniqueImages(splitImages(item.images), normalizeMediaSelection(model.selection)).join(',');
                 editorService.close();
             },
             close: function () {
                 editorService.close();
             }
         });
+    };
+
+    vm.removeDrawerImage = function (index) {
+        if (!vm.drawer) {
+            return;
+        }
+
+        var images = splitImages(vm.drawer.item.images);
+
+        if (index < 0 || index >= images.length) {
+            return;
+        }
+
+        images.splice(index, 1);
+        vm.drawer.item.images = images.join(',');
     };
 
     bindDragAndDrop();
@@ -843,11 +858,23 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
     function normalizeMediaSelection(selection) {
         return (selection || []).map(function (item) {
             if (typeof item === 'string') {
-                return item;
+                return normalizeMediaIdentifier(item);
             }
 
-            return item.udi || item.key || item.id || '';
+            return normalizeMediaIdentifier(item.udi || item.key || item.id || '');
         }).filter(Boolean);
+    }
+
+    function appendUniqueImages(currentImages, selectedImages) {
+        var images = currentImages.slice();
+
+        selectedImages.forEach(function (image) {
+            if (images.indexOf(image) === -1) {
+                images.push(image);
+            }
+        });
+
+        return images;
     }
 
     function isDraft(id) {
