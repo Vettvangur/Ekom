@@ -79,11 +79,11 @@
         </header>
 
         <div class="ekm-variants-drawer__body" ng-if="vm.drawer.type == 'group'">
-            <label>Group title
+            <label>Group title *
                 <div class="ekm-variants-mini-tabs" ng-if="vm.product.languages.length > 1">
                     <button type="button" class="btn-reset" ng-repeat="language in vm.product.languages" ng-class="{ active: language.isoCode == vm.activeLanguage }" ng-click="vm.setLanguage(language.isoCode)">{{ vm.getLanguageLabel(language) }}</button>
                 </div>
-                <input type="text" ng-model="vm.drawer.item.titleValues[vm.activeLanguage]" ng-change="vm.setTitleValue(vm.drawer.item, vm.drawer.item.titleValues[vm.activeLanguage])" />
+                <input type="text" ng-model="vm.drawer.item.titleValues[vm.activeLanguage]" ng-required="true" ng-change="vm.setTitleValue(vm.drawer.item, vm.drawer.item.titleValues[vm.activeLanguage])" />
             </label>
             <label ng-repeat="field in vm.drawer.item.customFields track by field.alias">{{ field.label }}<span ng-if="field.required"> *</span>
                 <input type="text" ng-model="field.value" ng-required="field.required" ng-change="vm.setCustomField(vm.drawer.item, field, field.value)" />
@@ -101,11 +101,11 @@
         </div>
 
         <div class="ekm-variants-drawer__body" ng-if="vm.drawer.type == 'variant'">
-            <label>Title
+            <label>Title *
                 <div class="ekm-variants-mini-tabs" ng-if="vm.product.languages.length > 1">
                     <button type="button" class="btn-reset" ng-repeat="language in vm.product.languages" ng-class="{ active: language.isoCode == vm.activeLanguage }" ng-click="vm.setLanguage(language.isoCode)">{{ vm.getLanguageLabel(language) }}</button>
                 </div>
-                <input type="text" ng-model="vm.drawer.item.titleValues[vm.activeLanguage]" ng-change="vm.setTitleValue(vm.drawer.item, vm.drawer.item.titleValues[vm.activeLanguage])" />
+                <input type="text" ng-model="vm.drawer.item.titleValues[vm.activeLanguage]" ng-required="true" ng-change="vm.setTitleValue(vm.drawer.item, vm.drawer.item.titleValues[vm.activeLanguage])" />
             </label>
             <label>SKU
                 <input type="text" ng-model="vm.drawer.item.sku" />

@@ -1,12 +1,12 @@
-var T = Object.defineProperty;
-var F = (i, o, t) => o in i ? T(i, o, { enumerable: !0, configurable: !0, writable: !0, value: t }) : i[o] = t;
+var L = Object.defineProperty;
+var F = (i, o, t) => o in i ? L(i, o, { enumerable: !0, configurable: !0, writable: !0, value: t }) : i[o] = t;
 var l = (i, o, t) => F(i, typeof o != "symbol" ? o + "" : o, t);
 import { UmbElementMixin as M } from "@umbraco-cms/backoffice/element-api";
 import { UMB_DOCUMENT_WORKSPACE_CONTEXT as O, UMB_DOCUMENT_PUBLISHING_WORKSPACE_CONTEXT as B } from "@umbraco-cms/backoffice/document";
 import "@umbraco-cms/backoffice/imaging";
 import "@umbraco-cms/backoffice/media";
-import { UMB_NOTIFICATION_CONTEXT as W } from "@umbraco-cms/backoffice/notification";
-import { UMB_WORKSPACE_VIEW_CONTEXT as j } from "@umbraco-cms/backoffice/workspace";
+import { UMB_NOTIFICATION_CONTEXT as j } from "@umbraco-cms/backoffice/notification";
+import { UMB_WORKSPACE_VIEW_CONTEXT as W } from "@umbraco-cms/backoffice/workspace";
 const V = "00000000-0000-0000-0000-000000000000", m = "ekom-variant-count";
 class R extends M(HTMLElement) {
   constructor() {
@@ -40,9 +40,9 @@ class R extends M(HTMLElement) {
     });
   }
   connectedCallback() {
-    super.connectedCallback(), window.addEventListener("keydown", this.onKeydown), this.consumeContext(W, (t) => {
+    super.connectedCallback(), window.addEventListener("keydown", this.onKeydown), this.consumeContext(j, (t) => {
       this.notificationContext = t;
-    }), this.consumeContext(j, (t) => {
+    }), this.consumeContext(W, (t) => {
       this.workspaceViewContext = t, this.updateWorkspaceViewBadge();
     }), this.consumeContext(O, (t) => {
       if (t == null)
@@ -114,7 +114,7 @@ class R extends M(HTMLElement) {
       images: "",
       sortOrder: this.product.groups.length,
       published: !1,
-      customFields: q(this.product.variantGroupFields),
+      customFields: T(this.product.variantGroupFields),
       variants: []
     };
     this.product.groups = [...this.product.groups, e], this.expandedGroupIds.add(t), this.drawer = { type: "group", groupId: t }, this.render();
@@ -134,7 +134,7 @@ class R extends M(HTMLElement) {
       images: "",
       priceValues: {},
       stockValues: this.createEmptyStockValues(),
-      customFields: q(((r = this.product) == null ? void 0 : r.variantFields) ?? []),
+      customFields: T(((r = this.product) == null ? void 0 : r.variantFields) ?? []),
       sortOrder: e.variants.length,
       published: !1
     };
@@ -142,7 +142,7 @@ class R extends M(HTMLElement) {
   }
   async save() {
     var e;
-    if (this.syncMediaPickers(), !this.validateAllCustomFields())
+    if (this.syncMediaPickers(), !this.validateAllTitles() || !this.validateAllCustomFields())
       return;
     if (this.product == null || !this.hasChanges()) {
       this.showNotification("default", "Variants", "No changes to save.");
@@ -248,7 +248,7 @@ class R extends M(HTMLElement) {
       var s;
       return {
         ...a,
-        priceValues: H(a.priceValues, ((s = this.product) == null ? void 0 : s.stores) ?? []),
+        priceValues: X(a.priceValues, ((s = this.product) == null ? void 0 : s.stores) ?? []),
         changed: !0
       };
     });
@@ -312,7 +312,7 @@ class R extends M(HTMLElement) {
   }
   render() {
     this.innerHTML = `
-      <style>${X}</style>
+      <style>${Y}</style>
       <section class="ekm-variant-editor">
         ${this.renderTopBar()}
         ${this.error ? `<p class="status status--error">${u(this.error)}</p>` : ""}
@@ -470,9 +470,9 @@ class R extends M(HTMLElement) {
   }
   renderTitleField(t, e, a, s, r = 0) {
     return `
-      <label>${u(t)}
+      <label>${u(t)} *
         ${this.renderLanguageMiniTabs()}
-        <input ${a} data-group-id="${s}" data-variant-id="${r}" value="${u(e)}">
+        <input ${a} data-group-id="${s}" data-variant-id="${r}" value="${u(e)}" required>
       </label>
     `;
   }
@@ -545,7 +545,7 @@ class R extends M(HTMLElement) {
     this.querySelectorAll('[data-action="create-group"]').forEach((r) => {
       r.addEventListener("click", () => this.addGroup());
     }), (t = this.querySelector('[data-action="save"]')) == null || t.addEventListener("click", () => void this.save()), (e = this.querySelector('[data-action="delete-selected"]')) == null || e.addEventListener("click", () => this.deleteSelected()), (a = this.querySelector('[data-action="delete-drawer-item"]')) == null || a.addEventListener("click", () => this.deleteDrawerItem()), (s = this.querySelector('[data-action="save-drawer"]')) == null || s.addEventListener("click", () => {
-      this.syncMediaPickers(), this.validateDrawerCustomFields() && (this.drawer = void 0, this.render());
+      this.syncMediaPickers(), !(!this.validateDrawerTitle() || !this.validateDrawerCustomFields()) && (this.drawer = void 0, this.render());
     }), this.querySelectorAll('[data-action="close-drawer"]').forEach((r) => {
       r.addEventListener("click", () => {
         this.syncMediaPickers(), this.drawer = void 0, this.render();
@@ -632,18 +632,18 @@ class R extends M(HTMLElement) {
   }
   bindMediaPickers() {
     this.querySelectorAll("[data-group-images], [data-variant-images]").forEach((t) => {
-      const e = t, a = t.dataset.value ?? "", s = I(a);
+      const e = t, a = t.dataset.value ?? "", s = x(a);
       e.value = s.join(","), e.selection = s, _(e), t.addEventListener("change", async (r) => {
         const n = Number(t.dataset.groupId), d = Number(t.dataset.variantId);
         r.stopPropagation(), await Promise.resolve();
-        const c = P(e);
+        const c = A(e);
         await f(e), d !== 0 ? this.updateVariant(n, d, "images", c) : this.updateGroupImages(n, c);
       });
     });
   }
   syncMediaPickers() {
     this.querySelectorAll("[data-group-images], [data-variant-images]").forEach((t) => {
-      const e = t, a = Number(t.dataset.groupId), s = Number(t.dataset.variantId), r = P(e);
+      const e = t, a = Number(t.dataset.groupId), s = Number(t.dataset.variantId), r = A(e);
       if (s !== 0) {
         const d = this.getVariant(a, s);
         d != null && d.images !== r && (d.images = r);
@@ -668,6 +668,26 @@ class R extends M(HTMLElement) {
     const t = this.drawer.type === "group" ? this.getGroup(this.drawer.groupId) : this.getVariant(this.drawer.groupId, this.drawer.variantId);
     return this.validateCustomFields(t == null ? void 0 : t.customFields);
   }
+  validateDrawerTitle() {
+    if (this.drawer == null)
+      return !0;
+    const t = this.drawer.type === "group" ? this.getGroup(this.drawer.groupId) : this.getVariant(this.drawer.groupId, this.drawer.variantId);
+    return this.validateTitle(t);
+  }
+  validateAllTitles() {
+    var t;
+    for (const e of ((t = this.product) == null ? void 0 : t.groups) ?? []) {
+      if (!this.validateTitle(e))
+        return !1;
+      for (const a of e.variants)
+        if (!this.validateTitle(a))
+          return !1;
+    }
+    return !0;
+  }
+  validateTitle(t) {
+    return H(t == null ? void 0 : t.titleValues) ? !0 : (this.showError("Title is required."), !1);
+  }
   validateAllCustomFields() {
     var t;
     for (const e of ((t = this.product) == null ? void 0 : t.groups) ?? []) {
@@ -687,7 +707,7 @@ class R extends M(HTMLElement) {
     return a == null ? !0 : (this.showError(`${a.label} is required.`), e && this.render(), !1);
   }
   reorderGroup(t, e) {
-    this.product == null || t == null || t === e || (this.product.groups = L(this.product.groups, t, e), this.product.groups.forEach((a, s) => {
+    this.product == null || t == null || t === e || (this.product.groups = q(this.product.groups, t, e), this.product.groups.forEach((a, s) => {
       a.sortOrder = s;
     }), this.render());
   }
@@ -695,7 +715,7 @@ class R extends M(HTMLElement) {
     if (t == null || t.groupId !== e || t.variantId === a)
       return;
     const s = this.getGroup(t.groupId);
-    s != null && (s.variants = L(s.variants, t.variantId, a), s.variants.forEach((r, n) => {
+    s != null && (s.variants = q(s.variants, t.variantId, a), s.variants.forEach((r, n) => {
       r.sortOrder = n;
     }), this.render());
   }
@@ -793,7 +813,7 @@ function S(i) {
 function C(i) {
   return new Intl.NumberFormat().format(i);
 }
-function I(i) {
+function x(i) {
   const o = String(i ?? "").trim();
   if (o.length === 0)
     return [];
@@ -803,10 +823,10 @@ function I(i) {
     } catch {
       return [];
     }
-  return o.split(",").map((t) => x(t.trim())).filter(Boolean);
+  return o.split(",").map((t) => I(t.trim())).filter(Boolean);
 }
 function k(i) {
-  return I(i)[0] ?? "";
+  return x(i)[0] ?? "";
 }
 function U(i) {
   const o = k(i.images);
@@ -822,20 +842,20 @@ function U(i) {
 function E(i, o) {
   return i ? `<umb-imaging-thumbnail unique="${u(i)}" width="38" height="38" alt="${u(o)}"></umb-imaging-thumbnail>` : "-";
 }
-function x(i) {
+function I(i) {
   const o = i.match(/umb:\/\/media\/(.+)$/i);
   return (o == null ? void 0 : o[1]) ?? i;
 }
-function P(i) {
-  return Array.isArray(i.selection) ? K(i.selection).join(",") : I(i.value ?? "").join(",");
+function A(i) {
+  return Array.isArray(i.selection) ? K(i.selection).join(",") : x(i.value ?? "").join(",");
 }
-const A = /* @__PURE__ */ new WeakSet();
+const P = /* @__PURE__ */ new WeakSet();
 async function _(i) {
-  if (A.has(i)) {
+  if (P.has(i)) {
     await f(i);
     return;
   }
-  A.add(i), await f(i);
+  P.add(i), await f(i);
   const o = i.shadowRoot;
   if (o == null)
     return;
@@ -859,10 +879,10 @@ async function f(i) {
 function K(i) {
   return i.map((o) => {
     if (typeof o == "string")
-      return x(o);
+      return I(o);
     if (o != null && typeof o == "object") {
       const t = o;
-      return x(String(t.udi ?? t.key ?? t.unique ?? t.id ?? ""));
+      return I(String(t.udi ?? t.key ?? t.unique ?? t.id ?? ""));
     }
     return "";
   }).filter(Boolean);
@@ -889,13 +909,16 @@ function N(i) {
     sortOrder: i.sortOrder
   });
 }
-function q(i) {
+function T(i) {
   return (i ?? []).map((o) => ({
     ...o,
     value: ""
   }));
 }
-function H(i, o) {
+function H(i) {
+  return Object.values(i ?? {}).some((o) => o.trim().length > 0);
+}
+function X(i, o) {
   const t = {};
   for (const e of o) {
     const a = e.alias ?? "", s = /* @__PURE__ */ new Map();
@@ -912,7 +935,7 @@ function H(i, o) {
   }
   return t;
 }
-function L(i, o, t) {
+function q(i, o, t) {
   const e = [...i], a = e.findIndex((n) => n.id === o), s = e.findIndex((n) => n.id === t);
   if (a < 0 || s < 0)
     return i;
@@ -928,7 +951,7 @@ function b(i) {
   }
   return JSON.stringify(i);
 }
-const X = `
+const Y = `
   :host { display: block; padding: var(--uui-size-layout-1, 24px); background: #f4f3f5; color: #1b264f; font-family: Lato, Arial, sans-serif; }
   .ekm-variant-editor { display: grid; gap: 16px; }
   .top-bar, .selection-actions, .main-actions, .group-header, .group-header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }

@@ -89,6 +89,10 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
     };
 
     vm.saveAll = function () {
+        if (!validateAllTitles()) {
+            return;
+        }
+
         if (!validateAllCustomFields()) {
             return;
         }
@@ -158,7 +162,7 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
     };
 
     vm.saveDrawer = function () {
-        if (!validateCustomFields(vm.drawer && vm.drawer.item && vm.drawer.item.customFields)) {
+        if (!validateTitle(vm.drawer && vm.drawer.item) || !validateCustomFields(vm.drawer && vm.drawer.item && vm.drawer.item.customFields)) {
             return;
         }
 
@@ -387,6 +391,10 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
     bindDragAndDrop();
 
     function saveVariantChanges(options) {
+        if (!validateAllTitles()) {
+            return Promise.resolve();
+        }
+
         if (!validateAllCustomFields()) {
             return Promise.resolve();
         }
@@ -527,6 +535,39 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
         }
 
         return true;
+    }
+
+    function validateAllTitles() {
+        var groups = vm.product ? vm.product.groups || [] : [];
+
+        for (var i = 0; i < groups.length; i++) {
+            if (!validateTitle(groups[i])) {
+                return false;
+            }
+
+            for (var j = 0; j < groups[i].variants.length; j++) {
+                if (!validateTitle(groups[i].variants[j])) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    function validateTitle(item) {
+        if (hasAnyTitleValue(item && item.titleValues)) {
+            return true;
+        }
+
+        notificationsService.error('Variants', 'Title is required.');
+        return false;
+    }
+
+    function hasAnyTitleValue(values) {
+        return Object.keys(values || {}).some(function (key) {
+            return String(values[key] || '').trim();
+        });
     }
 
     function validateCustomFields(fields) {
