@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.199](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.198...Ekom-v0.2.199) (2026-07-10)
+
+
+### Bug Fixes
+
+* **variants:** filter title languages by product stores ([#689](https://github.com/Vettvangur/Ekom/issues/689)) ([b95f200](https://github.com/Vettvangur/Ekom/commit/b95f200c93929117dcd612ac69d7c867adc61dfd))
+
 ## [0.2.198](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.197...Ekom-v0.2.198) (2026-07-10)
 
 
