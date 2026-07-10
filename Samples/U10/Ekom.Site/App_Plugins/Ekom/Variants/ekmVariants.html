@@ -114,12 +114,12 @@
             <label ng-repeat="field in vm.drawer.item.customFields track by field.alias">{{ field.label }}<span ng-if="field.required"> *</span>
                 <input type="text" ng-model="field.value" ng-required="field.required" ng-change="vm.setCustomField(vm.drawer.item, field, field.value)" />
             </label>
-            <section>
-                <h3>Prices</h3>
+            <section class="ekm-variants-field-group">
+                <div class="ekm-variants-field-label">Prices</div>
                 <table>
                     <thead><tr><th>Store</th><th>Currency</th><th>Price</th></tr></thead>
                     <tbody>
-                        <tr ng-repeat="priceRow in vm.priceRows()" ng-class="{ 'is-missing-value': priceRow.missing }">
+                        <tr ng-repeat="priceRow in vm.priceRows()">
                             <td>{{ priceRow.storeTitle }}</td>
                             <td>{{ priceRow.currencyLabel }}</td>
                             <td><input class="ekm-variants-number" type="number" min="0" step="any" ng-model="priceRow.value" ng-change="vm.setPrice(vm.drawer.item, priceRow.storeAlias, priceRow.currencyValue, priceRow.value)" /></td>
@@ -127,8 +127,8 @@
                     </tbody>
                 </table>
             </section>
-            <section>
-                <h3>Stock</h3>
+            <section class="ekm-variants-field-group">
+                <div class="ekm-variants-field-label">Stock</div>
                 <table>
                     <thead><tr><th>Store</th><th>Stock</th></tr></thead>
                     <tbody>

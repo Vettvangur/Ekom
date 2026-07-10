@@ -151,10 +151,15 @@
     text-align: center;
 }
 
-.ekm-variants-app label {
+.ekm-variants-app label,
+.ekm-variants-app .ekm-variants-field-group {
     display: grid;
     font-weight: 700;
     gap: 8px;
+}
+
+.ekm-variants-app .ekm-variants-field-group table {
+    font-weight: 400;
 }
 
 .ekm-variants-app input {
@@ -195,12 +200,6 @@
     margin-left: 5px;
     vertical-align: middle;
     width: 6px;
-}
-
-.ekm-variants-app tr.is-missing-value td:first-child,
-.ekm-variants-app tr.is-missing-value td:nth-child(2) {
-    color: #d42054;
-    font-weight: 700;
 }
 
 .ekm-variants-app .ekm-variants-media-list {
