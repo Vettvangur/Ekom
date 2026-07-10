@@ -41,7 +41,12 @@
                     <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
                         @foreach (var image in images)
                         {
-                            <img src="@image.Url" alt="@image.Description" class="rounded-lg" loading="lazy">
+                            var media = Umbraco.Media(image.Key);
+                            IHtmlContent imageUrl = media is not null
+                                ? Url.GetCropUrl(media, width: 800, height: 800, furtherOptions: "&rmode=BoxPad&bgcolor=f7f7f7")
+                                : Html.Raw(image.Url);
+
+                            <img src="@imageUrl" alt="@image.Description" class="rounded-lg" loading="lazy">
                         }
                     </div>
                 </div>

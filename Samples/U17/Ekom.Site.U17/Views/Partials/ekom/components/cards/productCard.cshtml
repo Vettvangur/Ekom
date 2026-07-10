@@ -8,16 +8,23 @@
         return;
     }
 
-    var images = product.Images;
+    var image = product.Images.FirstOrDefault();
+    var media = image is not null ? Umbraco.Media(image.Key) : null;
+    IHtmlContent? imageUrl = media is not null
+        ? Url.GetCropUrl(media, width: 278, height: 384, furtherOptions: "&rmode=BoxPad&bgcolor=f7f7f7")
+        : !string.IsNullOrWhiteSpace(image?.Url) ? Html.Raw(image.Url) : null;
+    IHtmlContent? imageUrl2x = media is not null
+        ? Url.GetCropUrl(media, width: 556, height: 768, furtherOptions: "&rmode=BoxPad&bgcolor=f7f7f7")
+        : !string.IsNullOrWhiteSpace(image?.Url) ? Html.Raw(image.Url) : null;
 }
 
 <div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
     <div class="aspect-h-4 aspect-w-3 bg-gray-200 sm:aspect-none group-hover:opacity-75 sm:h-96">
-        @if (images.Any())
+        @if (imageUrl is not null && imageUrl2x is not null)
         {
             <picture class="h-full w-full object-cover object-center sm:h-full sm:w-full">
-                <source media="(max-width: 576px)" srcset="@(images.First().Url)?width=278&height=384&rmode=BoxPad&bgcolor=f7f7f7 x1, @(images.First().Url)?width=556&height=768&rmode=BoxPad&bgcolor=f7f7f7 x2">
-                <img alt="@product.Title" loading="lazy" src="@(images.First().Url)?width=278&height=384&rmode=BoxPad&bgcolor=f7f7f7" srcset="@(images.First().Url)?width=278&height=384&rmode=BoxPad&bgcolor=f7f7f7 x1, @(images.First().Url)?width=556&height=768&rmode=BoxPad&bgcolor=f7f7f7 x2">
+                <source media="(max-width: 576px)" srcset="@imageUrl 1x, @imageUrl2x 2x">
+                <img alt="@product.Title" loading="lazy" src="@imageUrl" srcset="@imageUrl 1x, @imageUrl2x 2x">
             </picture>
         }
     </div>
