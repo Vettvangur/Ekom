@@ -960,10 +960,8 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
             ${(this.product?.stores ?? []).flatMap(store => (store.currencies ?? []).map(currency => {
               const storeAlias = store.alias ?? '';
               const currencyValue = currency.currencyValue ?? '';
-              const priceItem = variant.priceValues?.[storeAlias]?.find(item => getCurrency(item) === currencyValue);
-              const price = getPrice(priceItem);
-              const missingClass = priceItem == null ? ' class="is-missing-value"' : '';
-              return `<tr${missingClass}><td>${escapeHtml(store.title ?? storeAlias)}</td><td>${escapeHtml(currency.isoCurrencySymbol ?? currencyValue)}</td><td><input class="numeric" type="number" min="0" step="any" data-price data-price-store="${escapeHtml(storeAlias)}" data-price-currency="${escapeHtml(currencyValue)}" data-group-id="${groupId}" data-variant-id="${variant.id}" value="${escapeHtml(price)}"></td></tr>`;
+              const price = getPrice(variant.priceValues?.[storeAlias]?.find(item => getCurrency(item) === currencyValue));
+              return `<tr><td>${escapeHtml(store.title ?? storeAlias)}</td><td>${escapeHtml(currency.isoCurrencySymbol ?? currencyValue)}</td><td><input class="numeric" type="number" min="0" step="any" data-price data-price-store="${escapeHtml(storeAlias)}" data-price-currency="${escapeHtml(currencyValue)}" data-group-id="${groupId}" data-variant-id="${variant.id}" value="${escapeHtml(price)}"></td></tr>`;
             })).join('')}
           </tbody>
         </table>
@@ -1107,7 +1105,6 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
       field.addEventListener('input', event => {
         event.stopPropagation();
         this.updatePrice(Number(field.dataset.groupId), Number(field.dataset.variantId), field.dataset.priceStore ?? '', field.dataset.priceCurrency ?? '', field.value);
-        field.closest('tr')?.classList.toggle('is-missing-value', field.value.trim().length === 0);
       });
     });
 
@@ -1815,7 +1812,6 @@ const styles = `
   table { width: 100%; border-collapse: collapse; }
   th { background: #f8f7fa; color: #8b8994; font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
   th, td { border-bottom: 1px solid #e2e1e6; padding: 8px; }
-  tr.is-missing-value td:first-child, tr.is-missing-value td:nth-child(2) { color: #d42054; font-weight: 700; }
   .numeric { text-align: right; }
   @keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 `;
