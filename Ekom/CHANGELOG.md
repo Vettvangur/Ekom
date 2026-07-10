@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.198](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.197...Ekom-v0.2.198) (2026-07-10)
+
+
+### Bug Fixes
+
+* **variants:** refine variant app behavior ([#687](https://github.com/Vettvangur/Ekom/issues/687)) ([20af0d4](https://github.com/Vettvangur/Ekom/commit/20af0d4621f1f052f284da8c7f4c2fae7b21b916))
+
 ## [0.2.197](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.196...Ekom-v0.2.197) (2026-07-10)
 
 
