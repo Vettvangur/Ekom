@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.200](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.199...Ekom-v0.2.200) (2026-07-10)
+
+
+### Bug Fixes
+
+* **variants:** confirm publish with variant changes ([#691](https://github.com/Vettvangur/Ekom/issues/691)) ([aa0cf7a](https://github.com/Vettvangur/Ekom/commit/aa0cf7a0ceda1cf32d308435b85853faf2255b28))
+
 ## [0.2.199](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.198...Ekom-v0.2.199) (2026-07-10)
 
 
