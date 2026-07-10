@@ -95,6 +95,7 @@ type DrawerState =
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
 const VARIANT_COUNT_HINT = 'ekom-variant-count';
+const PUBLISH_WITH_VARIANT_CHANGES_MESSAGE = 'You have unsaved variant changes. Save & Publish will publish the product node and save/publish the variant changes. If you only want to save/publish variant changes, use the Save variant changes button at the top. Continue?';
 
 type DocumentWorkspaceSaveContext = {
   requestSave?: () => Promise<void>;
@@ -213,6 +214,10 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
     if (context.requestSubmit != null) {
       this.originalRequestSubmit = context.requestSubmit.bind(context);
       context.requestSubmit = async () => {
+        if (!this.confirmPublishWithVariantChanges()) {
+          return;
+        }
+
         await this.originalRequestSubmit?.();
         await this.saveAfterDocumentSave();
       };
@@ -221,6 +226,10 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
     if (context.saveAndPublish != null) {
       this.originalSaveAndPublish = context.saveAndPublish.bind(context);
       context.saveAndPublish = async () => {
+        if (!this.confirmPublishWithVariantChanges()) {
+          return;
+        }
+
         await this.originalSaveAndPublish?.();
         await this.saveAfterDocumentSave();
       };
@@ -261,6 +270,10 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
     if (context.saveAndPublish != null) {
       this.originalPublishingSaveAndPublish = context.saveAndPublish.bind(context);
       context.saveAndPublish = async () => {
+        if (!this.confirmPublishWithVariantChanges()) {
+          return;
+        }
+
         await this.originalPublishingSaveAndPublish?.();
         await this.saveAfterDocumentSave();
       };
@@ -286,6 +299,16 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
     if (this.product != null && this.hasChanges()) {
       await this.save();
     }
+  }
+
+  private confirmPublishWithVariantChanges(): boolean {
+    this.syncMediaPickers();
+
+    if (this.product == null || !this.hasChanges()) {
+      return true;
+    }
+
+    return window.confirm(PUBLISH_WITH_VARIANT_CHANGES_MESSAGE);
   }
 
   private async load(): Promise<void> {
