@@ -385,6 +385,10 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
   private async save(): Promise<void> {
     this.syncMediaPickers();
 
+    if (!this.validateAllTitles()) {
+      return;
+    }
+
     if (!this.validateAllCustomFields()) {
       return;
     }
@@ -899,9 +903,9 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
 
   private renderTitleField(label: string, value: string, attribute: string, groupId: number, variantId = 0): string {
     return `
-      <label>${escapeHtml(label)}
+      <label>${escapeHtml(label)} *
         ${this.renderLanguageMiniTabs()}
-        <input ${attribute} data-group-id="${groupId}" data-variant-id="${variantId}" value="${escapeHtml(value)}">
+        <input ${attribute} data-group-id="${groupId}" data-variant-id="${variantId}" value="${escapeHtml(value)}" required>
       </label>
     `;
   }
@@ -997,7 +1001,7 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
     this.querySelector('[data-action="save-drawer"]')?.addEventListener('click', () => {
       this.syncMediaPickers();
 
-      if (!this.validateDrawerCustomFields()) {
+      if (!this.validateDrawerTitle() || !this.validateDrawerCustomFields()) {
         return;
       }
 
@@ -1245,6 +1249,43 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
       : this.getVariant(this.drawer.groupId, this.drawer.variantId);
 
     return this.validateCustomFields(item?.customFields);
+  }
+
+  private validateDrawerTitle(): boolean {
+    if (this.drawer == null) {
+      return true;
+    }
+
+    const item = this.drawer.type === 'group'
+      ? this.getGroup(this.drawer.groupId)
+      : this.getVariant(this.drawer.groupId, this.drawer.variantId);
+
+    return this.validateTitle(item);
+  }
+
+  private validateAllTitles(): boolean {
+    for (const group of this.product?.groups ?? []) {
+      if (!this.validateTitle(group)) {
+        return false;
+      }
+
+      for (const variant of group.variants) {
+        if (!this.validateTitle(variant)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  private validateTitle(item: { titleValues?: Record<string, string> } | undefined): boolean {
+    if (hasAnyTitleValue(item?.titleValues)) {
+      return true;
+    }
+
+    this.showError('Title is required.');
+    return false;
   }
 
   private validateAllCustomFields(): boolean {
@@ -1632,6 +1673,10 @@ function createCustomFields(fields: CustomFieldDefinition[] | undefined): Custom
     ...field,
     value: '',
   }));
+}
+
+function hasAnyTitleValue(values: Record<string, string> | undefined): boolean {
+  return Object.values(values ?? {}).some(value => value.trim().length > 0);
 }
 
 function normalizePriceValues(priceValues: Record<string, CurrencyPrice[]>, stores: VariantStore[]): Record<string, CurrencyPrice[]> {
