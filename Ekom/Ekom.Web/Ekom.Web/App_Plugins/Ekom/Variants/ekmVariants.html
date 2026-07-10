@@ -81,7 +81,7 @@
         <div class="ekm-variants-drawer__body" ng-if="vm.drawer.type == 'group'">
             <label>Group title *
                 <div class="ekm-variants-mini-tabs" ng-if="vm.product.languages.length > 1">
-                    <button type="button" class="btn-reset" ng-repeat="language in vm.product.languages" ng-class="{ active: language.isoCode == vm.activeLanguage }" ng-click="vm.setLanguage(language.isoCode)">{{ vm.getLanguageLabel(language) }}</button>
+                    <button type="button" class="btn-reset" ng-repeat="language in vm.product.languages" ng-class="{ active: language.isoCode == vm.activeLanguage, 'is-missing': vm.isLanguageTitleMissing(vm.drawer.item, language) }" ng-click="vm.setLanguage(language.isoCode)" title="{{ vm.isLanguageTitleMissing(vm.drawer.item, language) ? 'Missing title value' : '' }}">{{ vm.getLanguageLabel(language) }}</button>
                 </div>
                 <input type="text" ng-model="vm.drawer.item.titleValues[vm.activeLanguage]" ng-required="true" ng-change="vm.setTitleValue(vm.drawer.item, vm.drawer.item.titleValues[vm.activeLanguage])" />
             </label>
@@ -103,7 +103,7 @@
         <div class="ekm-variants-drawer__body" ng-if="vm.drawer.type == 'variant'">
             <label>Title *
                 <div class="ekm-variants-mini-tabs" ng-if="vm.product.languages.length > 1">
-                    <button type="button" class="btn-reset" ng-repeat="language in vm.product.languages" ng-class="{ active: language.isoCode == vm.activeLanguage }" ng-click="vm.setLanguage(language.isoCode)">{{ vm.getLanguageLabel(language) }}</button>
+                    <button type="button" class="btn-reset" ng-repeat="language in vm.product.languages" ng-class="{ active: language.isoCode == vm.activeLanguage, 'is-missing': vm.isLanguageTitleMissing(vm.drawer.item, language) }" ng-click="vm.setLanguage(language.isoCode)" title="{{ vm.isLanguageTitleMissing(vm.drawer.item, language) ? 'Missing title value' : '' }}">{{ vm.getLanguageLabel(language) }}</button>
                 </div>
                 <input type="text" ng-model="vm.drawer.item.titleValues[vm.activeLanguage]" ng-required="true" ng-change="vm.setTitleValue(vm.drawer.item, vm.drawer.item.titleValues[vm.activeLanguage])" />
             </label>
@@ -118,7 +118,7 @@
                 <table>
                     <thead><tr><th>Store</th><th>Currency</th><th>Price</th></tr></thead>
                     <tbody>
-                        <tr ng-repeat="priceRow in vm.priceRows()">
+                        <tr ng-repeat="priceRow in vm.priceRows()" ng-class="{ 'is-missing-value': priceRow.missing }">
                             <td>{{ priceRow.storeTitle }}</td>
                             <td>{{ priceRow.currencyLabel }}</td>
                             <td><input class="ekm-variants-number" type="number" min="0" step="any" ng-model="priceRow.value" ng-change="vm.setPrice(vm.drawer.item, priceRow.storeAlias, priceRow.currencyValue, priceRow.value)" /></td>

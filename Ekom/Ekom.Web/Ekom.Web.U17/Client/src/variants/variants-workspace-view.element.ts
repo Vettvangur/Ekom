@@ -521,6 +521,7 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
     if (group != null) {
       group.titleValues = { ...group.titleValues, [this.activeLanguage]: value };
       group.title = getFirstValue(group.titleValues) || group.name;
+      this.updateActiveLanguageTabMissingState(group.titleValues);
       this.updateSaveButtonState();
     }
   }
@@ -540,6 +541,7 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
     if (variant != null) {
       variant.titleValues = { ...variant.titleValues, [this.activeLanguage]: value };
       variant.title = getFirstValue(variant.titleValues) || variant.name;
+      this.updateActiveLanguageTabMissingState(variant.titleValues);
       this.updateSaveButtonState();
     }
   }
@@ -842,7 +844,7 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
       <aside class="drawer">
         ${this.renderDrawerHeader(this.getTitle(group, 'New group'), 'variant group', group)}
         <div class="drawer-body">
-          ${this.renderTitleField('Group title', group.titleValues?.[this.activeLanguage] ?? '', 'data-group-title', group.id)}
+          ${this.renderTitleField('Group title', group.titleValues?.[this.activeLanguage] ?? '', 'data-group-title', group.id, 0, group.titleValues)}
           ${this.renderCustomFields(group.customFields, group.id)}
           ${this.renderMediaPicker('Images', group.images, 'data-group-images', group.id)}
           <p class="hint">Group images apply to all variants unless a variant has its own.</p>
@@ -858,7 +860,7 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
       <aside class="drawer">
         ${this.renderDrawerHeader(this.getTitle(variant, 'New variant'), `${this.getTitle(group, 'Group')} / variant`, variant)}
         <div class="drawer-body">
-          ${this.renderTitleField('Title', variant.titleValues?.[this.activeLanguage] ?? '', 'data-variant-title', group.id, variant.id)}
+          ${this.renderTitleField('Title', variant.titleValues?.[this.activeLanguage] ?? '', 'data-variant-title', group.id, variant.id, variant.titleValues)}
           <label>SKU<input data-variant-field="sku" data-group-id="${group.id}" data-variant-id="${variant.id}" value="${escapeHtml(variant.sku)}"></label>
           ${this.renderCustomFields(variant.customFields, group.id, variant.id)}
           ${this.renderPriceTable(group.id, variant)}
@@ -901,16 +903,16 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
     `;
   }
 
-  private renderTitleField(label: string, value: string, attribute: string, groupId: number, variantId = 0): string {
+  private renderTitleField(label: string, value: string, attribute: string, groupId: number, variantId = 0, titleValues: Record<string, string> = {}): string {
     return `
       <label>${escapeHtml(label)} *
-        ${this.renderLanguageMiniTabs()}
+        ${this.renderLanguageMiniTabs(titleValues)}
         <input ${attribute} data-group-id="${groupId}" data-variant-id="${variantId}" value="${escapeHtml(value)}" required>
       </label>
     `;
   }
 
-  private renderLanguageMiniTabs(): string {
+  private renderLanguageMiniTabs(titleValues: Record<string, string>): string {
     const languages = this.product?.languages ?? [];
 
     if (languages.length <= 1) {
@@ -921,7 +923,16 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
       <div class="mini-tabs">
         ${languages.map(language => {
           const value = language.isoCode ?? '';
-          return `<button type="button" data-action="set-language" data-tab-value="${escapeHtml(value)}" class="mini-tab ${value === this.activeLanguage ? 'active' : ''}">${escapeHtml(getLanguageLabel(language))}</button>`;
+          const classes = ['mini-tab'];
+          if (value === this.activeLanguage) {
+            classes.push('active');
+          }
+
+          if (!titleValues[value]?.trim()) {
+            classes.push('is-missing');
+          }
+
+          return `<button type="button" data-action="set-language" data-tab-value="${escapeHtml(value)}" class="${classes.join(' ')}" title="${!titleValues[value]?.trim() ? 'Missing title value' : ''}">${escapeHtml(getLanguageLabel(language))}</button>`;
         }).join('')}
       </div>
     `;
@@ -949,8 +960,10 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
             ${(this.product?.stores ?? []).flatMap(store => (store.currencies ?? []).map(currency => {
               const storeAlias = store.alias ?? '';
               const currencyValue = currency.currencyValue ?? '';
-              const price = getPrice(variant.priceValues?.[storeAlias]?.find(item => getCurrency(item) === currencyValue));
-              return `<tr><td>${escapeHtml(store.title ?? storeAlias)}</td><td>${escapeHtml(currency.isoCurrencySymbol ?? currencyValue)}</td><td><input class="numeric" type="number" min="0" step="any" data-price data-price-store="${escapeHtml(storeAlias)}" data-price-currency="${escapeHtml(currencyValue)}" data-group-id="${groupId}" data-variant-id="${variant.id}" value="${escapeHtml(price)}"></td></tr>`;
+              const priceItem = variant.priceValues?.[storeAlias]?.find(item => getCurrency(item) === currencyValue);
+              const price = getPrice(priceItem);
+              const missingClass = priceItem == null ? ' class="is-missing-value"' : '';
+              return `<tr${missingClass}><td>${escapeHtml(store.title ?? storeAlias)}</td><td>${escapeHtml(currency.isoCurrencySymbol ?? currencyValue)}</td><td><input class="numeric" type="number" min="0" step="any" data-price data-price-store="${escapeHtml(storeAlias)}" data-price-currency="${escapeHtml(currencyValue)}" data-group-id="${groupId}" data-variant-id="${variant.id}" value="${escapeHtml(price)}"></td></tr>`;
             })).join('')}
           </tbody>
         </table>
@@ -1094,6 +1107,7 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
       field.addEventListener('input', event => {
         event.stopPropagation();
         this.updatePrice(Number(field.dataset.groupId), Number(field.dataset.variantId), field.dataset.priceStore ?? '', field.dataset.priceCurrency ?? '', field.value);
+        field.closest('tr')?.classList.toggle('is-missing-value', field.value.trim().length === 0);
       });
     });
 
@@ -1224,6 +1238,12 @@ class EkomVariantsWorkspaceViewElement extends UmbElementMixin(HTMLElement) {
     if (saveButton != null) {
       saveButton.toggleAttribute('disabled', this.saving || !this.hasChanges());
     }
+  }
+
+  private updateActiveLanguageTabMissingState(titleValues: Record<string, string>): void {
+    const activeTab = Array.from(this.querySelectorAll<HTMLElement>('[data-action="set-language"]'))
+      .find(tab => tab.dataset.tabValue === this.activeLanguage);
+    activeTab?.classList.toggle('is-missing', !titleValues[this.activeLanguage]?.trim());
   }
 
   private updateCustomField(groupId: number, variantId: number, alias: string, value: string): void {
@@ -1790,9 +1810,12 @@ const styles = `
   .mini-tabs { display: inline-flex; gap: 4px; }
   .mini-tab { padding: 4px 8px; border-bottom: 2px solid transparent; color: #686570; font-weight: 700; }
   .mini-tab.active { border-bottom-color: #1b264f; color: #1b264f; }
+  .mini-tab.is-missing { color: #d42054; }
+  .mini-tab.is-missing::after { content: ''; display: inline-block; width: 6px; height: 6px; margin-left: 5px; border-radius: 999px; background: #d42054; vertical-align: middle; }
   table { width: 100%; border-collapse: collapse; }
   th { background: #f8f7fa; color: #8b8994; font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
   th, td { border-bottom: 1px solid #e2e1e6; padding: 8px; }
+  tr.is-missing-value td:first-child, tr.is-missing-value td:nth-child(2) { color: #d42054; font-weight: 700; }
   .numeric { text-align: right; }
   @keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 `;
