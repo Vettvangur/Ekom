@@ -83,7 +83,6 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
       this.internalValue = this.ensurePriceStructure(this.normalizeValue(this.rawValue));
       this.renderPrices();
       this.setStatus('');
-      this.emitChange();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not load prices.';
       this.setStatus(message, true);

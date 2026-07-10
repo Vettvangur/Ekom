@@ -107,7 +107,6 @@ export class EkomCountryPickerElement extends HTMLElement implements UmbProperty
 
     if (this.internalValue.length === 0 && this.select.options.length > 0) {
       this.internalValue = this.select.options[0]?.value ?? '';
-      this.emitChange();
     }
 
     this.syncValue();

@@ -1,0 +1,380 @@
+.ekm-variants-app {
+    color: #1b264f;
+}
+
+.ekm-variants-app .ekm-variants-toolbar,
+.ekm-variants-app .ekm-variants-selected,
+.ekm-variants-app .ekm-variants-toolbar__actions,
+.ekm-variants-app .ekm-variants-group__summary,
+.ekm-variants-app .ekm-variants-group__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.ekm-variants-app .ekm-variants-toolbar {
+    background: #fff;
+    border-bottom: 1px solid #e2e1e6;
+    box-shadow: 0 4px 10px rgba(27, 38, 79, .06);
+    justify-content: space-between;
+    margin: -20px -20px 16px;
+    padding: 16px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.ekm-variants-app .ekm-variants-selected {
+    min-height: 32px;
+}
+
+.ekm-variants-app .ekm-variants-toolbar__actions,
+.ekm-variants-app .ekm-variants-group__actions {
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+.ekm-variants-app .ekm-variants-group-list {
+    display: grid;
+    gap: 14px;
+}
+
+.ekm-variants-app .ekm-variants-group {
+    background: #fff;
+    border: 1px solid #e2e1e6;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(27, 38, 79, .06);
+    overflow: hidden;
+}
+
+.ekm-variants-app .ekm-variants-group.is-draft,
+.ekm-variants-app .ekm-variants-row.is-draft {
+    background: #f8fbf9;
+}
+
+.ekm-variants-app .ekm-variants-group__summary {
+    padding: 12px 14px;
+}
+
+.ekm-variants-app .ekm-variants-drag-handle {
+    color: #8b8994;
+    cursor: grab;
+    font-weight: 900;
+    letter-spacing: -2px;
+    user-select: none;
+}
+
+.ekm-variants-app .ekm-variants-caret,
+.ekm-variants-app .ekm-variants-title-button,
+.ekm-variants-app .ekm-variants-thumb--button,
+.ekm-variants-app .ekm-variants-open-node,
+.ekm-variants-app .ekm-variants-close,
+.ekm-variants-app .ekm-variants-mini-tabs button {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+}
+
+.ekm-variants-app .ekm-variants-title-button {
+    font-weight: 900;
+    text-align: left;
+}
+
+.ekm-variants-app .ekm-variants-thumb {
+    align-items: center;
+    background: #f4f3f5;
+    border: 1px solid #e2e1e6;
+    border-radius: 4px;
+    color: #686570;
+    display: inline-flex;
+    font-size: 11px;
+    height: 38px;
+    justify-content: center;
+    text-transform: uppercase;
+    width: 38px;
+}
+
+.ekm-variants-app .ekm-variants-thumb img {
+    border-radius: 3px;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.ekm-variants-app .ekm-variants-count,
+.ekm-variants-app .ekm-variants-hint,
+.ekm-variants-app small {
+    color: #686570;
+}
+
+.ekm-variants-app .ekm-variants-pill {
+    background: #ecf7f1;
+    border-radius: 999px;
+    color: #188a4f;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    text-transform: uppercase;
+}
+
+.ekm-variants-app .ekm-variants-table {
+    border-top: 1px solid #e2e1e6;
+}
+
+.ekm-variants-app .ekm-variants-table__head,
+.ekm-variants-app .ekm-variants-row {
+    align-items: center;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 18px 24px 44px minmax(140px, 1.3fr) minmax(100px, .8fr) minmax(100px, .8fr) minmax(80px, .6fr) auto;
+    padding: 10px 14px;
+}
+
+.ekm-variants-app .ekm-variants-table__head {
+    background: #f8f7fa;
+    color: #8b8994;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.ekm-variants-app .ekm-variants-row {
+    border-top: 1px solid #e2e1e6;
+}
+
+.ekm-variants-app .ekm-variants-price-cell,
+.ekm-variants-app .ekm-variants-stock-cell {
+    text-align: center;
+}
+
+.ekm-variants-app label {
+    display: grid;
+    font-weight: 700;
+    gap: 8px;
+}
+
+.ekm-variants-app input {
+    border: 1px solid #c4c2cb;
+    border-radius: 3px;
+    box-sizing: border-box;
+    font: inherit;
+    padding: 8px;
+    width: 100%;
+}
+
+.ekm-variants-app input:focus {
+    border-color: #1b264f;
+    outline: none;
+}
+
+.ekm-variants-app input[type="checkbox"] {
+    accent-color: #188a4f;
+    height: 16px;
+    padding: 0;
+    width: 16px;
+}
+
+.ekm-variants-app .ekm-variants-number {
+    text-align: right;
+}
+
+.ekm-variants-app .ekm-variants-media-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ekm-variants-app .ekm-variants-media-card {
+    align-items: center;
+    background: #f4f3f5;
+    border: 1px solid #e2e1e6;
+    border-radius: 4px;
+    cursor: grab;
+    display: grid;
+    gap: 4px;
+    grid-template-columns: 14px 54px;
+    padding: 4px;
+}
+
+.ekm-variants-app .ekm-variants-media-card img {
+    border-radius: 3px;
+    height: 54px;
+    object-fit: cover;
+    width: 54px;
+}
+
+.ekm-variants-app .ekm-variants-status {
+    background: #fff;
+    border-radius: 3px;
+    padding: 12px;
+}
+
+.ekm-variants-app .ekm-variants-status--error {
+    color: #d42054;
+}
+
+.ekm-variants-app .ekm-variants-empty,
+.ekm-variants-app .ekm-variants-empty-row {
+    border: 1px dashed #d8d7d9;
+    border-radius: 3px;
+    padding: 24px;
+}
+
+.ekm-variants-app .ekm-variants-empty-row {
+    border-width: 1px 0 0;
+    margin: 0;
+}
+
+.ekm-variants-app .ekm-variants-drawer-backdrop {
+    background: rgba(27, 38, 79, .35);
+    bottom: 0;
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 1000;
+}
+
+.ekm-variants-app .ekm-variants-drawer {
+    background: #fff;
+    bottom: 0;
+    box-shadow: -6px 0 24px rgba(27, 38, 79, .18);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: min(460px, 100vw);
+    z-index: 1001;
+}
+
+.ekm-variants-app .ekm-variants-drawer__header,
+.ekm-variants-app .ekm-variants-drawer__footer {
+    align-items: center;
+    border-bottom: 1px solid #e2e1e6;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 18px;
+}
+
+.ekm-variants-app .ekm-variants-drawer__header > div:first-child {
+    min-width: 0;
+}
+
+.ekm-variants-app .ekm-variants-drawer__header-actions {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+.ekm-variants-app .ekm-variants-open-node {
+    align-items: center;
+    border: 1px solid #d8d7dc;
+    border-radius: 3px;
+    color: #1b264f;
+    display: inline-flex;
+    height: 32px;
+    justify-content: center;
+    text-decoration: none;
+    width: 32px;
+}
+
+.ekm-variants-app .ekm-variants-open-node:hover {
+    background: #f8f7fa;
+    color: #1b264f;
+    text-decoration: none;
+}
+
+.ekm-variants-app .ekm-variants-open-node span {
+    font-size: 15px;
+    line-height: 1;
+    transform: translateY(-1px);
+}
+
+.ekm-variants-app .ekm-variants-drawer__footer {
+    border-bottom: 0;
+    border-top: 1px solid #e2e1e6;
+}
+
+.ekm-variants-app .ekm-variants-drawer__footer-left,
+.ekm-variants-app .ekm-variants-drawer__footer-right {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+}
+
+.ekm-variants-app .ekm-variants-drawer__footer-left {
+    margin-right: auto;
+}
+
+.ekm-variants-app .ekm-variants-drawer__footer-left .btn-danger {
+    background: #d42054;
+    border-color: #d42054;
+    color: #fff;
+}
+
+.ekm-variants-app .ekm-variants-drawer__header h2 {
+    font-size: 20px;
+    margin: 0;
+}
+
+.ekm-variants-app .ekm-variants-drawer__header p {
+    color: #686570;
+    margin: 4px 0 0;
+}
+
+.ekm-variants-app .ekm-variants-drawer__body {
+    align-content: start;
+    display: grid;
+    gap: 18px;
+    overflow: auto;
+    padding: 18px;
+}
+
+.ekm-variants-app .ekm-variants-drawer__body section h3 {
+    font-size: 13px;
+    margin: 0 0 10px;
+}
+
+.ekm-variants-app .ekm-variants-mini-tabs {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.ekm-variants-app .ekm-variants-mini-tabs button {
+    border-bottom: 2px solid transparent;
+    color: #686570;
+    font-weight: 700;
+    padding: 4px 8px;
+}
+
+.ekm-variants-app .ekm-variants-mini-tabs button.active {
+    border-bottom-color: #1b264f;
+    color: #1b264f;
+}
+
+.ekm-variants-app table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.ekm-variants-app th {
+    background: #f8f7fa;
+    color: #8b8994;
+    font-size: 11px;
+    letter-spacing: .04em;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.ekm-variants-app th,
+.ekm-variants-app td {
+    border-bottom: 1px solid #e2e1e6;
+    padding: 8px;
+}

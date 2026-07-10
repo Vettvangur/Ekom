@@ -69,7 +69,6 @@ export class EkomRangeEditorElement extends HTMLElement implements UmbPropertyEd
       this.internalValue = this.ensureRangeStructure(this.normalizeValue(this.rawValue));
       this.renderRanges();
       this.setStatus('');
-      this.emitChange();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not load ranges.';
       this.setStatus(message, true);

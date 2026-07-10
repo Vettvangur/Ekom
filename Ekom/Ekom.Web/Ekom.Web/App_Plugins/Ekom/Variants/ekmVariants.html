@@ -1,0 +1,162 @@
+<div ng-controller="Ekom.Variants as vm" class="ekm-variants-app">
+    <umb-box>
+        <umb-box-content>
+            <div class="ekm-variants-toolbar">
+                <div class="ekm-variants-selected">
+                    <span ng-if="vm.selectedCount()">{{ vm.selectedCount() }} selected</span>
+                    <button type="button" class="btn umb-button__button btn-danger" ng-if="vm.selectedCount()" ng-click="vm.deleteSelected()" ng-disabled="vm.busy">Delete</button>
+                </div>
+                <div class="ekm-variants-toolbar__actions">
+                    <button type="button" class="btn umb-button__button btn-primary" ng-click="vm.createGroup()" ng-disabled="vm.busy || !vm.product">Add group</button>
+                    <button type="button" class="btn umb-button__button btn-success" ng-click="vm.saveAll()" ng-disabled="vm.busy || !vm.product || !vm.hasChanges()">Save variant changes</button>
+                </div>
+            </div>
+
+            <p ng-if="vm.loading">Loading variants...</p>
+            <p class="ekm-variants-status ekm-variants-status--error" ng-if="vm.error">{{ vm.error }}</p>
+            <p class="ekm-variants-status" ng-if="vm.status">{{ vm.status }}</p>
+
+            <div ng-if="!vm.loading && vm.product && !vm.product.groups.length" class="ekm-variants-empty">
+                <h3>No variants yet</h3>
+                <p>Create a variant group to start adding product variants.</p>
+                <button type="button" class="btn umb-button__button btn-primary" ng-click="vm.createGroup()">Create variant group</button>
+            </div>
+
+            <div class="ekm-variants-group-list" ng-if="!vm.loading && vm.product && vm.product.groups.length">
+                <article class="ekm-variants-group" ng-repeat="group in vm.product.groups" ng-class="{ 'is-draft': vm.isDraft(group.id) }" draggable="true" data-drag-group-id="{{ group.id }}">
+                    <div class="ekm-variants-group__summary">
+                        <span class="ekm-variants-drag-handle" title="Drag to reorder">⋮⋮</span>
+                        <input type="checkbox" ng-model="vm.selectedGroupIds[group.id]" aria-label="Select group" />
+                        <button type="button" class="ekm-variants-caret" ng-click="vm.toggleGroup(group)" aria-label="Toggle group">{{ vm.expandedGroupIds[group.id] ? '▾' : '▸' }}</button>
+                        <button type="button" class="ekm-variants-thumb ekm-variants-thumb--button" ng-click="vm.toggleGroup(group)">
+                            <img ng-if="vm.getGroupThumbUrl(group)" ng-src="{{ vm.getGroupThumbUrl(group) }}" alt="" />
+                            <span ng-if="!vm.getGroupThumbUrl(group)">-</span>
+                        </button>
+                        <button type="button" class="ekm-variants-title-button" ng-click="vm.toggleGroup(group)">{{ vm.getTitleValue(group) || group.name || 'New variant group' }}</button>
+                        <span class="ekm-variants-count">{{ group.variants.length }} variants</span>
+                        <span class="ekm-variants-pill" ng-if="vm.isDraft(group.id)">draft</span>
+                        <div class="ekm-variants-group__actions">
+                            <button type="button" class="btn umb-button__button" ng-click="vm.editGroup(group)">Edit group</button>
+                            <button type="button" class="btn umb-button__button" ng-click="vm.createVariant(group)">Add variant</button>
+                        </div>
+                    </div>
+
+                    <div class="ekm-variants-table" ng-if="vm.expandedGroupIds[group.id]">
+                        <div class="ekm-variants-table__head">
+                            <span></span><span></span><span></span><span>Title</span><span>SKU</span><span class="ekm-variants-price-cell">Price</span><span class="ekm-variants-stock-cell">Stock</span><span></span>
+                        </div>
+                        <div class="ekm-variants-row" ng-repeat="variant in group.variants" ng-class="{ 'is-draft': vm.isDraft(variant.id) }" draggable="true" data-drag-group-id="{{ group.id }}" data-drag-variant-id="{{ variant.id }}">
+                            <span class="ekm-variants-drag-handle" title="Drag to reorder">⋮⋮</span>
+                            <input type="checkbox" ng-model="vm.selectedVariantIds[variant.id]" aria-label="Select variant" />
+                            <span class="ekm-variants-thumb">
+                                <img ng-if="vm.getFirstImageThumbUrl(variant.images)" ng-src="{{ vm.getFirstImageThumbUrl(variant.images) }}" alt="" />
+                                <span ng-if="!vm.getFirstImageThumbUrl(variant.images)">-</span>
+                            </span>
+                            <strong>{{ vm.getTitleValue(variant) || variant.name || 'New variant' }} <span class="ekm-variants-pill" ng-if="vm.isDraft(variant.id)">draft</span></strong>
+                            <span>{{ variant.sku }}</span>
+                            <span class="ekm-variants-price-cell">{{ vm.getDefaultPrice(variant) }}</span>
+                            <span class="ekm-variants-stock-cell">{{ vm.getTotalStock(variant) }}</span>
+                            <button type="button" class="btn umb-button__button" ng-click="vm.editVariant(group, variant)">Edit</button>
+                        </div>
+                        <p class="ekm-variants-empty-row" ng-if="!group.variants.length">No variants in this group.</p>
+                    </div>
+                </article>
+            </div>
+        </umb-box-content>
+    </umb-box>
+
+    <div class="ekm-variants-drawer-backdrop" ng-if="vm.drawer" ng-click="vm.closeDrawer()"></div>
+    <aside class="ekm-variants-drawer" ng-if="vm.drawer">
+        <header class="ekm-variants-drawer__header">
+            <div>
+                <h2>{{ vm.drawerTitle() }}</h2>
+                <p>{{ vm.drawerSubtitle() }}</p>
+            </div>
+            <div class="ekm-variants-drawer__header-actions">
+                <a class="btn-reset ekm-variants-open-node" ng-if="vm.drawer.item.id > 0" ng-href="#/content/content/edit/{{ vm.drawer.item.id }}" target="_blank" rel="noopener" title="Open node in new tab" aria-label="Open node in new tab"><span aria-hidden="true">✎</span></a>
+                <button type="button" class="btn-reset ekm-variants-close" ng-click="vm.closeDrawer()" aria-label="Close">×</button>
+            </div>
+        </header>
+
+        <div class="ekm-variants-drawer__body" ng-if="vm.drawer.type == 'group'">
+            <label>Group title
+                <div class="ekm-variants-mini-tabs" ng-if="vm.product.languages.length > 1">
+                    <button type="button" class="btn-reset" ng-repeat="language in vm.product.languages" ng-class="{ active: language.isoCode == vm.activeLanguage }" ng-click="vm.setLanguage(language.isoCode)">{{ vm.getLanguageLabel(language) }}</button>
+                </div>
+                <input type="text" ng-model="vm.drawer.item.titleValues[vm.activeLanguage]" ng-change="vm.setTitleValue(vm.drawer.item, vm.drawer.item.titleValues[vm.activeLanguage])" />
+            </label>
+            <label ng-repeat="field in vm.drawer.item.customFields track by field.alias">{{ field.label }}<span ng-if="field.required"> *</span>
+                <input type="text" ng-model="field.value" ng-required="field.required" ng-change="vm.setCustomField(vm.drawer.item, field, field.value)" />
+            </label>
+            <label>Images
+                <button type="button" class="btn umb-button__button" ng-click="vm.openMediaPicker(vm.drawer.item)">Select images</button>
+                <div class="ekm-variants-media-list" ng-if="vm.mediaImages(vm.drawer.item).length">
+                    <div class="ekm-variants-media-card" ng-repeat="image in vm.mediaImages(vm.drawer.item) track by $index" draggable="true" data-media-image-index="{{ $index }}">
+                        <span class="ekm-variants-drag-handle" title="Drag to reorder">⋮⋮</span>
+                        <img ng-src="{{ vm.getThumbUrl(image) }}" alt="" />
+                    </div>
+                </div>
+            </label>
+            <p class="ekm-variants-hint">Group images apply to all variants unless a variant has its own.</p>
+        </div>
+
+        <div class="ekm-variants-drawer__body" ng-if="vm.drawer.type == 'variant'">
+            <label>Title
+                <div class="ekm-variants-mini-tabs" ng-if="vm.product.languages.length > 1">
+                    <button type="button" class="btn-reset" ng-repeat="language in vm.product.languages" ng-class="{ active: language.isoCode == vm.activeLanguage }" ng-click="vm.setLanguage(language.isoCode)">{{ vm.getLanguageLabel(language) }}</button>
+                </div>
+                <input type="text" ng-model="vm.drawer.item.titleValues[vm.activeLanguage]" ng-change="vm.setTitleValue(vm.drawer.item, vm.drawer.item.titleValues[vm.activeLanguage])" />
+            </label>
+            <label>SKU
+                <input type="text" ng-model="vm.drawer.item.sku" />
+            </label>
+            <label ng-repeat="field in vm.drawer.item.customFields track by field.alias">{{ field.label }}<span ng-if="field.required"> *</span>
+                <input type="text" ng-model="field.value" ng-required="field.required" ng-change="vm.setCustomField(vm.drawer.item, field, field.value)" />
+            </label>
+            <section>
+                <h3>Prices</h3>
+                <table>
+                    <thead><tr><th>Store</th><th>Currency</th><th>Price</th></tr></thead>
+                    <tbody>
+                        <tr ng-repeat="priceRow in vm.priceRows()">
+                            <td>{{ priceRow.storeTitle }}</td>
+                            <td>{{ priceRow.currencyLabel }}</td>
+                            <td><input class="ekm-variants-number" type="number" min="0" step="any" ng-model="priceRow.value" ng-change="vm.setPrice(vm.drawer.item, priceRow.storeAlias, priceRow.currencyValue, priceRow.value)" /></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            <section>
+                <h3>Stock</h3>
+                <table>
+                    <thead><tr><th>Store</th><th>Stock</th></tr></thead>
+                    <tbody>
+                        <tr ng-repeat="stockRow in vm.stockRows()">
+                            <td>{{ stockRow.storeTitle }}</td>
+                            <td><input class="ekm-variants-number" type="number" min="0" step="any" ng-model="stockRow.value" ng-change="vm.setStockValue(vm.drawer.item, stockRow.storeAlias, stockRow.value)" /></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            <label>Images
+                <button type="button" class="btn umb-button__button" ng-click="vm.openMediaPicker(vm.drawer.item)">Select images</button>
+                <div class="ekm-variants-media-list" ng-if="vm.mediaImages(vm.drawer.item).length">
+                    <div class="ekm-variants-media-card" ng-repeat="image in vm.mediaImages(vm.drawer.item) track by $index" draggable="true" data-media-image-index="{{ $index }}">
+                        <span class="ekm-variants-drag-handle" title="Drag to reorder">⋮⋮</span>
+                        <img ng-src="{{ vm.getThumbUrl(image) }}" alt="" />
+                    </div>
+                </div>
+            </label>
+        </div>
+
+        <footer class="ekm-variants-drawer__footer">
+            <div class="ekm-variants-drawer__footer-left">
+                <button type="button" class="btn umb-button__button btn-danger" ng-click="vm.deleteDrawerItem()">Delete</button>
+            </div>
+            <div class="ekm-variants-drawer__footer-right">
+                <button type="button" class="btn umb-button__button" ng-click="vm.closeDrawer()">Close</button>
+                <button type="button" class="btn umb-button__button btn-success" ng-click="vm.saveDrawer()">Save</button>
+            </div>
+        </footer>
+    </aside>
+</div>

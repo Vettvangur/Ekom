@@ -80,7 +80,6 @@ export class EkomMetafieldPickerElement extends HTMLElement implements UmbProper
       this.ensureFieldValues();
       this.renderFields();
       this.setStatus('');
-      this.emitChange();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not load metafields.';
       this.setStatus(message, true);

@@ -69,7 +69,6 @@ export class EkomStockEditorElement extends HTMLElement implements UmbPropertyEd
 
       this.renderStock();
       this.setStatus('');
-      this.emitChange();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not load stock.';
       this.setStatus(message, true);

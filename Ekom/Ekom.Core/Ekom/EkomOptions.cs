@@ -1,6 +1,13 @@
 public sealed class EkomOptions
 {
     public ManagerOptions Manager { get; set; } = new();
+    public VariantAppOptions VariantApp { get; set; } = new();
+}
+
+public sealed class VariantAppOptions
+{
+    public List<string> VariantGroups { get; set; } = [];
+    public List<string> Variants { get; set; } = [];
 }
 
 public sealed class ManagerOptions

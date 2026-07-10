@@ -89,13 +89,26 @@ internal static class ImportContentExtensions
                 ? currencyPriceRoot
                 : JsonConvert.DeserializeObject<CurrencyPriceRoot>(fieldValue) ?? currencyPriceRoot;
 
-            if (!currencyPriceRoot.TryGetValue(storeAlias, out var storeItems))
+            var storeItems = currencyPriceRoot
+                .Where(x => x.Key.Equals(storeAlias, StringComparison.OrdinalIgnoreCase))
+                .SelectMany(x => x.Value)
+                .GroupBy(x => x.Currency, StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.Last())
+                .ToList();
+
+            foreach (var key in currencyPriceRoot.Keys.Where(x => x.Equals(storeAlias, StringComparison.OrdinalIgnoreCase)).ToList())
             {
-                currencyPriceRoot.Add(storeAlias, new List<CurrencyPrice> { new(price, currency) });
+                currencyPriceRoot.Remove(key);
+            }
+
+            if (storeItems.Count == 0)
+            {
+                storeItems.Add(new CurrencyPrice(price, currency));
+                currencyPriceRoot.Add(storeAlias, storeItems);
             }
             else
             {
-                var priceObject = storeItems.FirstOrDefault(x => x.Currency == currency);
+                var priceObject = storeItems.FirstOrDefault(x => x.Currency.Equals(currency, StringComparison.OrdinalIgnoreCase));
                 if (priceObject == null)
                 {
                     storeItems.Add(new CurrencyPrice(price, currency));
@@ -104,6 +117,8 @@ internal static class ImportContentExtensions
                 {
                     priceObject.Price = price;
                 }
+
+                currencyPriceRoot.Add(storeAlias, storeItems);
             }
 
             content.SetValue("price", JsonConvert.SerializeObject(currencyPriceRoot));

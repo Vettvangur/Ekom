@@ -374,15 +374,25 @@ public static class ContentExtensions
             try
             {
                 currencyPriceRoot = string.IsNullOrEmpty(fieldValue) ? currencyPriceRoot : JsonConvert.DeserializeObject<CurrencyPriceRoot>(fieldValue);
-                if (currencyPriceRoot.ContainsKey(storeAlias))
-                {
-                    var storeItems = currencyPriceRoot[storeAlias];
+                var storeItems = currencyPriceRoot
+                    .Where(x => x.Key.Equals(storeAlias, StringComparison.OrdinalIgnoreCase))
+                    .SelectMany(x => x.Value)
+                    .GroupBy(x => x.Currency, StringComparer.OrdinalIgnoreCase)
+                    .Select(x => x.Last())
+                    .ToList();
 
+                foreach (var key in currencyPriceRoot.Keys.Where(x => x.Equals(storeAlias, StringComparison.OrdinalIgnoreCase)).ToList())
+                {
+                    currencyPriceRoot.Remove(key);
+                }
+
+                if (storeItems.Count > 0)
+                {
                     // Ensure the storeItems list is not null and has elements
                     if (storeItems.Any())
                     {
                         // Find the first item with the specified currency
-                        priceObject = storeItems.FirstOrDefault(z => z.Currency == currency);
+                        priceObject = storeItems.FirstOrDefault(z => z.Currency.Equals(currency, StringComparison.OrdinalIgnoreCase));
 
                         if (priceObject != null)
                         {
@@ -397,6 +407,8 @@ public static class ContentExtensions
                     {
                         storeItems.Add(new CurrencyPrice(price, currency));
                     }
+
+                    currencyPriceRoot.Add(storeAlias, storeItems);
                 }
                 else
                 {

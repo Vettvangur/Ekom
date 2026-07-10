@@ -6,9 +6,23 @@
         "~/App_Plugins/Ekom/Shared/Chosen/chosen.jquery.min.js",
         "~/App_Plugins/Ekom/Shared/Chosen/angular-chosen.min.js",
         "~/App_Plugins/Ekom/Shared/ekmUtility.js",
-        "~/App_Plugins/Ekom/Shared/ekmResources.js"
+        "~/App_Plugins/Ekom/Shared/ekmResources.js",
+        "~/App_Plugins/Ekom/Variants/ekmVariants.controller.js"
     ],
     "css": [
-        "~/App_Plugins/Ekom/Shared/Chosen/chosen.css"
+        "~/App_Plugins/Ekom/Shared/Chosen/chosen.css",
+        "~/App_Plugins/Ekom/Variants/ekmVariants.css"
+    ],
+    "contentApps": [
+        {
+            "name": "Variants",
+            "alias": "ekomVariants",
+            "weight": 0,
+            "icon": "icon-layers-alt",
+            "view": "~/App_Plugins/Ekom/Variants/ekmVariants.html",
+            "show": [
+                "+content/ekmProduct"
+            ]
+        }
     ]
 }
