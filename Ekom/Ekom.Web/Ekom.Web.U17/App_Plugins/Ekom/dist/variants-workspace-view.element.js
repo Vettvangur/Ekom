@@ -2,13 +2,13 @@ var D = Object.defineProperty;
 var F = (i, o, t) => o in i ? D(i, o, { enumerable: !0, configurable: !0, writable: !0, value: t }) : i[o] = t;
 var l = (i, o, t) => F(i, typeof o != "symbol" ? o + "" : o, t);
 import { UmbElementMixin as M } from "@umbraco-cms/backoffice/element-api";
-import { UMB_DOCUMENT_WORKSPACE_CONTEXT as O, UMB_DOCUMENT_PUBLISHING_WORKSPACE_CONTEXT as B } from "@umbraco-cms/backoffice/document";
+import { UMB_DOCUMENT_WORKSPACE_CONTEXT as O, UMB_DOCUMENT_PUBLISHING_WORKSPACE_CONTEXT as W } from "@umbraco-cms/backoffice/document";
 import "@umbraco-cms/backoffice/imaging";
 import "@umbraco-cms/backoffice/media";
-import { UMB_NOTIFICATION_CONTEXT as j } from "@umbraco-cms/backoffice/notification";
-import { UMB_WORKSPACE_VIEW_CONTEXT as W } from "@umbraco-cms/backoffice/workspace";
-const V = "00000000-0000-0000-0000-000000000000", m = "ekom-variant-count";
-class R extends M(HTMLElement) {
+import { UMB_NOTIFICATION_CONTEXT as B } from "@umbraco-cms/backoffice/notification";
+import { UMB_WORKSPACE_VIEW_CONTEXT as j } from "@umbraco-cms/backoffice/workspace";
+const V = "00000000-0000-0000-0000-000000000000", m = "ekom-variant-count", R = "You have unsaved variant changes. Save & Publish will publish the product node and save/publish the variant changes. If you only want to save/publish variant changes, use the Save variant changes button at the top. Continue?";
+class z extends M(HTMLElement) {
   constructor() {
     super(...arguments);
     l(this, "notificationContext");
@@ -40,9 +40,9 @@ class R extends M(HTMLElement) {
     });
   }
   connectedCallback() {
-    super.connectedCallback(), window.addEventListener("keydown", this.onKeydown), this.consumeContext(j, (t) => {
+    super.connectedCallback(), window.addEventListener("keydown", this.onKeydown), this.consumeContext(B, (t) => {
       this.notificationContext = t;
-    }), this.consumeContext(W, (t) => {
+    }), this.consumeContext(j, (t) => {
       this.workspaceViewContext = t, this.updateWorkspaceViewBadge();
     }), this.consumeContext(O, (t) => {
       if (t == null)
@@ -51,7 +51,7 @@ class R extends M(HTMLElement) {
       e != null && (this.productId = e), this.patchDocumentSave(t), this.observe(t.unique, (a) => {
         a == null || a === this.productId || (this.productId = a, this.load());
       }, "ekomVariantProductId");
-    }), this.consumeContext(B, (t) => {
+    }), this.consumeContext(W, (t) => {
       t != null && this.patchPublishingSave(t);
     }), this.productId = this.getProductIdFromUrl(), this.render(), this.productId && this.load();
   }
@@ -64,10 +64,10 @@ class R extends M(HTMLElement) {
       await ((e = this.originalRequestSave) == null ? void 0 : e.call(this)), await this.saveAfterDocumentSave();
     }), t.requestSubmit != null && (this.originalRequestSubmit = t.requestSubmit.bind(t), t.requestSubmit = async () => {
       var e;
-      await ((e = this.originalRequestSubmit) == null ? void 0 : e.call(this)), await this.saveAfterDocumentSave();
+      this.confirmPublishWithVariantChanges() && (await ((e = this.originalRequestSubmit) == null ? void 0 : e.call(this)), await this.saveAfterDocumentSave());
     }), t.saveAndPublish != null && (this.originalSaveAndPublish = t.saveAndPublish.bind(t), t.saveAndPublish = async () => {
       var e;
-      await ((e = this.originalSaveAndPublish) == null ? void 0 : e.call(this)), await this.saveAfterDocumentSave();
+      this.confirmPublishWithVariantChanges() && (await ((e = this.originalSaveAndPublish) == null ? void 0 : e.call(this)), await this.saveAfterDocumentSave());
     }));
   }
   restoreDocumentSave() {
@@ -76,7 +76,7 @@ class R extends M(HTMLElement) {
   patchPublishingSave(t) {
     this.publishingWorkspaceContext !== t && (this.restorePublishingSave(), this.publishingWorkspaceContext = t, t.saveAndPublish != null && (this.originalPublishingSaveAndPublish = t.saveAndPublish.bind(t), t.saveAndPublish = async () => {
       var e;
-      await ((e = this.originalPublishingSaveAndPublish) == null ? void 0 : e.call(this)), await this.saveAfterDocumentSave();
+      this.confirmPublishWithVariantChanges() && (await ((e = this.originalPublishingSaveAndPublish) == null ? void 0 : e.call(this)), await this.saveAfterDocumentSave());
     }));
   }
   restorePublishingSave() {
@@ -84,6 +84,9 @@ class R extends M(HTMLElement) {
   }
   async saveAfterDocumentSave() {
     this.syncMediaPickers(), this.product != null && this.hasChanges() && await this.save();
+  }
+  confirmPublishWithVariantChanges() {
+    return this.syncMediaPickers(), this.product == null || !this.hasChanges() ? !0 : window.confirm(R);
   }
   async load() {
     var e;
@@ -170,9 +173,9 @@ class R extends M(HTMLElement) {
     const t = this.selectedGroupIds.size + this.selectedVariantIds.size;
     if (!(t === 0 || !window.confirm(`Delete ${t} selected item${t === 1 ? "" : "s"}?`))) {
       for (const e of this.product.groups) {
-        this.selectedGroupIds.has(e.id) && !h(e.id) && this.deletedNodeIds.add(e.id);
+        this.selectedGroupIds.has(e.id) && !p(e.id) && this.deletedNodeIds.add(e.id);
         for (const a of e.variants)
-          this.selectedVariantIds.has(a.id) && !h(a.id) && this.deletedNodeIds.add(a.id);
+          this.selectedVariantIds.has(a.id) && !p(a.id) && this.deletedNodeIds.add(a.id);
       }
       this.product.groups = this.product.groups.filter((e) => !this.selectedGroupIds.has(e.id)).map((e) => ({
         ...e,
@@ -187,10 +190,10 @@ class R extends M(HTMLElement) {
     if (window.confirm(`Delete this ${a}?`)) {
       if (e) {
         const s = this.getGroup(t.groupId);
-        s != null && !h(s.id) && this.deletedNodeIds.add(s.id), this.product.groups = this.product.groups.filter((r) => r.id !== t.groupId);
+        s != null && !p(s.id) && this.deletedNodeIds.add(s.id), this.product.groups = this.product.groups.filter((r) => r.id !== t.groupId);
       } else {
         const s = this.getGroup(t.groupId), r = this.getVariant(t.groupId, t.variantId);
-        r != null && !h(r.id) && this.deletedNodeIds.add(r.id), s != null && (s.variants = s.variants.filter((n) => n.id !== t.variantId));
+        r != null && !p(r.id) && this.deletedNodeIds.add(r.id), s != null && (s.variants = s.variants.filter((n) => n.id !== t.variantId));
       }
       this.drawer = void 0, this.render();
     }
@@ -215,8 +218,8 @@ class R extends M(HTMLElement) {
     const n = this.getVariant(t, e);
     if (n == null)
       return;
-    const d = [...n.priceValues[a] ?? []], c = Number(r) || 0, p = d.find((g) => v(g) === s);
-    p != null ? (p.Price = c, p.price = c) : d.push({ Currency: s, Price: c }), n.priceValues = { ...n.priceValues, [a]: d }, this.updateSaveButtonState();
+    const d = [...n.priceValues[a] ?? []], c = Number(r) || 0, h = d.find((g) => v(g) === s);
+    h != null ? (h.Price = c, h.price = c) : d.push({ Currency: s, Price: c }), n.priceValues = { ...n.priceValues, [a]: d }, this.updateSaveButtonState();
   }
   updateStock(t, e, a, s) {
     const r = this.getVariant(t, e);
@@ -224,7 +227,7 @@ class R extends M(HTMLElement) {
       return;
     const n = Number(s) || 0;
     let d = !1;
-    const c = r.stockValues.map((p) => p.storeAlias !== a ? p : (d = !0, { ...p, value: n }));
+    const c = r.stockValues.map((h) => h.storeAlias !== a ? h : (d = !0, { ...h, value: n }));
     d || c.push({ storeAlias: a, value: n }), r.stockValues = c, this.updateSaveButtonState();
   }
   hasChanges() {
@@ -248,7 +251,7 @@ class R extends M(HTMLElement) {
       var s;
       return {
         ...a,
-        priceValues: X(a.priceValues, ((s = this.product) == null ? void 0 : s.stores) ?? []),
+        priceValues: Y(a.priceValues, ((s = this.product) == null ? void 0 : s.stores) ?? []),
         changed: !0
       };
     });
@@ -259,10 +262,10 @@ class R extends M(HTMLElement) {
     };
   }
   isGroupChanged(t) {
-    return h(t.id) || this.groupSnapshots.get(t.id) !== G(t);
+    return p(t.id) || this.groupSnapshots.get(t.id) !== G(t);
   }
   isVariantChanged(t) {
-    return h(t.id) || this.variantSnapshots.get(t.id) !== N(t);
+    return p(t.id) || this.variantSnapshots.get(t.id) !== N(t);
   }
   getGroup(t) {
     var e;
@@ -312,7 +315,7 @@ class R extends M(HTMLElement) {
   }
   render() {
     this.innerHTML = `
-      <style>${Y}</style>
+      <style>${Q}</style>
       <section class="ekm-variant-editor">
         ${this.renderTopBar()}
         ${this.error ? `<p class="status status--error">${u(this.error)}</p>` : ""}
@@ -351,9 +354,9 @@ class R extends M(HTMLElement) {
     `;
   }
   renderGroup(t) {
-    const e = this.expandedGroupIds.has(t.id), a = this.getTitle(t, "New group"), s = U(t);
+    const e = this.expandedGroupIds.has(t.id), a = this.getTitle(t, "New group"), s = _(t);
     return `
-      <article class="group-card ${h(t.id) ? "is-draft" : ""}" draggable="true" data-drag-group-id="${t.id}">
+      <article class="group-card ${p(t.id) ? "is-draft" : ""}" draggable="true" data-drag-group-id="${t.id}">
         <div class="group-header">
           <span class="drag-handle" title="Drag to reorder" aria-hidden="true">⋮⋮</span>
           <input type="checkbox" data-select-group data-group-id="${t.id}" ${this.selectedGroupIds.has(t.id) ? "checked" : ""} aria-label="Select group">
@@ -361,7 +364,7 @@ class R extends M(HTMLElement) {
           <button type="button" class="thumb thumb--button" data-action="toggle-group" data-group-id="${t.id}">${E(s, a)}</button>
           <button type="button" class="group-title" data-action="toggle-group" data-group-id="${t.id}">${u(a)}</button>
           <span class="count">${t.variants.length} variants</span>
-          ${h(t.id) ? '<span class="badge">draft</span>' : ""}
+          ${p(t.id) ? '<span class="badge">draft</span>' : ""}
           <div class="group-header-actions">
             <uui-button compact look="secondary" data-action="edit-group" data-group-id="${t.id}">Edit group</uui-button>
             <uui-button compact look="secondary" data-action="create-variant" data-group-id="${t.id}">Add variant</uui-button>
@@ -383,11 +386,11 @@ class R extends M(HTMLElement) {
   }
   renderVariant(t, e) {
     return `
-      <div class="variant-row ${h(e.id) ? "is-draft" : ""}" draggable="true" data-drag-group-id="${t.id}" data-drag-variant-id="${e.id}">
+      <div class="variant-row ${p(e.id) ? "is-draft" : ""}" draggable="true" data-drag-group-id="${t.id}" data-drag-variant-id="${e.id}">
         <span class="drag-handle" title="Drag to reorder" aria-hidden="true">⋮⋮</span>
         <input type="checkbox" data-select-variant data-variant-id="${e.id}" ${this.selectedVariantIds.has(e.id) ? "checked" : ""} aria-label="Select variant">
         <span class="thumb">${E(k(e.images), this.getTitle(e, "New variant"))}</span>
-        <strong>${u(this.getTitle(e, "New variant"))}${h(e.id) ? ' <span class="badge">draft</span>' : ""}</strong>
+        <strong>${u(this.getTitle(e, "New variant"))}${p(e.id) ? ' <span class="badge">draft</span>' : ""}</strong>
         <span>${u(e.sku)}</span>
         <span class="variant-price-cell">${u(this.getDefaultPrice(e))}</span>
         <span class="variant-stock-cell">${u(this.getTotalStock(e))}</span>
@@ -441,7 +444,7 @@ class R extends M(HTMLElement) {
     `;
   }
   renderDrawerHeader(t, e, a) {
-    const s = !h(a.id) && a.key ? `/umbraco/section/content/workspace/document/edit/${a.key}` : "";
+    const s = !p(a.id) && a.key ? `/umbraco/section/content/workspace/document/edit/${a.key}` : "";
     return `
       <header class="drawer-header">
         <div class="drawer-title">
@@ -484,7 +487,7 @@ class R extends M(HTMLElement) {
         ${e.map((s) => {
       var d, c;
       const r = s.isoCode ?? "", n = ["mini-tab"];
-      return r === this.activeLanguage && n.push("active"), (d = t[r]) != null && d.trim() || n.push("is-missing"), `<button type="button" data-action="set-language" data-tab-value="${u(r)}" class="${n.join(" ")}" title="${(c = t[r]) != null && c.trim() ? "" : "Missing title value"}">${u(z(s))}</button>`;
+      return r === this.activeLanguage && n.push("active"), (d = t[r]) != null && d.trim() || n.push("is-missing"), `<button type="button" data-action="set-language" data-tab-value="${u(r)}" class="${n.join(" ")}" title="${(c = t[r]) != null && c.trim() ? "" : "Missing title value"}">${u(U(s))}</button>`;
     }).join("")}
       </div>
     `;
@@ -505,8 +508,8 @@ class R extends M(HTMLElement) {
           <thead><tr><th>Store</th><th>Currency</th><th>Price</th></tr></thead>
           <tbody>
             ${(((a = this.product) == null ? void 0 : a.stores) ?? []).flatMap((s) => (s.currencies ?? []).map((r) => {
-      var p, g;
-      const n = s.alias ?? "", d = r.currencyValue ?? "", c = S((g = (p = e.priceValues) == null ? void 0 : p[n]) == null ? void 0 : g.find((L) => v(L) === d));
+      var h, g;
+      const n = s.alias ?? "", d = r.currencyValue ?? "", c = S((g = (h = e.priceValues) == null ? void 0 : h[n]) == null ? void 0 : g.find((L) => v(L) === d));
       return `<tr><td>${u(s.title ?? n)}</td><td>${u(r.isoCurrencySymbol ?? d)}</td><td><input class="numeric" type="number" min="0" step="any" data-price data-price-store="${u(n)}" data-price-currency="${u(d)}" data-group-id="${t}" data-variant-id="${e.id}" value="${u(c)}"></td></tr>`;
     })).join("")}
           </tbody>
@@ -633,8 +636,8 @@ class R extends M(HTMLElement) {
   }
   bindMediaPickers() {
     this.querySelectorAll("[data-group-images], [data-variant-images]").forEach((t) => {
-      const e = t, a = t.dataset.value ?? "", s = I(a);
-      e.value = s.join(","), e.selection = s, _(e), t.addEventListener("change", async (r) => {
+      const e = t, a = t.dataset.value ?? "", s = x(a);
+      e.value = s.join(","), e.selection = s, H(e), t.addEventListener("change", async (r) => {
         const n = Number(t.dataset.groupId), d = Number(t.dataset.variantId);
         r.stopPropagation(), await Promise.resolve();
         const c = A(e);
@@ -692,7 +695,7 @@ class R extends M(HTMLElement) {
     return !0;
   }
   validateTitle(t) {
-    return H(t == null ? void 0 : t.titleValues) ? !0 : (this.showError("Title is required."), !1);
+    return X(t == null ? void 0 : t.titleValues) ? !0 : (this.showError("Title is required."), !1);
   }
   validateAllCustomFields() {
     var t;
@@ -750,11 +753,11 @@ class R extends M(HTMLElement) {
     return ((a = t.titleValues) == null ? void 0 : a[this.activeLanguage]) || y(t.titleValues) || t.title || t.name || e;
   }
   getDefaultPrice(t) {
-    var n, d, c, p;
+    var n, d, c, h;
     const e = (n = this.product) == null ? void 0 : n.stores[0], a = (d = e == null ? void 0 : e.currencies) == null ? void 0 : d[0];
     if (e == null || a == null)
       return "—";
-    const s = S((p = (c = t.priceValues) == null ? void 0 : c[e.alias ?? ""]) == null ? void 0 : p.find((g) => v(g) === (a.currencyValue ?? ""))), r = a.currencySymbol ?? a.isoCurrencySymbol ?? a.currencyValue ?? "";
+    const s = S((h = (c = t.priceValues) == null ? void 0 : c[e.alias ?? ""]) == null ? void 0 : h.find((g) => v(g) === (a.currencyValue ?? ""))), r = a.currencySymbol ?? a.isoCurrencySymbol ?? a.currencyValue ?? "";
     return `${C(s)} ${r}`.trim();
   }
   getTotalStock(t) {
@@ -807,7 +810,7 @@ function u(i) {
 function y(i) {
   return Object.values(i ?? {}).find((o) => o != null && o.trim().length > 0) ?? "";
 }
-function z(i) {
+function U(i) {
   return (i.isoCode ?? i.cultureName ?? "").split("-")[0].toUpperCase();
 }
 function v(i) {
@@ -819,7 +822,7 @@ function S(i) {
 function C(i) {
   return new Intl.NumberFormat().format(i);
 }
-function I(i) {
+function x(i) {
   const o = String(i ?? "").trim();
   if (o.length === 0)
     return [];
@@ -829,12 +832,12 @@ function I(i) {
     } catch {
       return [];
     }
-  return o.split(",").map((t) => x(t.trim())).filter(Boolean);
+  return o.split(",").map((t) => I(t.trim())).filter(Boolean);
 }
 function k(i) {
-  return I(i)[0] ?? "";
+  return x(i)[0] ?? "";
 }
-function U(i) {
+function _(i) {
   const o = k(i.images);
   if (o)
     return o;
@@ -848,15 +851,15 @@ function U(i) {
 function E(i, o) {
   return i ? `<umb-imaging-thumbnail unique="${u(i)}" width="38" height="38" alt="${u(o)}"></umb-imaging-thumbnail>` : "-";
 }
-function x(i) {
+function I(i) {
   const o = i.match(/umb:\/\/media\/(.+)$/i);
   return (o == null ? void 0 : o[1]) ?? i;
 }
 function A(i) {
-  return Array.isArray(i.selection) ? K(i.selection).join(",") : I(i.value ?? "").join(",");
+  return Array.isArray(i.selection) ? K(i.selection).join(",") : x(i.value ?? "").join(",");
 }
 const P = /* @__PURE__ */ new WeakSet();
-async function _(i) {
+async function H(i) {
   if (P.has(i)) {
     await f(i);
     return;
@@ -885,15 +888,15 @@ async function f(i) {
 function K(i) {
   return i.map((o) => {
     if (typeof o == "string")
-      return x(o);
+      return I(o);
     if (o != null && typeof o == "object") {
       const t = o;
-      return x(String(t.udi ?? t.key ?? t.unique ?? t.id ?? ""));
+      return I(String(t.udi ?? t.key ?? t.unique ?? t.id ?? ""));
     }
     return "";
   }).filter(Boolean);
 }
-function h(i) {
+function p(i) {
   return i <= 0;
 }
 function G(i) {
@@ -921,10 +924,10 @@ function T(i) {
     value: ""
   }));
 }
-function H(i) {
+function X(i) {
   return Object.values(i ?? {}).some((o) => o.trim().length > 0);
 }
-function X(i, o) {
+function Y(i, o) {
   const t = {};
   for (const e of o) {
     const a = e.alias ?? "", s = /* @__PURE__ */ new Map();
@@ -957,7 +960,7 @@ function b(i) {
   }
   return JSON.stringify(i);
 }
-const Y = `
+const Q = `
   :host { display: block; padding: var(--uui-size-layout-1, 24px); background: #f4f3f5; color: #1b264f; font-family: Lato, Arial, sans-serif; }
   .ekm-variant-editor { display: grid; gap: 16px; }
   .top-bar, .selection-actions, .main-actions, .group-header, .group-header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -1015,7 +1018,7 @@ const Y = `
   .numeric { text-align: right; }
   @keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 `;
-customElements.define("ekom-variants-workspace-view", R);
+customElements.define("ekom-variants-workspace-view", z);
 export {
-  R as default
+  z as default
 };
