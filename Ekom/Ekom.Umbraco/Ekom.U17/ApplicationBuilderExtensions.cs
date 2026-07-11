@@ -1,6 +1,7 @@
 using Ekom.AspNetCore;
 using Ekom.Services;
 using Ekom.Tracking;
+using Ekom.Umb.CatalogCollection.Services;
 using Ekom.Umb.Services;
 using Ekom.Umb.VariantApp.Services;
 using EkomCore.Services;
@@ -30,6 +31,7 @@ public static class ApplicationBuilderExtensions
         services.AddTransient<NodeService>();
         services.AddTransient<IMetafieldService, MetafieldService>();
         services.AddTransient<IUmbracoService, UmbracoService>();
+        services.AddTransient<ICatalogCollectionService, CatalogCollectionService>();
         services.AddTransient<IVariantAppService, VariantAppService>();
         services.AddTransient<IUrlService, UrlService>();
         services.AddScoped<BackofficeUserAccessor>();

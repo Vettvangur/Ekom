@@ -92,6 +92,24 @@ const e = [
     ]
   },
   {
+    type: "collectionView",
+    alias: "Ekom.CollectionView.Catalog",
+    name: "Ekom Catalog Collection View",
+    element: "/App_Plugins/Ekom/dist/catalog-collection-view.element.js",
+    weight: 400,
+    meta: {
+      label: "Catalog",
+      icon: "icon-grid",
+      pathName: "catalog"
+    },
+    conditions: [
+      {
+        alias: "Umb.Condition.CollectionAlias",
+        match: "Umb.Collection.Document"
+      }
+    ]
+  },
+  {
     type: "propertyEditorSchema",
     alias: "Ekom.Cache",
     name: "Ekom Cache Editor",

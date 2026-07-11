@@ -15,6 +15,7 @@ export default defineConfig({
         'metafield-picker.element': 'src/property-editors/metafield-picker.element.ts',
         'metavalue-editor.element': 'src/property-editors/metavalue-editor.element.ts',
         'analytics-section-view.element': 'src/manager/analytics-section-view.element.ts',
+        'catalog-collection-view.element': 'src/catalog/catalog-collection-view.element.ts',
         'orders-section-view.element': 'src/manager/orders-section-view.element.ts',
         'price-editor.element': 'src/property-editors/price-editor.element.ts',
         'property-editor.element': 'src/property-editors/property-editor.element.ts',
