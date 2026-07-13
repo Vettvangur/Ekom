@@ -56,6 +56,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   private data?: CatalogResponse;
   private revealTimer?: number;
   private resizeTimer?: number;
+  private collectionPaginationObserver?: MutationObserver;
   private readonly selectedProductKeys = new Set<string>();
   private readonly onPopState = (): void => this.restoreNodeFromHistory();
   private readonly onResize = (): void => {
@@ -117,6 +118,8 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     if (this.resizeTimer != null) {
       window.clearTimeout(this.resizeTimer);
     }
+    this.collectionPaginationObserver?.disconnect();
+    this.collectionPaginationObserver = undefined;
 
     super.disconnectedCallback();
   }
@@ -285,29 +288,64 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private revealCollectionHost(): void {
-    const collection = this.closestComposed('umb-collection-default');
-    const collectionRoot = collection?.shadowRoot;
-    const router = collectionRoot?.querySelector<HTMLElement>('#router');
-    const bodyLayout = collectionRoot?.querySelector<HTMLElement>('umb-body-layout');
-    const emptyState = collectionRoot?.querySelector<HTMLElement>('#empty-state');
+    for (const collection of this.getComposedAncestors('umb-collection-default')) {
+      const collectionRoot = collection.shadowRoot;
+      const router = collectionRoot?.querySelector<HTMLElement>('#router');
+      const bodyLayout = collectionRoot?.querySelector<HTMLElement>('umb-body-layout');
+      const emptyState = collectionRoot?.querySelector<HTMLElement>('#empty-state');
 
-    router?.style.setProperty('visibility', 'visible', 'important');
-    emptyState?.style.setProperty('display', 'none', 'important');
-    bodyLayout?.classList.add('has-items');
+      router?.style.setProperty('visibility', 'visible', 'important');
+      emptyState?.style.setProperty('display', 'none', 'important');
+      bodyLayout?.classList.add('has-items');
+    }
+
+    for (const collectionRoot of this.getComposedShadowRoots()) {
+      this.hideDefaultCollectionPagination(collectionRoot);
+      this.observeDefaultCollectionPagination(collectionRoot);
+    }
   }
 
-  private closestComposed(selector: string): HTMLElement | null {
+  private hideDefaultCollectionPagination(collectionRoot: ShadowRoot): void {
+    collectionRoot.querySelector<HTMLElement>('umb-collection-pagination')?.style.setProperty('display', 'none', 'important');
+  }
+
+  private observeDefaultCollectionPagination(collectionRoot: ShadowRoot): void {
+    if (this.collectionPaginationObserver == null) {
+      this.collectionPaginationObserver = new MutationObserver(() => this.revealCollectionHost());
+    }
+
+    this.collectionPaginationObserver.observe(collectionRoot, { childList: true, subtree: true });
+  }
+
+  private getComposedAncestors(selector: string): HTMLElement[] {
+    const ancestors: HTMLElement[] = [];
     let node: Node | null = this;
 
     while (node != null) {
       if (node instanceof HTMLElement && node.matches(selector)) {
-        return node;
+        ancestors.push(node);
       }
 
       node = node.parentNode ?? (node.getRootNode() instanceof ShadowRoot ? (node.getRootNode() as ShadowRoot).host : null);
     }
 
-    return null;
+    return ancestors;
+  }
+
+  private getComposedShadowRoots(): ShadowRoot[] {
+    const roots = new Set<ShadowRoot>();
+    let node: Node | null = this;
+
+    while (node != null) {
+      const root = node.getRootNode();
+      if (root instanceof ShadowRoot) {
+        roots.add(root);
+      }
+
+      node = node.parentNode ?? (root instanceof ShadowRoot ? root.host : null);
+    }
+
+    return [...roots];
   }
 
   private render(): void {
@@ -471,7 +509,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private renderPagination(data: CatalogResponse): string {
-    if (data.filteredProductCount === 0) {
+    if (data.filteredProductCount === 0 || data.totalPages <= 1) {
       return '';
     }
 
@@ -670,9 +708,10 @@ const styles = `
   .card { background: #fff; border: 1px solid #e9e9eb; border-radius: 4px; overflow: hidden; position: relative; transition: box-shadow .15s, border-color .15s; }
   .card:hover { box-shadow: 0 6px 16px rgba(0,0,0,.08); }
   .card.selected { border-color: #2152a3; box-shadow: 0 0 0 1px #2152a3; }
-  .checkbox { background: rgba(255,255,255,.76); border: 1px solid #d8d7d9; border-radius: 3px; color: #fff; height: 20px; left: 10px; line-height: 18px; opacity: .6; padding: 0; position: absolute; top: 10px; width: 20px; z-index: 1; }
-  .card:hover .checkbox, .checkbox.checked { opacity: 1; }
-  .checkbox.checked { background: #2152a3; border-color: #2152a3; }
+   .checkbox { background: transparent; border: 0; color: transparent; height: 50px; left: -5px; padding: 0; position: absolute; top: -5px; width: 50px; z-index: 1; }
+   .checkbox::after { background: rgba(255,255,255,.76); border: 1px solid #d8d7d9; border-radius: 3px; box-sizing: border-box; color: #fff; content: ''; font-size: 14px; height: 20px; left: 15px; line-height: 18px; opacity: .6; position: absolute; top: 15px; width: 20px; }
+   .card:hover .checkbox::after, .checkbox.checked::after { opacity: 1; }
+   .checkbox.checked::after { background: #2152a3; border-color: #2152a3; content: '✓'; }
   .image { align-items: center; background: linear-gradient(135deg, #f4f4f6, #e9e9eb); color: #888; display: flex; height: 160px; justify-content: center; text-decoration: none; }
   .image.dimmed { opacity: .45; }
   .image umb-imaging-thumbnail { height: 100%; width: 100%; }
