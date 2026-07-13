@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.202](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.201...Ekom-v0.2.202) (2026-07-13)
+
+
+### Bug Fixes
+
+* **catalog:** refine custom collection workspace ([#697](https://github.com/Vettvangur/Ekom/issues/697)) ([9c00670](https://github.com/Vettvangur/Ekom/commit/9c00670551e2c88f105bbe4ff5e5293ac82ddc23))
+
 ## [0.2.201](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.200...Ekom-v0.2.201) (2026-07-11)
 
 
