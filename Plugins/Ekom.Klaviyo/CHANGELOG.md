@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.100](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.99...Ekom.Klaviyo-v0.2.100) (2026-07-13)
+
+
+### Bug Fixes
+
+* **klaviyo:** resolve categories in order culture ([#695](https://github.com/Vettvangur/Ekom/issues/695)) ([e19d862](https://github.com/Vettvangur/Ekom/commit/e19d862087f43c5a2fdbaa5e990705cdd23f77e8))
+
 ## [0.2.99](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.98...Ekom.Klaviyo-v0.2.99) (2026-07-07)
 
 
