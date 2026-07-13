@@ -317,9 +317,11 @@ GROUP BY n.parentId, ct.alias",
     {
         const string mediaUdiPrefix = "umb://media/";
         var trimmedValue = value.Trim();
-        return trimmedValue.StartsWith(mediaUdiPrefix, StringComparison.OrdinalIgnoreCase)
+        var identifier = trimmedValue.StartsWith(mediaUdiPrefix, StringComparison.OrdinalIgnoreCase)
             ? trimmedValue[mediaUdiPrefix.Length..]
             : trimmedValue;
+
+        return Guid.TryParse(identifier, out var key) ? key.ToString("D") : identifier;
     }
 
     private static string GetTitle(IContent content)
