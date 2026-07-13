@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.203](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.202...Ekom-v0.2.203) (2026-07-13)
+
+
+### Bug Fixes
+
+* **catalog:** avoid refresh on tab focus ([#699](https://github.com/Vettvangur/Ekom/issues/699)) ([49f8b03](https://github.com/Vettvangur/Ekom/commit/49f8b039d92bf100a3239369943b0785f3e366ba))
+
 ## [0.2.202](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.201...Ekom-v0.2.202) (2026-07-13)
 
 
