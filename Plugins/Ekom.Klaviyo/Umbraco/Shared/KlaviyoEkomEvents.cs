@@ -170,7 +170,7 @@ internal sealed class KlaviyoEkomEvents : IComponent
             OrderId = orderInfo.KlaviyoUniqueId(),
             OrderNumber = orderInfo.OrderNumber,
             Customer = orderInfo.ToKlaviyoProfile(_opt),
-            Items = orderInfo.OrderLines.Select(ol => ol.ToKlaviyoOrderLine(_opt)).ToList(),
+            Items = orderInfo.OrderLines.Select(ol => ol.ToKlaviyoOrderLine(_opt, orderInfo.Culture)).ToList(),
             CheckoutUrl = storeOptions?.CheckoutUrl,
             Value = orderInfo.ChargedAmount.Value,
             ValueFormatted = orderInfo.ChargedAmount.CurrencyString,

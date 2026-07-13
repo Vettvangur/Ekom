@@ -95,7 +95,7 @@ public static class OrderMapper
             ShipTo = klaviyoShipTo,
             StoreAlias = order.StoreInfo.Alias,
             Language = locale,
-            Items = order.OrderLines.ToKlaviyoOrderLines(opt).ToList(),
+            Items = order.OrderLines.ToKlaviyoOrderLines(opt, locale).ToList(),
             TaxValue = order.Vat.Value,
             TaxValueFormatted = order.Vat.CurrencyString,
             DiscountValue = order.DiscountAmount.Value,
