@@ -36,6 +36,16 @@ type CatalogResponse = {
   totalPages: number;
 };
 
+type CatalogSelection = {
+  clearSelection(): void;
+  getSelection(): string[];
+  isSelected(key: string): boolean;
+  setMultiple(value: boolean): void;
+  setSelectable(value: boolean): void;
+  setSelection(selection: string[]): void;
+  toggleSelect(key: string): void;
+};
+
 const DEFAULT_PAGE_SIZE = 16;
 const DEFAULT_SORT = 'sortOrderAsc';
 const CATALOG_NODE_QUERY = 'ekomCatalogNode';
@@ -44,6 +54,7 @@ const GRID_MIN_CARD_WIDTH = 220;
 const MAX_PRODUCT_ROWS = 4;
 const PARENT_STORAGE_PREFIX = 'ekomCatalogParent:';
 const SORT_STORAGE_KEY = 'ekomCatalogSort';
+const HISTORY_STATE_KEY = 'ekomCatalog';
 
 class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   private nodeId = '';
@@ -57,7 +68,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   private revealTimer?: number;
   private resizeTimer?: number;
   private collectionPaginationObserver?: MutationObserver;
-  private readonly selectedProductKeys = new Set<string>();
+  private selection?: CatalogSelection;
   private readonly onPopState = (): void => this.restoreNodeFromHistory();
   private readonly onResize = (): void => {
     if (this.resizeTimer != null) {
@@ -81,12 +92,21 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
 
     this.nodeId = this.getNodeIdFromUrl();
     this.sort = getStoredSort();
+    this.restorePageFromHistory();
 
     this.consumeContext(UMB_COLLECTION_CONTEXT, context => {
       const unique = context?.getConfig()?.unique;
       if (this.getCatalogNodeFromUrl() == null && unique != null && unique !== this.nodeId) {
         this.nodeId = unique;
+        this.restorePageFromHistory();
         void this.load();
+      }
+
+      if (context?.selection != null) {
+        this.selection = context.selection as unknown as CatalogSelection;
+        this.selection.setSelectable(true);
+        this.selection.setMultiple(true);
+        this.observe(context.selection.selection, () => this.render(), 'ekomCatalogCollectionSelection');
       }
 
       this.observe(context?.filter, filter => this.setQueryFromCollectionFilter(filter), 'ekomCatalogCollectionFilter');
@@ -158,14 +178,15 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
 
   private restoreNodeFromHistory(): void {
     const nodeId = this.getNodeIdFromUrl();
-    if (!nodeId || nodeId === this.nodeId) {
+    if (!nodeId) {
       return;
     }
 
     this.nodeId = nodeId;
     this.query = '';
     this.page = 1;
-    this.selectedProductKeys.clear();
+    this.restorePageFromHistory();
+    this.selection?.clearSelection();
     void this.load();
   }
 
@@ -192,6 +213,36 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     return `${PARENT_STORAGE_PREFIX}${nodeId}`;
   }
 
+  private restorePageFromHistory(): void {
+    const state = history.state as Record<string, unknown> | null;
+    const catalogState = state?.[HISTORY_STATE_KEY];
+    if (catalogState == null || typeof catalogState !== 'object') {
+      return;
+    }
+
+    const { nodeId, page } = catalogState as { nodeId?: unknown; page?: unknown };
+    if (nodeId === this.nodeId && typeof page === 'number' && Number.isInteger(page) && page > 0) {
+      this.page = page;
+    }
+  }
+
+  private storePageInHistory(): void {
+    if (!this.nodeId) {
+      return;
+    }
+
+    const state = history.state != null && typeof history.state === 'object'
+      ? history.state as Record<string, unknown>
+      : {};
+    history.replaceState({
+      ...state,
+      [HISTORY_STATE_KEY]: {
+        nodeId: this.nodeId,
+        page: this.page,
+      },
+    }, '', window.location.href);
+  }
+
   private setQueryFromCollectionFilter(value: object | undefined): void {
     const filter = 'filter' in (value ?? {}) ? (value as { filter?: unknown }).filter : undefined;
     const query = typeof filter === 'string' ? filter : '';
@@ -201,6 +252,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
 
     this.query = query;
     this.page = 1;
+    this.storePageInHistory();
     if (this.nodeId) {
       void this.load();
     }
@@ -219,6 +271,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     this.sort = value;
     setStoredSort(value);
     this.page = 1;
+    this.storePageInHistory();
     void this.load();
   }
 
@@ -228,6 +281,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     }
 
     this.page = page;
+    this.storePageInHistory();
     void this.load();
   }
 
@@ -248,33 +302,22 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private toggleProduct(product: CatalogProduct): void {
-    if (this.selectedProductKeys.has(product.key)) {
-      this.selectedProductKeys.delete(product.key);
-    } else {
-      this.selectedProductKeys.add(product.key);
-    }
-
-    this.render();
+    this.selection?.toggleSelect(product.key);
   }
 
   private toggleCurrentPage(): void {
-    const products = this.data?.products ?? [];
-    const allSelected = products.length > 0 && products.every(product => this.selectedProductKeys.has(product.key));
-
-    for (const product of products) {
-      if (allSelected) {
-        this.selectedProductKeys.delete(product.key);
-      } else {
-        this.selectedProductKeys.add(product.key);
-      }
+    if (this.selection == null) {
+      return;
     }
 
-    this.render();
-  }
+    const products = this.data?.products ?? [];
+    const productKeys = products.map(product => product.key);
+    const allSelected = productKeys.length > 0 && productKeys.every(key => this.selection!.isSelected(key));
+    const selection = this.selection.getSelection();
 
-  private clearSelection(): void {
-    this.selectedProductKeys.clear();
-    this.render();
+    this.selection.setSelection(allSelected
+      ? selection.filter(key => !productKeys.includes(key))
+      : [...new Set([...selection, ...productKeys])]);
   }
 
   private revealCollectionHost(): void {
@@ -362,7 +405,6 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
       return '<div class="surface state">No catalog data.</div>';
     }
 
-    const selectedCount = this.selectedProductKeys.size;
     const isEmptyCategory = !this.query && this.data.productCount === 0 && this.data.subcategoryCount === 0;
 
     if (isEmptyCategory) {
@@ -377,7 +419,6 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
       ${this.renderBreadcrumbs(this.data)}
       ${this.renderHeader(this.data)}
       ${this.renderToolbar(this.data)}
-      ${selectedCount > 0 ? this.renderBulkBar(selectedCount) : ''}
       ${!this.query && this.data.subcategories.length > 0 ? this.renderSubcategories(this.data.subcategories) : ''}
       ${this.renderProducts(this.data)}
       ${this.renderPagination(this.data)}
@@ -405,7 +446,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private renderToolbar(data: CatalogResponse): string {
-    const currentPageSelected = data.products.length > 0 && data.products.every(product => this.selectedProductKeys.has(product.key));
+    const currentPageSelected = data.products.length > 0 && data.products.every(product => this.selection?.isSelected(product.key));
 
     return `
       <div class="toolbar">
@@ -430,20 +471,6 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
 
   private renderSortOption(value: string, label: string): string {
     return `<option value="${value}" ${this.sort === value ? 'selected' : ''}>${label}</option>`;
-  }
-
-  private renderBulkBar(selectedCount: number): string {
-    return `
-      <div class="bulk-bar">
-        <strong>${selectedCount} selected</strong>
-        <div>
-          <button type="button" disabled>Publish</button>
-          <button type="button" disabled>Unpublish</button>
-          <button type="button" disabled>Move</button>
-          <button type="button" class="clear" data-action="clear-selection">Clear ✕</button>
-        </div>
-      </div>
-    `;
   }
 
   private renderSubcategories(subcategories: CatalogNode[]): string {
@@ -482,7 +509,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private renderProduct(product: CatalogProduct): string {
-    const selected = this.selectedProductKeys.has(product.key);
+    const selected = this.selection?.isSelected(product.key) ?? false;
     const href = `/umbraco/section/content/workspace/document/edit/${product.key}`;
 
     return `
@@ -547,7 +574,6 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
       }
     });
     this.querySelector('[data-action="toggle-page"]')?.addEventListener('click', () => this.toggleCurrentPage());
-    this.querySelector('[data-action="clear-selection"]')?.addEventListener('click', () => this.clearSelection());
     this.querySelector('[data-field="sort"]')?.addEventListener('input', event => this.setSort((event.target as HTMLSelectElement).value));
     this.querySelector('[data-field="sort"]')?.addEventListener('change', event => this.setSort((event.target as HTMLSelectElement).value));
     this.querySelectorAll<HTMLElement>('[data-product-key]').forEach(element => {
@@ -684,9 +710,6 @@ const styles = `
   .select-all { align-items: center; display: flex; gap: 8px; }
   .fake-checkbox { border: 1px solid #b8b8b8; border-radius: 2px; height: 14px; width: 14px; }
   .fake-checkbox.checked { background: #2152a3; border-color: #2152a3; }
-  .bulk-bar { align-items: center; background: #1b264f; border-radius: 3px; color: #fff; display: flex; justify-content: space-between; margin-bottom: 18px; padding: 12px 14px; }
-  .bulk-bar button { background: transparent; border: 1px solid rgba(255,255,255,.75); border-radius: 3px; color: #fff; margin-left: 8px; padding: 6px 10px; }
-  .bulk-bar .clear { border: 0; }
   .section { margin-top: 22px; }
   h2 { color: #777; font-size: 11px; letter-spacing: .08em; margin: 0 0 10px; text-transform: uppercase; }
   .chips { display: flex; flex-wrap: wrap; gap: 10px; }
