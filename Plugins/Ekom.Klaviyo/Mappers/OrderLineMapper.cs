@@ -8,11 +8,13 @@ namespace Ekom.Klaviyo.Mappers;
 
 public static class OrderLineMapper
 {
-    public static KlaviyoOrderLine ToKlaviyoOrderLine(this IOrderLine ol, KlaviyoOptions opt)
+    public static KlaviyoOrderLine ToKlaviyoOrderLine(this IOrderLine ol, KlaviyoOptions opt, string? culture = null)
     {
+        using var cultureScope = KlaviyoCultureScope.Apply(culture);
+
         var product = API.Catalog.Instance.GetProduct(ol.ProductKey, ol.OrderInfo.StoreInfo.Alias);
 
-        var categories = product?.Categories.Select(x => x.Title).ToList() ?? null;
+        var categories = product?.Categories.Select(x => x.Title).ToList();
 
         var orderlineAmount = ol.Amount;
         var productPrice = ol.Product?.Price;
@@ -55,9 +57,9 @@ public static class OrderLineMapper
         return orderLine;
     }
 
-    public static IEnumerable<KlaviyoOrderLine> ToKlaviyoOrderLines(this IEnumerable<IOrderLine> orderlines, KlaviyoOptions opt)
+    public static IEnumerable<KlaviyoOrderLine> ToKlaviyoOrderLines(this IEnumerable<IOrderLine> orderlines, KlaviyoOptions opt, string? culture = null)
     {
-        return orderlines.Select(x => x.ToKlaviyoOrderLine(opt));
+        return orderlines.Select(x => x.ToKlaviyoOrderLine(opt, culture));
     }
     internal static JsonArray ToOrderLinesEvent(this IEnumerable<KlaviyoOrderLine> lines)
     {

@@ -117,6 +117,7 @@ internal class KlaviyoProductController : ControllerBase
                             new KlaviyoProductFeedEnrichmentContext
                             {
                                 StoreAlias = storeAlias,
+                                Culture = resolvedCulture,
                                 Product = product,
                                 FeedItem = item,
                                 Options = _opt
