@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.201](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.200...Ekom-v0.2.201) (2026-07-11)
+
+
+### Features
+
+* **catalog:** add custom collection view ([#693](https://github.com/Vettvangur/Ekom/issues/693)) ([b8d03a6](https://github.com/Vettvangur/Ekom/commit/b8d03a6d35c90e24e679ff212f297ef2d62e547e))
+
 ## [0.2.200](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.199...Ekom-v0.2.200) (2026-07-10)
 
 
