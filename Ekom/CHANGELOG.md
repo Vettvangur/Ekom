@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.204](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.203...Ekom-v0.2.204) (2026-07-13)
+
+
+### Features
+
+* **catalog:** use native bulk selection ([#701](https://github.com/Vettvangur/Ekom/issues/701)) ([90321a8](https://github.com/Vettvangur/Ekom/commit/90321a8e39f0c46342266fdca14e1ddae278974a))
+
 ## [0.2.203](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.202...Ekom-v0.2.203) (2026-07-13)
 
 
