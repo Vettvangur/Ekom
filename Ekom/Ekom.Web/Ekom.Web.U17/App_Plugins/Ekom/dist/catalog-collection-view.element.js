@@ -1,45 +1,42 @@
-var $ = Object.defineProperty;
-var P = (o, d, e) => d in o ? $(o, d, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[d] = e;
-var a = (o, d, e) => P(o, typeof d != "symbol" ? d + "" : d, e);
+var S = Object.defineProperty;
+var P = (i, d, e) => d in i ? S(i, d, { enumerable: !0, configurable: !0, writable: !0, value: e }) : i[d] = e;
+var n = (i, d, e) => P(i, typeof d != "symbol" ? d + "" : d, e);
 import { UMB_COLLECTION_CONTEXT as C } from "@umbraco-cms/backoffice/collection";
 import { UmbElementMixin as E } from "@umbraco-cms/backoffice/element-api";
 import "@umbraco-cms/backoffice/imaging";
-const z = 16, h = "sortOrderAsc", g = "ekomCatalogNode", b = 14, T = 220, O = 4, I = "ekomCatalogParent:", x = "ekomCatalogSort";
-class q extends E(HTMLElement) {
+const z = 16, h = "sortOrderAsc", g = "ekomCatalogNode", b = 14, T = 220, O = 4, q = "ekomCatalogParent:", x = "ekomCatalogSort";
+class A extends E(HTMLElement) {
   constructor() {
     super(...arguments);
-    a(this, "nodeId", "");
-    a(this, "query", "");
-    a(this, "sort", m());
-    a(this, "page", 1);
-    a(this, "pageSize", z);
-    a(this, "loading", !0);
-    a(this, "error", "");
-    a(this, "data");
-    a(this, "revealTimer");
-    a(this, "resizeTimer");
-    a(this, "collectionPaginationObserver");
-    a(this, "selectedProductKeys", /* @__PURE__ */ new Set());
-    a(this, "onPopState", () => this.restoreNodeFromHistory());
-    a(this, "onResize", () => {
+    n(this, "nodeId", "");
+    n(this, "query", "");
+    n(this, "sort", m());
+    n(this, "page", 1);
+    n(this, "pageSize", z);
+    n(this, "loading", !0);
+    n(this, "error", "");
+    n(this, "data");
+    n(this, "revealTimer");
+    n(this, "resizeTimer");
+    n(this, "collectionPaginationObserver");
+    n(this, "selectedProductKeys", /* @__PURE__ */ new Set());
+    n(this, "onPopState", () => this.restoreNodeFromHistory());
+    n(this, "onResize", () => {
       this.resizeTimer != null && window.clearTimeout(this.resizeTimer), this.resizeTimer = window.setTimeout(() => {
         this.updatePageSizeForViewport() && this.nodeId && this.data != null && !this.loading && this.load(!1);
       }, 150);
     });
-    a(this, "onWindowFocus", () => {
-      document.visibilityState !== "hidden" && this.nodeId && !this.loading && this.load(!1);
-    });
   }
   connectedCallback() {
-    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), window.addEventListener("popstate", this.onPopState), window.addEventListener("resize", this.onResize), window.addEventListener("focus", this.onWindowFocus), document.addEventListener("visibilitychange", this.onWindowFocus), this.revealCollectionHost(), this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250), this.nodeId = this.getNodeIdFromUrl(), this.sort = m(), this.consumeContext(C, (e) => {
+    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), window.addEventListener("popstate", this.onPopState), window.addEventListener("resize", this.onResize), this.revealCollectionHost(), this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250), this.nodeId = this.getNodeIdFromUrl(), this.sort = m(), this.consumeContext(C, (e) => {
       var r;
       const t = (r = e == null ? void 0 : e.getConfig()) == null ? void 0 : r.unique;
-      this.getCatalogNodeFromUrl() == null && t != null && t !== this.nodeId && (this.nodeId = t, this.load()), this.observe(e == null ? void 0 : e.filter, (i) => this.setQueryFromCollectionFilter(i), "ekomCatalogCollectionFilter");
+      this.getCatalogNodeFromUrl() == null && t != null && t !== this.nodeId && (this.nodeId = t, this.load()), this.observe(e == null ? void 0 : e.filter, (o) => this.setQueryFromCollectionFilter(o), "ekomCatalogCollectionFilter");
     }), this.render(), this.nodeId && this.load();
   }
   disconnectedCallback() {
     var e;
-    window.removeEventListener("popstate", this.onPopState), window.removeEventListener("resize", this.onResize), window.removeEventListener("focus", this.onWindowFocus), document.removeEventListener("visibilitychange", this.onWindowFocus), this.revealTimer != null && window.clearTimeout(this.revealTimer), this.resizeTimer != null && window.clearTimeout(this.resizeTimer), (e = this.collectionPaginationObserver) == null || e.disconnect(), this.collectionPaginationObserver = void 0, super.disconnectedCallback();
+    window.removeEventListener("popstate", this.onPopState), window.removeEventListener("resize", this.onResize), this.revealTimer != null && window.clearTimeout(this.revealTimer), this.resizeTimer != null && window.clearTimeout(this.resizeTimer), (e = this.collectionPaginationObserver) == null || e.disconnect(), this.collectionPaginationObserver = void 0, super.disconnectedCallback();
   }
   async load(e = !0) {
     if (!this.nodeId) {
@@ -81,7 +78,7 @@ class q extends E(HTMLElement) {
     return e ? (window.location.replace(this.getDocumentHref(e)), !0) : !1;
   }
   getParentStorageKey(e) {
-    return `${I}${e}`;
+    return `${q}${e}`;
   }
   setQueryFromCollectionFilter(e) {
     const t = "filter" in (e ?? {}) ? e.filter : void 0, r = typeof t == "string" ? t : "";
@@ -111,9 +108,9 @@ class q extends E(HTMLElement) {
   }
   toggleCurrentPage() {
     var r;
-    const e = ((r = this.data) == null ? void 0 : r.products) ?? [], t = e.length > 0 && e.every((i) => this.selectedProductKeys.has(i.key));
-    for (const i of e)
-      t ? this.selectedProductKeys.delete(i.key) : this.selectedProductKeys.add(i.key);
+    const e = ((r = this.data) == null ? void 0 : r.products) ?? [], t = e.length > 0 && e.every((o) => this.selectedProductKeys.has(o.key));
+    for (const o of e)
+      t ? this.selectedProductKeys.delete(o.key) : this.selectedProductKeys.add(o.key);
     this.render();
   }
   clearSelection() {
@@ -121,8 +118,8 @@ class q extends E(HTMLElement) {
   }
   revealCollectionHost() {
     for (const e of this.getComposedAncestors("umb-collection-default")) {
-      const t = e.shadowRoot, r = t == null ? void 0 : t.querySelector("#router"), i = t == null ? void 0 : t.querySelector("umb-body-layout"), n = t == null ? void 0 : t.querySelector("#empty-state");
-      r == null || r.style.setProperty("visibility", "visible", "important"), n == null || n.style.setProperty("display", "none", "important"), i == null || i.classList.add("has-items");
+      const t = e.shadowRoot, r = t == null ? void 0 : t.querySelector("#router"), o = t == null ? void 0 : t.querySelector("umb-body-layout"), a = t == null ? void 0 : t.querySelector("#empty-state");
+      r == null || r.style.setProperty("visibility", "visible", "important"), a == null || a.style.setProperty("display", "none", "important"), o == null || o.classList.add("has-items");
     }
     for (const e of this.getComposedShadowRoots())
       this.hideDefaultCollectionPagination(e), this.observeDefaultCollectionPagination(e);
@@ -182,8 +179,8 @@ class q extends E(HTMLElement) {
   }
   renderBreadcrumbs(e) {
     return `<nav class="breadcrumbs">${e.breadcrumbs.map((t, r) => {
-      const i = r === e.breadcrumbs.length - 1, n = l(t.title || t.name);
-      return `${r > 0 ? '<span class="sep">/</span>' : ""}${i ? `<span>${n}</span>` : `<a href="${this.getDocumentHref(t.key)}">${n}</a>`}`;
+      const o = r === e.breadcrumbs.length - 1, a = l(t.title || t.name);
+      return `${r > 0 ? '<span class="sep">/</span>' : ""}${o ? `<span>${a}</span>` : `<a href="${this.getDocumentHref(t.key)}">${a}</a>`}`;
     }).join("")}</nav>`;
   }
   renderHeader(e) {
@@ -275,7 +272,7 @@ class q extends E(HTMLElement) {
         <div class="card-body">
           <a class="title" href="${r}">${l(e.title || e.name)}</a>
           <div class="meta"><span>${e.sku ? `SKU ${l(e.sku)}` : "No SKU"}</span><strong>${l(e.price)}</strong></div>
-          <div class="status-row"><span class="pill ${A(e.status)}"><i></i>${e.status}</span><strong class="availability ${e.available ? "ok" : "bad"}">${e.available ? "✓ Available" : "✕ Unavailable"}</strong></div>
+          <div class="status-row"><span class="pill ${I(e.status)}"><i></i>${e.status}</span><strong class="availability ${e.available ? "ok" : "bad"}">${e.available ? "✓ Available" : "✕ Unavailable"}</strong></div>
         </div>
       </article>
     `;
@@ -288,7 +285,7 @@ class q extends E(HTMLElement) {
       <footer class="pagination">
         <div>
           <button type="button" data-page="${e.page - 1}" ${e.page <= 1 ? "disabled" : ""}>‹ Prev</button>
-          ${this.paginationItems(e.page, e.totalPages).map((i) => i === "…" ? "<span>…</span>" : `<button type="button" class="${i === e.page ? "current" : ""}" data-page="${i}">${i}</button>`).join("")}
+          ${this.paginationItems(e.page, e.totalPages).map((o) => o === "…" ? "<span>…</span>" : `<button type="button" class="${o === e.page ? "current" : ""}" data-page="${o}">${o}</button>`).join("")}
           <button type="button" data-page="${e.page + 1}" ${e.page >= e.totalPages ? "disabled" : ""}>Next ›</button>
         </div>
         <span>${t}–${r} of ${e.filteredProductCount}</span>
@@ -298,23 +295,23 @@ class q extends E(HTMLElement) {
   paginationItems(e, t) {
     if (t <= 7)
       return Array.from({ length: t }, (c, s) => s + 1);
-    const i = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((c) => c >= 1 && c <= t).sort((c, s) => c - s), n = [];
-    for (const c of i) {
-      const s = n[n.length - 1];
-      typeof s == "number" && c - s > 1 && n.push("…"), n.push(c);
+    const o = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((c) => c >= 1 && c <= t).sort((c, s) => c - s), a = [];
+    for (const c of o) {
+      const s = a[a.length - 1];
+      typeof s == "number" && c - s > 1 && a.push("…"), a.push(c);
     }
-    return n;
+    return a;
   }
   bindEvents() {
-    var e, t, r, i, n, c;
+    var e, t, r, o, a, c;
     (e = this.querySelector('[data-action="retry"]')) == null || e.addEventListener("click", () => void this.load()), (t = this.querySelector('[data-action="back"]')) == null || t.addEventListener("click", () => {
       var s;
       ((s = this.data) == null ? void 0 : s.parent) != null && this.drillTo(this.data.parent);
-    }), (r = this.querySelector('[data-action="toggle-page"]')) == null || r.addEventListener("click", () => this.toggleCurrentPage()), (i = this.querySelector('[data-action="clear-selection"]')) == null || i.addEventListener("click", () => this.clearSelection()), (n = this.querySelector('[data-field="sort"]')) == null || n.addEventListener("input", (s) => this.setSort(s.target.value)), (c = this.querySelector('[data-field="sort"]')) == null || c.addEventListener("change", (s) => this.setSort(s.target.value)), this.querySelectorAll("[data-product-key]").forEach((s) => {
-      s.addEventListener("click", (w) => {
+    }), (r = this.querySelector('[data-action="toggle-page"]')) == null || r.addEventListener("click", () => this.toggleCurrentPage()), (o = this.querySelector('[data-action="clear-selection"]')) == null || o.addEventListener("click", () => this.clearSelection()), (a = this.querySelector('[data-field="sort"]')) == null || a.addEventListener("input", (s) => this.setSort(s.target.value)), (c = this.querySelector('[data-field="sort"]')) == null || c.addEventListener("change", (s) => this.setSort(s.target.value)), this.querySelectorAll("[data-product-key]").forEach((s) => {
+      s.addEventListener("click", (k) => {
         var u;
-        w.preventDefault();
-        const k = s.dataset.productKey, p = (u = this.data) == null ? void 0 : u.products.find((S) => S.key === k);
+        k.preventDefault();
+        const w = s.dataset.productKey, p = (u = this.data) == null ? void 0 : u.products.find(($) => $.key === w);
         p != null && this.toggleProduct(p);
       });
     }), this.querySelectorAll("[data-page]").forEach((s) => {
@@ -328,8 +325,8 @@ class q extends E(HTMLElement) {
     const t = window.location.href, r = t.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
     if (r != null)
       return r[0];
-    const i = t.match(/\/edit\/([^/?#]+)/i);
-    return (i == null ? void 0 : i[1]) ?? "";
+    const o = t.match(/\/edit\/([^/?#]+)/i);
+    return (o == null ? void 0 : o[1]) ?? "";
   }
   getDocumentHref(e) {
     const t = new URL(window.location.href);
@@ -351,13 +348,13 @@ class f extends Error {
     super(d), this.status = e;
   }
 }
-function l(o) {
-  return o.replace(/[&<>"]/g, (d) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[d] ?? d);
+function l(i) {
+  return i.replace(/[&<>"]/g, (d) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[d] ?? d);
 }
-function A(o) {
-  return o === "Published" ? "published" : o === "Pending changes" ? "pending" : "unpublished";
+function I(i) {
+  return i === "Published" ? "published" : i === "Pending changes" ? "pending" : "unpublished";
 }
-function v(o) {
+function v(i) {
   return [
     "sortOrderAsc",
     "sortOrderDesc",
@@ -371,19 +368,19 @@ function v(o) {
     "createdDesc",
     "updatedAsc",
     "updatedDesc"
-  ].includes(o);
+  ].includes(i);
 }
 function m() {
   try {
-    const o = window.localStorage.getItem(x);
-    return o != null && v(o) ? o : h;
+    const i = window.localStorage.getItem(x);
+    return i != null && v(i) ? i : h;
   } catch {
     return h;
   }
 }
-function y(o) {
+function y(i) {
   try {
-    window.localStorage.setItem(x, o);
+    window.localStorage.setItem(x, i);
   } catch {
   }
 }
@@ -453,7 +450,7 @@ const N = `
   .pagination button { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; min-width: 34px; padding: 7px 10px; }
   .pagination .current { background: #1b264f; border-color: #1b264f; color: #fff; }
 `;
-customElements.define("ekom-catalog-collection-view", q);
+customElements.define("ekom-catalog-collection-view", A);
 export {
-  q as default
+  A as default
 };

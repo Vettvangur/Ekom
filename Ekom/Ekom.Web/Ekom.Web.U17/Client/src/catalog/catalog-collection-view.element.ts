@@ -70,20 +70,12 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
       }
     }, 150);
   };
-  private readonly onWindowFocus = (): void => {
-    if (document.visibilityState !== 'hidden' && this.nodeId && !this.loading) {
-      void this.load(false);
-    }
-  };
-
   override connectedCallback(): void {
     super.connectedCallback();
     this.style.setProperty('display', 'block', 'important');
     this.style.setProperty('visibility', 'visible', 'important');
     window.addEventListener('popstate', this.onPopState);
     window.addEventListener('resize', this.onResize);
-    window.addEventListener('focus', this.onWindowFocus);
-    document.addEventListener('visibilitychange', this.onWindowFocus);
     this.revealCollectionHost();
     this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250);
 
@@ -110,8 +102,6 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   override disconnectedCallback(): void {
     window.removeEventListener('popstate', this.onPopState);
     window.removeEventListener('resize', this.onResize);
-    window.removeEventListener('focus', this.onWindowFocus);
-    document.removeEventListener('visibilitychange', this.onWindowFocus);
     if (this.revealTimer != null) {
       window.clearTimeout(this.revealTimer);
     }
