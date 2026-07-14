@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.206](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.205...Ekom-v0.2.206) (2026-07-14)
+
+
+### Bug Fixes
+
+* **catalog:** page large category collections ([#705](https://github.com/Vettvangur/Ekom/issues/705)) ([993d44c](https://github.com/Vettvangur/Ekom/commit/993d44cc647063781e216975b477898e4c705dfe))
+
 ## [0.2.205](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.204...Ekom-v0.2.205) (2026-07-14)
 
 
