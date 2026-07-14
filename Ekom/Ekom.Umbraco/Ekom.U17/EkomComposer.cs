@@ -1,7 +1,10 @@
+using Ekom.Umb.Cache;
+using Microsoft.Extensions.DependencyInjection;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Routing;
+using Umbraco.Cms.Infrastructure.HybridCache;
 
 namespace Ekom.Umb;
 
@@ -16,6 +19,8 @@ public sealed class EkomComposer : IComposer
             .InsertBefore<ContentFinderByPageIdQuery, CatalogContentFinder>();
         builder.UrlProviders()
             .Insert<CatalogUrlProvider>();
+
+        builder.Services.AddSingleton<IDocumentSeedKeyProvider, EkomCatalogSeedKeyProvider>();
 
         builder.Components()
             .Append<EnsureTablesExist>()
