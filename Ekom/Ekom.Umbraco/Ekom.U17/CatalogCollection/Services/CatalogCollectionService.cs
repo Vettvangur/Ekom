@@ -5,8 +5,10 @@ using Newtonsoft.Json;
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Infrastructure.Persistence.Querying;
 using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Extensions;
 
@@ -18,11 +20,16 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
     private static readonly HashSet<string> CatalogAliases = new(StringComparer.OrdinalIgnoreCase) { "ekmCategory", "ekmProduct" };
 
     private readonly IContentService _contentService;
+    private readonly IContentTypeService _contentTypeService;
     private readonly IScopeProvider _scopeProvider;
 
-    public CatalogCollectionService(IContentService contentService, IScopeProvider scopeProvider)
+    public CatalogCollectionService(
+        IContentService contentService,
+        IContentTypeService contentTypeService,
+        IScopeProvider scopeProvider)
     {
         _contentService = contentService;
+        _contentTypeService = contentTypeService;
         _scopeProvider = scopeProvider;
     }
 
@@ -43,9 +50,7 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
 
         var pageSize = Math.Clamp(request.PageSize <= 0 ? 80 : request.PageSize, 1, MaxPageSize);
         var page = Math.Max(request.Page, 1);
-        var children = GetCatalogChildren(current.Id);
-        var subcategoryContent = children
-            .Where(x => x.ContentType.Alias.Equals("ekmCategory", StringComparison.OrdinalIgnoreCase))
+        var subcategoryContent = GetCatalogChildren(current.Id, "ekmCategory")
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .ToList();
@@ -53,20 +58,43 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
         var subcategories = subcategoryContent
             .Select(category => MapNode(category, subcategoryCounts.GetValueOrDefault(category.Id)))
             .ToList();
-        var products = children
-            .Where(x => x.ContentType.Alias.Equals("ekmProduct", StringComparison.OrdinalIgnoreCase))
-            .Select(MapProduct)
-            .ToList();
+        var hasQuery = !string.IsNullOrWhiteSpace(request.Query);
+        var productCount = 0;
+        var filteredProductCount = 0;
+        var totalPages = 1;
+        IReadOnlyList<CatalogCollectionProduct> pagedProducts;
 
-        var filteredProducts = FilterProducts(products, request.Query);
-        filteredProducts = SortProducts(filteredProducts, request.Sort);
+        if (hasQuery)
+        {
+            var products = GetCatalogChildren(current.Id, "ekmProduct")
+                .Select(MapProduct)
+                .ToList();
+            var filteredProducts = SortProducts(FilterProducts(products, request.Query), request.Sort);
 
-        var totalPages = Math.Max(1, (int)Math.Ceiling(filteredProducts.Count / (double)pageSize));
-        page = Math.Min(page, totalPages);
-        var pagedProducts = filteredProducts
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
+            productCount = products.Count;
+            filteredProductCount = filteredProducts.Count;
+            totalPages = Math.Max(1, (int)Math.Ceiling(filteredProductCount / (double)pageSize));
+            page = Math.Min(page, totalPages);
+            pagedProducts = filteredProducts
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+        }
+        else
+        {
+            var productContent = GetPagedProducts(current.Id, page - 1, pageSize, request.Sort, out var totalProducts);
+            productCount = (int)Math.Min(totalProducts, int.MaxValue);
+            filteredProductCount = productCount;
+            totalPages = Math.Max(1, (int)Math.Ceiling(productCount / (double)pageSize));
+            page = Math.Min(page, totalPages);
+
+            if (page - 1 != request.Page - 1)
+            {
+                productContent = GetPagedProducts(current.Id, page - 1, pageSize, request.Sort, out _);
+            }
+
+            pagedProducts = productContent.Select(MapProduct).ToList();
+        }
 
         return new CatalogCollectionResponse
         {
@@ -75,9 +103,9 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
             Breadcrumbs = GetBreadcrumbs(current),
             Subcategories = subcategories,
             Products = pagedProducts,
-            ProductCount = products.Count,
+            ProductCount = productCount,
             SubcategoryCount = subcategories.Count,
-            FilteredProductCount = filteredProducts.Count,
+            FilteredProductCount = filteredProductCount,
             Page = page,
             PageSize = pageSize,
             TotalPages = totalPages,
@@ -100,11 +128,58 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
         return content ?? throw new Exceptions.HttpResponseException(HttpStatusCode.NotFound);
     }
 
-    private IReadOnlyList<IContent> GetCatalogChildren(int parentId)
+    private IReadOnlyList<IContent> GetCatalogChildren(int parentId, string contentTypeAlias)
     {
-        return _contentService.GetPagedChildren(parentId, 0, int.MaxValue, out _)
-            .Where(x => !x.Trashed && CatalogAliases.Contains(x.ContentType.Alias))
+        var contentType = _contentTypeService.Get(contentTypeAlias)
+            ?? throw new InvalidOperationException($"Content type {contentTypeAlias} not found.");
+        var filter = new Query<IContent>(_scopeProvider.SqlContext)
+            .Where(x => !x.Trashed && x.ContentTypeId == contentType.Id);
+
+        return _contentService.GetPagedChildren(
+                parentId,
+                0,
+                int.MaxValue,
+                out _,
+                filter,
+                Ordering.ByDefault())
             .ToList();
+    }
+
+    private IReadOnlyList<IContent> GetPagedProducts(
+        int parentId,
+        int pageIndex,
+        int pageSize,
+        string? sort,
+        out long totalRecords)
+    {
+        var productType = _contentTypeService.Get("ekmProduct")
+            ?? throw new InvalidOperationException("Content type ekmProduct not found.");
+        var filter = new Query<IContent>(_scopeProvider.SqlContext)
+            .Where(x => !x.Trashed && x.ContentTypeId == productType.Id);
+
+        return _contentService.GetPagedChildren(
+                parentId,
+                pageIndex,
+                pageSize,
+                out totalRecords,
+                filter,
+                GetProductOrdering(sort))
+            .ToList();
+    }
+
+    private static Ordering GetProductOrdering(string? sort)
+    {
+        return (sort ?? string.Empty).ToUpperInvariant() switch
+        {
+            "SORTORDERDESC" => Ordering.By("sortOrder", Direction.Descending),
+            "NAMEASC" => Ordering.By("name", Direction.Ascending),
+            "NAMEDESC" => Ordering.By("name", Direction.Descending),
+            "CREATEDASC" => Ordering.By("createDate", Direction.Ascending),
+            "CREATEDDESC" => Ordering.By("createDate", Direction.Descending),
+            "UPDATEDASC" => Ordering.By("updateDate", Direction.Ascending),
+            "UPDATEDDESC" => Ordering.By("updateDate", Direction.Descending),
+            _ => Ordering.By("sortOrder", Direction.Ascending),
+        };
     }
 
     private CatalogCollectionNode? GetParent(IContent content)
@@ -164,10 +239,6 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
         {
             "SORTORDERDESC" => products.OrderByDescending(x => x.SortOrder).ThenBy(x => x.Title).ToList(),
             "NAMEDESC" => products.OrderByDescending(x => x.Title).ThenBy(x => x.Sku).ToList(),
-            "PRICEASC" => products.OrderBy(x => x.PriceValue ?? decimal.MaxValue).ThenBy(x => x.Title).ToList(),
-            "PRICEDESC" => products.OrderByDescending(x => x.PriceValue ?? decimal.MinValue).ThenBy(x => x.Title).ToList(),
-            "SKUASC" => products.OrderBy(x => x.Sku).ThenBy(x => x.Title).ToList(),
-            "SKUDESC" => products.OrderByDescending(x => x.Sku).ThenBy(x => x.Title).ToList(),
             "CREATEDASC" => products.OrderBy(x => x.CreatedDate).ThenBy(x => x.Title).ToList(),
             "CREATEDDESC" => products.OrderByDescending(x => x.CreatedDate).ThenBy(x => x.Title).ToList(),
             "UPDATEDASC" => products.OrderBy(x => x.UpdatedDate).ThenBy(x => x.Title).ToList(),
