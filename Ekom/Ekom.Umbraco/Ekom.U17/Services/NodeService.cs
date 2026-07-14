@@ -63,13 +63,20 @@ internal sealed class NodeService : INodeService
             return Array.Empty<UmbracoContent>();
         }
 
-        var nodes = _documentCacheService.GetByContentType(contentType).ToList();
+        var nodes = _documentCacheService.GetByContentType(contentType)
+            .Where(x => x.IsPublished())
+            .ToList();
 
         var metadata = BuildContentMetadata(nodes, rootNode);
+        var publishedKeys = _publishedContentQuery.Content(
+                metadata.Values.SelectMany(x => x.PathKeys).Distinct())
+            .Select(x => x.Key)
+            .ToHashSet();
         var rootPathValue = rootNode.Id.ToString();
         nodes = nodes
             .Where(x => metadata.TryGetValue(x.Key, out var itemMetadata)
-                && itemMetadata.Path.Split(',').Contains(rootPathValue))
+                && itemMetadata.Path.Split(',').Contains(rootPathValue)
+                && itemMetadata.PathKeys.All(publishedKeys.Contains))
             .ToList();
 
         var results = nodes
@@ -131,7 +138,8 @@ internal sealed class NodeService : INodeService
             metadata[node.Key] = new ContentMetadata(
                 parentKey.HasValue && idsByKey.TryGetValue(parentKey.Value, out var parentId) ? parentId : null,
                 parentKey,
-                string.Join(',', pathIds));
+                string.Join(',', pathIds),
+                pathKeys);
         }
 
         return metadata;
@@ -501,5 +509,9 @@ internal sealed class NodeService : INodeService
         return false;
     }
 
-    private sealed record ContentMetadata(int? ParentId, Guid? ParentKey, string Path);
+    private sealed record ContentMetadata(
+        int? ParentId,
+        Guid? ParentKey,
+        string Path,
+        IReadOnlyList<Guid> PathKeys);
 }
