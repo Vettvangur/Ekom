@@ -129,6 +129,8 @@ internal sealed class UmbracoEventListeners :
     {
         foreach (var node in notification.UnpublishedEntities)
         {
+            RemoveDescendantsFromCaches(node.Id);
+
             if (!node.ContentType.Alias.StartsWith("ekm", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -139,7 +141,6 @@ internal sealed class UmbracoEventListeners :
             var cacheEntry = FindMatchingCache(node.ContentType.Alias);
             cacheEntry?.Remove(node.Key);
 
-            RefreshCacheForRelatedNodes(node.Id, true);
             _ = RevalidateAsync(node, cancellationToken);
         }
 
@@ -351,6 +352,42 @@ internal sealed class UmbracoEventListeners :
         {
             var cacheEntry = FindMatchingCache(ancestor.ContentType.Alias);
             cacheEntry?.AddReplace(new Umbraco17Content(ancestor));
+        }
+    }
+
+    private void RemoveDescendantsFromCaches(int parentId)
+    {
+        const int pageSize = 2_000;
+        long pageIndex = 0;
+        long descendantCount = 0;
+
+        while (true)
+        {
+            var batch = _contentService.GetPagedDescendants(parentId, pageIndex, pageSize, out var totalRecords);
+            var descendants = batch as IList<IContent> ?? batch.ToList();
+
+            if (descendants.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var descendant in descendants)
+            {
+                if (!descendant.ContentType.Alias.StartsWith("ekm", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                FindMatchingCache(descendant.ContentType.Alias)?.Remove(descendant.Key);
+            }
+
+            descendantCount += descendants.Count;
+            if (descendantCount >= totalRecords)
+            {
+                return;
+            }
+
+            pageIndex++;
         }
     }
 
