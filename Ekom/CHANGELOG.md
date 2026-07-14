@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.207](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.206...Ekom-v0.2.207) (2026-07-14)
+
+
+### Features
+
+* **cache:** add optional catalog cache seeding ([#707](https://github.com/Vettvangur/Ekom/issues/707)) ([4bb5d0a](https://github.com/Vettvangur/Ekom/commit/4bb5d0aea2c7eb3cee0bcdcfcb3d8773c97b1d7d))
+
 ## [0.2.206](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.205...Ekom-v0.2.206) (2026-07-14)
 
 
