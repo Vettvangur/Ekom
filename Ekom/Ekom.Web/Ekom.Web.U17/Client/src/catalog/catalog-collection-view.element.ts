@@ -414,10 +414,6 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
           ${this.renderSortOption('sortOrderDesc', 'Sort order desc')}
           ${this.renderSortOption('nameAsc', 'Name asc')}
           ${this.renderSortOption('nameDesc', 'Name desc')}
-          ${this.renderSortOption('priceAsc', 'Price asc')}
-          ${this.renderSortOption('priceDesc', 'Price desc')}
-          ${this.renderSortOption('skuAsc', 'SKU asc')}
-          ${this.renderSortOption('skuDesc', 'SKU desc')}
           ${this.renderSortOption('createdAsc', 'Created asc')}
           ${this.renderSortOption('createdDesc', 'Created desc')}
           ${this.renderSortOption('updatedAsc', 'Updated asc')}
@@ -633,10 +629,6 @@ function isSortOption(value: string): boolean {
     'sortOrderDesc',
     'nameAsc',
     'nameDesc',
-    'priceAsc',
-    'priceDesc',
-    'skuAsc',
-    'skuDesc',
     'createdAsc',
     'createdDesc',
     'updatedAsc',

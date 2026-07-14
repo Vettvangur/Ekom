@@ -5,7 +5,7 @@ import { UMB_COLLECTION_CONTEXT as C } from "@umbraco-cms/backoffice/collection"
 import { UmbElementMixin as E } from "@umbraco-cms/backoffice/element-api";
 import "@umbraco-cms/backoffice/imaging";
 const z = 16, h = "sortOrderAsc", g = "ekomCatalogNode", b = 14, T = 220, O = 4, q = "ekomCatalogParent:", x = "ekomCatalogSort";
-class A extends E(HTMLElement) {
+class I extends E(HTMLElement) {
   constructor() {
     super(...arguments);
     n(this, "nodeId", "");
@@ -149,7 +149,7 @@ class A extends E(HTMLElement) {
   }
   render() {
     this.innerHTML = `
-      <style>${N}</style>
+      <style>${A}</style>
       <div class="catalog-shell">
         ${this.renderContent()}
       </div>
@@ -159,7 +159,7 @@ class A extends E(HTMLElement) {
     if (this.loading)
       return '<div class="surface state">Loading catalog…</div>';
     if (this.error)
-      return `<div class="surface state error"><strong>Catalog unavailable</strong><span>${l(this.error)}</span><button type="button" data-action="retry">Retry</button></div>`;
+      return `<div class="surface state error"><strong>Catalog unavailable</strong><span>${c(this.error)}</span><button type="button" data-action="retry">Retry</button></div>`;
     if (this.data == null)
       return '<div class="surface state">No catalog data.</div>';
     const e = this.selectedProductKeys.size;
@@ -179,7 +179,7 @@ class A extends E(HTMLElement) {
   }
   renderBreadcrumbs(e) {
     return `<nav class="breadcrumbs">${e.breadcrumbs.map((t, r) => {
-      const o = r === e.breadcrumbs.length - 1, a = l(t.title || t.name);
+      const o = r === e.breadcrumbs.length - 1, a = c(t.title || t.name);
       return `${r > 0 ? '<span class="sep">/</span>' : ""}${o ? `<span>${a}</span>` : `<a href="${this.getDocumentHref(t.key)}">${a}</a>`}`;
     }).join("")}</nav>`;
   }
@@ -188,7 +188,7 @@ class A extends E(HTMLElement) {
       <header class="catalog-header">
         <button type="button" class="back" data-action="back" ${e.parent == null ? "disabled" : ""}>←</button>
         <div>
-          <h1>${l(e.current.title || e.current.name)}</h1>
+          <h1>${c(e.current.title || e.current.name)}</h1>
           <p>${e.productCount} products · ${e.subcategoryCount} subcategories</p>
         </div>
       </header>
@@ -203,10 +203,6 @@ class A extends E(HTMLElement) {
           ${this.renderSortOption("sortOrderDesc", "Sort order desc")}
           ${this.renderSortOption("nameAsc", "Name asc")}
           ${this.renderSortOption("nameDesc", "Name desc")}
-          ${this.renderSortOption("priceAsc", "Price asc")}
-          ${this.renderSortOption("priceDesc", "Price desc")}
-          ${this.renderSortOption("skuAsc", "SKU asc")}
-          ${this.renderSortOption("skuDesc", "SKU desc")}
           ${this.renderSortOption("createdAsc", "Created asc")}
           ${this.renderSortOption("createdDesc", "Created desc")}
           ${this.renderSortOption("updatedAsc", "Updated asc")}
@@ -238,7 +234,7 @@ class A extends E(HTMLElement) {
         <h2>Subcategories</h2>
         <div class="chips">${e.map((t) => `
           <a class="chip" href="${this.getDocumentHref(t.key)}">
-            <span class="tile">▦</span><span class="chip-text"><strong>${l(t.title || t.name)}</strong><small>${t.productCount} products · ${t.subcategoryCount} subcategories</small></span><span>›</span>
+            <span class="tile">▦</span><span class="chip-text"><strong>${c(t.title || t.name)}</strong><small>${t.productCount} products · ${t.subcategoryCount} subcategories</small></span><span>›</span>
           </a>
         `).join("")}</div>
       </section>
@@ -255,7 +251,7 @@ class A extends E(HTMLElement) {
     `;
   }
   renderProducts(e) {
-    const t = this.query ? `No products match &quot;${l(this.query)}&quot;` : "No products in this category yet";
+    const t = this.query ? `No products match &quot;${c(this.query)}&quot;` : "No products in this category yet";
     return `
       <section class="section">
         <h2>Products (${e.filteredProductCount})</h2>
@@ -268,11 +264,11 @@ class A extends E(HTMLElement) {
     return `
       <article class="card ${t ? "selected" : ""}">
         <button type="button" class="checkbox ${t ? "checked" : ""}" data-product-key="${e.key}">${t ? "✓" : ""}</button>
-        <a class="image ${e.published ? "" : "dimmed"}" href="${r}">${e.image ? `<umb-imaging-thumbnail unique="${l(e.image)}" width="320" height="160" alt="${l(e.title || e.name)}"></umb-imaging-thumbnail>` : "<span>Product image</span>"}</a>
+        <a class="image ${e.published ? "" : "dimmed"}" href="${r}">${e.image ? `<umb-imaging-thumbnail unique="${c(e.image)}" width="320" height="160" alt="${c(e.title || e.name)}"></umb-imaging-thumbnail>` : "<span>Product image</span>"}</a>
         <div class="card-body">
-          <a class="title" href="${r}">${l(e.title || e.name)}</a>
-          <div class="meta"><span>${e.sku ? `SKU ${l(e.sku)}` : "No SKU"}</span><strong>${l(e.price)}</strong></div>
-          <div class="status-row"><span class="pill ${I(e.status)}"><i></i>${e.status}</span><strong class="availability ${e.available ? "ok" : "bad"}">${e.available ? "✓ Available" : "✕ Unavailable"}</strong></div>
+          <a class="title" href="${r}">${c(e.title || e.name)}</a>
+          <div class="meta"><span>${e.sku ? `SKU ${c(e.sku)}` : "No SKU"}</span><strong>${c(e.price)}</strong></div>
+          <div class="status-row"><span class="pill ${N(e.status)}"><i></i>${e.status}</span><strong class="availability ${e.available ? "ok" : "bad"}">${e.available ? "✓ Available" : "✕ Unavailable"}</strong></div>
         </div>
       </article>
     `;
@@ -294,20 +290,20 @@ class A extends E(HTMLElement) {
   }
   paginationItems(e, t) {
     if (t <= 7)
-      return Array.from({ length: t }, (c, s) => s + 1);
-    const o = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((c) => c >= 1 && c <= t).sort((c, s) => c - s), a = [];
-    for (const c of o) {
+      return Array.from({ length: t }, (l, s) => s + 1);
+    const o = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((l) => l >= 1 && l <= t).sort((l, s) => l - s), a = [];
+    for (const l of o) {
       const s = a[a.length - 1];
-      typeof s == "number" && c - s > 1 && a.push("…"), a.push(c);
+      typeof s == "number" && l - s > 1 && a.push("…"), a.push(l);
     }
     return a;
   }
   bindEvents() {
-    var e, t, r, o, a, c;
+    var e, t, r, o, a, l;
     (e = this.querySelector('[data-action="retry"]')) == null || e.addEventListener("click", () => void this.load()), (t = this.querySelector('[data-action="back"]')) == null || t.addEventListener("click", () => {
       var s;
       ((s = this.data) == null ? void 0 : s.parent) != null && this.drillTo(this.data.parent);
-    }), (r = this.querySelector('[data-action="toggle-page"]')) == null || r.addEventListener("click", () => this.toggleCurrentPage()), (o = this.querySelector('[data-action="clear-selection"]')) == null || o.addEventListener("click", () => this.clearSelection()), (a = this.querySelector('[data-field="sort"]')) == null || a.addEventListener("input", (s) => this.setSort(s.target.value)), (c = this.querySelector('[data-field="sort"]')) == null || c.addEventListener("change", (s) => this.setSort(s.target.value)), this.querySelectorAll("[data-product-key]").forEach((s) => {
+    }), (r = this.querySelector('[data-action="toggle-page"]')) == null || r.addEventListener("click", () => this.toggleCurrentPage()), (o = this.querySelector('[data-action="clear-selection"]')) == null || o.addEventListener("click", () => this.clearSelection()), (a = this.querySelector('[data-field="sort"]')) == null || a.addEventListener("input", (s) => this.setSort(s.target.value)), (l = this.querySelector('[data-field="sort"]')) == null || l.addEventListener("change", (s) => this.setSort(s.target.value)), this.querySelectorAll("[data-product-key]").forEach((s) => {
       s.addEventListener("click", (k) => {
         var u;
         k.preventDefault();
@@ -348,10 +344,10 @@ class f extends Error {
     super(d), this.status = e;
   }
 }
-function l(i) {
+function c(i) {
   return i.replace(/[&<>"]/g, (d) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[d] ?? d);
 }
-function I(i) {
+function N(i) {
   return i === "Published" ? "published" : i === "Pending changes" ? "pending" : "unpublished";
 }
 function v(i) {
@@ -360,10 +356,6 @@ function v(i) {
     "sortOrderDesc",
     "nameAsc",
     "nameDesc",
-    "priceAsc",
-    "priceDesc",
-    "skuAsc",
-    "skuDesc",
     "createdAsc",
     "createdDesc",
     "updatedAsc",
@@ -384,7 +376,7 @@ function y(i) {
   } catch {
   }
 }
-const N = `
+const A = `
   ekom-catalog-collection-view { color: #1f1f1f; display: block !important; font-family: Lato, sans-serif; visibility: visible !important; }
   .catalog-shell { background: #f6f4f4; min-height: 100%; padding: 24px; }
   .surface, .empty { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; }
@@ -450,7 +442,7 @@ const N = `
   .pagination button { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; min-width: 34px; padding: 7px 10px; }
   .pagination .current { background: #1b264f; border-color: #1b264f; color: #fff; }
 `;
-customElements.define("ekom-catalog-collection-view", A);
+customElements.define("ekom-catalog-collection-view", I);
 export {
-  A as default
+  I as default
 };
