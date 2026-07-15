@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.208](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.207...Ekom-v0.2.208) (2026-07-15)
+
+
+### Features
+
+* **catalog:** improve collection navigation and loading ([#709](https://github.com/Vettvangur/Ekom/issues/709)) ([e7abdbd](https://github.com/Vettvangur/Ekom/commit/e7abdbd77f58104051b17ad8a582c895e5c195db))
+
 ## [0.2.207](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.206...Ekom-v0.2.207) (2026-07-14)
 
 
