@@ -11,6 +11,15 @@ namespace Ekom.Tests.Tests;
 public sealed class MetaTrackingServiceTests
 {
     [Fact]
+    public void MetaEvents_AreDisabledByDefault()
+    {
+        var options = new TrackingOptions();
+
+        Assert.False(options.Meta.Events.AddedToCart);
+        Assert.False(options.Meta.Events.StartedCheckout);
+    }
+
+    [Fact]
     public async Task SendPurchaseAsync_Does_Not_Send_Or_Clear_Data_When_Marketing_Consent_Is_Missing()
     {
         using var handler = new CountingHttpMessageHandler();

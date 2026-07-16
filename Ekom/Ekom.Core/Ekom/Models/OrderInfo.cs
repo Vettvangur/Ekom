@@ -148,10 +148,10 @@ public class OrderInfo : IOrderInfo
     private Price LinePriceWithOrderDiscount(IOrderLine line)
     {
         OrderedDiscount? discount = Discount;
-        if (discount?.DiscountItems.Any() == true)
+        if (discount != null)
         {
-            // Filters order discounts to their applicable DiscountItems
-            if (!OrderService.IsDiscountApplicable(this, line, discount))
+            // Filters order discounts to their applicable include/exclude targets.
+            if (!DiscountApplicability.MatchesLineTargets(line, discount))
             {
                 discount = null;
             }

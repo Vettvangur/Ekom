@@ -3,6 +3,8 @@ namespace Ekom.Models;
 public class OrderDiscountCalculationResult
 {
     public bool Applied { get; set; }
+    public bool OrderConstraintsMet { get; set; }
+    public bool HasApplicableLines { get; set; }
     public required string CouponCode { get; set; }
     public Guid? DiscountId { get; set; }
     public string? DiscountTitle { get; set; }
@@ -19,6 +21,7 @@ public class OrderDiscountCalculationLineResult
     public required string Sku { get; set; }
     public string? VariantSku { get; set; }
     public decimal Quantity { get; set; }
+    public bool CouponApplicable { get; set; }
     public decimal UnitPriceBeforeDiscount { get; set; }
     public decimal LineTotalBeforeDiscount { get; set; }
     public decimal DiscountAmount { get; set; }

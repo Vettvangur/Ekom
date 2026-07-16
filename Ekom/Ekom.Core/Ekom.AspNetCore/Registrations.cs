@@ -72,6 +72,7 @@ static class Registrations
                 f.GetRequiredService<Catalog>(),
                 f.GetRequiredService<ICouponCache>(),
                 f.GetRequiredService<DiscountCache>(),
+                f.GetRequiredService<INodeService>(),
                 f.GetRequiredService<IStoreService>()
             )
         );

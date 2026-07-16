@@ -173,7 +173,23 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private drillTo(node: CatalogNode): void {
-    window.location.assign(this.getDocumentHref(node.key || String(node.id)));
+    const nodeId = node.key || String(node.id);
+    const state = history.state != null && typeof history.state === 'object'
+      ? history.state as Record<string, unknown>
+      : {};
+    history.pushState({
+      ...state,
+      [HISTORY_STATE_KEY]: {
+        nodeId,
+        page: 1,
+      },
+    }, '', this.getDocumentHref(nodeId));
+
+    this.nodeId = nodeId;
+    this.query = '';
+    this.page = 1;
+    this.selection?.clearSelection();
+    void this.load();
   }
 
   private restoreNodeFromHistory(): void {
@@ -394,7 +410,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
 
   private renderContent(): string {
     if (this.loading) {
-      return '<div class="surface state">Loading catalog…</div>';
+      return this.renderLoading();
     }
 
     if (this.error) {
@@ -422,6 +438,44 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
       ${!this.query && this.data.subcategories.length > 0 ? this.renderSubcategories(this.data.subcategories) : ''}
       ${this.renderProducts(this.data)}
       ${this.renderPagination(this.data)}
+    `;
+  }
+
+  private renderLoading(): string {
+    return `
+      <div class="catalog-loading" aria-busy="true" aria-label="Loading catalog" role="status">
+        <div class="loading-breadcrumbs">
+          <span class="skeleton skeleton-breadcrumb"></span>
+          <span class="skeleton skeleton-breadcrumb"></span>
+          <span class="skeleton skeleton-breadcrumb current"></span>
+        </div>
+        <div class="loading-header">
+          <span class="skeleton skeleton-back"></span>
+          <div>
+            <span class="skeleton skeleton-title"></span>
+            <span class="skeleton skeleton-summary"></span>
+          </div>
+        </div>
+        <div class="loading-toolbar">
+          <span class="skeleton skeleton-control"></span>
+          <span class="skeleton skeleton-control"></span>
+        </div>
+        <section class="loading-section">
+          <span class="skeleton skeleton-section-title"></span>
+          <div class="loading-chips">
+            <span class="skeleton skeleton-chip"></span>
+            <span class="skeleton skeleton-chip"></span>
+            <span class="skeleton skeleton-chip"></span>
+          </div>
+        </section>
+        <section class="loading-section">
+          <span class="skeleton skeleton-section-title"></span>
+          <div class="loading-grid">
+            ${Array.from({ length: 8 }, () => `<article class="loading-card"><span class="skeleton skeleton-image"></span><div class="loading-card-body"><span class="skeleton skeleton-product-title"></span><span class="skeleton skeleton-product-meta"></span><span class="skeleton skeleton-product-status"></span></div></article>`).join('')}
+          </div>
+        </section>
+        <span class="visually-hidden">Loading catalog…</span>
+      </div>
     `;
   }
 
@@ -685,6 +739,33 @@ const styles = `
   .surface, .empty { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; }
   .state { padding: 24px; display: grid; gap: 10px; }
   .error { color: #d42054; }
+  .catalog-loading { animation: loading-enter .18s ease-out; }
+  .skeleton { animation: skeleton-shimmer 1.4s ease-in-out infinite; background: linear-gradient(100deg, #e9e9eb 35%, #f8f8f9 50%, #e9e9eb 65%); background-size: 200% 100%; border-radius: 3px; display: block; }
+  .loading-breadcrumbs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .skeleton-breadcrumb { height: 13px; width: 58px; }
+  .skeleton-breadcrumb.current { width: 82px; }
+  .loading-header { align-items: center; display: flex; gap: 14px; margin-bottom: 18px; }
+  .skeleton-back { border-radius: 50%; height: 36px; width: 36px; }
+  .loading-header div { display: grid; gap: 8px; }
+  .skeleton-title { height: 28px; width: 176px; }
+  .skeleton-summary { height: 13px; width: 132px; }
+  .loading-toolbar { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 14px; }
+  .skeleton-control { height: 36px; width: 118px; }
+  .loading-section { margin-top: 22px; }
+  .skeleton-section-title { height: 11px; margin-bottom: 10px; width: 96px; }
+  .loading-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .skeleton-chip { border-radius: 999px; height: 42px; width: 172px; }
+  .loading-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .loading-card { background: #fff; border: 1px solid #e9e9eb; border-radius: 4px; overflow: hidden; }
+  .skeleton-image { border-radius: 0; height: 160px; }
+  .loading-card-body { display: grid; gap: 12px; padding: 12px; }
+  .skeleton-product-title { height: 16px; width: 76%; }
+  .skeleton-product-meta { height: 13px; width: 58%; }
+  .skeleton-product-status { height: 24px; width: 88%; }
+  .visually-hidden { height: 1px; margin: -1px; overflow: hidden; position: absolute; width: 1px; clip: rect(0, 0, 0, 0); }
+  @keyframes loading-enter { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+  @media (prefers-reduced-motion: reduce) { .catalog-loading, .skeleton { animation: none; } }
   button, input, select { font: inherit; }
   button { cursor: pointer; }
   button:disabled { cursor: default; opacity: .45; }

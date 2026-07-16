@@ -32,6 +32,38 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
     public Ga4PurchaseRequest CreatePurchaseRequest(IOrderInfo orderInfo)
     {
+        var request = CreateRequest(orderInfo, "purchase");
+        request.TransactionId = orderInfo.OrderNumber;
+        request.Value = orderInfo.ChargedAmount.Value;
+        request.Shipping = orderInfo.ShippingProvider?.Price.Value ?? 0;
+        request.Tax = orderInfo.Vat.Value;
+        request.PaymentType = orderInfo.PaymentProvider?.Title;
+        request.ShippingTier = orderInfo.ShippingProvider?.Title;
+        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo.StoreInfo.Alias)).ToList();
+
+        return request;
+    }
+
+    public Ga4PurchaseRequest CreateAddedToCartRequest(IOrderInfo orderInfo, IOrderLine orderLine)
+    {
+        var request = CreateRequest(orderInfo, "add_to_cart");
+        request.Value = orderLine.Amount.WithoutVat.Value * orderLine.Quantity;
+        request.Items = [CreateItem(orderLine, orderInfo.StoreInfo.Alias)];
+
+        return request;
+    }
+
+    public Ga4PurchaseRequest CreateStartedCheckoutRequest(IOrderInfo orderInfo)
+    {
+        var request = CreateRequest(orderInfo, "begin_checkout");
+        request.Value = orderInfo.ChargedAmount.Value;
+        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo.StoreInfo.Alias)).ToList();
+
+        return request;
+    }
+
+    private Ga4PurchaseRequest CreateRequest(IOrderInfo orderInfo, string eventName)
+    {
         var tracking = orderInfo.Tracking ?? new OrderTracking();
         var clientId = tracking.Ga4.ClientId;
         var generatedClientId = false;
@@ -42,11 +74,9 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         }
 
         var sessionId = ParseLong(tracking.Ga4.SessionId);
-        var generatedSessionId = false;
         if (!sessionId.HasValue)
         {
             sessionId = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            generatedSessionId = true;
         }
 
         var request = new Ga4PurchaseRequest
@@ -55,13 +85,8 @@ public sealed class Ga4TrackingService : IGa4TrackingService
             StoreAlias = orderInfo.StoreInfo.Alias,
             ClientId = clientId,
             SessionId = sessionId,
-            TransactionId = orderInfo.OrderNumber,
-            Value = orderInfo.ChargedAmount.Value,
-            Shipping = orderInfo.ShippingProvider?.Price.Value ?? 0,
-            Tax = orderInfo.Vat.Value,
+            EventName = eventName,
             Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
-            PaymentType = orderInfo.PaymentProvider?.Title,
-            ShippingTier = orderInfo.ShippingProvider?.Title,
             Source = tracking.Source,
             Medium = tracking.Medium,
             Campaign = tracking.Campaign,
@@ -79,24 +104,24 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         foreach (var entry in tracking.Ga4.Data)
             request.Parameters[entry.Key] = entry.Value;
 
-        request.Items = orderInfo.OrderLines.Select(orderLine =>
-        {
-            var catalogProduct = Catalog.Instance.GetProduct(orderLine.ProductKey, orderInfo.StoreInfo.Alias);
-
-            return new Ga4PurchaseItem
-            {
-                ItemId = orderLine.Variant?.SKU ?? orderLine.Product.SKU,
-                ItemName = orderLine.Product.Title,
-                ItemCategory = catalogProduct?.Categories.FirstOrDefault()?.Title,
-                ItemCategory2 = catalogProduct?.CategoryAncestors.LastOrDefault()?.Title,
-                Price = orderLine.Amount.WithoutVat.Value,
-                Discount = 0,
-                Quantity = Convert.ToInt32(orderLine.Quantity),
-                ItemVariant = orderLine.Variant?.Title
-            };
-        }).ToList();
-
         return request;
+    }
+
+    private static Ga4PurchaseItem CreateItem(IOrderLine orderLine, string storeAlias)
+    {
+        var catalogProduct = Catalog.Instance.GetProduct(orderLine.ProductKey, storeAlias);
+
+        return new Ga4PurchaseItem
+        {
+            ItemId = orderLine.Variant?.SKU ?? orderLine.Product.SKU,
+            ItemName = orderLine.Product.Title,
+            ItemCategory = catalogProduct?.Categories.FirstOrDefault()?.Title,
+            ItemCategory2 = catalogProduct?.CategoryAncestors.LastOrDefault()?.Title,
+            Price = orderLine.Amount.WithoutVat.Value,
+            Discount = 0,
+            Quantity = Convert.ToInt32(orderLine.Quantity),
+            ItemVariant = orderLine.Variant?.Title
+        };
     }
 
     public async Task SendPurchaseAsync(Ga4PurchaseRequest request, CancellationToken ct = default)
@@ -128,7 +153,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         var payloadJson = JsonSerializer.Serialize(payload, JsonOptions);
         if (_options.Value.LogPurchaseEventData)
         {
-            _logger.LogInformation("GA4 purchase event payload for store {StoreAlias}: {Payload}", request.StoreAlias, payloadJson);
+            _logger.LogInformation("GA4 {EventName} event payload for store {StoreAlias}: {Payload}", request.EventName, request.StoreAlias, payloadJson);
         }
 
         using var content = new StringContent(payloadJson, Encoding.UTF8, "application/json");
@@ -137,32 +162,27 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
         if (!response.IsSuccessStatusCode)
         {
-            await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 purchase event failed ({(int)response.StatusCode})", OrderActivityLogType.Alert).ConfigureAwait(false);
-            _logger.LogWarning("GA4 tracking failed for store {StoreAlias}. Status: {StatusCode}. Response: {Response}", request.StoreAlias, response.StatusCode, responseBody);
+            await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 {request.EventName} event failed ({(int)response.StatusCode})", OrderActivityLogType.Alert).ConfigureAwait(false);
+            _logger.LogWarning("GA4 {EventName} tracking failed for store {StoreAlias}. Status: {StatusCode}. Response: {Response}", request.EventName, request.StoreAlias, response.StatusCode, responseBody);
             return;
         }
 
         if (UseDebugEndpoint && TryGetValidationError(responseBody, out string? validationError))
         {
-            await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 purchase event validation failed: {validationError}", OrderActivityLogType.Alert).ConfigureAwait(false);
-            _logger.LogWarning("GA4 debug validation failed for store {StoreAlias}: {ValidationError}. Response: {Response}", request.StoreAlias, validationError, responseBody);
+            await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 {request.EventName} event validation failed: {validationError}", OrderActivityLogType.Alert).ConfigureAwait(false);
+            _logger.LogWarning("GA4 {EventName} debug validation failed for store {StoreAlias}: {ValidationError}. Response: {Response}", request.EventName, request.StoreAlias, validationError, responseBody);
             return;
         }
 
-        await WriteActivityLogAsync(request.OrderUniqueId, "GA4 purchase event successfully sent", OrderActivityLogType.Success).ConfigureAwait(false);
+        await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 {request.EventName} event successfully sent", OrderActivityLogType.Success).ConfigureAwait(false);
     }
 
     private object BuildParameters(Ga4PurchaseRequest request)
     {
         var parameters = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
-            ["transaction_id"] = request.TransactionId,
             ["value"] = request.Value,
-            ["shipping"] = request.Shipping,
-            ["tax"] = request.Tax,
             ["currency"] = request.Currency,
-            ["payment_type"] = request.PaymentType,
-            ["shipping_tier"] = request.ShippingTier,
             ["source"] = request.Source,
             ["medium"] = request.Medium,
             ["campaign"] = request.Campaign,
@@ -181,6 +201,15 @@ public sealed class Ga4TrackingService : IGa4TrackingService
                 ["item_variant"] = item.ItemVariant
             }).Select(FilterNullValues).ToList()
         };
+
+        if (string.Equals(request.EventName, "purchase", StringComparison.OrdinalIgnoreCase))
+        {
+            parameters["transaction_id"] = request.TransactionId;
+            parameters["shipping"] = request.Shipping;
+            parameters["tax"] = request.Tax;
+            parameters["payment_type"] = request.PaymentType;
+            parameters["shipping_tier"] = request.ShippingTier;
+        }
 
         if (request.SessionId.HasValue)
             parameters["session_id"] = request.SessionId.Value;

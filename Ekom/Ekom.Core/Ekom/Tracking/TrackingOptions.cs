@@ -12,7 +12,7 @@ public sealed class TrackingOptions
     public string? SiteBaseUrl { get; set; }
     public TrackingConsentOptions Consent { get; set; } = new();
     public Ga4TrackingProviderOptions Ga4 { get; set; } = new();
-    public TrackingProviderOptions Meta { get; set; } = new();
+    public MetaTrackingProviderOptions Meta { get; set; } = new();
 }
 
 public class TrackingConsentOptions
@@ -49,6 +49,24 @@ public sealed class Ga4TrackingProviderOptions : TrackingProviderOptions
 {
     public bool? UseDebugEndpoint { get; set; }
     public bool? DebugMode { get; set; }
+    public Ga4TrackingEventsOptions Events { get; set; } = new();
+}
+
+public sealed class Ga4TrackingEventsOptions
+{
+    public bool AddedToCart { get; set; }
+    public bool StartedCheckout { get; set; }
+}
+
+public sealed class MetaTrackingProviderOptions : TrackingProviderOptions
+{
+    public MetaTrackingEventsOptions Events { get; set; } = new();
+}
+
+public sealed class MetaTrackingEventsOptions
+{
+    public bool AddedToCart { get; set; }
+    public bool StartedCheckout { get; set; }
 }
 
 public sealed class TrackingDispatchOptions

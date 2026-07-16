@@ -22,11 +22,79 @@ internal sealed class TrackingAutomationEvents : IComponent
     public void Initialize()
     {
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
+        OrderEvents.AddedOrderlineAsync += OnAddedOrderlineAsync;
+        OrderEvents.AddedOrderlineAsync += OnAddedOrderlineMetaAsync;
+        OrderEvents.CustomerEmailAddedAsync += OnCustomerEmailAddedAsync;
+        OrderEvents.CustomerEmailAddedAsync += OnCustomerEmailAddedMetaAsync;
     }
 
     public void Terminate()
     {
         CheckoutEvents.CompleteCheckoutAsync -= OnCompleteCheckoutAsync;
+        OrderEvents.AddedOrderlineAsync -= OnAddedOrderlineAsync;
+        OrderEvents.AddedOrderlineAsync -= OnAddedOrderlineMetaAsync;
+        OrderEvents.CustomerEmailAddedAsync -= OnCustomerEmailAddedAsync;
+        OrderEvents.CustomerEmailAddedAsync -= OnCustomerEmailAddedMetaAsync;
+    }
+
+    private async Task OnAddedOrderlineAsync(object sender, AddedOrderlineEventArgs args, CancellationToken ct)
+    {
+        if (!_options.Enabled || !_options.Ga4.Enabled || !_options.Ga4.Events.AddedToCart)
+            return;
+
+        using var scope = _scopeFactory.CreateScope();
+        var consentService = scope.ServiceProvider.GetRequiredService<ITrackingConsentService>();
+        var ga4Service = scope.ServiceProvider.GetRequiredService<IGa4TrackingService>();
+        var request = ga4Service.CreateAddedToCartRequest(args.OrderInfo, args.OrderLine);
+        request.HasAnalyticsConsent = consentService.CanCaptureAnalytics(args.OrderInfo.Consent);
+
+        var dispatcher = scope.ServiceProvider.GetRequiredService<IGa4TrackingDispatcher>();
+        await dispatcher.EnqueueAsync(request, ct).ConfigureAwait(false);
+    }
+
+    private async Task OnAddedOrderlineMetaAsync(object sender, AddedOrderlineEventArgs args, CancellationToken ct)
+    {
+        if (!_options.Enabled || !_options.Meta.Enabled || !_options.Meta.Events.AddedToCart)
+            return;
+
+        using var scope = _scopeFactory.CreateScope();
+        var consentService = scope.ServiceProvider.GetRequiredService<ITrackingConsentService>();
+        var metaService = scope.ServiceProvider.GetRequiredService<IMetaTrackingService>();
+        var request = metaService.CreateAddedToCartRequest(args.OrderInfo, args.OrderLine);
+        request.HasMarketingConsent = consentService.CanCaptureMarketing(args.OrderInfo.Consent);
+
+        var dispatcher = scope.ServiceProvider.GetRequiredService<IMetaTrackingDispatcher>();
+        await dispatcher.EnqueueAsync(request, ct).ConfigureAwait(false);
+    }
+
+    private async Task OnCustomerEmailAddedAsync(object sender, CustomerEmailAddedEventArgs args, CancellationToken ct)
+    {
+        if (!_options.Enabled || !_options.Ga4.Enabled || !_options.Ga4.Events.StartedCheckout)
+            return;
+
+        using var scope = _scopeFactory.CreateScope();
+        var consentService = scope.ServiceProvider.GetRequiredService<ITrackingConsentService>();
+        var ga4Service = scope.ServiceProvider.GetRequiredService<IGa4TrackingService>();
+        var request = ga4Service.CreateStartedCheckoutRequest(args.OrderInfo);
+        request.HasAnalyticsConsent = consentService.CanCaptureAnalytics(args.OrderInfo.Consent);
+
+        var dispatcher = scope.ServiceProvider.GetRequiredService<IGa4TrackingDispatcher>();
+        await dispatcher.EnqueueAsync(request, ct).ConfigureAwait(false);
+    }
+
+    private async Task OnCustomerEmailAddedMetaAsync(object sender, CustomerEmailAddedEventArgs args, CancellationToken ct)
+    {
+        if (!_options.Enabled || !_options.Meta.Enabled || !_options.Meta.Events.StartedCheckout)
+            return;
+
+        using var scope = _scopeFactory.CreateScope();
+        var consentService = scope.ServiceProvider.GetRequiredService<ITrackingConsentService>();
+        var metaService = scope.ServiceProvider.GetRequiredService<IMetaTrackingService>();
+        var request = metaService.CreateStartedCheckoutRequest(args.OrderInfo);
+        request.HasMarketingConsent = consentService.CanCaptureMarketing(args.OrderInfo.Consent);
+
+        var dispatcher = scope.ServiceProvider.GetRequiredService<IMetaTrackingDispatcher>();
+        await dispatcher.EnqueueAsync(request, ct).ConfigureAwait(false);
     }
 
     private async Task OnCompleteCheckoutAsync(object sender, CompleteCheckoutEventArgs args, CancellationToken ct)

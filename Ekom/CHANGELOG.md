@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.2.211](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.210...Ekom-v0.2.211) (2026-07-16)
+
+
+### Features
+
+* **tracking:** add GA4 and Meta cart events ([#715](https://github.com/Vettvangur/Ekom/issues/715)) ([baaee16](https://github.com/Vettvangur/Ekom/commit/baaee16b4788a2bbab2b309b3b6950b89be3d680))
+
+## [0.2.210](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.209...Ekom-v0.2.210) (2026-07-16)
+
+
+### Bug Fixes
+
+* **tracking:** parse GA4 session ids ([#713](https://github.com/Vettvangur/Ekom/issues/713)) ([1fea902](https://github.com/Vettvangur/Ekom/commit/1fea90290fd9e74742f658ab9d47dcf23cfd0dbc))
+
+## [0.2.209](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.208...Ekom-v0.2.209) (2026-07-16)
+
+
+### Features
+
+* **ekom:** Add more information to response when adding coupon ([#711](https://github.com/Vettvangur/Ekom/issues/711)) ([e59e958](https://github.com/Vettvangur/Ekom/commit/e59e958a5a4f3b1599b474a935b606ad5f89ddb8))
+
+## [0.2.208](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.207...Ekom-v0.2.208) (2026-07-15)
+
+
+### Features
+
+* **catalog:** improve collection navigation and loading ([#709](https://github.com/Vettvangur/Ekom/issues/709)) ([e7abdbd](https://github.com/Vettvangur/Ekom/commit/e7abdbd77f58104051b17ad8a582c895e5c195db))
+
 ## [0.2.207](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.206...Ekom-v0.2.207) (2026-07-14)
 
 
