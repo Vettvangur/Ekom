@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.210](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.209...Ekom-v0.2.210) (2026-07-16)
+
+
+### Bug Fixes
+
+* **tracking:** parse GA4 session ids ([#713](https://github.com/Vettvangur/Ekom/issues/713)) ([1fea902](https://github.com/Vettvangur/Ekom/commit/1fea90290fd9e74742f658ab9d47dcf23cfd0dbc))
+
 ## [0.2.209](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.208...Ekom-v0.2.209) (2026-07-16)
 
 
