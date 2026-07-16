@@ -47,6 +47,8 @@ public class TrackingProviderOptions
 
 public sealed class Ga4TrackingProviderOptions : TrackingProviderOptions
 {
+    public bool? UseDebugEndpoint { get; set; }
+    public bool? DebugMode { get; set; }
     public Ga4TrackingEventsOptions Events { get; set; } = new();
 }
 
