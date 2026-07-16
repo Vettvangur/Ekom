@@ -34,13 +34,41 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
     public MetaPurchaseRequest CreatePurchaseRequest(IOrderInfo orderInfo)
     {
+        var request = CreateRequest(orderInfo, "Purchase", orderInfo.OrderNumber);
+        request.Value = orderInfo.ChargedAmount.Value;
+        request.Contents = orderInfo.OrderLines.Select(CreateContent).ToList();
+
+        return request;
+    }
+
+    public MetaPurchaseRequest CreateAddedToCartRequest(IOrderInfo orderInfo, IOrderLine orderLine)
+    {
+        var request = CreateRequest(orderInfo, "AddToCart", $"{orderInfo.OrderNumber}:{orderLine.Key}");
+        request.Value = orderLine.Amount.WithVat.Value * orderLine.Quantity;
+        request.Contents = [CreateContent(orderLine)];
+
+        return request;
+    }
+
+    public MetaPurchaseRequest CreateStartedCheckoutRequest(IOrderInfo orderInfo)
+    {
+        var request = CreateRequest(orderInfo, "InitiateCheckout", $"{orderInfo.OrderNumber}:initiate_checkout");
+        request.Value = orderInfo.ChargedAmount.Value;
+        request.Contents = orderInfo.OrderLines.Select(CreateContent).ToList();
+
+        return request;
+    }
+
+    private MetaPurchaseRequest CreateRequest(IOrderInfo orderInfo, string eventName, string eventId)
+    {
         var tracking = orderInfo.Tracking ?? new OrderTracking();
         var request = new MetaPurchaseRequest
         {
             OrderUniqueId = orderInfo.UniqueId,
             StoreAlias = orderInfo.StoreInfo.Alias,
             EventTimeUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            EventId = orderInfo.OrderNumber,
+            EventName = eventName,
+            EventId = eventId,
             EventSourceUrl = BuildEventSourceUrl(orderInfo, tracking),
             Email = orderInfo.CustomerInformation.Customer.Email,
             Phone = orderInfo.CustomerInformation.Customer.Phone,
@@ -48,7 +76,6 @@ public sealed class MetaTrackingService : IMetaTrackingService
             LastName = orderInfo.CustomerInformation.Customer.LastName,
             Fbp = tracking.Meta.Fbp,
             Fbc = tracking.Meta.Fbc,
-            Value = orderInfo.ChargedAmount.Value,
             Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
             Source = tracking.Source,
             Medium = tracking.Medium,
@@ -57,13 +84,7 @@ public sealed class MetaTrackingService : IMetaTrackingService
             Content = tracking.Content,
             Gclid = string.Equals(tracking.ClickIdType, "gclid", StringComparison.OrdinalIgnoreCase) ? tracking.ClickId : null,
             UserData = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase),
-            CustomData = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase),
-            Contents = orderInfo.OrderLines.Select(x => new MetaPurchaseContent
-            {
-                Id = x.Variant?.SKU ?? x.Product.SKU,
-                Quantity = x.Quantity,
-                ItemPrice = Math.Round(x.Amount.WithVat.Value, 2, MidpointRounding.AwayFromZero)
-            }).ToList()
+            CustomData = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         };
 
         foreach (var entry in tracking.Meta.Data)
@@ -71,6 +92,14 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
         return request;
     }
+
+    private static MetaPurchaseContent CreateContent(IOrderLine orderLine)
+        => new()
+        {
+            Id = orderLine.Variant?.SKU ?? orderLine.Product.SKU,
+            Quantity = orderLine.Quantity,
+            ItemPrice = Math.Round(orderLine.Amount.WithVat.Value, 2, MidpointRounding.AwayFromZero)
+        };
 
     public async Task SendPurchaseAsync(MetaPurchaseRequest request, CancellationToken ct = default)
     {
@@ -81,8 +110,8 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
         if (!HasMatchableUserData(request))
         {
-            await WriteActivityLogAsync(request.OrderUniqueId, "Meta purchase event skipped: insufficient customer information for matching", OrderActivityLogType.Alert).ConfigureAwait(false);
-            _logger.LogWarning("Meta tracking skipped for store {StoreAlias} because no matchable customer information is available.", request.StoreAlias);
+            await WriteActivityLogAsync(request.OrderUniqueId, $"Meta {request.EventName} event skipped: insufficient customer information for matching", OrderActivityLogType.Alert).ConfigureAwait(false);
+            _logger.LogWarning("Meta {EventName} tracking skipped for store {StoreAlias} because no matchable customer information is available.", request.EventName, request.StoreAlias);
             return;
         }
 
@@ -103,7 +132,7 @@ public sealed class MetaTrackingService : IMetaTrackingService
         var payloadJson = JsonSerializer.Serialize(payload, JsonOptions);
         if (_options.Value.LogPurchaseEventData)
         {
-            _logger.LogInformation("Meta purchase event payload for store {StoreAlias}: {Payload}", request.StoreAlias, payloadJson);
+            _logger.LogInformation("Meta {EventName} event payload for store {StoreAlias}: {Payload}", request.EventName, request.StoreAlias, payloadJson);
         }
 
         using var content = new StringContent(payloadJson, Encoding.UTF8, "application/json");
@@ -112,16 +141,16 @@ public sealed class MetaTrackingService : IMetaTrackingService
         if (!response.IsSuccessStatusCode)
         {
             var responseBody = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-            var errorMessage = TryGetErrorMessage(responseBody, out string? parsedError)
+            var errorMessage = TryGetErrorMessage(responseBody, request.EventName, out string? parsedError)
                 ? parsedError
-                : $"Meta purchase event failed ({(int)response.StatusCode})";
+                : $"Meta {request.EventName} event failed ({(int)response.StatusCode})";
 
             await WriteActivityLogAsync(request.OrderUniqueId, errorMessage, OrderActivityLogType.Alert).ConfigureAwait(false);
-            _logger.LogWarning("Meta tracking failed for store {StoreAlias}. Status: {StatusCode}. Response: {Response}", request.StoreAlias, response.StatusCode, responseBody);
+            _logger.LogWarning("Meta {EventName} tracking failed for store {StoreAlias}. Status: {StatusCode}. Response: {Response}", request.EventName, request.StoreAlias, response.StatusCode, responseBody);
             return;
         }
 
-        await WriteActivityLogAsync(request.OrderUniqueId, "Meta purchase event sent", OrderActivityLogType.Success).ConfigureAwait(false);
+        await WriteActivityLogAsync(request.OrderUniqueId, $"Meta {request.EventName} event sent", OrderActivityLogType.Success).ConfigureAwait(false);
     }
 
     private object BuildEvent(MetaPurchaseRequest request)
@@ -285,7 +314,7 @@ public sealed class MetaTrackingService : IMetaTrackingService
         }
     }
 
-    private static bool TryGetErrorMessage(string? responseBody, out string? errorMessage)
+    private static bool TryGetErrorMessage(string? responseBody, string eventName, out string? errorMessage)
     {
         errorMessage = null;
         if (string.IsNullOrWhiteSpace(responseBody))
@@ -310,7 +339,7 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
             if (!string.IsNullOrWhiteSpace(errorMessage))
             {
-                errorMessage = $"Meta purchase event failed: {errorMessage}";
+                errorMessage = $"Meta {eventName} event failed: {errorMessage}";
             }
 
             return !string.IsNullOrWhiteSpace(errorMessage);
