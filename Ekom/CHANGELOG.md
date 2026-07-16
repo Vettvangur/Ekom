@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.211](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.210...Ekom-v0.2.211) (2026-07-16)
+
+
+### Features
+
+* **tracking:** add GA4 and Meta cart events ([#715](https://github.com/Vettvangur/Ekom/issues/715)) ([baaee16](https://github.com/Vettvangur/Ekom/commit/baaee16b4788a2bbab2b309b3b6950b89be3d680))
+
 ## [0.2.210](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.209...Ekom-v0.2.210) (2026-07-16)
 
 
