@@ -1,7 +1,5 @@
-using Ekom.API;
 using Ekom.Services;
 using Ekom.Utilities;
-using Microsoft.Extensions.DependencyInjection;
 using System.Xml.Serialization;
 
 namespace Ekom.Models;
@@ -68,29 +66,8 @@ public class OrderLine : IOrderLine
 
         OrderedDiscount? discount = orderlinePrice.Discount;
 
-        var paths = new HashSet<string>(Product.Path.Split(','));
-        var categoriesUdi = Product.Properties.GetValue("categories").Split(',');
-
-        using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
-
-        if (categoriesUdi.Any())
-        {
-            foreach (var categoryUdi in categoriesUdi)
-            {
-                var categoryNode = nodeService.NodeById(categoryUdi, false);
-
-                if (categoryNode != null)
-                {
-                    paths.UnionWith(categoryNode.Path.Split(','));
-                }
-            }
-        }
-
-        var uniquePaths = paths.ToList();
-
         if (OrderInfo?.Discount != null &&
-            (OrderInfo.Discount.DiscountItems.Any() && paths.Intersect(OrderInfo.Discount.DiscountItems).Any() || OrderInfo.Discount.GlobalDiscount))
+            DiscountApplicability.MatchesLineTargets(this, OrderInfo.Discount))
         {
             if (Product.Price.HasDiscount && OrderInfo.Discount.Stackable)
             {

@@ -12,17 +12,20 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
     private readonly Catalog _catalog;
     private readonly ICouponCache _couponCache;
     private readonly DiscountCache _discountCache;
+    private readonly INodeService _nodeService;
     private readonly IStoreService _storeService;
 
     internal OrderDiscountCalculationService(
         Catalog catalog,
         ICouponCache couponCache,
         DiscountCache discountCache,
+        INodeService nodeService,
         IStoreService storeService)
     {
         _catalog = catalog;
         _couponCache = couponCache;
         _discountCache = discountCache;
+        _nodeService = nodeService;
         _storeService = storeService;
     }
 
@@ -52,11 +55,14 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         var beforeTotals = orderInfo.orderLines
             .Select(line => line.Amount.Value)
             .ToArray();
+        var couponLineTargets = orderInfo.orderLines
+            .Select(line => DiscountApplicability.MatchesLineTargets(line, discount, _nodeService))
+            .ToArray();
 
         var messages = new List<string>();
-        var applied = IsOrderDiscountApplicable(orderInfo, discount);
+        var orderDiscountConstraintsMet = DiscountApplicability.AreOrderConstraintsMet(orderInfo, discount);
 
-        if (applied)
+        if (orderDiscountConstraintsMet)
         {
             orderInfo.Discount = new OrderedDiscount(discount);
             orderInfo.Coupon = couponCode;
@@ -74,24 +80,31 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
             var lineTotalBeforeDiscount = beforeTotals[index];
             var lineTotalAfterDiscount = amount.Value;
             var discountAmount = lineTotalBeforeDiscount - lineTotalAfterDiscount;
+            var discountApplied = line.Discount?.Key == discount.Key;
 
             lineResults.Add(new OrderDiscountCalculationLineResult
             {
                 Sku = line.Product.SKU,
                 VariantSku = line.Variant?.SKU,
                 Quantity = line.Quantity,
+                CouponApplicable = orderDiscountConstraintsMet && couponLineTargets[index],
                 UnitPriceBeforeDiscount = line.Quantity == 0 ? 0 : lineTotalBeforeDiscount / line.Quantity,
                 LineTotalBeforeDiscount = lineTotalBeforeDiscount,
                 DiscountAmount = discountAmount,
                 LineTotalAfterDiscount = lineTotalAfterDiscount,
                 Vat = amount.Vat.Value,
-                DiscountApplied = line.Discount?.Key == discount.Key,
+                DiscountApplied = discountApplied,
             });
         }
 
+        var hasApplicableLines = lineResults.Any(line => line.CouponApplicable);
+        var hasAppliedLines = lineResults.Any(line => line.DiscountApplied);
+
         return new OrderDiscountCalculationResult
         {
-            Applied = applied && lineResults.Any(line => line.DiscountApplied),
+            Applied = orderDiscountConstraintsMet && hasAppliedLines,
+            OrderConstraintsMet = orderDiscountConstraintsMet,
+            HasApplicableLines = hasApplicableLines,
             CouponCode = couponCode,
             DiscountId = discount.Key,
             DiscountTitle = discount.Title,
@@ -221,23 +234,4 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         return variant;
     }
 
-    private static bool IsOrderDiscountApplicable(IOrderInfo orderInfo, IDiscount discount)
-    {
-        if (discount is IProductDiscount)
-        {
-            return false;
-        }
-
-        if (discount.Constraints == null)
-        {
-            return true;
-        }
-
-        if (!discount.GlobalDiscount && !discount.DiscountItems.Any())
-        {
-            return false;
-        }
-
-        return discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value);
-    }
 }

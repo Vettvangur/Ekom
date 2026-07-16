@@ -763,22 +763,13 @@ partial class OrderService
     /// <returns></returns>
     private bool IsDiscountApplicable(IOrderInfo orderInfo, IDiscount discount)
     {
-        // Constraints is set to null if there are no constraints
-        if (discount.Constraints == null)
-        {
-            return true;
-        }
-        if (!discount.GlobalDiscount && !discount.DiscountItems.Any())
-        {
-            return false;
-        }
-
-        return discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value);
+        return DiscountApplicability.AreOrderConstraintsMet(orderInfo, discount)
+            && orderInfo.OrderLines.Any(line => DiscountApplicability.MatchesLineTargets(line, discount));
     }
 
 
     /// <summary>
-    /// Do constraints hold and do discount items match if any
+    /// Do constraints hold and do discount targets match the order line.
     /// </summary>
     /// <param name="orderInfo"></param>
     /// <param name="orderLine"></param>
@@ -786,54 +777,7 @@ partial class OrderService
     /// <returns></returns>
     public static bool IsDiscountApplicable(IOrderInfo orderInfo, IOrderLine orderLine, IDiscount discount)
     {
-        // Constraints is set to null if there are no constraints
-        if (discount.Constraints == null)
-        {
-            return true;
-        }
-        if (!discount.Stackable && orderLine.Product.ProductDiscount != null)
-        {
-            return false;
-        }
-
-
-        var constraintsOk = discount.Constraints.IsValid(
-            orderInfo.StoreInfo.Culture,
-            orderInfo.OrderLineTotal.Value
-        );
-
-        // Collect path items
-        var pathItems = string.IsNullOrWhiteSpace(orderLine.Product.Path)
-            ? Array.Empty<string>()
-            : orderLine.Product.Path.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        // Collect category IDs (mapped via INodeService)
-        using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        var nodeSvc = scope.ServiceProvider.GetRequiredService<INodeService>();
-        var categoryIds = ((orderLine.Product.Properties.GetPropertyValue("categories") as string) ?? string.Empty)
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(x => nodeSvc.NodeById(x)?.Id.ToString())
-            .Where(id => !string.IsNullOrEmpty(id))
-            .ToArray();
-
-
-        var includeSet = new HashSet<string>(discount.DiscountItems ?? Enumerable.Empty<string>(),
-            StringComparer.OrdinalIgnoreCase);
-        var excludeSet = new HashSet<string>(discount.ExcludeDiscountItems ?? Enumerable.Empty<string>(),
-            StringComparer.OrdinalIgnoreCase);
-
-        // Matches include rules (empty include == match all)
-        bool matchesInclude =
-            includeSet.Count == 0 ||
-            pathItems.Any(includeSet.Contains) ||
-            categoryIds.Any(includeSet.Contains);
-
-        // Matches exclusion
-        bool matchesExclude =
-            excludeSet.Count > 0 &&
-            (pathItems.Any(excludeSet.Contains) || categoryIds.Any(excludeSet.Contains));
-
-        return constraintsOk && matchesInclude && !matchesExclude;
+        return DiscountApplicability.IsDiscountApplicable(orderInfo, orderLine, discount);
     }
 
     public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId, CancellationToken ct = default)
