@@ -123,7 +123,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
             }
         };
 
-        var endpoint = _options.Value.Ga4.Testing ? "debug/mp/collect" : "mp/collect";
+        var endpoint = UseDebugEndpoint ? "debug/mp/collect" : "mp/collect";
         var url = $"https://www.google-analytics.com/{endpoint}?measurement_id={storeOptions.MeasurementId}&api_secret={storeOptions.ApiSecret}";
         var payloadJson = JsonSerializer.Serialize(payload, JsonOptions);
         if (_options.Value.LogPurchaseEventData)
@@ -142,7 +142,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
             return;
         }
 
-        if (_options.Value.Ga4.Testing && TryGetValidationError(responseBody, out string? validationError))
+        if (UseDebugEndpoint && TryGetValidationError(responseBody, out string? validationError))
         {
             await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 purchase event validation failed: {validationError}", OrderActivityLogType.Alert).ConfigureAwait(false);
             _logger.LogWarning("GA4 debug validation failed for store {StoreAlias}: {ValidationError}. Response: {Response}", request.StoreAlias, validationError, responseBody);
@@ -185,7 +185,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         if (request.SessionId.HasValue)
             parameters["session_id"] = request.SessionId.Value;
 
-        if (_options.Value.Ga4.Testing)
+        if (UseDebugMode)
             parameters["debug_mode"] = true;
 
         foreach (var item in request.Parameters)
@@ -196,6 +196,12 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
     private TrackingStoreOptions? ResolveStore(string storeAlias)
         => _options.Value.Ga4.Stores.FirstOrDefault(x => x.Alias.Equals(storeAlias, StringComparison.OrdinalIgnoreCase));
+
+    private bool UseDebugEndpoint
+        => _options.Value.Ga4.UseDebugEndpoint ?? _options.Value.Ga4.Testing;
+
+    private bool UseDebugMode
+        => _options.Value.Ga4.DebugMode ?? _options.Value.Ga4.Testing;
 
     private void ApplyConsent(Ga4PurchaseRequest request)
     {

@@ -271,6 +271,8 @@ Full tracking config example:
   "Ga4": {
     "Enabled": true,
     "Testing": false,
+    "UseDebugEndpoint": false,
+    "DebugMode": false,
     "Dispatching": {
       "Capacity": 1000,
       "MaxConcurrency": 2
@@ -306,7 +308,9 @@ Notes:
 
 - `Ga4:Stores[*]` uses `MeasurementId` and `ApiSecret` for Measurement Protocol purchase events.
 - `Meta:Stores[*]` uses `PixelId` and `AccessToken` for Conversion API purchase events.
-- `Ga4:Testing` sends events through the GA4 debug endpoint.
+- `Ga4:UseDebugEndpoint` sends events through GA4's debug endpoint and enables debug-response validation.
+- `Ga4:DebugMode` adds `debug_mode: true` to GA4 event parameters.
+- `Ga4:Testing` is retained for backward compatibility. When the new GA4 settings are omitted, `Testing: true` enables both behaviors.
 - `Meta:Testing` uses `TestEventCode` when configured for the store.
 - `Dispatching:Capacity` and `Dispatching:MaxConcurrency` control the background queue used for provider dispatching.
 
