@@ -11,8 +11,8 @@ public sealed class TrackingOptions
     public double CookieLifetimeDays { get; set; } = 30;
     public string? SiteBaseUrl { get; set; }
     public TrackingConsentOptions Consent { get; set; } = new();
-    public TrackingProviderOptions Ga4 { get; set; } = new();
-    public TrackingProviderOptions Meta { get; set; } = new();
+    public Ga4TrackingProviderOptions Ga4 { get; set; } = new();
+    public MetaTrackingProviderOptions Meta { get; set; } = new();
 }
 
 public class TrackingConsentOptions
@@ -37,12 +37,34 @@ public sealed class TrackingConsentStoreOptions
     public string? MarketingHeaderName { get; set; }
 }
 
-public sealed class TrackingProviderOptions
+public class TrackingProviderOptions
 {
     public bool Enabled { get; set; }
     public bool Testing { get; set; }
     public TrackingDispatchOptions Dispatching { get; set; } = new();
     public List<TrackingStoreOptions> Stores { get; set; } = [];
+}
+
+public sealed class Ga4TrackingProviderOptions : TrackingProviderOptions
+{
+    public Ga4TrackingEventsOptions Events { get; set; } = new();
+}
+
+public sealed class Ga4TrackingEventsOptions
+{
+    public bool AddedToCart { get; set; }
+    public bool StartedCheckout { get; set; }
+}
+
+public sealed class MetaTrackingProviderOptions : TrackingProviderOptions
+{
+    public MetaTrackingEventsOptions Events { get; set; } = new();
+}
+
+public sealed class MetaTrackingEventsOptions
+{
+    public bool AddedToCart { get; set; }
+    public bool StartedCheckout { get; set; }
 }
 
 public sealed class TrackingDispatchOptions
