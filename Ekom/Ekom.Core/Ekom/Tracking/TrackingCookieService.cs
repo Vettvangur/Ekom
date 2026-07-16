@@ -136,7 +136,12 @@ public sealed class TrackingCookieService : ITrackingCookieService
             return null;
 
         var parts = gaCookie.Split('.');
-        return parts.Length >= 3 ? ValueOrNull(parts[2]) : null;
+        if (parts.Length < 3)
+            return null;
+
+        var sessionPart = parts[2].Split('$').FirstOrDefault(x => x.Length > 1 && x[0] == 's');
+        var sessionId = sessionPart is null ? parts[2] : sessionPart[1..];
+        return long.TryParse(sessionId, out var parsedSessionId) && parsedSessionId > 0 ? sessionId : null;
     }
 
     private static string? BuildFbc(string? fbclid)
