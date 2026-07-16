@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.209](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.208...Ekom-v0.2.209) (2026-07-16)
+
+
+### Features
+
+* **ekom:** Add more information to response when adding coupon ([#711](https://github.com/Vettvangur/Ekom/issues/711)) ([e59e958](https://github.com/Vettvangur/Ekom/commit/e59e958a5a4f3b1599b474a935b606ad5f89ddb8))
+
 ## [0.2.208](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.207...Ekom-v0.2.208) (2026-07-15)
 
 
