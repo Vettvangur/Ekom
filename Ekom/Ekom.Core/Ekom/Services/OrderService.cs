@@ -869,11 +869,11 @@ partial class OrderService
         }
         try
         {
-            IOrderLine? orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Key == lineId);
+            OrderLine? orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Key == lineId) as OrderLine;
 
             if (orderLine != null)
             {
-                RemoveOrderLine(orderInfo, orderLine as OrderLine);
+                RemoveOrderLine(orderInfo, orderLine);
             }
             else
             {
@@ -889,6 +889,11 @@ partial class OrderService
             {
                 OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
                 await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
+                await OrderEvents.OnRemovedOrderlineAsync(this, new RemovedOrderlineEventArgs
+                {
+                    OrderInfo = orderInfo,
+                    OrderLine = orderLine
+                }, ct);
             }
 
             return await UpdateOrderAndOrderInfoAsync(updatedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
@@ -1815,6 +1820,14 @@ partial class OrderService
                         logType: OrderActivityLogType.Info,
                         ct: ct)
                     .ConfigureAwait(false);
+
+                if (settings.FireEvents)
+                {
+                    await OrderEvents.OnShippingProviderAddedAsync(this, new ShippingProviderAddedEventArgs
+                    {
+                        OrderInfo = updatedOrderInfo
+                    }, ct);
+                }
             }
 
             return updatedOrderInfo;
@@ -1890,6 +1903,14 @@ partial class OrderService
                         logType: OrderActivityLogType.Info,
                         ct: ct)
                     .ConfigureAwait(false);
+
+                if (settings.FireEvents)
+                {
+                    await OrderEvents.OnPaymentProviderAddedAsync(this, new PaymentProviderAddedEventArgs
+                    {
+                        OrderInfo = updatedOrderInfo
+                    }, ct);
+                }
             }
 
             return updatedOrderInfo;

@@ -53,10 +53,39 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         return request;
     }
 
+    public Ga4PurchaseRequest CreateRemovedFromCartRequest(IOrderInfo orderInfo, IOrderLine orderLine)
+    {
+        var request = CreateRequest(orderInfo, "remove_from_cart");
+        request.Value = orderLine.Amount.WithoutVat.Value * orderLine.Quantity;
+        request.Items = [CreateItem(orderLine, orderInfo.StoreInfo.Alias)];
+
+        return request;
+    }
+
     public Ga4PurchaseRequest CreateStartedCheckoutRequest(IOrderInfo orderInfo)
     {
         var request = CreateRequest(orderInfo, "begin_checkout");
         request.Value = orderInfo.ChargedAmount.Value;
+        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo.StoreInfo.Alias)).ToList();
+
+        return request;
+    }
+
+    public Ga4PurchaseRequest CreateAddedShippingInfoRequest(IOrderInfo orderInfo)
+    {
+        var request = CreateRequest(orderInfo, "add_shipping_info");
+        request.Value = orderInfo.ChargedAmount.Value;
+        request.ShippingTier = orderInfo.ShippingProvider?.Title;
+        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo.StoreInfo.Alias)).ToList();
+
+        return request;
+    }
+
+    public Ga4PurchaseRequest CreateAddedPaymentInfoRequest(IOrderInfo orderInfo)
+    {
+        var request = CreateRequest(orderInfo, "add_payment_info");
+        request.Value = orderInfo.ChargedAmount.Value;
+        request.PaymentType = orderInfo.PaymentProvider?.Title;
         request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo.StoreInfo.Alias)).ToList();
 
         return request;
@@ -207,7 +236,17 @@ public sealed class Ga4TrackingService : IGa4TrackingService
             parameters["transaction_id"] = request.TransactionId;
             parameters["shipping"] = request.Shipping;
             parameters["tax"] = request.Tax;
+        }
+
+        if (string.Equals(request.EventName, "purchase", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(request.EventName, "add_payment_info", StringComparison.OrdinalIgnoreCase))
+        {
             parameters["payment_type"] = request.PaymentType;
+        }
+
+        if (string.Equals(request.EventName, "purchase", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(request.EventName, "add_shipping_info", StringComparison.OrdinalIgnoreCase))
+        {
             parameters["shipping_tier"] = request.ShippingTier;
         }
 

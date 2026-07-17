@@ -50,9 +50,36 @@ public sealed class MetaTrackingService : IMetaTrackingService
         return request;
     }
 
+    public MetaPurchaseRequest CreateRemovedFromCartRequest(IOrderInfo orderInfo, IOrderLine orderLine)
+    {
+        var request = CreateRequest(orderInfo, "RemoveFromCart", $"{orderInfo.OrderNumber}:{orderLine.Key}:remove_from_cart");
+        request.Value = orderLine.Amount.WithVat.Value * orderLine.Quantity;
+        request.Contents = [CreateContent(orderLine)];
+
+        return request;
+    }
+
     public MetaPurchaseRequest CreateStartedCheckoutRequest(IOrderInfo orderInfo)
     {
         var request = CreateRequest(orderInfo, "InitiateCheckout", $"{orderInfo.OrderNumber}:initiate_checkout");
+        request.Value = orderInfo.ChargedAmount.Value;
+        request.Contents = orderInfo.OrderLines.Select(CreateContent).ToList();
+
+        return request;
+    }
+
+    public MetaPurchaseRequest CreateAddedShippingInfoRequest(IOrderInfo orderInfo)
+    {
+        var request = CreateRequest(orderInfo, "AddShippingInfo", $"{orderInfo.OrderNumber}:add_shipping_info:{orderInfo.ShippingProvider?.Key}");
+        request.Value = orderInfo.ChargedAmount.Value;
+        request.Contents = orderInfo.OrderLines.Select(CreateContent).ToList();
+
+        return request;
+    }
+
+    public MetaPurchaseRequest CreateAddedPaymentInfoRequest(IOrderInfo orderInfo)
+    {
+        var request = CreateRequest(orderInfo, "AddPaymentInfo", $"{orderInfo.OrderNumber}:add_payment_info:{orderInfo.PaymentProvider?.Key}");
         request.Value = orderInfo.ChargedAmount.Value;
         request.Contents = orderInfo.OrderLines.Select(CreateContent).ToList();
 

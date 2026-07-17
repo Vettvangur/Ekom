@@ -53,7 +53,10 @@ public sealed class Ga4TrackingProviderOptions : TrackingProviderOptions
 public sealed class Ga4TrackingEventsOptions
 {
     public bool AddedToCart { get; set; }
+    public bool RemovedFromCart { get; set; }
     public bool StartedCheckout { get; set; }
+    public bool AddedShippingInfo { get; set; }
+    public bool AddedPaymentInfo { get; set; }
 }
 
 public sealed class MetaTrackingProviderOptions : TrackingProviderOptions
@@ -64,7 +67,10 @@ public sealed class MetaTrackingProviderOptions : TrackingProviderOptions
 public sealed class MetaTrackingEventsOptions
 {
     public bool AddedToCart { get; set; }
+    public bool RemovedFromCart { get; set; }
     public bool StartedCheckout { get; set; }
+    public bool AddedShippingInfo { get; set; }
+    public bool AddedPaymentInfo { get; set; }
 }
 
 public sealed class TrackingDispatchOptions

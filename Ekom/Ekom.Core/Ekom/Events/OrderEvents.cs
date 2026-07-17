@@ -107,6 +107,11 @@ public static class OrderEvents
     public static Task OnAddedOrderlineAsync(object sender, AddedOrderlineEventArgs args, CancellationToken ct = default)
         => AsyncEventInvoker.InvokeAsync(AddedOrderlineAsync, sender, args, ct);
 
+    public static event Func<object, RemovedOrderlineEventArgs, CancellationToken, Task>? RemovedOrderlineAsync;
+
+    public static Task OnRemovedOrderlineAsync(object sender, RemovedOrderlineEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(RemovedOrderlineAsync, sender, args, ct);
+
     public static event EventHandler<UpdatedOrderlineEventArgs>? UpdatedOrderline;
 
     internal static void OnUpdatedOrderline(object sender, UpdatedOrderlineEventArgs args)
@@ -116,6 +121,16 @@ public static class OrderEvents
 
     public static Task OnUpdatedOrderlineAsync(object sender, UpdatedOrderlineEventArgs args, CancellationToken ct = default)
         => AsyncEventInvoker.InvokeAsync(UpdatedOrderlineAsync, sender, args, ct);
+
+    public static event Func<object, ShippingProviderAddedEventArgs, CancellationToken, Task>? ShippingProviderAddedAsync;
+
+    public static Task OnShippingProviderAddedAsync(object sender, ShippingProviderAddedEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(ShippingProviderAddedAsync, sender, args, ct);
+
+    public static event Func<object, PaymentProviderAddedEventArgs, CancellationToken, Task>? PaymentProviderAddedAsync;
+
+    public static Task OnPaymentProviderAddedAsync(object sender, PaymentProviderAddedEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(PaymentProviderAddedAsync, sender, args, ct);
 }
 
 /// <summary>For changing and changed <see cref="OrderStatus"/> events</summary>
@@ -172,7 +187,23 @@ public sealed class AddedOrderlineEventArgs : EventArgs
     public required OrderLine OrderLine { get; set; }
 }
 
+public sealed class RemovedOrderlineEventArgs : EventArgs
+{
+    public required OrderInfo OrderInfo { get; set; }
+    public required OrderLine OrderLine { get; set; }
+}
+
 public sealed class UpdatedOrderlineEventArgs : EventArgs
+{
+    public required OrderInfo OrderInfo { get; set; }
+}
+
+public sealed class ShippingProviderAddedEventArgs : EventArgs
+{
+    public required OrderInfo OrderInfo { get; set; }
+}
+
+public sealed class PaymentProviderAddedEventArgs : EventArgs
 {
     public required OrderInfo OrderInfo { get; set; }
 }
