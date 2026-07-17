@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.212](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.211...Ekom-v0.2.212) (2026-07-16)
+
+
+### Bug Fixes
+
+* **tracking:** separate GA4 debug settings ([#717](https://github.com/Vettvangur/Ekom/issues/717)) ([31420f7](https://github.com/Vettvangur/Ekom/commit/31420f7c3161b11af7adf215113a3319985d557d))
+
 ## [0.2.211](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.210...Ekom-v0.2.211) (2026-07-16)
 
 
