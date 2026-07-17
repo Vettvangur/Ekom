@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.214](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.213...Ekom-v0.2.214) (2026-07-17)
+
+
+### Bug Fixes
+
+* **tracking:** prevent duplicate checkout events ([#721](https://github.com/Vettvangur/Ekom/issues/721)) ([7ab6108](https://github.com/Vettvangur/Ekom/commit/7ab61083a5c2fda2331f3061f8d22be6532af256))
+
 ## [0.2.213](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.212...Ekom-v0.2.213) (2026-07-17)
 
 
