@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.215](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.214...Ekom-v0.2.215) (2026-07-17)
+
+
+### Bug Fixes
+
+* **tracking:** remove GA4 client ID warning ([#723](https://github.com/Vettvangur/Ekom/issues/723)) ([c8adcd0](https://github.com/Vettvangur/Ekom/commit/c8adcd03c7e1a593ce265da202680d6da6a7eaae))
+
 ## [0.2.214](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.213...Ekom-v0.2.214) (2026-07-17)
 
 
