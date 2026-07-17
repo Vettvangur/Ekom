@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.213](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.212...Ekom-v0.2.213) (2026-07-17)
+
+
+### Features
+
+* **tracking:** add checkout tracking events ([#719](https://github.com/Vettvangur/Ekom/issues/719)) ([34f8b9c](https://github.com/Vettvangur/Ekom/commit/34f8b9cfc068e304ae72a42fd33597dc298ff624))
+
 ## [0.2.212](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.211...Ekom-v0.2.212) (2026-07-16)
 
 
