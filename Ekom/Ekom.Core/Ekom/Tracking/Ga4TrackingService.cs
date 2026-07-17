@@ -95,11 +95,10 @@ public sealed class Ga4TrackingService : IGa4TrackingService
     {
         var tracking = orderInfo.Tracking ?? new OrderTracking();
         var clientId = tracking.Ga4.ClientId;
-        var generatedClientId = false;
+
         if (string.IsNullOrWhiteSpace(clientId))
         {
             clientId = GenerateClientId();
-            generatedClientId = true;
         }
 
         var sessionId = ParseLong(tracking.Ga4.SessionId);
@@ -124,11 +123,6 @@ public sealed class Ga4TrackingService : IGa4TrackingService
             Gclid = string.Equals(tracking.ClickIdType, "gclid", StringComparison.OrdinalIgnoreCase) ? tracking.ClickId : null,
             Parameters = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         };
-
-        if (generatedClientId)
-        {
-            _logger.LogWarning("GA4 client_id missing for order {OrderNumber}. Generated fallback client_id for store {StoreAlias}.", orderInfo.OrderNumber, orderInfo.StoreInfo.Alias);
-        }
 
         foreach (var entry in tracking.Ga4.Data)
             request.Parameters[entry.Key] = entry.Value;
