@@ -275,7 +275,10 @@ Full tracking config example:
     "DebugMode": false,
     "Events": {
       "AddedToCart": false,
-      "StartedCheckout": false
+      "RemovedFromCart": false,
+      "StartedCheckout": false,
+      "AddedShippingInfo": false,
+      "AddedPaymentInfo": false
     },
     "Dispatching": {
       "Capacity": 1000,
@@ -294,7 +297,10 @@ Full tracking config example:
     "Testing": false,
     "Events": {
       "AddedToCart": false,
-      "StartedCheckout": false
+      "RemovedFromCart": false,
+      "StartedCheckout": false,
+      "AddedShippingInfo": false,
+      "AddedPaymentInfo": false
     },
     "Dispatching": {
       "Capacity": 1000,
@@ -315,8 +321,10 @@ Full tracking config example:
 Notes:
 
 - `Ga4:Stores[*]` uses `MeasurementId` and `ApiSecret` for Measurement Protocol purchase events.
-- `Ga4:Events:AddedToCart` and `Ga4:Events:StartedCheckout` enable `add_to_cart` and `begin_checkout` events. Both default to `false`.
+- `Ga4:Events:AddedToCart`, `Ga4:Events:RemovedFromCart`, `Ga4:Events:StartedCheckout`, `Ga4:Events:AddedShippingInfo`, and `Ga4:Events:AddedPaymentInfo` enable `add_to_cart`, `remove_from_cart`, `begin_checkout`, `add_shipping_info`, and `add_payment_info` events. All default to `false`.
 - `Meta:Stores[*]` uses `PixelId` and `AccessToken` for Conversion API purchase events.
+- `Meta:Events:AddedToCart`, `Meta:Events:RemovedFromCart`, `Meta:Events:StartedCheckout`, `Meta:Events:AddedShippingInfo`, and `Meta:Events:AddedPaymentInfo` enable `AddToCart`, `RemoveFromCart`, `InitiateCheckout`, `AddShippingInfo`, and `AddPaymentInfo` events. All default to `false`.
+- `Ga4:Testing` sends events through the GA4 debug endpoint.
 - `Meta:Events:AddedToCart` and `Meta:Events:StartedCheckout` enable `AddToCart` and `InitiateCheckout` events. Both default to `false`.
 - `Ga4:UseDebugEndpoint` sends events through GA4's debug endpoint and enables debug-response validation.
 - `Ga4:DebugMode` adds `debug_mode: true` to GA4 event parameters.

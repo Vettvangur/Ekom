@@ -16,7 +16,10 @@ public sealed class MetaTrackingServiceTests
         var options = new TrackingOptions();
 
         Assert.False(options.Meta.Events.AddedToCart);
+        Assert.False(options.Meta.Events.RemovedFromCart);
         Assert.False(options.Meta.Events.StartedCheckout);
+        Assert.False(options.Meta.Events.AddedShippingInfo);
+        Assert.False(options.Meta.Events.AddedPaymentInfo);
     }
 
     [Fact]
