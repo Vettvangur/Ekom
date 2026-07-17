@@ -1299,7 +1299,6 @@ partial class OrderService
     private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(
         OrderInfo orderInfo,
         bool fireOnOrderUpdatedEvents = true,
-        string? previousCustomerEmail = null,
         CancellationToken ct = default)
     {
         try
@@ -1394,20 +1393,6 @@ partial class OrderService
                 {
                     OrderInfo = orderInfo
                 }, ct);
-
-                var newCustomerEmail = orderInfo.CustomerInformation.Customer.Email;
-
-                if (string.IsNullOrWhiteSpace(previousCustomerEmail)
-                    && !string.IsNullOrWhiteSpace(newCustomerEmail))
-                {
-
-                    await OrderEvents.OnCustomerEmailAddedAsync(this, new CustomerEmailAddedEventArgs
-                    {
-                        OrderInfo = orderInfo,
-                        PreviousCustomerEmail = previousCustomerEmail,
-                        NewCustomerEmail = newCustomerEmail
-                    }, ct);
-                }
             }
 
             return orderInfo;
@@ -1700,8 +1685,21 @@ partial class OrderService
             }
         }
 
-        orderInfo = await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, previousCustomerEmail: previousCustomerEmail, ct: ct)
+        orderInfo = await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
             .ConfigureAwait(false);
+
+        var newCustomerEmail = orderInfo.CustomerInformation.Customer.Email;
+        if (settings.FireOnOrderUpdatedEvent
+            && string.IsNullOrWhiteSpace(previousCustomerEmail)
+            && !string.IsNullOrWhiteSpace(newCustomerEmail))
+        {
+            await OrderEvents.OnCustomerEmailAddedAsync(this, new CustomerEmailAddedEventArgs
+            {
+                OrderInfo = orderInfo,
+                PreviousCustomerEmail = previousCustomerEmail,
+                NewCustomerEmail = newCustomerEmail
+            }, ct);
+        }
 
         if (settings.FireEvents)
         {
