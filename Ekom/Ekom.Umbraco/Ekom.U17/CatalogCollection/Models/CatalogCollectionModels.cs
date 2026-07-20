@@ -12,7 +12,7 @@ public sealed class CatalogCollectionResponse
 {
     public CatalogCollectionNode Current { get; set; } = new();
     public CatalogCollectionNode? Parent { get; set; }
-    public IReadOnlyList<CatalogCollectionNode> Breadcrumbs { get; set; } = Array.Empty<CatalogCollectionNode>();
+    public IReadOnlyList<CatalogCollectionBreadcrumb> Breadcrumbs { get; set; } = Array.Empty<CatalogCollectionBreadcrumb>();
     public IReadOnlyList<CatalogCollectionNode> Subcategories { get; set; } = Array.Empty<CatalogCollectionNode>();
     public IReadOnlyList<CatalogCollectionProduct> Products { get; set; } = Array.Empty<CatalogCollectionProduct>();
     public int ProductCount { get; set; }
@@ -33,6 +33,11 @@ public class CatalogCollectionNode
     public int SortOrder { get; set; }
     public int ProductCount { get; set; }
     public int SubcategoryCount { get; set; }
+}
+
+public sealed class CatalogCollectionBreadcrumb : CatalogCollectionNode
+{
+    public IReadOnlyList<CatalogCollectionNode> Siblings { get; set; } = Array.Empty<CatalogCollectionNode>();
 }
 
 public sealed class CatalogCollectionProduct : CatalogCollectionNode
