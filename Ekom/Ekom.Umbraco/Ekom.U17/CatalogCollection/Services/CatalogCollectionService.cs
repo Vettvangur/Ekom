@@ -193,9 +193,9 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
         return parent == null || !CatalogAliases.Contains(parent.ContentType.Alias) ? null : MapNode(parent);
     }
 
-    private IReadOnlyList<CatalogCollectionNode> GetBreadcrumbs(IContent content)
+    private IReadOnlyList<CatalogCollectionBreadcrumb> GetBreadcrumbs(IContent content)
     {
-        var breadcrumbs = new List<CatalogCollectionNode>();
+        var breadcrumbs = new List<IContent>();
         var current = content;
 
         while (current.ParentId > 0)
@@ -208,15 +208,38 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
 
             if (CatalogAliases.Contains(parent.ContentType.Alias))
             {
-                breadcrumbs.Add(MapNode(parent));
+                breadcrumbs.Add(parent);
             }
 
             current = parent;
         }
 
         breadcrumbs.Reverse();
-        breadcrumbs.Add(MapNode(content));
-        return breadcrumbs;
+        breadcrumbs.Add(content);
+        return breadcrumbs.Select(MapBreadcrumb).ToList();
+    }
+
+    private CatalogCollectionBreadcrumb MapBreadcrumb(IContent content)
+    {
+        IReadOnlyList<CatalogCollectionNode> siblings = content.ContentType.Alias.Equals("ekmCategory", StringComparison.OrdinalIgnoreCase)
+            && content.ParentId > 0
+                ? GetCatalogChildren(content.ParentId, "ekmCategory")
+                    .OrderBy(x => x.SortOrder)
+                    .ThenBy(x => x.Name)
+                    .Select(category => MapNode(category))
+                    .ToList()
+                : Array.Empty<CatalogCollectionNode>();
+
+        return new CatalogCollectionBreadcrumb
+        {
+            Id = content.Id,
+            Key = content.Key,
+            Name = content.Name ?? string.Empty,
+            Title = GetTitle(content),
+            ContentTypeAlias = content.ContentType.Alias,
+            SortOrder = content.SortOrder,
+            Siblings = siblings,
+        };
     }
 
     private static List<CatalogCollectionProduct> FilterProducts(List<CatalogCollectionProduct> products, string? query)

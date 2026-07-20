@@ -1,37 +1,37 @@
 var $ = Object.defineProperty;
-var P = (r, l, e) => l in r ? $(r, l, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[l] = e;
-var n = (r, l, e) => P(r, typeof l != "symbol" ? l + "" : l, e);
+var P = (s, c, e) => c in s ? $(s, c, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[c] = e;
+var l = (s, c, e) => P(s, typeof c != "symbol" ? c + "" : c, e);
 import { UMB_COLLECTION_CONTEXT as C } from "@umbraco-cms/backoffice/collection";
 import { UmbElementMixin as E } from "@umbraco-cms/backoffice/element-api";
 import "@umbraco-cms/backoffice/imaging";
-const I = 16, u = "sortOrderAsc", b = "ekomCatalogNode", f = 14, T = 220, z = 4, O = "ekomCatalogParent:", k = "ekomCatalogSort", p = "ekomCatalog";
-class N extends E(HTMLElement) {
+const T = 16, m = "sortOrderAsc", f = "ekomCatalogNode", y = 14, I = 220, z = 4, q = "ekomCatalogParent:", w = "ekomCatalogSort", b = "ekomCatalog";
+class A extends E(HTMLElement) {
   constructor() {
     super(...arguments);
-    n(this, "nodeId", "");
-    n(this, "query", "");
-    n(this, "sort", y());
-    n(this, "page", 1);
-    n(this, "pageSize", I);
-    n(this, "loading", !0);
-    n(this, "error", "");
-    n(this, "data");
-    n(this, "revealTimer");
-    n(this, "resizeTimer");
-    n(this, "collectionPaginationObserver");
-    n(this, "selection");
-    n(this, "onPopState", () => this.restoreNodeFromHistory());
-    n(this, "onResize", () => {
+    l(this, "nodeId", "");
+    l(this, "query", "");
+    l(this, "sort", k());
+    l(this, "page", 1);
+    l(this, "pageSize", T);
+    l(this, "loading", !0);
+    l(this, "error", "");
+    l(this, "data");
+    l(this, "revealTimer");
+    l(this, "resizeTimer");
+    l(this, "collectionPaginationObserver");
+    l(this, "selection");
+    l(this, "onPopState", () => this.restoreNodeFromHistory());
+    l(this, "onResize", () => {
       this.resizeTimer != null && window.clearTimeout(this.resizeTimer), this.resizeTimer = window.setTimeout(() => {
         this.updatePageSizeForViewport() && this.nodeId && this.data != null && !this.loading && this.load(!1);
       }, 150);
     });
   }
   connectedCallback() {
-    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), window.addEventListener("popstate", this.onPopState), window.addEventListener("resize", this.onResize), this.revealCollectionHost(), this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250), this.nodeId = this.getNodeIdFromUrl(), this.sort = y(), this.restorePageFromHistory(), this.consumeContext(C, (e) => {
+    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), window.addEventListener("popstate", this.onPopState), window.addEventListener("resize", this.onResize), this.revealCollectionHost(), this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250), this.nodeId = this.getNodeIdFromUrl(), this.sort = k(), this.restorePageFromHistory(), this.consumeContext(C, (e) => {
       var o;
       const t = (o = e == null ? void 0 : e.getConfig()) == null ? void 0 : o.unique;
-      this.getCatalogNodeFromUrl() == null && t != null && t !== this.nodeId && (this.nodeId = t, this.restorePageFromHistory(), this.load()), (e == null ? void 0 : e.selection) != null && (this.selection = e.selection, this.selection.setSelectable(!0), this.selection.setMultiple(!0), this.observe(e.selection.selection, () => this.render(), "ekomCatalogCollectionSelection")), this.observe(e == null ? void 0 : e.filter, (i) => this.setQueryFromCollectionFilter(i), "ekomCatalogCollectionFilter");
+      this.getCatalogNodeFromUrl() == null && t != null && t !== this.nodeId && (this.nodeId = t, this.restorePageFromHistory(), this.load()), (e == null ? void 0 : e.selection) != null && (this.selection = e.selection, this.selection.setSelectable(!0), this.selection.setMultiple(!0), this.observe(e.selection.selection, () => this.render(), "ekomCatalogCollectionSelection")), this.observe(e == null ? void 0 : e.filter, (r) => this.setQueryFromCollectionFilter(r), "ekomCatalogCollectionFilter");
     }), this.render(), this.nodeId && this.load();
   }
   disconnectedCallback() {
@@ -53,7 +53,7 @@ class N extends E(HTMLElement) {
       });
       this.data = await this.fetchJson(`/ekom/backoffice/CatalogCollection/${encodeURIComponent(this.nodeId)}?${t}`), this.page = this.data.page, this.pageSize = this.data.pageSize, this.storeParentNode(this.data);
     } catch (t) {
-      if (t instanceof m && t.status === 404 && this.redirectToParent())
+      if (t instanceof x && t.status === 404 && this.redirectToParent())
         return;
       this.error = t instanceof Error ? t.message : "Unable to load catalog.";
     } finally {
@@ -61,15 +61,15 @@ class N extends E(HTMLElement) {
     }
   }
   drillTo(e) {
-    var i;
+    var r;
     const t = e.key || String(e.id), o = history.state != null && typeof history.state == "object" ? history.state : {};
     history.pushState({
       ...o,
-      [p]: {
+      [b]: {
         nodeId: t,
         page: 1
       }
-    }, "", this.getDocumentHref(t)), this.nodeId = t, this.query = "", this.page = 1, (i = this.selection) == null || i.clearSelection(), this.load();
+    }, "", this.getDocumentHref(t)), this.nodeId = t, this.query = "", this.page = 1, (r = this.selection) == null || r.clearSelection(), this.load();
   }
   restoreNodeFromHistory() {
     var t;
@@ -87,14 +87,14 @@ class N extends E(HTMLElement) {
     return e ? (window.location.replace(this.getDocumentHref(e)), !0) : !1;
   }
   getParentStorageKey(e) {
-    return `${O}${e}`;
+    return `${q}${e}`;
   }
   restorePageFromHistory() {
-    const e = history.state, t = e == null ? void 0 : e[p];
+    const e = history.state, t = e == null ? void 0 : e[b];
     if (t == null || typeof t != "object")
       return;
-    const { nodeId: o, page: i } = t;
-    o === this.nodeId && typeof i == "number" && Number.isInteger(i) && i > 0 && (this.page = i);
+    const { nodeId: o, page: r } = t;
+    o === this.nodeId && typeof r == "number" && Number.isInteger(r) && r > 0 && (this.page = r);
   }
   storePageInHistory() {
     if (!this.nodeId)
@@ -102,7 +102,7 @@ class N extends E(HTMLElement) {
     const e = history.state != null && typeof history.state == "object" ? history.state : {};
     history.replaceState({
       ...e,
-      [p]: {
+      [b]: {
         nodeId: this.nodeId,
         page: this.page
       }
@@ -113,12 +113,12 @@ class N extends E(HTMLElement) {
     o !== this.query && (this.query = o, this.page = 1, this.storePageInHistory(), this.nodeId && this.load());
   }
   setSort(e) {
-    if (v(e)) {
+    if (S(e)) {
       if (e === this.sort) {
-        x(e);
+        v(e);
         return;
       }
-      this.sort = e, x(e), this.page = 1, this.storePageInHistory(), this.load();
+      this.sort = e, v(e), this.page = 1, this.storePageInHistory(), this.load();
     }
   }
   setPage(e) {
@@ -128,7 +128,7 @@ class N extends E(HTMLElement) {
     const e = Math.max(0, this.clientWidth - 48);
     if (e === 0)
       return !1;
-    const o = Math.max(1, Math.floor((e + f) / (T + f))) * z;
+    const o = Math.max(1, Math.floor((e + y) / (I + y))) * z;
     return o === this.pageSize ? !1 : (this.pageSize = o, !0);
   }
   toggleProduct(e) {
@@ -139,13 +139,13 @@ class N extends E(HTMLElement) {
     var a;
     if (this.selection == null)
       return;
-    const t = (((a = this.data) == null ? void 0 : a.products) ?? []).map((s) => s.key), o = t.length > 0 && t.every((s) => this.selection.isSelected(s)), i = this.selection.getSelection();
-    this.selection.setSelection(o ? i.filter((s) => !t.includes(s)) : [.../* @__PURE__ */ new Set([...i, ...t])]);
+    const t = (((a = this.data) == null ? void 0 : a.products) ?? []).map((i) => i.key), o = t.length > 0 && t.every((i) => this.selection.isSelected(i)), r = this.selection.getSelection();
+    this.selection.setSelection(o ? r.filter((i) => !t.includes(i)) : [.../* @__PURE__ */ new Set([...r, ...t])]);
   }
   revealCollectionHost() {
     for (const e of this.getComposedAncestors("umb-collection-default")) {
-      const t = e.shadowRoot, o = t == null ? void 0 : t.querySelector("#router"), i = t == null ? void 0 : t.querySelector("umb-body-layout"), a = t == null ? void 0 : t.querySelector("#empty-state");
-      o == null || o.style.setProperty("visibility", "visible", "important"), a == null || a.style.setProperty("display", "none", "important"), i == null || i.classList.add("has-items");
+      const t = e.shadowRoot, o = t == null ? void 0 : t.querySelector("#router"), r = t == null ? void 0 : t.querySelector("umb-body-layout"), a = t == null ? void 0 : t.querySelector("#empty-state");
+      o == null || o.style.setProperty("visibility", "visible", "important"), a == null || a.style.setProperty("display", "none", "important"), r == null || r.classList.add("has-items");
     }
     for (const e of this.getComposedShadowRoots())
       this.hideDefaultCollectionPagination(e), this.observeDefaultCollectionPagination(e);
@@ -175,14 +175,14 @@ class N extends E(HTMLElement) {
   }
   render() {
     this.innerHTML = `
-      <style>${A}</style>
+      <style>${L}</style>
       <div class="catalog-shell">
         ${this.renderContent()}
       </div>
     `, this.revealCollectionHost(), this.bindEvents();
   }
   renderContent() {
-    return this.loading ? this.renderLoading() : this.error ? `<div class="surface state error"><strong>Catalog unavailable</strong><span>${d(this.error)}</span><button type="button" data-action="retry">Retry</button></div>` : this.data == null ? '<div class="surface state">No catalog data.</div>' : !this.query && this.data.productCount === 0 && this.data.subcategoryCount === 0 ? `
+    return this.loading ? this.renderLoading() : this.error ? `<div class="surface state error"><strong>Catalog unavailable</strong><span>${p(this.error)}</span><button type="button" data-action="retry">Retry</button></div>` : this.data == null ? '<div class="surface state">No catalog data.</div>' : !this.query && this.data.productCount === 0 && this.data.subcategoryCount === 0 ? `
         ${this.renderBreadcrumbs(this.data)}
         ${this.renderHeader(this.data)}
         ${this.renderEmptyCategory()}
@@ -234,8 +234,11 @@ class N extends E(HTMLElement) {
   }
   renderBreadcrumbs(e) {
     return `<nav class="breadcrumbs">${e.breadcrumbs.map((t, o) => {
-      const i = o === e.breadcrumbs.length - 1, a = d(t.title || t.name);
-      return `${o > 0 ? '<span class="sep">/</span>' : ""}${i ? `<span>${a}</span>` : `<a href="${this.getDocumentHref(t.key)}">${a}</a>`}`;
+      const r = o === e.breadcrumbs.length - 1, a = p(t.title || t.name), i = t.siblings.filter((d) => d.key !== t.key), h = t.contentTypeAlias === "ekmCategory" && i.length > 0 ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(t.key)}" data-breadcrumb-link-key="${p(t.key)}" ${r ? 'aria-current="page"' : ""}>${a}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${a}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${i.map((d) => {
+        const u = p(d.title || d.name);
+        return `<button type="button" data-breadcrumb-category-key="${p(d.key)}" role="menuitem">${u}</button>`;
+      }).join("")}</div></details></div>` : r ? `<span aria-current="page">${a}</span>` : `<a href="${this.getDocumentHref(t.key)}">${a}</a>`;
+      return `${o > 0 ? '<span class="sep">/</span>' : ""}${h}`;
     }).join("")}</nav>`;
   }
   renderHeader(e) {
@@ -243,7 +246,7 @@ class N extends E(HTMLElement) {
       <header class="catalog-header">
         <button type="button" class="back" data-action="back" ${e.parent == null ? "disabled" : ""}>←</button>
         <div>
-          <h1>${d(e.current.title || e.current.name)}</h1>
+          <h1>${p(e.current.title || e.current.name)}</h1>
           <p>${e.productCount} products · ${e.subcategoryCount} subcategories</p>
         </div>
       </header>
@@ -251,8 +254,8 @@ class N extends E(HTMLElement) {
   }
   renderToolbar(e) {
     const t = e.products.length > 0 && e.products.every((o) => {
-      var i;
-      return (i = this.selection) == null ? void 0 : i.isSelected(o.key);
+      var r;
+      return (r = this.selection) == null ? void 0 : r.isSelected(o.key);
     });
     return `
       <div class="toolbar">
@@ -279,7 +282,7 @@ class N extends E(HTMLElement) {
         <h2>Subcategories</h2>
         <div class="chips">${e.map((t) => `
           <a class="chip" href="${this.getDocumentHref(t.key)}">
-            <span class="tile">▦</span><span class="chip-text"><strong>${d(t.title || t.name)}</strong><small>${t.productCount} products · ${t.subcategoryCount} subcategories</small></span><span>›</span>
+            <span class="tile">▦</span><span class="chip-text"><strong>${p(t.title || t.name)}</strong><small>${t.productCount} products · ${t.subcategoryCount} subcategories</small></span><span>›</span>
           </a>
         `).join("")}</div>
       </section>
@@ -296,7 +299,7 @@ class N extends E(HTMLElement) {
     `;
   }
   renderProducts(e) {
-    const t = this.query ? `No products match &quot;${d(this.query)}&quot;` : "No products in this category yet";
+    const t = this.query ? `No products match &quot;${p(this.query)}&quot;` : "No products in this category yet";
     return `
       <section class="section">
         <h2>Products (${e.filteredProductCount})</h2>
@@ -305,16 +308,16 @@ class N extends E(HTMLElement) {
     `;
   }
   renderProduct(e) {
-    var i;
-    const t = ((i = this.selection) == null ? void 0 : i.isSelected(e.key)) ?? !1, o = `/umbraco/section/content/workspace/document/edit/${e.key}`;
+    var r;
+    const t = ((r = this.selection) == null ? void 0 : r.isSelected(e.key)) ?? !1, o = `/umbraco/section/content/workspace/document/edit/${e.key}`;
     return `
       <article class="card ${t ? "selected" : ""}">
         <button type="button" class="checkbox ${t ? "checked" : ""}" data-product-key="${e.key}">${t ? "✓" : ""}</button>
-        <a class="image ${e.published ? "" : "dimmed"}" href="${o}">${e.image ? `<umb-imaging-thumbnail unique="${d(e.image)}" width="320" height="160" alt="${d(e.title || e.name)}"></umb-imaging-thumbnail>` : "<span>Product image</span>"}</a>
+        <a class="image ${e.published ? "" : "dimmed"}" href="${o}">${e.image ? `<umb-imaging-thumbnail unique="${p(e.image)}" width="320" height="160" alt="${p(e.title || e.name)}"></umb-imaging-thumbnail>` : "<span>Product image</span>"}</a>
         <div class="card-body">
-          <a class="title" href="${o}">${d(e.title || e.name)}</a>
-          <div class="meta"><span>${e.sku ? `SKU ${d(e.sku)}` : "No SKU"}</span><strong>${d(e.price)}</strong></div>
-          <div class="status-row"><span class="pill ${q(e.status)}"><i></i>${e.status}</span><strong class="availability ${e.available ? "ok" : "bad"}">${e.available ? "✓ Available" : "✕ Unavailable"}</strong></div>
+          <a class="title" href="${o}">${p(e.title || e.name)}</a>
+          <div class="meta"><span>${e.sku ? `SKU ${p(e.sku)}` : "No SKU"}</span><strong>${p(e.price)}</strong></div>
+          <div class="status-row"><span class="pill ${O(e.status)}"><i></i>${e.status}</span><strong class="availability ${e.available ? "ok" : "bad"}">${e.available ? "✓ Available" : "✕ Unavailable"}</strong></div>
         </div>
       </article>
     `;
@@ -327,7 +330,7 @@ class N extends E(HTMLElement) {
       <footer class="pagination">
         <div>
           <button type="button" data-page="${e.page - 1}" ${e.page <= 1 ? "disabled" : ""}>‹ Prev</button>
-          ${this.paginationItems(e.page, e.totalPages).map((i) => i === "…" ? "<span>…</span>" : `<button type="button" class="${i === e.page ? "current" : ""}" data-page="${i}">${i}</button>`).join("")}
+          ${this.paginationItems(e.page, e.totalPages).map((r) => r === "…" ? "<span>…</span>" : `<button type="button" class="${r === e.page ? "current" : ""}" data-page="${r}">${r}</button>`).join("")}
           <button type="button" data-page="${e.page + 1}" ${e.page >= e.totalPages ? "disabled" : ""}>Next ›</button>
         </div>
         <span>${t}–${o} of ${e.filteredProductCount}</span>
@@ -336,28 +339,47 @@ class N extends E(HTMLElement) {
   }
   paginationItems(e, t) {
     if (t <= 7)
-      return Array.from({ length: t }, (s, c) => c + 1);
-    const i = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((s) => s >= 1 && s <= t).sort((s, c) => s - c), a = [];
-    for (const s of i) {
-      const c = a[a.length - 1];
-      typeof c == "number" && s - c > 1 && a.push("…"), a.push(s);
+      return Array.from({ length: t }, (i, n) => n + 1);
+    const r = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((i) => i >= 1 && i <= t).sort((i, n) => i - n), a = [];
+    for (const i of r) {
+      const n = a[a.length - 1];
+      typeof n == "number" && i - n > 1 && a.push("…"), a.push(i);
     }
     return a;
   }
   bindEvents() {
-    var e, t, o, i, a;
+    var e, t, o, r, a;
     (e = this.querySelector('[data-action="retry"]')) == null || e.addEventListener("click", () => void this.load()), (t = this.querySelector('[data-action="back"]')) == null || t.addEventListener("click", () => {
-      var s;
-      ((s = this.data) == null ? void 0 : s.parent) != null && this.drillTo(this.data.parent);
-    }), (o = this.querySelector('[data-action="toggle-page"]')) == null || o.addEventListener("click", () => this.toggleCurrentPage()), (i = this.querySelector('[data-field="sort"]')) == null || i.addEventListener("input", (s) => this.setSort(s.target.value)), (a = this.querySelector('[data-field="sort"]')) == null || a.addEventListener("change", (s) => this.setSort(s.target.value)), this.querySelectorAll("[data-product-key]").forEach((s) => {
-      s.addEventListener("click", (c) => {
-        var g;
-        c.preventDefault();
-        const w = s.dataset.productKey, h = (g = this.data) == null ? void 0 : g.products.find((S) => S.key === w);
-        h != null && this.toggleProduct(h);
+      var i;
+      ((i = this.data) == null ? void 0 : i.parent) != null && this.drillTo(this.data.parent);
+    }), (o = this.querySelector('[data-action="toggle-page"]')) == null || o.addEventListener("click", () => this.toggleCurrentPage()), (r = this.querySelector('[data-field="sort"]')) == null || r.addEventListener("input", (i) => this.setSort(i.target.value)), (a = this.querySelector('[data-field="sort"]')) == null || a.addEventListener("change", (i) => this.setSort(i.target.value)), this.querySelectorAll("[data-product-key]").forEach((i) => {
+      i.addEventListener("click", (n) => {
+        var u;
+        n.preventDefault();
+        const h = i.dataset.productKey, d = (u = this.data) == null ? void 0 : u.products.find((g) => g.key === h);
+        d != null && this.toggleProduct(d);
       });
-    }), this.querySelectorAll("[data-page]").forEach((s) => {
-      s.addEventListener("click", () => this.setPage(Number(s.dataset.page)));
+    }), this.querySelectorAll("[data-page]").forEach((i) => {
+      i.addEventListener("click", () => this.setPage(Number(i.dataset.page)));
+    }), this.querySelectorAll("[data-breadcrumb-link-key]").forEach((i) => {
+      i.addEventListener("click", (n) => {
+        var u;
+        n.preventDefault();
+        const h = i.dataset.breadcrumbLinkKey, d = (u = this.data) == null ? void 0 : u.breadcrumbs.find((g) => g.key === h);
+        d != null && this.drillTo(d);
+      });
+    }), this.querySelectorAll("[data-breadcrumb-category-key]").forEach((i) => {
+      i.addEventListener("click", () => {
+        var d;
+        const n = i.dataset.breadcrumbCategoryKey, h = (d = this.data) == null ? void 0 : d.breadcrumbs.flatMap((u) => u.siblings).find((u) => u.key === n);
+        h != null && this.drillTo(h);
+      });
+    }), this.querySelectorAll(".breadcrumb-menu").forEach((i) => {
+      i.addEventListener("toggle", () => {
+        i.open && this.querySelectorAll(".breadcrumb-menu").forEach((n) => {
+          n !== i && (n.open = !1);
+        });
+      });
     });
   }
   getNodeIdFromUrl() {
@@ -367,36 +389,36 @@ class N extends E(HTMLElement) {
     const t = window.location.href, o = t.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
     if (o != null)
       return o[0];
-    const i = t.match(/\/edit\/([^/?#]+)/i);
-    return (i == null ? void 0 : i[1]) ?? "";
+    const r = t.match(/\/edit\/([^/?#]+)/i);
+    return (r == null ? void 0 : r[1]) ?? "";
   }
   getDocumentHref(e) {
     const t = new URL(window.location.href);
-    return t.searchParams.delete(b), t.pathname.match(/\/edit\/[^/]+/i) != null ? (t.pathname = t.pathname.replace(/\/edit\/[^/]+/i, `/edit/${e}`), `${t.pathname}${t.search}${t.hash}`) : `/umbraco/section/content/workspace/document/edit/${e}`;
+    return t.searchParams.delete(f), t.pathname.match(/\/edit\/[^/]+/i) != null ? (t.pathname = t.pathname.replace(/\/edit\/[^/]+/i, `/edit/${e}`), `${t.pathname}${t.search}${t.hash}`) : `/umbraco/section/content/workspace/document/edit/${e}`;
   }
   getCatalogNodeFromUrl() {
-    const e = new URL(window.location.href).searchParams.get(b);
+    const e = new URL(window.location.href).searchParams.get(f);
     return e && e.trim().length > 0 ? e : null;
   }
   async fetchJson(e) {
     const t = await fetch(e, { credentials: "same-origin", headers: { Accept: "application/json" } });
     if (!t.ok)
-      throw new m(await t.text() || `Request failed (${t.status}).`, t.status);
+      throw new x(await t.text() || `Request failed (${t.status}).`, t.status);
     return await t.json();
   }
 }
-class m extends Error {
-  constructor(l, e) {
-    super(l), this.status = e;
+class x extends Error {
+  constructor(c, e) {
+    super(c), this.status = e;
   }
 }
-function d(r) {
-  return r.replace(/[&<>"]/g, (l) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[l] ?? l);
+function p(s) {
+  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 }
-function q(r) {
-  return r === "Published" ? "published" : r === "Pending changes" ? "pending" : "unpublished";
+function O(s) {
+  return s === "Published" ? "published" : s === "Pending changes" ? "pending" : "unpublished";
 }
-function v(r) {
+function S(s) {
   return [
     "sortOrderAsc",
     "sortOrderDesc",
@@ -406,23 +428,23 @@ function v(r) {
     "createdDesc",
     "updatedAsc",
     "updatedDesc"
-  ].includes(r);
+  ].includes(s);
 }
-function y() {
+function k() {
   try {
-    const r = window.localStorage.getItem(k);
-    return r != null && v(r) ? r : u;
+    const s = window.localStorage.getItem(w);
+    return s != null && S(s) ? s : m;
   } catch {
-    return u;
+    return m;
   }
 }
-function x(r) {
+function v(s) {
   try {
-    window.localStorage.setItem(k, r);
+    window.localStorage.setItem(w, s);
   } catch {
   }
 }
-const A = `
+const L = `
   ekom-catalog-collection-view { color: #1f1f1f; display: block !important; font-family: Lato, sans-serif; visibility: visible !important; }
   .catalog-shell { background: #f6f4f4; min-height: 100%; padding: 24px; }
   .surface, .empty { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; }
@@ -461,6 +483,17 @@ const A = `
   .breadcrumbs { align-items: center; color: #777; display: flex; flex-wrap: wrap; font-size: 13px; gap: 8px; margin-bottom: 18px; }
   .breadcrumbs a { color: #2152a3; text-decoration: none; }
   .breadcrumbs a:hover { text-decoration: underline; }
+  .breadcrumb-category { align-items: center; display: flex; gap: 2px; }
+  .breadcrumb-menu { position: relative; }
+  .breadcrumb-menu summary { align-items: center; background: #fff; border: 1px solid #b8c7df; border-radius: 3px; box-sizing: border-box; color: #2152a3; cursor: pointer; display: flex; height: 22px; justify-content: center; list-style: none; padding: 0; width: 22px; }
+  .breadcrumb-menu summary::-webkit-details-marker { display: none; }
+  .breadcrumb-menu summary:hover { background: #e6edf9; border-color: #2152a3; }
+  .breadcrumb-menu summary:focus-visible { border-radius: 2px; outline: 2px solid #2152a3; outline-offset: 2px; }
+  .breadcrumb-menu summary span { border: solid currentColor; border-width: 0 1.5px 1.5px 0; display: block; height: 5px; transform: translateY(-1px) rotate(45deg); width: 5px; }
+  .breadcrumb-menu[open] summary span { transform: translateY(1px) rotate(225deg); }
+  .breadcrumb-menu-list { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; box-shadow: 0 6px 16px rgba(0,0,0,.12); display: grid; left: 0; max-height: 320px; min-width: 220px; overflow-y: auto; padding: 4px; position: absolute; top: calc(100% + 4px); z-index: 2; }
+  .breadcrumb-menu-list button { background: transparent; border: 0; color: #1f1f1f; padding: 8px 10px; text-align: left; white-space: nowrap; }
+  .breadcrumb-menu-list button:hover, .breadcrumb-menu-list button:focus-visible { background: #f0f4fc; border-radius: 2px; outline: none; }
   .sep { color: #a5a5a5; }
   .catalog-header { align-items: center; display: flex; gap: 14px; margin-bottom: 18px; }
   .back { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; height: 36px; width: 36px; }
@@ -512,7 +545,7 @@ const A = `
   .pagination button { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; min-width: 34px; padding: 7px 10px; }
   .pagination .current { background: #1b264f; border-color: #1b264f; color: #fff; }
 `;
-customElements.define("ekom-catalog-collection-view", N);
+customElements.define("ekom-catalog-collection-view", A);
 export {
-  N as default
+  A as default
 };

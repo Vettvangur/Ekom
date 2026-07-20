@@ -12,6 +12,10 @@ type CatalogNode = {
   subcategoryCount: number;
 };
 
+type CatalogBreadcrumb = CatalogNode & {
+  siblings: CatalogNode[];
+};
+
 type CatalogProduct = CatalogNode & {
   sku: string;
   price: string;
@@ -25,7 +29,7 @@ type CatalogProduct = CatalogNode & {
 type CatalogResponse = {
   current: CatalogNode;
   parent?: CatalogNode;
-  breadcrumbs: CatalogNode[];
+  breadcrumbs: CatalogBreadcrumb[];
   subcategories: CatalogNode[];
   products: CatalogProduct[];
   productCount: number;
@@ -483,7 +487,15 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     return `<nav class="breadcrumbs">${data.breadcrumbs.map((item, index) => {
       const isCurrent = index === data.breadcrumbs.length - 1;
       const label = escapeHtml(item.title || item.name);
-      return `${index > 0 ? '<span class="sep">/</span>' : ''}${isCurrent ? `<span>${label}</span>` : `<a href="${this.getDocumentHref(item.key)}">${label}</a>`}`;
+      const siblings = item.siblings.filter(sibling => sibling.key !== item.key);
+      const hasSiblings = item.contentTypeAlias === 'ekmCategory' && siblings.length > 0;
+      const breadcrumb = hasSiblings
+        ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(item.key)}" data-breadcrumb-link-key="${escapeHtml(item.key)}" ${isCurrent ? 'aria-current="page"' : ''}>${label}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${label}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${siblings.map(sibling => {
+          const siblingLabel = escapeHtml(sibling.title || sibling.name);
+          return `<button type="button" data-breadcrumb-category-key="${escapeHtml(sibling.key)}" role="menuitem">${siblingLabel}</button>`;
+        }).join('')}</div></details></div>`
+        : isCurrent ? `<span aria-current="page">${label}</span>` : `<a href="${this.getDocumentHref(item.key)}">${label}</a>`;
+      return `${index > 0 ? '<span class="sep">/</span>' : ''}${breadcrumb}`;
     }).join('')}</nav>`;
   }
 
@@ -639,6 +651,38 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     this.querySelectorAll<HTMLElement>('[data-page]').forEach(element => {
       element.addEventListener('click', () => this.setPage(Number(element.dataset.page)));
     });
+    this.querySelectorAll<HTMLAnchorElement>('[data-breadcrumb-link-key]').forEach(element => {
+      element.addEventListener('click', event => {
+        event.preventDefault();
+        const key = element.dataset.breadcrumbLinkKey;
+        const category = this.data?.breadcrumbs.find(item => item.key === key);
+        if (category != null) {
+          this.drillTo(category);
+        }
+      });
+    });
+    this.querySelectorAll<HTMLElement>('[data-breadcrumb-category-key]').forEach(element => {
+      element.addEventListener('click', () => {
+        const key = element.dataset.breadcrumbCategoryKey;
+        const category = this.data?.breadcrumbs
+          .flatMap(breadcrumb => breadcrumb.siblings)
+          .find(item => item.key === key);
+        if (category != null) {
+          this.drillTo(category);
+        }
+      });
+    });
+    this.querySelectorAll<HTMLDetailsElement>('.breadcrumb-menu').forEach(menu => {
+      menu.addEventListener('toggle', () => {
+        if (menu.open) {
+          this.querySelectorAll<HTMLDetailsElement>('.breadcrumb-menu').forEach(otherMenu => {
+            if (otherMenu !== menu) {
+              otherMenu.open = false;
+            }
+          });
+        }
+      });
+    });
   }
 
   private getNodeIdFromUrl(): string {
@@ -772,6 +816,17 @@ const styles = `
   .breadcrumbs { align-items: center; color: #777; display: flex; flex-wrap: wrap; font-size: 13px; gap: 8px; margin-bottom: 18px; }
   .breadcrumbs a { color: #2152a3; text-decoration: none; }
   .breadcrumbs a:hover { text-decoration: underline; }
+  .breadcrumb-category { align-items: center; display: flex; gap: 2px; }
+  .breadcrumb-menu { position: relative; }
+  .breadcrumb-menu summary { align-items: center; background: #fff; border: 1px solid #b8c7df; border-radius: 3px; box-sizing: border-box; color: #2152a3; cursor: pointer; display: flex; height: 22px; justify-content: center; list-style: none; padding: 0; width: 22px; }
+  .breadcrumb-menu summary::-webkit-details-marker { display: none; }
+  .breadcrumb-menu summary:hover { background: #e6edf9; border-color: #2152a3; }
+  .breadcrumb-menu summary:focus-visible { border-radius: 2px; outline: 2px solid #2152a3; outline-offset: 2px; }
+  .breadcrumb-menu summary span { border: solid currentColor; border-width: 0 1.5px 1.5px 0; display: block; height: 5px; transform: translateY(-1px) rotate(45deg); width: 5px; }
+  .breadcrumb-menu[open] summary span { transform: translateY(1px) rotate(225deg); }
+  .breadcrumb-menu-list { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; box-shadow: 0 6px 16px rgba(0,0,0,.12); display: grid; left: 0; max-height: 320px; min-width: 220px; overflow-y: auto; padding: 4px; position: absolute; top: calc(100% + 4px); z-index: 2; }
+  .breadcrumb-menu-list button { background: transparent; border: 0; color: #1f1f1f; padding: 8px 10px; text-align: left; white-space: nowrap; }
+  .breadcrumb-menu-list button:hover, .breadcrumb-menu-list button:focus-visible { background: #f0f4fc; border-radius: 2px; outline: none; }
   .sep { color: #a5a5a5; }
   .catalog-header { align-items: center; display: flex; gap: 14px; margin-bottom: 18px; }
   .back { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; height: 36px; width: 36px; }
