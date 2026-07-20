@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.216](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.215...Ekom-v0.2.216) (2026-07-20)
+
+
+### Features
+
+* **catalog:** add breadcrumb sibling navigation ([#725](https://github.com/Vettvangur/Ekom/issues/725)) ([3734bff](https://github.com/Vettvangur/Ekom/commit/3734bff298b1088d03375c570cd08e474491f55f))
+
 ## [0.2.215](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.214...Ekom-v0.2.215) (2026-07-17)
 
 
