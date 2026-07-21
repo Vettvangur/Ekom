@@ -1,3 +1,4 @@
+@using System.Globalization
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
@@ -7,6 +8,7 @@
     var product = await _catalog.GetProductAsync();
 
     var checkoutNode = rootNode.FirstChildOfType("checkout");
+    var culture = CultureInfo.CurrentCulture.Name;
 
     var primaryVariantGroup = product.PrimaryVariantGroup;
     var primaryVariant = product.PrimaryVariant;
@@ -327,7 +329,10 @@
 
                     fetch('/ekom/order/add', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Culture': '@culture'
+                        },
                         body: JSON.stringify(formData)
                     })
                     .then((response) => {

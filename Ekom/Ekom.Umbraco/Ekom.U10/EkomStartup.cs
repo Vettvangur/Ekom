@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
@@ -137,6 +138,7 @@ class EkomStartup : IComponent
     readonly IServiceProvider _factory;
     readonly IMemoryCache _cache;
     readonly IRuntimeState _runtimeState;
+    private readonly IOptions<RequestLocalizationOptions> _requestLocalizationOptions;
 
     /// <summary>
     /// 
@@ -146,13 +148,15 @@ class EkomStartup : IComponent
         ILogger<EkomStartup> logger,
         IServiceProvider factory,
         IMemoryCache cache,
-        IRuntimeState runtimeState)
+        IRuntimeState runtimeState,
+        IOptions<RequestLocalizationOptions> requestLocalizationOptions)
     {
         _config = config;
         _logger = logger;
         _factory = factory;
         _cache = cache;
         _runtimeState = runtimeState;
+        _requestLocalizationOptions = requestLocalizationOptions;
     }
 
     /// <summary>
@@ -172,6 +176,9 @@ class EkomStartup : IComponent
 
             Configuration.Resolver = _factory;
             PriceCache.SetCache(_cache);
+            EkomCultureRequestLocalizationOptions.ConfigureCultures(
+                _requestLocalizationOptions.Value,
+                _factory.GetRequiredService<Ekom.Services.IUmbracoService>());
 
             var orderRepo = _factory.GetService<OrderRepository>();
 

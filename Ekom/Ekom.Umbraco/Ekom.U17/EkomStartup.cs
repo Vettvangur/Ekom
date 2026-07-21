@@ -4,9 +4,11 @@ using Ekom.Models;
 using Ekom.Payments;
 using Ekom.Repositories;
 using Ekom.Services;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Composing;
 
 namespace Ekom.Umb;
@@ -19,17 +21,20 @@ internal sealed class EkomStartup : IComponent
     private readonly ILogger<EkomStartup> _logger;
     private readonly IServiceProvider _factory;
     private readonly IMemoryCache _cache;
+    private readonly IOptions<RequestLocalizationOptions> _requestLocalizationOptions;
 
     public EkomStartup(
         Configuration config,
         ILogger<EkomStartup> logger,
         IServiceProvider factory,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        IOptions<RequestLocalizationOptions> requestLocalizationOptions)
     {
         _config = config;
         _logger = logger;
         _factory = factory;
         _cache = cache;
+        _requestLocalizationOptions = requestLocalizationOptions;
     }
 
     public void Initialize()
@@ -40,6 +45,9 @@ internal sealed class EkomStartup : IComponent
 
             Configuration.Resolver = _factory;
             PriceCache.SetCache(_cache);
+            EkomCultureRequestLocalizationOptions.ConfigureCultures(
+                _requestLocalizationOptions.Value,
+                _factory.GetRequiredService<Ekom.Services.IUmbracoService>());
 
             var orderRepository = _factory.GetService<OrderRepository>();
             orderRepository?.MigrateOrderTableAsync();
