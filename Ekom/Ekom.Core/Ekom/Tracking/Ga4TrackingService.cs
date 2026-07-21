@@ -5,6 +5,7 @@ using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
@@ -32,32 +33,41 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
     public Ga4PurchaseRequest CreatePurchaseRequest(IOrderInfo orderInfo)
     {
+        using var cultureScope = UseCulture(orderInfo.Culture);
+        var currencyDecimalDigits = orderInfo.StoreInfo.Currency.CurrencyDecimalDigits;
         var request = CreateRequest(orderInfo, "purchase");
         request.TransactionId = orderInfo.OrderNumber;
-        request.Value = orderInfo.ChargedAmount.Value;
-        request.Shipping = orderInfo.ShippingProvider?.Price.Value ?? 0;
-        request.Tax = orderInfo.Vat.Value;
+        request.Shipping = NormalizeAmount(orderInfo.ShippingProvider?.Price.WithoutVat.Value ?? 0, currencyDecimalDigits);
+        request.Tax = NormalizeAmount(orderInfo.Vat.Value, currencyDecimalDigits);
         request.PaymentType = orderInfo.PaymentProvider?.Title;
         request.ShippingTier = orderInfo.ShippingProvider?.Title;
-        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo.StoreInfo.Alias)).ToList();
+        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo, currencyDecimalDigits)).ToList();
+        request.Coupon = !string.IsNullOrWhiteSpace(orderInfo.Coupon) && request.Items.Any(item => string.Equals(item.Coupon, orderInfo.Coupon, StringComparison.Ordinal))
+            ? orderInfo.Coupon
+            : null;
+        request.Value = CalculateEventValue(request.Items, currencyDecimalDigits);
 
         return request;
     }
 
     public Ga4PurchaseRequest CreateAddedToCartRequest(IOrderInfo orderInfo, IOrderLine orderLine)
     {
+        using var cultureScope = UseCulture(orderInfo.Culture);
+        var currencyDecimalDigits = orderInfo.StoreInfo.Currency.CurrencyDecimalDigits;
         var request = CreateRequest(orderInfo, "add_to_cart");
-        request.Value = orderLine.Amount.WithoutVat.Value * orderLine.Quantity;
-        request.Items = [CreateItem(orderLine, orderInfo.StoreInfo.Alias)];
+        request.Items = [CreateItem(orderLine, orderInfo, currencyDecimalDigits)];
+        request.Value = CalculateEventValue(request.Items, currencyDecimalDigits);
 
         return request;
     }
 
     public Ga4PurchaseRequest CreateStartedCheckoutRequest(IOrderInfo orderInfo)
     {
+        using var cultureScope = UseCulture(orderInfo.Culture);
+        var currencyDecimalDigits = orderInfo.StoreInfo.Currency.CurrencyDecimalDigits;
         var request = CreateRequest(orderInfo, "begin_checkout");
-        request.Value = orderInfo.ChargedAmount.Value;
-        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo.StoreInfo.Alias)).ToList();
+        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo, currencyDecimalDigits)).ToList();
+        request.Value = CalculateEventValue(request.Items, currencyDecimalDigits);
 
         return request;
     }
@@ -74,6 +84,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         }
 
         var sessionId = ParseLong(tracking.Ga4.SessionId);
+        var hasCapturedSessionId = sessionId.HasValue;
         if (!sessionId.HasValue)
         {
             sessionId = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -85,6 +96,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
             StoreAlias = orderInfo.StoreInfo.Alias,
             ClientId = clientId,
             SessionId = sessionId,
+            HasCapturedSessionId = hasCapturedSessionId,
             EventName = eventName,
             Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
             Source = tracking.Source,
@@ -107,9 +119,11 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         return request;
     }
 
-    private static Ga4PurchaseItem CreateItem(IOrderLine orderLine, string storeAlias)
+    private static Ga4PurchaseItem CreateItem(IOrderLine orderLine, IOrderInfo orderInfo, int currencyDecimalDigits)
     {
-        var catalogProduct = Catalog.Instance.GetProduct(orderLine.ProductKey, storeAlias);
+        var catalogProduct = Catalog.Instance.GetProduct(orderLine.ProductKey, orderInfo.StoreInfo.Alias);
+        var unitPrice = CalculateUnitPrice(orderLine.Amount.BeforeDiscountWithOutVat.Value, orderLine.Quantity, currencyDecimalDigits);
+        var discountedUnitPrice = CalculateUnitPrice(orderLine.Amount.AfterDiscountWithOutVat.Value, orderLine.Quantity, currencyDecimalDigits);
 
         return new Ga4PurchaseItem
         {
@@ -117,11 +131,76 @@ public sealed class Ga4TrackingService : IGa4TrackingService
             ItemName = orderLine.Product.Title,
             ItemCategory = catalogProduct?.Categories.FirstOrDefault()?.Title,
             ItemCategory2 = catalogProduct?.CategoryAncestors.LastOrDefault()?.Title,
-            Price = orderLine.Amount.WithoutVat.Value,
-            Discount = 0,
-            Quantity = Convert.ToInt32(orderLine.Quantity),
-            ItemVariant = orderLine.Variant?.Title
+            Price = unitPrice,
+            Discount = NormalizeAmount(unitPrice - discountedUnitPrice, currencyDecimalDigits),
+            Quantity = orderLine.Quantity,
+            ItemVariant = orderLine.Variant?.Title,
+            Coupon = ResolveCoupon(orderLine, orderInfo)
         };
+    }
+
+    private static string? ResolveCoupon(IOrderLine orderLine, IOrderInfo orderInfo)
+    {
+        if (orderLine.Discount != null && !string.IsNullOrWhiteSpace(orderLine.Coupon))
+        {
+            return orderLine.Coupon;
+        }
+
+        return orderInfo.Discount != null
+            && ReferenceEquals(orderLine.Discount, orderInfo.Discount)
+            && !string.IsNullOrWhiteSpace(orderInfo.Coupon)
+            ? orderInfo.Coupon
+            : null;
+    }
+
+    private static decimal CalculateUnitPrice(decimal lineAmount, decimal quantity, int currencyDecimalDigits)
+    {
+        if (quantity == 0)
+        {
+            return 0;
+        }
+
+        return NormalizeAmount(lineAmount / quantity, currencyDecimalDigits);
+    }
+
+    private static decimal CalculateEventValue(IEnumerable<Ga4PurchaseItem> items, int currencyDecimalDigits)
+        => NormalizeAmount(items.Sum(item => (item.Price - item.Discount) * item.Quantity), currencyDecimalDigits);
+
+    private static decimal NormalizeAmount(decimal amount, int currencyDecimalDigits)
+        => Math.Round(amount, currencyDecimalDigits, MidpointRounding.AwayFromZero);
+
+    private static IDisposable UseCulture(string culture)
+        => string.IsNullOrWhiteSpace(culture)
+            ? EmptyDisposable.Instance
+            : new CultureScope(new CultureInfo(culture));
+
+    private sealed class CultureScope : IDisposable
+    {
+        private readonly CultureInfo _currentCulture;
+        private readonly CultureInfo _currentUICulture;
+
+        public CultureScope(CultureInfo culture)
+        {
+            _currentCulture = CultureInfo.CurrentCulture;
+            _currentUICulture = CultureInfo.CurrentUICulture;
+            CultureInfo.CurrentCulture = culture;
+            CultureInfo.CurrentUICulture = culture;
+        }
+
+        public void Dispose()
+        {
+            CultureInfo.CurrentCulture = _currentCulture;
+            CultureInfo.CurrentUICulture = _currentUICulture;
+        }
+    }
+
+    private sealed class EmptyDisposable : IDisposable
+    {
+        public static readonly EmptyDisposable Instance = new();
+
+        public void Dispose()
+        {
+        }
     }
 
     public async Task SendPurchaseAsync(Ga4PurchaseRequest request, CancellationToken ct = default)
@@ -151,7 +230,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         var endpoint = _options.Value.Ga4.Testing ? "debug/mp/collect" : "mp/collect";
         var url = $"https://www.google-analytics.com/{endpoint}?measurement_id={storeOptions.MeasurementId}&api_secret={storeOptions.ApiSecret}";
         var payloadJson = JsonSerializer.Serialize(payload, JsonOptions);
-        if (_options.Value.LogPurchaseEventData)
+        if (_options.Value.ShouldLogEventData(request.EventName))
         {
             _logger.LogInformation("GA4 {EventName} event payload for store {StoreAlias}: {Payload}", request.EventName, request.StoreAlias, payloadJson);
         }
@@ -183,11 +262,11 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         {
             ["value"] = request.Value,
             ["currency"] = request.Currency,
-            ["source"] = request.Source,
-            ["medium"] = request.Medium,
-            ["campaign"] = request.Campaign,
-            ["term"] = request.Term,
-            ["content"] = request.Content,
+            ["campaign_source"] = request.Source,
+            ["campaign_medium"] = request.Medium,
+            ["campaign_name"] = request.Campaign,
+            ["campaign_term"] = request.Term,
+            ["campaign_content"] = request.Content,
             ["gclid"] = request.Gclid,
             ["items"] = request.Items.Select(item => new Dictionary<string, object?>
             {
@@ -198,13 +277,15 @@ public sealed class Ga4TrackingService : IGa4TrackingService
                 ["price"] = item.Price,
                 ["discount"] = item.Discount,
                 ["quantity"] = item.Quantity,
-                ["item_variant"] = item.ItemVariant
+                ["item_variant"] = item.ItemVariant,
+                ["coupon"] = item.Coupon
             }).Select(FilterNullValues).ToList()
         };
 
         if (string.Equals(request.EventName, "purchase", StringComparison.OrdinalIgnoreCase))
         {
             parameters["transaction_id"] = request.TransactionId;
+            parameters["coupon"] = request.Coupon;
             parameters["shipping"] = request.Shipping;
             parameters["tax"] = request.Tax;
             parameters["payment_type"] = request.PaymentType;
@@ -219,6 +300,9 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
         foreach (var item in request.Parameters)
             parameters[item.Key] = item.Value;
+
+        if (request.HasAnalyticsConsent && request.HasCapturedSessionId)
+            parameters["engagement_time_msec"] = 1;
 
         return FilterNullValues(parameters);
     }
@@ -235,6 +319,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
         request.ClientId = GenerateClientId();
         request.SessionId = null;
+        request.HasCapturedSessionId = false;
         request.Parameters.Clear();
     }
 

@@ -6,13 +6,24 @@ public sealed class TrackingOptions
 {
     public bool Enabled { get; set; }
     public bool CaptureEnabled { get; set; } = true;
+    public bool LogEventData { get; set; }
     public bool LogPurchaseEventData { get; set; }
     public string CookieName { get; set; } = "EkomTracking";
     public double CookieLifetimeDays { get; set; } = 30;
     public string? SiteBaseUrl { get; set; }
+    public List<TrackingStoreUrlOptions> Stores { get; set; } = [];
     public TrackingConsentOptions Consent { get; set; } = new();
     public Ga4TrackingProviderOptions Ga4 { get; set; } = new();
     public MetaTrackingProviderOptions Meta { get; set; } = new();
+
+    public bool ShouldLogEventData(string eventName)
+        => LogEventData || (LogPurchaseEventData && string.Equals(eventName, "purchase", StringComparison.OrdinalIgnoreCase));
+}
+
+public sealed class TrackingStoreUrlOptions
+{
+    public string Alias { get; set; } = string.Empty;
+    public string? SiteBaseUrl { get; set; }
 }
 
 public class TrackingConsentOptions

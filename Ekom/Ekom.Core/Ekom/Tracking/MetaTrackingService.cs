@@ -130,7 +130,7 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
         var url = $"{storeOptions.PixelId}/events?access_token={storeOptions.AccessToken}";
         var payloadJson = JsonSerializer.Serialize(payload, JsonOptions);
-        if (_options.Value.LogPurchaseEventData)
+        if (_options.Value.ShouldLogEventData(request.EventName))
         {
             _logger.LogInformation("Meta {EventName} event payload for store {StoreAlias}: {Payload}", request.EventName, request.StoreAlias, payloadJson);
         }
@@ -204,7 +204,7 @@ public sealed class MetaTrackingService : IMetaTrackingService
 
     private string? BuildEventSourceUrl(IOrderInfo orderInfo, OrderTracking tracking)
     {
-        var baseUrl = tracking.LandingUrl ?? _options.Value.SiteBaseUrl;
+        var baseUrl = tracking.LandingUrl ?? ResolveSiteBaseUrl(orderInfo.StoreInfo.Alias);
         if (string.IsNullOrWhiteSpace(baseUrl))
             return null;
 
@@ -222,6 +222,15 @@ public sealed class MetaTrackingService : IMetaTrackingService
         return QueryHelpers.AddQueryString(
             baseUrl,
             query.Where(x => !string.IsNullOrWhiteSpace(x.Value)).ToDictionary(x => x.Key, x => x.Value!));
+    }
+
+    private string? ResolveSiteBaseUrl(string storeAlias)
+    {
+        var storeBaseUrl = _options.Value.Stores
+            .FirstOrDefault(x => string.Equals(x.Alias, storeAlias, StringComparison.OrdinalIgnoreCase))?
+            .SiteBaseUrl;
+
+        return string.IsNullOrWhiteSpace(storeBaseUrl) ? _options.Value.SiteBaseUrl : storeBaseUrl;
     }
 
     private TrackingStoreOptions? ResolveStore(string storeAlias)

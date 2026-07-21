@@ -232,9 +232,11 @@ Ekom tracking supports order-level `Consent` and `Tracking` data for automatic G
 
 - `Ekom:Tracking:Enabled` turns tracking features on or off.
 - `Ekom:Tracking:CaptureEnabled` controls whether Ekom captures consent and browser tracking data from incoming requests.
-- `Ekom:Tracking:LogPurchaseEventData` controls whether outbound GA4 and Meta purchase payloads are logged before dispatch.
+- `Ekom:Tracking:LogEventData` controls whether all outbound GA4 and Meta event payloads are logged before dispatch.
+- `Ekom:Tracking:LogPurchaseEventData` controls whether only outbound GA4 and Meta purchase payloads are logged before dispatch.
 - `Ekom:Tracking:CookieName` and `Ekom:Tracking:CookieLifetimeDays` control Ekom's own tracking cookie.
-- `Ekom:Tracking:SiteBaseUrl` is used as a fallback base URL when no landing URL can be resolved from the request.
+- `Ekom:Tracking:SiteBaseUrl` is the fallback base URL when no landing URL or store-specific base URL can be resolved.
+- `Ekom:Tracking:Stores` lets you override the fallback base URL per store alias.
 - `Ekom:Tracking:Consent` defines the default consent cookie/header names and fallback values.
 - `Ekom:Tracking:Consent:Stores` lets you override consent handling per store alias.
 - Consent is resolved through a chain of `ITrackingConsentResolver` services.
@@ -249,10 +251,17 @@ Full tracking config example:
 "Tracking": {
   "Enabled": true,
   "CaptureEnabled": true,
+  "LogEventData": false,
   "LogPurchaseEventData": false,
   "CookieName": "EkomTracking",
   "CookieLifetimeDays": 30,
   "SiteBaseUrl": "https://www.example.com",
+  "Stores": [
+    {
+      "Alias": "Store",
+      "SiteBaseUrl": "https://store.example.com"
+    }
+  ],
   "Consent": {
     "FallbackAnalyticsConsent": false,
     "FallbackMarketingConsent": false,
@@ -319,6 +328,11 @@ Notes:
 - `Ga4:Testing` sends events through the GA4 debug endpoint.
 - `Meta:Testing` uses `TestEventCode` when configured for the store.
 - `Dispatching:Capacity` and `Dispatching:MaxConcurrency` control the background queue used for provider dispatching.
+- Meta uses the captured landing URL first, then `Tracking:Stores[*]:SiteBaseUrl`, and finally `Tracking:SiteBaseUrl` for `event_source_url`.
+- GA4 sends VAT-exclusive list unit prices in `items[*]:price`, with per-unit discounts in `items[*]:discount`, and derives event `value` from the discounted item totals. Applied order and line coupons are sent in GA4 coupon fields. Purchase `tax` and shipping are sent separately; payment fees are excluded from the GA4 event value.
+- GA4 monetary values are rounded to the store currency's decimal precision before dispatch.
+- GA4 adds `engagement_time_msec: 1` only when analytics consent and a captured GA session ID are available.
+- GA4 maps captured UTM values to `campaign_source`, `campaign_medium`, `campaign_name`, `campaign_term`, and `campaign_content`.
 
 Default consent config example:
 
