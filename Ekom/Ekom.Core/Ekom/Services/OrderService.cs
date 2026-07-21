@@ -1414,12 +1414,6 @@ partial class OrderService
     {
         var store = _storeSvc.GetStoreByAlias(orderInfo.StoreInfo.Alias);
         var storeCultures = store?.Cultures ?? [];
-        var currentCulture = CultureInfo.CurrentCulture.Name;
-
-        if (IsStoreCulture(currentCulture, storeCultures))
-        {
-            return currentCulture;
-        }
 
         if (IsStoreCulture(orderInfo.Culture, storeCultures))
         {

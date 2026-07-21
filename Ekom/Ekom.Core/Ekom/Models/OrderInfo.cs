@@ -1,5 +1,8 @@
 using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -83,17 +86,35 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
-            if (string.IsNullOrEmpty(_culture))
+            var contextCulture = GetContextCulture();
+            if (!string.IsNullOrWhiteSpace(contextCulture))
             {
-                this._culture = StoreInfo.Culture;
+                _culture = contextCulture;
+            }
+
+            if (string.IsNullOrWhiteSpace(_culture))
+            {
+                _culture = StoreInfo.Culture;
             }
 
             return _culture;
         }
         set
         {
-            this._culture = value;
+            _culture = value;
         }
+    }
+
+    private static string? GetContextCulture()
+    {
+        var httpContext = Configuration.Resolver?.GetService<IHttpContextAccessor>()?.HttpContext;
+        if (httpContext == null)
+        {
+            return null;
+        }
+
+        return httpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture.Name
+            ?? CultureInfo.CurrentCulture.Name;
     }
 
     /// <summary>

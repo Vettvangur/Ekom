@@ -2,8 +2,6 @@ using Ekom.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Globalization;
 
@@ -11,88 +9,37 @@ namespace Ekom;
 
 public class EkomCultureRequestLocalizationOptions : IConfigureOptions<RequestLocalizationOptions>
 {
-    private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly ILogger<EkomCultureRequestLocalizationOptions> _logger;
-
-    public EkomCultureRequestLocalizationOptions(
-        IServiceScopeFactory serviceScopeFactory,
-        ILogger<EkomCultureRequestLocalizationOptions> logger)
-    {
-        _serviceScopeFactory = serviceScopeFactory;
-        _logger = logger;
-    }
-
     public void Configure(RequestLocalizationOptions options)
     {
-        try
+        if (!options.RequestCultureProviders.OfType<EkomCultureProvider>().Any())
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-
-            if (!IsUmbracoRuntimeReady(scope.ServiceProvider))
-            {
-                return;
-            }
-
-            var umbracoService = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
-
-            var cultures = umbracoService.GetLanguages();
-            var defaultCulture = umbracoService.DefaultLanguage();
-
-            var supportedCultures = cultures.Select(culture => new CultureInfo(culture.IsoCode)).ToList();
-
-            options.DefaultRequestCulture = new RequestCulture(defaultCulture, defaultCulture);
-            options.SupportedCultures = supportedCultures;
-            options.SupportedUICultures = supportedCultures;
-
-            // Insert EkomCultureProvider at the highest priority
-            options.RequestCultureProviders.Insert(0, new EkomCultureProvider(options));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed configuring Ekom localization.");
+            options.RequestCultureProviders.Insert(0, new EkomCultureProvider());
         }
     }
 
-    private static bool IsUmbracoRuntimeReady(IServiceProvider serviceProvider)
+    public static void ConfigureCultures(RequestLocalizationOptions options, IUmbracoService umbracoService)
     {
-        var runtimeStateType = AppDomain.CurrentDomain
-            .GetAssemblies()
-            .Select(assembly => assembly.GetType("Umbraco.Cms.Core.Runtime.IRuntimeState"))
-            .FirstOrDefault(type => type != null);
+        var defaultCulture = umbracoService.DefaultLanguage();
+        var supportedCultures = umbracoService.GetLanguages()
+            .Select(culture => culture.IsoCode)
+            .Append(defaultCulture)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(culture => culture, culture => culture, StringComparer.OrdinalIgnoreCase);
+        var cultures = supportedCultures.Values.Select(culture => new CultureInfo(culture)).ToList();
 
-        if (runtimeStateType == null)
-        {
-            return false;
-        }
+        options.DefaultRequestCulture = new RequestCulture(defaultCulture, defaultCulture);
+        options.SupportedCultures = cultures;
+        options.SupportedUICultures = cultures;
 
-        var runtimeState = serviceProvider.GetService(runtimeStateType);
-
-        if (runtimeState == null)
-        {
-            return false;
-        }
-
-        var level = runtimeStateType.GetProperty("Level")?.GetValue(runtimeState)?.ToString();
-
-        return string.Equals(level, "Run", StringComparison.Ordinal);
+        options.RequestCultureProviders.OfType<EkomCultureProvider>()
+            .FirstOrDefault()
+            ?.SetCultures(defaultCulture, supportedCultures);
     }
-
 }
 
 public class EkomCultureProvider : RequestCultureProvider
 {
-    private readonly RequestLocalizationOptions _localizationOptions;
-    private readonly Dictionary<string, string> _supportedCulturesByName;
-
-    // ctor with reference to the RequestLocalizationOptions
-    public EkomCultureProvider(RequestLocalizationOptions localizationOptions)
-    {
-        _localizationOptions = localizationOptions;
-        _supportedCulturesByName = localizationOptions.SupportedCultures
-            ?.DistinctBy(culture => culture.Name)
-            .ToDictionary(culture => culture.Name, culture => culture.Name, StringComparer.OrdinalIgnoreCase)
-            ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    }
+    private CultureSettings? _cultureSettings;
 
     public override Task<ProviderCultureResult> DetermineProviderCultureResult(HttpContext context)
     {
@@ -101,17 +48,19 @@ public class EkomCultureProvider : RequestCultureProvider
             return NullProviderCultureResult;
         }
 
+        var cultureSettings = Volatile.Read(ref _cultureSettings);
+        if (cultureSettings == null)
+        {
+            return NullProviderCultureResult;
+        }
+
         var cultureName = context.Request.Query["Culture"].FirstOrDefault()
-                            ?? context.Request.Headers["Culture"].FirstOrDefault()
-                            ?? context.Request.Headers["Accept-Language"].FirstOrDefault();
+            ?? context.Request.Headers["Culture"].FirstOrDefault()
+            ?? context.Request.Headers["Accept-Language"].FirstOrDefault();
 
         if (string.IsNullOrWhiteSpace(cultureName))
         {
-            // No culture specified → use default
-            return Task.FromResult(
-                new ProviderCultureResult(
-                    _localizationOptions.DefaultRequestCulture.Culture.Name,
-                    _localizationOptions.DefaultRequestCulture.UICulture.Name));
+            return Task.FromResult(new ProviderCultureResult(cultureSettings.DefaultCulture, cultureSettings.DefaultCulture));
         }
 
         if (string.IsNullOrEmpty(cultureName) || cultureName == "*")
@@ -121,17 +70,23 @@ public class EkomCultureProvider : RequestCultureProvider
 
         cultureName = ParseAcceptLanguageHeader(cultureName);
 
-        if (_supportedCulturesByName.TryGetValue(cultureName, out string? supportedCulture))
+        if (cultureSettings.SupportedCultures.TryGetValue(cultureName, out var supportedCulture))
         {
-            // Found in supported list
             return Task.FromResult(new ProviderCultureResult(supportedCulture, supportedCulture));
         }
 
-        return Task.FromResult(
-            new ProviderCultureResult(
-                _localizationOptions.DefaultRequestCulture.Culture.Name,
-                _localizationOptions.DefaultRequestCulture.UICulture.Name));
+        return Task.FromResult(new ProviderCultureResult(cultureSettings.DefaultCulture, cultureSettings.DefaultCulture));
     }
+
+    internal void SetCultures(string defaultCulture, IReadOnlyDictionary<string, string> supportedCultures)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(defaultCulture);
+        Volatile.Write(ref _cultureSettings, new CultureSettings(defaultCulture, supportedCultures));
+    }
+
+    private sealed record CultureSettings(
+        string DefaultCulture,
+        IReadOnlyDictionary<string, string> SupportedCultures);
 
     private static string ParseAcceptLanguageHeader(string headerValue)
     {

@@ -1,10 +1,12 @@
-﻿@inherits UmbracoViewPage
+﻿@using System.Globalization
+@inherits UmbracoViewPage
 
 @{
     Layout = "Master.cshtml";
     
     var rootNode = Model.GetSite();
     var checkoutNode = rootNode.FirstChildOfType("checkout");
+    var culture = CultureInfo.CurrentCulture.Name;
     var product = await _catalog.GetProductAsync();
 
     if (product == null)
@@ -196,7 +198,10 @@
 
                     fetch('/ekom/order/add', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Culture': '@culture'
+                        },
                         body: JSON.stringify(formData)
                     })
                     .then((response) => {

@@ -1,5 +1,10 @@
 using Ekom.Models;
+using Ekom.Tests.Objects;
 using System.Reflection;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
@@ -7,6 +12,29 @@ namespace Ekom.Tests.Tests;
 
 public class OrderInfoTests
 {
+    [Fact]
+    public void Culture_UsesRequestCultureAndRetainsItWithoutARequest()
+    {
+        var httpContextAccessor = new HttpContextAccessor
+        {
+            HttpContext = new DefaultHttpContext(),
+        };
+        httpContextAccessor.HttpContext.Features.Set<IRequestCultureFeature>(
+            new RequestCultureFeature(new RequestCulture("da-DK"), null));
+
+        using var configurationScope = new ConfigurationScope(addServices: services =>
+            services.AddSingleton<IHttpContextAccessor>(httpContextAccessor));
+        var store = new Mock<IStore>();
+        store.SetupGet(x => x.Culture).Returns(new CultureInfoDto { Name = "en-US" });
+        var orderInfo = new OrderInfo(new OrderData(), store.Object);
+
+        Assert.Equal("da-DK", orderInfo.Culture);
+
+        httpContextAccessor.HttpContext = null;
+
+        Assert.Equal("da-DK", orderInfo.Culture);
+    }
+
     [Fact]
     public void Constructor_PreservesLegacyTopLevelDiscountObjectAmountValue()
     {
