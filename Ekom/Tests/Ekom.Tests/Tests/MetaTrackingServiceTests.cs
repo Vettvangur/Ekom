@@ -3,7 +3,9 @@ using Ekom.Tracking;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Moq;
 using System.Net;
+using System.Reflection;
 using Xunit;
 
 namespace Ekom.Tests.Tests;
@@ -49,6 +51,61 @@ public sealed class MetaTrackingServiceTests
         Assert.Equal(0, handler.CallCount);
         Assert.Equal("customer@example.com", request.Email);
     }
+
+    [Theory]
+    [InlineData("uk", false, true)]
+    [InlineData("UK", false, true)]
+    [InlineData("other", false, false)]
+    [InlineData("uk", true, false)]
+    public void BuildEventSourceUrl_Uses_Landing_Url_Then_Store_Override_Then_Global_Fallback(string storeAlias, bool hasLandingUrl, bool usesStoreOverride)
+    {
+        var options = new TrackingOptions
+        {
+            SiteBaseUrl = "https://default.example.com",
+            Stores =
+            [
+                new TrackingStoreUrlOptions
+                {
+                    Alias = "uk",
+                    SiteBaseUrl = "https://uk.example.com"
+                }
+            ]
+        };
+        var sut = new MetaTrackingService(
+            new HttpClient(),
+            Options.Create(options),
+            new ThrowingServiceScopeFactory(),
+            NullLogger<MetaTrackingService>.Instance);
+        var orderInfo = new Mock<Ekom.Models.IOrderInfo>();
+        orderInfo.SetupGet(x => x.StoreInfo).Returns(CreateStoreInfo(storeAlias));
+        var landingUrl = hasLandingUrl ? "https://landing.example.com" : null;
+        var expectedUrl = hasLandingUrl
+            ? landingUrl
+            : usesStoreOverride ? "https://uk.example.com" : "https://default.example.com";
+
+        var result = InvokeBuildEventSourceUrl(sut, orderInfo.Object, new Ekom.Models.OrderTracking { LandingUrl = landingUrl });
+
+        Assert.Equal(expectedUrl, result);
+    }
+
+    private static string? InvokeBuildEventSourceUrl(MetaTrackingService service, Ekom.Models.IOrderInfo orderInfo, Ekom.Models.OrderTracking tracking)
+    {
+        var method = typeof(MetaTrackingService).GetMethod("BuildEventSourceUrl", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        Assert.NotNull(method);
+        return (string?)method.Invoke(service, [orderInfo, tracking]);
+    }
+
+    private static Ekom.Models.StoreInfo CreateStoreInfo(string alias)
+        => new(
+            Guid.NewGuid(),
+            new Ekom.Models.CurrencyModel(),
+            [],
+            "en-GB",
+            alias,
+            false,
+            0,
+            false);
 
     private sealed class CountingHttpMessageHandler : HttpMessageHandler
     {

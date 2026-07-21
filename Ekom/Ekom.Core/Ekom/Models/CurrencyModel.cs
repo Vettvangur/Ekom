@@ -20,6 +20,25 @@ public class CurrencyModel
             return TryGetRegionInfo()?.ISOCurrencySymbol ?? string.Empty;
         }
     }
+    public int CurrencyDecimalDigits
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(CurrencyValue))
+            {
+                return 2;
+            }
+
+            try
+            {
+                return CultureInfo.GetCultureInfo(CurrencyValue).NumberFormat.CurrencyDecimalDigits;
+            }
+            catch (CultureNotFoundException)
+            {
+                return 2;
+            }
+        }
+    }
 
     private RegionInfo? TryGetRegionInfo()
     {

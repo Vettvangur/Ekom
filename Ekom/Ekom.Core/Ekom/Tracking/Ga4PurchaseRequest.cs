@@ -5,10 +5,12 @@ public sealed class Ga4PurchaseRequest
     public Guid OrderUniqueId { get; set; }
     public string StoreAlias { get; set; } = string.Empty;
     public bool HasAnalyticsConsent { get; set; }
+    public bool HasCapturedSessionId { get; set; }
     public string? ClientId { get; set; }
     public long? SessionId { get; set; }
     public string EventName { get; set; } = "purchase";
     public string? TransactionId { get; set; }
+    public string? Coupon { get; set; }
     public decimal Value { get; set; }
     public decimal Shipping { get; set; }
     public decimal Tax { get; set; }
@@ -33,6 +35,7 @@ public sealed class Ga4PurchaseItem
     public string? ItemCategory2 { get; set; }
     public decimal Price { get; set; }
     public decimal Discount { get; set; }
-    public int Quantity { get; set; }
+    public decimal Quantity { get; set; }
     public string? ItemVariant { get; set; }
+    public string? Coupon { get; set; }
 }
