@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.219](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.218...Ekom-v0.2.219) (2026-07-21)
+
+
+### Bug Fixes
+
+* **culture:** preserve order request culture ([#731](https://github.com/Vettvangur/Ekom/issues/731)) ([de9599e](https://github.com/Vettvangur/Ekom/commit/de9599edea9b82bfcefd6e0bab9481f81cb79bd3))
+
 ## [0.2.218](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.217...Ekom-v0.2.218) (2026-07-21)
 
 
