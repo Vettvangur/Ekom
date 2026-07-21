@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.218](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.217...Ekom-v0.2.218) (2026-07-21)
+
+
+### Bug Fixes
+
+* **tracking:** build additional GA4 events ([#729](https://github.com/Vettvangur/Ekom/issues/729)) ([1d83894](https://github.com/Vettvangur/Ekom/commit/1d83894e19cfc38736c1e3dab13ff8b574c6004b))
+
 ## [0.2.217](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.216...Ekom-v0.2.217) (2026-07-21)
 
 
