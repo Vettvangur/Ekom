@@ -63,9 +63,11 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
     public Ga4PurchaseRequest CreateRemovedFromCartRequest(IOrderInfo orderInfo, IOrderLine orderLine)
     {
+        using var cultureScope = UseCulture(orderInfo.Culture);
+        var currencyDecimalDigits = orderInfo.StoreInfo.Currency.CurrencyDecimalDigits;
         var request = CreateRequest(orderInfo, "remove_from_cart");
-        request.Value = orderLine.Amount.WithoutVat.Value * orderLine.Quantity;
-        request.Items = [CreateItem(orderLine, orderInfo.StoreInfo.Alias)];
+        request.Items = [CreateItem(orderLine, orderInfo, currencyDecimalDigits)];
+        request.Value = CalculateEventValue(request.Items, currencyDecimalDigits);
 
         return request;
     }
@@ -83,20 +85,24 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
     public Ga4PurchaseRequest CreateAddedShippingInfoRequest(IOrderInfo orderInfo)
     {
+        using var cultureScope = UseCulture(orderInfo.Culture);
+        var currencyDecimalDigits = orderInfo.StoreInfo.Currency.CurrencyDecimalDigits;
         var request = CreateRequest(orderInfo, "add_shipping_info");
-        request.Value = orderInfo.ChargedAmount.Value;
         request.ShippingTier = orderInfo.ShippingProvider?.Title;
-        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo.StoreInfo.Alias)).ToList();
+        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo, currencyDecimalDigits)).ToList();
+        request.Value = CalculateEventValue(request.Items, currencyDecimalDigits);
 
         return request;
     }
 
     public Ga4PurchaseRequest CreateAddedPaymentInfoRequest(IOrderInfo orderInfo)
     {
+        using var cultureScope = UseCulture(orderInfo.Culture);
+        var currencyDecimalDigits = orderInfo.StoreInfo.Currency.CurrencyDecimalDigits;
         var request = CreateRequest(orderInfo, "add_payment_info");
-        request.Value = orderInfo.ChargedAmount.Value;
         request.PaymentType = orderInfo.PaymentProvider?.Title;
-        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo.StoreInfo.Alias)).ToList();
+        request.Items = orderInfo.OrderLines.Select(orderLine => CreateItem(orderLine, orderInfo, currencyDecimalDigits)).ToList();
+        request.Value = CalculateEventValue(request.Items, currencyDecimalDigits);
 
         return request;
     }
