@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.217](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.216...Ekom-v0.2.217) (2026-07-21)
+
+
+### Bug Fixes
+
+* **tracking:** improve multi-store analytics events ([#727](https://github.com/Vettvangur/Ekom/issues/727)) ([f0e6737](https://github.com/Vettvangur/Ekom/commit/f0e67378868514e35024dc4f3b4576a913c0365c))
+
 ## [0.2.216](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.215...Ekom-v0.2.216) (2026-07-20)
 
 
