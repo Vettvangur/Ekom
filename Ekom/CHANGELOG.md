@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.220](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.219...Ekom-v0.2.220) (2026-07-22)
+
+
+### Bug Fixes
+
+* **product:** Don't raise event on internal calls ([#733](https://github.com/Vettvangur/Ekom/issues/733)) ([bccdf67](https://github.com/Vettvangur/Ekom/commit/bccdf67badb9773511a090be3ede85d1c1443d97))
+
 ## [0.2.219](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.218...Ekom-v0.2.219) (2026-07-21)
 
 
