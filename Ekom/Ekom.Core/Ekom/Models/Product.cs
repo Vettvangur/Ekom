@@ -600,7 +600,7 @@ public class Product : PerStoreNodeEntity, IProduct
         }
 
         // Primary category from ParentId
-        AddCategory(Catalog.Instance.GetCategory(ParentId, Store.Alias));
+        AddCategory(Catalog.Instance.GetCategory(ParentId, Store.Alias, raiseEvent: false));
 
         // Extra categories from "categories" field
         if (!Properties.ContainsKey("categories"))
@@ -636,12 +636,12 @@ public class Product : PerStoreNodeEntity, IProduct
             // Try int first (fast path)
             if (int.TryParse(token, out var id))
             {
-                AddCategory(Catalog.Instance.GetCategory(id, Store.Alias));
+                AddCategory(Catalog.Instance.GetCategory(id, Store.Alias, raiseEvent: false));
             }
             else
             {
                 // Fallback: maybe guid/udi/string format used elsewhere
-                AddCategory(Catalog.Instance.GetCategory(token.ToString(), Store.Alias));
+                AddCategory(Catalog.Instance.GetCategory(token.ToString(), Store.Alias, raiseEvent: false));
             }
         }
     }
@@ -654,7 +654,7 @@ public class Product : PerStoreNodeEntity, IProduct
         {
             if (int.TryParse(p, out int id))
             {
-                ICategory? c = Catalog.Instance.GetCategory(id, Store.Alias);
+                ICategory? c = Catalog.Instance.GetCategory(id, Store.Alias, raiseEvent: false);
 
                 if (c != null && !c.VirtualUrl)
                 {
