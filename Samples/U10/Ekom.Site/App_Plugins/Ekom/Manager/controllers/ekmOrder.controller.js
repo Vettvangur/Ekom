@@ -28,6 +28,10 @@
     $scope.customerInformationEditorOpen = false;
     $scope.customerInformationSaving = false;
     $scope.customerInformationEditModel = null;
+    $scope.orderLineEditorOpen = false;
+    $scope.orderLineSaving = false;
+    $scope.orderLineEditModel = null;
+    $scope.removingOrderLineId = null;
 
     var customerFields = [
       { key: "customerName", label: "Name", property: "name" },
@@ -517,6 +521,79 @@
         })
         .finally(function () {
           $scope.customerInformationSaving = false;
+        });
+    };
+
+    $scope.openOrderLineEditor = function () {
+      $scope.orderLineEditModel = {
+        productId: "",
+        variantId: "",
+        quantity: 1
+      };
+      $scope.orderLineEditorOpen = true;
+    };
+
+    $scope.closeOrderLineEditor = function () {
+      if ($scope.orderLineSaving) {
+        return;
+      }
+
+      $scope.orderLineEditorOpen = false;
+      $scope.orderLineEditModel = null;
+    };
+
+    $scope.saveOrderLine = function () {
+      var orderId = getCurrentOrderId();
+      var model = $scope.orderLineEditModel;
+
+      if (!orderId || !model || $scope.orderLineSaving) {
+        return;
+      }
+
+      $scope.orderLineSaving = true;
+
+      resources.AddOrderLine(orderId, {
+        productId: model.productId,
+        variantId: model.variantId || null,
+        quantity: Number(model.quantity)
+      })
+        .then(function (result) {
+          applyOrderData(result.data);
+          $scope.orderLineEditorOpen = false;
+          $scope.orderLineEditModel = null;
+          notificationsService.success("Success", "Order line added.");
+          loadActivityLogs();
+          loadOrderActions();
+          eventsService.emit("order.changed", {});
+        }, function (error) {
+          notificationsService.error("Error", getErrorMessage(error, "Error adding order line."));
+        })
+        .finally(function () {
+          $scope.orderLineSaving = false;
+        });
+    };
+
+    $scope.removeOrderLine = function (orderLine) {
+      var orderId = getCurrentOrderId();
+
+      if (!orderId || !orderLine || !orderLine.key || $scope.removingOrderLineId || !window.confirm("Remove " + orderLine.product.title + " from this order?")) {
+        return;
+      }
+
+      $scope.removingOrderLineId = orderLine.key;
+
+      resources.RemoveOrderLine(orderId, orderLine.key)
+        .then(function (result) {
+          applyOrderData(result.data);
+          notificationsService.success("Success", "Order line removed.");
+          loadActivityLogs();
+          loadOrderActions();
+          eventsService.emit("order.changed", {});
+        }, function (error) {
+          notificationsService.error("Error", getErrorMessage(error, "Error removing order line."));
+        })
+        .finally(function () {
+          $scope.removingOrderLineId = null;
         });
     };
 

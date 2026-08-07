@@ -185,11 +185,15 @@
     </div>
   </div>
 
-  <h4>Order Details</h4>
+  <div style="align-items:center; display:flex; gap:10px; justify-content:space-between;">
+    <h4>Order Details</h4>
+    <button type="button" class="btn btn-outline umb-outline" ng-click="openOrderLineEditor()">Add order line</button>
+  </div>
 
   <div class="umb-table" style="width:100%;">
     <div class="umb-table-head">
       <div class="umb-table-row">
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell not-fixed">Product</div>
         <div class="umb-table-cell">Quantity</div>
         <div class="umb-table-cell">Unit Price (inc VAT)</div>
@@ -200,6 +204,9 @@
     </div>
     <div class="umb-table-body">
       <div ng-repeat="orderLine in model.editModel.order.orderLines" class="umb-table-row">
+        <div class="umb-table-cell">
+          <button type="button" class="btn-reset" ng-click="removeOrderLine(orderLine)" ng-disabled="removingOrderLineId === orderLine.key" aria-label="Remove {{ orderLine.product.title }}" title="Remove order line">&#128465;</button>
+        </div>
         <div class="umb-table-cell not-fixed" style="flex-direction:column;">
           {{ orderLine.product.title }} ({{ orderLine.product.sku }})
           <small ng-if="orderLine.variant" style="font-style:italic; display:block; margin-top:3px; text-overflow: unset !important; white-space:normal !important;">
@@ -222,35 +229,45 @@
     </div>
     <div class="umb-table-footer">
       <div class="umb-table-row">
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell">Sub Total (inc VAT)</div>
         <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.subTotal.withVat.currencyString }}</div>
       </div>
       <div class="umb-table-row">
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell">Discount</div>
         <div class="umb-table-cell" style="text-align: right;">-{{ model.editModel.order.discountAmount.currencyString }}</div>
       </div>
       <div class="umb-table-row" ng-if="model.editModel.order.shippingProvider != null">
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell">Shipping Total</div>
         <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.shippingProvider.price.withVat.currencyString }}</div>
       </div>
       <div class="umb-table-row">
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell">Vat</div>
         <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.chargedVat.currencyString }}</div>
       </div>
       <div class="umb-table-row">
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell">Total</div>
@@ -387,6 +404,35 @@
           <button type="submit" class="btn btn-success" ng-disabled="customerInformationSaving">
             {{ customerInformationSaving ? 'Saving...' : 'Save customer information' }}
           </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="ekmCustomerInformationModal" ng-if="orderLineEditorOpen" style="position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#fff; width:100%; max-width:760px; max-height:90vh; overflow:auto; border-radius:3px; box-shadow:0 10px 30px rgba(0,0,0,.25);">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:20px; border-bottom:1px solid #d8d7d9;">
+        <h3 style="margin:0;">Add order line</h3>
+        <button type="button" class="btn-reset" ng-click="closeOrderLineEditor()" ng-disabled="orderLineSaving" aria-label="Close">&times;</button>
+      </div>
+
+      <form name="orderLineForm" ng-submit="saveOrderLine()" style="padding:20px;">
+        <div class="control-group umb-control-group">
+          <label class="control-label">Product ID</label>
+          <div class="umb-property-editor"><input type="text" class="umb-editor umb-textstring" ng-model="orderLineEditModel.productId" ng-disabled="orderLineSaving" required /></div>
+        </div>
+        <div class="control-group umb-control-group">
+          <label class="control-label">Variant ID</label>
+          <div class="umb-property-editor"><input type="text" class="umb-editor umb-textstring" ng-model="orderLineEditModel.variantId" ng-disabled="orderLineSaving" /></div>
+        </div>
+        <div class="control-group umb-control-group" style="padding-bottom:20px;">
+          <label class="control-label">Quantity</label>
+          <div class="umb-property-editor"><input type="number" class="umb-editor umb-textstring" min="0.000001" step="any" ng-model="orderLineEditModel.quantity" ng-disabled="orderLineSaving" required /></div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;">
+          <button type="button" class="btn btn-outline umb-outline" ng-click="closeOrderLineEditor()" ng-disabled="orderLineSaving">Cancel</button>
+          <button type="submit" class="btn btn-success" ng-disabled="orderLineSaving || orderLineForm.$invalid">{{ orderLineSaving ? 'Adding...' : 'Add order line' }}</button>
         </div>
       </form>
     </div>

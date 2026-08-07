@@ -1,6 +1,7 @@
 using Ekom.ActionFilters;
 using Ekom.API;
 using Ekom.Authorization;
+using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Models.Manager;
 using Ekom.Repositories;
@@ -332,6 +333,107 @@ public class EkomManagerController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to update customer information. {OrderId}", request.OrderId);
+
+            return StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
+    [HttpPost]
+    [Route("Order/{orderId}/OrderLines")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> AddOrderLineAsync(Guid orderId, [FromBody] OrderLineAddRequest? request, CancellationToken ct = default)
+    {
+        if (request == null || request.ProductId == Guid.Empty || request.Quantity <= 0)
+        {
+            return BadRequest("ProductId and a positive quantity are required.");
+        }
+
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(orderId, ct);
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            var order = await _repo.GetOrderInfoAsync(orderId, ct);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            var updatedOrder = await Order.Instance.AddOrderLineAsync(request.ProductId, request.Quantity, orderData.StoreAlias, new AddOrderSettings
+            {
+                FireEvents = true,
+                OrderInfo = order,
+                OrderAction = OrderAction.Set,
+                VariantKey = request.VariantId
+            }, ct).ConfigureAwait(false);
+
+            return Ok(updatedOrder);
+        }
+        catch (InvalidOperationException)
+        {
+            return NotFound();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (EkomException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add order line. {OrderId} {ProductId}", orderId, request.ProductId);
+
+            return StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
+    [HttpDelete]
+    [Route("Order/{orderId}/OrderLines/{lineId}")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> RemoveOrderLineAsync(Guid orderId, Guid lineId, CancellationToken ct = default)
+    {
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(orderId, ct);
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            var order = await _repo.GetOrderInfoAsync(orderId, ct);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            var updatedOrder = await Order.Instance.RemoveOrderLineAsync(lineId, orderData.StoreAlias, new OrderSettings
+            {
+                FireEvents = true,
+                OrderInfo = order
+            }, ct).ConfigureAwait(false);
+
+            return Ok(updatedOrder);
+        }
+        catch (InvalidOperationException)
+        {
+            return NotFound();
+        }
+        catch (EkomException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove order line. {OrderId} {OrderLineId}", orderId, lineId);
 
             return StatusCode(500, "An unexpected error occurred.");
         }

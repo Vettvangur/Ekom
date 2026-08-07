@@ -896,6 +896,12 @@ partial class OrderService
                 }, ct);
             }
 
+            await _orderActivityLogService.AddOrderLogAsync(
+                    orderInfo.UniqueId,
+                    $"Order line removed. Product: {orderLine.Product.Title} - {orderLine.Product.SKU} {(orderLine.Variant != null ? " Variant: " + orderLine.Variant.SKU : "")}",
+                    ct: ct)
+                .ConfigureAwait(false);
+
             return await UpdateOrderAndOrderInfoAsync(updatedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
         }
@@ -1285,7 +1291,7 @@ partial class OrderService
             {
                 await _orderActivityLogService.AddOrderLogAsync(
                         updatedOrderInfo.UniqueId,
-                        $"Order line added. Product: {orderLine.Product.Title}",
+                        $"Order line added. Product: {orderLine.Product.Title} - {orderLine.Product.SKU} {(orderLine.Variant != null ? " Variant: " + orderLine.Variant.SKU : "")}",
                         ct: ct)
                     .ConfigureAwait(false);
             }
