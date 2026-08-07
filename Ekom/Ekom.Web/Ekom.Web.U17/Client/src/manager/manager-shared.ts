@@ -194,6 +194,24 @@ export class EkomManagerApi {
     return this.postBody('/ekom/manager/UpdateCustomerInformation', { orderId, customer, shipping });
   }
 
+  async addOrderLine(orderId: string, productId: string, variantId: string | undefined, quantity: number): Promise<OrderInfo> {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(orderId)}/OrderLines`, { productId, variantId, quantity });
+  }
+
+  async removeOrderLine(orderId: string, lineId: string): Promise<OrderInfo> {
+    const response = await fetch(`/ekom/manager/Order/${encodeURIComponent(orderId)}/OrderLines/${encodeURIComponent(lineId)}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw await EkomManagerApi.createError(response, 'Error removing order line.');
+    }
+
+    return response.json() as Promise<OrderInfo>;
+  }
+
   async charts(filters: ManagerFilters): Promise<ChartData> {
     return this.getJson('/ekom/manager/charts', {
       start: filters.dateFrom,

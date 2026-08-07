@@ -1,7 +1,7 @@
 const f = /* @__PURE__ */ new Date(), y = new Date(f.getFullYear(), 0, 1), w = {
   filters: {
-    dateFrom: h(y),
-    dateTo: h(f),
+    dateFrom: x(y),
+    dateTo: x(f),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
@@ -71,6 +71,19 @@ class m {
   }
   async updateCustomerInformation(e, r, t) {
     return this.postBody("/ekom/manager/UpdateCustomerInformation", { orderId: e, customer: r, shipping: t });
+  }
+  async addOrderLine(e, r, t, n) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines`, { productId: r, variantId: t, quantity: n });
+  }
+  async removeOrderLine(e, r) {
+    const t = await fetch(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines/${encodeURIComponent(r)}`, {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" }
+    });
+    if (!t.ok)
+      throw await m.createError(t, "Error removing order line.");
+    return t.json();
   }
   async charts(e) {
     return this.getJson("/ekom/manager/charts", {
@@ -151,7 +164,7 @@ function u(a) {
   const r = e.toString();
   return r ? `?${r}` : "";
 }
-function h(a) {
+function x(a) {
   const e = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
   return `${a.getFullYear()}-${e}-${r}`;
 }
@@ -170,11 +183,11 @@ function _(a) {
 function v(a) {
   return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function S(a) {
+function O(a) {
   const e = document.createElement("textarea");
   return e.innerHTML = String(a ?? ""), e.value;
 }
-function O(a) {
+function S(a) {
   return a.enumValue || a.value || "";
 }
 function C(a, e) {
@@ -305,7 +318,7 @@ const T = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-function j(a, e, r) {
+function L(a, e, r) {
   const t = a.getBoundingClientRect(), n = window.devicePixelRatio || 1, d = Math.max(t.width, 300), i = Math.max(t.height, 220);
   a.width = d * n, a.height = i * n;
   const o = a.getContext("2d");
@@ -316,12 +329,12 @@ function j(a, e, r) {
     const l = 20 + (i - 50) / 4 * s;
     o.beginPath(), o.moveTo(40, l), o.lineTo(d - 10, l), o.stroke();
   }
-  const p = e.points || [], k = p.map((s) => Number(s.y || 0)), b = Math.max(...k, 1), x = p.length > 1 ? (d - 60) / (p.length - 1) : 0;
+  const p = e.points || [], k = p.map((s) => Number(s.y || 0)), b = Math.max(...k, 1), h = p.length > 1 ? (d - 60) / (p.length - 1) : 0;
   o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), p.forEach((s, l) => {
-    const c = 40 + x * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
+    const c = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
     l === 0 ? o.moveTo(c, g) : o.lineTo(c, g);
   }), o.stroke(), o.fillStyle = r, p.forEach((s, l) => {
-    const c = 40 + x * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
+    const c = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
     o.beginPath(), o.arc(c, g, 3, 0, Math.PI * 2), o.fill();
   });
 }
@@ -329,11 +342,11 @@ export {
   m as E,
   T as a,
   M as b,
-  S as d,
+  O as d,
   v as e,
   _ as f,
-  O as g,
+  S as g,
   w as m,
   C as p,
-  j as r
+  L as r
 };

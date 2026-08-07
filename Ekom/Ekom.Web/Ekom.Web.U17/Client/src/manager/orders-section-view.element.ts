@@ -67,6 +67,10 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private customerEditorOpen = false;
   private customerSaving = false;
   private customerEditModel?: { customer: CustomerInformationField[]; shipping: CustomerInformationField[] };
+  private orderLineEditorOpen = false;
+  private orderLineSaving = false;
+  private orderLineEditModel?: { productId: string; variantId: string; quantity: string };
+  private removingOrderLineId = '';
   private exportIncludeOrderLines = false;
   private exporting = false;
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
@@ -81,6 +85,17 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
       this.customerEditorOpen = false;
       this.customerEditModel = undefined;
+      this.render();
+      return;
+    }
+
+    if (this.orderLineEditorOpen) {
+      if (this.orderLineSaving) {
+        return;
+      }
+
+      this.orderLineEditorOpen = false;
+      this.orderLineEditModel = undefined;
       this.render();
       return;
     }
@@ -389,6 +404,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         </div>
       </div>
       ${this.customerEditorOpen ? this.renderCustomerEditor() : ''}
+      ${this.orderLineEditorOpen ? this.renderOrderLineEditor() : ''}
     `;
   }
 
@@ -462,18 +478,18 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private renderOrderLines(order: OrderInfo): string {
     const lines = Array.isArray(order.orderLines) ? order.orderLines : [];
     return `
-      <h4>Order Details</h4>
+      <div style="align-items:center; display:flex; gap:10px; justify-content:space-between;"><h4>Order Details</h4><button type="button" class="btn-outline" data-action="open-order-line-editor">Add order line</button></div>
       <div class="umb-table">
-        <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
+        <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
         <div class="umb-table-body">
-          ${lines.map((line: Record<string, any>) => `<div class="umb-table-row"><div class="umb-table-cell not-fixed">${escapeHtml(line.product?.title)} (${escapeHtml(line.product?.sku)})${line.variant ? `<small style="display:block; margin-top:3px;">${escapeHtml(line.variant.title)} ${line.variant.sku ? `(${escapeHtml(line.variant.sku)})` : ''}</small>` : ''}${renderOrderLineProperties(line)}</div><div class="umb-table-cell">${escapeHtml(line.quantity)}</div><div class="umb-table-cell">${escapeHtml(line.product?.price?.withVat?.currencyString)}</div><div class="umb-table-cell">${escapeHtml(line.amount?.vat?.currencyString)}</div><div class="umb-table-cell">-${escapeHtml(line.amount?.discountAmount?.currencyString)}</div><div class="umb-table-cell"><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></div></div>`).join('')}
+          ${lines.map((line: Record<string, any>) => `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${escapeHtml(line.key)}" data-product-title="${escapeHtml(line.product?.title)}" ${this.removingOrderLineId === line.key ? 'disabled' : ''} aria-label="Remove ${escapeHtml(line.product?.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed">${escapeHtml(line.product?.title)} (${escapeHtml(line.product?.sku)})${line.variant ? `<small style="display:block; margin-top:3px;">${escapeHtml(line.variant.title)} ${line.variant.sku ? `(${escapeHtml(line.variant.sku)})` : ''}</small>` : ''}${renderOrderLineProperties(line)}</div><div class="umb-table-cell">${escapeHtml(line.quantity)}</div><div class="umb-table-cell">${escapeHtml(line.product?.price?.withVat?.currencyString)}</div><div class="umb-table-cell">${escapeHtml(line.amount?.vat?.currencyString)}</div><div class="umb-table-cell">-${escapeHtml(line.amount?.discountAmount?.currencyString)}</div><div class="umb-table-cell"><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></div></div>`).join('')}
         </div>
         <div class="umb-table-footer">
-          <div class="umb-table-row"><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${escapeHtml(order.subTotal?.withVat?.currencyString)}</div></div>
-          <div class="umb-table-row"><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">-${escapeHtml(order.discountAmount?.currencyString)}</div></div>
-          ${order.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${escapeHtml(order.shippingProvider.price?.withVat?.currencyString)}</div></div>` : ''}
-          <div class="umb-table-row"><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${escapeHtml(order.chargedVat?.currencyString)}</div></div>
-          <div class="umb-table-row"><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Total</div><div class="umb-table-cell"><strong>${escapeHtml(order.chargedAmount?.currencyString)}</strong></div></div>
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${escapeHtml(order.subTotal?.withVat?.currencyString)}</div></div>
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">-${escapeHtml(order.discountAmount?.currencyString)}</div></div>
+          ${order.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${escapeHtml(order.shippingProvider.price?.withVat?.currencyString)}</div></div>` : ''}
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${escapeHtml(order.chargedVat?.currencyString)}</div></div>
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Total</div><div class="umb-table-cell"><strong>${escapeHtml(order.chargedAmount?.currencyString)}</strong></div></div>
         </div>
       </div>
     `;
@@ -531,6 +547,16 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
   private renderCustomerFields(fields: CustomerInformationField[], group: string): string {
     return fields.map(field => `<label class="control-group">${escapeHtml(field.label)} ${field.isExtra ? `<small>(${escapeHtml(field.key)})</small>` : ''}<input type="text" data-customer-group="${group}" data-customer-key="${escapeHtml(field.key)}" value="${escapeHtml(field.value)}" ${this.customerSaving ? 'disabled' : ''}></label>`).join('');
+  }
+
+  private renderOrderLineEditor(): string {
+    const model = this.orderLineEditModel;
+
+    if (!model) {
+      return '';
+    }
+
+    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel"><div class="ekmOverlay__header"><h3>Add order line</h3><button class="btn-reset" type="button" data-action="close-order-line-editor" ${this.orderLineSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Product ID<input type="text" data-order-line-field="productId" value="${escapeHtml(model.productId)}" required ${this.orderLineSaving ? 'disabled' : ''}></label><label class="control-group">Variant ID<input type="text" data-order-line-field="variantId" value="${escapeHtml(model.variantId)}" ${this.orderLineSaving ? 'disabled' : ''}></label><label class="control-group" style="padding-bottom:20px;">Quantity<input type="number" min="0.000001" step="any" data-order-line-field="quantity" value="${escapeHtml(model.quantity)}" required ${this.orderLineSaving ? 'disabled' : ''}></label><div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;"><button class="btn-outline" type="button" data-action="close-order-line-editor" ${this.orderLineSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-order-line" ${this.orderLineSaving ? 'disabled' : ''}>${this.orderLineSaving ? 'Adding...' : 'Add order line'}</button></div></div></div></div>`;
   }
 
   private bindEvents(): void {
@@ -635,6 +661,32 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     if (action === 'save-customer-information') {
       await this.saveCustomerInformation();
+      return;
+    }
+
+    if (action === 'open-order-line-editor') {
+      this.orderLineEditModel = { productId: '', variantId: '', quantity: '1' };
+      this.orderLineEditorOpen = true;
+      this.render();
+      return;
+    }
+
+    if (action === 'close-order-line-editor') {
+      if (!this.orderLineSaving) {
+        this.orderLineEditorOpen = false;
+        this.orderLineEditModel = undefined;
+        this.render();
+      }
+      return;
+    }
+
+    if (action === 'save-order-line') {
+      await this.saveOrderLine();
+      return;
+    }
+
+    if (action === 'remove-order-line') {
+      await this.removeOrderLine(target.dataset.orderLineId || '', target.dataset.productTitle || 'this order line');
     }
   }
 
@@ -812,6 +864,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     this.selectedOrder = undefined;
     this.customerEditorOpen = false;
     this.customerEditModel = undefined;
+    this.orderLineEditorOpen = false;
+    this.orderLineEditModel = undefined;
     this.render();
   }
 
@@ -935,6 +989,73 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       this.customerSaving = false;
       this.render();
     }
+  }
+
+  private async saveOrderLine(): Promise<void> {
+    if (!this.selectedOrder?.uniqueId || !this.orderLineEditModel || this.orderLineSaving) {
+      return;
+    }
+
+    this.querySelectorAll<HTMLInputElement>('[data-order-line-field]').forEach(input => {
+      const field = input.dataset.orderLineField as keyof typeof this.orderLineEditModel;
+
+      if (field) {
+        this.orderLineEditModel![field] = input.value;
+      }
+    });
+
+    const { productId, variantId, quantity } = this.orderLineEditModel;
+    const parsedQuantity = Number(quantity);
+
+    if (!productId.trim() || !Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+      this.showError('Product ID and a positive quantity are required.');
+      return;
+    }
+
+    this.orderLineSaving = true;
+    this.render();
+
+    try {
+      this.selectedOrder = await this.api.addOrderLine(this.selectedOrder.uniqueId, productId.trim(), variantId.trim() || undefined, parsedQuantity);
+      this.orderLineEditorOpen = false;
+      this.orderLineEditModel = undefined;
+      this.showSuccess('Order line added.');
+      await this.refreshOrderAfterLineChange();
+    } catch (error) {
+      this.showError(getErrorMessage(error, 'Error adding order line.'));
+    } finally {
+      this.orderLineSaving = false;
+      this.render();
+    }
+  }
+
+  private async removeOrderLine(lineId: string, productTitle: string): Promise<void> {
+    if (!this.selectedOrder?.uniqueId || !lineId || this.removingOrderLineId || !window.confirm(`Remove ${productTitle} from this order?`)) {
+      return;
+    }
+
+    this.removingOrderLineId = lineId;
+    this.render();
+
+    try {
+      this.selectedOrder = await this.api.removeOrderLine(this.selectedOrder.uniqueId, lineId);
+      this.showSuccess('Order line removed.');
+      await this.refreshOrderAfterLineChange();
+    } catch (error) {
+      this.showError(getErrorMessage(error, 'Error removing order line.'));
+    } finally {
+      this.removingOrderLineId = '';
+      this.render();
+    }
+  }
+
+  private async refreshOrderAfterLineChange(): Promise<void> {
+    if (!this.selectedOrder?.uniqueId) {
+      return;
+    }
+
+    const orderId = this.selectedOrder.uniqueId;
+    await Promise.all([this.loadOrders(), this.loadOrderLogs(orderId), this.loadOrderActions(orderId)]);
   }
 }
 

@@ -95,6 +95,15 @@ angular.module("umbraco.resources").factory("Ekom.Manager.Resources", [
       UpdateCustomerInformation: function (data) {
         return postJson(backofficeBaseUrl + "UpdateCustomerInformation", data);
       },
+      AddOrderLine: function (orderId, data) {
+        return postJson(backofficeBaseUrl + "Order/" + encodeURIComponent(orderId) + "/OrderLines", data);
+      },
+      RemoveOrderLine: function (orderId, lineId) {
+        return $http({
+          method: "DELETE",
+          url: backofficeBaseUrl + "Order/" + encodeURIComponent(orderId) + "/OrderLines/" + encodeURIComponent(lineId)
+        });
+      },
       PaymentProviders: function (storeAlias) {
         return get(baseUrl + "provider/paymentsproviders/" + storeAlias);
       }
