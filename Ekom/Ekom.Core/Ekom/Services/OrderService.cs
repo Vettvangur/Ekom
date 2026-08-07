@@ -1202,6 +1202,26 @@ partial class OrderService
                 {
                     orderLine.OrderLineInfo.Properties[kvp.Key] = kvp.Value;
                 }
+
+                // Re-snapshot the product when the caller supplies its own prices.
+                // Previously an OrderDynamicRequest was honoured only when the line was
+                // first created and silently dropped on every subsequent update, so a
+                // line kept the prices it was born with for the lifetime of the cart.
+                // Gated on the caller having supplied a request, so callers that pass
+                // none - which is every caller that could observe the old behaviour -
+                // are unaffected. OrderLineSettings is deliberately left alone: Link
+                // identifies existing child lines and must not change under them.
+                if (settings.OrderDynamicRequest != null && orderInfo.orderLines.Contains(orderLine))
+                {
+                    orderLine.Product = new OrderedProduct(
+                        product,
+                        variant,
+                        orderInfo.StoreInfo,
+                        settings.OrderDynamicRequest);
+
+                    orderLine.Discount = orderLine.Variant?.Price.Discount
+                        ?? orderLine.Product.Price.Discount;
+                }
             }
             else
             {
