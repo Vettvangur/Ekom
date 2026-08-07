@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.221](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.220...Ekom-v0.2.221) (2026-08-07)
+
+
+### Features
+
+* **manager:** manage order lines ([#737](https://github.com/Vettvangur/Ekom/issues/737)) ([4b8a1eb](https://github.com/Vettvangur/Ekom/commit/4b8a1eb7de4e879704ffe85286156f533d8042b2))
+
+
+### Bug Fixes
+
+* **order:** Re-snapshot product when caller supplies its own prices ([#735](https://github.com/Vettvangur/Ekom/issues/735)) ([9298bb6](https://github.com/Vettvangur/Ekom/commit/9298bb654c88a7b773878d9e1b580af957904c71))
+
 ## [0.2.220](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.219...Ekom-v0.2.220) (2026-07-22)
 
 
