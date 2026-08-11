@@ -178,10 +178,10 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
       const useLanguages = Boolean(config.useLanguages);
       this.internalValue.type = useLanguages ? 'Language' : 'Store';
 
-      const nodeId = this.getNodeId();
+      const contentKey = this.getContentKey();
       this.tabs = useLanguages
-        ? await this.loadLanguageTabs(nodeId)
-        : await this.loadStoreTabs(nodeId);
+        ? await this.loadLanguageTabs(contentKey)
+        : await this.loadStoreTabs(this.getNodeId());
 
       this.currentTab = this.getStoredTab() ?? this.tabs[0];
       this.loading = false;
@@ -198,9 +198,9 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
     }
   }
 
-  private async loadLanguageTabs(nodeId: number): Promise<EkomTab[]> {
-    const url = nodeId > 0
-      ? `/ekom/backoffice/Languages/${nodeId}`
+  private async loadLanguageTabs(contentKey: string | undefined): Promise<EkomTab[]> {
+    const url = contentKey != null
+      ? `/ekom/backoffice/Languages/${encodeURIComponent(contentKey)}`
       : '/ekom/backoffice/Languages';
     const languages = await this.fetchJson<EkomLanguage[]>(url);
 
@@ -384,7 +384,7 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
     const values = { ...this.internalValue.values };
 
     for (const tab of this.tabs) {
-      if (shouldFillSlug && this.manuallyEditedSlugTabs.has(tab.value)) {
+      if ((shouldFillSlug && this.manuallyEditedSlugTabs.has(tab.value)) || this.hasTabValue(values[tab.value])) {
         continue;
       }
 
@@ -640,6 +640,12 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
     return Number.parseInt(numericPathPart, 10);
   }
 
+  private getContentKey(): string | undefined {
+    return window.location.pathname
+      .split('/')
+      .find(part => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part));
+  }
+
   private extractGuid(value: unknown): string | undefined {
     if (typeof value === 'string' && value.length > 0) {
       return value;
@@ -655,6 +661,10 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
 
   private stringIsNullOrWhiteSpace(value: string | undefined): value is undefined {
     return value == null || value.trim().length === 0;
+  }
+
+  private hasTabValue(value: unknown): boolean {
+    return typeof value === 'string' ? value.trim().length > 0 : value != null;
   }
 
   private normalizeValue(value: unknown): EkomPropertyValue {

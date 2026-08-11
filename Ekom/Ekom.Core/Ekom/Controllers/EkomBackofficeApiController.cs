@@ -86,11 +86,11 @@ public class EkomBackofficeApiController : ControllerBase
         => _umbracoService.GetLanguages();
 
     [HttpGet]
-    [Route("Languages/{id:int}")]
+    [Route("Languages/{id}")]
     [UmbracoUserAuthorize]
-    public IEnumerable<object> GetLanguagesByNode([FromRoute] int id)
+    public IEnumerable<object> GetLanguagesByNode([FromRoute] string id)
     {
-        if (id <= 0)
+        if (string.IsNullOrWhiteSpace(id) || id == "0")
         {
             return _umbracoService.GetLanguages();
         }
@@ -171,6 +171,16 @@ public class EkomBackofficeApiController : ControllerBase
         }
     }
 
+    private IEnumerable<IStore> LoadStores(string id)
+    {
+        var allStores = API.Store.Instance.GetAllStores();
+        var node = _nodeService.NodeById(id, true);
+        if (node == null)
+            return allStores;
+
+        return FilterEnabledStores(node, allStores);
+    }
+
     private IEnumerable<IStore> LoadStores(int id)
     {
         var allStores = API.Store.Instance.GetAllStores();
@@ -178,6 +188,11 @@ public class EkomBackofficeApiController : ControllerBase
         if (node == null)
             return allStores;
 
+        return FilterEnabledStores(node, allStores);
+    }
+
+    private IEnumerable<IStore> FilterEnabledStores(UmbracoContent node, IEnumerable<IStore> allStores)
+    {
         var ancestors = _nodeService.GetAllCatalogAncestors(node);
         var disabledAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var result = new List<IStore>();

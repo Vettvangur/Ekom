@@ -81,15 +81,15 @@ class S extends T {
         this.wrappedDataType = await this.fetchJson(`/ekom/backoffice/DataType/${r}`);
         const a = !!e.useLanguages;
         this.internalValue.type = a ? "Language" : "Store";
-        const n = this.getNodeId();
-        this.tabs = a ? await this.loadLanguageTabs(n) : await this.loadStoreTabs(n), this.currentTab = this.getStoredTab() ?? this.tabs[0], this.loading = !1, this.failed = !1, this.syncStatus(), this.renderTabs(), this.tryAutofillFromNodeName((t = this.propertyDatasetContext) == null ? void 0 : t.getName()), await this.renderCurrentEditor();
+        const n = this.getContentKey();
+        this.tabs = a ? await this.loadLanguageTabs(n) : await this.loadStoreTabs(this.getNodeId()), this.currentTab = this.getStoredTab() ?? this.tabs[0], this.loading = !1, this.failed = !1, this.syncStatus(), this.renderTabs(), this.tryAutofillFromNodeName((t = this.propertyDatasetContext) == null ? void 0 : t.getName()), await this.renderCurrentEditor();
       } catch (e) {
         this.loading = !1, this.failed = !0, this.errorMessage = e instanceof Error ? e.message : "Could not render the property.", this.syncStatus();
       }
     }
   }
   async loadLanguageTabs(t) {
-    const e = t > 0 ? `/ekom/backoffice/Languages/${t}` : "/ekom/backoffice/Languages";
+    const e = t != null ? `/ekom/backoffice/Languages/${encodeURIComponent(t)}` : "/ekom/backoffice/Languages";
     return (await this.fetchJson(e)).filter((a) => a.isoCode != null).map((a) => ({
       value: a.isoCode ?? "",
       text: a.cultureName ?? a.isoCode ?? ""
@@ -103,7 +103,7 @@ class S extends T {
     }));
   }
   async renderCurrentEditor() {
-    var a, n, u, d;
+    var a, n, d, l;
     if (this.editorContainer == null || this.loading || this.failed || this.currentTab == null || this.wrappedDataType == null)
       return;
     const t = this.wrappedDataType.view;
@@ -116,7 +116,7 @@ class S extends T {
     const r = await C(e);
     if (r == null)
       throw new Error(`Could not create property editor UI "${t}".`);
-    r.manifest = e, r.name = `${this.name ?? this.propertyAlias}.${this.currentTab.value}`, r.value = (u = this.internalValue.values) == null ? void 0 : u[this.currentTab.value], r.config = new k(this.getWrappedConfig()), r.readonly = this.readonly, r.mandatory = !1, this.stringIsNullOrWhiteSpace(this.mandatoryMessage) || (r.mandatoryMessage = this.mandatoryMessage), r.toggleAttribute("readonly", this.readonly), r.addEventListener("change", (l) => this.onWrappedEditorChange(l)), r.addEventListener("property-value-change", (l) => this.onWrappedEditorChange(l)), this.editor = r, this.editorContainer.append(r), this.tryAutofillFromNodeName((d = this.propertyDatasetContext) == null ? void 0 : d.getName());
+    r.manifest = e, r.name = `${this.name ?? this.propertyAlias}.${this.currentTab.value}`, r.value = (d = this.internalValue.values) == null ? void 0 : d[this.currentTab.value], r.config = new k(this.getWrappedConfig()), r.readonly = this.readonly, r.mandatory = !1, this.stringIsNullOrWhiteSpace(this.mandatoryMessage) || (r.mandatoryMessage = this.mandatoryMessage), r.toggleAttribute("readonly", this.readonly), r.addEventListener("change", (u) => this.onWrappedEditorChange(u)), r.addEventListener("property-value-change", (u) => this.onWrappedEditorChange(u)), this.editor = r, this.editorContainer.append(r), this.tryAutofillFromNodeName((l = this.propertyDatasetContext) == null ? void 0 : l.getName());
   }
   onWrappedEditorChange(t) {
     t.stopPropagation(), !(this.currentTab == null || this.editor == null) && (this.propertyAlias === "slug" && this.manuallyEditedSlugTabs.add(this.currentTab.value), this.internalValue = {
@@ -165,20 +165,20 @@ class S extends T {
     (t = this.propertyContext) == null || t.setValue(this.internalValue), this.dispatchEvent(new y());
   }
   tryAutofillFromNodeName(t) {
-    var l;
+    var u;
     if (!this.isCreateMode() || this.stringIsNullOrWhiteSpace(t) || this.tabs.length === 0)
       return;
     const e = this.propertyAlias === "title", r = this.propertyAlias === "slug";
     if (!e && !r)
       return;
     const a = e ? t : this.slugify(t);
-    let n = !1, u = !1;
-    const d = { ...this.internalValue.values };
+    let n = !1, d = !1;
+    const l = { ...this.internalValue.values };
     for (const h of this.tabs)
-      r && this.manuallyEditedSlugTabs.has(h.value) || (d[h.value] = a, u = !0, h.value === ((l = this.currentTab) == null ? void 0 : l.value) && (n = !0));
-    u && (this.internalValue = {
+      r && this.manuallyEditedSlugTabs.has(h.value) || this.hasTabValue(l[h.value]) || (l[h.value] = a, d = !0, h.value === ((u = this.currentTab) == null ? void 0 : u.value) && (n = !0));
+    d && (this.internalValue = {
       ...this.internalValue,
-      values: d
+      values: l
     }, n && this.editor != null && (this.editor.value = a), this.emitChange());
   }
   syncCurrentEditorValue() {
@@ -311,6 +311,9 @@ class S extends T {
     const r = t.pathname.split("/").reverse().find((a) => /^\d+$/.test(a));
     return r == null ? 0 : Number.parseInt(r, 10);
   }
+  getContentKey() {
+    return window.location.pathname.split("/").find((t) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t));
+  }
   extractGuid(t) {
     if (typeof t == "string" && t.length > 0)
       return t;
@@ -321,6 +324,9 @@ class S extends T {
   }
   stringIsNullOrWhiteSpace(t) {
     return t == null || t.trim().length === 0;
+  }
+  hasTabValue(t) {
+    return typeof t == "string" ? t.trim().length > 0 : t != null;
   }
   normalizeValue(t) {
     if (t != null && typeof t == "object" && "values" in t) {
