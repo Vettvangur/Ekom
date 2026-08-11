@@ -6,6 +6,7 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
     vm.error = '';
     vm.status = '';
     vm.product = null;
+    vm.unsavedProduct = false;
     vm.activeLanguage = '';
     vm.expandedGroupIds = {};
     vm.selectedGroupIds = {};
@@ -20,8 +21,16 @@ angular.module('umbraco').controller('Ekom.Variants', function ($element, $http,
     vm.load = function () {
         vm.loading = true;
         vm.error = '';
+        vm.unsavedProduct = false;
 
-        $http.get('/ekom/backoffice/Variants/' + encodeURIComponent(editorState.current.id))
+        var productId = editorState.current.id;
+        if (productId == null || Number(productId) <= 0) {
+            vm.unsavedProduct = true;
+            vm.loading = false;
+            return;
+        }
+
+        $http.get('/ekom/backoffice/Variants/' + encodeURIComponent(productId))
             .then(function (response) {
                 vm.product = response.data;
                 vm.activeLanguage = (vm.product.languages[0] || {}).isoCode || '';
