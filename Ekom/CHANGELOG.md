@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.222](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.221...Ekom-v0.2.222) (2026-08-11)
+
+
+### Bug Fixes
+
+* **u17:** filter property languages by store ([#738](https://github.com/Vettvangur/Ekom/issues/738)) ([8472b78](https://github.com/Vettvangur/Ekom/commit/8472b78c4f5713de79f8957588c440fba7a62e19))
+
 ## [0.2.221](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.220...Ekom-v0.2.221) (2026-08-07)
 
 
