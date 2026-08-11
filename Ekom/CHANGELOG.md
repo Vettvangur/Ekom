@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.224](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.223...Ekom-v0.2.224) (2026-08-11)
+
+
+### Features
+
+* **u17:** add node value extensions ([#742](https://github.com/Vettvangur/Ekom/issues/742)) ([103da59](https://github.com/Vettvangur/Ekom/commit/103da59b342021c565d9f4a0b3aefed40b43b096))
+
 ## [0.2.223](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.222...Ekom-v0.2.223) (2026-08-11)
 
 
