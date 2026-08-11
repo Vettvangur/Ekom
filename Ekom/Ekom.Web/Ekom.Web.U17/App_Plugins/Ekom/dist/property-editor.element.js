@@ -6,9 +6,9 @@ import { createExtensionElement as C } from "@umbraco-cms/backoffice/extension-a
 import { umbExtensionsRegistry as v } from "@umbraco-cms/backoffice/extension-registry";
 import { UmbLitElement as T } from "@umbraco-cms/backoffice/lit-element";
 import { UMB_PROPERTY_CONTEXT as w, UMB_PROPERTY_DATASET_CONTEXT as E } from "@umbraco-cms/backoffice/property";
-import { UmbPropertyEditorConfigCollection as k } from "@umbraco-cms/backoffice/property-editor";
+import { UmbPropertyEditorConfigCollection as N } from "@umbraco-cms/backoffice/property-editor";
 const c = "00000000-0000-0000-0000-000000000000", f = "ekomCurrentTab", p = "ekom-property-title-changed", g = "ekom-property-tab-changed";
-class S extends T {
+class k extends T {
   constructor() {
     super(...arguments);
     i(this, "manifest");
@@ -30,6 +30,7 @@ class S extends T {
     i(this, "loading", !0);
     i(this, "failed", !1);
     i(this, "errorMessage", "");
+    i(this, "lastAutofilledNodeName");
     i(this, "manuallyEditedSlugTabs", /* @__PURE__ */ new Set());
     i(this, "onTitleChanged", (t) => this.handleTitleChanged(t));
     i(this, "onTabChanged", (t) => this.handleTabChanged(t));
@@ -103,7 +104,7 @@ class S extends T {
     }));
   }
   async renderCurrentEditor() {
-    var a, n, d, l;
+    var a, n, u, d;
     if (this.editorContainer == null || this.loading || this.failed || this.currentTab == null || this.wrappedDataType == null)
       return;
     const t = this.wrappedDataType.view;
@@ -116,7 +117,7 @@ class S extends T {
     const r = await C(e);
     if (r == null)
       throw new Error(`Could not create property editor UI "${t}".`);
-    r.manifest = e, r.name = `${this.name ?? this.propertyAlias}.${this.currentTab.value}`, r.value = (d = this.internalValue.values) == null ? void 0 : d[this.currentTab.value], r.config = new k(this.getWrappedConfig()), r.readonly = this.readonly, r.mandatory = !1, this.stringIsNullOrWhiteSpace(this.mandatoryMessage) || (r.mandatoryMessage = this.mandatoryMessage), r.toggleAttribute("readonly", this.readonly), r.addEventListener("change", (u) => this.onWrappedEditorChange(u)), r.addEventListener("property-value-change", (u) => this.onWrappedEditorChange(u)), this.editor = r, this.editorContainer.append(r), this.tryAutofillFromNodeName((l = this.propertyDatasetContext) == null ? void 0 : l.getName());
+    r.manifest = e, r.name = `${this.name ?? this.propertyAlias}.${this.currentTab.value}`, r.value = (u = this.internalValue.values) == null ? void 0 : u[this.currentTab.value], r.config = new N(this.getWrappedConfig()), r.readonly = this.readonly, r.mandatory = !1, this.stringIsNullOrWhiteSpace(this.mandatoryMessage) || (r.mandatoryMessage = this.mandatoryMessage), r.toggleAttribute("readonly", this.readonly), r.addEventListener("change", (l) => this.onWrappedEditorChange(l)), r.addEventListener("property-value-change", (l) => this.onWrappedEditorChange(l)), this.editor = r, this.editorContainer.append(r), this.tryAutofillFromNodeName((d = this.propertyDatasetContext) == null ? void 0 : d.getName());
   }
   onWrappedEditorChange(t) {
     t.stopPropagation(), !(this.currentTab == null || this.editor == null) && (this.propertyAlias === "slug" && this.manuallyEditedSlugTabs.add(this.currentTab.value), this.internalValue = {
@@ -165,21 +166,29 @@ class S extends T {
     (t = this.propertyContext) == null || t.setValue(this.internalValue), this.dispatchEvent(new y());
   }
   tryAutofillFromNodeName(t) {
-    var u;
-    if (!this.isCreateMode() || this.stringIsNullOrWhiteSpace(t) || this.tabs.length === 0)
+    var l;
+    if (!this.isCreateMode() || this.tabs.length === 0)
       return;
+    if (this.stringIsNullOrWhiteSpace(t)) {
+      this.lastAutofilledNodeName = void 0;
+      return;
+    }
     const e = this.propertyAlias === "title", r = this.propertyAlias === "slug";
-    if (!e && !r)
+    if (!e && !r || t === this.lastAutofilledNodeName)
       return;
     const a = e ? t : this.slugify(t);
-    let n = !1, d = !1;
-    const l = { ...this.internalValue.values };
+    let n = !1, u = !1;
+    const d = { ...this.internalValue.values };
     for (const h of this.tabs)
-      r && this.manuallyEditedSlugTabs.has(h.value) || this.hasTabValue(l[h.value]) || (l[h.value] = a, d = !0, h.value === ((u = this.currentTab) == null ? void 0 : u.value) && (n = !0));
-    d && (this.internalValue = {
+      r && this.manuallyEditedSlugTabs.has(h.value) || (d[h.value] = a, u = !0, h.value === ((l = this.currentTab) == null ? void 0 : l.value) && (n = !0));
+    if (!u) {
+      this.lastAutofilledNodeName = t;
+      return;
+    }
+    this.internalValue = {
       ...this.internalValue,
-      values: l
-    }, n && this.editor != null && (this.editor.value = a), this.emitChange());
+      values: d
+    }, n && this.editor != null && (this.editor.value = a), this.lastAutofilledNodeName = t, this.emitChange();
   }
   syncCurrentEditorValue() {
     var t;
@@ -325,9 +334,6 @@ class S extends T {
   stringIsNullOrWhiteSpace(t) {
     return t == null || t.trim().length === 0;
   }
-  hasTabValue(t) {
-    return typeof t == "string" ? t.trim().length > 0 : t != null;
-  }
   normalizeValue(t) {
     if (t != null && typeof t == "object" && "values" in t) {
       const e = t;
@@ -357,8 +363,8 @@ class S extends T {
     return await e.json();
   }
 }
-customElements.define("ekom-property-editor", S);
+customElements.define("ekom-property-editor", k);
 export {
-  S as EkomPropertyEditorElement,
-  S as default
+  k as EkomPropertyEditorElement,
+  k as default
 };

@@ -16,6 +16,11 @@
             <p class="ekm-variants-status ekm-variants-status--error" ng-if="vm.error">{{ vm.error }}</p>
             <p class="ekm-variants-status" ng-if="vm.status">{{ vm.status }}</p>
 
+            <div ng-if="!vm.loading && vm.unsavedProduct" class="ekm-variants-empty">
+                <h3>Save product first</h3>
+                <p>Save the product before managing variants.</p>
+            </div>
+
             <div ng-if="!vm.loading && vm.product && !vm.product.groups.length" class="ekm-variants-empty">
                 <h3>No variants yet</h3>
                 <p>Create a variant group to start adding product variants.</p>

@@ -85,6 +85,7 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
   private loading = true;
   private failed = false;
   private errorMessage = '';
+  private lastAutofilledNodeName?: string;
   private readonly manuallyEditedSlugTabs = new Set<string>();
   private readonly onTitleChanged = (event: Event): void => this.handleTitleChanged(event);
   private readonly onTabChanged = (event: Event): void => this.handleTabChanged(event);
@@ -366,7 +367,12 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
   }
 
   private tryAutofillFromNodeName(nodeName: string | undefined): void {
-    if (!this.isCreateMode() || this.stringIsNullOrWhiteSpace(nodeName) || this.tabs.length === 0) {
+    if (!this.isCreateMode() || this.tabs.length === 0) {
+      return;
+    }
+
+    if (this.stringIsNullOrWhiteSpace(nodeName)) {
+      this.lastAutofilledNodeName = undefined;
       return;
     }
 
@@ -377,6 +383,10 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
       return;
     }
 
+    if (nodeName === this.lastAutofilledNodeName) {
+      return;
+    }
+
     const value = shouldFillTitle ? nodeName : this.slugify(nodeName);
     let changedCurrentTab = false;
     let changed = false;
@@ -384,7 +394,7 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
     const values = { ...this.internalValue.values };
 
     for (const tab of this.tabs) {
-      if ((shouldFillSlug && this.manuallyEditedSlugTabs.has(tab.value)) || this.hasTabValue(values[tab.value])) {
+      if (shouldFillSlug && this.manuallyEditedSlugTabs.has(tab.value)) {
         continue;
       }
 
@@ -397,6 +407,7 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
     }
 
     if (!changed) {
+      this.lastAutofilledNodeName = nodeName;
       return;
     }
 
@@ -409,6 +420,7 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
       this.editor.value = value;
     }
 
+    this.lastAutofilledNodeName = nodeName;
     this.emitChange();
   }
 
@@ -661,10 +673,6 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
 
   private stringIsNullOrWhiteSpace(value: string | undefined): value is undefined {
     return value == null || value.trim().length === 0;
-  }
-
-  private hasTabValue(value: unknown): boolean {
-    return typeof value === 'string' ? value.trim().length > 0 : value != null;
   }
 
   private normalizeValue(value: unknown): EkomPropertyValue {
