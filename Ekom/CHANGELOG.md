@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.223](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.222...Ekom-v0.2.223) (2026-08-11)
+
+
+### Bug Fixes
+
+* **workspaces:** preserve language and variant state ([#740](https://github.com/Vettvangur/Ekom/issues/740)) ([8f9f9f1](https://github.com/Vettvangur/Ekom/commit/8f9f9f147b6e52e1ae9d2702a4b2102fe316ca17))
+
 ## [0.2.222](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.221...Ekom-v0.2.222) (2026-08-11)
 
 
