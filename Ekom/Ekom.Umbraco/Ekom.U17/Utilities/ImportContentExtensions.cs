@@ -8,7 +8,7 @@ using Umbraco.Extensions;
 
 namespace Ekom.Utilities;
 
-internal static class ImportContentExtensions
+public static class ImportContentExtensions
 {
     private static readonly string[] AllCultures = ["*"];
 
