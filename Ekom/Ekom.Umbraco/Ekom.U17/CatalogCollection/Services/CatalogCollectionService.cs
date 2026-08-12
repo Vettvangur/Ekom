@@ -314,6 +314,8 @@ GROUP BY n.parentId, ct.alias",
 
     private static CatalogCollectionNode MapNode(IContent content, CatalogCollectionCounts? counts = null)
     {
+        var pendingChanges = content.Published && content.Edited;
+
         return new CatalogCollectionNode
         {
             Id = content.Id,
@@ -324,14 +326,15 @@ GROUP BY n.parentId, ct.alias",
             SortOrder = content.SortOrder,
             ProductCount = counts?.ProductCount ?? 0,
             SubcategoryCount = counts?.SubcategoryCount ?? 0,
+            Published = content.Published,
+            PendingChanges = pendingChanges,
+            Status = content.Published ? pendingChanges ? "Pending changes" : "Published" : "Unpublished",
         };
     }
 
     private static CatalogCollectionProduct MapProduct(IContent content)
     {
         var price = GetPrice(content);
-        var pendingChanges = content.Published && content.Edited;
-
         return new CatalogCollectionProduct
         {
             Id = content.Id,
@@ -345,9 +348,6 @@ GROUP BY n.parentId, ct.alias",
             Price = FormatPrice(price),
             CreatedDate = content.CreateDate,
             UpdatedDate = content.UpdateDate,
-            Published = content.Published,
-            PendingChanges = pendingChanges,
-            Status = content.Published ? pendingChanges ? "Pending changes" : "Published" : "Unpublished",
             Available = IsAvailable(content),
             Image = GetFirstImage(GetStringValue(content, "images")),
         };

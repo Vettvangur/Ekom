@@ -234,4 +234,8 @@ abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
     }
 
     public virtual void Remove(Guid id) => RemoveItemFromCache(id);
+
+    public virtual void RemoveDescendants(int id)
+    {
+    }
 }

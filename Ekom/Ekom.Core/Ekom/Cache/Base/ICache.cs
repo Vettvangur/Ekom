@@ -24,6 +24,11 @@ public interface ICache
     void Remove(Guid id);
 
     /// <summary>
+    /// Removes cached items below a content node without querying the content tree.
+    /// </summary>
+    void RemoveDescendants(int id);
+
+    /// <summary>
     /// Handles initial population of cache data
     /// </summary>
     void FillCache();

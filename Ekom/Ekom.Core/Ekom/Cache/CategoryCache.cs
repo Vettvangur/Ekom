@@ -51,11 +51,26 @@ class CategoryCache : PerStoreCache<ICategory>
 
     public override bool RemoveItemFromCache(IStore store, Guid key)
     {
-        var removed = base.RemoveItemFromCache(store, key);
+        var removed = RemoveItemFromCacheCore(store, key);
         if (removed)
             RebuildIndexes(store.Alias);
 
         return removed;
+    }
+
+    protected override void RemoveItemsFromCache(IStore store, IReadOnlyCollection<Guid> keys)
+    {
+        var removed = false;
+
+        foreach (var key in keys)
+        {
+            removed |= RemoveItemFromCacheCore(store, key);
+        }
+
+        if (removed)
+        {
+            RebuildIndexes(store.Alias);
+        }
     }
 
     private void RebuildIndexes(string storeAlias)

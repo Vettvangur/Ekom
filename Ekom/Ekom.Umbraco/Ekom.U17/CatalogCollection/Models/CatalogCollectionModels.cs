@@ -33,6 +33,9 @@ public class CatalogCollectionNode
     public int SortOrder { get; set; }
     public int ProductCount { get; set; }
     public int SubcategoryCount { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public bool Published { get; set; }
+    public bool PendingChanges { get; set; }
 }
 
 public sealed class CatalogCollectionBreadcrumb : CatalogCollectionNode
@@ -47,9 +50,6 @@ public sealed class CatalogCollectionProduct : CatalogCollectionNode
     public decimal? PriceValue { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime UpdatedDate { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public bool Published { get; set; }
-    public bool PendingChanges { get; set; }
     public bool Available { get; set; }
     public string Image { get; set; } = string.Empty;
 }

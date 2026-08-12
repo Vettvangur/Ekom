@@ -372,6 +372,9 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     }
 
     public virtual bool RemoveItemFromCache(IStore store, Guid key)
+        => RemoveItemFromCacheCore(store, key);
+
+    protected bool RemoveItemFromCacheCore(IStore store, Guid key)
     {
         var alias = store.Alias;
 
@@ -452,6 +455,36 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     public virtual void AddReplace(UmbracoContent node) => AddOrReplaceFromAllCaches(node);
 
     public virtual void Remove(Guid id) => RemoveItemFromAllCaches(id);
+
+    public virtual void RemoveDescendants(int id)
+    {
+        foreach (var store in _storeCache.Cache.Values)
+        {
+            if (!Cache.TryGetValue(store.Alias, out var storeCache))
+            {
+                continue;
+            }
+
+            var keys = storeCache
+                .Where(item => item.Value is INodeEntity node && IsDescendantOf(node, id))
+                .Select(item => item.Key)
+                .ToList();
+
+            RemoveItemsFromCache(store, keys);
+        }
+    }
+
+    protected virtual void RemoveItemsFromCache(IStore store, IReadOnlyCollection<Guid> keys)
+    {
+        foreach (var key in keys)
+        {
+            RemoveItemFromCacheCore(store, key);
+        }
+    }
+
+    private static bool IsDescendantOf(INodeEntity node, int ancestorId)
+        => node.Id != ancestorId
+            && node.PathArray.Any(pathId => int.TryParse(pathId, out var id) && id == ancestorId);
 
     // -----------------------------
     // Lookups (O(1) when enabled)

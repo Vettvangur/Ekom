@@ -1,18 +1,18 @@
-var $ = Object.defineProperty;
-var P = (s, c, e) => c in s ? $(s, c, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[c] = e;
-var l = (s, c, e) => P(s, typeof c != "symbol" ? c + "" : c, e);
-import { UMB_COLLECTION_CONTEXT as C } from "@umbraco-cms/backoffice/collection";
-import { UmbElementMixin as E } from "@umbraco-cms/backoffice/element-api";
+var P = Object.defineProperty;
+var C = (s, c, e) => c in s ? P(s, c, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[c] = e;
+var l = (s, c, e) => C(s, typeof c != "symbol" ? c + "" : c, e);
+import { UMB_COLLECTION_CONTEXT as E } from "@umbraco-cms/backoffice/collection";
+import { UmbElementMixin as T } from "@umbraco-cms/backoffice/element-api";
 import "@umbraco-cms/backoffice/imaging";
-const T = 16, m = "sortOrderAsc", f = "ekomCatalogNode", y = 14, I = 220, z = 4, q = "ekomCatalogParent:", w = "ekomCatalogSort", b = "ekomCatalog";
-class A extends E(HTMLElement) {
+const I = 16, m = "sortOrderAsc", f = "ekomCatalogNode", y = 14, z = 220, q = 4, A = "ekomCatalogParent:", S = "ekomCatalogSort", b = "ekomCatalog";
+class O extends T(HTMLElement) {
   constructor() {
     super(...arguments);
     l(this, "nodeId", "");
     l(this, "query", "");
-    l(this, "sort", k());
+    l(this, "sort", v());
     l(this, "page", 1);
-    l(this, "pageSize", T);
+    l(this, "pageSize", I);
     l(this, "loading", !0);
     l(this, "error", "");
     l(this, "data");
@@ -28,9 +28,9 @@ class A extends E(HTMLElement) {
     });
   }
   connectedCallback() {
-    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), window.addEventListener("popstate", this.onPopState), window.addEventListener("resize", this.onResize), this.revealCollectionHost(), this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250), this.nodeId = this.getNodeIdFromUrl(), this.sort = k(), this.restorePageFromHistory(), this.consumeContext(C, (e) => {
-      var o;
-      const t = (o = e == null ? void 0 : e.getConfig()) == null ? void 0 : o.unique;
+    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), window.addEventListener("popstate", this.onPopState), window.addEventListener("resize", this.onResize), this.revealCollectionHost(), this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250), this.nodeId = this.getNodeIdFromUrl(), this.sort = v(), this.restorePageFromHistory(), this.consumeContext(E, (e) => {
+      var i;
+      const t = (i = e == null ? void 0 : e.getConfig()) == null ? void 0 : i.unique;
       this.getCatalogNodeFromUrl() == null && t != null && t !== this.nodeId && (this.nodeId = t, this.restorePageFromHistory(), this.load()), (e == null ? void 0 : e.selection) != null && (this.selection = e.selection, this.selection.setSelectable(!0), this.selection.setMultiple(!0), this.observe(e.selection.selection, () => this.render(), "ekomCatalogCollectionSelection")), this.observe(e == null ? void 0 : e.filter, (r) => this.setQueryFromCollectionFilter(r), "ekomCatalogCollectionFilter");
     }), this.render(), this.nodeId && this.load();
   }
@@ -62,9 +62,9 @@ class A extends E(HTMLElement) {
   }
   drillTo(e) {
     var r;
-    const t = e.key || String(e.id), o = history.state != null && typeof history.state == "object" ? history.state : {};
+    const t = e.key || String(e.id), i = history.state != null && typeof history.state == "object" ? history.state : {};
     history.pushState({
-      ...o,
+      ...i,
       [b]: {
         nodeId: t,
         page: 1
@@ -77,24 +77,24 @@ class A extends E(HTMLElement) {
     e && (this.nodeId = e, this.query = "", this.page = 1, this.restorePageFromHistory(), (t = this.selection) == null || t.clearSelection(), this.load());
   }
   storeParentNode(e) {
-    var o;
+    var i;
     const t = this.getParentStorageKey(e.current.key || String(e.current.id));
-    (o = e.parent) != null && o.key ? window.sessionStorage.setItem(t, e.parent.key) : window.sessionStorage.removeItem(t);
+    (i = e.parent) != null && i.key ? window.sessionStorage.setItem(t, e.parent.key) : window.sessionStorage.removeItem(t);
   }
   redirectToParent() {
-    var t, o;
-    const e = ((o = (t = this.data) == null ? void 0 : t.parent) == null ? void 0 : o.key) ?? window.sessionStorage.getItem(this.getParentStorageKey(this.nodeId));
+    var t, i;
+    const e = ((i = (t = this.data) == null ? void 0 : t.parent) == null ? void 0 : i.key) ?? window.sessionStorage.getItem(this.getParentStorageKey(this.nodeId));
     return e ? (window.location.replace(this.getDocumentHref(e)), !0) : !1;
   }
   getParentStorageKey(e) {
-    return `${q}${e}`;
+    return `${A}${e}`;
   }
   restorePageFromHistory() {
     const e = history.state, t = e == null ? void 0 : e[b];
     if (t == null || typeof t != "object")
       return;
-    const { nodeId: o, page: r } = t;
-    o === this.nodeId && typeof r == "number" && Number.isInteger(r) && r > 0 && (this.page = r);
+    const { nodeId: i, page: r } = t;
+    i === this.nodeId && typeof r == "number" && Number.isInteger(r) && r > 0 && (this.page = r);
   }
   storePageInHistory() {
     if (!this.nodeId)
@@ -109,16 +109,16 @@ class A extends E(HTMLElement) {
     }, "", window.location.href);
   }
   setQueryFromCollectionFilter(e) {
-    const t = "filter" in (e ?? {}) ? e.filter : void 0, o = typeof t == "string" ? t : "";
-    o !== this.query && (this.query = o, this.page = 1, this.storePageInHistory(), this.nodeId && this.load());
+    const t = "filter" in (e ?? {}) ? e.filter : void 0, i = typeof t == "string" ? t : "";
+    i !== this.query && (this.query = i, this.page = 1, this.storePageInHistory(), this.nodeId && this.load());
   }
   setSort(e) {
-    if (S(e)) {
+    if ($(e)) {
       if (e === this.sort) {
-        v(e);
+        w(e);
         return;
       }
-      this.sort = e, v(e), this.page = 1, this.storePageInHistory(), this.load();
+      this.sort = e, w(e), this.page = 1, this.storePageInHistory(), this.load();
     }
   }
   setPage(e) {
@@ -128,8 +128,8 @@ class A extends E(HTMLElement) {
     const e = Math.max(0, this.clientWidth - 48);
     if (e === 0)
       return !1;
-    const o = Math.max(1, Math.floor((e + y) / (I + y))) * z;
-    return o === this.pageSize ? !1 : (this.pageSize = o, !0);
+    const i = Math.max(1, Math.floor((e + y) / (z + y))) * q;
+    return i === this.pageSize ? !1 : (this.pageSize = i, !0);
   }
   toggleProduct(e) {
     var t;
@@ -139,13 +139,13 @@ class A extends E(HTMLElement) {
     var a;
     if (this.selection == null)
       return;
-    const t = (((a = this.data) == null ? void 0 : a.products) ?? []).map((i) => i.key), o = t.length > 0 && t.every((i) => this.selection.isSelected(i)), r = this.selection.getSelection();
-    this.selection.setSelection(o ? r.filter((i) => !t.includes(i)) : [.../* @__PURE__ */ new Set([...r, ...t])]);
+    const t = (((a = this.data) == null ? void 0 : a.products) ?? []).map((o) => o.key), i = t.length > 0 && t.every((o) => this.selection.isSelected(o)), r = this.selection.getSelection();
+    this.selection.setSelection(i ? r.filter((o) => !t.includes(o)) : [.../* @__PURE__ */ new Set([...r, ...t])]);
   }
   revealCollectionHost() {
     for (const e of this.getComposedAncestors("umb-collection-default")) {
-      const t = e.shadowRoot, o = t == null ? void 0 : t.querySelector("#router"), r = t == null ? void 0 : t.querySelector("umb-body-layout"), a = t == null ? void 0 : t.querySelector("#empty-state");
-      o == null || o.style.setProperty("visibility", "visible", "important"), a == null || a.style.setProperty("display", "none", "important"), r == null || r.classList.add("has-items");
+      const t = e.shadowRoot, i = t == null ? void 0 : t.querySelector("#router"), r = t == null ? void 0 : t.querySelector("umb-body-layout"), a = t == null ? void 0 : t.querySelector("#empty-state");
+      i == null || i.style.setProperty("visibility", "visible", "important"), a == null || a.style.setProperty("display", "none", "important"), r == null || r.classList.add("has-items");
     }
     for (const e of this.getComposedShadowRoots())
       this.hideDefaultCollectionPagination(e), this.observeDefaultCollectionPagination(e);
@@ -159,17 +159,17 @@ class A extends E(HTMLElement) {
   }
   getComposedAncestors(e) {
     const t = [];
-    let o = this;
-    for (; o != null; )
-      o instanceof HTMLElement && o.matches(e) && t.push(o), o = o.parentNode ?? (o.getRootNode() instanceof ShadowRoot ? o.getRootNode().host : null);
+    let i = this;
+    for (; i != null; )
+      i instanceof HTMLElement && i.matches(e) && t.push(i), i = i.parentNode ?? (i.getRootNode() instanceof ShadowRoot ? i.getRootNode().host : null);
     return t;
   }
   getComposedShadowRoots() {
     const e = /* @__PURE__ */ new Set();
     let t = this;
     for (; t != null; ) {
-      const o = t.getRootNode();
-      o instanceof ShadowRoot && e.add(o), t = t.parentNode ?? (o instanceof ShadowRoot ? o.host : null);
+      const i = t.getRootNode();
+      i instanceof ShadowRoot && e.add(i), t = t.parentNode ?? (i instanceof ShadowRoot ? i.host : null);
     }
     return [...e];
   }
@@ -233,12 +233,12 @@ class A extends E(HTMLElement) {
     `;
   }
   renderBreadcrumbs(e) {
-    return `<nav class="breadcrumbs">${e.breadcrumbs.map((t, o) => {
-      const r = o === e.breadcrumbs.length - 1, a = p(t.title || t.name), i = t.siblings.filter((d) => d.key !== t.key), h = t.contentTypeAlias === "ekmCategory" && i.length > 0 ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(t.key)}" data-breadcrumb-link-key="${p(t.key)}" ${r ? 'aria-current="page"' : ""}>${a}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${a}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${i.map((d) => {
+    return `<nav class="breadcrumbs">${e.breadcrumbs.map((t, i) => {
+      const r = i === e.breadcrumbs.length - 1, a = p(t.title || t.name), o = t.siblings.filter((d) => d.key !== t.key), h = t.contentTypeAlias === "ekmCategory" && o.length > 0 ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(t.key)}" data-breadcrumb-link-key="${p(t.key)}" ${r ? 'aria-current="page"' : ""}>${a}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${a}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${o.map((d) => {
         const u = p(d.title || d.name);
         return `<button type="button" data-breadcrumb-category-key="${p(d.key)}" role="menuitem">${u}</button>`;
       }).join("")}</div></details></div>` : r ? `<span aria-current="page">${a}</span>` : `<a href="${this.getDocumentHref(t.key)}">${a}</a>`;
-      return `${o > 0 ? '<span class="sep">/</span>' : ""}${h}`;
+      return `${i > 0 ? '<span class="sep">/</span>' : ""}${h}`;
     }).join("")}</nav>`;
   }
   renderHeader(e) {
@@ -253,9 +253,9 @@ class A extends E(HTMLElement) {
     `;
   }
   renderToolbar(e) {
-    const t = e.products.length > 0 && e.products.every((o) => {
+    const t = e.products.length > 0 && e.products.every((i) => {
       var r;
-      return (r = this.selection) == null ? void 0 : r.isSelected(o.key);
+      return (r = this.selection) == null ? void 0 : r.isSelected(i.key);
     });
     return `
       <div class="toolbar">
@@ -282,7 +282,7 @@ class A extends E(HTMLElement) {
         <h2>Subcategories</h2>
         <div class="chips">${e.map((t) => `
           <a class="chip" href="${this.getDocumentHref(t.key)}">
-            <span class="tile">▦</span><span class="chip-text"><strong>${p(t.title || t.name)}</strong><small>${t.productCount} products · ${t.subcategoryCount} subcategories</small></span><span>›</span>
+            <span class="tile">▦</span><span class="chip-text"><strong>${p(t.title || t.name)}</strong><small>${t.productCount} products · ${t.subcategoryCount} subcategories</small><span class="pill ${k(t.status)}"><i></i>${t.status}</span></span><span>›</span>
           </a>
         `).join("")}</div>
       </section>
@@ -303,21 +303,21 @@ class A extends E(HTMLElement) {
     return `
       <section class="section">
         <h2>Products (${e.filteredProductCount})</h2>
-        ${e.products.length === 0 ? `<div class="empty">${t}</div>` : `<div class="grid">${e.products.map((o) => this.renderProduct(o)).join("")}</div>`}
+        ${e.products.length === 0 ? `<div class="empty">${t}</div>` : `<div class="grid">${e.products.map((i) => this.renderProduct(i)).join("")}</div>`}
       </section>
     `;
   }
   renderProduct(e) {
     var r;
-    const t = ((r = this.selection) == null ? void 0 : r.isSelected(e.key)) ?? !1, o = `/umbraco/section/content/workspace/document/edit/${e.key}`;
+    const t = ((r = this.selection) == null ? void 0 : r.isSelected(e.key)) ?? !1, i = `/umbraco/section/content/workspace/document/edit/${e.key}`;
     return `
       <article class="card ${t ? "selected" : ""}">
         <button type="button" class="checkbox ${t ? "checked" : ""}" data-product-key="${e.key}">${t ? "✓" : ""}</button>
-        <a class="image ${e.published ? "" : "dimmed"}" href="${o}">${e.image ? `<umb-imaging-thumbnail unique="${p(e.image)}" width="320" height="160" alt="${p(e.title || e.name)}"></umb-imaging-thumbnail>` : "<span>Product image</span>"}</a>
+        <a class="image ${e.published ? "" : "dimmed"}" href="${i}">${e.image ? `<umb-imaging-thumbnail unique="${p(e.image)}" width="320" height="160" alt="${p(e.title || e.name)}"></umb-imaging-thumbnail>` : "<span>Product image</span>"}</a>
         <div class="card-body">
-          <a class="title" href="${o}">${p(e.title || e.name)}</a>
+          <a class="title" href="${i}">${p(e.title || e.name)}</a>
           <div class="meta"><span>${e.sku ? `SKU ${p(e.sku)}` : "No SKU"}</span><strong>${p(e.price)}</strong></div>
-          <div class="status-row"><span class="pill ${O(e.status)}"><i></i>${e.status}</span><strong class="availability ${e.available ? "ok" : "bad"}">${e.available ? "✓ Available" : "✕ Unavailable"}</strong></div>
+          <div class="status-row"><span class="pill ${k(e.status)}"><i></i>${e.status}</span><strong class="availability ${e.available ? "ok" : "bad"}">${e.available ? "✓ Available" : "✕ Unavailable"}</strong></div>
         </div>
       </article>
     `;
@@ -325,7 +325,7 @@ class A extends E(HTMLElement) {
   renderPagination(e) {
     if (e.filteredProductCount === 0 || e.totalPages <= 1)
       return "";
-    const t = (e.page - 1) * e.pageSize + 1, o = Math.min(e.page * e.pageSize, e.filteredProductCount);
+    const t = (e.page - 1) * e.pageSize + 1, i = Math.min(e.page * e.pageSize, e.filteredProductCount);
     return `
       <footer class="pagination">
         <div>
@@ -333,51 +333,51 @@ class A extends E(HTMLElement) {
           ${this.paginationItems(e.page, e.totalPages).map((r) => r === "…" ? "<span>…</span>" : `<button type="button" class="${r === e.page ? "current" : ""}" data-page="${r}">${r}</button>`).join("")}
           <button type="button" data-page="${e.page + 1}" ${e.page >= e.totalPages ? "disabled" : ""}>Next ›</button>
         </div>
-        <span>${t}–${o} of ${e.filteredProductCount}</span>
+        <span>${t}–${i} of ${e.filteredProductCount}</span>
       </footer>
     `;
   }
   paginationItems(e, t) {
     if (t <= 7)
-      return Array.from({ length: t }, (i, n) => n + 1);
-    const r = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((i) => i >= 1 && i <= t).sort((i, n) => i - n), a = [];
-    for (const i of r) {
+      return Array.from({ length: t }, (o, n) => n + 1);
+    const r = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((o) => o >= 1 && o <= t).sort((o, n) => o - n), a = [];
+    for (const o of r) {
       const n = a[a.length - 1];
-      typeof n == "number" && i - n > 1 && a.push("…"), a.push(i);
+      typeof n == "number" && o - n > 1 && a.push("…"), a.push(o);
     }
     return a;
   }
   bindEvents() {
-    var e, t, o, r, a;
+    var e, t, i, r, a;
     (e = this.querySelector('[data-action="retry"]')) == null || e.addEventListener("click", () => void this.load()), (t = this.querySelector('[data-action="back"]')) == null || t.addEventListener("click", () => {
-      var i;
-      ((i = this.data) == null ? void 0 : i.parent) != null && this.drillTo(this.data.parent);
-    }), (o = this.querySelector('[data-action="toggle-page"]')) == null || o.addEventListener("click", () => this.toggleCurrentPage()), (r = this.querySelector('[data-field="sort"]')) == null || r.addEventListener("input", (i) => this.setSort(i.target.value)), (a = this.querySelector('[data-field="sort"]')) == null || a.addEventListener("change", (i) => this.setSort(i.target.value)), this.querySelectorAll("[data-product-key]").forEach((i) => {
-      i.addEventListener("click", (n) => {
+      var o;
+      ((o = this.data) == null ? void 0 : o.parent) != null && this.drillTo(this.data.parent);
+    }), (i = this.querySelector('[data-action="toggle-page"]')) == null || i.addEventListener("click", () => this.toggleCurrentPage()), (r = this.querySelector('[data-field="sort"]')) == null || r.addEventListener("input", (o) => this.setSort(o.target.value)), (a = this.querySelector('[data-field="sort"]')) == null || a.addEventListener("change", (o) => this.setSort(o.target.value)), this.querySelectorAll("[data-product-key]").forEach((o) => {
+      o.addEventListener("click", (n) => {
         var u;
         n.preventDefault();
-        const h = i.dataset.productKey, d = (u = this.data) == null ? void 0 : u.products.find((g) => g.key === h);
+        const h = o.dataset.productKey, d = (u = this.data) == null ? void 0 : u.products.find((g) => g.key === h);
         d != null && this.toggleProduct(d);
       });
-    }), this.querySelectorAll("[data-page]").forEach((i) => {
-      i.addEventListener("click", () => this.setPage(Number(i.dataset.page)));
-    }), this.querySelectorAll("[data-breadcrumb-link-key]").forEach((i) => {
-      i.addEventListener("click", (n) => {
+    }), this.querySelectorAll("[data-page]").forEach((o) => {
+      o.addEventListener("click", () => this.setPage(Number(o.dataset.page)));
+    }), this.querySelectorAll("[data-breadcrumb-link-key]").forEach((o) => {
+      o.addEventListener("click", (n) => {
         var u;
         n.preventDefault();
-        const h = i.dataset.breadcrumbLinkKey, d = (u = this.data) == null ? void 0 : u.breadcrumbs.find((g) => g.key === h);
+        const h = o.dataset.breadcrumbLinkKey, d = (u = this.data) == null ? void 0 : u.breadcrumbs.find((g) => g.key === h);
         d != null && this.drillTo(d);
       });
-    }), this.querySelectorAll("[data-breadcrumb-category-key]").forEach((i) => {
-      i.addEventListener("click", () => {
+    }), this.querySelectorAll("[data-breadcrumb-category-key]").forEach((o) => {
+      o.addEventListener("click", () => {
         var d;
-        const n = i.dataset.breadcrumbCategoryKey, h = (d = this.data) == null ? void 0 : d.breadcrumbs.flatMap((u) => u.siblings).find((u) => u.key === n);
+        const n = o.dataset.breadcrumbCategoryKey, h = (d = this.data) == null ? void 0 : d.breadcrumbs.flatMap((u) => u.siblings).find((u) => u.key === n);
         h != null && this.drillTo(h);
       });
-    }), this.querySelectorAll(".breadcrumb-menu").forEach((i) => {
-      i.addEventListener("toggle", () => {
-        i.open && this.querySelectorAll(".breadcrumb-menu").forEach((n) => {
-          n !== i && (n.open = !1);
+    }), this.querySelectorAll(".breadcrumb-menu").forEach((o) => {
+      o.addEventListener("toggle", () => {
+        o.open && this.querySelectorAll(".breadcrumb-menu").forEach((n) => {
+          n !== o && (n.open = !1);
         });
       });
     });
@@ -386,9 +386,9 @@ class A extends E(HTMLElement) {
     const e = this.getCatalogNodeFromUrl();
     if (e != null)
       return e;
-    const t = window.location.href, o = t.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-    if (o != null)
-      return o[0];
+    const t = window.location.href, i = t.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    if (i != null)
+      return i[0];
     const r = t.match(/\/edit\/([^/?#]+)/i);
     return (r == null ? void 0 : r[1]) ?? "";
   }
@@ -415,10 +415,10 @@ class x extends Error {
 function p(s) {
   return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 }
-function O(s) {
+function k(s) {
   return s === "Published" ? "published" : s === "Pending changes" ? "pending" : "unpublished";
 }
-function S(s) {
+function $(s) {
   return [
     "sortOrderAsc",
     "sortOrderDesc",
@@ -430,17 +430,17 @@ function S(s) {
     "updatedDesc"
   ].includes(s);
 }
-function k() {
+function v() {
   try {
-    const s = window.localStorage.getItem(w);
-    return s != null && S(s) ? s : m;
+    const s = window.localStorage.getItem(S);
+    return s != null && $(s) ? s : m;
   } catch {
     return m;
   }
 }
-function v(s) {
+function w(s) {
   try {
-    window.localStorage.setItem(w, s);
+    window.localStorage.setItem(S, s);
   } catch {
   }
 }
@@ -545,7 +545,7 @@ const L = `
   .pagination button { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; min-width: 34px; padding: 7px 10px; }
   .pagination .current { background: #1b264f; border-color: #1b264f; color: #fff; }
 `;
-customElements.define("ekom-catalog-collection-view", A);
+customElements.define("ekom-catalog-collection-view", O);
 export {
-  A as default
+  O as default
 };

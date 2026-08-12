@@ -214,6 +214,11 @@ class UmbracoEventListeners :
     {
         foreach (var node in args.UnpublishedEntities)
         {
+            foreach (var cache in _config.CacheList.Value)
+            {
+                cache.RemoveDescendants(node.Id);
+            }
+
             if (node.ContentType.Alias.StartsWith("ekm"))
             {
                 ClearMemoryCache(node);
