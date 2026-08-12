@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.225](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.224...Ekom-v0.2.225) (2026-08-12)
+
+
+### Bug Fixes
+
+* **cache:** evict unpublished descendants ([#744](https://github.com/Vettvangur/Ekom/issues/744)) ([617dc88](https://github.com/Vettvangur/Ekom/commit/617dc8828b86bf0ee7276a4170721fc95d16b85b))
+
 ## [0.2.224](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.223...Ekom-v0.2.224) (2026-08-11)
 
 
