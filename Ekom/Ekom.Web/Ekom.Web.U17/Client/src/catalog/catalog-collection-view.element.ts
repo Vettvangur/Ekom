@@ -541,7 +541,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
         <h2>Subcategories</h2>
         <div class="chips">${subcategories.map(category => `
           <a class="chip" href="${this.getDocumentHref(category.key)}">
-            <span class="tile">▦</span><span class="chip-text"><strong>${escapeHtml(category.title || category.name)}</strong><small>${category.productCount} products · ${category.subcategoryCount} subcategories</small><span class="pill ${statusClass(category.status)}"><i></i>${category.status}</span></span><span>›</span>
+            <span class="tile">▦</span><span class="chip-text"><strong>${escapeHtml(category.title || category.name)}<span class="chip-status ${statusClass(category.status)}" title="${category.status}" aria-label="${category.status}"></span></strong><small>${category.productCount} products · ${category.subcategoryCount} subcategories</small></span><span>›</span>
           </a>
         `).join('')}</div>
       </section>
@@ -842,8 +842,13 @@ const styles = `
   h2 { color: #777; font-size: 11px; letter-spacing: .08em; margin: 0 0 10px; text-transform: uppercase; }
   .chips { display: flex; flex-wrap: wrap; gap: 10px; }
   .chip { align-items: center; background: #fff; border: 1px solid #d8d7d9; border-radius: 999px; color: inherit; display: flex; gap: 10px; padding: 6px 11px 6px 6px; text-align: left; text-decoration: none; }
-  .chip-text { display: grid; gap: 1px; }
+  .chip-text { display: grid; gap: 1px; min-width: 0; }
+  .chip-text strong { align-items: center; display: flex; gap: 5px; }
   .chip-text small { color: #777; font-size: 11px; }
+  .chip-status { border-radius: 50%; flex: 0 0 7px; height: 7px; width: 7px; }
+  .chip-status.published { background: #2bc37c; }
+  .chip-status.pending { background: #fbd142; }
+  .chip-status.unpublished { background: #c4c4c4; }
   .tile { align-items: center; background: #f6f4f4; border-radius: 50%; color: #1b264f; display: inline-flex; height: 30px; justify-content: center; width: 30px; }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
   .card { background: #fff; border: 1px solid #e9e9eb; border-radius: 4px; overflow: hidden; position: relative; transition: box-shadow .15s, border-color .15s; }
