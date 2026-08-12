@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.226](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.225...Ekom-v0.2.226) (2026-08-12)
+
+
+### Bug Fixes
+
+* **u17:** compact category status indicator ([#748](https://github.com/Vettvangur/Ekom/issues/748)) ([0ef25bf](https://github.com/Vettvangur/Ekom/commit/0ef25bf9788994e0255f850d36850231ec2d2476))
+
 ## [0.2.225](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.224...Ekom-v0.2.225) (2026-08-12)
 
 
