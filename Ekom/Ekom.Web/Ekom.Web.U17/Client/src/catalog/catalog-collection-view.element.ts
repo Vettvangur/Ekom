@@ -10,6 +10,9 @@ type CatalogNode = {
   contentTypeAlias: string;
   productCount: number;
   subcategoryCount: number;
+  status: 'Published' | 'Pending changes' | 'Unpublished';
+  published: boolean;
+  pendingChanges: boolean;
 };
 
 type CatalogBreadcrumb = CatalogNode & {
@@ -19,9 +22,6 @@ type CatalogBreadcrumb = CatalogNode & {
 type CatalogProduct = CatalogNode & {
   sku: string;
   price: string;
-  status: 'Published' | 'Pending changes' | 'Unpublished';
-  published: boolean;
-  pendingChanges: boolean;
   available: boolean;
   image: string;
 };
@@ -541,7 +541,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
         <h2>Subcategories</h2>
         <div class="chips">${subcategories.map(category => `
           <a class="chip" href="${this.getDocumentHref(category.key)}">
-            <span class="tile">▦</span><span class="chip-text"><strong>${escapeHtml(category.title || category.name)}</strong><small>${category.productCount} products · ${category.subcategoryCount} subcategories</small></span><span>›</span>
+            <span class="tile">▦</span><span class="chip-text"><strong>${escapeHtml(category.title || category.name)}</strong><small>${category.productCount} products · ${category.subcategoryCount} subcategories</small><span class="pill ${statusClass(category.status)}"><i></i>${category.status}</span></span><span>›</span>
           </a>
         `).join('')}</div>
       </section>
