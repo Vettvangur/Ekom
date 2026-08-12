@@ -45,9 +45,10 @@ internal sealed class EkomStartup : IComponent
 
             Configuration.Resolver = _factory;
             PriceCache.SetCache(_cache);
+            using var scope = _factory.CreateScope();
             EkomCultureRequestLocalizationOptions.ConfigureCultures(
                 _requestLocalizationOptions.Value,
-                _factory.GetRequiredService<Ekom.Services.IUmbracoService>());
+                scope.ServiceProvider.GetRequiredService<Ekom.Services.IUmbracoService>());
 
             var orderRepository = _factory.GetService<OrderRepository>();
             orderRepository?.MigrateOrderTableAsync();
