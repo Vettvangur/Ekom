@@ -214,13 +214,13 @@ internal sealed class UrlService : IUrlService
 
         var slugValue = JsonConvert.DeserializeObject<PropertyValue>(rawSlug);
         var urls = new List<UmbracoUrl>();
-        var categoryUrls = categories.SelectMany(c => c.UrlsWithContext);
+        var categoryUrls = categories.SelectMany(c => c.UrlsWithContext).ToList();
 
         if (slugValue?.Type == PropertyEditorType.Language && store.Domains.Any())
         {
             foreach (var categoryUrl in categoryUrls)
             {
-                var productSlug = item.GetValue("slug", categoryUrl.Culture);
+                var productSlug = GetPropertyValue(slugValue, categoryUrl.Culture);
 
                 if (string.IsNullOrWhiteSpace(productSlug))
                 {
@@ -238,7 +238,7 @@ internal sealed class UrlService : IUrlService
         }
         else
         {
-            var productSlug = item.GetValue("slug", store.Alias);
+            var productSlug = GetPropertyValue(slugValue, store.Alias, rawSlug);
 
             if (!string.IsNullOrWhiteSpace(productSlug))
             {
@@ -258,6 +258,24 @@ internal sealed class UrlService : IUrlService
         }
 
         return urls;
+    }
+
+    private static string GetPropertyValue(PropertyValue? propertyValue, string key, string fallback = "")
+    {
+        if (propertyValue?.Values == null)
+        {
+            return fallback;
+        }
+
+        foreach (var value in propertyValue.Values)
+        {
+            if (value.Key.Equals(key, StringComparison.OrdinalIgnoreCase))
+            {
+                return value.Value?.ToString() ?? string.Empty;
+            }
+        }
+
+        return fallback;
     }
 
     public string? GetNodeEntityUrl(INodeEntityWithUrl node)
