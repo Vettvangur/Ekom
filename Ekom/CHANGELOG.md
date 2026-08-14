@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.228](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.227...Ekom-v0.2.228) (2026-08-14)
+
+
+### Bug Fixes
+
+* **u17:** read wrapped rich text configuration ([#752](https://github.com/Vettvangur/Ekom/issues/752)) ([69b144b](https://github.com/Vettvangur/Ekom/commit/69b144bad40c449d94491a0c4ab7f8a4f8656cfa))
+
 ## [0.2.227](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.226...Ekom-v0.2.227) (2026-08-14)
 
 
