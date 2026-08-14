@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.227](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.226...Ekom-v0.2.227) (2026-08-14)
+
+
+### Bug Fixes
+
+* **u17:** serialize rich text import values ([#750](https://github.com/Vettvangur/Ekom/issues/750)) ([e533eca](https://github.com/Vettvangur/Ekom/commit/e533ecaa23ad20af50563bc7750d073b1a793c5c))
+
 ## [0.2.226](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.225...Ekom-v0.2.226) (2026-08-12)
 
 
