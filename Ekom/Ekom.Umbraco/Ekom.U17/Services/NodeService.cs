@@ -3,11 +3,9 @@ using Ekom.Models;
 using Ekom.Services;
 using Ekom.Umb.Models;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
-using Umbraco.Cms.Core.PublishedCache;
-using Umbraco.Cms.Core.Scoping;
-using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
 
@@ -17,35 +15,25 @@ internal sealed class NodeService : INodeService
 {
     private readonly IUmbracoContextFactory _context;
     private readonly IPublishedContentQuery _publishedContentQuery;
-    private readonly IDocumentCacheService _documentCacheService;
-    private readonly IPublishedContentTypeCache _publishedContentTypeCache;
-    private readonly ICoreScopeProvider _scopeProvider;
-    private readonly IDocumentNavigationQueryService _documentNavigationQueryService;
     private readonly Umbraco17ContentCache _contentCache;
     private readonly ILogger<NodeService> _logger;
 
     public NodeService(
         IUmbracoContextFactory context,
         IPublishedContentQuery publishedContentQuery,
-        IDocumentCacheService documentCacheService,
-        IPublishedContentTypeCache publishedContentTypeCache,
-        ICoreScopeProvider scopeProvider,
-        IDocumentNavigationQueryService documentNavigationQueryService,
         Umbraco17ContentCache contentCache,
         ILogger<NodeService> logger)
     {
         _context = context;
         _publishedContentQuery = publishedContentQuery;
-        _documentCacheService = documentCacheService;
-        _publishedContentTypeCache = publishedContentTypeCache;
-        _scopeProvider = scopeProvider;
-        _documentNavigationQueryService = documentNavigationQueryService;
         _contentCache = contentCache;
         _logger = logger;
     }
 
     public IEnumerable<UmbracoContent> NodesByTypes(string contentTypeAlias)
     {
+        var stopwatch = Stopwatch.StartNew();
+        using var contextReference = _context.EnsureUmbracoContext();
         var rootNode = _publishedContentQuery.ContentAtRoot()
             .FirstOrDefault(x => x.IsDocumentType("ekom"));
 
@@ -54,41 +42,25 @@ internal sealed class NodeService : INodeService
             throw new EkomRootNodeException("Ekom root node not found.");
         }
 
-        using var scope = _scopeProvider.CreateCoreScope(autoComplete: true);
+        var keysById = _contentCache.Values
+            .ToDictionary(x => x.Id, x => x.Key);
+        keysById[rootNode.Id] = rootNode.Key;
+        var nodes = rootNode.DescendantsOfType(contentTypeAlias).ToList();
 
-        var contentType = _publishedContentTypeCache.Get(PublishedItemType.Content, contentTypeAlias);
-        if (contentType == null)
+        foreach (var node in nodes)
         {
-            _logger.LogWarning("Content type {ContentTypeAlias} not found.", contentTypeAlias);
-            return Array.Empty<UmbracoContent>();
+            keysById[node.Id] = node.Key;
         }
 
-        var nodes = _documentCacheService.GetByContentType(contentType)
-            .Where(x => x.IsPublished())
-            .ToList();
-
-        var metadata = BuildContentMetadata(nodes, rootNode);
-        var publishedKeys = _publishedContentQuery.Content(
-                metadata.Values.SelectMany(x => x.PathKeys).Distinct())
-            .Select(x => x.Key)
-            .ToHashSet();
-        var rootPathValue = rootNode.Id.ToString();
-        nodes = nodes
-            .Where(x => metadata.TryGetValue(x.Key, out var itemMetadata)
-                && itemMetadata.Path.Split(',').Contains(rootPathValue)
-                && itemMetadata.PathKeys.All(publishedKeys.Contains))
-            .ToList();
-
         var results = nodes
-            .Select(x =>
+            .Select(node =>
             {
-                metadata.TryGetValue(x.Key, out var itemMetadata);
+                var parentId = GetParentId(node.Path);
+                var parentKey = parentId.HasValue && keysById.TryGetValue(parentId.Value, out var parentKeyValue)
+                    ? parentKeyValue
+                    : (Guid?)null;
 
-                return new Umbraco17Content(
-                    x,
-                    itemMetadata?.ParentId,
-                    itemMetadata?.ParentKey,
-                    itemMetadata?.Path);
+                return new Umbraco17Content(node, parentId, parentKey, node.Path);
             })
             .ToList();
 
@@ -97,118 +69,32 @@ internal sealed class NodeService : INodeService
             _contentCache.AddOrUpdate(result);
         }
 
+        stopwatch.Stop();
+        _logger.LogDebug(
+            "Retrieved and mapped {Count} published {ContentTypeAlias} nodes in {Elapsed}.",
+            results.Count,
+            contentTypeAlias,
+            stopwatch.Elapsed);
+
         return results;
     }
 
-    private Dictionary<Guid, ContentMetadata> BuildContentMetadata(
-        IReadOnlyCollection<IPublishedContent> nodes,
-        IPublishedContent rootNode)
+    private static int? GetParentId(string? path)
     {
-        if (nodes.Count == 0)
+        if (string.IsNullOrWhiteSpace(path))
         {
-            return new Dictionary<Guid, ContentMetadata>();
+            return null;
         }
 
-        var pathsByKey = new Dictionary<Guid, List<Guid>>();
-        var pathCache = new Dictionary<Guid, List<Guid>>();
-
-        foreach (var node in nodes)
+        var lastSeparator = path.LastIndexOf(',');
+        if (lastSeparator <= 0)
         {
-            pathsByKey[node.Key] = GetPathKeys(node.Key, pathCache);
+            return null;
         }
 
-        var idsByKey = BuildIdsByKey(nodes, rootNode);
-
-        var metadata = new Dictionary<Guid, ContentMetadata>();
-
-        foreach (var node in nodes)
-        {
-            var pathKeys = pathsByKey[node.Key];
-            var parentKey = pathKeys.Count > 1 ? pathKeys[^2] : (Guid?)null;
-            var pathIds = new List<string> { "-1" };
-
-            foreach (var key in pathKeys)
-            {
-                if (idsByKey.TryGetValue(key, out var id))
-                {
-                    pathIds.Add(id.ToString());
-                }
-            }
-
-            metadata[node.Key] = new ContentMetadata(
-                parentKey.HasValue && idsByKey.TryGetValue(parentKey.Value, out var parentId) ? parentId : null,
-                parentKey,
-                string.Join(',', pathIds),
-                pathKeys);
-        }
-
-        return metadata;
-    }
-
-    private Dictionary<Guid, int> BuildIdsByKey(IReadOnlyCollection<IPublishedContent> nodes, IPublishedContent rootNode)
-    {
-        var idsByKey = new Dictionary<Guid, int>
-        {
-            [rootNode.Key] = rootNode.Id,
-        };
-
-        foreach (var item in _contentCache.Values)
-        {
-            idsByKey[item.Key] = item.Id;
-        }
-
-        foreach (var node in nodes)
-        {
-            idsByKey[node.Key] = node.Id;
-        }
-
-        return idsByKey;
-    }
-
-    private List<Guid> GetPathKeys(Guid key, Dictionary<Guid, List<Guid>> pathCache)
-    {
-        if (pathCache.TryGetValue(key, out var cachedPath))
-        {
-            return cachedPath;
-        }
-
-        var descendantKeys = new List<Guid>();
-        List<Guid>? cachedPrefix = null;
-        var currentKey = key;
-
-        while (true)
-        {
-            if (pathCache.TryGetValue(currentKey, out var currentPath))
-            {
-                cachedPrefix = currentPath;
-                break;
-            }
-
-            descendantKeys.Add(currentKey);
-
-            if (!_documentNavigationQueryService.TryGetParentKey(currentKey, out var parentKey) || !parentKey.HasValue)
-            {
-                break;
-            }
-
-            currentKey = parentKey.Value;
-        }
-
-        descendantKeys.Reverse();
-        var path = cachedPrefix == null
-            ? descendantKeys
-            : cachedPrefix.Concat(descendantKeys).ToList();
-
-        foreach (var cacheKey in descendantKeys)
-        {
-            var index = path.IndexOf(cacheKey);
-            if (index >= 0)
-            {
-                pathCache[cacheKey] = path.GetRange(0, index + 1);
-            }
-        }
-
-        return path;
+        var parentSeparator = path.LastIndexOf(',', lastSeparator - 1);
+        var parentIdValue = path[(parentSeparator + 1)..lastSeparator];
+        return int.TryParse(parentIdValue, out var parentId) ? parentId : null;
     }
 
     public IEnumerable<UmbracoContent> NodesByTypesFaster(string contentTypeAlias)
@@ -509,9 +395,4 @@ internal sealed class NodeService : INodeService
         return false;
     }
 
-    private sealed record ContentMetadata(
-        int? ParentId,
-        Guid? ParentKey,
-        string Path,
-        IReadOnlyList<Guid> PathKeys);
 }
