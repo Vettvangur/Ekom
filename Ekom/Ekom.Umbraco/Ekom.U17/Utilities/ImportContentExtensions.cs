@@ -3,9 +3,12 @@ using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Extensions;
+using JsonElement = System.Text.Json.JsonElement;
+using JsonValueKind = System.Text.Json.JsonValueKind;
 
 namespace Ekom.Utilities;
 
@@ -49,23 +52,51 @@ public static class ImportContentExtensions
             return false;
         }
 
-        var configuration = JObject.FromObject(dataType.ConfigurationData);
-        return configuration["dataType"]?["propertyEditorAlias"]?.Value<string>() == RichTextEditorAlias;
+        if (!dataType.ConfigurationData.TryGetValue("dataType", out var wrappedDataType))
+        {
+            return false;
+        }
+
+        return string.Equals(GetPropertyEditorAlias(wrappedDataType), RichTextEditorAlias, StringComparison.Ordinal);
     }
 
     private static object CreateRichTextValue(object? value)
     {
-        if (value is JObject richTextValue && richTextValue["markup"] != null)
-        {
-            return richTextValue;
-        }
-
-        if (value is string stringValue && TryParseRichTextValue(stringValue, out richTextValue))
+        if (TryParseRichTextValue(value, out var richTextValue))
         {
             return richTextValue;
         }
 
         return new { markup = value?.ToString() ?? string.Empty };
+    }
+
+    private static string? GetPropertyEditorAlias(object? value)
+    {
+        return value switch
+        {
+            JsonObject jsonObject => jsonObject["propertyEditorAlias"]?.GetValue<string>(),
+            JsonElement jsonElement when jsonElement.ValueKind == JsonValueKind.Object &&
+                jsonElement.TryGetProperty("propertyEditorAlias", out var propertyEditorAlias) &&
+                propertyEditorAlias.ValueKind == JsonValueKind.String => propertyEditorAlias.GetString(),
+            IDictionary<string, object> values when values.TryGetValue("propertyEditorAlias", out var propertyEditorAlias) => propertyEditorAlias?.ToString(),
+            _ => null,
+        };
+    }
+
+    private static bool TryParseRichTextValue(object? value, out JObject richTextValue)
+    {
+        richTextValue = new JObject();
+
+        var json = value switch
+        {
+            JObject jsonObject => jsonObject.ToString(),
+            JsonObject jsonObject => jsonObject.ToJsonString(),
+            JsonElement jsonElement when jsonElement.ValueKind == JsonValueKind.Object => jsonElement.GetRawText(),
+            string stringValue => stringValue,
+            _ => null,
+        };
+
+        return json != null && TryParseRichTextValue(json, out richTextValue);
     }
 
     private static bool TryParseRichTextValue(string value, out JObject richTextValue)
