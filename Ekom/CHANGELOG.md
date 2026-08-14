@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.229](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.228...Ekom-v0.2.229) (2026-08-14)
+
+
+### Performance Improvements
+
+* **u17:** optimize cache fill traversal ([#754](https://github.com/Vettvangur/Ekom/issues/754)) ([1ea2bca](https://github.com/Vettvangur/Ekom/commit/1ea2bca57d67bf10e3f3d1fc60ee255801ccb584))
+
 ## [0.2.228](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.227...Ekom-v0.2.228) (2026-08-14)
 
 
