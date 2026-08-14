@@ -101,7 +101,7 @@ internal class Umbraco17Content : UmbracoContent
     {
         try
         {
-            if (prop.PropertyType.EditorAlias == "Umbraco.TinyMCE")
+            if (prop.PropertyType.EditorAlias == "Umbraco.RichText")
             {
                 return prop.PropertyType.VariesByCulture()
                     ? content.Value<string>(prop.Alias, firstCulture) ?? string.Empty
@@ -122,7 +122,7 @@ internal class Umbraco17Content : UmbracoContent
     {
         var prop = content.Properties.FirstOrDefault(x => x.Alias == alias);
 
-        if (prop != null && prop.PropertyType.PropertyEditorAlias == "Umbraco.TinyMCE")
+        if (prop != null && prop.PropertyType.PropertyEditorAlias == "Umbraco.RichText")
         {
             var rteValue = content.GetValue<string>(alias) ?? string.Empty;
 

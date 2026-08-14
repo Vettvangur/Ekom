@@ -2,6 +2,7 @@ using Ekom.Models;
 using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Extensions;
@@ -11,6 +12,7 @@ namespace Ekom.Utilities;
 public static class ImportContentExtensions
 {
     private static readonly string[] AllCultures = ["*"];
+    private const string RichTextEditorAlias = "Umbraco.RichText";
 
     public static void SetProperty(this IContent content, string alias, Dictionary<string, object> values, PropertyEditorType type = PropertyEditorType.Empty)
     {
@@ -26,15 +28,59 @@ public static class ImportContentExtensions
 
         var dataTypeService = Configuration.Resolver.GetService<IDataTypeService>();
         var dataType = dataTypeService?.GetDataType(property.PropertyType.DataTypeId);
+        var propertyValues = IsRichTextEditor(dataType)
+            ? values.ToDictionary(x => x.Key, x => CreateRichTextValue(x.Value))
+            : values;
 
         var value = JsonConvert.SerializeObject(new PropertyValue
         {
             DtdGuid = dataType?.Key ?? Guid.Empty,
-            Values = values,
+            Values = propertyValues,
             Type = type == PropertyEditorType.Empty ? PropertyEditorType.Language : type,
         });
 
         content.SetValue(alias, value);
+    }
+
+    private static bool IsRichTextEditor(IDataType? dataType)
+    {
+        if (dataType?.ConfigurationData == null)
+        {
+            return false;
+        }
+
+        var configuration = JObject.FromObject(dataType.ConfigurationData);
+        return configuration["dataType"]?["propertyEditorAlias"]?.Value<string>() == RichTextEditorAlias;
+    }
+
+    private static object CreateRichTextValue(object? value)
+    {
+        if (value is JObject richTextValue && richTextValue["markup"] != null)
+        {
+            return richTextValue;
+        }
+
+        if (value is string stringValue && TryParseRichTextValue(stringValue, out richTextValue))
+        {
+            return richTextValue;
+        }
+
+        return new { markup = value?.ToString() ?? string.Empty };
+    }
+
+    private static bool TryParseRichTextValue(string value, out JObject richTextValue)
+    {
+        richTextValue = new JObject();
+
+        try
+        {
+            richTextValue = JObject.Parse(value);
+            return richTextValue["markup"] != null;
+        }
+        catch (JsonReaderException)
+        {
+            return false;
+        }
     }
 
     public static void SetSlug(this IContent content, Dictionary<string, object> values, PropertyEditorType type = PropertyEditorType.Empty)
