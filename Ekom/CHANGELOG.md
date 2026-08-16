@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.230](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.229...Ekom-v0.2.230) (2026-08-16)
+
+
+### Features
+
+* **u17:** add SKU product picker ([#756](https://github.com/Vettvangur/Ekom/issues/756)) ([0fdbfba](https://github.com/Vettvangur/Ekom/commit/0fdbfbabad9bb454059d883ac038953ff6083967))
+
 ## [0.2.229](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.228...Ekom-v0.2.229) (2026-08-14)
 
 
