@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.231](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.230...Ekom-v0.2.231) (2026-08-16)
+
+
+### Bug Fixes
+
+* **catalog:** use node names in collection ([#758](https://github.com/Vettvangur/Ekom/issues/758)) ([e00912a](https://github.com/Vettvangur/Ekom/commit/e00912a4094c571d3283c941e35acd81bd324933))
+
 ## [0.2.230](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.229...Ekom-v0.2.230) (2026-08-16)
 
 
