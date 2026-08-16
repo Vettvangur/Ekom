@@ -100,3 +100,12 @@ public sealed class EkomPropertyEditor : DataEditor
     {
     }
 }
+
+[DataEditor("Ekom.SkuProductPicker", ValueType = ValueTypes.Json)]
+public sealed class EkomSkuProductPicker : DataEditor
+{
+    public EkomSkuProductPicker(IDataValueEditorFactory dataValueEditorFactory)
+        : base(dataValueEditorFactory)
+    {
+    }
+}

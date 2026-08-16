@@ -20,6 +20,7 @@ export default defineConfig({
         'price-editor.element': 'src/property-editors/price-editor.element.ts',
         'property-editor.element': 'src/property-editors/property-editor.element.ts',
         'range-editor.element': 'src/property-editors/range-editor.element.ts',
+        'sku-product-picker.element': 'src/property-editors/sku-product-picker.element.ts',
         'stock-editor.element': 'src/property-editors/stock-editor.element.ts',
         'variant-count-workspace-footer-app.element': 'src/variants/variant-count-workspace-footer-app.element.ts',
         'variants-workspace-view.element': 'src/variants/variants-workspace-view.element.ts',

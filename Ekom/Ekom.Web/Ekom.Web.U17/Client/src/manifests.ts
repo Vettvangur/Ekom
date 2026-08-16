@@ -195,6 +195,27 @@ export const manifests: Array<UmbExtensionManifest> = [
   },
   {
     type: 'propertyEditorSchema',
+    alias: 'Ekom.SkuProductPicker',
+    name: 'Ekom SKU Product Picker',
+    meta: {
+      defaultPropertyEditorUiAlias: 'Ekom.PropertyEditorUi.SkuProductPicker',
+    },
+  },
+  {
+    type: 'propertyEditorUi',
+    alias: 'Ekom.PropertyEditorUi.SkuProductPicker',
+    name: 'Ekom SKU Product Picker UI',
+    element: '/App_Plugins/Ekom/dist/sku-product-picker.element.js',
+    meta: {
+      label: 'Ekom SKU Product Picker',
+      propertyEditorSchemaAlias: 'Ekom.SkuProductPicker',
+      icon: 'icon-page-add',
+      group: 'Ekom',
+      supportsReadOnly: true,
+    },
+  },
+  {
+    type: 'propertyEditorSchema',
     alias: 'Ekom.Range',
     name: 'Ekom Range Editor',
     meta: {
