@@ -486,12 +486,12 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   private renderBreadcrumbs(data: CatalogResponse): string {
     return `<nav class="breadcrumbs">${data.breadcrumbs.map((item, index) => {
       const isCurrent = index === data.breadcrumbs.length - 1;
-      const label = escapeHtml(item.title || item.name);
+      const label = escapeHtml(item.name);
       const siblings = item.siblings.filter(sibling => sibling.key !== item.key);
       const hasSiblings = item.contentTypeAlias === 'ekmCategory' && siblings.length > 0;
       const breadcrumb = hasSiblings
         ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(item.key)}" data-breadcrumb-link-key="${escapeHtml(item.key)}" ${isCurrent ? 'aria-current="page"' : ''}>${label}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${label}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${siblings.map(sibling => {
-          const siblingLabel = escapeHtml(sibling.title || sibling.name);
+          const siblingLabel = escapeHtml(sibling.name);
           return `<button type="button" data-breadcrumb-category-key="${escapeHtml(sibling.key)}" role="menuitem">${siblingLabel}</button>`;
         }).join('')}</div></details></div>`
         : isCurrent ? `<span aria-current="page">${label}</span>` : `<a href="${this.getDocumentHref(item.key)}">${label}</a>`;
@@ -504,7 +504,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
       <header class="catalog-header">
         <button type="button" class="back" data-action="back" ${data.parent == null ? 'disabled' : ''}>←</button>
         <div>
-          <h1>${escapeHtml(data.current.title || data.current.name)}</h1>
+          <h1>${escapeHtml(data.current.name)}</h1>
           <p>${data.productCount} products · ${data.subcategoryCount} subcategories</p>
         </div>
       </header>
@@ -541,7 +541,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
         <h2>Subcategories</h2>
         <div class="chips">${subcategories.map(category => `
           <a class="chip" href="${this.getDocumentHref(category.key)}">
-            <span class="tile">▦</span><span class="chip-text"><strong>${escapeHtml(category.title || category.name)}<span class="chip-status ${statusClass(category.status)}" title="${category.status}" aria-label="${category.status}"></span></strong><small>${category.productCount} products · ${category.subcategoryCount} subcategories</small></span><span>›</span>
+            <span class="tile">▦</span><span class="chip-text"><strong>${escapeHtml(category.name)}<span class="chip-status ${statusClass(category.status)}" title="${category.status}" aria-label="${category.status}"></span></strong><small>${category.productCount} products · ${category.subcategoryCount} subcategories</small></span><span>›</span>
           </a>
         `).join('')}</div>
       </section>
@@ -577,9 +577,9 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     return `
       <article class="card ${selected ? 'selected' : ''}">
         <button type="button" class="checkbox ${selected ? 'checked' : ''}" data-product-key="${product.key}">${selected ? '✓' : ''}</button>
-        <a class="image ${!product.published ? 'dimmed' : ''}" href="${href}">${product.image ? `<umb-imaging-thumbnail unique="${escapeHtml(product.image)}" width="320" height="160" alt="${escapeHtml(product.title || product.name)}"></umb-imaging-thumbnail>` : '<span>Product image</span>'}</a>
+        <a class="image ${!product.published ? 'dimmed' : ''}" href="${href}">${product.image ? `<umb-imaging-thumbnail unique="${escapeHtml(product.image)}" width="320" height="160" alt="${escapeHtml(product.name)}"></umb-imaging-thumbnail>` : '<span>Product image</span>'}</a>
         <div class="card-body">
-          <a class="title" href="${href}">${escapeHtml(product.title || product.name)}</a>
+          <a class="title" href="${href}">${escapeHtml(product.name)}</a>
           <div class="meta"><span>${product.sku ? `SKU ${escapeHtml(product.sku)}` : 'No SKU'}</span><strong>${escapeHtml(product.price)}</strong></div>
           <div class="status-row"><span class="pill ${statusClass(product.status)}"><i></i>${product.status}</span><strong class="availability ${product.available ? 'ok' : 'bad'}">${product.available ? '✓ Available' : '✕ Unavailable'}</strong></div>
         </div>

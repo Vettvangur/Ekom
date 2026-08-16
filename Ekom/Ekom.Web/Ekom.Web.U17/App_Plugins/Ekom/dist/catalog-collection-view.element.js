@@ -1,6 +1,6 @@
 var P = Object.defineProperty;
-var C = (r, c, e) => c in r ? P(r, c, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[c] = e;
-var l = (r, c, e) => C(r, typeof c != "symbol" ? c + "" : c, e);
+var C = (r, d, e) => d in r ? P(r, d, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[d] = e;
+var l = (r, d, e) => C(r, typeof d != "symbol" ? d + "" : d, e);
 import { UMB_COLLECTION_CONTEXT as E } from "@umbraco-cms/backoffice/collection";
 import { UmbElementMixin as T } from "@umbraco-cms/backoffice/element-api";
 import "@umbraco-cms/backoffice/imaging";
@@ -234,9 +234,9 @@ class O extends T(HTMLElement) {
   }
   renderBreadcrumbs(e) {
     return `<nav class="breadcrumbs">${e.breadcrumbs.map((t, i) => {
-      const o = i === e.breadcrumbs.length - 1, a = p(t.title || t.name), s = t.siblings.filter((d) => d.key !== t.key), h = t.contentTypeAlias === "ekmCategory" && s.length > 0 ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(t.key)}" data-breadcrumb-link-key="${p(t.key)}" ${o ? 'aria-current="page"' : ""}>${a}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${a}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${s.map((d) => {
-        const u = p(d.title || d.name);
-        return `<button type="button" data-breadcrumb-category-key="${p(d.key)}" role="menuitem">${u}</button>`;
+      const o = i === e.breadcrumbs.length - 1, a = p(t.name), s = t.siblings.filter((c) => c.key !== t.key), h = t.contentTypeAlias === "ekmCategory" && s.length > 0 ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(t.key)}" data-breadcrumb-link-key="${p(t.key)}" ${o ? 'aria-current="page"' : ""}>${a}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${a}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${s.map((c) => {
+        const u = p(c.name);
+        return `<button type="button" data-breadcrumb-category-key="${p(c.key)}" role="menuitem">${u}</button>`;
       }).join("")}</div></details></div>` : o ? `<span aria-current="page">${a}</span>` : `<a href="${this.getDocumentHref(t.key)}">${a}</a>`;
       return `${i > 0 ? '<span class="sep">/</span>' : ""}${h}`;
     }).join("")}</nav>`;
@@ -246,7 +246,7 @@ class O extends T(HTMLElement) {
       <header class="catalog-header">
         <button type="button" class="back" data-action="back" ${e.parent == null ? "disabled" : ""}>←</button>
         <div>
-          <h1>${p(e.current.title || e.current.name)}</h1>
+          <h1>${p(e.current.name)}</h1>
           <p>${e.productCount} products · ${e.subcategoryCount} subcategories</p>
         </div>
       </header>
@@ -282,7 +282,7 @@ class O extends T(HTMLElement) {
         <h2>Subcategories</h2>
         <div class="chips">${e.map((t) => `
           <a class="chip" href="${this.getDocumentHref(t.key)}">
-            <span class="tile">▦</span><span class="chip-text"><strong>${p(t.title || t.name)}<span class="chip-status ${k(t.status)}" title="${t.status}" aria-label="${t.status}"></span></strong><small>${t.productCount} products · ${t.subcategoryCount} subcategories</small></span><span>›</span>
+            <span class="tile">▦</span><span class="chip-text"><strong>${p(t.name)}<span class="chip-status ${k(t.status)}" title="${t.status}" aria-label="${t.status}"></span></strong><small>${t.productCount} products · ${t.subcategoryCount} subcategories</small></span><span>›</span>
           </a>
         `).join("")}</div>
       </section>
@@ -313,9 +313,9 @@ class O extends T(HTMLElement) {
     return `
       <article class="card ${t ? "selected" : ""}">
         <button type="button" class="checkbox ${t ? "checked" : ""}" data-product-key="${e.key}">${t ? "✓" : ""}</button>
-        <a class="image ${e.published ? "" : "dimmed"}" href="${i}">${e.image ? `<umb-imaging-thumbnail unique="${p(e.image)}" width="320" height="160" alt="${p(e.title || e.name)}"></umb-imaging-thumbnail>` : "<span>Product image</span>"}</a>
+        <a class="image ${e.published ? "" : "dimmed"}" href="${i}">${e.image ? `<umb-imaging-thumbnail unique="${p(e.image)}" width="320" height="160" alt="${p(e.name)}"></umb-imaging-thumbnail>` : "<span>Product image</span>"}</a>
         <div class="card-body">
-          <a class="title" href="${i}">${p(e.title || e.name)}</a>
+          <a class="title" href="${i}">${p(e.name)}</a>
           <div class="meta"><span>${e.sku ? `SKU ${p(e.sku)}` : "No SKU"}</span><strong>${p(e.price)}</strong></div>
           <div class="status-row"><span class="pill ${k(e.status)}"><i></i>${e.status}</span><strong class="availability ${e.available ? "ok" : "bad"}">${e.available ? "✓ Available" : "✕ Unavailable"}</strong></div>
         </div>
@@ -356,8 +356,8 @@ class O extends T(HTMLElement) {
       s.addEventListener("click", (n) => {
         var u;
         n.preventDefault();
-        const h = s.dataset.productKey, d = (u = this.data) == null ? void 0 : u.products.find((g) => g.key === h);
-        d != null && this.toggleProduct(d);
+        const h = s.dataset.productKey, c = (u = this.data) == null ? void 0 : u.products.find((g) => g.key === h);
+        c != null && this.toggleProduct(c);
       });
     }), this.querySelectorAll("[data-page]").forEach((s) => {
       s.addEventListener("click", () => this.setPage(Number(s.dataset.page)));
@@ -365,13 +365,13 @@ class O extends T(HTMLElement) {
       s.addEventListener("click", (n) => {
         var u;
         n.preventDefault();
-        const h = s.dataset.breadcrumbLinkKey, d = (u = this.data) == null ? void 0 : u.breadcrumbs.find((g) => g.key === h);
-        d != null && this.drillTo(d);
+        const h = s.dataset.breadcrumbLinkKey, c = (u = this.data) == null ? void 0 : u.breadcrumbs.find((g) => g.key === h);
+        c != null && this.drillTo(c);
       });
     }), this.querySelectorAll("[data-breadcrumb-category-key]").forEach((s) => {
       s.addEventListener("click", () => {
-        var d;
-        const n = s.dataset.breadcrumbCategoryKey, h = (d = this.data) == null ? void 0 : d.breadcrumbs.flatMap((u) => u.siblings).find((u) => u.key === n);
+        var c;
+        const n = s.dataset.breadcrumbCategoryKey, h = (c = this.data) == null ? void 0 : c.breadcrumbs.flatMap((u) => u.siblings).find((u) => u.key === n);
         h != null && this.drillTo(h);
       });
     }), this.querySelectorAll(".breadcrumb-menu").forEach((s) => {
@@ -408,12 +408,12 @@ class O extends T(HTMLElement) {
   }
 }
 class x extends Error {
-  constructor(c, e) {
-    super(c), this.status = e;
+  constructor(d, e) {
+    super(d), this.status = e;
   }
 }
 function p(r) {
-  return r.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
+  return r.replace(/[&<>"]/g, (d) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[d] ?? d);
 }
 function k(r) {
   return r === "Published" ? "published" : r === "Pending changes" ? "pending" : "unpublished";
