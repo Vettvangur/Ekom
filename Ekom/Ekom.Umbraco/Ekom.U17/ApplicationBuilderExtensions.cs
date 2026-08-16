@@ -3,6 +3,7 @@ using Ekom.Services;
 using Ekom.Tracking;
 using Ekom.Umb.CatalogCollection.Services;
 using Ekom.Umb.Services;
+using Ekom.Umb.SkuProductPicker.Services;
 using Ekom.Umb.VariantApp.Services;
 using EkomCore.Services;
 using Microsoft.AspNetCore.Builder;
@@ -32,6 +33,7 @@ public static class ApplicationBuilderExtensions
         services.AddTransient<IMetafieldService, MetafieldService>();
         services.AddTransient<IUmbracoService, UmbracoService>();
         services.AddTransient<ICatalogCollectionService, CatalogCollectionService>();
+        services.AddTransient<ISkuProductPickerService, SkuProductPickerService>();
         services.AddTransient<IVariantAppService, VariantAppService>();
         services.AddTransient<IUrlService, UrlService>();
         services.AddScoped<BackofficeUserAccessor>();

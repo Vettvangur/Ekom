@@ -34,6 +34,7 @@ class EnsureNodesExist : IComponent
     private const string EkomCurrencyEditorUiAlias = "Ekom.PropertyEditorUi.Currency";
     private const string EkomPriceEditorUiAlias = "Ekom.PropertyEditorUi.Price";
     private const string EkomPropertyEditorUiAlias = "Ekom.PropertyEditorUi.Property";
+    private const string EkomSkuProductPickerEditorUiAlias = "Ekom.PropertyEditorUi.SkuProductPicker";
     private const string EkomStockEditorUiAlias = "Ekom.PropertyEditorUi.Stock";
     private const string EkomZoneEditorUiAlias = "Ekom.PropertyEditorUi.Zone";
     private static readonly JsonSerializerOptions ConfigurationSerializerOptions = new()
@@ -1483,6 +1484,8 @@ class EnsureNodesExist : IComponent
                 #endregion
             }
 
+            EnsureSkuProductPickerDataType();
+
             _logger.LogDebug("Done");
         }
 #pragma warning disable CA1031 // Should not kill startup
@@ -1511,6 +1514,33 @@ class EnsureNodesExist : IComponent
         }
 
         return ekmContainer;
+    }
+
+    private void EnsureSkuProductPickerDataType()
+    {
+        if (!_propertyEditorCollection.TryGet("Ekom.SkuProductPicker", out IDataEditor? skuProductPicker)
+            || _contentTypeService.Get("ekmProduct") is not { } productContentType)
+        {
+            return;
+        }
+
+        var dataTypeContainer = EnsureDataTypeContainerExists();
+        var dataType = EnsureDataTypeExists(new DataType(skuProductPicker, _configurationEditorJsonSerializer, dataTypeContainer.Id)
+        {
+            Name = "Ekom SKU Product Picker",
+            EditorUiAlias = EkomSkuProductPickerEditorUiAlias,
+        });
+
+        dataType.ConfigurationData = ToConfigurationData(new MultiNodePickerConfiguration
+        {
+            Filter = BuildContentTypeFilter(productContentType),
+            TreeSource = new MultiNodePickerConfigurationTreeSource
+            {
+                ObjectType = "content",
+            },
+        });
+
+        _dataTypeService.Save(dataType);
     }
 
     private IDataType GetDataType(Guid key)

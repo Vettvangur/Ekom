@@ -335,6 +335,8 @@ GROUP BY n.parentId, ct.alias",
     private static CatalogCollectionProduct MapProduct(IContent content)
     {
         var price = GetPrice(content);
+        var pendingChanges = content.Published && content.Edited;
+
         return new CatalogCollectionProduct
         {
             Id = content.Id,
@@ -350,6 +352,9 @@ GROUP BY n.parentId, ct.alias",
             UpdatedDate = content.UpdateDate,
             Available = IsAvailable(content),
             Image = GetFirstImage(GetStringValue(content, "images")),
+            Published = content.Published,
+            PendingChanges = pendingChanges,
+            Status = content.Published ? pendingChanges ? "Pending changes" : "Published" : "Unpublished",
         };
     }
 
