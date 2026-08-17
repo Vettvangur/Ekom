@@ -100,6 +100,8 @@ public class OrderedVariant
         set { }
     }
 
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
     public List<IPrice> Prices { get; }
 
     public decimal ProductVat { get; set; }

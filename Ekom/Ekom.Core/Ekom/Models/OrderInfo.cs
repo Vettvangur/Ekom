@@ -87,7 +87,7 @@ public class OrderInfo : IOrderInfo
         get
         {
             var contextCulture = GetContextCulture();
-            if (!string.IsNullOrWhiteSpace(contextCulture))
+            if (string.IsNullOrWhiteSpace(_culture) && !string.IsNullOrWhiteSpace(contextCulture))
             {
                 _culture = contextCulture;
             }

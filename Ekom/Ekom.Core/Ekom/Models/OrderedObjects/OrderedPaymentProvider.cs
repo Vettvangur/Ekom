@@ -125,6 +125,8 @@ public class OrderedPaymentProvider
             );
         }
     }
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
     public virtual List<IPrice> Prices { get; set; }
     public Dictionary<string, string> CustomData = new Dictionary<string, string>();
 }

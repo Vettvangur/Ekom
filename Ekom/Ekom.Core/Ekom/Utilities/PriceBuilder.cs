@@ -95,6 +95,24 @@ public static class PriceBuilder
                 disc is null ? null : new OrderedDiscount(disc)));
         }
 
+        foreach (var storeCurrency in storeCurrencies)
+        {
+            if (prices.Any(x => string.Equals(
+                x.Currency.CurrencyValue,
+                storeCurrency.CurrencyValue,
+                StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            prices.Add(new Price(
+                "0",
+                storeCurrency,
+                vat,
+                vatIncludedInPrice,
+                null));
+        }
+
         return prices;
     }
 

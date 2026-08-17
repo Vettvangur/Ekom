@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
@@ -33,6 +34,62 @@ public class OrderInfoTests
         httpContextAccessor.HttpContext = null;
 
         Assert.Equal("da-DK", orderInfo.Culture);
+    }
+
+    [Fact]
+    public void Culture_DoesNotOverrideResolvedCultureWithRequestCulture()
+    {
+        var httpContextAccessor = new HttpContextAccessor
+        {
+            HttpContext = new DefaultHttpContext(),
+        };
+        httpContextAccessor.HttpContext.Features.Set<IRequestCultureFeature>(
+            new RequestCultureFeature(new RequestCulture("is-IS"), null));
+
+        using var configurationScope = new ConfigurationScope(addServices: services =>
+            services.AddSingleton<IHttpContextAccessor>(httpContextAccessor));
+        var store = new Mock<IStore>();
+        store.SetupGet(x => x.Culture).Returns(new CultureInfoDto { Name = "fi-FI" });
+        var orderInfo = new OrderInfo(new OrderData(), store.Object)
+        {
+            Culture = "fi-FI",
+        };
+
+        Assert.Equal("fi-FI", orderInfo.Culture);
+    }
+
+    [Fact]
+    public void OrderedPaymentProvider_SerializesOnlyActivePrice()
+    {
+        using var configurationScope = new ConfigurationScope();
+        var currency = new CurrencyModel
+        {
+            CurrencyFormat = "C",
+            CurrencyValue = "en-US",
+        };
+        var storeInfo = new StoreInfo(
+            Guid.NewGuid(),
+            currency,
+            [currency],
+            "en-US",
+            "Store2",
+            vatIncludedInPrice: true,
+            vat: 0.11m,
+            applyVatOnShipping: true);
+        var price = new Price(25m, currency, storeInfo.Vat, storeInfo.VatIncludedInPrice);
+        var providerJson = new JObject
+        {
+            ["Id"] = 1,
+            ["Key"] = Guid.NewGuid(),
+            ["Title"] = "Test payment",
+            ["Price"] = JToken.FromObject(price),
+        };
+
+        var provider = new OrderedPaymentProvider(providerJson, storeInfo);
+        var serializedProvider = JObject.Parse(JsonConvert.SerializeObject(provider, EkomJsonDotNet.Settings));
+
+        Assert.Null(serializedProvider["Prices"]);
+        Assert.Equal("en-US", serializedProvider["Price"]?["Currency"]?["CurrencyValue"]?.Value<string>());
     }
 
     [Fact]
