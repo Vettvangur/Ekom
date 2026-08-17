@@ -24,15 +24,15 @@ static class CookieHelper
             }
         }
 
-        //if (culture != null)
-        //{
-        //    var price = currencies.FirstOrDefault(x => x.CurrencyValue == culture.Name);
+        if (culture != null)
+        {
+            var currency = currencies.FirstOrDefault(x => x.CurrencyValue == culture.Name);
 
-        //    if (price != null)
-        //    {
-        //        return price;
-        //    }
-        //}
+            if (currency != null)
+            {
+                return currency;
+            }
+        }
 
         return currencies.FirstOrDefault();
     }

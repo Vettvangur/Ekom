@@ -158,6 +158,8 @@ public class OrderedShippingProvider
             );
         }
     }
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
     public virtual List<IPrice> Prices { get; set; } = new List<IPrice>();
     public Dictionary<string, string> CustomData = new Dictionary<string, string>();
 }

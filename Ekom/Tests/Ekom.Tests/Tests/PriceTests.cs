@@ -243,6 +243,26 @@ public class PriceTests
         Assert.Contains("\"ISOCurrencySymbol\":\"\"", json);
     }
 
+    [Fact]
+    public void BuildPricesSync_AddsZeroPriceForMissingStoreCurrency()
+    {
+        using var configurationScope = new ConfigurationScope();
+        var isk = Currency("is-IS");
+        var usd = Currency("en-US");
+        var prices = PriceBuilder.BuildPricesSync(
+            "[{\"Currency\":\"is-IS\",\"Price\":2500}]",
+            [isk, usd],
+            vat: 0.11m,
+            vatIncludedInPrice: true,
+            fallbackCurrency: isk,
+            storeAlias: null,
+            path: null,
+            categories: null);
+
+        Assert.Equal(2500m, prices.Single(x => x.Currency.CurrencyValue == "is-IS").OriginalValue);
+        Assert.Equal(0m, prices.Single(x => x.Currency.CurrencyValue == "en-US").OriginalValue);
+    }
+
     [Theory]
     [InlineData(1538.42, 0.24, 4)]
     public void Isk_Diff_PerUnit_vs_PerTotal(decimal price, decimal vat, int qty)

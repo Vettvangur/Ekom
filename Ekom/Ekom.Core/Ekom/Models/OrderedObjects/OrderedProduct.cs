@@ -107,6 +107,8 @@ public class OrderedProduct
         }
     }
 
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
     public List<IPrice> Prices { get; }
 
     public decimal Vat
