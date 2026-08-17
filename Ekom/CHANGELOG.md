@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.232](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.231...Ekom-v0.2.232) (2026-08-17)
+
+
+### Bug Fixes
+
+* **order:** preserve active store currency ([#760](https://github.com/Vettvangur/Ekom/issues/760)) ([0458a26](https://github.com/Vettvangur/Ekom/commit/0458a26449418ee7335eb38e2b6afeaecafd0466))
+
 ## [0.2.231](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.230...Ekom-v0.2.231) (2026-08-16)
 
 
