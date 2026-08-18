@@ -32,6 +32,8 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:Search:Cache:DurationMinutes"] = "15",
                 ["Ekom:Algolia:Search:Cache:CacheEmptyResults"] = "false",
                 ["Ekom:Algolia:ContentIndexing:Enabled"] = "true",
+                ["Ekom:Algolia:ContentIndexing:OversizedRecords:Behavior"] = "Skip",
+                ["Ekom:Algolia:ContentIndexing:OversizedRecords:MaxSizeBytes"] = "90000",
                 ["Ekom:Algolia:ContentIndexing:Indexes:0:IndexName"] = "SearchIndex",
                 ["Ekom:Algolia:ContentIndexing:Indexes:0:ContentTypes:0:Alias"] = "article",
                 ["Ekom:Algolia:ContentIndexing:Indexes:0:ContentTypes:0:Properties:0"] = "title",
@@ -55,6 +57,8 @@ public class AlgoliaSearchTests
         Assert.Equal(15, options.Search.Cache.DurationMinutes);
         Assert.False(options.Search.Cache.CacheEmptyResults);
         Assert.True(options.ContentIndexing.Enabled);
+        Assert.Equal(AlgoliaOversizedRecordBehavior.Skip, options.ContentIndexing.OversizedRecords.Behavior);
+        Assert.Equal(90_000, options.ContentIndexing.OversizedRecords.MaxSizeBytes);
         Assert.Equal("SearchIndex", options.ContentIndexing.Indexes.Single().IndexName);
         Assert.Equal("article", options.ContentIndexing.Indexes.Single().ContentTypes.Single().Alias);
         Assert.Equal(["title", "publishedAt|unix"], options.ContentIndexing.Indexes.Single().ContentTypes.Single().Properties);

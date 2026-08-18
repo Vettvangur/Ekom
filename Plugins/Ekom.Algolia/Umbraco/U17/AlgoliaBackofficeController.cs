@@ -8,7 +8,7 @@ using Umbraco.Cms.Core;
 namespace Ekom.Algolia.Controllers;
 
 [Authorize(AuthenticationSchemes = Constants.Security.BackOfficeAuthenticationType)]
-[Route("umbraco/backoffice/api/Ekom/AlgoliaBackoffice")]
+[Route("umbraco/backoffice/api/EkomAlgoliaBackoffice")]
 public class EkomAlgoliaBackofficeController : ControllerBase
 {
     private readonly IAlgoliaProductIndexService _algoliaProductIndexService;
