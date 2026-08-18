@@ -20,6 +20,7 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:ApplicationId"] = "app-id",
                 ["Ekom:Algolia:AdminApiKey"] = "admin-key",
                 ["Ekom:Algolia:SearchApiKey"] = "search-key",
+                ["Ekom:Algolia:Replacement:MaxRetries"] = "400",
                 ["Ekom:Algolia:Search:Enabled"] = "true",
                 ["Ekom:Algolia:Search:Products"] = "true",
                 ["Ekom:Algolia:Search:Categories"] = "true",
@@ -48,6 +49,7 @@ public class AlgoliaSearchTests
         var options = provider.GetRequiredService<IOptions<AlgoliaOptions>>().Value;
 
         Assert.Equal("search-key", options.SearchApiKey);
+        Assert.Equal(400, options.Replacement.MaxRetries);
         Assert.True(options.Search.Categories);
         Assert.True(options.Search.QuerySuggestions);
         Assert.True(options.Search.IncludeUserToken);

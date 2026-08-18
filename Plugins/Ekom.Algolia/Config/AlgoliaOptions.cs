@@ -16,10 +16,16 @@ public sealed class AlgoliaOptions
 
     public AlgoliaIndexingOptions Indexing { get; set; } = new();
     public AlgoliaContentIndexingOptions ContentIndexing { get; set; } = new();
+    public AlgoliaIndexReplacementOptions Replacement { get; set; } = new();
     public AlgoliaEventsOptions Events { get; set; } = new();
     public AlgoliaSearchOptions Search { get; set; } = new();
 
     public IReadOnlyCollection<AlgoliaStoreOptions> Stores { get; init; } = [];
+}
+
+public sealed class AlgoliaIndexReplacementOptions
+{
+    public int MaxRetries { get; set; } = 800;
 }
 
 public sealed class AlgoliaIndexingOptions

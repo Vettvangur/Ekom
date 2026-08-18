@@ -77,6 +77,9 @@ public sealed class ProductSearchController
       "InsightsApiKey": "INSIGHTS_API_KEY",
       "AnalyticsRegion": "eu",
       "Environment": "prod",
+      "Replacement": {
+        "MaxRetries": 800
+      },
       "Indexing": {
         "Enabled": true,
         "Products": true,
@@ -173,6 +176,7 @@ public sealed class ProductSearchController
 | `InsightsApiKey` | `string` | `null` | Optional key for Insights events. Falls back to `AdminApiKey` when omitted. |
 | `AnalyticsRegion` | `string` | `null` | Algolia analytics region for query suggestions, usually `us` or `eu`. If omitted, the plugin tries both. |
 | `Environment` | `string` | `prod` | Environment segment used in generated index names. |
+| `Replacement:MaxRetries` | `int` | `800` | Maximum number of status polling retries while atomically replacing an existing index. |
 | `Indexing:Enabled` | `bool` | `true` | Enables indexing features. |
 | `Indexing:Products` | `bool` | `true` | Enables product indexing. |
 | `Indexing:Categories` | `bool` | `true` | Enables category indexing. |

@@ -53,6 +53,7 @@ public static class AlgoliaServiceCollectionExtensions
         services.AddSingleton<IndexNameBuilder>();
         services.AddSingleton<ContentIndexNameResolver>();
         services.AddSingleton<AlgoliaStoreResolver>();
+        services.AddSingleton<AlgoliaIndexReplacementService>();
         services.AddSingleton<AlgoliaSearchCacheVersionProvider>();
         services.AddSingleton<AlgoliaSearchCacheKeyBuilder>();
         services.AddSingleton<IAlgoliaProductIndexMapper, ProductIndexMapper>();

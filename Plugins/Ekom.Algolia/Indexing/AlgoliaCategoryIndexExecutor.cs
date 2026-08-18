@@ -14,6 +14,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
     private const string CategoriesEntity = "categories";
 
     private readonly ISearchClient _client;
+    private readonly AlgoliaIndexReplacementService _indexReplacementService;
     private readonly AlgoliaOptions _options;
     private readonly AlgoliaStoreResolver _storeResolver;
     private readonly IndexNameBuilder _indexNameBuilder;
@@ -23,6 +24,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
 
     public AlgoliaCategoryIndexExecutor(
         ISearchClient client,
+        AlgoliaIndexReplacementService indexReplacementService,
         IOptions<AlgoliaOptions> options,
         AlgoliaStoreResolver storeResolver,
         IndexNameBuilder indexNameBuilder,
@@ -31,6 +33,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
         ILogger<AlgoliaCategoryIndexExecutor> logger)
     {
         _client = client;
+        _indexReplacementService = indexReplacementService;
         _options = options.Value;
         _storeResolver = storeResolver;
         _indexNameBuilder = indexNameBuilder;
@@ -112,11 +115,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
 
             var batchSize = _options.Indexing.BatchSize <= 0 ? 1000 : _options.Indexing.BatchSize;
 
-            await _client.ReplaceAllObjectsAsync(
-                indexName: indexName,
-                objects: records,
-                batchSize: batchSize,
-                cancellationToken: ct).ConfigureAwait(false);
+            await _indexReplacementService.ReplaceAllAsync(indexName, records, batchSize, ct).ConfigureAwait(false);
 
             _logger.LogInformation(
                 "Algolia rebuild store {Store} locale {Locale} -> {IndexName}. Categories={Count}",
