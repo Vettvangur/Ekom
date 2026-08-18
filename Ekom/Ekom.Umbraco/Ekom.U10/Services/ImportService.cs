@@ -231,7 +231,14 @@ public class ImportService : IImportService
 
     private void CategorySyncCore(ImportData data, Guid parentKey, int syncUser)
     {
-        _logger.LogInformation($"Category Sync running. ParentKey: {parentKey}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
+        var categoryCount = GetAllCategories(data)?.Count ?? 0;
+        var productCount = data.Products?.Count ?? 0;
+        _logger.LogInformation(
+            "Category Sync running. ParentKey: {ParentKey}, SyncUser: {SyncUser}, Categories: {CategoryCount} Products: {ProductCount}",
+            parentKey,
+            syncUser,
+            categoryCount,
+            productCount);
 
         var stopwatch = Stopwatch.StartNew();
 
