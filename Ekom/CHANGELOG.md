@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.234](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.233...Ekom-v0.2.234) (2026-08-18)
+
+
+### Bug Fixes
+
+* **algolia:** handle oversized content records ([#764](https://github.com/Vettvangur/Ekom/issues/764)) ([a9bbfd6](https://github.com/Vettvangur/Ekom/commit/a9bbfd6e02dabb43ac1298f214f644bdc2db454d))
+
 ## [0.2.233](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.232...Ekom-v0.2.233) (2026-08-18)
 
 
