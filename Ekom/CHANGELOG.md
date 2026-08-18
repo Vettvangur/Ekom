@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.233](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.232...Ekom-v0.2.233) (2026-08-18)
+
+
+### Performance Improvements
+
+* **u17:** optimize cache startup snapshot ([#762](https://github.com/Vettvangur/Ekom/issues/762)) ([b77a84c](https://github.com/Vettvangur/Ekom/commit/b77a84c388a62b5b613fd8809887b07eaa4316cb))
+
 ## [0.2.232](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.231...Ekom-v0.2.232) (2026-08-17)
 
 
