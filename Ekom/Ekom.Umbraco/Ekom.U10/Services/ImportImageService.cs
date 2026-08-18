@@ -83,7 +83,7 @@ public class ImportMediaService
             lastMediaFolder = CreateMediaFolder("1");
         }
 
-        var mediaItems = _mediaService.GetPagedChildren(lastMediaFolder.Id, 0, int.MaxValue, out var _).Where(x => !x.Trashed && x.ContentType.Alias == MediaTypes.Image || x.ContentType.Alias == MediaTypes.File).ToList();
+        var mediaItems = _mediaService.GetPagedChildren(lastMediaFolder.Id, 0, int.MaxValue, out var _).Where(x => !x.Trashed && (x.ContentType.Alias == MediaTypes.Image || x.ContentType.Alias == MediaTypes.File)).ToList();
 
         mediaCount = mediaItems.Count;
     }

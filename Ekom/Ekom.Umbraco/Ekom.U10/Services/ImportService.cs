@@ -385,9 +385,7 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
-
-        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        _ = _importMediaService.GetRootMedia(mediaRootKey);
 
         var allEkomNodes = GetAllEkomNodes();
 
@@ -1807,7 +1805,7 @@ public class ImportService : IImportService
         else
         {
             umbracoRootContent = _contentService
-                .GetPagedOfType(catalogContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+                .GetPagedOfType(catalogContentType.Id, 0, 1, out var _, new Query<IContent>(_scopeProvider.SqlContext)
                 .Where(x => !x.Trashed)).FirstOrDefault();
         }
 
