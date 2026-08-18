@@ -1,6 +1,4 @@
 using Ekom.Cache;
-using Ekom.Interfaces;
-using Ekom.Models;
 using Ekom.Payments;
 using Ekom.Repositories;
 using Ekom.Services;
@@ -17,20 +15,17 @@ namespace Ekom.Umb;
 internal sealed class EkomStartup : IComponent
 #pragma warning restore CA1001 // Types that own disposable fields should be disposable
 {
-    private readonly Configuration _config;
     private readonly ILogger<EkomStartup> _logger;
     private readonly IServiceProvider _factory;
     private readonly IMemoryCache _cache;
     private readonly IOptions<RequestLocalizationOptions> _requestLocalizationOptions;
 
     public EkomStartup(
-        Configuration config,
         ILogger<EkomStartup> logger,
         IServiceProvider factory,
         IMemoryCache cache,
         IOptions<RequestLocalizationOptions> requestLocalizationOptions)
     {
-        _config = config;
         _logger = logger;
         _factory = factory;
         _cache = cache;
@@ -53,19 +48,6 @@ internal sealed class EkomStartup : IComponent
             var orderRepository = _factory.GetService<OrderRepository>();
             orderRepository?.MigrateOrderTableAsync();
             orderRepository?.MigrateStockToDecimalAsync();
-
-            foreach (var cacheEntry in _config.CacheList.Value)
-            {
-                cacheEntry.FillCache();
-            }
-
-            var stockCache = _config.PerStoreStock
-                ? _factory.GetService<IPerStoreCache<StockData>>()
-                : _factory.GetService<IBaseCache<StockData>>() as ICache;
-
-            stockCache?.FillCache();
-
-            _factory.GetService<ICouponCache>()?.FillCache();
 
             Payments.Events.SuccessAsync += CompleteCheckoutAsync;
 

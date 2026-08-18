@@ -15,17 +15,20 @@ internal sealed class NodeService : INodeService
 {
     private readonly IUmbracoContextFactory _context;
     private readonly IPublishedContentQuery _publishedContentQuery;
+    private readonly EkomCacheBuildContext _cacheBuildContext;
     private readonly Umbraco17ContentCache _contentCache;
     private readonly ILogger<NodeService> _logger;
 
     public NodeService(
         IUmbracoContextFactory context,
         IPublishedContentQuery publishedContentQuery,
+        EkomCacheBuildContext cacheBuildContext,
         Umbraco17ContentCache contentCache,
         ILogger<NodeService> logger)
     {
         _context = context;
         _publishedContentQuery = publishedContentQuery;
+        _cacheBuildContext = cacheBuildContext;
         _contentCache = contentCache;
         _logger = logger;
     }
@@ -34,6 +37,12 @@ internal sealed class NodeService : INodeService
     {
         var stopwatch = Stopwatch.StartNew();
         using var contextReference = _context.EnsureUmbracoContext();
+
+        if (_cacheBuildContext.TryGetNodes(contentTypeAlias, out var cacheBuildNodes))
+        {
+            return NodesByTypesForCacheBuild(cacheBuildNodes, contentTypeAlias, stopwatch);
+        }
+
         var rootNode = _publishedContentQuery.ContentAtRoot()
             .FirstOrDefault(x => x.IsDocumentType("ekom"));
 
@@ -45,6 +54,7 @@ internal sealed class NodeService : INodeService
         var keysById = _contentCache.Values
             .ToDictionary(x => x.Id, x => x.Key);
         keysById[rootNode.Id] = rootNode.Key;
+
         var nodes = rootNode.DescendantsOfType(contentTypeAlias).ToList();
 
         foreach (var node in nodes)
@@ -72,6 +82,38 @@ internal sealed class NodeService : INodeService
         stopwatch.Stop();
         _logger.LogDebug(
             "Retrieved and mapped {Count} published {ContentTypeAlias} nodes in {Elapsed}.",
+            results.Count,
+            contentTypeAlias,
+            stopwatch.Elapsed);
+
+        return results;
+    }
+
+    private IEnumerable<UmbracoContent> NodesByTypesForCacheBuild(
+        IReadOnlyList<IPublishedContent> nodes,
+        string contentTypeAlias,
+        Stopwatch stopwatch)
+    {
+        var results = nodes
+            .Select(node =>
+            {
+                if (!_cacheBuildContext.TryGetNodeInfo(node, out var parentId, out var parentKey, out var path))
+                {
+                    throw new InvalidOperationException($"Cache build node {node.Key} was not found.");
+                }
+
+                return new Umbraco17Content(node, parentId, parentKey, path);
+            })
+            .ToList();
+
+        foreach (var result in results)
+        {
+            _contentCache.AddOrUpdate(result);
+        }
+
+        stopwatch.Stop();
+        _logger.LogDebug(
+            "Retrieved and mapped {Count} cache-build {ContentTypeAlias} nodes in {Elapsed}.",
             results.Count,
             contentTypeAlias,
             stopwatch.Elapsed);

@@ -61,6 +61,13 @@ class ProductCache : PerStoreCache<IProduct>
         _categoryIndex[store.Alias] = idx;
         return count;
     }
+
+    public override void ClearCache()
+    {
+        base.ClearCache();
+        _categoryIndex.Clear();
+    }
+
     public override void AddOrReplaceFromCache(Guid key, Store store, IProduct item)
     {
         var alias = store.Alias;

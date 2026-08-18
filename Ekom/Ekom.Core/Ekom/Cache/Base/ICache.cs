@@ -33,3 +33,14 @@ public interface ICache
     /// </summary>
     void FillCache();
 }
+
+/// <summary>
+/// Supports clearing all cached data before rebuilding a cache.
+/// </summary>
+public interface IClearableCache
+{
+    /// <summary>
+    /// Clears all cached items and indexes.
+    /// </summary>
+    void ClearCache();
+}

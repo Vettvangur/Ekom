@@ -1,39 +1,35 @@
 using Microsoft.Extensions.Configuration;
-using Umbraco.Cms.Core.Models;
-using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Infrastructure.HybridCache;
-using Umbraco.Cms.Infrastructure.Persistence.Querying;
-using Umbraco.Cms.Infrastructure.Scoping;
 
 namespace Ekom.Umb.Cache;
 
 internal sealed class EkomCatalogSeedKeyProvider : IDocumentSeedKeyProvider
 {
+    private const string EkomRootContentTypeAlias = "ekom";
+
     private static readonly string[] CatalogContentTypeAliases =
     [
+        "ekmCatalog",
+        "ekmStore",
         "ekmProduct",
         "ekmCategory",
         "ekmProductVariant",
         "ekmProductVariantGroup",
     ];
 
-    private const int PageSize = 2_000;
-
-    private readonly IContentService _contentService;
-    private readonly IContentTypeService _contentTypeService;
     private readonly IConfiguration _configuration;
-    private readonly IScopeProvider _scopeProvider;
+    private readonly IDocumentNavigationQueryService _navigationService;
+    private readonly IPublishStatusQueryService _publishStatusQueryService;
 
     public EkomCatalogSeedKeyProvider(
-        IContentService contentService,
-        IContentTypeService contentTypeService,
         IConfiguration configuration,
-        IScopeProvider scopeProvider)
+        IDocumentNavigationQueryService navigationService,
+        IPublishStatusQueryService publishStatusQueryService)
     {
-        _contentService = contentService;
-        _contentTypeService = contentTypeService;
         _configuration = configuration;
-        _scopeProvider = scopeProvider;
+        _navigationService = navigationService;
+        _publishStatusQueryService = publishStatusQueryService;
     }
 
     public ISet<Guid> GetSeedKeys()
@@ -44,32 +40,27 @@ internal sealed class EkomCatalogSeedKeyProvider : IDocumentSeedKeyProvider
         }
 
         var keys = new HashSet<Guid>();
-        var filter = new Query<IContent>(_scopeProvider.SqlContext).Where(x => !x.Trashed);
-
-        foreach (var contentTypeAlias in CatalogContentTypeAliases)
+        if (!_navigationService.TryGetRootKeysOfType(EkomRootContentTypeAlias, out var ekomRootKeys))
         {
-            var contentType = _contentTypeService.Get(contentTypeAlias);
-            if (contentType == null)
+            return keys;
+        }
+
+        foreach (var ekomRootKey in ekomRootKeys)
+        {
+            if (_publishStatusQueryService.IsDocumentPublishedInAnyCulture(ekomRootKey))
             {
-                continue;
+                keys.Add(ekomRootKey);
             }
 
-            var pageIndex = 0;
-            long totalRecords;
-
-            do
+            foreach (var contentTypeAlias in CatalogContentTypeAliases)
             {
-                var content = _contentService.GetPagedOfType(
-                    contentType.Id,
-                    pageIndex,
-                    PageSize,
-                    out totalRecords,
-                    filter);
+                if (!_navigationService.TryGetDescendantsKeysOfType(ekomRootKey, contentTypeAlias, out var descendantKeys))
+                {
+                    continue;
+                }
 
-                keys.UnionWith(content.Where(x => x.Published).Select(x => x.Key));
-                pageIndex++;
+                keys.UnionWith(descendantKeys.Where(_publishStatusQueryService.IsDocumentPublishedInAnyCulture));
             }
-            while (pageIndex * PageSize < totalRecords);
         }
 
         return keys;

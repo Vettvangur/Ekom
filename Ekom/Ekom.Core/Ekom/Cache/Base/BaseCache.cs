@@ -15,7 +15,7 @@ namespace Ekom.Cache;
 ///  - Sku (string) -> Key (Guid)
 /// Primary cache remains: Key(Guid) -> TItem
 /// </summary>
-abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
+abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
     where TItem : class
 {
     protected readonly Configuration _config;
@@ -212,6 +212,13 @@ abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
             NodeAlias,
             stopwatch.Elapsed
         );
+    }
+
+    public virtual void ClearCache()
+    {
+        Cache.Clear();
+        IdIndex.Clear();
+        SkuIndex.Clear();
     }
 
     // -----------------------------

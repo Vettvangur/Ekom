@@ -17,7 +17,7 @@ namespace Ekom.Cache;
 ///  - Route (string) -> Key (Guid)
 /// Primary store remains: storeAlias -> (Key Guid -> TItem)
 /// </summary>
-abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TItem>, IPerStoreIndexedCache<TItem>
+abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, IPerStoreCache<TItem>, IPerStoreIndexedCache<TItem>
     where TItem : class
 {
     protected readonly Configuration _config;
@@ -218,6 +218,14 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
             NodeAlias,
             stopwatch.Elapsed
         );
+    }
+
+    public virtual void ClearCache()
+    {
+        Cache.Clear();
+        IdIndex.Clear();
+        SkuIndex.Clear();
+        RouteIndex.Clear();
     }
 
     /// <summary>

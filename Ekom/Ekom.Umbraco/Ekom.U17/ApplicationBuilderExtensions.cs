@@ -25,6 +25,8 @@ public static class ApplicationBuilderExtensions
         services.AddHttpClient();
 
         services.AddTransient<IMemberService, MemberService>();
+        services.AddScoped<EkomCacheInitializer>();
+        services.AddSingleton<EkomCacheBuildContext>();
         services.AddSingleton<Umbraco17ContentCache>();
         services.AddTransient<INodeService, NodeService>();
         services.AddTransient<IImportService, ImportService>();
