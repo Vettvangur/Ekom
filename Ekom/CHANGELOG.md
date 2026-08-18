@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.237](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.236...Ekom-v0.2.237) (2026-08-18)
+
+
+### Bug Fixes
+
+* **import:** support nested media root folders ([#770](https://github.com/Vettvangur/Ekom/issues/770)) ([e207daf](https://github.com/Vettvangur/Ekom/commit/e207dafce2af8664cb06e0691f8473bcd32e8a93))
+
 ## [0.2.236](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.235...Ekom-v0.2.236) (2026-08-18)
 
 
