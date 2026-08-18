@@ -84,11 +84,8 @@ public sealed class ProductSearchController
         "Variants": false,
         "BatchSize": 1000,
         "ProductProperties": [
-          "title",
-          "summary",
-          "description",
           "channels|array",
-          "stockCount|int",
+          "packageCount|int",
           "weight|decimal",
           "publishedAt|unix"
         ],
@@ -103,6 +100,10 @@ public sealed class ProductSearchController
         "Enabled": true,
         "EnforcePublisherOnly": true,
         "BatchSize": 1000,
+        "OversizedRecords": {
+          "Behavior": "Fail",
+          "MaxSizeBytes": 100000
+        },
         "Indexes": [
           {
             "IndexName": "SearchIndex",
@@ -185,6 +186,8 @@ public sealed class ProductSearchController
 | `Indexing:Dispatching:MaxConcurrency` | `int` | `2` | Maximum indexing worker concurrency. |
 | `ContentIndexing:Enabled` | `bool` | `false` | Enables standard Umbraco content indexing. |
 | `ContentIndexing:BatchSize` | `int` | `1000` | Batch size for content index rebuild operations. |
+| `ContentIndexing:OversizedRecords:Behavior` | `Fail` or `Skip` | `Fail` | Fails content indexing or skips records that exceed the configured size limit. |
+| `ContentIndexing:OversizedRecords:MaxSizeBytes` | `int` | `100000` | Maximum serialized UTF-8 size of one content record. |
 | `ContentIndexing:Indexes` | `object[]` | `[]` | Content indexes to maintain. Index names resolve as `{IndexName}.{Environment}.{Culture}`. |
 | `ContentIndexing:Indexes[*]:ContentTypes[*]:Alias` | `string` | required | Umbraco content type alias to include in the content index. |
 | `ContentIndexing:Indexes[*]:ContentTypes[*]:Properties` | `string[]` | `[]` | Property aliases to index. Use `|unix` or `|unixms` to add numeric date fields. |
@@ -249,6 +252,31 @@ When `Search:QuerySuggestions` is enabled, the plugin provisions the separate `q
     }
   }
 }
+```
+
+### Oversized content records
+
+Standard content records are measured before they are sent to Algolia. The default `ContentIndexing:OversizedRecords:Behavior` is `Fail`, which stops the operation and logs enough Umbraco context to identify the node. Set it to `Skip` to exclude oversized records and continue indexing:
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "ContentIndexing": {
+        "OversizedRecords": {
+          "Behavior": "Skip",
+          "MaxSizeBytes": 100000
+        }
+      }
+    }
+  }
+}
+```
+
+Diagnostics include the index name, record size, `NodeId`, `objectID`, node name, content type alias, URL, and the five largest field names with their approximate byte sizes. Field values are not logged. When `Skip` is used during incremental indexing, any previous record for that node is deleted from Algolia to prevent stale content.
+
+```text
+Algolia content record is too large for index SearchIndex.prod.en-US: size 102824/100000 bytes, NodeId 1234, ObjectID f0446822-c9cd-4bd9-8351-2e582153ce43, Name Example article, ContentTypeAlias article, Url /articles/example/, LargestFields body=101542, summary=640. Behavior: Fail.
 ```
 
 ### Index naming and store context
@@ -343,7 +371,19 @@ Search cache keys include the resolved index name and serialized Algolia query p
 
 ### Product records and ranking fields
 
-Product records always include `Title` as a top-level field. `NodeName` contains the Umbraco node name.
+Product records provide the following fields without requiring any `Indexing:ProductProperties` configuration:
+
+- Identity: `objectID`, `Sku`, `ProductId`, and `IsVariant`.
+- Content: `NodeName`, `Title`, `Summary`, `Description`, and `Url`.
+- Images: `image_url` and `ImageUrls`.
+- Pricing: `Price`, `PriceWithVat`, `PriceWithoutVat`, and `Currency`.
+- Availability and ranking: `Available`, `ProductRanking`, and `CategoryRanking`.
+- Store context and dates: `StoreAlias`, `Locale`, `CreatedAt`, and `UpdatedAt`.
+- Categories: `hierarchical_categories.lvl0`, additional hierarchy levels when present, and `category_paths`.
+
+Optional fields are omitted when no value is available. `Stock` is included only when `Stores[*]:IncludeStock` is enabled. Variant-specific fields are included when variant indexing is enabled, as described below.
+
+`Title` is a required top-level field. `NodeName` contains the Umbraco node name.
 
 `Available` is indexed as a numeric value so it can be used for ranking:
 
@@ -417,7 +457,7 @@ Product indexes are configured with `AttributeForDistinct = ProductId`. `Search:
 
 ### Additional product properties and metafields
 
-`Indexing:ProductProperties` adds extra product properties and metafields to product records. Each entry supports one optional modifier: `|array`, `|int`, `|decimal`, `|unix`, or `|unixms`.
+`Indexing:ProductProperties` is only for adding extra product properties and metafields that are not part of the default product record fields listed above. Do not add built-in fields such as `title`, `summary`, or `description` here. Each entry supports one optional modifier: `|array`, `|int`, `|decimal`, `|unix`, or `|unixms`.
 
 ```json
 {
@@ -426,7 +466,7 @@ Product indexes are configured with `AttributeForDistinct = ProductId`. `Search:
       "Indexing": {
         "ProductProperties": [
           "channels|array",
-          "stockCount|int",
+          "packageCount|int",
           "weight|decimal",
           "publishedAt|unix"
         ]
@@ -468,11 +508,11 @@ Use the backoffice endpoints to rebuild Algolia indexes manually. Both endpoints
 Rebuild all configured store indexes:
 
 ```http
-POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildIndexes
+POST /umbraco/backoffice/api/EkomAlgoliaBackoffice/RebuildIndexes
 ```
 
 Rebuild one store:
 
 ```http
-POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildStoreIndexes?storeAlias=Store
+POST /umbraco/backoffice/api/EkomAlgoliaBackoffice/RebuildStoreIndexes?storeAlias=Store
 ```

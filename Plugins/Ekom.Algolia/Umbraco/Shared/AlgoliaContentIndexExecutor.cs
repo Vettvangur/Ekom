@@ -1,4 +1,5 @@
 using Algolia.Search.Clients;
+using Algolia.Search.Exceptions;
 using Ekom.Algolia.Mappers;
 using Ekom.Algolia.Models.Indexing;
 using Ekom.Algolia.Services;
@@ -142,8 +143,8 @@ internal sealed class AlgoliaContentIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
             var batchSize = _options.ContentIndexing.BatchSize <= 0 ? 1000 : _options.ContentIndexing.BatchSize;
-            await _client.ReplaceAllObjectsAsync(resolvedIndexName, documents, batchSize, cancellationToken: ct).ConfigureAwait(false);
-            _logger.LogInformation("Rebuilt Algolia content index {IndexName} with {Count} documents.", resolvedIndexName, documents.Count);
+            var indexedCount = await ReplaceAllObjectsAsync(resolvedIndexName, documents, batchSize, ct).ConfigureAwait(false);
+            _logger.LogInformation("Rebuilt Algolia content index {IndexName} with {Count} documents.", resolvedIndexName, indexedCount);
         }
 
         _searchCacheVersions.InvalidateStore("content");
@@ -174,7 +175,7 @@ internal sealed class AlgoliaContentIndexExecutor
                     continue;
 
                 var indexName = _indexNameResolver.Resolve(index.IndexName, culture);
-                await _client.SaveObjectsAsync(indexName, documents, batchSize: 1000, waitForTasks: true, cancellationToken: ct).ConfigureAwait(false);
+                await SaveObjectsAsync(indexName, documents, ct).ConfigureAwait(false);
             }
 
             foreach (var (culture, keys) in deletesByCulture)
@@ -210,6 +211,165 @@ internal sealed class AlgoliaContentIndexExecutor
         var indexName = _indexNameResolver.Resolve(index.IndexName, culture);
         await _client.DeleteObjectsAsync(indexName, ids, batchSize: 1000, waitForTasks: false, cancellationToken: ct).ConfigureAwait(false);
     }
+
+    private async Task<int> ReplaceAllObjectsAsync(
+        string indexName,
+        IReadOnlyCollection<AlgoliaContentRecord> documents,
+        int batchSize,
+        CancellationToken ct)
+    {
+        var accepted = PrepareDocuments(indexName, documents, out _);
+
+        while (true)
+        {
+            try
+            {
+                await _client.ReplaceAllObjectsAsync(indexName, accepted, batchSize, cancellationToken: ct).ConfigureAwait(false);
+                return accepted.Count;
+            }
+            catch (AlgoliaApiException ex)
+            {
+                var oversized = ResolveOversizedRecord(ex, accepted);
+                if (oversized is null)
+                    throw;
+
+                LogOversizedRecord(indexName, oversized, ex);
+                if (_options.ContentIndexing.OversizedRecords.Behavior == AlgoliaOversizedRecordBehavior.Fail)
+                    throw;
+
+                accepted.Remove(oversized.Record);
+            }
+        }
+    }
+
+    private async Task SaveObjectsAsync(
+        string indexName,
+        IReadOnlyCollection<AlgoliaContentRecord> documents,
+        CancellationToken ct)
+    {
+        var accepted = PrepareDocuments(indexName, documents, out var skippedObjectIds);
+
+        while (accepted.Count > 0)
+        {
+            try
+            {
+                await _client.SaveObjectsAsync(indexName, accepted, batchSize: 1000, waitForTasks: true, cancellationToken: ct).ConfigureAwait(false);
+                break;
+            }
+            catch (AlgoliaApiException ex)
+            {
+                var oversized = ResolveOversizedRecord(ex, accepted);
+                if (oversized is null)
+                    throw;
+
+                LogOversizedRecord(indexName, oversized, ex);
+                if (_options.ContentIndexing.OversizedRecords.Behavior == AlgoliaOversizedRecordBehavior.Fail)
+                    throw;
+
+                accepted.Remove(oversized.Record);
+                skippedObjectIds.Add(oversized.Record.ObjectID);
+            }
+        }
+
+        if (skippedObjectIds.Count > 0)
+        {
+            await _client.DeleteObjectsAsync(
+                indexName,
+                skippedObjectIds,
+                batchSize: 1000,
+                waitForTasks: true,
+                cancellationToken: ct).ConfigureAwait(false);
+        }
+    }
+
+    private List<AlgoliaContentRecord> PrepareDocuments(
+        string indexName,
+        IReadOnlyCollection<AlgoliaContentRecord> documents,
+        out HashSet<string> skippedObjectIds)
+    {
+        var maxSizeBytes = _options.ContentIndexing.OversizedRecords.MaxSizeBytes <= 0
+            ? 100_000
+            : _options.ContentIndexing.OversizedRecords.MaxSizeBytes;
+        var accepted = new List<AlgoliaContentRecord>(documents.Count);
+        skippedObjectIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var document in documents)
+        {
+            if (AlgoliaContentRecordSizeInspector.GetSizeBytes(document) <= maxSizeBytes)
+            {
+                accepted.Add(document);
+                continue;
+            }
+
+            var sizeInfo = AlgoliaContentRecordSizeInspector.Inspect(document);
+            LogOversizedRecord(indexName, sizeInfo);
+            if (_options.ContentIndexing.OversizedRecords.Behavior == AlgoliaOversizedRecordBehavior.Fail)
+                throw new InvalidOperationException(BuildOversizedRecordMessage(indexName, sizeInfo, maxSizeBytes));
+
+            skippedObjectIds.Add(document.ObjectID);
+        }
+
+        return accepted;
+    }
+
+    private AlgoliaContentRecordSizeInfo? ResolveOversizedRecord(
+        AlgoliaApiException exception,
+        IReadOnlyCollection<AlgoliaContentRecord> documents)
+    {
+        if (exception.HttpErrorCode != 400 ||
+            !exception.Message.Contains("too big", StringComparison.OrdinalIgnoreCase) ||
+            !AlgoliaContentRecordSizeInspector.TryGetObjectId(exception.Message, out var objectId))
+        {
+            return null;
+        }
+
+        var record = documents.FirstOrDefault(document => document.ObjectID.Equals(objectId, StringComparison.OrdinalIgnoreCase));
+        return record is null ? null : AlgoliaContentRecordSizeInspector.Inspect(record);
+    }
+
+    private void LogOversizedRecord(string indexName, AlgoliaContentRecordSizeInfo sizeInfo, Exception? exception = null)
+    {
+        var maxSizeBytes = _options.ContentIndexing.OversizedRecords.MaxSizeBytes <= 0
+            ? 100_000
+            : _options.ContentIndexing.OversizedRecords.MaxSizeBytes;
+        var largestFields = string.Join(", ", sizeInfo.LargestFields.Select(field => $"{field.Name}={field.SizeBytes}"));
+        var message = "Algolia content record is too large for index {IndexName}: size {RecordSizeBytes}/{MaxSizeBytes} bytes, NodeId {NodeId}, ObjectID {ObjectID}, Name {Name}, ContentTypeAlias {ContentTypeAlias}, Url {Url}, LargestFields {LargestFields}. Behavior: {Behavior}.";
+
+        if (_options.ContentIndexing.OversizedRecords.Behavior == AlgoliaOversizedRecordBehavior.Skip)
+        {
+            _logger.LogWarning(
+                exception,
+                message,
+                indexName,
+                sizeInfo.SizeBytes,
+                maxSizeBytes,
+                sizeInfo.Record.NodeId,
+                sizeInfo.Record.ObjectID,
+                sizeInfo.Record.Name,
+                sizeInfo.Record.ContentTypeAlias,
+                sizeInfo.Record.Url,
+                largestFields,
+                _options.ContentIndexing.OversizedRecords.Behavior);
+            return;
+        }
+
+        _logger.LogError(
+            exception,
+            message,
+            indexName,
+            sizeInfo.SizeBytes,
+            maxSizeBytes,
+            sizeInfo.Record.NodeId,
+            sizeInfo.Record.ObjectID,
+            sizeInfo.Record.Name,
+            sizeInfo.Record.ContentTypeAlias,
+            sizeInfo.Record.Url,
+            largestFields,
+            _options.ContentIndexing.OversizedRecords.Behavior);
+    }
+
+    private static string BuildOversizedRecordMessage(string indexName, AlgoliaContentRecordSizeInfo sizeInfo, int maxSizeBytes)
+        => $"Algolia content record '{sizeInfo.Record.Name}' (NodeId {sizeInfo.Record.NodeId}, ObjectID {sizeInfo.Record.ObjectID}, ContentTypeAlias {sizeInfo.Record.ContentTypeAlias}, Url {sizeInfo.Record.Url}) is too large for index '{indexName}': {sizeInfo.SizeBytes}/{maxSizeBytes} bytes.";
 
     private List<IContent> GetAllOfType(int contentTypeId)
     {

@@ -43,7 +43,20 @@ public sealed class AlgoliaContentIndexingOptions
     public bool EnforcePublisherOnly { get; set; } = true;
     public int BatchSize { get; set; } = 1000;
     public AlgoliaDispatcherOptions Dispatching { get; init; } = new();
+    public AlgoliaOversizedRecordOptions OversizedRecords { get; init; } = new();
     public IReadOnlyCollection<AlgoliaContentIndexOptions> Indexes { get; init; } = [];
+}
+
+public sealed class AlgoliaOversizedRecordOptions
+{
+    public AlgoliaOversizedRecordBehavior Behavior { get; init; } = AlgoliaOversizedRecordBehavior.Fail;
+    public int MaxSizeBytes { get; init; } = 100_000;
+}
+
+public enum AlgoliaOversizedRecordBehavior
+{
+    Fail,
+    Skip
 }
 
 public sealed class AlgoliaContentIndexOptions
