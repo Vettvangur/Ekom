@@ -29,6 +29,7 @@ static class ExceptionHandler
             OrderLineNegativeException => new StatusCodeResult((int)HttpStatusCode.BadRequest),
             OrderLineNotFoundException => new NotFoundResult(),
             ProductNotFoundException => new NotFoundResult(),
+            VariantRequiredException requiredEx => new BadRequestObjectResult(new { message = requiredEx.Message }),
             VariantNotFoundException => new NotFoundResult(),
             NotEnoughStockException => new StatusCodeResult((int)HttpStatusCode.Conflict),
             DiscountNotFoundException => new NotFoundResult(),

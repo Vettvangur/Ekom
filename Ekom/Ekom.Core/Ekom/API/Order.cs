@@ -365,6 +365,7 @@ public partial class Order
     /// <exception cref="ArgumentException">storeAlias</exception>
     /// <exception cref="OrderLineNegativeException">Can indicate a request to modify lines to negative values f.x. </exception>
     /// <exception cref="ProductNotFoundException"></exception>
+    /// <exception cref="VariantRequiredException"></exception>
     /// <exception cref="VariantNotFoundException"></exception>
     /// <exception cref="NotEnoughStockException"></exception>
     public async Task<IOrderInfo> AddOrderLineAsync(

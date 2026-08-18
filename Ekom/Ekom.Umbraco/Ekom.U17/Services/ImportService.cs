@@ -52,7 +52,7 @@ public class ImportService : IImportService
     private int variantGroupDeleted = 0;
 
     private static readonly object _syncLock = new object();
-    private static bool _isFullSyncRunning = false;
+    private static bool _isSyncRunning = false;
 
     public ImportService(
         IUmbracoContextFactory umbracoContextFactory,
@@ -80,16 +80,7 @@ public class ImportService : IImportService
     {
         _logger.LogInformation($"Full Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Categories: {(data.Categories != null ?  (data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()) : 0)} Products: {data.Products.Count}");
 
-        lock (_syncLock)
-        {
-            if (_isFullSyncRunning)
-            {
-                _logger.LogError("Full Sync is already in progress.");
-                throw new InvalidOperationException("Sync is already in progress.");
-            }
-
-            _isFullSyncRunning = true;
-        }
+        BeginSync("Full Sync");
 
         try
         {
@@ -166,10 +157,7 @@ public class ImportService : IImportService
         }
         finally
         {
-            lock (_syncLock)
-            {
-                _isFullSyncRunning = false;
-            }
+            EndSync();
         }
     }
 
@@ -177,16 +165,7 @@ public class ImportService : IImportService
     {
         _logger.LogInformation($"Move Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Categories: {(data.Categories != null ? (data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()) : 0)} Products: {data.Products.Count}");
 
-        lock (_syncLock)
-        {
-            if (_isFullSyncRunning)
-            {
-                _logger.LogError("Full Sync is already in progress.");
-                throw new InvalidOperationException("Sync is already in progress.");
-            }
-
-            _isFullSyncRunning = true;
-        }
+        BeginSync("Move Sync");
 
         try
         {
@@ -231,14 +210,25 @@ public class ImportService : IImportService
         }
         finally
         {
-            lock (_syncLock)
-            {
-                _isFullSyncRunning = false;
-            }
+            EndSync();
         }
     }
 
     public void CategorySync(ImportData data, Guid parentKey, int syncUser = -1)
+    {
+        BeginSync("Category Sync");
+
+        try
+        {
+            CategorySyncCore(data, parentKey, syncUser);
+        }
+        finally
+        {
+            EndSync();
+        }
+    }
+
+    private void CategorySyncCore(ImportData data, Guid parentKey, int syncUser)
     {
         _logger.LogInformation($"Category Sync running. ParentKey: {parentKey}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
 
@@ -278,6 +268,28 @@ public class ImportService : IImportService
         _logger.LogInformation(
             "Category Sync took {Duration} seconds. Parent {parentKey} Categories Saved: {categoriesCount} Products Saved: {productsCount} Products With Error: {productsErrorCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount} Categories Deleted: {categoriesDeleted} Products Deleted: {productDeleted} Variants Deleted: {variantDeleted} VariantsGroups Deleted: {variantGroupDeleted}",
             (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), parentKey, categoriesSaved.Count, productsSaved.Where(x => x.Exception == null).Count(), productsSaved.Where(x => x.Exception != null).Count(), variantsSaved.Count, variantGroupsSaved.Count, categoriesDeleted, productDeleted, variantDeleted, variantGroupDeleted);
+    }
+
+    private void BeginSync(string syncName)
+    {
+        lock (_syncLock)
+        {
+            if (_isSyncRunning)
+            {
+                _logger.LogError("{SyncName} cannot start because another import sync is already in progress.", syncName);
+                throw new InvalidOperationException("Sync is already in progress.");
+            }
+
+            _isSyncRunning = true;
+        }
+    }
+
+    private static void EndSync()
+    {
+        lock (_syncLock)
+        {
+            _isSyncRunning = false;
+        }
     }
 
     public void ProductSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1, bool forceUpdate = false)
