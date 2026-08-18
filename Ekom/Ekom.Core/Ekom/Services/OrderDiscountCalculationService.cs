@@ -191,6 +191,7 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
             }
 
             var variant = await ResolveVariantAsync(requestLine, product, store.Alias, ct).ConfigureAwait(false);
+            OrderLineVariantValidator.Validate(product, variant);
 
             orderInfo.orderLines.Add(new OrderLine(
                 product,

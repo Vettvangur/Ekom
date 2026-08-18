@@ -649,6 +649,7 @@ partial class OrderService
     /// <exception cref="ArgumentException">productKey</exception>
     /// <exception cref="OrderLineNegativeException">Can indicate a request to modify lines to negative values f.x. </exception>
     /// <exception cref="ProductNotFoundException"></exception>
+    /// <exception cref="VariantRequiredException"></exception>
     /// <exception cref="VariantNotFoundException"></exception>
     /// <exception cref="NotEnoughStockException"></exception>
     public async Task<OrderInfo> AddOrderLineAsync(
@@ -687,6 +688,8 @@ partial class OrderService
             }
         }
 
+        OrderLineVariantValidator.Validate(product, variant);
+
         IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
         return await AddOrderLineAsync(
@@ -705,6 +708,7 @@ partial class OrderService
     /// </summary>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="OrderLineNegativeException">Can indicate a request to modify lines to negative values f.x. </exception>
+    /// <exception cref="VariantRequiredException"></exception>
     public async Task<OrderInfo> AddOrderLineAsync(
         IProduct product,
         decimal quantity,
@@ -1124,6 +1128,10 @@ partial class OrderService
         variant = addingOrderlineEventArgs.Variant;
         settings = addingOrderlineEventArgs.Settings;
         action = addingOrderlineEventArgs.Action;
+
+        OrderLineVariantValidator.Validate(product, variant);
+        if (variant != null && variant.ProductKey != product.Key)
+            throw new EkomException("Mismatch between product and variant. Ensure chosen variant is a child of given Product");
 
         if (quantity == 0)
         {
