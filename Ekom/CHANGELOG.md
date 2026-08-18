@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.235](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.234...Ekom-v0.2.235) (2026-08-18)
+
+
+### Bug Fixes
+
+* validate variants and guard import syncs ([#766](https://github.com/Vettvangur/Ekom/issues/766)) ([8421ede](https://github.com/Vettvangur/Ekom/commit/8421ede645fab835d4757dfc939bfae5f777bdbb))
+
 ## [0.2.234](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.233...Ekom-v0.2.234) (2026-08-18)
 
 
