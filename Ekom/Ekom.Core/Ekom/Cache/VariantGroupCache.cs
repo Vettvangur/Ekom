@@ -50,6 +50,12 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
         return count;
     }
 
+    public override void ClearCache()
+    {
+        base.ClearCache();
+        _productIndex.Clear();
+    }
+
     public IEnumerable<IVariantGroup> GetByProductId(string storeAlias, int productId)
     {
         if (!Cache.TryGetValue(storeAlias, out var storeCache))

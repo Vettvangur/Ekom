@@ -109,9 +109,9 @@ public class ImportService : IImportService
             var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct")
                 .ToList();
 
-            var rootUmbracoMediafolder = _importMediaService.GetRootMedia(data.MediaRootKey);
-
-            var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+            var allUmbracoMedia = data.MediaRootKey == Guid.Empty
+                ? new List<IMedia>()
+                : _importMediaService.GetUmbracoMediaFiles(_importMediaService.GetRootMedia(data.MediaRootKey));
             var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
 
             var recycleBinNode = data.RecycleBinKey.HasValue ? _contentService.GetById(data.RecycleBinKey.Value) : null;
@@ -256,9 +256,9 @@ public class ImportService : IImportService
         var allUmbracoCategories = allEkomNodes.Where(x => x.ContentType.Alias == "ekmCategory").ToList();
         var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct").ToList();
 
-        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(data.MediaRootKey);
-
-        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var allUmbracoMedia = data.MediaRootKey == Guid.Empty
+            ? new List<IMedia>()
+            : _importMediaService.GetUmbracoMediaFiles(_importMediaService.GetRootMedia(data.MediaRootKey));
         var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
 
         var recycleBinNode = data.RecycleBinKey.HasValue ? _contentService.GetById(data.RecycleBinKey.Value) : null;

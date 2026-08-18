@@ -43,6 +43,13 @@ class CategoryCache : PerStoreCache<ICategory>
         return count;
     }
 
+    public override void ClearCache()
+    {
+        base.ClearCache();
+        _childrenIndex.Clear();
+        _descIndex.Clear();
+    }
+
     public override void AddOrReplaceFromCache(Guid key, Store store, ICategory item)
     {
         base.AddOrReplaceFromCache(key, store, item);

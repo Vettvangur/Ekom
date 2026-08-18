@@ -11,5 +11,7 @@ internal sealed class Umbraco17ContentCache
 
     public void AddOrUpdate(UmbracoContent content) => _contentById[content.Id] = content;
 
+    public void Clear() => _contentById.Clear();
+
     public bool TryGetById(int id, out UmbracoContent? content) => _contentById.TryGetValue(id, out content);
 }

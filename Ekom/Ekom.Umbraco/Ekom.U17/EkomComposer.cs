@@ -39,7 +39,8 @@ public sealed class EkomComposer : IComposer
             .AddNotificationHandler<DomainDeletedNotification, UmbracoEventListeners>()
             .AddNotificationHandler<ServerVariablesParsingNotification, UmbracoEventListeners>()
             .AddNotificationHandler<LanguageSavedNotification, UmbracoEventListeners>()
-            .AddNotificationHandler<LanguageDeletedNotification, UmbracoEventListeners>();
+            .AddNotificationHandler<LanguageDeletedNotification, UmbracoEventListeners>()
+            .AddNotificationHandler<UmbracoApplicationStartedNotification, EkomCacheInitializationHandler>();
 
         builder.Services.AddEkom(builder.Config);
     }
