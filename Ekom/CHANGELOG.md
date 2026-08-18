@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.238](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.237...Ekom-v0.2.238) (2026-08-18)
+
+
+### Performance Improvements
+
+* **import:** reduce unnecessary import work ([#772](https://github.com/Vettvangur/Ekom/issues/772)) ([6cf0217](https://github.com/Vettvangur/Ekom/commit/6cf02172e90ecd5d28de472e860f3395d8382355))
+
 ## [0.2.237](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.236...Ekom-v0.2.237) (2026-08-18)
 
 
