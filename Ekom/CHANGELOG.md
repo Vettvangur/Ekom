@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.239](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.238...Ekom-v0.2.239) (2026-08-18)
+
+
+### Bug Fixes
+
+* **algolia:** handle initial index rebuilds ([#774](https://github.com/Vettvangur/Ekom/issues/774)) ([00639d6](https://github.com/Vettvangur/Ekom/commit/00639d6259c39ef69101a43ab6e0c2360cf27555))
+
 ## [0.2.238](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.237...Ekom-v0.2.238) (2026-08-18)
 
 
