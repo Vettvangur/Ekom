@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.236](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.235...Ekom-v0.2.236) (2026-08-18)
+
+
+### Bug Fixes
+
+* **import:** handle null categories in category sync ([#768](https://github.com/Vettvangur/Ekom/issues/768)) ([afe0b95](https://github.com/Vettvangur/Ekom/commit/afe0b958c5783141a685e185ce7d635b295c6396))
+
 ## [0.2.235](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.234...Ekom-v0.2.235) (2026-08-18)
 
 
