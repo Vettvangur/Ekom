@@ -6,6 +6,13 @@
 
 * **algolia:** add optional variant-level product indexing for SKU search.
 
+## [0.2.37](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.36...Ekom.Algolia-v0.2.37) (2026-08-18)
+
+
+### Bug Fixes
+
+* **algolia:** handle initial index rebuilds ([#774](https://github.com/Vettvangur/Ekom/issues/774)) ([00639d6](https://github.com/Vettvangur/Ekom/commit/00639d6259c39ef69101a43ab6e0c2360cf27555))
+
 ## [0.2.36](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.35...Ekom.Algolia-v0.2.36) (2026-08-18)
 
 
