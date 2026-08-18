@@ -13,6 +13,7 @@ namespace Ekom.Algolia.Indexing;
 internal sealed class AlgoliaProductIndexExecutor
 {
     private readonly ISearchClient _client;
+    private readonly AlgoliaIndexReplacementService _indexReplacementService;
     private readonly AlgoliaOptions _options;
     private readonly AlgoliaStoreResolver _storeResolver;
     private readonly IndexNameBuilder _indexNameBuilder;
@@ -23,6 +24,7 @@ internal sealed class AlgoliaProductIndexExecutor
 
     public AlgoliaProductIndexExecutor(
         ISearchClient client,
+        AlgoliaIndexReplacementService indexReplacementService,
         IOptions<AlgoliaOptions> options,
         AlgoliaStoreResolver storeResolver,
         IndexNameBuilder indexNameBuilder,
@@ -32,6 +34,7 @@ internal sealed class AlgoliaProductIndexExecutor
         ILogger<AlgoliaProductIndexExecutor> logger)
     {
         _client = client;
+        _indexReplacementService = indexReplacementService;
         _options = options.Value;
         _storeResolver = storeResolver;
         _indexNameBuilder = indexNameBuilder;
@@ -129,7 +132,6 @@ internal sealed class AlgoliaProductIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
-            await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
 
             var skippedProducts = 0;
@@ -162,12 +164,9 @@ internal sealed class AlgoliaProductIndexExecutor
                 indexName,
                 records.Count);
 
-            await _client.ReplaceAllObjectsAsync(
-                indexName: indexName,
-                objects: records,
-                batchSize: batchSize,
-                cancellationToken: ct).ConfigureAwait(false);
+            await _indexReplacementService.ReplaceAllAsync(indexName, records, batchSize, ct).ConfigureAwait(false);
 
+            await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
             await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
         }
 

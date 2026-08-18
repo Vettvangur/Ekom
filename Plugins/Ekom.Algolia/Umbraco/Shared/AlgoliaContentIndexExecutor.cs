@@ -21,6 +21,7 @@ namespace Ekom.Algolia.Indexing;
 internal sealed class AlgoliaContentIndexExecutor
 {
     private readonly ISearchClient _client;
+    private readonly AlgoliaIndexReplacementService _indexReplacementService;
     private readonly AlgoliaOptions _options;
     private readonly IReadOnlyList<IAlgoliaContentEnricher> _enrichers;
     private readonly IReadOnlyList<IAlgoliaContentPropertyValueConverter> _propertyConverters;
@@ -38,6 +39,7 @@ internal sealed class AlgoliaContentIndexExecutor
 
     public AlgoliaContentIndexExecutor(
         ISearchClient client,
+        AlgoliaIndexReplacementService indexReplacementService,
         IOptions<AlgoliaOptions> options,
         IContentService contentService,
         ILocalizationService languageService,
@@ -54,6 +56,7 @@ internal sealed class AlgoliaContentIndexExecutor
         IEnumerable<IAlgoliaContentPropertyValueConverter>? propertyConverters = null)
     {
         _client = client;
+        _indexReplacementService = indexReplacementService;
         _options = options.Value;
         _contentService = contentService;
         _languageService = languageService;
@@ -224,7 +227,7 @@ internal sealed class AlgoliaContentIndexExecutor
         {
             try
             {
-                await _client.ReplaceAllObjectsAsync(indexName, accepted, batchSize, cancellationToken: ct).ConfigureAwait(false);
+                await _indexReplacementService.ReplaceAllAsync(indexName, accepted, batchSize, ct).ConfigureAwait(false);
                 return accepted.Count;
             }
             catch (AlgoliaApiException ex)
