@@ -46,9 +46,24 @@ public class ImportMediaService
 
     public IMedia GetRootMedia(Guid rootMediaKey)
     {
-        _rootMediaFolder = _mediaService.GetRootMedia().FirstOrDefault(x => x.Key == rootMediaKey);
+        var media = _mediaService.GetById(rootMediaKey);
 
-        ArgumentNullException.ThrowIfNull(_rootMediaFolder);
+        if (media == null)
+        {
+            throw new ArgumentException($"No media exists with key '{rootMediaKey}'.", nameof(rootMediaKey));
+        }
+
+        if (media.Trashed)
+        {
+            throw new InvalidOperationException($"Media '{rootMediaKey}' is in the recycle bin.");
+        }
+
+        if (media.ContentType.Alias != MediaTypes.Folder)
+        {
+            throw new InvalidOperationException($"Media '{rootMediaKey}' is not a media folder.");
+        }
+
+        _rootMediaFolder = media;
 
         GetRootMediaLastChildrenFolder(_rootMediaFolder);
 
