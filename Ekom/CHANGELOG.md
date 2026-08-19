@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.240](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.239...Ekom-v0.2.240) (2026-08-19)
+
+
+### Features
+
+* add Algolia transforms and optimize imports ([#776](https://github.com/Vettvangur/Ekom/issues/776)) ([2f5057b](https://github.com/Vettvangur/Ekom/commit/2f5057b92149505ea2046bdb366f7a90dc296c36))
+
 ## [0.2.239](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.238...Ekom-v0.2.239) (2026-08-18)
 
 
