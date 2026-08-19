@@ -465,6 +465,8 @@ internal sealed class AlgoliaContentIndexExecutor
             var value = ReadPropertyValue(property, propertyCulture, availableCultures, contentTypes);
             var converted = ConvertProperty(new AlgoliaContentPropertyContext(content, property, propertyCulture, culture, baseIndexName), value);
 
+            converted = ApplyConfiguredTransform(converted, transform);
+
             if (!HasIndexableValue(converted))
                 continue;
 
@@ -624,7 +626,7 @@ internal sealed class AlgoliaContentIndexExecutor
             _ => true
         };
 
-    private static (string Alias, AlgoliaContentFieldTransform Transform) ParseConfiguredField(string raw)
+    internal static (string Alias, AlgoliaContentFieldTransform Transform) ParseConfiguredField(string raw)
     {
         var parts = raw.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (parts.Length == 0)
@@ -636,11 +638,17 @@ internal sealed class AlgoliaContentIndexExecutor
             {
                 "unix" => AlgoliaContentFieldTransform.UnixSeconds,
                 "unixms" => AlgoliaContentFieldTransform.UnixMilliseconds,
+                "striphtml" => AlgoliaContentFieldTransform.StripHtml,
                 _ => AlgoliaContentFieldTransform.None
             };
 
         return (parts[0], transform);
     }
+
+    internal static object? ApplyConfiguredTransform(object? value, AlgoliaContentFieldTransform transform)
+        => transform == AlgoliaContentFieldTransform.StripHtml
+            ? AlgoliaHtmlTextConverter.Convert(value)
+            : value;
 
     private static object? TryToUnix(object? value, bool unixMilliseconds)
     {

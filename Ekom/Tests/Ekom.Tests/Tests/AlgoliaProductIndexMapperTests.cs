@@ -110,6 +110,59 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Fact]
+    public void Strips_Html_From_Configured_Product_Property()
+    {
+        var mapper = CreateMapper(productProperties: ["body|striphtml"]);
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["body"] = "<p>Hello&nbsp;<strong>world</strong></p><p>Next</p>"
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal("Hello world Next", Assert.IsType<string>(record!.Data["body"]));
+    }
+
+    [Fact]
+    public void Strips_Html_From_Built_In_Product_Text_Fields()
+    {
+        var mapper = CreateMapper(productProperties: ["TITLE|STRIPHTML", "summary|striphtml", "description|striphtml"]);
+        var product = CreateProduct(
+            title: "<p>Product <strong>title</strong></p>",
+            summary: "<div>Product&nbsp;summary</div>",
+            description: "{\"markup\":\"<p>Product description</p>\"}");
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal("Product title", record!.Title);
+        Assert.Equal("Product summary", record.Summary);
+        Assert.Equal("Product description", record.Description);
+        Assert.DoesNotContain(record.Data.Keys, key => key.Equals("title", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(record.Data.Keys, key => key.Equals("summary", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(record.Data.Keys, key => key.Equals("description", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Omits_Configured_Values_That_Are_Empty_After_Stripping_Html()
+    {
+        var mapper = CreateMapper(productProperties: ["body|striphtml", "summary|striphtml"]);
+        var product = CreateProduct(
+            summary: "<script>alert('ignored')</script>",
+            properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["body"] = "<style>.hidden { display: none; }</style>"
+            });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Null(record!.Summary);
+        Assert.DoesNotContain("body", record.Data.Keys);
+    }
+
+    [Fact]
     public void Maps_Array_Product_Properties_From_Configured_Modifier()
     {
         var mapper = CreateMapper(productProperties: ["channels|array"]);
@@ -244,6 +297,20 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Fact]
+    public void MapRecords_Strips_Html_From_Variant_Description()
+    {
+        var mapper = CreateMapper(productProperties: ["description|striphtml"], indexVariants: true);
+        var variant = CreateVariant(description: "<p>Variant <strong>description</strong></p>");
+        var product = CreateProduct(variants: [variant.Object]);
+
+        var records = mapper.MapRecords(product.Object, CreateStore(), "products");
+
+        var variantRecord = records.Single(x => x.IsVariant);
+        Assert.Equal("Variant description", variantRecord.Description);
+        Assert.Equal("Variant description", Assert.IsType<string>(variantRecord.Data["variantDescription"]));
+    }
+
+    [Fact]
     public void Keeps_Relative_Urls_And_Image_Urls_As_Is()
     {
         var mapper = CreateMapper();
@@ -276,6 +343,21 @@ public class AlgoliaProductIndexMapperTests
 
         Assert.NotNull(record);
         Assert.Equal("Cotton", Assert.IsType<string>(record!.Data["material"]));
+    }
+
+    [Fact]
+    public void Strips_Html_From_Configured_Metafield()
+    {
+        var mapper = CreateMapper(productProperties: ["metafield:longDescription|striphtml"]);
+        var product = CreateProduct(metafields:
+        [
+            CreateMetafield("longDescription", [CreateMetafieldValue(("is-IS", "{\"markup\":\"<p>Halló <strong>heimur</strong></p>\"}"))])
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(locale: "is-IS"), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal("Halló heimur", Assert.IsType<string>(record!.Data["longDescription"]));
     }
 
     [Fact]

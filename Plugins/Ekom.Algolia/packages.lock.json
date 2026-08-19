@@ -12,6 +12,12 @@
           "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, 11.0.0)"
         }
       },
+      "HtmlAgilityPack": {
+        "type": "Direct",
+        "requested": "[1.12.4, )",
+        "resolved": "1.12.4",
+        "contentHash": "ljqvBabvFwKoLniuoQKO8b5bJfJweKLs4fUNS/V5dsvpo0A8MlJqxxn9XVmP2DaskbUXty6IYaWAi1SArGIMeQ=="
+      },
       "Microsoft.Extensions.Caching.Memory": {
         "type": "Direct",
         "requested": "[10.0.0, )",
@@ -286,11 +292,6 @@
         "dependencies": {
           "Hangfire.Core": "[1.8.18]"
         }
-      },
-      "HtmlAgilityPack": {
-        "type": "Transitive",
-        "resolved": "1.12.4",
-        "contentHash": "ljqvBabvFwKoLniuoQKO8b5bJfJweKLs4fUNS/V5dsvpo0A8MlJqxxn9XVmP2DaskbUXty6IYaWAi1SArGIMeQ=="
       },
       "Humanizer.Core": {
         "type": "Transitive",
@@ -1800,6 +1801,12 @@
           "Microsoft.Extensions.Logging.Abstractions": "[8.0.0, 11.0.0)"
         }
       },
+      "HtmlAgilityPack": {
+        "type": "Direct",
+        "requested": "[1.11.74, )",
+        "resolved": "1.11.74",
+        "contentHash": "q0wRGbegtr4sZXjCNoV3OeRLTOcTNJQKiO9etNVSKPoTo33unmSK8Ahg36C4jIg/Hd3aw8YnTQjtKpBy+wlOpg=="
+      },
       "Microsoft.Extensions.Caching.Memory": {
         "type": "Direct",
         "requested": "[8.0.1, )",
@@ -2062,11 +2069,6 @@
         "dependencies": {
           "Hangfire.Core": "[1.8.18]"
         }
-      },
-      "HtmlAgilityPack": {
-        "type": "Transitive",
-        "resolved": "1.11.74",
-        "contentHash": "q0wRGbegtr4sZXjCNoV3OeRLTOcTNJQKiO9etNVSKPoTo33unmSK8Ahg36C4jIg/Hd3aw8YnTQjtKpBy+wlOpg=="
       },
       "Humanizer.Core": {
         "type": "Transitive",

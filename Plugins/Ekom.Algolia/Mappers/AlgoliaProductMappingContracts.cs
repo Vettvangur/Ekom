@@ -42,5 +42,6 @@ public enum AlgoliaFieldTransform
 {
     None,
     UnixSeconds,
-    UnixMilliseconds
+    UnixMilliseconds,
+    StripHtml,
 }
