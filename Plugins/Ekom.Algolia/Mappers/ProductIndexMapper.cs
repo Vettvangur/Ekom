@@ -105,6 +105,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             Available = product.Available ? 1 : 0,
             ProductRanking = ResolveRank(product, store.Alias),
             CategoryRanking = ResolveCategoryRank(product, store.Alias),
+            CategoryPageId = BuildCategoryPageIds(product),
             Stock = store.IncludeStock ? product.Stock : null,
             StoreAlias = NullIfWhiteSpace(store.Alias),
             Locale = NullIfWhiteSpace(store.Locale),
@@ -238,6 +239,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             Available = variant.Available ? 1 : 0,
             ProductRanking = productRecord.ProductRanking,
             CategoryRanking = productRecord.CategoryRanking,
+            CategoryPageId = productRecord.CategoryPageId,
             Stock = store.IncludeStock ? variant.Stock : productRecord.Stock,
             StoreAlias = productRecord.StoreAlias,
             Locale = productRecord.Locale,
@@ -485,6 +487,25 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         }
 
         return categoryPaths;
+    }
+
+    private static IReadOnlyList<string>? BuildCategoryPageIds(IProduct product)
+    {
+        var categoryIds = new List<string>();
+        var seen = new HashSet<Guid>();
+
+        foreach (var category in product.Categories)
+        {
+            foreach (var categoryKey in category.Ancestors
+                .Select(ancestor => ancestor.Key)
+                .Append(category.Key))
+            {
+                if (categoryKey != Guid.Empty && seen.Add(categoryKey))
+                    categoryIds.Add(categoryKey.ToString("D"));
+            }
+        }
+
+        return categoryIds.Count > 0 ? categoryIds : null;
     }
 
     private static void RemoveEmptyValues(IDictionary<string, object?> values)

@@ -13,12 +13,15 @@ public class AlgoliaProductIndexMapperTests
     [Fact]
     public void Maps_Category_Levels_For_Hierarchical_Menu()
     {
+        var candyKey = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var chocolateKey = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var organicKey = Guid.Parse("33333333-3333-3333-3333-333333333333");
         var mapper = CreateMapper();
         var product = CreateProduct(
             categories:
             [
-                CreateCategory("Chocolate", ancestors: [CreateCategory("Candy")]),
-                CreateCategory("Organic")
+                CreateCategory("Chocolate", ancestors: [CreateCategory("Candy", key: candyKey)], key: chocolateKey),
+                CreateCategory("Organic", key: organicKey)
             ]);
 
         var record = mapper.Map(product.Object, CreateStore(), "products");
@@ -29,6 +32,36 @@ public class AlgoliaProductIndexMapperTests
         Assert.Equal(
             ["Candy", "Candy > Chocolate", "Organic"],
             Assert.IsAssignableFrom<IReadOnlyList<string>>(record.Data["category_paths"]));
+        Assert.Equal(
+            [candyKey.ToString("D"), chocolateKey.ToString("D"), organicKey.ToString("D")],
+            record.CategoryPageId);
+
+        using var json = JsonDocument.Parse(JsonSerializer.Serialize(record));
+        Assert.True(json.RootElement.TryGetProperty("categoryPageId", out _));
+        Assert.False(json.RootElement.TryGetProperty("CategoryPageId", out _));
+    }
+
+    [Fact]
+    public void Deduplicates_Category_Page_Ids_While_Preserving_Order()
+    {
+        var rootKey = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var firstKey = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var secondKey = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var root = CreateCategory("Root", key: rootKey);
+        var mapper = CreateMapper();
+        var product = CreateProduct(
+            categories:
+            [
+                CreateCategory("First", ancestors: [root], key: firstKey),
+                CreateCategory("Second", ancestors: [root], key: secondKey)
+            ]);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(
+            [rootKey.ToString("D"), firstKey.ToString("D"), secondKey.ToString("D")],
+            record!.CategoryPageId);
     }
 
     [Fact]
@@ -247,6 +280,7 @@ public class AlgoliaProductIndexMapperTests
         Assert.Null(record.Url);
         Assert.Null(record.ImageUrl);
         Assert.Null(record.ImageUrls);
+        Assert.Null(record.CategoryPageId);
         Assert.DoesNotContain("emptyProp", record.Data.Keys);
         Assert.DoesNotContain("blankProp", record.Data.Keys);
         Assert.False(Assert.IsType<bool>(record.Data["featured"]));
@@ -257,6 +291,7 @@ public class AlgoliaProductIndexMapperTests
         Assert.DoesNotContain("Description", json, StringComparison.Ordinal);
         Assert.DoesNotContain("image_url", json, StringComparison.Ordinal);
         Assert.DoesNotContain("ImageUrls", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("categoryPageId", json, StringComparison.Ordinal);
         Assert.DoesNotContain("emptyProp", json, StringComparison.Ordinal);
         Assert.DoesNotContain("blankProp", json, StringComparison.Ordinal);
         Assert.Contains("\"featured\":false", json, StringComparison.Ordinal);
@@ -280,7 +315,11 @@ public class AlgoliaProductIndexMapperTests
     {
         var mapper = CreateMapper(indexVariants: true);
         var variant = CreateVariant(sku: "variant-sku", title: "Variant title");
-        var product = CreateProduct(sku: "placeholder", variants: [variant.Object]);
+        var categoryKey = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var product = CreateProduct(
+            categories: [CreateCategory("Category", key: categoryKey)],
+            sku: "placeholder",
+            variants: [variant.Object]);
 
         var records = mapper.MapRecords(product.Object, CreateStore(), "products");
 
@@ -292,6 +331,7 @@ public class AlgoliaProductIndexMapperTests
         Assert.Equal(variant.Object.Key.ToString(), variantRecord.VariantId);
         Assert.Equal("variant-sku", variantRecord.Sku);
         Assert.Equal("placeholder", variantRecord.ParentSku);
+        Assert.Equal([categoryKey.ToString("D")], variantRecord.CategoryPageId);
         Assert.Equal("variant-sku", Assert.IsType<string>(variantRecord.Data["variantSku"]));
         Assert.Equal("Variant title", Assert.IsType<string>(variantRecord.Data["variantTitle"]));
     }
@@ -533,9 +573,11 @@ public class AlgoliaProductIndexMapperTests
     private static Mock<Ekom.Models.ICategory> CreateCategory(
         string title,
         IReadOnlyList<Mock<Ekom.Models.ICategory>>? ancestors = null,
-        string? algoliaRank = null)
+        string? algoliaRank = null,
+        Guid? key = null)
     {
         var category = new Mock<Ekom.Models.ICategory>();
+        category.SetupGet(x => x.Key).Returns(key ?? Guid.Empty);
         category.SetupGet(x => x.Title).Returns(title);
         category.SetupGet(x => x.Ancestors).Returns((ancestors ?? []).Select(x => x.Object));
         category.Setup(x => x.GetValue("title", It.IsAny<string?>(), true)).Returns(string.Empty);
