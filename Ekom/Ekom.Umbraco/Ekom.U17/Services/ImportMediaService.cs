@@ -6,6 +6,8 @@ using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
+using Umbraco.Cms.Infrastructure.Persistence.Querying;
+using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Extensions;
 using MediaTypes = Umbraco.Cms.Core.Constants.Conventions.MediaTypes;
 
@@ -20,6 +22,7 @@ public class ImportMediaService
     private readonly MediaUrlGeneratorCollection _mediaUrlGenerators;
     private readonly IShortStringHelper _shortStringHelper;
     private readonly ILogger<ImportMediaService> _logger;
+    private readonly IScopeProvider _scopeProvider;
 
     private readonly int _mediaFolderPageSize = 400;
     private int _mediaCount;
@@ -33,7 +36,8 @@ public class ImportMediaService
         MediaFileManager mediaFileManager,
         MediaUrlGeneratorCollection mediaUrlGenerators,
         IShortStringHelper shortStringHelper,
-        ILogger<ImportMediaService> logger)
+        ILogger<ImportMediaService> logger,
+        IScopeProvider scopeProvider)
     {
         _mediaService = mediaService;
         _httpClientFactory = httpClientFactory;
@@ -42,6 +46,7 @@ public class ImportMediaService
         _mediaUrlGenerators = mediaUrlGenerators;
         _shortStringHelper = shortStringHelper;
         _logger = logger;
+        _scopeProvider = scopeProvider;
     }
 
     public IMedia GetRootMedia(Guid rootMediaKey)
@@ -102,6 +107,70 @@ public class ImportMediaService
         while (true);
 
         return results;
+    }
+
+    public List<IMedia> GetUmbracoMediaFiles(
+        IMedia rootMedia,
+        IReadOnlyCollection<string> identifiers,
+        IReadOnlyCollection<string> comparers,
+        IReadOnlyCollection<Guid> keys)
+    {
+        if (identifiers.Count == 0 && comparers.Count == 0 && keys.Count == 0)
+        {
+            return new List<IMedia>();
+        }
+
+        var conditions = new List<string>();
+        var parameters = new List<object> { $"%,{rootMedia.Id},%", MediaTypes.Image, MediaTypes.File };
+
+        if (keys.Count > 0)
+        {
+            conditions.Add($"n.uniqueId IN (@{parameters.Count})");
+            parameters.Add(keys);
+        }
+
+        if (identifiers.Count > 0)
+        {
+            conditions.Add($"(pt.alias = 'ekmIdentifier' AND pd.varcharValue IN (@{parameters.Count}))");
+            parameters.Add(identifiers);
+        }
+
+        if (comparers.Count > 0)
+        {
+            conditions.Add($"(pt.alias = 'comparer' AND pd.varcharValue IN (@{parameters.Count}))");
+            parameters.Add(comparers);
+        }
+
+        using var scope = _scopeProvider.CreateScope(autoComplete: true);
+        var mediaIds = scope.Database.Fetch<int>(
+            $@"SELECT DISTINCT n.id
+FROM umbracoNode n
+INNER JOIN umbracoContent c ON c.nodeId = n.id
+INNER JOIN cmsContentType ct ON ct.nodeId = c.contentTypeId
+INNER JOIN umbracoContentVersion cv ON cv.nodeId = n.id AND cv.[current] = 1
+LEFT JOIN umbracoPropertyData pd ON pd.versionId = cv.id
+LEFT JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId
+WHERE n.trashed = 0
+  AND n.path LIKE @0
+  AND ct.alias IN (@1, @2)
+  AND ({string.Join(" OR ", conditions)})
+ORDER BY n.id",
+            parameters.ToArray());
+
+        var matchingMedia = _mediaService.GetPagedDescendants(
+                rootMedia.Id,
+                0,
+                int.MaxValue,
+                out _,
+                new Query<IMedia>(_scopeProvider.SqlContext).Where(media => mediaIds.Contains(media.Id)))
+            .Where(media => !media.Trashed
+                && (media.ContentType.Alias == MediaTypes.Image || media.ContentType.Alias == MediaTypes.File))
+            .ToDictionary(media => media.Id);
+
+        return mediaIds
+            .Where(matchingMedia.ContainsKey)
+            .Select(mediaId => matchingMedia[mediaId])
+            .ToList();
     }
 
     public IMedia? ImportMediaFromExternalUrl(

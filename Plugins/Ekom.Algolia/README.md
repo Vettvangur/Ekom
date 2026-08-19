@@ -90,7 +90,8 @@ public sealed class ProductSearchController
           "channels|array",
           "packageCount|int",
           "weight|decimal",
-          "publishedAt|unix"
+          "publishedAt|unix",
+          "description|striphtml"
         ],
         "Dispatching": {
           "MaxBatchSize": 100,
@@ -115,7 +116,7 @@ public sealed class ProductSearchController
                 "Alias": "article",
                 "Properties": [
                   "title",
-                  "summary",
+                  "summary|striphtml",
                   "publishedAt|unix"
                 ]
               }
@@ -194,7 +195,7 @@ public sealed class ProductSearchController
 | `ContentIndexing:OversizedRecords:MaxSizeBytes` | `int` | `100000` | Maximum serialized UTF-8 size of one content record. |
 | `ContentIndexing:Indexes` | `object[]` | `[]` | Content indexes to maintain. Index names resolve as `{IndexName}.{Environment}.{Culture}`. |
 | `ContentIndexing:Indexes[*]:ContentTypes[*]:Alias` | `string` | required | Umbraco content type alias to include in the content index. |
-| `ContentIndexing:Indexes[*]:ContentTypes[*]:Properties` | `string[]` | `[]` | Property aliases to index. Use `|unix` or `|unixms` to add numeric date fields. |
+| `ContentIndexing:Indexes[*]:ContentTypes[*]:Properties` | `string[]` | `[]` | Property aliases to index. Use `|unix` or `|unixms` for numeric dates, or `|striphtml` for searchable plain text from rich-text values. |
 | `Search:Enabled` | `bool` | `true` | Enables Algolia search services. |
 | `Search:Products` | `bool` | `true` | Enables product search. |
 | `Search:Categories` | `bool` | `true` | Enables category search. |
@@ -461,7 +462,7 @@ Product indexes are configured with `AttributeForDistinct = ProductId`. `Search:
 
 ### Additional product properties and metafields
 
-`Indexing:ProductProperties` is only for adding extra product properties and metafields that are not part of the default product record fields listed above. Do not add built-in fields such as `title`, `summary`, or `description` here. Each entry supports one optional modifier: `|array`, `|int`, `|decimal`, `|unix`, or `|unixms`.
+`Indexing:ProductProperties` adds extra product properties and metafields that are not part of the default product record fields listed above. The built-in `title`, `summary`, and `description` aliases may also be configured with `|striphtml` to transform their top-level record fields. Each entry supports one optional modifier: `|array`, `|int`, `|decimal`, `|unix`, `|unixms`, or `|striphtml`.
 
 ```json
 {
@@ -472,7 +473,8 @@ Product indexes are configured with `AttributeForDistinct = ProductId`. `Search:
           "channels|array",
           "packageCount|int",
           "weight|decimal",
-          "publishedAt|unix"
+          "publishedAt|unix",
+          "description|striphtml"
         ]
       }
     }
@@ -490,7 +492,8 @@ Metafields can be indexed explicitly with `metafield:<alias>`:
         "ProductProperties": [
           "metafield:material",
           "metafield:color|array",
-          "metafield:releaseDate|unix"
+          "metafield:releaseDate|unix",
+          "metafield:longDescription|striphtml"
         ]
       }
     }
@@ -502,8 +505,10 @@ Modifier behavior:
 
 - `|array` parses JSON arrays such as `["Web","Store"]` into Algolia string arrays.
 - `|decimal` accepts comma or dot decimal separators, such as `0,1` and `0.0`.
+- `|striphtml` converts direct HTML or rich-text JSON with a `markup` property to plain text. It removes script and style content, decodes HTML entities, and normalizes tags and whitespace to single spaces.
 - Multi-value metafields are skipped unless `|array` is configured.
 - Invalid `|array`, `|int`, and `|decimal` values are skipped instead of being indexed as strings.
+- Only one modifier is supported for each configured field.
 
 ### Manual reindexing
 

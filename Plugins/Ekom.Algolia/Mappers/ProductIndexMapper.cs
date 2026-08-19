@@ -38,7 +38,27 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var locale = store.Locale;
         var categoryLevels = BuildCategoryLevels(product, locale);
         var nodeName = GetNodeName(product);
-        var title = GetLocalizedValue(product, "title", product.Title, locale);
+        var title = ApplyBuiltInTextTransform(
+            "title",
+            GetLocalizedValue(product, "title", product.Title, locale),
+            allowedProps,
+            product,
+            store,
+            baseIndexName);
+        var summary = ApplyBuiltInTextTransform(
+            "summary",
+            GetLocalizedValue(product, "summary", product.Summary, locale),
+            allowedProps,
+            product,
+            store,
+            baseIndexName);
+        var description = ApplyBuiltInTextTransform(
+            "description",
+            GetLocalizedValue(product, "description", product.Description, locale),
+            allowedProps,
+            product,
+            store,
+            baseIndexName);
 
         var images = product.Images
             .Select(i => i?.Url)
@@ -73,8 +93,8 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             ProductId = product.Key.ToString(),
             NodeName = NullIfWhiteSpace(nodeName),
             Title = title,
-            Summary = NullIfWhiteSpace(GetLocalizedValue(product, "summary", product.Summary, locale)),
-            Description = NullIfWhiteSpace(GetLocalizedValue(product, "description", product.Description, locale)),
+            Summary = NullIfWhiteSpace(summary),
+            Description = NullIfWhiteSpace(description),
             Url = NullIfWhiteSpace(urls.FirstOrDefault() ?? product.Url),
             ImageUrl = NullIfWhiteSpace(images.FirstOrDefault()),
             ImageUrls = images.Count > 0 ? images : null,
@@ -101,7 +121,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         if (categoryPaths.Count > 0)
             record.Data["category_paths"] = categoryPaths;
 
-        foreach (var kvp in allowedProps)
+        foreach (var kvp in allowedProps.Where(x => !IsBuiltInTextStripHtmlField(x.Value)))
         {
             var alias = kvp.Key;
             var configuredField = kvp.Value;
@@ -109,6 +129,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             object? converted = ResolveConfiguredValue(product, store, configuredField);
             var ctx = new AlgoliaProductFieldContext(product, store, alias, baseIndexName);
             converted = ConvertProperty(ctx, converted);
+            converted = ApplyTransform(converted, configuredField.Transform);
 
             if (converted is null)
                 continue;
@@ -151,10 +172,11 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             return [productRecord];
 
         var records = new List<AlgoliaProductRecord> { productRecord };
+        var configuredFields = BuildAllowedProperties(product, store);
 
         foreach (var variant in product.AllVariants)
         {
-            var record = MapVariant(product, variant, productRecord, store);
+            var record = MapVariant(product, variant, productRecord, store, baseIndexName, configuredFields);
             if (record is not null)
                 records.Add(record);
         }
@@ -162,11 +184,13 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         return records;
     }
 
-    private static AlgoliaProductRecord? MapVariant(
+    private AlgoliaProductRecord? MapVariant(
         IProduct product,
         IVariant variant,
         AlgoliaProductRecord productRecord,
-        AlgoliaResolvedStore store)
+        AlgoliaResolvedStore store,
+        string baseIndexName,
+        IReadOnlyDictionary<string, ConfiguredField> configuredFields)
     {
         if (string.IsNullOrWhiteSpace(variant.SKU))
             return null;
@@ -179,11 +203,12 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             .ToList();
 
         var price = ResolvePrice(variant, store);
+        var variantDescription = ResolveVariantDescription(product, variant, store, baseIndexName, configuredFields);
         var data = new Dictionary<string, object?>(productRecord.Data, StringComparer.OrdinalIgnoreCase)
         {
             ["variantSku"] = variant.SKU,
             ["variantTitle"] = NullIfWhiteSpace(variant.Title),
-            ["variantDescription"] = NullIfWhiteSpace(variant.Description),
+            ["variantDescription"] = variantDescription,
             ["variantAvailable"] = variant.Available ? 1 : 0,
             ["variantStock"] = store.IncludeStock ? variant.Stock : null
         };
@@ -202,7 +227,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             NodeName = productRecord.NodeName,
             Title = productRecord.Title,
             Summary = productRecord.Summary,
-            Description = NullIfWhiteSpace(variant.Description) ?? productRecord.Description,
+            Description = variantDescription ?? productRecord.Description,
             Url = productRecord.Url,
             ImageUrl = NullIfWhiteSpace(images.FirstOrDefault()) ?? productRecord.ImageUrl,
             ImageUrls = images.Count > 0 ? images : productRecord.ImageUrls,
@@ -220,6 +245,23 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             UpdatedAt = ToUnixTimeSeconds(variant.UpdateDate),
             Data = data
         };
+    }
+
+    private string? ResolveVariantDescription(
+        IProduct product,
+        IVariant variant,
+        AlgoliaResolvedStore store,
+        string baseIndexName,
+        IReadOnlyDictionary<string, ConfiguredField> configuredFields)
+    {
+        if (!configuredFields.TryGetValue("description", out var field) || !IsBuiltInTextStripHtmlField(field))
+            return NullIfWhiteSpace(variant.Description);
+
+        var context = new AlgoliaProductFieldContext(product, store, "description", baseIndexName);
+        var converted = ConvertProperty(context, variant.Description);
+        converted = ApplyTransform(converted, field.Transform);
+
+        return NullIfWhiteSpace(converted?.ToString());
     }
 
     private Dictionary<string, ConfiguredField> BuildAllowedProperties(IProduct product, AlgoliaResolvedStore store)
@@ -244,6 +286,36 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
         return value;
     }
+
+    private static object? ApplyTransform(object? value, AlgoliaFieldTransform transform)
+        => transform == AlgoliaFieldTransform.StripHtml
+            ? AlgoliaHtmlTextConverter.Convert(value)
+            : value;
+
+    private string ApplyBuiltInTextTransform(
+        string alias,
+        string value,
+        IReadOnlyDictionary<string, ConfiguredField> configuredFields,
+        IProduct product,
+        AlgoliaResolvedStore store,
+        string baseIndexName)
+    {
+        if (!configuredFields.TryGetValue(alias, out var field) || !IsBuiltInTextStripHtmlField(field))
+            return value;
+
+        var context = new AlgoliaProductFieldContext(product, store, alias, baseIndexName);
+        var converted = ConvertProperty(context, value);
+        converted = ApplyTransform(converted, field.Transform);
+
+        return converted?.ToString() ?? string.Empty;
+    }
+
+    private static bool IsBuiltInTextStripHtmlField(ConfiguredField field)
+        => field.Source == AlgoliaFieldSource.Property
+            && field.Transform == AlgoliaFieldTransform.StripHtml
+            && (field.Alias.Equals("title", StringComparison.OrdinalIgnoreCase)
+                || field.Alias.Equals("summary", StringComparison.OrdinalIgnoreCase)
+                || field.Alias.Equals("description", StringComparison.OrdinalIgnoreCase));
 
     private static object? ResolveConfiguredValue(IProduct product, AlgoliaResolvedStore store, ConfiguredField configuredField)
     {
@@ -608,6 +680,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
                 "array" => new ConfiguredField(alias, source, AlgoliaFieldValueType.Array, AlgoliaFieldTransform.None),
                 "unix" => new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixSeconds),
                 "unixms" => new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixMilliseconds),
+                "striphtml" => new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.StripHtml),
                 _ => new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.None)
             };
         }

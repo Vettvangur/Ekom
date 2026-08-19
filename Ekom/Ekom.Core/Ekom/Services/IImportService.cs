@@ -13,6 +13,13 @@ public interface IImportService
     /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
     public void FullSync(ImportData data, Guid? parentKey = null, int syncUser = -1);
 
+    /// <summary>
+    /// Reconciles the category hierarchy by moving categories to the parents specified in the import data.
+    /// Use this when category parent relationships have changed and products do not need to be synchronized.
+    /// </summary>
+    /// <param name="data">The import data containing the category hierarchy to reconcile.</param>
+    /// <param name="parentKey">Optional GUID of the parent category under which the hierarchy is processed. If null, processing starts at the root level.</param>
+    /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
     public void MoveSync(ImportData data, Guid? parentKey = null, int syncUser = -1);
 
 
@@ -25,9 +32,10 @@ public interface IImportService
     public void CategorySync(ImportData data, Guid categoryKey, int syncUser = -1);
 
     /// <summary>
-    /// Synchronizes a single product, ensuring it is updated or integrated into the catalog according to the provided data. This method is targeted at product-level operations.
+    /// Creates or updates a product and synchronizes its related product tree, including variants and variant groups.
+    /// Use this when receiving a complete product payload, including media and child entities, and the product may not already exist.
     /// </summary>
-    /// <param name="productData">The product data to be synchronized, including any variants and associated information.</param>
+    /// <param name="productData">The complete product data to synchronize, including media, variants, and variant groups.</param>
     /// <param name="parentKey">Optional GUID of the parent category under which the data should be synchronized. If null, synchronization is performed at the root level.</param>
     /// <param name="mediaRootKey">The GUID key identifying the media root folder in the CMS.</param>
     /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
@@ -35,7 +43,8 @@ public interface IImportService
     public void ProductSync(ImportProduct productData, Guid? parentKey, Guid mediaRootKey, int syncUser = -1, bool forceUpdate = false);
 
     /// <summary>
-    /// Updates a single product, ensuring the product data is modified or synchronized in the catalog.
+    /// Updates an existing product's own data without synchronizing its media, variants, or variant groups.
+    /// Use this for a product-only update when the product is known to already exist; an exception is thrown if it cannot be found by identifier.
     /// </summary>
     /// <param name="importProduct">The product data to be updated.</param>
     /// <param name="parentKey">Optional GUID of the parent category under which the data should be updated. If null, the product is updated at the root level.</param>

@@ -81,7 +81,8 @@ public enum AlgoliaContentFieldTransform
 {
     None,
     UnixSeconds,
-    UnixMilliseconds
+    UnixMilliseconds,
+    StripHtml,
 }
 
 public sealed class AlgoliaEventsOptions
