@@ -311,14 +311,19 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var allEkomNodes = GetAllEkomNodes();
-
-        var allUmbracoCategories = allEkomNodes.Where(x => x.ContentType.Alias == "ekmCategory").ToList();
-        var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct").ToList();
+        var allUmbracoCategories = GetContentByIdentifiers(categoryContentType, importProduct.Categories);
+        var primaryCategory = importProduct.Categories
+            .Select(identifier => allUmbracoCategories.FirstOrDefault(category => category.GetValue<string>(Configuration.ImportAliasIdentifier) == identifier))
+            .FirstOrDefault(category => category != null);
+        var allUmbracoProducts = primaryCategory == null
+            ? new List<IContent>()
+            : GetContentByIdentifiers(productContentType, new[] { importProduct.Identifier }, primaryCategory.Id);
+        var existingProduct = allUmbracoProducts.FirstOrDefault();
+        var allEkomNodes = GetProductSyncNodes(allUmbracoCategories, existingProduct);
 
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
-        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var allUmbracoMedia = GetProductSyncMedia(rootUmbracoMediafolder, importProduct);
         var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
 
         IterateProductTree(new List<ImportProduct> { importProduct }, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, false, forceUpdate: forceUpdate);
@@ -387,11 +392,9 @@ public class ImportService : IImportService
 
         _ = _importMediaService.GetRootMedia(mediaRootKey);
 
-        var allEkomNodes = GetAllEkomNodes();
+        var allUmbracoCategories = GetContentByIdentifiers(categoryContentType, importProduct.Categories);
 
-        var allUmbracoCategories = allEkomNodes.Where(x => x.ContentType.Alias == "ekmCategory").ToList();
-
-        var product = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProduct" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importProduct.Identifier);
+        var product = GetContentByIdentifiers(productContentType, new[] { importProduct.Identifier }).FirstOrDefault();
 
         if (product == null)
         {
@@ -2010,6 +2013,177 @@ public class ImportService : IImportService
         }
 
         return all;
+    }
+
+    private List<IContent> GetProductSyncNodes(List<IContent> categories, IContent? product)
+    {
+        var nodes = new List<IContent>(categories.Count);
+        nodes.AddRange(categories);
+
+        if (product == null)
+        {
+            return nodes;
+        }
+
+        var variantGroups = GetSyncEnabledChildren(product.Id);
+        nodes.AddRange(variantGroups);
+
+        foreach (var variantGroup in variantGroups)
+        {
+            nodes.AddRange(GetSyncEnabledChildren(variantGroup.Id));
+        }
+
+        return nodes;
+    }
+
+    private List<IContent> GetSyncEnabledChildren(int parentId)
+    {
+        return _contentService.GetPagedChildren(parentId, 0, int.MaxValue, out _, new Query<IContent>(_scopeProvider.SqlContext)
+                .Where(x => !x.Trashed))
+            .Where(x => !x.GetValue<bool>("ekmDisableSync"))
+            .ToList();
+    }
+
+    private List<IContent> GetContentByIdentifiers(IContentType? contentType, IEnumerable<string>? identifiers, int? parentId = null)
+    {
+        ArgumentNullException.ThrowIfNull(contentType);
+        ArgumentNullException.ThrowIfNull(umbracoRootContent);
+
+        var requestedIdentifiers = identifiers?
+            .Where(identifier => !string.IsNullOrWhiteSpace(identifier))
+            .Distinct(StringComparer.Ordinal)
+            .ToList() ?? new List<string>();
+
+        if (requestedIdentifiers.Count == 0)
+        {
+            return new List<IContent>();
+        }
+
+        var contentByIdentifier = new Dictionary<string, IContent>(StringComparer.Ordinal);
+        var root = umbracoRootContent;
+        if (!parentId.HasValue
+            && !root.Trashed
+            && root.ContentType.Id == contentType.Id
+            && !root.GetValue<bool>("ekmDisableSync")
+            && root.GetValue<string>(Configuration.ImportAliasIdentifier) is { } rootIdentifier
+            && requestedIdentifiers.Contains(rootIdentifier, StringComparer.Ordinal))
+        {
+            contentByIdentifier.TryAdd(rootIdentifier, root);
+        }
+
+        using var scope = _scopeProvider.CreateScope(autoComplete: true);
+        var parentFilter = parentId.HasValue ? "\n  AND n.parentId = @4" : string.Empty;
+        var query = $@"SELECT n.id
+FROM umbracoNode n
+INNER JOIN umbracoContent c ON c.nodeId = n.id
+INNER JOIN umbracoContentVersion cv ON cv.nodeId = n.id AND cv.[current] = 1
+INNER JOIN umbracoPropertyData pd ON pd.versionId = cv.id
+INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId
+WHERE n.trashed = 0
+  AND n.path LIKE @0
+  AND c.contentTypeId = @1
+  AND pt.alias = @2
+  AND pd.varcharValue IN (@3){parentFilter}";
+        object[] queryParameters = parentId.HasValue
+            ? [$"%,{root.Id},%", contentType.Id, Configuration.ImportAliasIdentifier, requestedIdentifiers, parentId.Value]
+            : [$"%,{root.Id},%", contentType.Id, Configuration.ImportAliasIdentifier, requestedIdentifiers];
+        var contentIds = scope.Database.Fetch<int>(query, queryParameters);
+
+        foreach (var contentId in contentIds)
+        {
+            var content = _contentService.GetById(contentId);
+            if (content == null
+                || content.Trashed
+                || content.GetValue<bool>("ekmDisableSync")
+                || content.GetValue<string>(Configuration.ImportAliasIdentifier) is not { } identifier
+                || !requestedIdentifiers.Contains(identifier, StringComparer.Ordinal))
+            {
+                continue;
+            }
+
+            contentByIdentifier.TryAdd(identifier, content);
+        }
+
+        return contentByIdentifier.Values.ToList();
+    }
+
+    private List<IMedia> GetProductSyncMedia(IMedia rootMedia, ImportProduct importProduct)
+    {
+        var identifiers = new HashSet<string>(StringComparer.Ordinal);
+        var comparers = new HashSet<string>(StringComparer.Ordinal);
+        var keys = new HashSet<Guid>();
+
+        AddMediaReferences(importProduct.Images, identifiers, comparers, keys);
+        AddMediaReferences(importProduct.Files, identifiers, comparers, keys);
+
+        foreach (var variantGroup in importProduct.VariantGroups)
+        {
+            AddMediaReferences(variantGroup.Images, identifiers, comparers, keys);
+
+            foreach (var variant in variantGroup.Variants)
+            {
+                AddMediaReferences(variant.Images, identifiers, comparers, keys);
+                AddMediaReferences(variant.Files, identifiers, comparers, keys);
+            }
+        }
+
+        return _importMediaService.GetUmbracoMediaFiles(rootMedia, identifiers, comparers, keys);
+    }
+
+    private void AddMediaReferences(
+        IEnumerable<IImportMedia> importMedias,
+        ISet<string> identifiers,
+        ISet<string> comparers,
+        ISet<Guid> keys)
+    {
+        foreach (var importMedia in importMedias)
+        {
+            switch (importMedia)
+            {
+                case ImportMediaFromUdi udiMedia:
+                    const string mediaUdiPrefix = "umb://media/";
+                    if (udiMedia.Udi.StartsWith(mediaUdiPrefix, StringComparison.OrdinalIgnoreCase)
+                        && Guid.TryParse(udiMedia.Udi[mediaUdiPrefix.Length..], out var key))
+                    {
+                        keys.Add(key);
+                    }
+                    break;
+                case ImportMediaFromExternalUrl externalUrlMedia:
+                    AddMediaReference(
+                        externalUrlMedia.Identifier,
+                        externalUrlMedia.Comparer ?? ComputeSha256Hash(externalUrlMedia, new[] { "Action", "SortOrder" }),
+                        identifiers,
+                        comparers);
+                    break;
+                case ImportMediaFromBytes bytesMedia:
+                    AddMediaReference(
+                        bytesMedia.Identifier,
+                        bytesMedia.Comparer ?? ComputeSha256Hash(bytesMedia, new[] { "Bytes", "SortOrder" }),
+                        identifiers,
+                        comparers);
+                    break;
+                case ImportMediaFromBase64 base64Media:
+                    AddMediaReference(
+                        base64Media.Identifier,
+                        base64Media.Comparer ?? ComputeSha256Hash(base64Media, new[] { "Base64", "SortOrder" }),
+                        identifiers,
+                        comparers);
+                    break;
+            }
+        }
+    }
+
+    private static void AddMediaReference(string? identifier, string comparer, ISet<string> identifiers, ISet<string> comparers)
+    {
+        if (!string.IsNullOrEmpty(identifier))
+        {
+            identifiers.Add(identifier);
+        }
+
+        if (!string.IsNullOrEmpty(comparer))
+        {
+            comparers.Add(comparer);
+        }
     }
 
     private sealed class ImportMediaIndex
