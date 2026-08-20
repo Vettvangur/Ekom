@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.244](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.243...Ekom-v0.2.244) (2026-08-20)
+
+
+### Bug Fixes
+
+* improve metafield indexing and import timestamps ([#785](https://github.com/Vettvangur/Ekom/issues/785)) ([dbf2f0a](https://github.com/Vettvangur/Ekom/commit/dbf2f0a309b102f496491c06dae49502b4150b9f))
+
 ## [0.2.243](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.242...Ekom-v0.2.243) (2026-08-20)
 
 
