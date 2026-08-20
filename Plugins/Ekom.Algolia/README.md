@@ -516,7 +516,7 @@ Metafields can be indexed explicitly with `metafield:<alias>`:
       "Indexing": {
         "ProductProperties": [
           "metafield:material",
-          "metafield:color|array",
+          "metafield:color",
           "metafield:releaseDate|unix",
           "metafield:longDescription|striphtml"
         ]
@@ -531,7 +531,7 @@ Modifier behavior:
 - `|array` parses JSON arrays such as `["Web","Store"]` into Algolia string arrays.
 - `|decimal` accepts comma or dot decimal separators, such as `0,1` and `0.0`.
 - `|striphtml` converts direct HTML or rich-text JSON with a `markup` property to plain text. It removes script and style content, decodes HTML entities, and normalizes tags and whitespace to single spaces.
-- Multi-value metafields are skipped unless `|array` is configured.
+- Metafields with `Enable Multiple Choice` enabled are automatically indexed as string arrays. The `|array` modifier can still be used to explicitly index other metafields as arrays.
 - Invalid `|array`, `|int`, and `|decimal` values are skipped instead of being indexed as strings.
 - Only one modifier is supported for each configured field.
 

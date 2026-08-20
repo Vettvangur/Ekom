@@ -379,7 +379,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         if (values.Count == 0)
             return null;
 
-        if (valueType == AlgoliaFieldValueType.Array)
+        if (valueType == AlgoliaFieldValueType.Array || metafield.Field.EnableMultipleChoice)
             return values;
 
         if (values.Count != 1)

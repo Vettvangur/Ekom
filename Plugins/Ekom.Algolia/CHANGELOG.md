@@ -6,6 +6,10 @@
 
 * **algolia:** add optional variant-level product indexing for SKU search.
 
+### Bug Fixes
+
+* **algolia:** index multiple-choice metafields as arrays.
+
 ## [0.2.39](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.38...Ekom.Algolia-v0.2.39) (2026-08-20)
 
 

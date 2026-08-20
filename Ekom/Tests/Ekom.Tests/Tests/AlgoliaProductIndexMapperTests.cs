@@ -436,7 +436,44 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Fact]
-    public void Skips_Multi_Value_Metafield_Without_Array_Modifier()
+    public void Maps_Multiple_Choice_Metafield_As_Array_Without_Array_Modifier()
+    {
+        var mapper = CreateMapper(productProperties: ["metafield:channels"]);
+        var product = CreateProduct(metafields:
+        [
+            CreateMetafield("channels",
+            [
+                CreateMetafieldValue((string.Empty, "Web")),
+                CreateMetafieldValue((string.Empty, "Store"))
+            ], enableMultipleChoice: true)
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(["Web", "Store"], Assert.IsAssignableFrom<IReadOnlyList<string>>(record!.Data["channels"]));
+    }
+
+    [Fact]
+    public void Maps_Single_Multiple_Choice_Metafield_Value_As_Array()
+    {
+        var mapper = CreateMapper(productProperties: ["metafield:channels"]);
+        var product = CreateProduct(metafields:
+        [
+            CreateMetafield("channels",
+            [
+                CreateMetafieldValue((string.Empty, "Web"))
+            ], enableMultipleChoice: true)
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(["Web"], Assert.IsAssignableFrom<IReadOnlyList<string>>(record!.Data["channels"]));
+    }
+
+    [Fact]
+    public void Skips_Multi_Value_Metafield_When_Multiple_Choice_Is_Disabled()
     {
         var mapper = CreateMapper(productProperties: ["metafield:channels"]);
         var product = CreateProduct(metafields:
@@ -665,14 +702,18 @@ public class AlgoliaProductIndexMapperTests
         return variant;
     }
 
-    private static Ekom.Models.MetavalueSlim CreateMetafield(string alias, IReadOnlyList<Dictionary<string, string>> values)
+    private static Ekom.Models.MetavalueSlim CreateMetafield(
+        string alias,
+        IReadOnlyList<Dictionary<string, string>> values,
+        bool enableMultipleChoice = false)
         => new()
         {
             Field = new Ekom.Models.MetafieldSlim
             {
                 Alias = alias,
                 Name = alias,
-                Description = string.Empty
+                Description = string.Empty,
+                EnableMultipleChoice = enableMultipleChoice
             },
             Values = values.ToList()
         };
