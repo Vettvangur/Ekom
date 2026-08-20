@@ -9,10 +9,12 @@ public class OrderDiscountCalculationRequest
 
 public class OrderDiscountCalculationLineRequest
 {
+    public string? ClientLineId { get; set; }
     public required string Sku { get; set; }
     public string? VariantSku { get; set; }
     public Guid? VariantKey { get; set; }
     public decimal Quantity { get; set; } = 1;
+    public Dictionary<string, string>? PricingContext { get; set; }
 }
 
 public class OrderDiscountStockUpdateRequest

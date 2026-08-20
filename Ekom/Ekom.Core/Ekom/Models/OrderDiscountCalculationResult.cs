@@ -18,6 +18,7 @@ public class OrderDiscountCalculationResult
 
 public class OrderDiscountCalculationLineResult
 {
+    public string? ClientLineId { get; set; }
     public required string Sku { get; set; }
     public string? VariantSku { get; set; }
     public decimal Quantity { get; set; }

@@ -14,19 +14,22 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
     private readonly DiscountCache _discountCache;
     private readonly INodeService _nodeService;
     private readonly IStoreService _storeService;
+    private readonly OrderDiscountCalculationContextAccessor _contextAccessor;
 
     internal OrderDiscountCalculationService(
         Catalog catalog,
         ICouponCache couponCache,
         DiscountCache discountCache,
         INodeService nodeService,
-        IStoreService storeService)
+        IStoreService storeService,
+        OrderDiscountCalculationContextAccessor contextAccessor)
     {
         _catalog = catalog;
         _couponCache = couponCache;
         _discountCache = discountCache;
         _nodeService = nodeService;
         _storeService = storeService;
+        _contextAccessor = contextAccessor;
     }
 
     public async Task<OrderDiscountCalculationResult> CalculateByCouponAsync(
@@ -51,10 +54,11 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         var store = ResolveStore(request.StoreAlias);
         var couponCode = request.CouponCode.ToLowerInvariant();
         var discount = ResolveDiscount(couponCode, store.Alias);
-        var orderInfo = await CreateOrderInfoAsync(request.Lines, store, ct).ConfigureAwait(false);
-        var beforeTotals = orderInfo.orderLines
-            .Select(line => line.Amount.Value)
-            .ToArray();
+        ValidateClientLineIds(request.Lines);
+
+        var calculation = await CreateOrderInfoAsync(request.Lines, store, ct).ConfigureAwait(false);
+        var orderInfo = calculation.OrderInfo;
+        var lineSnapshots = calculation.Lines;
         var couponLineTargets = orderInfo.orderLines
             .Select(line => DiscountApplicability.MatchesLineTargets(line, discount, _nodeService))
             .ToArray();
@@ -62,9 +66,11 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         var messages = new List<string>();
         var orderDiscountConstraintsMet = DiscountApplicability.AreOrderConstraintsMet(orderInfo, discount);
 
+        OrderedDiscount? orderedDiscount = null;
         if (orderDiscountConstraintsMet)
         {
-            orderInfo.Discount = new OrderedDiscount(discount);
+            orderedDiscount = new OrderedDiscount(discount);
+            orderInfo.Discount = orderedDiscount;
             orderInfo.Coupon = couponCode;
         }
         else
@@ -76,18 +82,23 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         for (var index = 0; index < orderInfo.orderLines.Count; index++)
         {
             var line = orderInfo.orderLines[index];
+            var couponApplicable = orderDiscountConstraintsMet && couponLineTargets[index];
             var amount = line.Amount;
-            var lineTotalBeforeDiscount = beforeTotals[index];
+            var lineTotalBeforeDiscount = lineSnapshots[index].LineTotalBeforeDiscount;
             var lineTotalAfterDiscount = amount.Value;
-            var discountAmount = lineTotalBeforeDiscount - lineTotalAfterDiscount;
-            var discountApplied = line.Discount?.Key == discount.Key;
+            var discountAmount = Math.Max(0, lineTotalBeforeDiscount - lineTotalAfterDiscount);
+            var couponSelected = couponApplicable
+                && orderedDiscount != null
+                && line.Discount?.Key == orderedDiscount.Key;
+            var discountApplied = couponSelected && discountAmount > 0;
 
             lineResults.Add(new OrderDiscountCalculationLineResult
             {
+                ClientLineId = lineSnapshots[index].RequestLine.ClientLineId,
                 Sku = line.Product.SKU,
                 VariantSku = line.Variant?.SKU,
                 Quantity = line.Quantity,
-                CouponApplicable = orderDiscountConstraintsMet && couponLineTargets[index],
+                CouponApplicable = couponApplicable,
                 UnitPriceBeforeDiscount = line.Quantity == 0 ? 0 : lineTotalBeforeDiscount / line.Quantity,
                 LineTotalBeforeDiscount = lineTotalBeforeDiscount,
                 DiscountAmount = discountAmount,
@@ -98,7 +109,7 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         }
 
         var hasApplicableLines = lineResults.Any(line => line.CouponApplicable);
-        var hasAppliedLines = lineResults.Any(line => line.DiscountApplied);
+        var hasAppliedLines = lineResults.Any(line => line.DiscountApplied && line.DiscountAmount > 0);
 
         return new OrderDiscountCalculationResult
         {
@@ -109,9 +120,9 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
             DiscountId = discount.Key,
             DiscountTitle = discount.Title,
             Currency = store.Currency.CurrencyValue,
-            SubTotal = beforeTotals.Sum(),
+            SubTotal = lineSnapshots.Sum(line => line.LineTotalBeforeDiscount),
             DiscountTotal = lineResults.Sum(line => line.DiscountAmount),
-            GrandTotal = orderInfo.ChargedAmount.Value,
+            GrandTotal = lineResults.Sum(line => line.LineTotalAfterDiscount),
             Lines = lineResults,
             Messages = messages,
         };
@@ -152,7 +163,30 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         throw new DiscountUnableToFindCouponException($"Unable to find discount with coupon {couponCode}");
     }
 
-    private async Task<OrderInfo> CreateOrderInfoAsync(
+    private static void ValidateClientLineIds(IReadOnlyList<OrderDiscountCalculationLineRequest> lines)
+    {
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var line in lines)
+        {
+            if (line.ClientLineId == null)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(line.ClientLineId))
+            {
+                throw new ArgumentException("ClientLineId cannot be blank", nameof(lines));
+            }
+
+            if (!ids.Add(line.ClientLineId))
+            {
+                throw new ArgumentException("Duplicate ClientLineId values are not allowed", nameof(lines));
+            }
+        }
+    }
+
+    private async Task<OrderDiscountCalculationOrderInfo> CreateOrderInfoAsync(
         IReadOnlyList<OrderDiscountCalculationLineRequest> lines,
         IStore store,
         CancellationToken ct)
@@ -171,6 +205,7 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
                 StoreAlias = store.Alias,
             },
             store);
+        var snapshots = new List<OrderDiscountCalculationLineSnapshot>();
 
         foreach (var requestLine in lines)
         {
@@ -184,25 +219,37 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
                 throw new ArgumentException("Line quantity must be greater than zero", nameof(lines));
             }
 
-            var product = await _catalog.GetProductAsync(requestLine.Sku, store.Alias, ct: ct).ConfigureAwait(false);
-            if (product == null)
-            {
-                throw new ProductNotFoundException($"Unable to find product with sku: {requestLine.Sku}");
-            }
+            using var contextScope = _contextAccessor.Activate(requestLine.PricingContext);
 
+            var product = await _catalog.GetProductAsync(requestLine.Sku, store.Alias, ct: ct).ConfigureAwait(false)
+                ?? throw new ProductNotFoundException($"Unable to find product with sku: {requestLine.Sku}");
             var variant = await ResolveVariantAsync(requestLine, product, store.Alias, ct).ConfigureAwait(false);
             OrderLineVariantValidator.Validate(product, variant);
 
-            orderInfo.orderLines.Add(new OrderLine(
+            var orderLine = new OrderLine(
                 product,
                 requestLine.Quantity,
                 Guid.NewGuid(),
                 orderInfo,
                 new Dictionary<string, string>(),
-                variant));
+                variant);
+
+            orderInfo.orderLines.Add(orderLine);
+            snapshots.Add(CreateLineSnapshot(requestLine, orderLine));
         }
 
-        return orderInfo;
+        return new OrderDiscountCalculationOrderInfo(orderInfo, snapshots);
+    }
+
+    private static OrderDiscountCalculationLineSnapshot CreateLineSnapshot(
+        OrderDiscountCalculationLineRequest requestLine,
+        OrderLine orderLine)
+    {
+        var productOnlyAmount = orderLine.Amount;
+
+        return new OrderDiscountCalculationLineSnapshot(
+            requestLine,
+            productOnlyAmount.Value);
     }
 
     private async Task<IVariant?> ResolveVariantAsync(
@@ -234,5 +281,13 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
 
         return variant;
     }
+
+    private sealed record OrderDiscountCalculationOrderInfo(
+        OrderInfo OrderInfo,
+        IReadOnlyList<OrderDiscountCalculationLineSnapshot> Lines);
+
+    private sealed record OrderDiscountCalculationLineSnapshot(
+        OrderDiscountCalculationLineRequest RequestLine,
+        decimal LineTotalBeforeDiscount);
 
 }

@@ -65,6 +65,7 @@ static class Registrations
         services.AddScoped<ApiExceptionFilter>();
 
         services.AddTransient<IStoreService, StoreService>();
+        services.AddSingleton<OrderDiscountCalculationContextAccessor>();
 
         services.AddTransient<OrderService>();
         services.AddTransient<IOrderDiscountCalculationService>(f =>
@@ -73,7 +74,8 @@ static class Registrations
                 f.GetRequiredService<ICouponCache>(),
                 f.GetRequiredService<DiscountCache>(),
                 f.GetRequiredService<INodeService>(),
-                f.GetRequiredService<IStoreService>()
+                f.GetRequiredService<IStoreService>(),
+                f.GetRequiredService<OrderDiscountCalculationContextAccessor>()
             )
         );
         services.AddScoped<RevalidateService>();
