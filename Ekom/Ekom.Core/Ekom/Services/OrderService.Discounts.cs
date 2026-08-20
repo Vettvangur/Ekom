@@ -649,21 +649,14 @@ partial class OrderService
             return false;
         }
 
-        if (orderLine.Discount.Type == discount.Type)
-        {
-            return discount.CompareTo(orderLine.Discount) > 0;
-        }
-
-        OrderedDiscount oldDiscount = orderLine.Discount;
-        IPrice oldTotal = orderLine.Amount;
-
-        orderLine.Discount = new OrderedDiscount(discount);
-
-        bool result = orderLine.Amount.Value < oldTotal.Value;
-
-        orderLine.Discount = oldDiscount;
-
-        return result;
+        var orderlinePrice = orderLine.Variant?.Price ?? orderLine.Product.Price;
+        return DiscountValueCalculator.IsBetterLineDiscount(
+            orderlinePrice,
+            discount,
+            orderLine.Discount,
+            orderLine.Vat,
+            orderLine.OrderInfo.StoreInfo.VatIncludedInPrice,
+            orderLine.Quantity);
     }
 
     /// <summary>
