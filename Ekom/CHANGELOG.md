@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.241](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.240...Ekom-v0.2.241) (2026-08-20)
+
+
+### Bug Fixes
+
+* **umbraco:** improve metafield editor behavior ([#778](https://github.com/Vettvangur/Ekom/issues/778)) ([427bc9b](https://github.com/Vettvangur/Ekom/commit/427bc9bd364f14f719982fe1ae85129e3adfb27a))
+
 ## [0.2.240](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.239...Ekom-v0.2.240) (2026-08-19)
 
 
