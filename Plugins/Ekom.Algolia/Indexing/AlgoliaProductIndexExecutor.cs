@@ -345,7 +345,9 @@ internal sealed class AlgoliaProductIndexExecutor
             {
                 Replicas = replicas.Select(x => x.Name).ToList(),
                 AttributeForDistinct = _options.Indexing.Variants ? "ProductId" : null,
-                AttributesForFaceting = _options.Indexing.Variants ? ["filterOnly(ProductId)"] : null
+                AttributesForFaceting = _options.Indexing.Variants
+                    ? ["filterOnly(ProductId)", "filterOnly(categoryPageId)"]
+                    : null
             },
             forwardToReplicas: false,
             options: null,

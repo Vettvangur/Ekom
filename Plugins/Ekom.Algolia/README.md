@@ -384,7 +384,7 @@ Product records provide the following fields without requiring any `Indexing:Pro
 - Pricing: `Price`, `PriceWithVat`, `PriceWithoutVat`, and `Currency`.
 - Availability and ranking: `Available`, `ProductRanking`, and `CategoryRanking`.
 - Store context and dates: `StoreAlias`, `Locale`, `CreatedAt`, and `UpdatedAt`.
-- Categories: `hierarchical_categories.lvl0`, additional hierarchy levels when present, and `category_paths`.
+- Categories: `categoryPageId`, `hierarchical_categories.lvl0`, additional hierarchy levels when present, and `category_paths`.
 
 Optional fields are omitted when no value is available. `Stock` is included only when `Stores[*]:IncludeStock` is enabled. Variant-specific fields are included when variant indexing is enabled, as described below.
 
@@ -411,6 +411,31 @@ Product records also include `ProductRanking` and `CategoryRanking` integer fiel
   "CategoryRanking": 5
 }
 ```
+
+### Category pages
+
+`categoryPageId` contains the GUIDs of every category assigned to the product and all their ancestors. Values are deduplicated while preserving root-to-leaf order. This lets a category page filter by its own GUID and include products assigned to descendant categories. Variant records inherit the same identifiers.
+
+```json
+{
+  "categoryPageId": [
+    "0f0ea901-6280-4586-b7fe-7ae731ed9489",
+    "4925fa5f-163a-4882-80af-b12e6501c30c",
+    "acee53b7-c6f6-4cb2-b940-508f1b49208d"
+  ]
+}
+```
+
+Configure `categoryPageId` as `filterOnly(categoryPageId)` in the Algolia dashboard, then apply the category GUID as a fixed InstantSearch filter. When variant indexing is enabled, the plugin applies this setting together with `filterOnly(ProductId)`.
+
+```jsx
+<Configure
+  filters={`categoryPageId:"${categoryKey}"`}
+  analyticsTags={['category-page']}
+/>
+```
+
+Category hierarchy changes are not propagated to product records automatically. After moving, deleting, publishing, or changing a category hierarchy, queue a product-index rebuild with `IAlgoliaProductIndexService.RebuildStoreAsync(storeAlias)` or `RebuildAllAsync()`. The existing product indexing worker performs the rebuild in the background.
 
 ### Variant indexing
 

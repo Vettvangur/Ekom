@@ -64,6 +64,10 @@ public sealed class AlgoliaProductRecord
 
     public int CategoryRanking { get; init; }
 
+    [JsonPropertyName("categoryPageId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? CategoryPageId { get; init; }
+
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public decimal? Stock { get; init; }
 
