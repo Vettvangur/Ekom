@@ -33,8 +33,15 @@ export class EkomMetavalueEditorElement extends HTMLElement implements UmbProper
   }
 
   set value(value: unknown) {
-    this.items = this.normalizeValue(value);
-    this.renderRows();
+    const items = this.normalizeValue(value);
+    const canSyncInputs = this.hasMatchingRows(items);
+    this.items = items;
+
+    if (canSyncInputs) {
+      this.syncInputs();
+    } else {
+      this.renderRows();
+    }
   }
 
   get readonly(): boolean {
@@ -125,11 +132,13 @@ export class EkomMetavalueEditorElement extends HTMLElement implements UmbProper
   private createRow(item: MetavalueItem, index: number): HTMLDivElement {
     const row = document.createElement('div');
     row.className = 'row';
+    row.dataset.itemId = item.id;
 
     for (const language of this.languages) {
       const isoCode = language.isoCode ?? '';
       const input = document.createElement('input');
       input.type = 'text';
+      input.dataset.language = isoCode;
       input.value = item.values[isoCode] ?? '';
       input.addEventListener('input', () => this.setLanguageValue(index, isoCode, input.value));
       row.append(input);
@@ -236,6 +245,40 @@ export class EkomMetavalueEditorElement extends HTMLElement implements UmbProper
       : currentItem);
 
     this.emitChange();
+  }
+
+  private hasMatchingRows(items: MetavalueItem[]): boolean {
+    if (this.editor == null || this.editor.childElementCount === 0) {
+      return false;
+    }
+
+    const rows = this.editor.querySelectorAll<HTMLDivElement>('.row');
+    return rows.length === items.length
+      && items.every((item, index) => rows[index]?.dataset.itemId === item.id);
+  }
+
+  private syncInputs(): void {
+    if (this.editor == null) {
+      return;
+    }
+
+    const rows = this.editor.querySelectorAll<HTMLDivElement>('.row');
+
+    rows.forEach((row, index) => {
+      const item = this.items[index];
+
+      if (item == null) {
+        return;
+      }
+
+      for (const input of row.querySelectorAll<HTMLInputElement>('input[data-language]')) {
+        const value = item.values[input.dataset.language ?? ''] ?? '';
+
+        if (input.value !== value) {
+          input.value = value;
+        }
+      }
+    });
   }
 
   private normalizeValue(value: unknown): MetavalueItem[] {

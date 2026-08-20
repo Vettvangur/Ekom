@@ -99,6 +99,8 @@ internal sealed class UmbracoEventListeners :
                 continue;
             }
 
+            ClearMemoryCache(node);
+
             var cacheEntry = FindMatchingCache(node.ContentType.Alias);
             var parentNode = _nodeService.NodeById(node.ParentId);
 
@@ -398,7 +400,7 @@ internal sealed class UmbracoEventListeners :
             _cache.Remove($"{content.Id}_SerializeMetafields");
         }
 
-        if (content.ContentType.Alias == "ekmMetaField")
+        if (content.ContentType.Alias.Equals("ekmMetafield", StringComparison.OrdinalIgnoreCase))
         {
             _cache.Remove("GetMetafields");
         }

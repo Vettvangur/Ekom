@@ -1349,15 +1349,14 @@ class EnsureNodesExist : IComponent
                                 },
                                 new PropertyType(_shortStringHelper, textstringDt, "description")
                                 {
-                                    Name = "Description",
-                                    Mandatory = true
+                                    Name = "Description"
                                 },
-                                new PropertyType(_shortStringHelper, booleanDt, "enableMultipleChoice")
+                                new PropertyType(_shortStringHelper, booleanDt, "filterable")
                                 {
                                     Name = "Filterable",
                                     Description = "When checked, the metafield will be visible in the filter."
                                 },
-                                new PropertyType(_shortStringHelper, booleanDt, "filterable")
+                                new PropertyType(_shortStringHelper, booleanDt, "enableMultipleChoice")
                                 {
                                     Name = "Enable Multiple Choice",
                                     Description  = "When checked, the dropdown will be a select multiple / combo box style dropdown."
@@ -1367,11 +1366,11 @@ class EnsureNodesExist : IComponent
                                     Name = "Values",
                                     Description  = "If no values are set then an textstring input is used."
                                 },
-                                new PropertyType(_shortStringHelper, booleanDt, "enableMultipleChoice")
+                                new PropertyType(_shortStringHelper, booleanDt, "required")
                                 {
                                     Name = "Required"
                                 },
-                                new PropertyType(_shortStringHelper, booleanDt, "enableMultipleChoice")
+                                new PropertyType(_shortStringHelper, booleanDt, "readOnly")
                                 {
                                     Name = "Read Only",
                                     Description = "When checked, the field will be read-only. This is good for metafields that data are for example synced to."
