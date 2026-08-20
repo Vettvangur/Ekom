@@ -143,12 +143,17 @@ class ProductDiscountService
         if (applicableArgs.ApplicableDiscounts.Count == 0)
             return null;
 
-        Guid bestFixedKey = Guid.Empty;
-        Guid bestPercentageKey = Guid.Empty;
-        decimal bestPercentageValue = 0;
-        decimal bestFixedValue = 0;
+        return SelectBestDiscount(applicableArgs.ApplicableDiscounts, price);
+    }
 
-        foreach (var usableDiscount in applicableArgs.ApplicableDiscounts)
+    internal static IProductDiscount? SelectBestDiscount(
+        IReadOnlyCollection<IProductDiscount> applicableDiscounts,
+        decimal price)
+    {
+        IProductDiscount? bestFixed = null;
+        IProductDiscount? bestPercentage = null;
+
+        foreach (var usableDiscount in applicableDiscounts)
         {
             bool inRange =
                 usableDiscount.StartOfRange <= price &&
@@ -157,38 +162,31 @@ class ProductDiscountService
             if (!inRange)
                 continue;
 
+            if (DiscountValueCalculator.CalculateDiscountAmount(price, usableDiscount) <= 0)
+                continue;
+
             if (usableDiscount.Type == DiscountType.Fixed)
             {
-                if (usableDiscount.Amount > bestFixedValue)
+                if (bestFixed == null || usableDiscount.Amount > bestFixed.Amount)
                 {
-                    bestFixedValue = usableDiscount.Amount;
-                    bestFixedKey = usableDiscount.Key;
+                    bestFixed = usableDiscount;
                 }
             }
             else if (usableDiscount.Type == DiscountType.Percentage)
             {
-                if (usableDiscount.Amount > bestPercentageValue)
+                if (bestPercentage == null || usableDiscount.Amount > bestPercentage.Amount)
                 {
-                    bestPercentageValue = usableDiscount.Amount;
-                    bestPercentageKey = usableDiscount.Key;
+                    bestPercentage = usableDiscount;
                 }
             }
         }
 
-        if (bestFixedKey == Guid.Empty && bestPercentageKey == Guid.Empty)
-            return null;
+        if (bestFixed == null)
+            return bestPercentage;
 
-        if (bestFixedKey == Guid.Empty)
-            return applicableArgs.ApplicableDiscounts.SingleOrDefault(x => x.Key == bestPercentageKey);
-
-        if (bestPercentageKey == Guid.Empty)
-            return applicableArgs.ApplicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey);
-
-        var fixedAsPercent = Math.Abs(bestFixedValue / price * 100m);
-
-        return fixedAsPercent > bestPercentageValue
-            ? applicableArgs.ApplicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey)
-            : applicableArgs.ApplicableDiscounts.SingleOrDefault(x => x.Key == bestPercentageKey);
+        return bestPercentage == null || DiscountValueCalculator.IsBetterDiscount(price, bestFixed, bestPercentage)
+            ? bestFixed
+            : bestPercentage;
     }
 
 }

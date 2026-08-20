@@ -22,40 +22,16 @@ public class ProductDiscount : Discount, IProductDiscount
 
     public override decimal Amount
     {
-
         get
         {
-            if (!Discounts.Any())
+            if (Discounts.Count == 0)
             {
                 return 0;
             }
 
-            CurrencyValue? discount = Discounts.FirstOrDefault();
-
-            CurrencyModel? currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
-
-            if (Discounts.Any(x => x.Currency == currency.CurrencyValue))
-            {
-                discount = Discounts.FirstOrDefault(x => x.Currency == currency.CurrencyValue);
-            }
-
-            if (discount.Value <= 0)
-            {
-                return 0;
-            }
-            else
-            {
-                decimal value = discount.Value;
-                value = value * 0.01M;
-                if (value > 1)
-                {
-                    return value * 0.01M;
-                }
-                return value;
-            }
-
+            decimal amount = base.Amount;
+            return amount > 0 ? amount : 0;
         }
-
     }
 
     /// <summary>
