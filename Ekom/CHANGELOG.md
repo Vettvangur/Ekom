@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Features
-
-* **import:** support nullable content creation and update dates.
-
 ## [0.2.243](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.242...Ekom-v0.2.243) (2026-08-20)
 
 
