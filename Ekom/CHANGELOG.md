@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.242](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.241...Ekom-v0.2.242) (2026-08-20)
+
+
+### Bug Fixes
+
+* **discounts:** compare actual discount values ([#780](https://github.com/Vettvangur/Ekom/issues/780)) ([2ea53d2](https://github.com/Vettvangur/Ekom/commit/2ea53d25a809b35bf5012fa7a88085eea067c8e6))
+
 ## [0.2.241](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.240...Ekom-v0.2.241) (2026-08-20)
 
 
