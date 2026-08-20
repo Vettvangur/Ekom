@@ -1003,7 +1003,7 @@ public class ImportService : IImportService
                 categoryContent.TemplateId = importCategory.TemplateId.Value;
             }
 
-            SaveEvent(categoryContent, importCategory.SaveEvent, importCategory.PreservePublishStatus, syncUser, args.IsCreateOperation);
+            SaveEvent(categoryContent, importCategory, importCategory.SaveEvent, importCategory.PreservePublishStatus, syncUser, args.IsCreateOperation);
 
             categoriesSaved.Add(importCategory);
 
@@ -1153,7 +1153,7 @@ public class ImportService : IImportService
                 productContent.TemplateId = importProduct.TemplateId.Value;
             }
 
-            SaveEvent(productContent, importProduct.SaveEvent, importProduct.PreservePublishStatus, syncUser, args.IsCreateOperation, recycleBinNode, productProcessNode);
+            SaveEvent(productContent, importProduct, importProduct.SaveEvent, importProduct.PreservePublishStatus, syncUser, args.IsCreateOperation, recycleBinNode, productProcessNode);
 
             productsSaved.Add(importProduct);
 
@@ -1198,7 +1198,7 @@ public class ImportService : IImportService
 
         variantGroupContent.Name = importVariantGroup.NodeName;
 
-        SaveEvent(variantGroupContent, importVariantGroup.SaveEvent, importVariantGroup.PreservePublishStatus, syncUser, create);
+        SaveEvent(variantGroupContent, importVariantGroup, importVariantGroup.SaveEvent, importVariantGroup.PreservePublishStatus, syncUser, create);
 
         variantGroupsSaved.Add(importVariantGroup);
     }
@@ -1294,7 +1294,7 @@ public class ImportService : IImportService
 
         variantContent.Name = importVariant.NodeName;
 
-        SaveEvent(variantContent, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, args.IsCreateOperation);
+        SaveEvent(variantContent, importVariant, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, args.IsCreateOperation);
 
         variantsSaved.Add(importVariant);
         
@@ -1708,6 +1708,7 @@ public class ImportService : IImportService
 
     private void SaveEvent(
         IContent content,
+        ImportBase importEntity,
         ImportSaveEntEnum saveEvent,
         bool preservePublishStatus,
         int syncUser,
@@ -1723,6 +1724,8 @@ public class ImportService : IImportService
         {
             _contentService.Move(content, productProcessNode.Id, syncUser);
         }
+
+        ApplyImportDates(content, importEntity);
 
         // If content currently lives under productProcessNode, we treat it as staging: never publish here.
         bool inProcessing = productProcessNode != null && content.ParentId == productProcessNode.Id;
@@ -1767,6 +1770,15 @@ public class ImportService : IImportService
                 }
                 return;
         }
+    }
+
+    private static void ApplyImportDates(IContent content, ImportBase importEntity)
+    {
+        if (importEntity.CreateDate.HasValue)
+            content.CreateDate = importEntity.CreateDate.Value;
+
+        if (importEntity.UpdateDate.HasValue)
+            content.UpdateDate = importEntity.UpdateDate.Value;
     }
 
     /// <summary>

@@ -47,6 +47,19 @@ public class ImportBase
     /// the entity. "ekmIdentifier" is the alias of the property
     /// </summary>
     public required string Identifier { get; set; }
+
+    /// <summary>
+    /// Optional creation date to apply to the imported Umbraco content.
+    /// When not set, the current Umbraco creation date is preserved.
+    /// </summary>
+    public DateTime? CreateDate { get; set; }
+
+    /// <summary>
+    /// Optional update date to apply to the imported Umbraco content.
+    /// When not set, the current Umbraco update date is preserved.
+    /// </summary>
+    public DateTime? UpdateDate { get; set; }
+
     /// <summary>
     /// The default behavior is to save/publish newly created and modified data.
     /// You can change it so data will be unpublished or only saved
