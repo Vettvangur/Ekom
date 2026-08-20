@@ -26,7 +26,7 @@ internal class MetafieldService : IMetafieldService
             return cachedResponse;
         }
 
-        IEnumerable<UmbracoContent> metafieldNodes = _nodeService.NodesByTypes("ekmMetaField");
+        IEnumerable<UmbracoContent> metafieldNodes = _nodeService.NodesByTypes("ekmMetafield");
 
         IEnumerable<Metafield> result = metafieldNodes.Select(x => new Metafield(x));
 

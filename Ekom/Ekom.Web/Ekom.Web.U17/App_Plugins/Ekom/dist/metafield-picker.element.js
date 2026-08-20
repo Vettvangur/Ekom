@@ -1,21 +1,25 @@
-var c = Object.defineProperty;
-var p = (o, l, e) => l in o ? c(o, l, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[l] = e;
-var r = (o, l, e) => p(o, typeof l != "symbol" ? l + "" : l, e);
-import { UmbChangeEvent as h } from "@umbraco-cms/backoffice/event";
-class m extends HTMLElement {
+var v = Object.defineProperty;
+var k = (b, m, e) => m in b ? v(b, m, { enumerable: !0, configurable: !0, writable: !0, value: e }) : b[m] = e;
+var p = (b, m, e) => k(b, typeof m != "symbol" ? m + "" : m, e);
+import { UmbChangeEvent as w } from "@umbraco-cms/backoffice/event";
+class S extends HTMLElement {
   constructor() {
     super(...arguments);
-    r(this, "manifest");
-    r(this, "name");
-    r(this, "dataSourceAlias");
-    r(this, "config");
-    r(this, "mandatory");
-    r(this, "mandatoryMessage");
-    r(this, "editor");
-    r(this, "status");
-    r(this, "languages", []);
-    r(this, "fields", []);
-    r(this, "items", []);
+    p(this, "manifest");
+    p(this, "name");
+    p(this, "dataSourceAlias");
+    p(this, "config");
+    p(this, "mandatory");
+    p(this, "mandatoryMessage");
+    p(this, "editor");
+    p(this, "status");
+    p(this, "languages", []);
+    p(this, "fields", []);
+    p(this, "items", []);
+    p(this, "handleDocumentClick", (e) => {
+      const t = e.composedPath().find((o) => o instanceof Element && o.classList.contains("combobox"));
+      (!(t instanceof Element) || !this.contains(t)) && this.closeDropdowns();
+    });
   }
   get value() {
     return this.items;
@@ -30,7 +34,10 @@ class m extends HTMLElement {
     this.toggleAttribute("readonly", e), this.syncDisabledState();
   }
   connectedCallback() {
-    this.renderShell(), this.loadData();
+    this.renderShell(), document.addEventListener("click", this.handleDocumentClick), this.loadData();
+  }
+  disconnectedCallback() {
+    document.removeEventListener("click", this.handleDocumentClick);
   }
   async loadData() {
     this.setStatus("Loading metafields...");
@@ -54,10 +61,27 @@ class m extends HTMLElement {
         .label-row { display: flex; align-items: start; justify-content: space-between; gap: var(--uui-size-space-4, 16px); }
         label { display: grid; gap: var(--uui-size-space-1, 4px); font-weight: 700; }
         small { display: block; color: var(--uui-color-text-alt, #515054); font-weight: 400; }
-        input, select { box-sizing: border-box; width: 100%; min-height: 32px; border: 1px solid var(--uui-color-border, #d8d7d9); border-radius: var(--uui-border-radius, 3px); padding: var(--uui-size-space-2, 8px); background: var(--uui-color-surface, #fff); color: var(--uui-color-text, #1b264f); font: inherit; }
-        select[multiple] { min-height: 130px; }
-        button { border: 0; border-radius: var(--uui-border-radius, 3px); padding: var(--uui-size-space-2, 8px) var(--uui-size-space-3, 12px); background: var(--uui-color-surface-alt, #f3f3f5); color: var(--uui-color-text, #1b264f); border: 1px solid var(--uui-color-border, #d8d7d9); cursor: pointer; font: inherit; font-weight: 600; white-space: nowrap; }
-        button:disabled, input:disabled, select:disabled { cursor: not-allowed; opacity: 0.55; }
+        input { box-sizing: border-box; width: 100%; min-height: 32px; border: 1px solid var(--uui-color-border, #d8d7d9); border-radius: var(--uui-border-radius, 3px); padding: var(--uui-size-space-2, 8px); background: var(--uui-color-surface, #fff); color: var(--uui-color-text, #1b264f); font: inherit; }
+        .combobox { position: relative; }
+        .combobox-control { display: flex; align-items: center; gap: var(--uui-size-space-2, 8px); box-sizing: border-box; width: 100%; min-height: 40px; border: 1px solid var(--uui-color-border, #d8d7d9); border-radius: var(--uui-border-radius, 3px); padding: var(--uui-size-space-1, 4px) var(--uui-size-space-2, 8px); background: var(--uui-color-surface, #fff); color: var(--uui-color-text, #1b264f); cursor: pointer; }
+        .combobox-control:focus { outline: 2px solid var(--uui-color-focus, #3544b1); outline-offset: 1px; }
+        .combobox-control[aria-disabled='true'] { cursor: not-allowed; opacity: 0.55; }
+        .combobox-value { display: flex; flex: 1; flex-wrap: wrap; gap: var(--uui-size-space-1, 4px); min-width: 0; }
+        .placeholder { color: var(--uui-color-text-alt, #515054); }
+        .combobox-arrow { flex: 0 0 auto; }
+        .combobox-dropdown { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; right: 0; display: grid; gap: var(--uui-size-space-2, 8px); border: 1px solid var(--uui-color-border, #d8d7d9); border-radius: var(--uui-border-radius, 3px); padding: var(--uui-size-space-2, 8px); background: var(--uui-color-surface, #fff); box-shadow: 0 4px 12px rgb(0 0 0 / 18%); }
+        .combobox-dropdown[hidden] { display: none; }
+        .chip { display: inline-flex; align-items: center; gap: var(--uui-size-space-1, 4px); border-radius: 999px; padding: 3px 6px 3px 10px; background: var(--uui-color-surface-alt, #f3f3f5); color: var(--uui-color-text, #1b264f); }
+        .chip button { display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 50%; padding: 0; background: transparent; color: inherit; cursor: pointer; font: inherit; font-size: 18px; line-height: 1; }
+        .chip button:hover { background: var(--uui-color-border, #d8d7d9); }
+        .option-list { display: grid; max-height: 220px; overflow-y: auto; border: 1px solid var(--uui-color-border, #d8d7d9); border-radius: var(--uui-border-radius, 3px); background: var(--uui-color-surface, #fff); }
+        .option { display: flex; align-items: center; gap: var(--uui-size-space-2, 8px); border: 0; padding: var(--uui-size-space-2, 8px); background: transparent; color: inherit; font: inherit; font-weight: 400; text-align: left; cursor: pointer; }
+        .option + .option { border-top: 1px solid var(--uui-color-border, #d8d7d9); }
+        .option:hover, .option:focus { background: var(--uui-color-surface-alt, #f3f3f5); }
+        .option-mark { width: 16px; text-align: center; }
+        .empty-options { padding: var(--uui-size-space-3, 12px); color: var(--uui-color-text-alt, #515054); }
+        .clear-button { border: 1px solid var(--uui-color-border, #d8d7d9); border-radius: var(--uui-border-radius, 3px); padding: var(--uui-size-space-1, 4px) var(--uui-size-space-2, 8px); background: var(--uui-color-surface-alt, #f3f3f5); color: var(--uui-color-text, #1b264f); cursor: pointer; font: inherit; white-space: nowrap; }
+        button:disabled, input:disabled { cursor: not-allowed; opacity: 0.55; }
         p { margin: 0; color: var(--uui-color-text-alt, #515054); }
         p[data-error='true'] { color: var(--uui-color-danger, #d42054); }
       </style>
@@ -73,104 +97,206 @@ class m extends HTMLElement {
       const t = document.createElement("p");
       t.textContent = "No metafields exist. You can create them under Metafields in Ekom", e.append(t);
     }
-    this.fields.forEach((t, s) => e.append(this.createField(t, s))), this.editor.replaceChildren(e), this.syncDisabledState();
+    this.fields.forEach((t, o) => e.append(this.createField(t, o))), this.editor.replaceChildren(e), this.syncDisabledState();
   }
   createField(e, t) {
+    const o = document.createElement("div");
+    o.className = "field";
     const s = document.createElement("div");
-    s.className = "field";
-    const i = document.createElement("div");
-    i.className = "label-row";
+    s.className = "label-row";
     const a = document.createElement("label");
-    if (a.htmlFor = `metafield_${t}`, a.textContent = e.name ?? e.key ?? "", !this.isEmpty(e.description)) {
-      const u = document.createElement("small");
-      u.textContent = e.description ?? "", a.append(u);
+    a.htmlFor = `metafield_${t}`, a.textContent = e.name ?? e.key ?? "";
+    const r = `metafield_${t}_description`;
+    if (!this.isEmpty(e.description)) {
+      const d = document.createElement("small");
+      d.id = r, d.textContent = e.description ?? "", a.append(d);
     }
-    const n = document.createElement("button");
-    n.type = "button", n.textContent = "Clear", n.addEventListener("click", (u) => this.clearField(u, e)), i.append(a, n), s.append(i);
-    const d = e.values ?? [];
-    return d.length > 0 ? s.append(this.createSelect(e, t, d)) : s.append(this.createTextInput(e, t)), s;
+    const l = document.createElement("button");
+    l.type = "button", l.className = "clear-button", l.dataset.key = e.key ?? "", l.dataset.action = "clear", l.textContent = "Clear", l.addEventListener("click", (d) => this.clearField(d, e)), s.append(a, l), o.append(s);
+    const c = e.values ?? [];
+    return c.length > 0 ? o.append(e.enableMultipleChoice === !0 ? this.createMultiSelect(e, t, r) : this.createSelect(e, t, c, r)) : o.append(this.createTextInput(e, t, r)), o;
   }
-  createSelect(e, t, s) {
-    const i = document.createElement("select");
-    if (i.id = `metafield_${t}`, i.dataset.key = e.key ?? "", i.multiple = e.enableMultipleChoice === !0, !i.multiple) {
-      const a = document.createElement("option");
-      a.value = "", a.textContent = "Select value", i.append(a);
-    }
-    for (const a of s) {
-      const n = document.createElement("option");
-      n.value = a.id ?? "", n.textContent = this.getMetavalueLabel(a), i.append(n);
-    }
-    return this.setSelectValue(i, e), i.addEventListener("change", () => this.setMetafieldSelectValue(e, i)), i;
+  createSelect(e, t, o, s) {
+    return this.createChoicePicker(e, t, s, !1);
   }
-  createTextInput(e, t) {
+  createMultiSelect(e, t, o) {
+    return this.createChoicePicker(e, t, o, !0);
+  }
+  createChoicePicker(e, t, o, s) {
+    const a = document.createElement("div");
+    a.className = `combobox ${s ? "multi-picker" : "single-picker"}`, a.dataset.key = e.key ?? "";
+    const r = document.createElement("div");
+    r.id = `metafield_${t}`, r.className = "combobox-control", r.dataset.key = e.key ?? "", r.dataset.control = "choice", r.tabIndex = 0, r.setAttribute("role", "combobox"), r.setAttribute("aria-haspopup", "listbox"), r.setAttribute("aria-expanded", "false"), r.setAttribute("aria-label", e.name ?? e.key ?? "Metafield"), this.setDescription(r, e, o);
+    const l = document.createElement("div");
+    l.className = "combobox-value", l.setAttribute("aria-label", s ? "Selected values" : "Selected value");
+    const c = document.createElement("span");
+    c.className = "combobox-arrow", c.setAttribute("aria-hidden", "true"), c.textContent = "▾", r.append(l, c);
+    const d = document.createElement("div");
+    d.className = "combobox-dropdown", d.hidden = !0;
+    const n = document.createElement("input");
+    n.type = "search", n.placeholder = "Search values", n.dataset.key = e.key ?? "", n.dataset.control = "search", n.setAttribute("aria-label", `Search ${e.name ?? e.key ?? "metafield"} values`), n.addEventListener("input", () => this.renderChoiceOptions(e, a, n.value, s)), n.addEventListener("keydown", (i) => {
+      var h;
+      i.key === "Escape" ? (i.preventDefault(), this.closeDropdown(a, !0)) : i.key === "ArrowDown" && (i.preventDefault(), (h = a.querySelector(".option")) == null || h.focus());
+    });
+    const u = document.createElement("div");
+    return u.className = "option-list", u.setAttribute("role", "listbox"), u.setAttribute("aria-label", "Available values"), u.setAttribute("aria-multiselectable", String(s)), r.addEventListener("click", () => this.toggleDropdown(e, a, s)), r.addEventListener("keydown", (i) => {
+      i.key === "Enter" || i.key === " " || i.key === "ArrowDown" ? (i.preventDefault(), this.openDropdown(e, a, s)) : i.key === "Escape" && (i.preventDefault(), this.closeDropdown(a));
+    }), d.append(n, u), a.append(r, d), this.syncChoicePicker(e, a, s), a;
+  }
+  createTextInput(e, t, o) {
     const s = document.createElement("input");
-    return s.id = `metafield_${t}`, s.type = "text", s.dataset.key = e.key ?? "", s.value = String(this.getFieldValue(e) ?? ""), s.readOnly = e.readOnly === !0, s.addEventListener("input", () => this.setMetafieldValue(e, s.value)), s;
-  }
-  setSelectValue(e, t) {
-    const s = new Set(this.getSelectedIds(t));
-    for (const i of e.options)
-      i.selected = s.has(i.value);
-  }
-  setMetafieldSelectValue(e, t) {
-    if (this.readonly)
-      return;
-    const s = Array.from(t.selectedOptions).map((i) => (e.values ?? []).find((a) => a.id === i.value)).filter((i) => i != null);
-    this.setMetafieldValue(e, t.multiple ? s : s[0] ?? "");
+    return s.id = `metafield_${t}`, s.type = "text", s.dataset.key = e.key ?? "", s.dataset.control = "text", s.value = String(this.getFieldValue(e) ?? ""), s.readOnly = e.readOnly === !0, this.setDescription(s, e, o), s.addEventListener("input", () => this.setMetafieldValue(e, s.value)), s;
   }
   clearField(e, t) {
-    var i;
-    if (e.preventDefault(), this.readonly)
+    var s;
+    if (e.preventDefault(), this.isFieldReadonly(t))
       return;
-    const s = (((i = t.values) == null ? void 0 : i.length) ?? 0) > 0 && t.enableMultipleChoice === !0 ? [] : "";
-    this.setMetafieldValue(t, s), this.syncInputs();
+    const o = (((s = t.values) == null ? void 0 : s.length) ?? 0) > 0 && t.enableMultipleChoice === !0 ? [] : "";
+    this.setMetafieldValue(t, o), this.syncInputs();
   }
   setMetafieldValue(e, t) {
-    const s = e.key;
-    s != null && (this.items = this.items.map((i) => i.key === s ? {
-      key: s,
+    const o = e.key;
+    o != null && (this.items = this.items.map((s) => s.key === o ? {
+      key: o,
       values: t
-    } : i), this.items.some((i) => i.key === s) || (this.items = [
+    } : s), this.items.some((s) => s.key === o) || (this.items = [
       ...this.items,
       {
-        key: s,
+        key: o,
         values: t
       }
-    ]), this.emitChange());
+    ]), this.syncDisabledState(), this.emitChange());
   }
   ensureFieldValues() {
     var t;
     const e = [...this.items];
-    for (const s of this.fields) {
-      const i = s.key;
-      i == null || e.some((a) => a.key === i) || e.push({
-        key: i,
-        values: (((t = s.values) == null ? void 0 : t.length) ?? 0) > 0 ? [] : ""
+    for (const o of this.fields) {
+      const s = o.key;
+      s == null || e.some((a) => a.key === s) || e.push({
+        key: s,
+        values: (((t = o.values) == null ? void 0 : t.length) ?? 0) > 0 ? [] : ""
       });
     }
     this.items = e;
   }
   syncInputs() {
-    if (!(this.editor == null || this.fields.length === 0))
+    if (!(this.editor == null || this.fields.length === 0)) {
       for (const e of this.fields) {
         const t = e.key;
         if (t == null)
           continue;
-        const s = this.editor.querySelector(`input[data-key="${CSS.escape(t)}"]`), i = this.editor.querySelector(`select[data-key="${CSS.escape(t)}"]`);
-        s != null && (s.value = String(this.getFieldValue(e) ?? "")), i != null && this.setSelectValue(i, e);
+        const o = this.editor.querySelector(`input[data-control="text"][data-key="${CSS.escape(t)}"]`), s = this.editor.querySelector(`.multi-picker[data-key="${CSS.escape(t)}"]`), a = this.editor.querySelector(`.single-picker[data-key="${CSS.escape(t)}"]`);
+        o != null && (o.value = String(this.getFieldValue(e) ?? "")), s != null && this.syncChoicePicker(e, s, !0), a != null && this.syncChoicePicker(e, a, !1);
       }
+      this.syncDisabledState();
+    }
   }
   getFieldValue(e) {
     var t;
-    return (t = this.items.find((s) => s.key === e.key)) == null ? void 0 : t.values;
+    return (t = this.items.find((o) => o.key === e.key)) == null ? void 0 : t.values;
   }
   getSelectedIds(e) {
     const t = this.getFieldValue(e);
-    return Array.isArray(t) ? t.map((s) => this.isRecord(s) ? String(s.id ?? "") : String(s)) : this.isRecord(t) ? [String(t.id ?? "")] : t == null || t === "" ? [] : [String(t)];
+    return Array.isArray(t) ? t.map((o) => this.isRecord(o) ? String(o.id ?? "") : String(o)) : this.isRecord(t) ? [String(t.id ?? "")] : t == null || t === "" ? [] : [String(t)];
+  }
+  syncChoicePicker(e, t, o) {
+    const s = new Set(this.getSelectedIds(e)), a = (e.values ?? []).filter((c) => s.has(c.id ?? "")), r = t.querySelector(".combobox-value"), l = t.querySelector('input[type="search"]');
+    if (r != null)
+      if (o) {
+        const c = a.map((d) => {
+          const n = this.getMetavalueLabel(d), u = document.createElement("span");
+          u.className = "chip", u.append(document.createTextNode(n));
+          const i = document.createElement("button");
+          return i.type = "button", i.dataset.key = e.key ?? "", i.setAttribute("aria-label", `Remove ${n}`), i.textContent = "×", i.addEventListener("click", (h) => {
+            h.preventDefault(), h.stopPropagation(), this.toggleMetavalue(e, d, !1, t);
+          }), u.append(i), u;
+        });
+        c.length === 0 ? r.replaceChildren(this.createPlaceholder("Select values")) : r.replaceChildren(...c);
+      } else {
+        const c = a[0];
+        r.replaceChildren(c == null ? this.createPlaceholder("Select value") : document.createTextNode(this.getMetavalueLabel(c)));
+      }
+    this.isDropdownClosed(t) || this.renderChoiceOptions(e, t, (l == null ? void 0 : l.value) ?? "", o), this.syncDisabledState();
+  }
+  createPlaceholder(e) {
+    const t = document.createElement("span");
+    return t.className = "placeholder", t.textContent = e, t;
+  }
+  toggleDropdown(e, t, o) {
+    this.isDropdownClosed(t) ? this.openDropdown(e, t, o) : this.closeDropdown(t);
+  }
+  openDropdown(e, t, o) {
+    if (this.isFieldReadonly(e))
+      return;
+    this.closeDropdowns(t);
+    const s = t.querySelector(".combobox-control"), a = t.querySelector(".combobox-dropdown"), r = t.querySelector('input[type="search"]');
+    s == null || a == null || r == null || (a.hidden = !1, s.setAttribute("aria-expanded", "true"), this.renderChoiceOptions(e, t, r.value, o), r.focus());
+  }
+  closeDropdown(e, t = !1) {
+    const o = e.querySelector(".combobox-control"), s = e.querySelector(".combobox-dropdown"), a = e.querySelector('input[type="search"]'), r = e.querySelector(".option-list");
+    s != null && (s.hidden = !0, o == null || o.setAttribute("aria-expanded", "false"), r == null || r.replaceChildren(), a != null && (a.value = ""), t && (o == null || o.focus()));
+  }
+  closeDropdowns(e) {
+    for (const t of this.querySelectorAll(".combobox"))
+      t !== e && this.closeDropdown(t);
+  }
+  isDropdownClosed(e) {
+    var t;
+    return ((t = e.querySelector(".combobox-dropdown")) == null ? void 0 : t.hidden) !== !1;
+  }
+  renderChoiceOptions(e, t, o, s) {
+    const a = t.querySelector(".option-list");
+    if (a == null || this.isDropdownClosed(t))
+      return;
+    const r = o.trim().toLocaleLowerCase(), l = new Set(this.getSelectedIds(e)), c = (e.values ?? []).filter((n) => this.getMetavalueLabel(n).toLocaleLowerCase().includes(r));
+    if (c.length === 0) {
+      const n = document.createElement("span");
+      n.className = "empty-options", n.textContent = "No matching values", a.replaceChildren(n);
+      return;
+    }
+    const d = c.map((n) => {
+      const u = n.id ?? "", i = document.createElement("button"), h = l.has(u);
+      i.type = "button", i.className = "option", i.dataset.key = e.key ?? "", i.dataset.valueId = u, i.setAttribute("role", "option"), i.setAttribute("aria-selected", String(h));
+      const y = document.createElement("span");
+      y.className = "option-mark", y.setAttribute("aria-hidden", "true"), y.textContent = h ? "✓" : "";
+      const g = document.createElement("span");
+      return g.textContent = this.getMetavalueLabel(n), i.append(y, g), i.addEventListener("click", (f) => {
+        var x;
+        f.preventDefault(), f.stopPropagation(), s ? (this.toggleMetavalue(e, n, !h, t), (x = t.querySelector(`button[data-value-id="${CSS.escape(u)}"]`)) == null || x.focus()) : this.selectMetavalue(e, n, t);
+      }), i.addEventListener("keydown", (f) => this.handleOptionKeydown(f, t)), i;
+    });
+    a.replaceChildren(...d);
+  }
+  toggleMetavalue(e, t, o, s) {
+    if (this.isFieldReadonly(e))
+      return;
+    const a = t.id ?? "", r = new Set(this.getSelectedIds(e));
+    o ? r.add(a) : r.delete(a);
+    const l = (e.values ?? []).filter((c) => r.has(c.id ?? ""));
+    this.setMetafieldValue(e, l), this.syncChoicePicker(e, s, !0);
+  }
+  selectMetavalue(e, t, o) {
+    this.isFieldReadonly(e) || (this.setMetafieldValue(e, t), this.syncChoicePicker(e, o, !1), this.closeDropdown(o, !0));
+  }
+  handleOptionKeydown(e, t) {
+    var r;
+    if (e.key === "Escape") {
+      e.preventDefault(), this.closeDropdown(t, !0);
+      return;
+    }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp")
+      return;
+    e.preventDefault();
+    const o = Array.from(t.querySelectorAll(".option")), s = o.indexOf(e.currentTarget), a = e.key === "ArrowDown" ? Math.min(s + 1, o.length - 1) : Math.max(s - 1, 0);
+    (r = o[a]) == null || r.focus();
+  }
+  setDescription(e, t, o) {
+    this.isEmpty(t.description) || e.setAttribute("aria-describedby", o);
   }
   getMetavalueLabel(e) {
-    var s, i, a;
-    const t = (s = this.languages[0]) == null ? void 0 : s.isoCode;
-    return t != null && !this.isEmpty((i = e.values) == null ? void 0 : i[t]) ? ((a = e.values) == null ? void 0 : a[t]) ?? "" : Object.values(e.values ?? {}).find((n) => !this.isEmpty(n)) ?? e.id ?? "";
+    var o, s, a;
+    const t = (o = this.languages[0]) == null ? void 0 : o.isoCode;
+    return t != null && !this.isEmpty((s = e.values) == null ? void 0 : s[t]) ? ((a = e.values) == null ? void 0 : a[t]) ?? "" : Object.values(e.values ?? {}).find((r) => !this.isEmpty(r)) ?? e.id ?? "";
   }
   normalizeValue(e) {
     return Array.isArray(e) ? e.map((t) => {
@@ -182,18 +308,34 @@ class m extends HTMLElement {
     }).filter((t) => t != null) : [];
   }
   syncDisabledState() {
-    for (const e of this.querySelectorAll("input, select, button"))
-      e.disabled = this.readonly;
-    for (const e of this.querySelectorAll("input")) {
-      const t = e.dataset.key, s = this.fields.find((i) => i.key === t);
-      e.readOnly = (s == null ? void 0 : s.readOnly) === !0;
+    for (const e of this.querySelectorAll("input, button")) {
+      const t = e.dataset.key, o = this.fields.find((l) => l.key === t), s = e instanceof HTMLInputElement && e.dataset.control === "text", a = e.dataset.action === "clear" && (o == null || this.isFieldValueEmpty(o)), r = this.readonly || !s && (o == null ? void 0 : o.readOnly) === !0 || a;
+      e.toggleAttribute("disabled", r);
     }
+    for (const e of this.querySelectorAll('input[data-control="text"]')) {
+      const t = e.dataset.key, o = this.fields.find((s) => s.key === t);
+      e.readOnly = (o == null ? void 0 : o.readOnly) === !0;
+    }
+    for (const e of this.querySelectorAll(".combobox-control")) {
+      const t = this.fields.find((s) => s.key === e.dataset.key), o = t == null || this.isFieldReadonly(t);
+      if (e.setAttribute("aria-disabled", String(o)), e.tabIndex = o ? -1 : 0, o) {
+        const s = e.closest(".combobox");
+        s != null && this.closeDropdown(s);
+      }
+    }
+  }
+  isFieldReadonly(e) {
+    return this.readonly || e.readOnly === !0;
+  }
+  isFieldValueEmpty(e) {
+    const t = this.getFieldValue(e);
+    return Array.isArray(t) ? t.length === 0 : t == null || t === "";
   }
   setStatus(e, t = !1) {
     this.status != null && (this.status.textContent = e, this.status.dataset.error = String(t));
   }
   emitChange() {
-    this.dispatchEvent(new h());
+    this.dispatchEvent(new w());
   }
   isEmpty(e) {
     return e == null || String(e).length === 0;
@@ -213,8 +355,8 @@ class m extends HTMLElement {
     return await t.json();
   }
 }
-customElements.define("ekom-metafield-picker", m);
+customElements.define("ekom-metafield-picker", S);
 export {
-  m as EkomMetafieldPickerElement,
-  m as default
+  S as EkomMetafieldPickerElement,
+  S as default
 };

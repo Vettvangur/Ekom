@@ -1379,14 +1379,13 @@ class EnsureNodesExist : IComponent
                                 new PropertyType(_shortStringHelper, textstringDt, "description")
                                 {
                                     Name = "Description",
-                                    Mandatory = true
                                 },
-                                new PropertyType(_shortStringHelper, booleanDt, "enableMultipleChoice")
+                                new PropertyType(_shortStringHelper, booleanDt, "filterable")
                                 {
                                     Name = "Filterable",
                                     Description = "When checked, the metafield will be visible in the filter."
                                 },
-                                new PropertyType(_shortStringHelper, booleanDt, "filterable")
+                                new PropertyType(_shortStringHelper, booleanDt, "enableMultipleChoice")
                                 {
                                     Name = "Enable Multiple Choice",
                                     Description  = "When checked, the dropdown will be a select multiple / combo box style dropdown."
@@ -1464,6 +1463,7 @@ class EnsureNodesExist : IComponent
                     CreateContentTypeSort(paymentProvidersCt, 4),
                     CreateContentTypeSort(zonesCt, 5),
                     CreateContentTypeSort(discountsCt, 6),
+                    CreateContentTypeSort(metafieldsCt, 7),
                 },
                     Icon = "icon-box color-green",
                 });

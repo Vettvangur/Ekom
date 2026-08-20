@@ -1,6 +1,6 @@
-var l = Object.defineProperty;
-var c = (n, o, e) => o in n ? l(n, o, { enumerable: !0, configurable: !0, writable: !0, value: e }) : n[o] = e;
-var r = (n, o, e) => c(n, typeof o != "symbol" ? o + "" : o, e);
+var d = Object.defineProperty;
+var c = (u, o, t) => o in u ? d(u, o, { enumerable: !0, configurable: !0, writable: !0, value: t }) : u[o] = t;
+var r = (u, o, t) => c(u, typeof o != "symbol" ? o + "" : o, t);
 import { UmbChangeEvent as h } from "@umbraco-cms/backoffice/event";
 class m extends HTMLElement {
   constructor() {
@@ -19,14 +19,15 @@ class m extends HTMLElement {
   get value() {
     return this.items;
   }
-  set value(e) {
-    this.items = this.normalizeValue(e), this.renderRows();
+  set value(t) {
+    const e = this.normalizeValue(t), a = this.hasMatchingRows(e);
+    this.items = e, a ? this.syncInputs() : this.renderRows();
   }
   get readonly() {
     return this.hasAttribute("readonly");
   }
-  set readonly(e) {
-    this.toggleAttribute("readonly", e), this.syncDisabledState();
+  set readonly(t) {
+    this.toggleAttribute("readonly", t), this.syncDisabledState();
   }
   connectedCallback() {
     this.renderShell(), this.loadLanguages();
@@ -35,9 +36,9 @@ class m extends HTMLElement {
     this.setStatus("Loading languages...");
     try {
       this.languages = await this.fetchJson("/ekom/backoffice/Languages"), this.renderRows(), this.setStatus("");
-    } catch (e) {
-      const t = e instanceof Error ? e.message : "Could not load languages.";
-      this.setStatus(t, !0);
+    } catch (t) {
+      const e = t instanceof Error ? t.message : "Could not load languages.";
+      this.setStatus(e, !0);
     }
   }
   renderShell() {
@@ -64,113 +65,134 @@ class m extends HTMLElement {
     if (this.editor == null)
       return;
     this.editor.style.setProperty("--language-count", String(Math.max(this.languages.length, 1)));
-    const e = document.createDocumentFragment();
+    const t = document.createDocumentFragment();
     if (this.languages.length > 0 && this.items.length > 0) {
       const a = document.createElement("div");
       a.className = "header";
-      for (const s of this.languages) {
-        const i = document.createElement("div");
-        i.textContent = s.cultureName ?? s.isoCode ?? "", a.append(i);
+      for (const i of this.languages) {
+        const s = document.createElement("div");
+        s.textContent = i.cultureName ?? i.isoCode ?? "", a.append(s);
       }
-      a.append(document.createElement("div")), e.append(a);
+      a.append(document.createElement("div")), t.append(a);
     }
-    this.items.forEach((a, s) => e.append(this.createRow(a, s)));
-    const t = document.createElement("button");
-    t.type = "button", t.textContent = "Add", t.addEventListener("click", (a) => this.addItem(a)), e.append(t), this.editor.replaceChildren(e), this.syncDisabledState();
+    this.items.forEach((a, i) => t.append(this.createRow(a, i)));
+    const e = document.createElement("button");
+    e.type = "button", e.textContent = "Add", e.addEventListener("click", (a) => this.addItem(a)), t.append(e), this.editor.replaceChildren(t), this.syncDisabledState();
   }
-  createRow(e, t) {
+  createRow(t, e) {
     const a = document.createElement("div");
-    a.className = "row";
-    for (const i of this.languages) {
-      const u = i.isoCode ?? "", d = document.createElement("input");
-      d.type = "text", d.value = e.values[u] ?? "", d.addEventListener("input", () => this.setLanguageValue(t, u, d.value)), a.append(d);
+    a.className = "row", a.dataset.itemId = t.id;
+    for (const s of this.languages) {
+      const n = s.isoCode ?? "", l = document.createElement("input");
+      l.type = "text", l.dataset.language = n, l.value = t.values[n] ?? "", l.addEventListener("input", () => this.setLanguageValue(e, n, l.value)), a.append(l);
     }
-    const s = document.createElement("div");
-    return s.className = "actions", s.append(
-      this.createActionButton("↑", () => this.moveItem(t, -1), "secondary", t === 0),
-      this.createActionButton("↓", () => this.moveItem(t, 1), "secondary", t === this.items.length - 1),
-      this.createActionButton("Remove", () => this.removeItem(t), "danger")
-    ), a.append(s), a;
+    const i = document.createElement("div");
+    return i.className = "actions", i.append(
+      this.createActionButton("↑", () => this.moveItem(e, -1), "secondary", e === 0),
+      this.createActionButton("↓", () => this.moveItem(e, 1), "secondary", e === this.items.length - 1),
+      this.createActionButton("Remove", () => this.removeItem(e), "danger")
+    ), a.append(i), a;
   }
-  createActionButton(e, t, a, s = !1) {
-    const i = document.createElement("button");
-    return i.type = "button", i.textContent = e, a != null && (i.dataset.kind = a), i.dataset.disabledWhenEnabled = String(s), i.disabled = s, i.addEventListener("click", (u) => {
-      u.preventDefault(), this.readonly || t();
-    }), i;
+  createActionButton(t, e, a, i = !1) {
+    const s = document.createElement("button");
+    return s.type = "button", s.textContent = t, a != null && (s.dataset.kind = a), s.dataset.disabledWhenEnabled = String(i), s.disabled = i, s.addEventListener("click", (n) => {
+      n.preventDefault(), this.readonly || e();
+    }), s;
   }
-  addItem(e) {
-    if (e.preventDefault(), this.readonly)
+  addItem(t) {
+    if (t.preventDefault(), this.readonly)
       return;
-    const t = {};
+    const e = {};
     for (const a of this.languages)
-      a.isoCode != null && (t[a.isoCode] = "");
+      a.isoCode != null && (e[a.isoCode] = "");
     this.items = [
       ...this.items,
       {
         id: Math.random().toString(16).slice(2),
-        values: t
+        values: e
       }
     ], this.renderRows(), this.emitChange();
   }
-  removeItem(e) {
-    this.items = this.items.filter((t, a) => a !== e), this.renderRows(), this.emitChange();
+  removeItem(t) {
+    this.items = this.items.filter((e, a) => a !== t), this.renderRows(), this.emitChange();
   }
-  moveItem(e, t) {
-    const a = e + t;
+  moveItem(t, e) {
+    const a = t + e;
     if (a < 0 || a >= this.items.length)
       return;
-    const s = [...this.items], [i] = s.splice(e, 1);
-    s.splice(a, 0, i), this.items = s, this.renderRows(), this.emitChange();
+    const i = [...this.items], [s] = i.splice(t, 1);
+    i.splice(a, 0, s), this.items = i, this.renderRows(), this.emitChange();
   }
-  setLanguageValue(e, t, a) {
-    this.items[e] != null && (this.items = this.items.map((i, u) => u === e ? {
-      ...i,
+  setLanguageValue(t, e, a) {
+    this.items[t] != null && (this.items = this.items.map((s, n) => n === t ? {
+      ...s,
       values: {
-        ...i.values,
-        [t]: a
+        ...s.values,
+        [e]: a
       }
-    } : i), this.emitChange());
+    } : s), this.emitChange());
   }
-  normalizeValue(e) {
-    return Array.isArray(e) ? e.map((t) => {
-      if (this.isRecord(t))
+  hasMatchingRows(t) {
+    if (this.editor == null || this.editor.childElementCount === 0)
+      return !1;
+    const e = this.editor.querySelectorAll(".row");
+    return e.length === t.length && t.every((a, i) => {
+      var s;
+      return ((s = e[i]) == null ? void 0 : s.dataset.itemId) === a.id;
+    });
+  }
+  syncInputs() {
+    if (this.editor == null)
+      return;
+    this.editor.querySelectorAll(".row").forEach((e, a) => {
+      const i = this.items[a];
+      if (i != null)
+        for (const s of e.querySelectorAll("input[data-language]")) {
+          const n = i.values[s.dataset.language ?? ""] ?? "";
+          s.value !== n && (s.value = n);
+        }
+    });
+  }
+  normalizeValue(t) {
+    return Array.isArray(t) ? t.map((e) => {
+      if (this.isRecord(e))
         return {
-          id: String(t.id ?? Math.random().toString(16).slice(2)),
-          values: this.isRecord(t.values) ? this.normalizeValues(t.values) : {}
+          id: String(e.id ?? Math.random().toString(16).slice(2)),
+          values: this.isRecord(e.values) ? this.normalizeValues(e.values) : {}
         };
-    }).filter((t) => t != null) : [];
+    }).filter((e) => e != null) : [];
   }
-  normalizeValues(e) {
-    const t = {};
-    for (const [a, s] of Object.entries(e))
-      t[a] = s == null ? "" : String(s);
-    return t;
+  normalizeValues(t) {
+    const e = {};
+    for (const [a, i] of Object.entries(t))
+      e[a] = i == null ? "" : String(i);
+    return e;
   }
   syncDisabledState() {
-    for (const e of this.querySelectorAll("input"))
-      e.disabled = this.readonly;
-    for (const e of this.querySelectorAll("button"))
-      e.disabled = this.readonly || e.dataset.disabledWhenEnabled === "true";
+    for (const t of this.querySelectorAll("input"))
+      t.disabled = this.readonly;
+    for (const t of this.querySelectorAll("button"))
+      t.disabled = this.readonly || t.dataset.disabledWhenEnabled === "true";
   }
-  setStatus(e, t = !1) {
-    this.status != null && (this.status.textContent = e, this.status.dataset.error = String(t));
+  setStatus(t, e = !1) {
+    this.status != null && (this.status.textContent = t, this.status.dataset.error = String(e));
   }
   emitChange() {
     this.dispatchEvent(new h());
   }
-  isRecord(e) {
-    return e != null && typeof e == "object" && !Array.isArray(e);
+  isRecord(t) {
+    return t != null && typeof t == "object" && !Array.isArray(t);
   }
-  async fetchJson(e) {
-    const t = await fetch(e, {
+  async fetchJson(t) {
+    const e = await fetch(t, {
       credentials: "same-origin",
       headers: {
         Accept: "application/json"
       }
     });
-    if (!t.ok)
-      throw new Error(`Request to ${e} failed with status ${t.status}.`);
-    return await t.json();
+    if (!e.ok)
+      throw new Error(`Request to ${t} failed with status ${e.status}.`);
+    return await e.json();
   }
 }
 customElements.define("ekom-metavalue-editor", m);
