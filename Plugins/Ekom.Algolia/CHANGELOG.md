@@ -6,6 +6,13 @@
 
 * **algolia:** add optional variant-level product indexing for SKU search.
 
+## [0.2.40](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.39...Ekom.Algolia-v0.2.40) (2026-08-20)
+
+
+### Bug Fixes
+
+* improve metafield indexing and import timestamps ([#785](https://github.com/Vettvangur/Ekom/issues/785)) ([dbf2f0a](https://github.com/Vettvangur/Ekom/commit/dbf2f0a309b102f496491c06dae49502b4150b9f))
+
 ## [0.2.39](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.38...Ekom.Algolia-v0.2.39) (2026-08-20)
 
 
