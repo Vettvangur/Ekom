@@ -601,7 +601,7 @@ class EnsureNodesExist : IComponent
                                         Name = "Images",
                                         SortOrder = 2
                                     },
-                                    new PropertyType(_shortStringHelper, propertyTextareaDt, "description")
+                                    new PropertyType(_shortStringHelper, propertyRteDt, "description")
                                     {
                                         Name = "Description",
                                         SortOrder = 3
@@ -719,6 +719,10 @@ class EnsureNodesExist : IComponent
                                         Name = "SKU",
                                     },
                                     new PropertyType(_shortStringHelper, propertyTextareaDt, "description")
+                                    {
+                                        Name = "Summary",
+                                    },
+                                    new PropertyType(_shortStringHelper, propertyRteDt, "description")
                                     {
                                         Name = "Description",
                                     },

@@ -315,8 +315,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
     private static bool IsBuiltInTextStripHtmlField(ConfiguredField field)
         => field.Source == AlgoliaFieldSource.Property
             && field.Transform == AlgoliaFieldTransform.StripHtml
-            && (field.Alias.Equals("title", StringComparison.OrdinalIgnoreCase)
-                || field.Alias.Equals("summary", StringComparison.OrdinalIgnoreCase)
+            && (field.Alias.Equals("summary", StringComparison.OrdinalIgnoreCase)
                 || field.Alias.Equals("description", StringComparison.OrdinalIgnoreCase));
 
     private static object? ResolveConfiguredValue(IProduct product, AlgoliaResolvedStore store, ConfiguredField configuredField)

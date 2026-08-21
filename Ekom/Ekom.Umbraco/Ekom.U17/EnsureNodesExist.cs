@@ -738,7 +738,11 @@ class EnsureNodesExist : IComponent
                                     {
                                         Name = "SKU",
                                     },
-                                    new PropertyType(_shortStringHelper, propertyTextareaDt, "description")
+                                    new PropertyType(_shortStringHelper, propertyTextareaDt, "summary")
+                                    {
+                                        Name = "Summary",
+                                    },
+                                    new PropertyType(_shortStringHelper, propertyRteDt, "description")
                                     {
                                         Name = "Description",
                                     },
