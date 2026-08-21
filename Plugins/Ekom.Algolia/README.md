@@ -158,7 +158,13 @@ public sealed class ProductSearchController
       },
       "Stores": [
         {
-          "Alias": "Store"
+          "Alias": "Store",
+          "LanguageSettings": {
+            "QueryLanguages": ["en"],
+            "IndexLanguages": ["en"],
+            "RemoveStopWords": true,
+            "IgnorePlurals": true
+          }
         }
       ]
     }
@@ -184,6 +190,8 @@ public sealed class ProductSearchController
 | `Indexing:Variants` | `bool` | `false` | Indexes product variants as separate product records so variant SKUs can be searched directly. |
 | `Indexing:BatchSize` | `int` | `1000` | Batch size for Algolia save/replace/delete operations. |
 | `Indexing:ProductProperties` | `string[]` | `[]` | Additional product properties/metafields to include in product records. Supports modifiers documented below. |
+| `Indexing:FacetAttributes` | `string[]` | `[]` | Product properties/metafields to include under `attributes` and configure as facets. |
+| `Indexing:VariantFacetAttributes` | `object` | `{}` | Maps facet output names to `variant:` or `variantGroup:` property sources. |
 | `Indexing:SortedReplicas` | `object[]` | `[]` | Replica definitions using `Attribute` and `Direction` (`Asc` or `Desc`). |
 | `Indexing:Dispatching:MaxBatchSize` | `int` | `100` | Maximum queued jobs processed in one worker batch. |
 | `Indexing:Dispatching:FlushIntervalSeconds` | `int` | `2` | Worker delay between queue flushes. |
@@ -223,6 +231,10 @@ public sealed class ProductSearchController
 | `Stores` | `object[]` | `[]` | Store aliases supported by the plugin. Locale/currency are resolved from Ekom store data. |
 | `Stores[*]:Alias` | `string` | required | Ekom store alias. |
 | `Stores[*]:IncludeStock` | `bool` | `false` | Includes product stock in indexed records for this store. |
+| `Stores[*]:LanguageSettings:QueryLanguages` | `string[]` | `[]` | ISO 639-1 languages used for language-specific query processing. |
+| `Stores[*]:LanguageSettings:IndexLanguages` | `string[]` | `[]` | ISO 639-1 languages used for language-specific indexing. |
+| `Stores[*]:LanguageSettings:RemoveStopWords` | `bool` | `null` | Enables or disables stop-word removal for this store's product indexes. |
+| `Stores[*]:LanguageSettings:IgnorePlurals` | `bool` | `null` | Enables or disables matching singular, plural, and inflected forms for this store's product indexes. |
 
 ## Usage notes
 
@@ -258,6 +270,41 @@ When `Search:QuerySuggestions` is enabled, the plugin provisions the separate `q
   }
 }
 ```
+
+### Per-store language settings
+
+Configure Algolia's language processing separately for each store. These settings are applied to the store's primary product indexes and sorted replicas. Algolia recommends configuring both `QueryLanguages` and `IndexLanguages` so query-time and index-time processing are consistent.
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Stores": [
+        {
+          "Alias": "IcelandicStore",
+          "LanguageSettings": {
+            "QueryLanguages": ["is"],
+            "IndexLanguages": ["is"],
+            "RemoveStopWords": false,
+            "IgnorePlurals": true
+          }
+        },
+        {
+          "Alias": "EnglishStore",
+          "LanguageSettings": {
+            "QueryLanguages": ["en"],
+            "IndexLanguages": ["en"],
+            "RemoveStopWords": true,
+            "IgnorePlurals": true
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+Language values are validated against Algolia's supported ISO 639-1 language codes. Omitted boolean settings preserve Algolia's defaults; explicitly setting them to `false` disables the corresponding processing. These settings don't apply to standard content or query-suggestions indexes.
 
 ### Oversized content records
 
@@ -487,7 +534,7 @@ Product indexes are configured with `AttributeForDistinct = ProductId`. `Search:
 
 ### Additional product properties and metafields
 
-`Indexing:ProductProperties` adds extra product properties and metafields that are not part of the default product record fields listed above. The built-in `title`, `summary`, and `description` aliases may also be configured with `|striphtml` to transform their top-level record fields. Each entry supports one optional modifier: `|array`, `|int`, `|decimal`, `|unix`, `|unixms`, or `|striphtml`.
+`Indexing:ProductProperties` adds extra product properties and metafields that are not part of the default product record fields listed above. The built-in `summary` and `description` aliases may also be configured with `|striphtml` to transform their top-level record fields. Each entry supports one optional modifier: `|array`, `|int`, `|decimal`, `|unix`, `|unixms`, or `|striphtml`.
 
 ```json
 {
@@ -534,6 +581,69 @@ Modifier behavior:
 - Metafields with `Enable Multiple Choice` enabled are automatically indexed as string arrays. The `|array` modifier can still be used to explicitly index other metafields as arrays.
 - Invalid `|array`, `|int`, and `|decimal` values are skipped instead of being indexed as strings.
 - Only one modifier is supported for each configured field.
+
+### Facet attributes
+
+`Indexing:FacetAttributes` places selected product properties and metafields under the record's `attributes` object and configures them as Algolia facets. The entries use the same aliases and optional modifiers as `ProductProperties`.
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Indexing": {
+        "FacetAttributes": [
+          "brand",
+          "metafield:material",
+          "metafield:availableSizes"
+        ]
+      }
+    }
+  }
+}
+```
+
+This produces values such as:
+
+```json
+{
+  "attributes": {
+    "brand": "Nike",
+    "material": "Leather",
+    "availableSizes": ["M", "L", "XL"]
+  }
+}
+```
+
+When variant indexing is enabled, `Indexing:VariantFacetAttributes` maps output facet names to properties on either the variant group or variant node. This supports two-level variants such as color groups containing size variants:
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Indexing": {
+        "Variants": true,
+        "VariantFacetAttributes": {
+          "color": "variantGroup:title",
+          "size": "variant:title"
+        }
+      }
+    }
+  }
+}
+```
+
+For one-level variants where both values are stored on each variant node, use property aliases instead:
+
+```json
+"VariantFacetAttributes": {
+  "color": "variant:color",
+  "size": "variant:size"
+}
+```
+
+Variant facets are stored on each variant record, so combined filters such as color and size must match the same variant. Product facet attributes are inherited by variant records, and a variant attribute overrides a product attribute with the same output name.
+
+With variants enabled, the plugin configures these facets with Algolia's `afterDistinct` modifier and groups search results by `ProductId`. This provides product-level facet counts while preserving variant-level combinations. Algolia recommends that facet values are consistent within each distinct group, so validate counts for catalogues where one product has many different variant values. A full product reindex is required after adding or changing facet attributes.
 
 ### Manual reindexing
 

@@ -317,7 +317,9 @@ internal sealed class AlgoliaProductIndexExecutor
 
     private async Task EnsureIndexSettingsAsync(AlgoliaResolvedStore store, string primaryIndexName, CancellationToken ct)
     {
-        if (_options.Indexing.SortedReplicas.Count == 0 && !_options.Indexing.Variants)
+        var attributesForFaceting = BuildAttributesForFaceting(_options.Indexing);
+        var hasLanguageSettings = HasLanguageSettings(store.LanguageSettings);
+        if (_options.Indexing.SortedReplicas.Count == 0 && attributesForFaceting.Count == 0 && !hasLanguageSettings)
             return;
 
         var replicas = _options.Indexing.SortedReplicas
@@ -330,7 +332,7 @@ internal sealed class AlgoliaProductIndexExecutor
             .DistinctBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (replicas.Count == 0 && !_options.Indexing.Variants)
+        if (replicas.Count == 0 && attributesForFaceting.Count == 0 && !hasLanguageSettings)
             return;
 
         _logger.LogDebug(
@@ -339,32 +341,120 @@ internal sealed class AlgoliaProductIndexExecutor
             primaryIndexName,
             store.Alias);
 
+        var primarySettings = new IndexSettings
+        {
+            Replicas = replicas.Select(x => x.Name).ToList(),
+            AttributeForDistinct = _options.Indexing.Variants ? "ProductId" : null,
+            AttributesForFaceting = attributesForFaceting.Count > 0 ? attributesForFaceting : null,
+        };
+        ApplyLanguageSettings(primarySettings, store);
+
         await _client.SetSettingsAsync(
             primaryIndexName,
-            new IndexSettings
-            {
-                Replicas = replicas.Select(x => x.Name).ToList(),
-                AttributeForDistinct = _options.Indexing.Variants ? "ProductId" : null,
-                AttributesForFaceting = _options.Indexing.Variants
-                    ? ["filterOnly(ProductId)", "filterOnly(categoryPageId)"]
-                    : null
-            },
+            primarySettings,
             forwardToReplicas: false,
             options: null,
             cancellationToken: ct).ConfigureAwait(false);
 
         foreach (var replica in replicas)
         {
+            var replicaSettings = new IndexSettings
+            {
+                Ranking = BuildReplicaRanking(replica.Options),
+                AttributeForDistinct = _options.Indexing.Variants ? "ProductId" : null,
+                AttributesForFaceting = attributesForFaceting.Count > 0 ? attributesForFaceting : null,
+            };
+            ApplyLanguageSettings(replicaSettings, store);
+
             await _client.SetSettingsAsync(
                 replica.Name,
-                new IndexSettings
-                {
-                    Ranking = BuildReplicaRanking(replica.Options)
-                },
+                replicaSettings,
                 forwardToReplicas: false,
                 options: null,
                 cancellationToken: ct).ConfigureAwait(false);
         }
+    }
+
+    internal static void ApplyLanguageSettings(IndexSettings indexSettings, AlgoliaResolvedStore store)
+    {
+        var languageSettings = store.LanguageSettings;
+
+        indexSettings.QueryLanguages = ParseLanguages(
+            languageSettings.QueryLanguages,
+            nameof(languageSettings.QueryLanguages),
+            store.Alias);
+        indexSettings.IndexLanguages = ParseLanguages(
+            languageSettings.IndexLanguages,
+            nameof(languageSettings.IndexLanguages),
+            store.Alias);
+        indexSettings.RemoveStopWords = languageSettings.RemoveStopWords.HasValue
+            ? new RemoveStopWords(languageSettings.RemoveStopWords.Value)
+            : null;
+        indexSettings.IgnorePlurals = languageSettings.IgnorePlurals.HasValue
+            ? new IgnorePlurals(languageSettings.IgnorePlurals.Value)
+            : null;
+    }
+
+    internal static bool HasLanguageSettings(AlgoliaLanguageSettingsOptions settings)
+        => settings.QueryLanguages.Count > 0
+            || settings.IndexLanguages.Count > 0
+            || settings.RemoveStopWords.HasValue
+            || settings.IgnorePlurals.HasValue;
+
+    private static List<SupportedLanguage>? ParseLanguages(
+        IReadOnlyCollection<string> languages,
+        string settingName,
+        string storeAlias)
+    {
+        if (languages.Count == 0)
+            return null;
+
+        var parsedLanguages = new List<SupportedLanguage>(languages.Count);
+        foreach (var language in languages)
+        {
+            var value = language?.Trim();
+            if (string.IsNullOrWhiteSpace(value)
+                || !Enum.TryParse(value, ignoreCase: true, out SupportedLanguage parsedLanguage)
+                || !Enum.IsDefined(parsedLanguage))
+            {
+                throw new InvalidOperationException(
+                    $"Unsupported Algolia language '{language}' configured for store '{storeAlias}' in '{settingName}'. Use a supported ISO 639-1 language code.");
+            }
+
+            if (!parsedLanguages.Contains(parsedLanguage))
+                parsedLanguages.Add(parsedLanguage);
+        }
+
+        return parsedLanguages;
+    }
+
+    internal static List<string> BuildAttributesForFaceting(AlgoliaIndexingOptions options)
+    {
+        var attributes = options.FacetAttributes
+            .Select(ProductIndexMapper.ConfiguredField.Parse)
+            .Select(field => field.Alias)
+            .Concat(options.VariantFacetAttributes
+                .Select(x => ProductIndexMapper.ConfiguredVariantFacet.Parse(x.Key, x.Value))
+                .Where(attribute => !string.IsNullOrWhiteSpace(attribute.Field.Alias))
+                .Select(attribute => attribute.OutputAlias))
+            .Where(alias => !string.IsNullOrWhiteSpace(alias))
+            .Select(alias => alias.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var attributesForFaceting = new List<string>();
+        if (options.Variants)
+        {
+            attributesForFaceting.Add("filterOnly(ProductId)");
+            attributesForFaceting.Add("filterOnly(categoryPageId)");
+        }
+
+        attributesForFaceting.AddRange(attributes.Select(attribute =>
+            options.Variants
+                ? $"afterDistinct(attributes.{attribute})"
+                : $"attributes.{attribute}"));
+
+        return attributesForFaceting;
     }
 
     private async Task DeleteByProductIdsAsync(string indexName, IEnumerable<Guid> productKeys, bool waitForTasks, CancellationToken ct)

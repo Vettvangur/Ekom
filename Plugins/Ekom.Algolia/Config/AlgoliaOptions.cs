@@ -38,6 +38,8 @@ public sealed class AlgoliaIndexingOptions
     public int BatchSize { get; set; } = 1000;
 
     public IReadOnlyCollection<string> ProductProperties { get; init; } = [];
+    public IReadOnlyCollection<string> FacetAttributes { get; init; } = [];
+    public Dictionary<string, string> VariantFacetAttributes { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyCollection<AlgoliaSortedReplicaOptions> SortedReplicas { get; init; } = [];
 
     public AlgoliaDispatcherOptions Dispatching { get; init; } = new();
@@ -139,6 +141,15 @@ public sealed class AlgoliaStoreOptions
 {
     public required string Alias { get; set; }
     public bool IncludeStock { get; set; }
+    public AlgoliaLanguageSettingsOptions LanguageSettings { get; init; } = new();
+}
+
+public sealed class AlgoliaLanguageSettingsOptions
+{
+    public IReadOnlyCollection<string> QueryLanguages { get; init; } = [];
+    public IReadOnlyCollection<string> IndexLanguages { get; init; } = [];
+    public bool? RemoveStopWords { get; init; }
+    public bool? IgnorePlurals { get; init; }
 }
 
 public sealed class AlgoliaResolvedStore
@@ -149,6 +160,7 @@ public sealed class AlgoliaResolvedStore
     public bool IncludeStock { get; init; }
     public IReadOnlyList<string> Locales { get; init; } = [];
     public IReadOnlyList<string> Currencies { get; init; } = [];
+    public AlgoliaLanguageSettingsOptions LanguageSettings { get; init; } = new();
 
     public IReadOnlyList<AlgoliaResolvedStore> ExpandIndexTargets()
     {
@@ -173,7 +185,8 @@ public sealed class AlgoliaResolvedStore
             Currency = currency,
             IncludeStock = IncludeStock,
             Locales = Locales,
-            Currencies = Currencies
+            Currencies = Currencies,
+            LanguageSettings = LanguageSettings,
         };
 }
 

@@ -158,9 +158,9 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Fact]
-    public void Strips_Html_From_Built_In_Product_Text_Fields()
+    public void Strips_Html_From_Built_In_Summary_And_Description_Fields()
     {
-        var mapper = CreateMapper(productProperties: ["TITLE|STRIPHTML", "summary|striphtml", "description|striphtml"]);
+        var mapper = CreateMapper(productProperties: ["summary|striphtml", "description|striphtml"]);
         var product = CreateProduct(
             title: "<p>Product <strong>title</strong></p>",
             summary: "<div>Product&nbsp;summary</div>",
@@ -169,7 +169,7 @@ public class AlgoliaProductIndexMapperTests
         var record = mapper.Map(product.Object, CreateStore(), "products");
 
         Assert.NotNull(record);
-        Assert.Equal("Product title", record!.Title);
+        Assert.Equal("<p>Product <strong>title</strong></p>", record!.Title);
         Assert.Equal("Product summary", record.Summary);
         Assert.Equal("Product description", record.Description);
         Assert.DoesNotContain(record.Data.Keys, key => key.Equals("title", StringComparison.OrdinalIgnoreCase));
@@ -348,6 +348,139 @@ public class AlgoliaProductIndexMapperTests
         var variantRecord = records.Single(x => x.IsVariant);
         Assert.Equal("Variant description", variantRecord.Description);
         Assert.Equal("Variant description", Assert.IsType<string>(variantRecord.Data["variantDescription"]));
+    }
+
+    [Fact]
+    public void Maps_Product_Properties_And_Metafields_As_Nested_Facet_Attributes()
+    {
+        var mapper = CreateMapper(facetAttributes: ["brand", "metafield:material"]);
+        var product = CreateProduct(
+            metafields: [CreateMetafield("material", [CreateMetafieldValue((string.Empty, "Leather"))])],
+            properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["brand"] = "Nike"
+            });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        var recordAttributes = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(record!.Data["attributes"]);
+        Assert.Equal("Nike", Assert.IsType<string>(recordAttributes["brand"]));
+        Assert.Equal("Leather", Assert.IsType<string>(recordAttributes["material"]));
+        Assert.DoesNotContain("brand", record.Data.Keys);
+        Assert.DoesNotContain("material", record.Data.Keys);
+
+        using var json = JsonDocument.Parse(JsonSerializer.Serialize(record));
+        var attributes = json.RootElement.GetProperty("attributes");
+        Assert.Equal("Nike", attributes.GetProperty("brand").GetString());
+        Assert.Equal("Leather", attributes.GetProperty("material").GetString());
+    }
+
+    [Fact]
+    public void Maps_Variant_Group_And_Variant_Properties_As_Facet_Attributes()
+    {
+        var variantGroup = CreateVariantGroup(title: "Black");
+        var variant = CreateVariant(title: "XL", variantGroup: variantGroup.Object);
+        var mapper = CreateMapper(
+            indexVariants: true,
+            facetAttributes: ["brand"],
+            variantFacetAttributes: new Dictionary<string, string>
+            {
+                ["color"] = "variantGroup:title",
+                ["size"] = "variant:title"
+            });
+        var product = CreateProduct(
+            properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["brand"] = "Nike"
+            },
+            variants: [variant.Object]);
+
+        var records = mapper.MapRecords(product.Object, CreateStore(), "products");
+
+        var productRecord = records.Single(record => !record.IsVariant);
+        var variantRecord = records.Single(record => record.IsVariant);
+        var productAttributes = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(productRecord.Data["attributes"]);
+        var variantAttributes = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(variantRecord.Data["attributes"]);
+        Assert.Equal("Nike", Assert.IsType<string>(productAttributes["brand"]));
+        Assert.Equal("Nike", Assert.IsType<string>(variantAttributes["brand"]));
+        Assert.Equal("Black", Assert.IsType<string>(variantAttributes["color"]));
+        Assert.Equal("XL", Assert.IsType<string>(variantAttributes["size"]));
+    }
+
+    [Fact]
+    public void Maps_One_Level_Variant_Properties_As_Facet_Attributes()
+    {
+        var variant = CreateVariant(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["color"] = "White",
+            ["size"] = "Large"
+        });
+        var mapper = CreateMapper(
+            indexVariants: true,
+            variantFacetAttributes: new Dictionary<string, string>
+            {
+                ["color"] = "variant:color",
+                ["size"] = "variant:size"
+            });
+        var product = CreateProduct(variants: [variant.Object]);
+
+        var records = mapper.MapRecords(product.Object, CreateStore(), "products");
+
+        var variantRecord = records.Single(record => record.IsVariant);
+        var attributes = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(variantRecord.Data["attributes"]);
+        Assert.Equal("White", Assert.IsType<string>(attributes["color"]));
+        Assert.Equal("Large", Assert.IsType<string>(attributes["size"]));
+    }
+
+    [Fact]
+    public void Keeps_Facet_Values_On_Their_Own_Variant_Records()
+    {
+        var blackMedium = CreateVariant(
+            sku: "black-medium",
+            title: "Medium",
+            variantGroup: CreateVariantGroup("Black").Object);
+        var whiteLarge = CreateVariant(
+            sku: "white-large",
+            title: "Large",
+            variantGroup: CreateVariantGroup("White").Object);
+        var mapper = CreateMapper(
+            indexVariants: true,
+            variantFacetAttributes: new Dictionary<string, string>
+            {
+                ["color"] = "variantGroup:title",
+                ["size"] = "variant:title"
+            });
+        var product = CreateProduct(variants: [blackMedium.Object, whiteLarge.Object]);
+
+        var records = mapper.MapRecords(product.Object, CreateStore(), "products");
+
+        var combinations = records
+            .Where(record => record.IsVariant)
+            .Select(record => Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(record.Data["attributes"]))
+            .Select(attributes => $"{attributes["color"]}/{attributes["size"]}")
+            .ToList();
+        Assert.Equal(["Black/Medium", "White/Large"], combinations);
+        Assert.DoesNotContain("Black/Large", combinations);
+    }
+
+    [Fact]
+    public void Skips_Variant_Group_Facet_When_Group_Cannot_Be_Resolved()
+    {
+        var variant = CreateVariant();
+        variant.SetupGet(x => x.VariantGroup).Returns((Ekom.Models.IVariantGroup)null!);
+        var mapper = CreateMapper(
+            indexVariants: true,
+            variantFacetAttributes: new Dictionary<string, string>
+            {
+                ["color"] = "variantGroup:title"
+            });
+        var product = CreateProduct(variants: [variant.Object]);
+
+        var records = mapper.MapRecords(product.Object, CreateStore(), "products");
+
+        var variantRecord = records.Single(record => record.IsVariant);
+        Assert.DoesNotContain("attributes", variantRecord.Data.Keys);
     }
 
     [Fact]
@@ -584,7 +717,11 @@ public class AlgoliaProductIndexMapperTests
         Assert.Equal(0, record.CategoryRanking);
     }
 
-    private static ProductIndexMapper CreateMapper(IReadOnlyCollection<string>? productProperties = null, bool indexVariants = false)
+    private static ProductIndexMapper CreateMapper(
+        IReadOnlyCollection<string>? productProperties = null,
+        bool indexVariants = false,
+        IReadOnlyCollection<string>? facetAttributes = null,
+        Dictionary<string, string>? variantFacetAttributes = null)
     {
         var options = Options.Create(new AlgoliaOptions
         {
@@ -594,7 +731,9 @@ public class AlgoliaProductIndexMapperTests
             Indexing = new AlgoliaIndexingOptions
             {
                 Variants = indexVariants,
-                ProductProperties = productProperties ?? []
+                ProductProperties = productProperties ?? [],
+                FacetAttributes = facetAttributes ?? [],
+                VariantFacetAttributes = variantFacetAttributes ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
             }
         });
 
@@ -677,7 +816,9 @@ public class AlgoliaProductIndexMapperTests
         string sku = "variant-sku",
         string title = "Variant",
         string description = "Variant description",
-        bool available = true)
+        bool available = true,
+        IReadOnlyDictionary<string, string>? properties = null,
+        Ekom.Models.IVariantGroup? variantGroup = null)
     {
         var price = new Mock<Ekom.Models.IPrice>();
         price.SetupGet(x => x.Value).Returns(10m);
@@ -696,10 +837,25 @@ public class AlgoliaProductIndexMapperTests
         variant.SetupGet(x => x.Price).Returns(price.Object);
         variant.SetupGet(x => x.Prices).Returns([price.Object]);
         variant.SetupGet(x => x.VariantGroupId).Returns(123);
+        variant.SetupGet(x => x.VariantGroup).Returns(variantGroup ?? Mock.Of<Ekom.Models.IVariantGroup>());
         variant.SetupGet(x => x.CreateDate).Returns(new DateTime(2024, 1, 3, 0, 0, 0, DateTimeKind.Utc));
         variant.SetupGet(x => x.UpdateDate).Returns(new DateTime(2024, 1, 4, 0, 0, 0, DateTimeKind.Utc));
+        variant.Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<bool>()))
+            .Returns((string alias, string? _, bool _) => properties != null && properties.TryGetValue(alias, out var value) ? value : string.Empty);
 
         return variant;
+    }
+
+    private static Mock<Ekom.Models.IVariantGroup> CreateVariantGroup(
+        string title = "Variant group",
+        IReadOnlyDictionary<string, string>? properties = null)
+    {
+        var variantGroup = new Mock<Ekom.Models.IVariantGroup>();
+        variantGroup.SetupGet(x => x.Title).Returns(title);
+        variantGroup.Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<bool>()))
+            .Returns((string alias, string? _, bool _) => properties != null && properties.TryGetValue(alias, out var value) ? value : string.Empty);
+
+        return variantGroup;
     }
 
     private static Ekom.Models.MetavalueSlim CreateMetafield(

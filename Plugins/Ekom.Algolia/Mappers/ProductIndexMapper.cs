@@ -38,6 +38,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var locale = store.Locale;
         var categoryLevels = BuildCategoryLevels(product, locale);
         var nodeName = GetNodeName(product);
+        var facetAttributes = BuildProductFacetAttributes(product, store, baseIndexName);
         var title = ApplyBuiltInTextTransform(
             "title",
             GetLocalizedValue(product, "title", product.Title, locale),
@@ -151,6 +152,9 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             }
         }
 
+        if (facetAttributes.Count > 0)
+            record.Data["attributes"] = facetAttributes;
+
         if (_enrichers.Count > 0)
         {
             var ctx = new AlgoliaProductEnrichmentContext(product, store, baseIndexName, allowedTransforms);
@@ -174,10 +178,11 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
         var records = new List<AlgoliaProductRecord> { productRecord };
         var configuredFields = BuildAllowedProperties(product, store);
+        var variantFacetAttributes = BuildVariantFacetAttributes();
 
         foreach (var variant in product.AllVariants)
         {
-            var record = MapVariant(product, variant, productRecord, store, baseIndexName, configuredFields);
+            var record = MapVariant(product, variant, productRecord, store, baseIndexName, configuredFields, variantFacetAttributes);
             if (record is not null)
                 records.Add(record);
         }
@@ -191,7 +196,8 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         AlgoliaProductRecord productRecord,
         AlgoliaResolvedStore store,
         string baseIndexName,
-        IReadOnlyDictionary<string, ConfiguredField> configuredFields)
+        IReadOnlyDictionary<string, ConfiguredField> configuredFields,
+        IReadOnlyList<ConfiguredVariantFacet> variantFacetAttributes)
     {
         if (string.IsNullOrWhiteSpace(variant.SKU))
             return null;
@@ -205,6 +211,20 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
         var price = ResolvePrice(variant, store);
         var variantDescription = ResolveVariantDescription(product, variant, store, baseIndexName, configuredFields);
+        var attributes = CopyAttributes(productRecord.Data);
+
+        foreach (var configuredAttribute in variantFacetAttributes)
+        {
+            var converted = ResolveVariantFacetValue(variant, store, configuredAttribute);
+            var context = new AlgoliaProductFieldContext(product, store, configuredAttribute.OutputAlias, baseIndexName);
+            converted = ConvertProperty(context, converted);
+            converted = ApplyFacetTransform(converted, configuredAttribute.Field.Transform);
+
+            if (converted is not null)
+                attributes[configuredAttribute.OutputAlias] = converted;
+        }
+
+        RemoveEmptyValues(attributes);
         var data = new Dictionary<string, object?>(productRecord.Data, StringComparer.OrdinalIgnoreCase)
         {
             ["variantSku"] = variant.SKU,
@@ -213,6 +233,9 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             ["variantAvailable"] = variant.Available ? 1 : 0,
             ["variantStock"] = store.IncludeStock ? variant.Stock : null
         };
+
+        if (attributes.Count > 0)
+            data["attributes"] = attributes;
 
         RemoveEmptyValues(data);
 
@@ -278,6 +301,49 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase);
     }
 
+    private Dictionary<string, object?> BuildProductFacetAttributes(IProduct product, AlgoliaResolvedStore store, string baseIndexName)
+    {
+        var attributes = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var field in BuildConfiguredFields(_options.Indexing.FacetAttributes).Values)
+        {
+            var converted = ResolveConfiguredValue(product, store, field);
+            var context = new AlgoliaProductFieldContext(product, store, field.Alias, baseIndexName);
+            converted = ConvertProperty(context, converted);
+            converted = ApplyFacetTransform(converted, field.Transform);
+
+            if (converted is not null)
+                attributes[field.Alias] = converted;
+        }
+
+        RemoveEmptyValues(attributes);
+        return attributes;
+    }
+
+    private IReadOnlyList<ConfiguredVariantFacet> BuildVariantFacetAttributes()
+    {
+        var attributes = new Dictionary<string, ConfiguredVariantFacet>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (outputAlias, source) in _options.Indexing.VariantFacetAttributes)
+        {
+            var configuredAttribute = ConfiguredVariantFacet.Parse(outputAlias, source);
+            if (!string.IsNullOrWhiteSpace(configuredAttribute.OutputAlias)
+                && !string.IsNullOrWhiteSpace(configuredAttribute.Field.Alias))
+            {
+                attributes[configuredAttribute.OutputAlias] = configuredAttribute;
+            }
+        }
+
+        return attributes.Values.ToList();
+    }
+
+    private static Dictionary<string, ConfiguredField> BuildConfiguredFields(IEnumerable<string> fields)
+        => fields
+            .Select(ConfiguredField.Parse)
+            .Where(field => !string.IsNullOrWhiteSpace(field.Alias))
+            .GroupBy(field => field.Alias, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Last(), StringComparer.OrdinalIgnoreCase);
+
     private object? ConvertProperty(AlgoliaProductFieldContext ctx, object? value)
     {
         foreach (var converter in _converters)
@@ -293,6 +359,14 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         => transform == AlgoliaFieldTransform.StripHtml
             ? AlgoliaHtmlTextConverter.Convert(value)
             : value;
+
+    private static object? ApplyFacetTransform(object? value, AlgoliaFieldTransform transform)
+        => transform switch
+        {
+            AlgoliaFieldTransform.UnixSeconds => TryToUnix(value, unixMilliseconds: false),
+            AlgoliaFieldTransform.UnixMilliseconds => TryToUnix(value, unixMilliseconds: true),
+            _ => ApplyTransform(value, transform),
+        };
 
     private string ApplyBuiltInTextTransform(
         string alias,
@@ -334,6 +408,24 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             return null;
 
         return NormalizePropertyValue(raw, configuredField.ValueType);
+    }
+
+    private static object? ResolveVariantFacetValue(IVariant variant, AlgoliaResolvedStore store, ConfiguredVariantFacet configuredAttribute)
+    {
+        INodeEntity? node = configuredAttribute.Source == AlgoliaVariantFacetSource.VariantGroup
+            ? variant.VariantGroup
+            : variant;
+        if (node is null)
+            return null;
+
+        var fallback = configuredAttribute.Field.Alias.Equals("title", StringComparison.OrdinalIgnoreCase)
+            ? node.Title
+            : node.GetValue(configuredAttribute.Field.Alias, store.Alias);
+        var raw = GetLocalizedValue(node, configuredAttribute.Field.Alias, fallback, store.Locale);
+
+        return string.IsNullOrWhiteSpace(raw)
+            ? null
+            : NormalizePropertyValue(raw, configuredAttribute.Field.ValueType);
     }
 
     private static int ResolveCategoryRank(IProduct product, string? storeAlias)
@@ -516,6 +608,17 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
         foreach (var key in keysToRemove)
             values.Remove(key);
+    }
+
+    private static Dictionary<string, object?> CopyAttributes(IReadOnlyDictionary<string, object?> data)
+    {
+        if (data.TryGetValue("attributes", out var value)
+            && value is IReadOnlyDictionary<string, object?> attributes)
+        {
+            return attributes.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        }
+
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
     }
 
     private static bool IsEmptyValue(object? value)
@@ -715,6 +818,40 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             return (rawAlias, AlgoliaFieldSource.Property);
         }
     }
+
+    internal readonly record struct ConfiguredVariantFacet(
+        string OutputAlias,
+        AlgoliaVariantFacetSource Source,
+        ConfiguredField Field)
+    {
+        public static ConfiguredVariantFacet Parse(string outputAlias, string raw)
+        {
+            if (string.IsNullOrWhiteSpace(outputAlias) || string.IsNullOrWhiteSpace(raw))
+                return default;
+
+            const string variantPrefix = "variant:";
+            const string variantGroupPrefix = "variantGroup:";
+            AlgoliaVariantFacetSource source;
+            string field;
+
+            if (raw.StartsWith(variantGroupPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                source = AlgoliaVariantFacetSource.VariantGroup;
+                field = raw[variantGroupPrefix.Length..];
+            }
+            else if (raw.StartsWith(variantPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                source = AlgoliaVariantFacetSource.Variant;
+                field = raw[variantPrefix.Length..];
+            }
+            else
+            {
+                return default;
+            }
+
+            return new ConfiguredVariantFacet(outputAlias.Trim(), source, ConfiguredField.Parse(field));
+        }
+    }
 }
 
 internal enum AlgoliaFieldSource
@@ -729,4 +866,10 @@ internal enum AlgoliaFieldValueType
     Int,
     Decimal,
     Array
+}
+
+internal enum AlgoliaVariantFacetSource
+{
+    Variant,
+    VariantGroup,
 }
