@@ -74,8 +74,7 @@ static class Registrations
                 f.GetRequiredService<ICouponCache>(),
                 f.GetRequiredService<DiscountCache>(),
                 f.GetRequiredService<INodeService>(),
-                f.GetRequiredService<IStoreService>(),
-                f.GetRequiredService<OrderDiscountCalculationContextAccessor>()
+                f.GetRequiredService<IStoreService>()
             )
         );
         services.AddScoped<RevalidateService>();

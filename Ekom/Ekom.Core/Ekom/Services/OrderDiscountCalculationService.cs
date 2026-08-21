@@ -14,22 +14,19 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
     private readonly DiscountCache _discountCache;
     private readonly INodeService _nodeService;
     private readonly IStoreService _storeService;
-    private readonly OrderDiscountCalculationContextAccessor _contextAccessor;
 
     internal OrderDiscountCalculationService(
         Catalog catalog,
         ICouponCache couponCache,
         DiscountCache discountCache,
         INodeService nodeService,
-        IStoreService storeService,
-        OrderDiscountCalculationContextAccessor contextAccessor)
+        IStoreService storeService)
     {
         _catalog = catalog;
         _couponCache = couponCache;
         _discountCache = discountCache;
         _nodeService = nodeService;
         _storeService = storeService;
-        _contextAccessor = contextAccessor;
     }
 
     public async Task<OrderDiscountCalculationResult> CalculateByCouponAsync(
@@ -64,7 +61,10 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
             .ToArray();
 
         var messages = new List<string>();
-        var orderDiscountConstraintsMet = DiscountApplicability.AreOrderConstraintsMet(orderInfo, discount);
+        // Use the per-line snapshots (each priced under its own PricingContext) for the order total
+        // instead of orderInfo.OrderLineTotal, which would re-price every line with no context.
+        var orderLineTotal = lineSnapshots.Sum(line => line.LineTotalBeforeDiscount);
+        var orderDiscountConstraintsMet = DiscountApplicability.AreOrderConstraintsMet(orderInfo, discount, orderLineTotal);
 
         OrderedDiscount? orderedDiscount = null;
         if (orderDiscountConstraintsMet)
@@ -83,7 +83,16 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         {
             var line = orderInfo.orderLines[index];
             var couponApplicable = orderDiscountConstraintsMet && couponLineTargets[index];
-            var amount = line.Amount;
+
+            // OrderLine.Amount recalculates on every access, so the line's PricingContext must be
+            // active here too or the "after discount" price would be evaluated for a different audience
+            // than the "before discount" snapshot.
+            IPrice amount;
+            using (PricingContext.Activate(lineSnapshots[index].RequestLine.PricingContext))
+            {
+                amount = line.Amount;
+            }
+
             var lineTotalBeforeDiscount = lineSnapshots[index].LineTotalBeforeDiscount;
             var lineTotalAfterDiscount = amount.Value;
             var discountAmount = Math.Max(0, lineTotalBeforeDiscount - lineTotalAfterDiscount);
@@ -120,7 +129,7 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
             DiscountId = discount.Key,
             DiscountTitle = discount.Title,
             Currency = store.Currency.CurrencyValue,
-            SubTotal = lineSnapshots.Sum(line => line.LineTotalBeforeDiscount),
+            SubTotal = orderLineTotal,
             DiscountTotal = lineResults.Sum(line => line.DiscountAmount),
             GrandTotal = lineResults.Sum(line => line.LineTotalAfterDiscount),
             Lines = lineResults,
@@ -219,7 +228,10 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
                 throw new ArgumentException("Line quantity must be greater than zero", nameof(lines));
             }
 
-            using var contextScope = _contextAccessor.Activate(requestLine.PricingContext);
+            // Product/variant prices are evaluated lazily (Product.Price -> PriceCache -> DiscountEvents).
+            // The line's PricingContext must be ambient for the whole of that evaluation, including the
+            // snapshot taken below. It is forwarded into the pricing event args by Ekom.
+            using var contextScope = PricingContext.Activate(requestLine.PricingContext);
 
             var product = await _catalog.GetProductAsync(requestLine.Sku, store.Alias, ct: ct).ConfigureAwait(false)
                 ?? throw new ProductNotFoundException($"Unable to find product with sku: {requestLine.Sku}");

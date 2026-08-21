@@ -41,6 +41,12 @@ public class DiscountEvents
         public string StoreAlias { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public string[]? Categories { get; set; }
+
+        /// <summary>
+        /// Ambient <see cref="Ekom.PricingContext"/> active for this evaluation (e.g. per order line during
+        /// order discount calculation). Case-insensitive, empty when no context is active.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> PricingContext { get; init; } = Ekom.PricingContext.CurrentOrEmpty;
     }
 
     public class ProductDiscountApplicableEventArgs : EventArgs
@@ -51,18 +57,33 @@ public class DiscountEvents
         public string[]? Categories { get; }
         public List<IProductDiscount> ApplicableDiscounts { get; }
 
+        /// <inheritdoc cref="ProductDiscountEvaluationEventArgs.PricingContext"/>
+        public IReadOnlyDictionary<string, string> PricingContext { get; }
+
         public ProductDiscountApplicableEventArgs(
             string path,
             string storeAlias,
             decimal price,
             string[]? categories,
             List<IProductDiscount> applicableDiscounts)
+            : this(path, storeAlias, price, categories, applicableDiscounts, Ekom.PricingContext.CurrentOrEmpty)
+        {
+        }
+
+        public ProductDiscountApplicableEventArgs(
+            string path,
+            string storeAlias,
+            decimal price,
+            string[]? categories,
+            List<IProductDiscount> applicableDiscounts,
+            IReadOnlyDictionary<string, string> pricingContext)
         {
             Path = path;
             StoreAlias = storeAlias;
             Price = price;
             Categories = categories;
             ApplicableDiscounts = applicableDiscounts;
+            PricingContext = pricingContext;
         }
     }
 

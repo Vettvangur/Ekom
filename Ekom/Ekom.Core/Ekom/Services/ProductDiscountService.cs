@@ -134,7 +134,8 @@ class ProductDiscountService
             storeAlias,
             price,
             categories,
-            applicableDiscounts);
+            applicableDiscounts,
+            evalArgs.PricingContext);
 
         await _discountEvents.RaiseAfterApplicableDiscountsAsync(this, applicableArgs, ct).ConfigureAwait(false);
 
