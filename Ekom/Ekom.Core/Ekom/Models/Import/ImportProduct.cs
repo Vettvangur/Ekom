@@ -16,6 +16,7 @@ public class ImportProduct : ImportBase
     public Dictionary<string, object>? Slug { get; set; } = new Dictionary<string, object>();
     public string? SKU { get; set; }
     public Dictionary<string, object>? Description { get; set; } = new Dictionary<string, object>();
+    public Dictionary<string, object>? Summary { get; set; } = new Dictionary<string, object>();
     public List<ImportPrice> Price { get; set; } = new List<ImportPrice>();
     public List<ImportStock> Stock { get; set; } = new List<ImportStock>();
     public bool EnableBackorder { get; set; }

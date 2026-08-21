@@ -16,6 +16,7 @@ public static class ImportContentExtensions
 {
     private static readonly string[] AllCultures = ["*"];
     private const string RichTextEditorAlias = "Umbraco.RichText";
+    private const string LegacyRichTextEditorAlias = "Umbraco.TinyMCE";
 
     public static void SetProperty(this IContent content, string alias, Dictionary<string, object> values, PropertyEditorType type = PropertyEditorType.Empty)
     {
@@ -57,7 +58,9 @@ public static class ImportContentExtensions
             return false;
         }
 
-        return string.Equals(GetPropertyEditorAlias(wrappedDataType), RichTextEditorAlias, StringComparison.Ordinal);
+        var propertyEditorAlias = GetPropertyEditorAlias(wrappedDataType);
+        return string.Equals(propertyEditorAlias, RichTextEditorAlias, StringComparison.Ordinal)
+            || string.Equals(propertyEditorAlias, LegacyRichTextEditorAlias, StringComparison.Ordinal);
     }
 
     private static object CreateRichTextValue(object? value)
