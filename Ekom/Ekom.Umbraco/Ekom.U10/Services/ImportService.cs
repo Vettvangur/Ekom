@@ -985,7 +985,7 @@ public class ImportService : IImportService
                 foreach (var property in importCategory.AdditionalProperties)
                 {
                     if (categoryContent.HasProperty(property.Key))
-                        categoryContent.SetValue(property.Key, property.Value);
+                        categoryContent.SetAdditionalProperty(property.Key, property.Value);
                 }
             }
 
@@ -1084,6 +1084,7 @@ public class ImportService : IImportService
 
             if (!importProduct.PreserveExistingValues)
             {
+                productContent.SetProperty("summary", importProduct.Summary);
                 productContent.SetProperty("description", importProduct.Description);
             }
 
@@ -1113,7 +1114,7 @@ public class ImportService : IImportService
                 {
                     if (productContent.HasProperty(property.Key))
                     {
-                        productContent.SetValue(property.Key, property.Value);
+                        productContent.SetAdditionalProperty(property.Key, property.Value);
                     }
                 }
             }
@@ -1185,7 +1186,7 @@ public class ImportService : IImportService
         {
             foreach (var property in importVariantGroup.AdditionalProperties)
             {
-                variantGroupContent.SetValue(property.Key, property.Value);
+                variantGroupContent.SetAdditionalProperty(property.Key, property.Value);
             }
         }
 
@@ -1286,7 +1287,7 @@ public class ImportService : IImportService
         {
             foreach (var property in importVariant.AdditionalProperties)
             {
-                variantContent.SetValue(property.Key, property.Value);
+                variantContent.SetAdditionalProperty(property.Key, property.Value);
             }
         }
 

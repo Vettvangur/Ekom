@@ -16,6 +16,7 @@ public static class ImportContentExtensions
 {
     private static readonly string[] AllCultures = ["*"];
     private const string RichTextEditorAlias = "Umbraco.RichText";
+    private const string LegacyRichTextEditorAlias = "Umbraco.TinyMCE";
 
     public static void SetProperty(this IContent content, string alias, Dictionary<string, object> values, PropertyEditorType type = PropertyEditorType.Empty)
     {
@@ -39,10 +40,40 @@ public static class ImportContentExtensions
         {
             DtdGuid = dataType?.Key ?? Guid.Empty,
             Values = propertyValues,
-            Type = type == PropertyEditorType.Empty ? PropertyEditorType.Language : type,
+            Type = GetPropertyEditorType(dataType, type),
         });
 
         content.SetValue(alias, value);
+    }
+
+    public static void SetAdditionalProperty(this IContent content, string alias, object? value)
+    {
+        var property = content.Properties.FirstOrDefault(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
+
+        if (value is Dictionary<string, object> values
+            && string.Equals(property?.PropertyType.PropertyEditorAlias, "Ekom.Property", StringComparison.Ordinal))
+        {
+            content.SetProperty(alias, values);
+            return;
+        }
+
+        content.SetValue(alias, value);
+    }
+
+    private static PropertyEditorType GetPropertyEditorType(IDataType? dataType, PropertyEditorType type)
+    {
+        if (type != PropertyEditorType.Empty)
+        {
+            return type;
+        }
+
+        if (dataType?.ConfigurationData?.TryGetValue("useLanguages", out var useLanguages) == true
+            && bool.TryParse(useLanguages?.ToString(), out var value))
+        {
+            return value ? PropertyEditorType.Language : PropertyEditorType.Store;
+        }
+
+        return PropertyEditorType.Language;
     }
 
     private static bool IsRichTextEditor(IDataType? dataType)
@@ -57,7 +88,9 @@ public static class ImportContentExtensions
             return false;
         }
 
-        return string.Equals(GetPropertyEditorAlias(wrappedDataType), RichTextEditorAlias, StringComparison.Ordinal);
+        var propertyEditorAlias = GetPropertyEditorAlias(wrappedDataType);
+        return string.Equals(propertyEditorAlias, RichTextEditorAlias, StringComparison.Ordinal)
+            || string.Equals(propertyEditorAlias, LegacyRichTextEditorAlias, StringComparison.Ordinal);
     }
 
     private static object CreateRichTextValue(object? value)

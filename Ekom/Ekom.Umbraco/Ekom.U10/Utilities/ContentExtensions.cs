@@ -97,6 +97,20 @@ public static class ContentExtensions
         throw new InvalidOperationException("Unable to find matching property on IContent.");
     }
 
+    public static void SetAdditionalProperty(this IContent content, string alias, object? value)
+    {
+        var property = content.Properties.FirstOrDefault(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
+
+        if (value is Dictionary<string, object> values
+            && string.Equals(property?.PropertyType.PropertyEditorAlias, "Ekom.Property", StringComparison.Ordinal))
+        {
+            content.SetProperty(alias, values);
+            return;
+        }
+
+        content.SetValue(alias, value);
+    }
+
     private static IEnumerable<IDataType>? GetDataTypesByEditorAlias(string alias)
     {
         var cache = Configuration.Resolver.GetService<IMemoryCache>();
