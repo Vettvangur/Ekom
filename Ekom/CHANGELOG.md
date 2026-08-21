@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.246](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.245...Ekom-v0.2.246) (2026-08-21)
+
+
+### Bug Fixes
+
+* **import:** support product summaries ([#789](https://github.com/Vettvangur/Ekom/issues/789)) ([2021c88](https://github.com/Vettvangur/Ekom/commit/2021c880ac1e9346c9288113dc07e9b484983e8c))
+
 ## [0.2.245](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.244...Ekom-v0.2.245) (2026-08-21)
 
 
