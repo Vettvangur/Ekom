@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.245](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.244...Ekom-v0.2.245) (2026-08-21)
+
+
+### Bug Fixes
+
+* **products:** add summary property editor ([#787](https://github.com/Vettvangur/Ekom/issues/787)) ([a8661d8](https://github.com/Vettvangur/Ekom/commit/a8661d82db7fefa34653b3b139f7eabdb54506ae))
+
 ## [0.2.244](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.243...Ekom-v0.2.244) (2026-08-20)
 
 
