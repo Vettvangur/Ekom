@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.247](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.246...Ekom-v0.2.247) (2026-08-21)
+
+
+### Features
+
+* **discounts:** Order discount calculations ([#782](https://github.com/Vettvangur/Ekom/issues/782)) ([7a32fda](https://github.com/Vettvangur/Ekom/commit/7a32fdac516d0fe514606cbf3b6275c653bc5599))
+
 ## [0.2.246](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.245...Ekom-v0.2.246) (2026-08-21)
 
 
