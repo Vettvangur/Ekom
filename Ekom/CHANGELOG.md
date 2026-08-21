@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.248](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.247...Ekom-v0.2.248) (2026-08-21)
+
+
+### Features
+
+* **algolia:** add configurable facet and language settings ([#792](https://github.com/Vettvangur/Ekom/issues/792)) ([337e996](https://github.com/Vettvangur/Ekom/commit/337e9967a01000d1dfaa980c4570802c176e1574))
+
 ## [0.2.247](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.246...Ekom-v0.2.247) (2026-08-21)
 
 

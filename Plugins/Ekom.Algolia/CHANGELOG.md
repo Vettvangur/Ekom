@@ -6,6 +6,13 @@
 
 * **algolia:** add optional variant-level product indexing for SKU search.
 
+## [0.2.42](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.41...Ekom.Algolia-v0.2.42) (2026-08-21)
+
+
+### Features
+
+* **algolia:** add configurable facet and language settings ([#792](https://github.com/Vettvangur/Ekom/issues/792)) ([337e996](https://github.com/Vettvangur/Ekom/commit/337e9967a01000d1dfaa980c4570802c176e1574))
+
 ## [0.2.41](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.40...Ekom.Algolia-v0.2.41) (2026-08-21)
 
 
