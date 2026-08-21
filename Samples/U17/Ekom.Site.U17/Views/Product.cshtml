@@ -170,6 +170,11 @@
                 }
 
                 <div class="mt-10">
+                    <h2 class="text-sm font-medium text-gray-900">Summary</h2>
+                    <div class="prose prose-sm mt-4 text-gray-500">@Html.ReplaceLineBreaks(product.Summary)</div>
+                </div>
+
+                <div class="mt-10">
                     <h2 class="text-sm font-medium text-gray-900">Description</h2>
                     <div class="prose prose-sm mt-4 text-gray-500">@Html.Raw(product.Description)</div>
                 </div>
