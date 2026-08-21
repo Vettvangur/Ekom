@@ -47,7 +47,8 @@ internal sealed class AlgoliaStoreResolver
             Currency = ekomStore?.Currency?.CurrencyValue,
             IncludeStock = configuredStore?.IncludeStock ?? false,
             Locales = locales,
-            Currencies = currencies
+            Currencies = currencies,
+            LanguageSettings = configuredStore?.LanguageSettings ?? new(),
         };
     }
 
