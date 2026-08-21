@@ -101,10 +101,19 @@ public static class PriceCache
         public string ItemKey { get; }
         public string Generation { get; set; }
 
+        /// <summary>
+        /// Ambient <see cref="Ekom.PricingContext"/> active when the generation was requested.
+        /// Handlers that vary prices by context should fold the relevant values into
+        /// <see cref="Generation"/> so cached prices are partitioned accordingly.
+        /// Case-insensitive, empty when no context is active.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> PricingContext { get; }
+
         public PriceGenerationEventArgs(string itemKey, string generation)
         {
             ItemKey = itemKey;
             Generation = generation;
+            PricingContext = Ekom.PricingContext.CurrentOrEmpty;
         }
     }
 }

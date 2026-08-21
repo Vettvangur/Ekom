@@ -65,6 +65,7 @@ static class Registrations
         services.AddScoped<ApiExceptionFilter>();
 
         services.AddTransient<IStoreService, StoreService>();
+        services.AddSingleton<OrderDiscountCalculationContextAccessor>();
 
         services.AddTransient<OrderService>();
         services.AddTransient<IOrderDiscountCalculationService>(f =>

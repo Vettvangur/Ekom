@@ -16,6 +16,22 @@ internal static class DiscountApplicability
         return AreConstraintsMet(orderInfo, discount);
     }
 
+    /// <summary>
+    /// Same as <see cref="AreOrderConstraintsMet(IOrderInfo, IDiscount)"/> but with a caller supplied
+    /// order line total, for cases where lines were priced under differing ambient pricing contexts
+    /// and <c>orderInfo.OrderLineTotal</c> would re-price them without that context.
+    /// </summary>
+    public static bool AreOrderConstraintsMet(IOrderInfo orderInfo, IDiscount discount, decimal orderLineTotal)
+    {
+        if (discount is IProductDiscount)
+        {
+            return false;
+        }
+
+        return discount.Constraints == null
+            || discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderLineTotal);
+    }
+
     public static bool IsDiscountApplicable(
         IOrderInfo orderInfo,
         IOrderLine orderLine,

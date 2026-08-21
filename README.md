@@ -216,15 +216,49 @@ X-Ekom-Api-Key: integration-secret
   "storeAlias": "Store",
   "lines": [
     {
+      "clientLineId": "basket-line-1",
       "sku": "SKU-123",
       "variantSku": "VARIANT-SKU-123",
-      "quantity": 1
+      "quantity": 1,
+      "pricingContext": {
+        "customerGroup": "member"
+      }
     }
   ]
 }
 ```
 
-`variantSku` is optional. Configure `Ekom:OrderDiscountCalculation:ApiKey` to enable the endpoint; callers must send the same value in `X-Ekom-Api-Key`.
+`variantSku`, `clientLineId` and `pricingContext` are optional. `clientLineId` is echoed back on each result line so callers can map results to their own basket lines. Configure `Ekom:OrderDiscountCalculation:ApiKey` to enable the endpoint; callers must send the same value in `X-Ekom-Api-Key`.
+
+`pricingContext` is an arbitrary string dictionary that is not interpreted by Ekom. While a line is priced, Ekom activates it as the ambient `Ekom.PricingContext` and forwards it into the pricing event args, so handlers in the site hosting Ekom can vary pricing per line:
+
+- `DiscountEvents.BeforeEvaluateDiscountsAsync` / `AfterApplicableDiscountsAsync` — `e.PricingContext` (e.g. drop discounts that do not apply to this audience)
+- `PriceCache.OnGenerationCreatedAsync` — `e.PricingContext` (fold context values into `e.Generation` so cached prices are partitioned per audience)
+
+```csharp
+discountEvents.AfterApplicableDiscountsAsync += (sender, e) =>
+{
+    var isMember = e.PricingContext.TryGetValue("customerGroup", out var group) && group == "member";
+    if (!isMember)
+    {
+        e.ApplicableDiscounts.RemoveAll(d => d.Title == "memberDiscount");
+    }
+
+    return Task.CompletedTask;
+};
+
+PriceCache.OnGenerationCreatedAsync += (e, ct) =>
+{
+    if (e.PricingContext.TryGetValue("customerGroup", out var group))
+    {
+        e.Generation += $":{group}";
+    }
+
+    return ValueTask.CompletedTask;
+};
+```
+
+Keys are matched case-insensitively and `PricingContext` is never null (empty when no context is active). Code that runs outside these events can inject `OrderDiscountCalculationContextAccessor` or read `Ekom.PricingContext.Current` directly.
 
 ### Tracking and consent
 
