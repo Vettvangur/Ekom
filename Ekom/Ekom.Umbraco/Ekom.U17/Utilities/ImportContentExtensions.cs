@@ -40,10 +40,40 @@ public static class ImportContentExtensions
         {
             DtdGuid = dataType?.Key ?? Guid.Empty,
             Values = propertyValues,
-            Type = type == PropertyEditorType.Empty ? PropertyEditorType.Language : type,
+            Type = GetPropertyEditorType(dataType, type),
         });
 
         content.SetValue(alias, value);
+    }
+
+    public static void SetAdditionalProperty(this IContent content, string alias, object? value)
+    {
+        var property = content.Properties.FirstOrDefault(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
+
+        if (value is Dictionary<string, object> values
+            && string.Equals(property?.PropertyType.PropertyEditorAlias, "Ekom.Property", StringComparison.Ordinal))
+        {
+            content.SetProperty(alias, values);
+            return;
+        }
+
+        content.SetValue(alias, value);
+    }
+
+    private static PropertyEditorType GetPropertyEditorType(IDataType? dataType, PropertyEditorType type)
+    {
+        if (type != PropertyEditorType.Empty)
+        {
+            return type;
+        }
+
+        if (dataType?.ConfigurationData?.TryGetValue("useLanguages", out var useLanguages) == true
+            && bool.TryParse(useLanguages?.ToString(), out var value))
+        {
+            return value ? PropertyEditorType.Language : PropertyEditorType.Store;
+        }
+
+        return PropertyEditorType.Language;
     }
 
     private static bool IsRichTextEditor(IDataType? dataType)
