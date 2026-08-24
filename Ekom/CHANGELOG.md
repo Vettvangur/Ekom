@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.249](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.248...Ekom-v0.2.249) (2026-08-24)
+
+
+### Bug Fixes
+
+* **algolia:** preserve configured facet settings ([#794](https://github.com/Vettvangur/Ekom/issues/794)) ([4849205](https://github.com/Vettvangur/Ekom/commit/48492058043e3dae14723eff70aa4b4463744180))
+
 ## [0.2.248](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.247...Ekom-v0.2.248) (2026-08-21)
 
 
