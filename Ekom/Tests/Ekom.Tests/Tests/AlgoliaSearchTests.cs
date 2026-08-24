@@ -32,6 +32,7 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:Search:Cache:Enabled"] = "true",
                 ["Ekom:Algolia:Search:Cache:DurationMinutes"] = "15",
                 ["Ekom:Algolia:Search:Cache:CacheEmptyResults"] = "false",
+                ["Ekom:Algolia:Indexing:AttributesForFaceting:0"] = "filterOnly(categoryPageId)",
                 ["Ekom:Algolia:Indexing:FacetAttributes:0"] = "metafield:material",
                 ["Ekom:Algolia:Indexing:VariantFacetAttributes:color"] = "variantGroup:title",
                 ["Ekom:Algolia:Indexing:VariantFacetAttributes:size"] = "variant:title",
@@ -66,6 +67,7 @@ public class AlgoliaSearchTests
         Assert.Equal(50, options.Search.MaxHitsPerPage);
         Assert.Equal(15, options.Search.Cache.DurationMinutes);
         Assert.False(options.Search.Cache.CacheEmptyResults);
+        Assert.Equal(["filterOnly(categoryPageId)"], options.Indexing.AttributesForFaceting);
         Assert.Equal(["metafield:material"], options.Indexing.FacetAttributes);
         Assert.Equal("variantGroup:title", options.Indexing.VariantFacetAttributes["color"]);
         Assert.Equal("variant:title", options.Indexing.VariantFacetAttributes["size"]);
