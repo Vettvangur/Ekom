@@ -48,6 +48,7 @@ public class OrderInfo : IOrderInfo
             CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
             Consent = CreateConsentFromJson(orderInfoJObject);
             Tracking = CreateTrackingFromJson(orderInfoJObject);
+            Giftcards = orderInfoJObject[nameof(Giftcards)]?.ToObject<List<Giftcard>>() ?? new List<Giftcard>();
             Discount = CreateOrderedDiscountFromJson(orderInfoJObject[nameof(Discount)]);
             Coupon = orderInfoJObject[nameof(Coupon)]?.ToObject<string>();
             _hangfireJobs = orderInfoJObject[nameof(HangfireJobs)]?.ToObject<List<string>>();
@@ -58,6 +59,7 @@ public class OrderInfo : IOrderInfo
     public OrderedDiscount Discount { get; internal set; }
     /// <inheritdoc />
     public string Coupon { get; internal set; }
+    public List<Giftcard> Giftcards { get; set; } = new List<Giftcard>();
 
     /// <inheritdoc />
     public Guid UniqueId
@@ -245,7 +247,7 @@ public class OrderInfo : IOrderInfo
             if (ShippingProvider != null) amount += ShippingProvider.Price.WithoutVat.Value;
             if (PaymentProvider != null) amount += PaymentProvider.Price.WithoutVat.Value;
 
-            return new CalculatedPrice(amount, StoreInfo.Currency);
+            return new CalculatedPrice(Math.Max(0, amount - GetApplicableGiftcardAmount()), StoreInfo.Currency);
         }
     }
 
@@ -283,6 +285,21 @@ public class OrderInfo : IOrderInfo
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }
+    }
+
+    private decimal GetApplicableGiftcardAmount()
+    {
+        return Giftcards
+            .Where(IsGiftcardApplicable)
+            .Sum(giftcard => giftcard.Amount);
+    }
+
+    private static bool IsGiftcardApplicable(Giftcard giftcard)
+    {
+        return giftcard.Amount > 0
+            && (giftcard.Claimed
+                || !giftcard.ValidUntil.HasValue
+                || giftcard.ValidUntil.Value.ToUniversalTime() > DateTime.UtcNow);
     }
 
     public ICalculatedPrice ProductDiscountAmountWithOutVat
@@ -328,7 +345,7 @@ public class OrderInfo : IOrderInfo
                 amount += PaymentProvider.Price.Value;
             }
 
-            return new CalculatedPrice(amount, StoreInfo.Currency);
+            return new CalculatedPrice(Math.Max(0, amount - GetApplicableGiftcardAmount()), StoreInfo.Currency);
         }
     }
 

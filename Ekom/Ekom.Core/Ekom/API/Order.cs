@@ -400,6 +400,43 @@ public partial class Order
             .ConfigureAwait(false);
     }
 
+    public async Task<IOrderInfo> AddGiftcardAsync(
+        Giftcard giftcard,
+        string storeAlias,
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(giftcard);
+
+        if (string.IsNullOrWhiteSpace(storeAlias))
+        {
+            throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
+        }
+
+        return await _orderService.AddGiftcardAsync(giftcard, storeAlias, settings, ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<IOrderInfo> RemoveGiftcardAsync(
+        string code,
+        string storeAlias,
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            throw new ArgumentException("Null or empty code", nameof(code));
+        }
+
+        if (string.IsNullOrWhiteSpace(storeAlias))
+        {
+            throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
+        }
+
+        return await _orderService.RemoveGiftcardAsync(code, storeAlias, settings, ct)
+            .ConfigureAwait(false);
+    }
+
     /// <summary>
     /// 
     /// </summary>

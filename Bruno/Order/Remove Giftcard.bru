@@ -1,0 +1,11 @@
+meta {
+  name: Remove Giftcard
+  type: http
+  seq: 15
+}
+
+delete {
+  url: {{baseUrl}}/ekom/order/giftcards/GIFT-123?storeAlias=store
+  body: none
+  auth: none
+}

@@ -27,3 +27,9 @@ public class CouponRequest
     public required string coupon { get; set; }
     public string storeAlias { get; set; } = string.Empty;
 }
+
+public sealed class GiftcardRequest
+{
+    public required Giftcard Giftcard { get; set; }
+    public required string StoreAlias { get; set; }
+}
