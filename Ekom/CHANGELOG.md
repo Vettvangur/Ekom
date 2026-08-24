@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.250](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.249...Ekom-v0.2.250) (2026-08-24)
+
+
+### Features
+
+* **order:** support giftcard payments ([#796](https://github.com/Vettvangur/Ekom/issues/796)) ([65462e5](https://github.com/Vettvangur/Ekom/commit/65462e573e921966e1779c8102f2dd6b62113af1))
+
 ## [0.2.249](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.248...Ekom-v0.2.249) (2026-08-24)
 
 
