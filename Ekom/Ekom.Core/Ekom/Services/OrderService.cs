@@ -625,6 +625,112 @@ partial class OrderService
         return null;
     }
 
+    public async Task<OrderInfo> AddGiftcardAsync(
+        Giftcard giftcard,
+        string storeAlias,
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(giftcard);
+
+        if (string.IsNullOrWhiteSpace(giftcard.Code))
+        {
+            throw new ArgumentException("Giftcard code is required", nameof(giftcard));
+        }
+
+        if (giftcard.Amount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(giftcard), "Giftcard amount must be greater than zero");
+        }
+
+        settings ??= new OrderSettings();
+        OrderInfo? orderInfo = settings.OrderInfo as OrderInfo
+            ?? await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+        if (orderInfo == null)
+        {
+            throw new OrderInfoNotFoundException();
+        }
+
+        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
+        if (!settings.IsEventHandler)
+        {
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        }
+
+        try
+        {
+            if (orderInfo.Giftcards.Any(existingGiftcard => string.Equals(
+                existingGiftcard.Code,
+                giftcard.Code,
+                StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new ArgumentException("Giftcard code is already applied", nameof(giftcard));
+            }
+
+            orderInfo.Giftcards.Add(giftcard);
+
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            if (!settings.IsEventHandler)
+            {
+                semaphore.Release();
+            }
+        }
+    }
+
+    public async Task<OrderInfo> RemoveGiftcardAsync(
+        string code,
+        string storeAlias,
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            throw new ArgumentException("Giftcard code is required", nameof(code));
+        }
+
+        settings ??= new OrderSettings();
+        OrderInfo? orderInfo = settings.OrderInfo as OrderInfo
+            ?? await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+        if (orderInfo == null)
+        {
+            throw new OrderInfoNotFoundException();
+        }
+
+        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
+        if (!settings.IsEventHandler)
+        {
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        }
+
+        try
+        {
+            Giftcard? giftcard = orderInfo.Giftcards.FirstOrDefault(existingGiftcard => string.Equals(
+                existingGiftcard.Code,
+                code,
+                StringComparison.OrdinalIgnoreCase));
+            if (giftcard == null)
+            {
+                throw new ArgumentException("Giftcard code is not applied to the order", nameof(code));
+            }
+
+            orderInfo.Giftcards.Remove(giftcard);
+
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            if (!settings.IsEventHandler)
+            {
+                semaphore.Release();
+            }
+        }
+    }
+
     public async Task UpdatePaidDateAsync(Guid uniqueId, CancellationToken ct)
     {
         // ToDo: Lock

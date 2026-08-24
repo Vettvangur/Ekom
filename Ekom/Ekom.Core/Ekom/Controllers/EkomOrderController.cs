@@ -126,6 +126,38 @@ public partial class EkomOrderController : ControllerBase
 
     }
 
+    /// <summary>
+    /// Add a giftcard to the current order.
+    /// </summary>
+    [HttpPost]
+    [Route("giftcards")]
+    public async Task<IActionResult> AddGiftcard([FromBody] GiftcardRequest request, CancellationToken ct = default)
+    {
+        if (request == null || request.Giftcard == null)
+        {
+            return BadRequest();
+        }
+
+        IOrderInfo orderInfo = await _order.AddGiftcardAsync(request.Giftcard, request.StoreAlias, ct: ct);
+
+        return Ok(orderInfo);
+    }
+
+    /// <summary>
+    /// Remove a giftcard from the current order by code.
+    /// </summary>
+    [HttpDelete]
+    [Route("giftcards/{code}")]
+    public async Task<IActionResult> RemoveGiftcard(
+        [FromRoute] string code,
+        [FromQuery] string storeAlias,
+        CancellationToken ct = default)
+    {
+        IOrderInfo orderInfo = await _order.RemoveGiftcardAsync(code, storeAlias, ct: ct);
+
+        return Ok(orderInfo);
+    }
+
     ///// <summary>
     ///// Get order
     ///// </summary>

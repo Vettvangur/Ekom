@@ -1,0 +1,22 @@
+meta {
+  name: Add Giftcard
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/ekom/order/giftcards
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "StoreAlias": "store",
+    "Giftcard": {
+      "Amount": 25,
+      "Code": "GIFT-123",
+      "ValidUntil": "2026-12-31T23:59:59Z"
+    }
+  }
+}

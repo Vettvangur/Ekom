@@ -17,6 +17,8 @@ public interface IOrderInfo
     /// </summary>
     string Coupon { get; }
 
+    List<Giftcard> Giftcards { get; set; }
+
     /// <summary>
     /// Gets the uniqueId.
     /// </summary>
