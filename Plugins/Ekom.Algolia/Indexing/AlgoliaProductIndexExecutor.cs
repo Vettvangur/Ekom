@@ -430,7 +430,7 @@ internal sealed class AlgoliaProductIndexExecutor
 
     internal static List<string> BuildAttributesForFaceting(AlgoliaIndexingOptions options)
     {
-        var attributes = options.FacetAttributes
+        var generatedAttributes = options.FacetAttributes
             .Select(ProductIndexMapper.ConfiguredField.Parse)
             .Select(field => field.Alias)
             .Concat(options.VariantFacetAttributes
@@ -442,19 +442,25 @@ internal sealed class AlgoliaProductIndexExecutor
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var attributesForFaceting = new List<string>();
+        var attributesForFaceting = options.AttributesForFaceting
+            .Where(attribute => !string.IsNullOrWhiteSpace(attribute))
+            .Select(attribute => attribute.Trim())
+            .ToList();
+
         if (options.Variants)
         {
             attributesForFaceting.Add("filterOnly(ProductId)");
             attributesForFaceting.Add("filterOnly(categoryPageId)");
         }
 
-        attributesForFaceting.AddRange(attributes.Select(attribute =>
+        attributesForFaceting.AddRange(generatedAttributes.Select(attribute =>
             options.Variants
                 ? $"afterDistinct(attributes.{attribute})"
                 : $"attributes.{attribute}"));
 
-        return attributesForFaceting;
+        return attributesForFaceting
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private async Task DeleteByProductIdsAsync(string indexName, IEnumerable<Guid> productKeys, bool waitForTasks, CancellationToken ct)

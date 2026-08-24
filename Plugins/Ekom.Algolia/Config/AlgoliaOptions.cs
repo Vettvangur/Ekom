@@ -38,6 +38,7 @@ public sealed class AlgoliaIndexingOptions
     public int BatchSize { get; set; } = 1000;
 
     public IReadOnlyCollection<string> ProductProperties { get; init; } = [];
+    public IReadOnlyCollection<string> AttributesForFaceting { get; init; } = [];
     public IReadOnlyCollection<string> FacetAttributes { get; init; } = [];
     public Dictionary<string, string> VariantFacetAttributes { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyCollection<AlgoliaSortedReplicaOptions> SortedReplicas { get; init; } = [];

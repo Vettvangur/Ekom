@@ -21,6 +21,19 @@ public class AlgoliaProductIndexExecutorTests
     }
 
     [Fact]
+    public void Configures_Top_Level_Facets_When_Variants_Are_Disabled()
+    {
+        var options = new AlgoliaIndexingOptions
+        {
+            AttributesForFaceting = ["filterOnly(categoryPageId)"],
+        };
+
+        var attributes = AlgoliaProductIndexExecutor.BuildAttributesForFaceting(options);
+
+        Assert.Equal(["filterOnly(categoryPageId)"], attributes);
+    }
+
+    [Fact]
     public void Configures_Facets_After_Distinct_When_Variants_Are_Enabled()
     {
         var options = new AlgoliaIndexingOptions
@@ -43,6 +56,34 @@ public class AlgoliaProductIndexExecutorTests
                 "afterDistinct(attributes.brand)",
                 "afterDistinct(attributes.color)",
                 "afterDistinct(attributes.size)",
+            ],
+            attributes);
+    }
+
+    [Fact]
+    public void Merges_Configured_And_Generated_Facet_Expressions()
+    {
+        var options = new AlgoliaIndexingOptions
+        {
+            Variants = true,
+            AttributesForFaceting =
+            [
+                " filterOnly(categoryPageId) ",
+                "searchable(brand)",
+                "FILTERONLY(CATEGORYPAGEID)",
+                " ",
+            ],
+            FacetAttributes = ["brand"],
+        };
+
+        var attributes = AlgoliaProductIndexExecutor.BuildAttributesForFaceting(options);
+
+        Assert.Equal(
+            [
+                "filterOnly(categoryPageId)",
+                "searchable(brand)",
+                "filterOnly(ProductId)",
+                "afterDistinct(attributes.brand)",
             ],
             attributes);
     }
