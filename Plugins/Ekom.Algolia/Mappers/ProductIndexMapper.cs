@@ -39,6 +39,10 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var categoryLevels = BuildCategoryLevels(product, locale);
         var nodeName = GetNodeName(product);
         var facetAttributes = BuildProductFacetAttributes(product, store, baseIndexName);
+        if (!_options.Indexing.Variants)
+        {
+            AddVariantFacetAttributes(product, store, baseIndexName, facetAttributes);
+        }
         var title = ApplyBuiltInTextTransform(
             "title",
             GetLocalizedValue(product, "title", product.Title, locale),
@@ -335,6 +339,44 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         }
 
         return attributes.Values.ToList();
+    }
+
+    private void AddVariantFacetAttributes(
+        IProduct product,
+        AlgoliaResolvedStore store,
+        string baseIndexName,
+        Dictionary<string, object?> attributes)
+    {
+        foreach (var configuredAttribute in BuildVariantFacetAttributes())
+        {
+            var values = product.AllVariants
+                .Select(variant => ResolveVariantFacetValue(variant, store, configuredAttribute))
+                .Select(value => ConvertProperty(
+                    new AlgoliaProductFieldContext(product, store, configuredAttribute.OutputAlias, baseIndexName),
+                    value))
+                .Select(value => ApplyFacetTransform(value, configuredAttribute.Field.Transform))
+                .SelectMany(FlattenFacetValue)
+                .Where(value => !IsEmptyValue(value))
+                .Distinct()
+                .ToList();
+
+            if (values.Count > 0)
+            {
+                attributes[configuredAttribute.OutputAlias] = values;
+            }
+        }
+
+        RemoveEmptyValues(attributes);
+    }
+
+    private static IEnumerable<object?> FlattenFacetValue(object? value)
+    {
+        if (value is not System.Collections.IEnumerable enumerable || value is string)
+        {
+            return [value];
+        }
+
+        return enumerable.Cast<object?>();
     }
 
     private static Dictionary<string, ConfiguredField> BuildConfiguredFields(IEnumerable<string> fields)

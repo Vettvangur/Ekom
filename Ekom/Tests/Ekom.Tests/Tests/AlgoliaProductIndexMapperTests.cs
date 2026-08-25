@@ -409,6 +409,29 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Fact]
+    public void Maps_Variant_Facet_Attributes_To_Product_Record_When_Variants_Are_Disabled()
+    {
+        var blackSmall = CreateVariant(title: "Small", variantGroup: CreateVariantGroup("Black").Object);
+        var blackLarge = CreateVariant(title: "Large", variantGroup: CreateVariantGroup("Black").Object);
+        var whiteLarge = CreateVariant(title: "Large", variantGroup: CreateVariantGroup("White").Object);
+        var mapper = CreateMapper(
+            indexVariants: false,
+            variantFacetAttributes: new Dictionary<string, string>
+            {
+                ["color"] = "variantGroup:title",
+                ["size"] = "variant:title",
+            });
+        var product = CreateProduct(variants: [blackSmall.Object, blackLarge.Object, whiteLarge.Object]);
+
+        var records = mapper.MapRecords(product.Object, CreateStore(), "products");
+
+        var record = Assert.Single(records);
+        var attributes = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(record.Data["attributes"]);
+        Assert.Equal(["Black", "White"], Assert.IsAssignableFrom<IEnumerable<object?>>(attributes["color"]));
+        Assert.Equal(["Small", "Large"], Assert.IsAssignableFrom<IEnumerable<object?>>(attributes["size"]));
+    }
+
+    [Fact]
     public void Maps_One_Level_Variant_Properties_As_Facet_Attributes()
     {
         var variant = CreateVariant(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

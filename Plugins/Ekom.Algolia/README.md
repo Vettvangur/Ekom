@@ -633,7 +633,7 @@ This produces values such as:
 }
 ```
 
-When variant indexing is enabled, `Indexing:VariantFacetAttributes` maps output facet names to properties on either the variant group or variant node. This supports two-level variants such as color groups containing size variants:
+`Indexing:VariantFacetAttributes` maps output facet names to properties on either the variant group or variant node. When variant indexing is disabled, each configured facet is added to the product record as a distinct array of values from all variants. When variant indexing is enabled, facets are stored on individual variant records to support combination-safe filtering. This supports two-level variants such as color groups containing size variants:
 
 ```json
 {
