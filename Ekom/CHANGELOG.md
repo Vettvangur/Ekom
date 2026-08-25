@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.251](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.250...Ekom-v0.2.251) (2026-08-25)
+
+
+### Bug Fixes
+
+* **algolia:** aggregate variant facets on products ([#798](https://github.com/Vettvangur/Ekom/issues/798)) ([9e1870d](https://github.com/Vettvangur/Ekom/commit/9e1870d5b1296bd6ed698e7fc1faf65a00f9acdf))
+
 ## [0.2.250](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.249...Ekom-v0.2.250) (2026-08-24)
 
 
