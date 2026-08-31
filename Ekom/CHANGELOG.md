@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.253](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.252...Ekom-v0.2.253) (2026-08-31)
+
+
+### Bug Fixes
+
+* **import:** optimize media folder lookup ([#802](https://github.com/Vettvangur/Ekom/issues/802)) ([1fe9d18](https://github.com/Vettvangur/Ekom/commit/1fe9d188009249238dce45f9636c971f4d3c2121))
+
 ## [0.2.252](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.251...Ekom-v0.2.252) (2026-08-31)
 
 
