@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.252](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.251...Ekom-v0.2.252) (2026-08-31)
+
+
+### Bug Fixes
+
+* **import:** batch media queries ([#800](https://github.com/Vettvangur/Ekom/issues/800)) ([70ee9f9](https://github.com/Vettvangur/Ekom/commit/70ee9f97d903de1ce5da7b863a01e4de35825284))
+
 ## [0.2.251](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.250...Ekom-v0.2.251) (2026-08-25)
 
 
