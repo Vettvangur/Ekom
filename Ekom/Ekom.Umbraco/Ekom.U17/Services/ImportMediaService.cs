@@ -90,18 +90,19 @@ public class ImportMediaService
 
     public List<IMedia> GetUmbracoMediaFiles(IMedia rootMedia)
     {
-        const int pageSize = 1000;
+        const int pageSize = 100;
+        var imageTypeId = GetMediaTypeId(MediaTypes.Image);
+        var fileTypeId = GetMediaTypeId(MediaTypes.File);
+        var filter = new Query<IMedia>(_scopeProvider.SqlContext)
+            .Where(media => !media.Trashed && (media.ContentTypeId == imageTypeId || media.ContentTypeId == fileTypeId));
         var results = new List<IMedia>();
         var pageIndex = 0;
 
         do
         {
-            var page = _mediaService.GetPagedDescendants(rootMedia.Id, pageIndex, pageSize, out var total).ToList();
+            var page = _mediaService.GetPagedDescendants(rootMedia.Id, pageIndex, pageSize, out var total, filter).ToList();
 
-            results.AddRange(page.Where(x =>
-                !x.Trashed
-                && (x.ContentType.Alias == Constants.Conventions.MediaTypes.Image
-                    || x.ContentType.Alias == Constants.Conventions.MediaTypes.File)));
+            results.AddRange(page);
 
             pageIndex++;
 
