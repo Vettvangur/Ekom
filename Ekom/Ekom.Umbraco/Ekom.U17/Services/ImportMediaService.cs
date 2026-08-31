@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.IO;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Persistence.Querying;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
@@ -15,6 +16,8 @@ namespace Ekom.Umb.Services;
 
 public class ImportMediaService
 {
+    private const int MediaQueryPageSize = 1_000;
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMediaService _mediaService;
     private readonly IContentTypeBaseServiceProvider _contentTypeBaseServiceProvider;
@@ -77,7 +80,7 @@ public class ImportMediaService
 
     public List<IMedia> GetRootMediaChildren(IMedia rootMedia)
     {
-        return _mediaService.GetPagedChildren(rootMedia.Id, 0, int.MaxValue, out _)
+        return GetPagedChildren(rootMedia.Id)
             .Where(x => !x.Trashed && x.ContentType.Alias == MediaTypes.Folder)
             .ToList();
     }
@@ -157,11 +160,8 @@ WHERE n.trashed = 0
 ORDER BY n.id",
             parameters.ToArray());
 
-        var matchingMedia = _mediaService.GetPagedDescendants(
+        var matchingMedia = GetPagedDescendants(
                 rootMedia.Id,
-                0,
-                int.MaxValue,
-                out _,
                 new Query<IMedia>(_scopeProvider.SqlContext).Where(media => mediaIds.Contains(media.Id)))
             .Where(media => !media.Trashed
                 && (media.ContentType.Alias == MediaTypes.Image || media.ContentType.Alias == MediaTypes.File))
@@ -224,11 +224,53 @@ ORDER BY n.id",
         var mediaFolders = GetRootMediaChildren(rootMedia);
         _lastMediaFolder = mediaFolders.LastOrDefault() ?? CreateMediaFolder("1");
 
-        var mediaItems = _mediaService.GetPagedChildren(_lastMediaFolder.Id, 0, int.MaxValue, out _)
+        var mediaItems = GetPagedChildren(_lastMediaFolder.Id)
             .Where(x => !x.Trashed && (x.ContentType.Alias == MediaTypes.Image || x.ContentType.Alias == MediaTypes.File))
             .ToList();
 
         _mediaCount = mediaItems.Count;
+    }
+
+    private List<IMedia> GetPagedChildren(int parentId)
+    {
+        var results = new List<IMedia>();
+        var pageIndex = 0;
+
+        do
+        {
+            var page = _mediaService.GetPagedChildren(parentId, pageIndex, MediaQueryPageSize, out var total).ToList();
+            results.AddRange(page);
+            pageIndex++;
+
+            if ((long)pageIndex * MediaQueryPageSize >= total)
+            {
+                break;
+            }
+        }
+        while (true);
+
+        return results;
+    }
+
+    private List<IMedia> GetPagedDescendants(int rootMediaId, IQuery<IMedia> query)
+    {
+        var results = new List<IMedia>();
+        var pageIndex = 0;
+
+        do
+        {
+            var page = _mediaService.GetPagedDescendants(rootMediaId, pageIndex, MediaQueryPageSize, out var total, query).ToList();
+            results.AddRange(page);
+            pageIndex++;
+
+            if ((long)pageIndex * MediaQueryPageSize >= total)
+            {
+                break;
+            }
+        }
+        while (true);
+
+        return results;
     }
 
     private async Task<MemoryStream?> LoadMediaToMemoryStreamAsync(string url)
