@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.254](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.253...Ekom-v0.2.254) (2026-08-31)
+
+
+### Bug Fixes
+
+* **import:** filter media descendant pages ([#804](https://github.com/Vettvangur/Ekom/issues/804)) ([fdc64f2](https://github.com/Vettvangur/Ekom/commit/fdc64f2f32f682da42618983344927de26ec09ea))
+
 ## [0.2.253](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.252...Ekom-v0.2.253) (2026-08-31)
 
 
