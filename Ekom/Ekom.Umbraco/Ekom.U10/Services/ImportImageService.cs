@@ -15,10 +15,11 @@ using MediaTypes = Umbraco.Cms.Core.Constants.Conventions.MediaTypes;
 namespace Ekom.Umb.Services;
 public class ImportMediaService
 {
-    private const int MediaQueryPageSize = 1_000;
+    private const int MediaQueryPageSize = 100;
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMediaService _mediaService;
+    private readonly IMediaTypeService _mediaTypeService;
     private readonly IContentTypeBaseServiceProvider _contentTypeBaseServiceProvider;
     private readonly MediaFileManager _mediaFileManager;
     private readonly MediaUrlGeneratorCollection _mediaUrlGenerators;
@@ -33,6 +34,7 @@ public class ImportMediaService
 
     public ImportMediaService(
         IMediaService mediaService,
+        IMediaTypeService mediaTypeService,
         IHttpClientFactory httpClientFactory,
         IContentTypeBaseServiceProvider contentTypeBaseServiceProvider,
         MediaFileManager mediaFileManager,
@@ -42,6 +44,7 @@ public class ImportMediaService
         IScopeProvider scopeProvider)
     {
         _mediaService = mediaService;
+        _mediaTypeService = mediaTypeService;
         _httpClientFactory = httpClientFactory;
         _contentTypeBaseServiceProvider = contentTypeBaseServiceProvider;
         _mediaFileManager = mediaFileManager;
@@ -81,20 +84,8 @@ public class ImportMediaService
     private void GetRootMediaLastChildrenFolder(IMedia rootMedia)
     { 
        
-        var mediaFolders = GetRootMediaChildren(rootMedia);
-
-        lastMediaFolder = mediaFolders.LastOrDefault();
-
-        if (lastMediaFolder == null)
-        {
-            lastMediaFolder = CreateMediaFolder("1");
-        }
-
-        var mediaItems = GetPagedChildren(lastMediaFolder.Id)
-            .Where(x => !x.Trashed && (x.ContentType.Alias == MediaTypes.Image || x.ContentType.Alias == MediaTypes.File))
-            .ToList();
-
-        mediaCount = mediaItems.Count;
+        lastMediaFolder = GetLastRootMediaFolder(rootMedia) ?? CreateMediaFolder("1");
+        mediaCount = GetMediaItemCount(lastMediaFolder.Id);
     }
 
     public List<IMedia> GetRootMediaChildren(IMedia rootMedia)
@@ -104,6 +95,40 @@ public class ImportMediaService
             .ToList();
 
         return mediaFolders;
+    }
+
+    private IMedia? GetLastRootMediaFolder(IMedia rootMedia)
+    {
+        var mediaTypeId = GetMediaTypeId(MediaTypes.Folder);
+        var filter = new Query<IMedia>(_scopeProvider.SqlContext)
+            .Where(media => !media.Trashed && media.ContentTypeId == mediaTypeId);
+        var totalRecords = GetPagedChildrenTotal(rootMedia.Id, filter);
+
+        return totalRecords == 0
+            ? null
+            : _mediaService.GetPagedChildren(rootMedia.Id, totalRecords - 1, 1, out _, filter, Ordering.ByDefault()).SingleOrDefault();
+    }
+
+    private int GetMediaItemCount(int parentId)
+    {
+        var imageTypeId = GetMediaTypeId(MediaTypes.Image);
+        var fileTypeId = GetMediaTypeId(MediaTypes.File);
+        var filter = new Query<IMedia>(_scopeProvider.SqlContext)
+            .Where(media => !media.Trashed && (media.ContentTypeId == imageTypeId || media.ContentTypeId == fileTypeId));
+
+        return checked((int)GetPagedChildrenTotal(parentId, filter));
+    }
+
+    private long GetPagedChildrenTotal(int parentId, IQuery<IMedia> filter)
+    {
+        _ = _mediaService.GetPagedChildren(parentId, 0, 1, out var totalRecords, filter, Ordering.ByDefault()).ToList();
+        return totalRecords;
+    }
+
+    private int GetMediaTypeId(string alias)
+    {
+        return _mediaTypeService.Get(alias)?.Id
+            ?? throw new InvalidOperationException($"Media type '{alias}' was not found.");
     }
 
     public List<IMedia> GetUmbracoMediaFiles(IMedia rootMedia)
