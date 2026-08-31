@@ -136,7 +136,11 @@ public class ImportMediaService
         if (rootMedia == null)
             return new List<IMedia>();
 
-        const int pageSize = 1000;
+        const int pageSize = 100;
+        var imageTypeId = GetMediaTypeId(MediaTypes.Image);
+        var fileTypeId = GetMediaTypeId(MediaTypes.File);
+        var filter = new Query<IMedia>(_scopeProvider.SqlContext)
+            .Where(media => !media.Trashed && (media.ContentTypeId == imageTypeId || media.ContentTypeId == fileTypeId));
         var results = new List<IMedia>();
         long total;
         var pageIndex = 0;
@@ -147,12 +151,10 @@ public class ImportMediaService
                 rootMedia.Id,
                 pageIndex,
                 pageSize,
-                out total).ToList();
+                out total,
+                filter).ToList();
 
-            results.AddRange(page.Where(x =>
-                !x.Trashed &&
-                (x.ContentType.Alias == Constants.Conventions.MediaTypes.Image ||
-                 x.ContentType.Alias == Constants.Conventions.MediaTypes.File)));
+            results.AddRange(page);
 
             pageIndex++;
         }
