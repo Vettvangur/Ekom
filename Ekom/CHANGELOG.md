@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.255](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.254...Ekom-v0.2.255) (2026-09-02)
+
+
+### Bug Fixes
+
+* **algolia:** send conversion object data as arrays ([#806](https://github.com/Vettvangur/Ekom/issues/806)) ([2c8fbf3](https://github.com/Vettvangur/Ekom/commit/2c8fbf32f34f0bd5e1579c6347c8eb79d722b249))
+
 ## [0.2.254](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.253...Ekom-v0.2.254) (2026-08-31)
 
 
