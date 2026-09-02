@@ -10,7 +10,11 @@ using Umbraco.Cms.Infrastructure.Scoping;
 
 namespace Ekom.Umb;
 
+#if UMBRACO_18
+internal sealed class MigrationCreateTables : AsyncMigrationBase
+#else
 internal sealed class MigrationCreateTables : MigrationBase
+#endif
 {
     private readonly DatabaseService _databaseService;
 
@@ -20,13 +24,25 @@ internal sealed class MigrationCreateTables : MigrationBase
         _databaseService = databaseService;
     }
 
+#if UMBRACO_18
+    protected override Task MigrateAsync()
+    {
+        _databaseService.CreateTables();
+        return Task.CompletedTask;
+    }
+#else
     protected override void Migrate()
     {
         _databaseService.CreateTables();
     }
+#endif
 }
 
+#if UMBRACO_18
+internal sealed class MigrationAddOrderActivityLogTypeColumn : AsyncMigrationBase
+#else
 internal sealed class MigrationAddOrderActivityLogTypeColumn : MigrationBase
+#endif
 {
     private readonly DatabaseService _databaseService;
 
@@ -36,10 +52,18 @@ internal sealed class MigrationAddOrderActivityLogTypeColumn : MigrationBase
         _databaseService = databaseService;
     }
 
+#if UMBRACO_18
+    protected override Task MigrateAsync()
+    {
+        _databaseService.EnsureOrderActivityLogTypeColumn();
+        return Task.CompletedTask;
+    }
+#else
     protected override void Migrate()
     {
         _databaseService.EnsureOrderActivityLogTypeColumn();
     }
+#endif
 }
 
 internal sealed class EkomMigrationPlan : MigrationPlan
@@ -55,7 +79,7 @@ internal sealed class EkomMigrationPlan : MigrationPlan
     }
 }
 
-internal sealed class EnsureTablesExist : IComponent
+internal sealed class EnsureTablesExist : IAsyncComponent
 {
     private readonly IScopeProvider _scopeProvider;
     private readonly IMigrationPlanExecutor _migrationPlanExecutor;
@@ -80,7 +104,7 @@ internal sealed class EnsureTablesExist : IComponent
         _databaseService = databaseService;
     }
 
-    public void Initialize()
+    public async Task InitializeAsync(bool isRestarting, CancellationToken cancellationToken)
     {
         if (_runtimeState.Level < RuntimeLevel.Run)
         {
@@ -94,13 +118,13 @@ internal sealed class EnsureTablesExist : IComponent
         if (string.IsNullOrEmpty(currentState))
         {
             _logger.LogInformation("Running initial database setup for Ekom.");
-            ExecuteMigrationPlan();
+            await ExecuteMigrationPlanAsync().ConfigureAwait(false);
             _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "2");
         }
         else if (currentState == "1")
         {
             _logger.LogInformation("Running Ekom database activity log type migration.");
-            ExecuteMigrationPlan();
+            await ExecuteMigrationPlanAsync().ConfigureAwait(false);
             _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "2");
         }
         else
@@ -111,13 +135,14 @@ internal sealed class EnsureTablesExist : IComponent
         _logger.LogDebug("Done");
     }
 
-    public void Terminate()
+    public Task TerminateAsync(bool isRestarting, CancellationToken cancellationToken)
     {
+        return Task.CompletedTask;
     }
 
-    private void ExecuteMigrationPlan()
+    private async Task ExecuteMigrationPlanAsync()
     {
         var upgrader = new Upgrader(new EkomMigrationPlan());
-        upgrader.Execute(_migrationPlanExecutor, _scopeProvider, _keyValueService);
+        await upgrader.ExecuteAsync(_migrationPlanExecutor, _scopeProvider, _keyValueService).ConfigureAwait(false);
     }
 }

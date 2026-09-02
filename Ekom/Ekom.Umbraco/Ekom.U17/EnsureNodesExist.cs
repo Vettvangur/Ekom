@@ -14,14 +14,21 @@ using Umbraco.Cms.Core.Web;
 
 namespace Ekom.Umb;
 
-class EnsureNodesExist : IComponent
+class EnsureNodesExist : IAsyncComponent
 {
     private readonly ILogger<EnsureNodesExist> _logger;
     private readonly Configuration _configuration;
     private readonly IContentService _contentService;
+#if UMBRACO_18
+    private readonly ITemplateService _templateService;
+#else
     private readonly IFileService _fileService;
+#endif
     private readonly IContentTypeService _contentTypeService;
     private readonly IDataTypeService _dataTypeService;
+#if UMBRACO_18
+    private readonly IDataTypeContainerService _dataTypeContainerService;
+#endif
     private readonly PropertyEditorCollection _propertyEditorCollection;
     private readonly IUmbracoContextFactory _contextFactory;
     private readonly IShortStringHelper _shortStringHelper;
@@ -44,10 +51,17 @@ class EnsureNodesExist : IComponent
 
     public EnsureNodesExist(
         ILogger<EnsureNodesExist> logger,
+#if UMBRACO_18
+        ITemplateService templateService,
+#else
         IFileService fileService,
+#endif
         IContentService contentService,
         IContentTypeService contentTypeService,
         IDataTypeService dataTypeService,
+#if UMBRACO_18
+        IDataTypeContainerService dataTypeContainerService,
+#endif
         PropertyEditorCollection propertyEditorCollection,
         Configuration configuration,
         IUmbracoContextFactory contextFactory,
@@ -56,10 +70,17 @@ class EnsureNodesExist : IComponent
         IRuntimeState runtimeState)
     {
         _logger = logger;
+#if UMBRACO_18
+        _templateService = templateService;
+#else
         _fileService = fileService;
+#endif
         _contentService = contentService;
         _contentTypeService = contentTypeService;
         _dataTypeService = dataTypeService;
+#if UMBRACO_18
+        _dataTypeContainerService = dataTypeContainerService;
+#endif
         _propertyEditorCollection = propertyEditorCollection;
         _configuration = configuration;
         _contextFactory = contextFactory;
@@ -68,12 +89,12 @@ class EnsureNodesExist : IComponent
         _runtimeState = runtimeState;
     }
 
-    public void Initialize()
+    public Task InitializeAsync(bool isRestarting, CancellationToken cancellationToken)
     {
         if (_runtimeState.Level < RuntimeLevel.Run)
         {
             // If Installing or Upgrading, we don't want to run this
-            return;
+            return Task.CompletedTask;
         }
 
         _logger.LogDebug("Ensuring Umbraco nodes exist");
@@ -172,7 +193,7 @@ class EnsureNodesExist : IComponent
 
                 #region Templates
 
-                var allTemplates = _fileService.GetTemplates();
+                var allTemplates = GetTemplates();
 
                 var productTemplate = allTemplates.FirstOrDefault(x => x.Alias.ToLowerInvariant() == "product" || x.Alias.ToLowerInvariant() == "ekmproduct");
                 var categoryTemplate = allTemplates.FirstOrDefault(x => x.Alias.ToLowerInvariant() == "category" || x.Alias.ToLowerInvariant() == "ekmcategory");
@@ -910,7 +931,7 @@ class EnsureNodesExist : IComponent
                             CreateContentTypeSort(categoryCt, 1)
                         );
 
-                    _contentTypeService.Save(categoryCt);
+                    SaveContentType(categoryCt);
                 }
 
                 var catalogCt = EnsureContentTypeExists(new ContentType(_shortStringHelper, catalogContainer.Id)
@@ -1498,10 +1519,43 @@ class EnsureNodesExist : IComponent
         {
             _logger.LogError(ex, "Failed to Initialize EnsureNodesExist");
         }
+
+        return Task.CompletedTask;
+    }
+
+    public Task TerminateAsync(bool isRestarting, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    private IEnumerable<ITemplate> GetTemplates()
+    {
+#if UMBRACO_18
+        return _templateService.GetAllAsync(Array.Empty<string>()).GetAwaiter().GetResult();
+#else
+        return _fileService.GetTemplates();
+#endif
     }
 
     private EntityContainer EnsureDataTypeContainerExists()
     {
+#if UMBRACO_18
+        var ekmContainer = _dataTypeContainerService.GetAsync("Ekom", 1).GetAwaiter().GetResult().FirstOrDefault();
+        if (ekmContainer == null)
+        {
+            var createContainerAttempt = _dataTypeContainerService
+                .CreateAsync(Guid.NewGuid(), "Ekom", null, Constants.Security.SuperUserKey)
+                .GetAwaiter()
+                .GetResult();
+
+            if (!createContainerAttempt.Success || createContainerAttempt.Result == null)
+            {
+                throw new EnsureNodesException(
+                    "Unable to create container, failed creating Ekom Data Types",
+                    createContainerAttempt.Exception ?? new InvalidOperationException("Unable to create Ekom data type container."));
+            }
+
+            ekmContainer = createContainerAttempt.Result;
+            _logger.LogInformation("Created Ekom DataType container");
+        }
+#else
         var ekmContainer = _dataTypeService.GetContainers("Ekom", 1).FirstOrDefault();
         if (ekmContainer == null)
         {
@@ -1516,6 +1570,7 @@ class EnsureNodesExist : IComponent
                 throw new EnsureNodesException("Unable to create container, failed creating Ekom Data Types", createContainerAttempt.Exception);
             }
         }
+#endif
 
         return ekmContainer;
     }
@@ -1544,13 +1599,58 @@ class EnsureNodesExist : IComponent
             },
         });
 
-        _dataTypeService.Save(dataType);
+        SaveDataType(dataType);
     }
 
     private IDataType GetDataType(Guid key)
     {
         return _dataTypeService.GetAsync(key).GetAwaiter().GetResult()
             ?? throw new EnsureNodesException($"Unable to find data type {key}, failed creating Ekom nodes.");
+    }
+
+    private IDataType? GetDataType(string name)
+    {
+#if UMBRACO_18
+        return _dataTypeService.GetAsync(name).GetAwaiter().GetResult();
+#else
+        return _dataTypeService.GetDataType(name);
+#endif
+    }
+
+    private void SaveDataType(IDataType dataType)
+    {
+#if UMBRACO_18
+        var attempt = dataType.HasIdentity
+            ? _dataTypeService.UpdateAsync(dataType, Constants.Security.SuperUserKey).GetAwaiter().GetResult()
+            : _dataTypeService.CreateAsync(dataType, Constants.Security.SuperUserKey).GetAwaiter().GetResult();
+
+        if (!attempt.Success)
+        {
+            throw new EnsureNodesException(
+                $"Unable to save data type {dataType.Name}, failed creating Ekom nodes.",
+                attempt.Exception ?? new InvalidOperationException($"Unable to save data type {dataType.Name}."));
+        }
+#else
+        _dataTypeService.Save(dataType);
+#endif
+    }
+
+    private void SaveContentType(IContentType contentType)
+    {
+#if UMBRACO_18
+        var attempt = contentType.HasIdentity
+            ? _contentTypeService.UpdateAsync(contentType, Constants.Security.SuperUserKey).GetAwaiter().GetResult()
+            : _contentTypeService.CreateAsync(contentType, Constants.Security.SuperUserKey).GetAwaiter().GetResult();
+
+        if (!attempt.Success)
+        {
+            throw new EnsureNodesException(
+                $"Unable to save content type {contentType.Name}, failed creating Ekom nodes.",
+                attempt.Exception ?? new InvalidOperationException($"Unable to save content type {contentType.Name}."));
+        }
+#else
+        _contentTypeService.Save(contentType);
+#endif
     }
 
     private static ContentTypeSort CreateContentTypeSort(IContentType contentType, int sortOrder)
@@ -1597,7 +1697,7 @@ class EnsureNodesExist : IComponent
             },
         });
 
-        _dataTypeService.Save(dataType);
+        SaveDataType(dataType);
     }
 
     private void ConfigureVariantGroupContentPicker(IDataType dataType, string variantGroupContentTypeFilter)
@@ -1617,7 +1717,7 @@ class EnsureNodesExist : IComponent
             },
         });
 
-        _dataTypeService.Save(dataType);
+        SaveDataType(dataType);
     }
 
     private void ConfigureDiscountTypeDataType(IDataType dataType)
@@ -1632,7 +1732,7 @@ class EnsureNodesExist : IComponent
             },
         });
 
-        _dataTypeService.Save(dataType);
+        SaveDataType(dataType);
     }
 
     private void ConfigureShippingMethodDataType(IDataType dataType)
@@ -1647,13 +1747,13 @@ class EnsureNodesExist : IComponent
             },
         });
 
-        _dataTypeService.Save(dataType);
+        SaveDataType(dataType);
     }
 
     private void ConfigureEditorUi(IDataType dataType, string editorUiAlias)
     {
         dataType.EditorUiAlias = editorUiAlias;
-        _dataTypeService.Save(dataType);
+        SaveDataType(dataType);
     }
 
     private void ConfigureExistingEkomEditorUis()
@@ -1678,7 +1778,7 @@ class EnsureNodesExist : IComponent
 
         foreach (var (name, editorUiAlias) in editorUiAliases)
         {
-            var dataType = _dataTypeService.GetDataType(name);
+            var dataType = GetDataType(name);
 
             if (dataType == null || dataType.EditorUiAlias == editorUiAlias)
             {
@@ -1699,7 +1799,7 @@ class EnsureNodesExist : IComponent
         }
 
         propertyType.DataTypeId = dataType.Id;
-        _contentTypeService.Save(contentType);
+        SaveContentType(contentType);
     }
 
     private static Dictionary<string, object> ToConfigurationData<TConfiguration>(TConfiguration configuration)
@@ -1710,12 +1810,12 @@ class EnsureNodesExist : IComponent
 
     private IDataType EnsureDataTypeExists(DataType dt)
     {
-        var textDt = _dataTypeService.GetDataType(dt.Name);
+        var textDt = GetDataType(dt.Name);
 
         if (textDt == null)
         {
             textDt = dt;
-            _dataTypeService.Save(textDt);
+            SaveDataType(textDt);
             _logger.LogInformation(
                 "Created Data Type {Name}, editor alias {EditorAlias}",
                 dt.Name,
@@ -1725,7 +1825,7 @@ class EnsureNodesExist : IComponent
         else if (!string.IsNullOrWhiteSpace(dt.EditorUiAlias) && textDt.EditorUiAlias != dt.EditorUiAlias)
         {
             textDt.EditorUiAlias = dt.EditorUiAlias;
-            _dataTypeService.Save(textDt);
+            SaveDataType(textDt);
             _logger.LogInformation(
                 "Updated Data Type {Name}, editor UI alias {EditorUiAlias}",
                 dt.Name,
@@ -1763,7 +1863,7 @@ class EnsureNodesExist : IComponent
         if (ekmContentType == null)
         {
             ekmContentType = contentType;
-            _contentTypeService.Save(ekmContentType);
+            SaveContentType(ekmContentType);
             _logger.LogInformation(
                 "Created content type {Name}, alias {Alias}",
                 contentType.Name,

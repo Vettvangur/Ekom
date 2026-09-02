@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Ekom.Site.U18" type="DotNetProject" factoryName=".NET Project">
+    <option name="PROJECT_PATH" value="$PROJECT_DIR$/Samples/U18/Ekom.Site.U18/Ekom.Site.U18.csproj" />
+    <option name="PROJECT_TFM" value="net10.0" />
+    <option name="LAUNCH_PROFILE" value="Ekom.Site.U18" />
+    <envs>
+      <option name="ASPNETCORE_ENVIRONMENT" value="Development" />
+      <option name="ASPNETCORE_URLS" value="https://localhost:44319;http://localhost:5018" />
+    </envs>
+    <method v="2">
+      <option name="Build" enabled="true" />
+    </method>
+  </configuration>
+</component>

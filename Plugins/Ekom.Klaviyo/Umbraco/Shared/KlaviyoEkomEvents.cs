@@ -14,7 +14,11 @@ using Umbraco.Cms.Core.DependencyInjection;
 
 namespace Ekom.Klaviyo.Events;
 
+#if UMBRACO_18
+internal sealed class KlaviyoEkomEvents : IAsyncComponent
+#else
 internal sealed class KlaviyoEkomEvents : IComponent
+#endif
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -27,12 +31,19 @@ internal sealed class KlaviyoEkomEvents : IComponent
         _httpContextAccessor = httpContextAccessor;
     }
 
+#if UMBRACO_18
+    public Task InitializeAsync(bool isRestarting, CancellationToken cancellationToken)
+#else
     public void Initialize()
+#endif
     {
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
         OrderEvents.AddedOrderlineAsync += OnAddedOrderlineAsync;
         OrderEvents.UpdatedOrderlineAsync += OnUpdatedOrderlineAsync;
         OrderEvents.CustomerEmailAddedAsync += OnCustomerEmailAddedAsync;
+#if UMBRACO_18
+        return Task.CompletedTask;
+#endif
     }
 
     private async Task OnAddedOrderlineAsync(object arg1, AddedOrderlineEventArgs args, CancellationToken ct)
@@ -153,12 +164,19 @@ internal sealed class KlaviyoEkomEvents : IComponent
         await orderService.TrackPlacedOrderAsync(klaviyoOrder, ct);
     }
 
+#if UMBRACO_18
+    public Task TerminateAsync(bool isRestarting, CancellationToken cancellationToken)
+#else
     public void Terminate()
+#endif
     {
         CheckoutEvents.CompleteCheckoutAsync -= OnCompleteCheckoutAsync;
         OrderEvents.AddedOrderlineAsync -= OnAddedOrderlineAsync; 
         OrderEvents.UpdatedOrderlineAsync -= OnUpdatedOrderlineAsync;
         OrderEvents.CustomerEmailAddedAsync -= OnCustomerEmailAddedAsync;
+#if UMBRACO_18
+        return Task.CompletedTask;
+#endif
     }
 
     private KlaviyoStartedCheckoutEvent CreateStartedCheckoutEvent(IOrderInfo orderInfo, bool useCartFingerprint)

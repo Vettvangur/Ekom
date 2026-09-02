@@ -7,7 +7,7 @@ using Umbraco.Cms.Core.Composing;
 
 namespace Ekom.Umb;
 
-internal sealed class TrackingAutomationEvents : IComponent
+internal sealed class TrackingAutomationEvents : IAsyncComponent
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TrackingOptions _options;
@@ -18,7 +18,7 @@ internal sealed class TrackingAutomationEvents : IComponent
         _options = options.Value;
     }
 
-    public void Initialize()
+    public Task InitializeAsync(bool isRestarting, CancellationToken cancellationToken)
     {
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
         OrderEvents.AddedOrderlineAsync += OnAddedOrderlineAsync;
@@ -31,9 +31,10 @@ internal sealed class TrackingAutomationEvents : IComponent
         OrderEvents.ShippingProviderAddedAsync += OnShippingProviderAddedMetaAsync;
         OrderEvents.PaymentProviderAddedAsync += OnPaymentProviderAddedAsync;
         OrderEvents.PaymentProviderAddedAsync += OnPaymentProviderAddedMetaAsync;
+        return Task.CompletedTask;
     }
 
-    public void Terminate()
+    public Task TerminateAsync(bool isRestarting, CancellationToken cancellationToken)
     {
         CheckoutEvents.CompleteCheckoutAsync -= OnCompleteCheckoutAsync;
         OrderEvents.AddedOrderlineAsync -= OnAddedOrderlineAsync;
@@ -46,6 +47,7 @@ internal sealed class TrackingAutomationEvents : IComponent
         OrderEvents.ShippingProviderAddedAsync -= OnShippingProviderAddedMetaAsync;
         OrderEvents.PaymentProviderAddedAsync -= OnPaymentProviderAddedAsync;
         OrderEvents.PaymentProviderAddedAsync -= OnPaymentProviderAddedMetaAsync;
+        return Task.CompletedTask;
     }
 
     private async Task OnAddedOrderlineAsync(object sender, AddedOrderlineEventArgs args, CancellationToken cancellationToken)

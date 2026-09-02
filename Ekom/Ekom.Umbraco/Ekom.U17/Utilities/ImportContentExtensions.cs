@@ -31,7 +31,14 @@ public static class ImportContentExtensions
         }
 
         var dataTypeService = Configuration.Resolver.GetService<IDataTypeService>();
+#if UMBRACO_18
+        var idKeyMap = Configuration.Resolver.GetService<IIdKeyMap>();
+        var dataType = dataTypeService != null && idKeyMap != null
+            ? property.PropertyType.GetDataType(dataTypeService, idKeyMap)
+            : null;
+#else
         var dataType = dataTypeService?.GetDataType(property.PropertyType.DataTypeId);
+#endif
         var propertyValues = IsRichTextEditor(dataType)
             ? values.ToDictionary(x => x.Key, x => CreateRichTextValue(x.Value))
             : values;

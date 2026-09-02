@@ -19,20 +19,32 @@ internal sealed class VariantAppService : IVariantAppService
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
     private readonly INodeService _nodeService;
+#if UMBRACO_18
+    private readonly ILanguageService _languageService;
+#else
     private readonly ILocalizationService _localizationService;
+#endif
     private readonly VariantAppOptions _variantAppOptions;
 
     public VariantAppService(
         IContentService contentService,
         IContentTypeService contentTypeService,
         INodeService nodeService,
+#if UMBRACO_18
+        ILanguageService languageService,
+#else
         ILocalizationService localizationService,
+#endif
         IOptions<EkomOptions> options)
     {
         _contentService = contentService;
         _contentTypeService = contentTypeService;
         _nodeService = nodeService;
+#if UMBRACO_18
+        _languageService = languageService;
+#else
         _localizationService = localizationService;
+#endif
         _variantAppOptions = options.Value.VariantApp;
     }
 
@@ -879,7 +891,7 @@ internal sealed class VariantAppService : IVariantAppService
 
     private IReadOnlyList<UmbracoLanguage> LoadLanguages()
     {
-        return _localizationService.GetAllLanguages()
+        return GetAllLanguages()
             .OrderByDescending(x => x.IsDefault)
             .ThenBy(x => x.CultureName)
             .Select(x => new UmbracoLanguage
@@ -889,6 +901,15 @@ internal sealed class VariantAppService : IVariantAppService
                 IsoCode = x.IsoCode,
             })
             .ToList();
+    }
+
+    private IEnumerable<ILanguage> GetAllLanguages()
+    {
+#if UMBRACO_18
+        return _languageService.GetAllAsync().GetAwaiter().GetResult();
+#else
+        return _localizationService.GetAllLanguages();
+#endif
     }
 
 }

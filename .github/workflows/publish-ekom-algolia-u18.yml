@@ -1,0 +1,67 @@
+name: publish-ekom-algolia-u18
+
+on:
+  push:
+    tags:
+      - "Ekom.Algolia.U18-v*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish-ekom-algolia-u18:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Read Ekom package version
+        id: ekom-version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          [xml]$props = Get-Content "Ekom/Directory.Build.props"
+          $version = $props.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw "Could not read Ekom package version." }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Pack Ekom U18 dependency locally
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $version = "${{ steps.ekom-version.outputs.version }}"
+          New-Item -ItemType Directory -Force -Path local-packages | Out-Null
+          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U18/Ekom.U18.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
+          dotnet nuget add source "$PWD/local-packages" --name local-ekom
+
+      - name: Restore and build
+        run: dotnet build "Plugins/Ekom.Algolia/U18/Ekom.Algolia.U18.csproj" -c Release -p:UseProjectReferences=false -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
+
+      - name: Pack Ekom.Algolia.U18
+        id: pack
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if ("${{ github.ref_name }}" -notmatch 'v(?<ver>\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?)$') { throw "Could not parse SemVer from tag '${{ github.ref_name }}'" }
+          dotnet pack "Plugins/Ekom.Algolia/U18/Ekom.Algolia.U18.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$Matches['ver'] -p:UseProjectReferences=false -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
+
+      - name: NuGet Login (OIDC)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: Vettvangur
+
+      - name: Push Ekom.Algolia.U18 to NuGet.org
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Get-ChildItem -Path artifacts -Filter "Ekom.Algolia.U18*.nupkg" -File | ForEach-Object {
+            dotnet nuget push "$($_.FullName)" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+            if ($LASTEXITCODE -ne 0) { throw "dotnet nuget push failed for $($_.Name)" }
+          }

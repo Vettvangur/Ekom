@@ -26,7 +26,11 @@ internal sealed class AlgoliaContentIndexExecutor
     private readonly IReadOnlyList<IAlgoliaContentEnricher> _enrichers;
     private readonly IReadOnlyList<IAlgoliaContentPropertyValueConverter> _propertyConverters;
     private readonly IContentService _contentService;
+#if UMBRACO_18
+    private readonly ILanguageService _languageService;
+#else
     private readonly ILocalizationService _languageService;
+#endif
     private readonly PropertyEditorCollection _propertyEditors;
     private readonly IContentTypeService _contentTypeService;
     private readonly IPublishedUrlProvider _urlProvider;
@@ -42,7 +46,11 @@ internal sealed class AlgoliaContentIndexExecutor
         AlgoliaIndexReplacementService indexReplacementService,
         IOptions<AlgoliaOptions> options,
         IContentService contentService,
+#if UMBRACO_18
+        ILanguageService languageService,
+#else
         ILocalizationService languageService,
+#endif
         PropertyEditorCollection propertyEditors,
         IContentTypeService contentTypeService,
         IPublishedUrlProvider urlProvider,
@@ -509,7 +517,7 @@ internal sealed class AlgoliaContentIndexExecutor
 
         var indexValues = propertyEditor.PropertyIndexValueFactory.GetIndexValues(property, culture, null, true, availableCultures, contentTypes);
         var firstValue = indexValues?
-#if UMBRACO_17
+#if UMBRACO_17 || UMBRACO_18
             .SelectMany(x => x.Values ?? [])
 #else
             .SelectMany(x => x.Value ?? [])
@@ -607,9 +615,18 @@ internal sealed class AlgoliaContentIndexExecutor
         => await _cache.GetOrCreateAsync("algolia:content:languages", entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
-            var cultures = _languageService.GetAllLanguages().Select(x => x.IsoCode).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var cultures = GetAllLanguages().Select(x => x.IsoCode).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             return Task.FromResult<string[]?>(cultures);
         }).ConfigureAwait(false) ?? [];
+
+    private IEnumerable<ILanguage> GetAllLanguages()
+    {
+#if UMBRACO_18
+        return _languageService.GetAllAsync().GetAwaiter().GetResult();
+#else
+        return _languageService.GetAllLanguages();
+#endif
+    }
 
     private Task<Dictionary<Guid, IContentType>> GetContentTypesAsync()
         => _cache.GetOrCreateAsync("algolia:content:contenttypes", entry =>

@@ -24,7 +24,12 @@ internal sealed class UmbracoService : IUmbracoService
     private readonly IDataTypeService _dataTypeService;
     private readonly IDomainService _domainService;
     private readonly INodeService _nodeService;
+#if UMBRACO_18
+    private readonly ILanguageService _languageService;
+    private readonly IIdKeyMap _idKeyMap;
+#else
     private readonly ILocalizationService _localizationService;
+#endif
     private readonly PropertyEditorCollection _propertyEditorCollection;
     private readonly IContentTypeService _contentTypeService;
     private readonly IAppPolicyCache _runtimeCache;
@@ -34,7 +39,12 @@ internal sealed class UmbracoService : IUmbracoService
     public UmbracoService(
         IDomainService domainService,
         IDataTypeService dataTypeService,
+#if UMBRACO_18
+        ILanguageService languageService,
+        IIdKeyMap idKeyMap,
+#else
         ILocalizationService localizationService,
+#endif
         PropertyEditorCollection propertyEditorCollection,
         IContentTypeService contentTypeService,
         AppCaches appCaches,
@@ -44,7 +54,12 @@ internal sealed class UmbracoService : IUmbracoService
     {
         _domainService = domainService;
         _dataTypeService = dataTypeService;
+#if UMBRACO_18
+        _languageService = languageService;
+        _idKeyMap = idKeyMap;
+#else
         _localizationService = localizationService;
+#endif
         _propertyEditorCollection = propertyEditorCollection;
         _contentTypeService = contentTypeService;
         _runtimeCache = appCaches.RuntimeCache;
@@ -55,7 +70,7 @@ internal sealed class UmbracoService : IUmbracoService
 
     public IEnumerable<Ekom.Models.UmbracoDomain> GetDomains(bool includeWildcards = false)
     {
-        return _domainService.GetAll(includeWildcards).Select(x => new Umbraco17Domain(x));
+        return (_domainService.GetAllAsync(includeWildcards).GetAwaiter().GetResult()).Select(x => new Umbraco17Domain(x));
     }
 
     public string GetDictionaryValue(string key) => string.Empty;
@@ -120,7 +135,7 @@ internal sealed class UmbracoService : IUmbracoService
     {
         return _runtimeCache.GetCacheItem(
             "ekmDefaultLanguage",
-            () => _localizationService.GetDefaultLanguageIsoCode(),
+            GetDefaultLanguageIsoCode,
             TimeSpan.FromHours(6)) ?? string.Empty;
     }
 
@@ -140,7 +155,7 @@ internal sealed class UmbracoService : IUmbracoService
 
     public IEnumerable<object> GetNonEkomDataTypes()
     {
-        return _dataTypeService.GetAll()
+        return _dataTypeService.GetAllAsync().GetAwaiter().GetResult()
             .Where(x => !x.EditorAlias.StartsWith("Ekom", StringComparison.OrdinalIgnoreCase))
             .OrderBy(x => x.SortOrder)
             .Select(x => new
@@ -160,13 +175,20 @@ internal sealed class UmbracoService : IUmbracoService
         return _cache.GetOrCreate(cacheKey, entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+#if UMBRACO_18
+            var keyAttempt = _idKeyMap.GetKeyForId(typeId, UmbracoObjectTypes.DataType);
+            return keyAttempt.Success
+                ? _dataTypeService.GetAsync(keyAttempt.Result).GetAwaiter().GetResult()
+                : null;
+#else
             return _dataTypeService.GetDataType(typeId);
+#endif
         });
     }
 
     private IReadOnlyList<UmbracoLanguage> LoadLanguages()
     {
-        return _localizationService.GetAllLanguages()
+        return GetAllLanguages()
             .OrderByDescending(x => x.IsDefault)
             .ThenBy(x => x.CultureName)
             .Select(x => new UmbracoLanguage
@@ -176,6 +198,24 @@ internal sealed class UmbracoService : IUmbracoService
                 IsoCode = x.IsoCode,
             })
             .ToList();
+    }
+
+    private string? GetDefaultLanguageIsoCode()
+    {
+#if UMBRACO_18
+        return _languageService.GetDefaultIsoCodeAsync().GetAwaiter().GetResult();
+#else
+        return _localizationService.GetDefaultLanguageIsoCode();
+#endif
+    }
+
+    private IEnumerable<ILanguage> GetAllLanguages()
+    {
+#if UMBRACO_18
+        return _languageService.GetAllAsync().GetAwaiter().GetResult();
+#else
+        return _localizationService.GetAllLanguages();
+#endif
     }
 
     private object? GetDataTypeAliasValue(string contentTypeAlias, string propertyAlias)
