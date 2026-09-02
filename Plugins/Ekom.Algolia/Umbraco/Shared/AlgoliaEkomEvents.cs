@@ -7,7 +7,11 @@ using Umbraco.Cms.Core.DependencyInjection;
 
 namespace Ekom.Algolia.Events;
 
+#if UMBRACO_18
+internal sealed class AlgoliaEkomEvents : IAsyncComponent
+#else
 internal sealed class AlgoliaEkomEvents : IComponent
+#endif
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly AlgoliaOptions _options;
@@ -18,20 +22,34 @@ internal sealed class AlgoliaEkomEvents : IComponent
         _options = options.Value;
     }
 
+#if UMBRACO_18
+    public Task InitializeAsync(bool isRestarting, CancellationToken cancellationToken)
+#else
     public void Initialize()
+#endif
     {
         //CatalogEvents.BeforeReturnProductAsync += OnBeforeReturnProductAsync;
         OrderEvents.AddedOrderlineAsync += OnAddedOrderlineAsync;
         OrderEvents.CustomerEmailAddedAsync += OnCustomerEmailAddedAsync;
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
+#if UMBRACO_18
+        return Task.CompletedTask;
+#endif
     }
 
+#if UMBRACO_18
+    public Task TerminateAsync(bool isRestarting, CancellationToken cancellationToken)
+#else
     public void Terminate()
+#endif
     {
         //CatalogEvents.BeforeReturnProductAsync -= OnBeforeReturnProductAsync;
         OrderEvents.AddedOrderlineAsync -= OnAddedOrderlineAsync;
         OrderEvents.CustomerEmailAddedAsync -= OnCustomerEmailAddedAsync;
         CheckoutEvents.CompleteCheckoutAsync -= OnCompleteCheckoutAsync;
+#if UMBRACO_18
+        return Task.CompletedTask;
+#endif
     }
 
     //private async ValueTask OnBeforeReturnProductAsync(ProductEventArgs args, CancellationToken ct)

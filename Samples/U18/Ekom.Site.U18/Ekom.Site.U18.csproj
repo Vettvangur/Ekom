@@ -14,6 +14,8 @@
     <ItemGroup>
         <ProjectReference Include="..\..\..\Ekom\Ekom.Umbraco\Ekom.U18\Ekom.U18.csproj" />
         <ProjectReference Include="..\..\..\Ekom\Ekom.Web\Ekom.Web.U18\Ekom.Web.U18.csproj" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\..\..\Plugins\Ekom.Algolia\U18\Ekom.Algolia.U18.csproj" />
+        <ProjectReference Include="..\..\..\Plugins\Ekom.Klaviyo\U18\Ekom.Klaviyo.U18.csproj" />
     </ItemGroup>
 
     <ItemGroup>

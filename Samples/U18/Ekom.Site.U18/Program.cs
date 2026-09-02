@@ -1,3 +1,5 @@
+using Ekom.Algolia;
+using Ekom.Klaviyo;
 using Ekom.Services;
 using Ekom.Site.U17;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
@@ -13,6 +15,8 @@ builder.CreateUmbracoBuilder()
     .Build();
 
 builder.Services.AddTransient<IProductFilterService, CustomProductFilterService>();
+builder.Services.AddAlgolia();
+builder.Services.AddKlaviyo();
 
 var app = builder.Build();
 
