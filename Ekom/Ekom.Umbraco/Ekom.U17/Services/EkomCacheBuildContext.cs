@@ -1,4 +1,5 @@
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Extensions;
 
 namespace Ekom.Umb.Services;
 
@@ -90,7 +91,7 @@ internal sealed class EkomCacheBuildContext
         {
             var allNodes = nodes.DistinctBy(x => x.Key).ToList();
             IdByKey = allNodes.ToDictionary(x => x.Key, x => x.Id);
-            NodeInfoByKey = allNodes.ToDictionary(x => x.Key, x => new NodeInfo(x.Id, x.Parent?.Key));
+            NodeInfoByKey = allNodes.ToDictionary(x => x.Key, x => new NodeInfo(x.Id, GetParent(x)?.Key));
             NodesByContentType = allNodes
                 .GroupBy(x => x.ContentType.Alias)
                 .ToDictionary(x => x.Key, x => (IReadOnlyList<IPublishedContent>)x.ToList());
@@ -101,6 +102,15 @@ internal sealed class EkomCacheBuildContext
         public Dictionary<Guid, NodeInfo> NodeInfoByKey { get; }
 
         public Dictionary<string, IReadOnlyList<IPublishedContent>> NodesByContentType { get; }
+
+        private static IPublishedContent? GetParent(IPublishedContent content)
+        {
+#if UMBRACO_18
+            return content.Parent();
+#else
+            return content.Parent;
+#endif
+        }
     }
 
     private sealed class NodeInfo(int id, Guid? parentKey)

@@ -2,6 +2,17 @@
   "version": 1,
   "dependencies": {
     "net10.0": {
+      "Ekom.Payments.U18": {
+        "type": "Direct",
+        "requested": "[0.2.86, )",
+        "resolved": "0.2.86",
+        "contentHash": "QHuR0hvxRVnEZv8RVzeXFykT3M2G/tChyarTbofYTznycQVmHB8ASUW1Dny03u+TC+CViFy40uOjwGJIa0g7Lw==",
+        "dependencies": {
+          "Ekom.Payments.AspNetCore": "0.2.86",
+          "Umbraco.Cms.Core": "18.0.0",
+          "Umbraco.Cms.Web.Common": "18.0.0"
+        }
+      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[1.0.0, )",
@@ -251,10 +262,18 @@
         "resolved": "3.1.0",
         "contentHash": "i6x0hDsFWg6Ke2isaNAcHQ9ChxBvTJu2cSmBY+Jtjiv2W4q6y9QlA3JKYuZqJ573TAZmpAn65Qf3sRpjvZ1gmw=="
       },
+      "Ekom.Payments.AspNetCore": {
+        "type": "Transitive",
+        "resolved": "0.2.86",
+        "contentHash": "4lmodViuiuQL+U2CsIBM9YxvyxYYe5IwMKNWDFreUCdskL+qb5hYeNdeCuMjIQgASTMdc7PMfmQEDR0sp7F9Qw==",
+        "dependencies": {
+          "Ekom.Payments.Core": "0.2.86"
+        }
+      },
       "Ekom.Payments.Core": {
         "type": "Transitive",
-        "resolved": "0.2.83",
-        "contentHash": "6c0cHIcQmLBsDIGfOoiKYgZJQ/tEWw37dtB20HyfwesSaS4fhUB6aHlZEmUXKYpHbxyCU1tg0Au+qaI41+Q9xw==",
+        "resolved": "0.2.86",
+        "contentHash": "VamfMFGR0beCiDSK5Fnl6J04nHRg6SZMLJd6FfXKNNdw/5o/TVYbRNXke5JZz8UUZv4WrG9hiNr3WsGYIucQQA==",
         "dependencies": {
           "Azure.Core": "1.51.0",
           "Azure.Identity": "1.17.1",

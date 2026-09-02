@@ -181,9 +181,18 @@ internal sealed class NodeService : INodeService
 
         ArgumentNullException.ThrowIfNull(node);
 
-        return node.Children
+        return GetChildren(node)
             .Select(x => new Umbraco17Content(x))
             .ToList();
+    }
+
+    private static IEnumerable<IPublishedContent> GetChildren(IPublishedContent content)
+    {
+#if UMBRACO_18
+        return content.Children();
+#else
+        return content.Children;
+#endif
     }
 
     public bool IsItemUnpublished(UmbracoContent content)

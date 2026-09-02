@@ -52,7 +52,7 @@ internal class Umbraco17Content : UmbracoContent
         string? urlOverride)
     {
         var id = content.Id.ToString();
-        var parent = parentId.HasValue || parentKey.HasValue ? null : content.Parent;
+        var parent = parentId.HasValue || parentKey.HasValue ? null : GetParent(content);
         var resolvedParentId = parentId ?? parent?.Id;
         var resolvedParentKey = parentKey ?? parent?.Key;
         var resolvedPath = path ?? content.Path ?? string.Empty;
@@ -81,6 +81,15 @@ internal class Umbraco17Content : UmbracoContent
             ["__VariesByCulture"] = variesByCulture,
             ["url"] = urlOverride ?? "#",
         };
+    }
+
+    private static IPublishedContent? GetParent(IPublishedContent content)
+    {
+#if UMBRACO_18
+        return content.Parent();
+#else
+        return content.Parent;
+#endif
     }
 
     private static Dictionary<string, string> GetContentProperties(IPublishedContent content)

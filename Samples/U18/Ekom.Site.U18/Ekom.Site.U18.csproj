@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <UserSecretsId>20c0ce5b-d9d6-47bf-9870-d111d7831cb3</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Umbraco.Cms" Version="18.1.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\Ekom\Ekom.Umbraco\Ekom.U18\Ekom.U18.csproj" />
+        <ProjectReference Include="..\..\..\Ekom\Ekom.Web\Ekom.Web.U18\Ekom.Web.U18.csproj" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\U17\Ekom.Site.U17\CustomProductFilterService.cs" Link="CustomProductFilterService.cs" />
+        <Compile Include="..\..\U17\Ekom.Site.U17\Utility\**\*.cs" Link="Utility\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Content Include="..\..\U17\Ekom.Site.U17\Views\**\*.cshtml" Exclude="..\..\U17\Ekom.Site.U17\Views\_ViewImports.cshtml" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+        <RazorGenerate Include="..\..\U17\Ekom.Site.U17\Views\**\*.cshtml" Exclude="..\..\U17\Ekom.Site.U17\Views\_ViewImports.cshtml" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <Import Project="..\..\..\Ekom\Ekom.Web\Ekom.Web.U18\buildTransitive\Ekom.Web.U18.targets" Condition="Exists('..\..\..\Ekom\Ekom.Web\Ekom.Web.U18\buildTransitive\Ekom.Web.U18.targets')" />
+
+</Project>

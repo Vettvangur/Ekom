@@ -9,6 +9,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <DefineConstants>$(DefineConstants);UMBRACO_18</DefineConstants>
 
         <!-- Package properties -->
         <PackageId>Ekom.U18</PackageId>
@@ -58,7 +59,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ekom.Payments.U18" Version="0.2.83" />
+        <PackageReference Include="Ekom.Payments.U18" Version="0.2.86" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="Umbraco.Cms.Api.Common" Version="[18.0.0,19.0.0)" />
         <PackageReference Include="Umbraco.Cms.Core" Version="[18.0.0,19.0.0)" />

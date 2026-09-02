@@ -8,6 +8,7 @@ using Lucene.Net.QueryParsers.Classic;
 using Microsoft.Extensions.Logging;
 using System.Text;
 using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Infrastructure.Examine;
 using Umbraco.Extensions;
 
@@ -136,16 +137,17 @@ internal sealed class CatalogSearchService : ICatalogSearchService
                 Score = x.Score,
                 Path = x.Content.Path,
                 DocType = x.Content.ContentType.Alias,
-                ParentName = x.Content.Parent != null ? x.Content.Parent.Name : string.Empty,
+                ParentName = GetParent(x.Content)?.Name ?? string.Empty,
                 ParentId = x.Content.IsDocumentType("ekmProduct")
                     ? x.Content.Id
                     : x.Content.IsDocumentType("ekmVariant")
-                        ? x.Content.Parent?.Parent?.Id ?? x.Content.Id
+                        ? GetParent(GetParent(x.Content))?.Id ?? x.Content.Id
                         : x.Content.Id,
                 SKU = x.Content.HasProperty("sku") ? x.Content.Value<string>("sku") ?? string.Empty : string.Empty,
                 Url = x.Content.Url(),
             });
         }
+
         catch (OperationCanceledException)
         {
             throw;
@@ -157,6 +159,15 @@ internal sealed class CatalogSearchService : ICatalogSearchService
             total = 0;
             return Array.Empty<SearchResultEntity>();
         }
+    }
+
+    private static IPublishedContent? GetParent(IPublishedContent content)
+    {
+#if UMBRACO_18
+        return content.Parent();
+#else
+        return content.Parent;
+#endif
     }
 
     private IEnumerable<SearchResultEntity> InternalQueryCore(SearchRequest req, out long total, CancellationToken ct)
