@@ -188,6 +188,7 @@ public sealed class ProductSearchController
 | `Indexing:Products` | `bool` | `true` | Enables product indexing. |
 | `Indexing:Categories` | `bool` | `true` | Enables category indexing. |
 | `Indexing:Variants` | `bool` | `false` | Indexes product variants as separate product records so variant SKUs can be searched directly. |
+| `Indexing:EnableAvailabilityUpdates` | `bool` | `false` | Partially updates indexed availability after stock changes. When `Stores[*]:IncludeStock` is enabled, also updates the indexed stock amount. |
 | `Indexing:BatchSize` | `int` | `1000` | Batch size for Algolia save/replace/delete operations. |
 | `Indexing:ProductProperties` | `string[]` | `[]` | Additional product properties/metafields to include in product records. Supports modifiers documented below. |
 | `Indexing:AttributesForFaceting` | `string[]` | `[]` | Algolia facet expressions to preserve on product indexes, such as `filterOnly(categoryPageId)` or `searchable(brand)`. |
@@ -279,6 +280,24 @@ await fetch('/ekom/order/add', {
 ```
 
 The stored token is used for Ekom's add-to-cart, checkout, and purchase Insights events. Ekom also uses each persisted line query ID for the corresponding conversion event. The Order Info tracking view shows an Algolia subsection only when this data exists.
+
+### Stock availability updates
+
+Enable partial product-record updates when stock changes:
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Indexing": {
+        "EnableAvailabilityUpdates": true
+      }
+    }
+  }
+}
+```
+
+Ekom updates `Available` only when effective sellable availability changes, including stock-buffer, backorder, and variant availability rules. For products with variants, the parent record becomes unavailable only when every variant is unavailable. If `Stores[*]:IncludeStock` is `true`, every stock change also partially updates `Stock`; indexed variant records additionally update `variantStock`. Existing records are updated only—stock changes never create incomplete Algolia records.
 
 ### Indexing triggers and API keys
 

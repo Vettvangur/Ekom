@@ -2,7 +2,7 @@ using Ekom.Models;
 
 namespace Ekom.Utilities;
 
-internal static class StockBufferHelper
+public static class StockBufferHelper
 {
     public static decimal GetEffectiveStock(decimal stock, IProduct product, IVariant? variant = null)
     {
