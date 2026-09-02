@@ -74,9 +74,15 @@ internal sealed class AlgoliaInsightsClient : IAlgoliaInsightsClient
 
         if (evt.ObjectData != null && evt.ObjectData.Count > 0)
         {
-            var data = new JsonObject();
-            foreach (var kvp in evt.ObjectData)
-                data[kvp.Key] = JsonValue.Create(kvp.Value);
+            var data = new JsonArray();
+            foreach (var objectData in evt.ObjectData)
+            {
+                var item = new JsonObject();
+                foreach (var kvp in objectData)
+                    item[kvp.Key] = JsonValue.Create(kvp.Value);
+
+                data.Add(item);
+            }
             json["objectData"] = data;
         }
 

@@ -10,5 +10,5 @@ public sealed class AlgoliaInsightsEvent
 
     public string? QueryId { get; init; }
     public DateTimeOffset? Timestamp { get; init; }
-    public IReadOnlyDictionary<string, object?>? ObjectData { get; init; }
+    public IReadOnlyList<IReadOnlyDictionary<string, object?>>? ObjectData { get; init; }
 }

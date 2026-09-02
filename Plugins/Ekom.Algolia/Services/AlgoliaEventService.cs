@@ -85,12 +85,15 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             Index = indexName,
             UserToken = userToken,
             ObjectIds = new[] { orderLine.ProductKey.ToString() },
-            ObjectData = new Dictionary<string, object?>
-            {
-                ["quantity"] = orderLine.Quantity,
-                ["value"] = orderLine.Amount.Value,
-                ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
-            }
+            ObjectData =
+            [
+                new Dictionary<string, object?>
+                {
+                    ["quantity"] = orderLine.Quantity,
+                    ["value"] = orderLine.Amount.Value,
+                    ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
+                }
+            ]
         };
 
         return _insightsClient.SendEventsAsync(new[] { evt }, ct);
@@ -129,11 +132,14 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             Index = indexName,
             UserToken = userToken,
             ObjectIds = objectIds,
-            ObjectData = new Dictionary<string, object?>
-            {
-                ["value"] = orderInfo.ChargedAmount.Value,
-                ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
-            }
+            ObjectData =
+            [
+                new Dictionary<string, object?>
+                {
+                    ["value"] = orderInfo.ChargedAmount.Value,
+                    ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
+                }
+            ]
         };
 
         return _insightsClient.SendEventsAsync(new[] { evt }, ct);
@@ -172,11 +178,14 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             Index = indexName,
             UserToken = userToken,
             ObjectIds = objectIds,
-            ObjectData = new Dictionary<string, object?>
-            {
-                ["value"] = orderInfo.ChargedAmount.Value,
-                ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
-            }
+            ObjectData =
+            [
+                new Dictionary<string, object?>
+                {
+                    ["value"] = orderInfo.ChargedAmount.Value,
+                    ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
+                }
+            ]
         };
 
         return _insightsClient.SendEventsAsync(new[] { evt }, ct);
