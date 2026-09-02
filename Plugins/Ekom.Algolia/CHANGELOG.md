@@ -6,6 +6,13 @@
 
 * **algolia:** add optional variant-level product indexing for SKU search.
 
+## [0.2.45](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.44...Ekom.Algolia-v0.2.45) (2026-09-02)
+
+
+### Bug Fixes
+
+* **algolia:** send conversion object data as arrays ([#806](https://github.com/Vettvangur/Ekom/issues/806)) ([2c8fbf3](https://github.com/Vettvangur/Ekom/commit/2c8fbf32f34f0bd5e1579c6347c8eb79d722b249))
+
 ## [0.2.44](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.43...Ekom.Algolia-v0.2.44) (2026-08-25)
 
 
