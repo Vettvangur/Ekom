@@ -50,6 +50,32 @@ public class AlgoliaInsightsClientTests
         Assert.Equal("USD", objectData[0].GetProperty("currency").GetString());
     }
 
+    [Fact]
+    public async Task Sends_Query_Id_When_Present()
+    {
+        using var handler = new CapturingHandler();
+        using var httpClient = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://insights.algolia.io/1/")
+        };
+        var client = new AlgoliaInsightsClient(httpClient, NullLogger<AlgoliaInsightsClient>.Instance);
+        var evt = new AlgoliaInsightsEvent
+        {
+            EventType = "conversion",
+            EventName = "Purchased",
+            Index = "products",
+            UserToken = "user-token",
+            QueryId = "query-id",
+            ObjectIds = ["product-1"]
+        };
+
+        await client.SendEventsAsync([evt]);
+
+        using var document = JsonDocument.Parse(handler.RequestBody);
+        var sentEvent = document.RootElement.GetProperty("events")[0];
+        Assert.Equal("query-id", sentEvent.GetProperty("queryID").GetString());
+    }
+
     private sealed class CapturingHandler : HttpMessageHandler
     {
         public string RequestBody { get; private set; } = string.Empty;

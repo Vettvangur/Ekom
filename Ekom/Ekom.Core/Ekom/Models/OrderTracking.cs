@@ -16,6 +16,7 @@ public sealed class OrderTracking
     public string? CaptureMethod { get; set; }
     public Ga4OrderTracking Ga4 { get; set; } = new();
     public MetaOrderTracking Meta { get; set; } = new();
+    public AlgoliaOrderTracking Algolia { get; set; } = new();
 
     public bool HasData()
         => !string.IsNullOrWhiteSpace(Source)
@@ -27,7 +28,8 @@ public sealed class OrderTracking
         || !string.IsNullOrWhiteSpace(LandingUrl)
         || !string.IsNullOrWhiteSpace(Referrer)
         || Ga4.HasData()
-        || Meta.HasData();
+        || Meta.HasData()
+        || Algolia?.HasData() == true;
 
     public OrderTracking Clone()
         => new()
@@ -45,7 +47,8 @@ public sealed class OrderTracking
             HasCookieSupport = HasCookieSupport,
             CaptureMethod = CaptureMethod,
             Ga4 = Ga4.Clone(),
-            Meta = Meta.Clone()
+            Meta = Meta.Clone(),
+            Algolia = Algolia?.Clone() ?? new()
         };
 }
 
@@ -86,5 +89,53 @@ public sealed class MetaOrderTracking
             Fbp = Fbp,
             Fbc = Fbc,
             Data = new Dictionary<string, string?>(Data, StringComparer.OrdinalIgnoreCase)
+        };
+}
+
+public sealed class AlgoliaOrderTracking
+{
+    public string? UserToken { get; set; }
+    public List<AlgoliaOrderLineTracking> Lines { get; set; } = [];
+
+    public bool HasData()
+        => !string.IsNullOrWhiteSpace(UserToken)
+        || Lines.Count > 0;
+
+    public void AddLine(Guid orderLineKey, string? queryId)
+    {
+        if (string.IsNullOrWhiteSpace(queryId) || Lines.Any(line => line.OrderLineKey == orderLineKey))
+            return;
+
+        Lines.Add(new AlgoliaOrderLineTracking
+        {
+            OrderLineKey = orderLineKey,
+            QueryId = queryId
+        });
+    }
+
+    public void RemoveLine(Guid orderLineKey)
+        => Lines.RemoveAll(line => line.OrderLineKey == orderLineKey);
+
+    public string? GetQueryId(Guid orderLineKey)
+        => Lines.FirstOrDefault(line => line.OrderLineKey == orderLineKey)?.QueryId;
+
+    public AlgoliaOrderTracking Clone()
+        => new()
+        {
+            UserToken = UserToken,
+            Lines = Lines.Select(line => line.Clone()).ToList()
+        };
+}
+
+public sealed class AlgoliaOrderLineTracking
+{
+    public Guid OrderLineKey { get; set; }
+    public string QueryId { get; set; } = string.Empty;
+
+    public AlgoliaOrderLineTracking Clone()
+        => new()
+        {
+            OrderLineKey = OrderLineKey,
+            QueryId = QueryId
         };
 }

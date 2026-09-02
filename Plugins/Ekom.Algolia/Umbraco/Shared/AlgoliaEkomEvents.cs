@@ -22,6 +22,7 @@ internal sealed class AlgoliaEkomEvents : IComponent
     {
         //CatalogEvents.BeforeReturnProductAsync += OnBeforeReturnProductAsync;
         OrderEvents.AddedOrderlineAsync += OnAddedOrderlineAsync;
+        OrderEvents.RemovedOrderlineAsync += OnRemovedOrderlineAsync;
         OrderEvents.CustomerEmailAddedAsync += OnCustomerEmailAddedAsync;
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
     }
@@ -30,6 +31,7 @@ internal sealed class AlgoliaEkomEvents : IComponent
     {
         //CatalogEvents.BeforeReturnProductAsync -= OnBeforeReturnProductAsync;
         OrderEvents.AddedOrderlineAsync -= OnAddedOrderlineAsync;
+        OrderEvents.RemovedOrderlineAsync -= OnRemovedOrderlineAsync;
         OrderEvents.CustomerEmailAddedAsync -= OnCustomerEmailAddedAsync;
         CheckoutEvents.CompleteCheckoutAsync -= OnCompleteCheckoutAsync;
     }
@@ -50,16 +52,30 @@ internal sealed class AlgoliaEkomEvents : IComponent
 
     private async Task OnAddedOrderlineAsync(object sender, AddedOrderlineEventArgs args, CancellationToken ct)
     {
-        if (!_options.Enabled || !_options.Events.Enabled || !_options.Events.AddedToCart)
+        if (!_options.Enabled)
             return;
 
-        var orderInfo = args.OrderInfo;
-        var orderLine = args.OrderLine;
-
         using var scope = _scopeFactory.CreateScope();
+        var userTokenProvider = scope.ServiceProvider.GetRequiredService<IAlgoliaUserTokenProvider>();
+        var tracking = args.OrderInfo.Tracking ??= new();
+        var algoliaTracking = tracking.Algolia ??= new();
+        algoliaTracking.UserToken ??= userTokenProvider.GetOrCreateUserToken();
+        algoliaTracking.AddLine(args.OrderLine.Key, args.Settings.AlgoliaQueryId);
+
+        if (!_options.Events.Enabled || !_options.Events.AddedToCart)
+            return;
+
         var service = scope.ServiceProvider.GetRequiredService<IAlgoliaEventService>();
 
-        await service.TrackAddedToCartAsync(orderInfo, orderLine, ct).ConfigureAwait(false);
+        await service.TrackAddedToCartAsync(args.OrderInfo, args.OrderLine, ct).ConfigureAwait(false);
+    }
+
+    private Task OnRemovedOrderlineAsync(object sender, RemovedOrderlineEventArgs args, CancellationToken ct)
+    {
+        if (_options.Enabled)
+            args.OrderInfo.Tracking?.Algolia?.RemoveLine(args.OrderLine.Key);
+
+        return Task.CompletedTask;
     }
 
     private async Task OnCustomerEmailAddedAsync(object sender, CustomerEmailAddedEventArgs args, CancellationToken ct)

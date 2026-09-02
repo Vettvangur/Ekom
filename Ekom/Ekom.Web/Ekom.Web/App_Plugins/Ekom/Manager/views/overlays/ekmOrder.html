@@ -320,6 +320,14 @@
               <li ng-repeat="pair in metaTrackingData track by $index" class="ekmOrderTracking__wrap"><strong>{{ pair[0] }}</strong>: {{ pair[1] }}</li>
             </ul>
           </div>
+
+          <div ng-if="model.editModel.order.tracking.algolia && (model.editModel.order.tracking.algolia.userToken || algoliaTrackingLines.length > 0)" class="ekmOrderTracking__provider">
+            <h5>Algolia</h5>
+            <p ng-if="model.editModel.order.tracking.algolia.userToken" class="ekmOrderTracking__wrap">User token: {{ model.editModel.order.tracking.algolia.userToken }}</p>
+            <ul ng-if="algoliaTrackingLines.length > 0" class="ekmOrderTracking__list">
+              <li ng-repeat="line in algoliaTrackingLines track by line.orderLineKey" class="ekmOrderTracking__wrap"><strong>Order line key</strong>: {{ line.orderLineKey }}<br><strong>Query ID</strong>: {{ line.queryId }}</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

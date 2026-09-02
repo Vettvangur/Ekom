@@ -185,6 +185,7 @@ public sealed class AddedOrderlineEventArgs : EventArgs
 {
     public required OrderInfo OrderInfo { get; set; }
     public required OrderLine OrderLine { get; set; }
+    public required OrderSettings Settings { get; set; }
 }
 
 public sealed class RemovedOrderlineEventArgs : EventArgs
