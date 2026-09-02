@@ -65,7 +65,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
         if (!_options.Enabled || !_options.Events.Enabled || !_options.Events.AddedToCart)
             return Task.CompletedTask;
 
-        var userToken = _userTokenProvider.GetUserToken();
+        var userToken = GetUserToken(orderInfo);
         if (string.IsNullOrWhiteSpace(userToken))
             return Task.CompletedTask;
 
@@ -85,6 +85,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             Index = indexName,
             UserToken = userToken,
             ObjectIds = new[] { orderLine.ProductKey.ToString() },
+            QueryId = orderInfo.Tracking?.Algolia?.GetQueryId(orderLine.Key),
             ObjectData =
             [
                 new Dictionary<string, object?>
@@ -104,7 +105,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
         if (!_options.Enabled || !_options.Events.Enabled || !_options.Events.StartedCheckout)
             return Task.CompletedTask;
 
-        var userToken = _userTokenProvider.GetUserToken();
+        var userToken = GetUserToken(orderInfo);
         if (string.IsNullOrWhiteSpace(userToken))
             return Task.CompletedTask;
 
@@ -117,32 +118,11 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             localeOverride: orderInfo.StoreInfo.Culture,
             currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
-        var objectIds = orderInfo.OrderLines
-            .Select(l => l.ProductKey.ToString())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (objectIds.Count == 0)
+        var events = CreateOrderLineConversionEvents(orderInfo, userToken, indexName, "Started Checkout");
+        if (events.Count == 0)
             return Task.CompletedTask;
 
-        var evt = new AlgoliaInsightsEvent
-        {
-            EventType = "conversion",
-            EventName = "Started Checkout",
-            Index = indexName,
-            UserToken = userToken,
-            ObjectIds = objectIds,
-            ObjectData =
-            [
-                new Dictionary<string, object?>
-                {
-                    ["value"] = orderInfo.ChargedAmount.Value,
-                    ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
-                }
-            ]
-        };
-
-        return _insightsClient.SendEventsAsync(new[] { evt }, ct);
+        return _insightsClient.SendEventsAsync(events, ct);
     }
 
     public Task TrackPurchaseAsync(IOrderInfo orderInfo, CancellationToken ct = default)
@@ -150,7 +130,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
         if (!_options.Enabled || !_options.Events.Enabled || !_options.Events.Purchase)
             return Task.CompletedTask;
 
-        var userToken = _userTokenProvider.GetUserToken();
+        var userToken = GetUserToken(orderInfo);
         if (string.IsNullOrWhiteSpace(userToken))
             return Task.CompletedTask;
 
@@ -163,32 +143,40 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             localeOverride: orderInfo.StoreInfo.Culture,
             currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
-        var objectIds = orderInfo.OrderLines
-            .Select(l => l.ProductKey.ToString())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (objectIds.Count == 0)
+        var events = CreateOrderLineConversionEvents(orderInfo, userToken, indexName, "Purchased");
+        if (events.Count == 0)
             return Task.CompletedTask;
 
-        var evt = new AlgoliaInsightsEvent
-        {
-            EventType = "conversion",
-            EventName = "Purchased",
-            Index = indexName,
-            UserToken = userToken,
-            ObjectIds = objectIds,
-            ObjectData =
-            [
-                new Dictionary<string, object?>
-                {
-                    ["value"] = orderInfo.ChargedAmount.Value,
-                    ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
-                }
-            ]
-        };
-
-        return _insightsClient.SendEventsAsync(new[] { evt }, ct);
+        return _insightsClient.SendEventsAsync(events, ct);
     }
+
+    private string? GetUserToken(IOrderInfo orderInfo)
+        => orderInfo.Tracking?.Algolia?.UserToken ?? _userTokenProvider.GetOrCreateUserToken();
+
+    private static IReadOnlyList<AlgoliaInsightsEvent> CreateOrderLineConversionEvents(
+        IOrderInfo orderInfo,
+        string userToken,
+        string indexName,
+        string eventName)
+        => orderInfo.OrderLines
+            .Select(orderLine => new AlgoliaInsightsEvent
+            {
+                EventType = "conversion",
+                EventName = eventName,
+                Index = indexName,
+                UserToken = userToken,
+                ObjectIds = new[] { orderLine.ProductKey.ToString() },
+                QueryId = orderInfo.Tracking?.Algolia?.GetQueryId(orderLine.Key),
+                ObjectData =
+                [
+                    new Dictionary<string, object?>
+                    {
+                        ["quantity"] = orderLine.Quantity,
+                        ["value"] = orderLine.Amount.Value,
+                        ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
+                    }
+                ]
+            })
+            .ToList();
 
 }

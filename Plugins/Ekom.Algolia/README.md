@@ -239,6 +239,47 @@ public sealed class ProductSearchController
 
 ## Usage notes
 
+### Insights user-token correlation with InstantSearch
+
+Ekom issues an opaque first-party user-token cookie the first time `IAlgoliaUserTokenProvider.GetOrCreateUserToken()` is called. Use that same value to initialize the browser's Search Insights client so frontend click events and server-side conversion events share one Algolia user token. The token is not derived from a username or other personally identifiable information.
+
+Resolve the token while rendering the Razor page and initialize Search Insights with it. Do not let Search Insights generate a competing user token.
+
+```cshtml
+@using Ekom.Algolia.Services
+@inject IAlgoliaUserTokenProvider AlgoliaUserTokenProvider
+
+@{
+    var algoliaUserToken = AlgoliaUserTokenProvider.GetOrCreateUserToken();
+}
+
+<script>
+    aa('init', {
+        appId: '@algoliaOptions.ApplicationId',
+        apiKey: '@algoliaOptions.SearchApiKey',
+        useCookie: false,
+    });
+    aa('setUserToken', '@algoliaUserToken');
+</script>
+```
+
+When a result is added to an Ekom order, include that result's Algolia `queryID` as `algoliaQueryId` in the add-to-order request. Ekom persists the first query ID received for each order line along with the shared user token in `OrderInfo.Tracking.Algolia`.
+
+```js
+await fetch('/ekom/order/add', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    productId,
+    quantity: 1,
+    storeAlias,
+    algoliaQueryId: searchResult.queryID,
+  }),
+});
+```
+
+The stored token is used for Ekom's add-to-cart, checkout, and purchase Insights events. Ekom also uses each persisted line query ID for the corresponding conversion event. The Order Info tracking view shows an Algolia subsection only when this data exists.
+
 ### Indexing triggers and API keys
 
 Product and category indexing is triggered from Umbraco content notifications for `ekmProduct` and `ekmCategory`.

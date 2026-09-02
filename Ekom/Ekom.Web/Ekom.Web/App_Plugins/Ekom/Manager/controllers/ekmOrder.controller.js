@@ -25,6 +25,7 @@
     $scope.executingOrderActionKey = null;
     $scope.ga4TrackingData = [];
     $scope.metaTrackingData = [];
+    $scope.algoliaTrackingLines = [];
     $scope.customerInformationEditorOpen = false;
     $scope.customerInformationSaving = false;
     $scope.customerInformationEditModel = null;
@@ -272,6 +273,7 @@
       $scope.model.editModel.order = order;
       $scope.ga4TrackingData = tracking && tracking.ga4 && tracking.ga4.data ? Object.entries(tracking.ga4.data) : [];
       $scope.metaTrackingData = tracking && tracking.meta && tracking.meta.data ? Object.entries(tracking.meta.data) : [];
+      $scope.algoliaTrackingLines = tracking && tracking.algolia && Array.isArray(tracking.algolia.lines) ? tracking.algolia.lines : [];
 
       orderLines.forEach(function (orderLine) {
         orderLine.displayProperties = getOrderLineProperties(orderLine);
@@ -647,7 +649,8 @@
         orderTracking.capturedAtUtc ||
         orderTracking.hasCookieSupport !== null && orderTracking.hasCookieSupport !== undefined ||
         (orderTracking.ga4 && (orderTracking.ga4.clientId || orderTracking.ga4.sessionId || $scope.ga4TrackingData.length > 0)) ||
-        (orderTracking.meta && (orderTracking.meta.fbp || orderTracking.meta.fbc || $scope.metaTrackingData.length > 0))
+        (orderTracking.meta && (orderTracking.meta.fbp || orderTracking.meta.fbc || $scope.metaTrackingData.length > 0)) ||
+        (orderTracking.algolia && (orderTracking.algolia.userToken || $scope.algoliaTrackingLines.length > 0))
       );
     };
 

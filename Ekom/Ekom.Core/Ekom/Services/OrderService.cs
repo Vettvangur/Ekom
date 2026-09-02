@@ -1399,7 +1399,8 @@ partial class OrderService
             var addedEventArgs = new AddedOrderlineEventArgs()
             {
                 OrderInfo = orderInfo,
-                OrderLine = orderLine
+                OrderLine = orderLine,
+                Settings = settings
             };
 
             if (settings.FireEvents)

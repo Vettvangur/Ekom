@@ -109,6 +109,8 @@ public partial class EkomOrderController : ControllerBase
             }
         }
 
+        customData.Remove("algoliaQueryId");
+
         IOrderInfo orderInfo = await _order.AddOrderLineAsync(
             request.ProductId,
             request.Quantity,
@@ -118,6 +120,7 @@ public partial class EkomOrderController : ControllerBase
                 OrderAction = request.Action ?? OrderAction.AddOrUpdate,
                 VariantKey = request.VariantId,
                 CustomData = customData,
+                AlgoliaQueryId = request.AlgoliaQueryId,
                 Consent = request.Consent,
                 Tracking = request.Tracking
             }, ct);

@@ -1099,13 +1099,22 @@ function formatOrderLinePropertyKey(key: string): string {
 }
 
 function hasTrackingData(tracking: Record<string, any> | undefined): boolean {
-  return Boolean(tracking && (tracking.source || tracking.medium || tracking.campaign || tracking.term || tracking.content || tracking.clickId || tracking.clickIdType || tracking.landingUrl || tracking.referrer || tracking.captureMethod || tracking.capturedAtUtc || tracking.hasCookieSupport !== null && tracking.hasCookieSupport !== undefined || tracking.ga4?.clientId || tracking.ga4?.sessionId || tracking.meta?.fbp || tracking.meta?.fbc));
+  return Boolean(tracking && (tracking.source || tracking.medium || tracking.campaign || tracking.term || tracking.content || tracking.clickId || tracking.clickIdType || tracking.landingUrl || tracking.referrer || tracking.captureMethod || tracking.capturedAtUtc || tracking.hasCookieSupport !== null && tracking.hasCookieSupport !== undefined || tracking.ga4?.clientId || tracking.ga4?.sessionId || tracking.meta?.fbp || tracking.meta?.fbc || hasAlgoliaTrackingData(tracking.algolia)));
 }
 
 function renderTrackingDetails(tracking: Record<string, any>): string {
   const ga4Data = Object.entries(tracking.ga4?.data || {});
   const metaData = Object.entries(tracking.meta?.data || {});
-  return `<div class="ekmSplit"><div class="ekmSplit__column">${renderOptional('Captured', formatDate(tracking.capturedAtUtc))}${renderOptional('Capture method', tracking.captureMethod)}${tracking.hasCookieSupport !== null && tracking.hasCookieSupport !== undefined ? `<p>Cookie support: ${tracking.hasCookieSupport ? 'Yes' : 'No'}</p>` : ''}${renderOptional('Source', tracking.source)}${renderOptional('Medium', tracking.medium)}${renderOptional('Campaign', tracking.campaign)}${renderOptional('Term', tracking.term)}${renderOptional('Content', tracking.content)}${renderOptional('Click ID', tracking.clickId)}${renderOptional('Click ID Type', tracking.clickIdType)}${renderOptional('Landing URL', tracking.landingUrl)}${renderOptional('Referrer', tracking.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${renderOptional('Client ID', tracking.ga4?.clientId)}${renderOptional('Session ID', tracking.ga4?.sessionId)}${renderPairs(ga4Data)}<h5>Meta</h5>${renderOptional('FBP', tracking.meta?.fbp)}${renderOptional('FBC', tracking.meta?.fbc)}${renderPairs(metaData)}</div></div>`;
+  const algolia = tracking.algolia;
+  const algoliaLines = Array.isArray(algolia?.lines) ? algolia.lines : [];
+  const algoliaTracking = hasAlgoliaTrackingData(algolia)
+    ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${renderOptional('User token', algolia.userToken)}${algoliaLines.length ? `<ul>${algoliaLines.map((line: Record<string, any>) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${escapeHtml(line.orderLineKey)}<br><strong>Query ID</strong>: ${escapeHtml(line.queryId)}</li>`).join('')}</ul>` : ''}</div>`
+    : '';
+  return `<div class="ekmSplit"><div class="ekmSplit__column">${renderOptional('Captured', formatDate(tracking.capturedAtUtc))}${renderOptional('Capture method', tracking.captureMethod)}${tracking.hasCookieSupport !== null && tracking.hasCookieSupport !== undefined ? `<p>Cookie support: ${tracking.hasCookieSupport ? 'Yes' : 'No'}</p>` : ''}${renderOptional('Source', tracking.source)}${renderOptional('Medium', tracking.medium)}${renderOptional('Campaign', tracking.campaign)}${renderOptional('Term', tracking.term)}${renderOptional('Content', tracking.content)}${renderOptional('Click ID', tracking.clickId)}${renderOptional('Click ID Type', tracking.clickIdType)}${renderOptional('Landing URL', tracking.landingUrl)}${renderOptional('Referrer', tracking.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${renderOptional('Client ID', tracking.ga4?.clientId)}${renderOptional('Session ID', tracking.ga4?.sessionId)}${renderPairs(ga4Data)}<h5>Meta</h5>${renderOptional('FBP', tracking.meta?.fbp)}${renderOptional('FBC', tracking.meta?.fbc)}${renderPairs(metaData)}${algoliaTracking}</div></div>`;
+}
+
+function hasAlgoliaTrackingData(algolia: Record<string, any> | undefined): boolean {
+  return Boolean(algolia && (algolia.userToken || Array.isArray(algolia.lines) && algolia.lines.length));
 }
 
 function renderOptional(label: string, value: unknown): string {

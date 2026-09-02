@@ -10,6 +10,7 @@ public class OrderRequest
     public decimal Quantity { get; set; } = 1;
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     public OrderAction? Action { get; set; } = OrderAction.AddOrUpdate;
+    public string? AlgoliaQueryId { get; set; }
     public OrderConsent? Consent { get; set; }
     public OrderTracking? Tracking { get; set; }
 }
