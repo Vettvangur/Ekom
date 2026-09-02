@@ -1,4 +1,5 @@
 using Ekom.Cache;
+using Ekom.Events;
 using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Repositories;
@@ -236,6 +237,7 @@ public partial class Stock
     {
         SemaphoreSlim? semaphore = null;
         StockData stockData;
+        StockChangedEventArgs? stockChangedArgs = null;
 
         try
         {
@@ -264,13 +266,16 @@ public partial class Stock
                 throw new NotEnoughStockException($"Not enough stock available for {stockData.UniqueId}.");
             }
 
-            await SetStockWithLockAsync(stockData, stockData.Stock + value, outerLock: true, ct)
+            stockChangedArgs = await SetStockWithLockAsync(key, storeAlias, stockData, stockData.Stock + value, outerLock: true, ct)
                 .ConfigureAwait(false);
         }
         finally
         {
             semaphore?.Release();
         }
+
+        if (stockChangedArgs is not null)
+            await StockEvents.OnStockChangedAsync(this, stockChangedArgs, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -325,7 +330,12 @@ public partial class Stock
             stockData = _stockCache.Cache[key];
         }
 
-        return await SetStockWithLockAsync(stockData, value, ct: ct).ConfigureAwait(false);
+        var stockChangedArgs = await SetStockWithLockAsync(key, storeAlias, stockData, value, ct: ct).ConfigureAwait(false);
+
+        if (stockChangedArgs is not null)
+            await StockEvents.OnStockChangedAsync(this, stockChangedArgs, ct).ConfigureAwait(false);
+
+        return true;
     }
 
     /// <summary>
@@ -462,7 +472,7 @@ public partial class Stock
     /// Throws an exception when current value and provided value are equal
     /// </exception>
     /// <exception cref="ArgumentNullException"/>
-    private async Task<bool> SetStockWithLockAsync(StockData stockData, decimal value, bool outerLock = false, CancellationToken ct = default)
+    private async Task<StockChangedEventArgs?> SetStockWithLockAsync(Guid key, string? storeAlias, StockData stockData, decimal value, bool outerLock = false, CancellationToken ct = default)
     {
         if (stockData == null)
         {
@@ -470,7 +480,7 @@ public partial class Stock
         }
         if (stockData.Stock == value)
         {
-            return true;
+            return null;
         }
 
         //if (stockData.Stock == value)
@@ -494,7 +504,13 @@ public partial class Stock
 
             await _stockRepo.SetAsync(stockData.UniqueId, value, oldValue, ct).ConfigureAwait(false);
 
-            return true;
+            return new StockChangedEventArgs
+            {
+                Key = key,
+                StoreAlias = _config.PerStoreStock ? storeAlias : null,
+                OldValue = oldValue,
+                NewValue = value
+            };
         }
         finally
         {

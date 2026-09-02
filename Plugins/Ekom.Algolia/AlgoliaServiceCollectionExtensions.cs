@@ -58,6 +58,7 @@ public static class AlgoliaServiceCollectionExtensions
         services.AddSingleton<AlgoliaSearchCacheKeyBuilder>();
         services.AddSingleton<IAlgoliaProductIndexMapper, ProductIndexMapper>();
         services.AddSingleton<IAlgoliaCategoryIndexMapper, CategoryIndexMapper>();
+        services.AddSingleton<AlgoliaAvailabilityUpdateService>();
 
         services.AddSingleton<IAlgoliaProductIndexQueue, AlgoliaProductIndexQueue>();
         services.AddSingleton<AlgoliaProductIndexExecutor>();

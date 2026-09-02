@@ -1,4 +1,5 @@
 using Ekom.Events;
+using Ekom.Algolia.Indexing;
 using Ekom.Algolia.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -31,6 +32,7 @@ internal sealed class AlgoliaEkomEvents : IComponent
         //CatalogEvents.BeforeReturnProductAsync += OnBeforeReturnProductAsync;
         OrderEvents.AddedOrderlineAsync += OnAddedOrderlineAsync;
         OrderEvents.RemovedOrderlineAsync += OnRemovedOrderlineAsync;
+        StockEvents.StockChangedAsync += OnStockChangedAsync;
         OrderEvents.CustomerEmailAddedAsync += OnCustomerEmailAddedAsync;
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
 #if UMBRACO_18
@@ -47,6 +49,7 @@ internal sealed class AlgoliaEkomEvents : IComponent
         //CatalogEvents.BeforeReturnProductAsync -= OnBeforeReturnProductAsync;
         OrderEvents.AddedOrderlineAsync -= OnAddedOrderlineAsync;
         OrderEvents.RemovedOrderlineAsync -= OnRemovedOrderlineAsync;
+        StockEvents.StockChangedAsync -= OnStockChangedAsync;
         OrderEvents.CustomerEmailAddedAsync -= OnCustomerEmailAddedAsync;
         CheckoutEvents.CompleteCheckoutAsync -= OnCompleteCheckoutAsync;
 #if UMBRACO_18
@@ -94,6 +97,17 @@ internal sealed class AlgoliaEkomEvents : IComponent
             args.OrderInfo.Tracking?.Algolia?.RemoveLine(args.OrderLine.Key);
 
         return Task.CompletedTask;
+    }
+
+    private async Task OnStockChangedAsync(object sender, StockChangedEventArgs args, CancellationToken ct)
+    {
+        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.EnableAvailabilityUpdates)
+            return;
+
+        using var scope = _scopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<AlgoliaAvailabilityUpdateService>();
+
+        await service.UpdateAsync(args, ct).ConfigureAwait(false);
     }
 
     private async Task OnCustomerEmailAddedAsync(object sender, CustomerEmailAddedEventArgs args, CancellationToken ct)

@@ -34,6 +34,7 @@ public sealed class AlgoliaIndexingOptions
     public bool Products { get; set; } = true;
     public bool Categories { get; set; } = true;
     public bool Variants { get; set; }
+    public bool EnableAvailabilityUpdates { get; set; }
 
     public int BatchSize { get; set; } = 1000;
 
