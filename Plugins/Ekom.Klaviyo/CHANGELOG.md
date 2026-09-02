@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.101](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.100...Ekom.Klaviyo-v0.2.101) (2026-09-02)
+
+
+### Features
+
+* **u18:** add Umbraco 18 support ([#808](https://github.com/Vettvangur/Ekom/issues/808)) ([84b9c19](https://github.com/Vettvangur/Ekom/commit/84b9c1902900b6e3fdfc593545a1a4c6bb7c4be8))
+
 ## [0.2.100](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.99...Ekom.Klaviyo-v0.2.100) (2026-07-13)
 
 

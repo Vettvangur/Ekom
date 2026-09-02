@@ -6,6 +6,13 @@
 
 * **algolia:** add optional variant-level product indexing for SKU search.
 
+## [0.2.46](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.45...Ekom.Algolia-v0.2.46) (2026-09-02)
+
+
+### Features
+
+* **u18:** add Umbraco 18 support ([#808](https://github.com/Vettvangur/Ekom/issues/808)) ([84b9c19](https://github.com/Vettvangur/Ekom/commit/84b9c1902900b6e3fdfc593545a1a4c6bb7c4be8))
+
 ## [0.2.45](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.44...Ekom.Algolia-v0.2.45) (2026-09-02)
 
 
