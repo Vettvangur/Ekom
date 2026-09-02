@@ -7,6 +7,13 @@
 * **algolia:** add optional variant-level product indexing for SKU search.
 * **algolia:** optionally update indexed availability and stock after stock changes.
 
+## [0.2.48](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.47...Ekom.Algolia-v0.2.48) (2026-09-02)
+
+
+### Features
+
+* **algolia:** update availability after stock changes ([#812](https://github.com/Vettvangur/Ekom/issues/812)) ([08aca91](https://github.com/Vettvangur/Ekom/commit/08aca91fce11698b89419095c9165d91c46c99aa))
+
 ## [0.2.47](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.46...Ekom.Algolia-v0.2.47) (2026-09-02)
 
 

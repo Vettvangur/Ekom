@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.258](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.257...Ekom-v0.2.258) (2026-09-02)
+
+
+### Features
+
+* **algolia:** update availability after stock changes ([#812](https://github.com/Vettvangur/Ekom/issues/812)) ([08aca91](https://github.com/Vettvangur/Ekom/commit/08aca91fce11698b89419095c9165d91c46c99aa))
+
 ## [0.2.257](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.256...Ekom-v0.2.257) (2026-09-02)
 
 
