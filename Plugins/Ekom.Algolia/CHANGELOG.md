@@ -6,6 +6,13 @@
 
 * **algolia:** add optional variant-level product indexing for SKU search.
 
+## [0.2.47](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.46...Ekom.Algolia-v0.2.47) (2026-09-02)
+
+
+### Features
+
+* **algolia:** correlate insights with order lines ([#810](https://github.com/Vettvangur/Ekom/issues/810)) ([e89b7ef](https://github.com/Vettvangur/Ekom/commit/e89b7efb7c29181fdfd4874c13fbce8916c2d098))
+
 ## [0.2.46](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.45...Ekom.Algolia-v0.2.46) (2026-09-02)
 
 
