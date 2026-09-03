@@ -34,7 +34,6 @@ public sealed class AlgoliaIndexingOptions
     public bool Products { get; set; } = true;
     public bool Categories { get; set; } = true;
     public bool Variants { get; set; }
-    public bool EnableAvailabilityUpdates { get; set; }
 
     public int BatchSize { get; set; } = 1000;
 
@@ -143,6 +142,7 @@ public sealed class AlgoliaStoreOptions
 {
     public required string Alias { get; set; }
     public bool IncludeStock { get; set; }
+    public bool EnableAvailabilityUpdates { get; set; }
     public AlgoliaLanguageSettingsOptions LanguageSettings { get; init; } = new();
 }
 
@@ -160,6 +160,7 @@ public sealed class AlgoliaResolvedStore
     public string? Locale { get; init; }
     public string? Currency { get; init; }
     public bool IncludeStock { get; init; }
+    public bool EnableAvailabilityUpdates { get; init; }
     public IReadOnlyList<string> Locales { get; init; } = [];
     public IReadOnlyList<string> Currencies { get; init; } = [];
     public AlgoliaLanguageSettingsOptions LanguageSettings { get; init; } = new();
@@ -186,6 +187,7 @@ public sealed class AlgoliaResolvedStore
             Locale = locale,
             Currency = currency,
             IncludeStock = IncludeStock,
+            EnableAvailabilityUpdates = EnableAvailabilityUpdates,
             Locales = Locales,
             Currencies = Currencies,
             LanguageSettings = LanguageSettings,

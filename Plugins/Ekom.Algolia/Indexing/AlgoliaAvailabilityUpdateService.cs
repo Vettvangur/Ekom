@@ -36,12 +36,17 @@ internal sealed class AlgoliaAvailabilityUpdateService
 
     public async Task UpdateAsync(StockChangedEventArgs args, CancellationToken ct)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products || !_options.Indexing.EnableAvailabilityUpdates)
+        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
             return;
 
         var storeAliases = string.IsNullOrWhiteSpace(args.StoreAlias)
-            ? _options.Stores.Select(store => store.Alias).Distinct(StringComparer.OrdinalIgnoreCase)
-            : [args.StoreAlias];
+            ? _options.Stores
+                .Where(store => store.EnableAvailabilityUpdates)
+                .Select(store => store.Alias)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+            : _options.Stores
+                .Where(store => store.EnableAvailabilityUpdates && store.Alias.Equals(args.StoreAlias, StringComparison.OrdinalIgnoreCase))
+                .Select(store => store.Alias);
 
         foreach (var storeAlias in storeAliases)
         {
@@ -59,6 +64,9 @@ internal sealed class AlgoliaAvailabilityUpdateService
     private async Task UpdateStoreAsync(StockChangedEventArgs args, string storeAlias, CancellationToken ct)
     {
         var store = _storeResolver.Resolve(storeAlias);
+        if (!store.EnableAvailabilityUpdates)
+            return;
+
         var product = await Catalog.Instance.GetProductAsync(args.Key, store.Alias, raiseEvent: false, ct: ct).ConfigureAwait(false);
 
         if (product is not null)

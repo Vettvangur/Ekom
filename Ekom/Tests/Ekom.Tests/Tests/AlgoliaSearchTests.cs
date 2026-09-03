@@ -32,12 +32,12 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:Search:Cache:Enabled"] = "true",
                 ["Ekom:Algolia:Search:Cache:DurationMinutes"] = "15",
                 ["Ekom:Algolia:Search:Cache:CacheEmptyResults"] = "false",
-                ["Ekom:Algolia:Indexing:EnableAvailabilityUpdates"] = "true",
                 ["Ekom:Algolia:Indexing:AttributesForFaceting:0"] = "filterOnly(categoryPageId)",
                 ["Ekom:Algolia:Indexing:FacetAttributes:0"] = "metafield:material",
                 ["Ekom:Algolia:Indexing:VariantFacetAttributes:color"] = "variantGroup:title",
                 ["Ekom:Algolia:Indexing:VariantFacetAttributes:size"] = "variant:title",
                 ["Ekom:Algolia:Stores:0:Alias"] = "Store",
+                ["Ekom:Algolia:Stores:0:EnableAvailabilityUpdates"] = "true",
                 ["Ekom:Algolia:Stores:0:LanguageSettings:QueryLanguages:0"] = "is",
                 ["Ekom:Algolia:Stores:0:LanguageSettings:IndexLanguages:0"] = "is",
                 ["Ekom:Algolia:Stores:0:LanguageSettings:RemoveStopWords"] = "true",
@@ -68,12 +68,12 @@ public class AlgoliaSearchTests
         Assert.Equal(50, options.Search.MaxHitsPerPage);
         Assert.Equal(15, options.Search.Cache.DurationMinutes);
         Assert.False(options.Search.Cache.CacheEmptyResults);
-        Assert.True(options.Indexing.EnableAvailabilityUpdates);
         Assert.Equal(["filterOnly(categoryPageId)"], options.Indexing.AttributesForFaceting);
         Assert.Equal(["metafield:material"], options.Indexing.FacetAttributes);
         Assert.Equal("variantGroup:title", options.Indexing.VariantFacetAttributes["color"]);
         Assert.Equal("variant:title", options.Indexing.VariantFacetAttributes["size"]);
         var store = Assert.Single(options.Stores);
+        Assert.True(store.EnableAvailabilityUpdates);
         Assert.Equal(["is"], store.LanguageSettings.QueryLanguages);
         Assert.Equal(["is"], store.LanguageSettings.IndexLanguages);
         Assert.True(store.LanguageSettings.RemoveStopWords);
