@@ -207,7 +207,7 @@ static class Registrations
         services.AddTransient<Ekom.API.Store>(f =>
             new Ekom.API.Store(
                 f.GetService<IStoreService>(),
-                f.GetService<Configuration>()
+                f.GetRequiredService<ICacheRefreshService>()
             )
         );
         services.AddTransient<Discounts>(f =>
