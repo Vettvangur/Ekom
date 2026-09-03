@@ -155,5 +155,37 @@ public class PriceCacheTests
         }
     }
 
+    [Fact]
+    public void BeginBulkInvalidation_PreservesItemInvalidationEvents()
+    {
+        var itemKey = CreateItemKey();
+        var invalidatedGenerations = new List<string>();
+
+        void Handler(object? sender, PriceCache.PriceGenerationEventArgs args)
+        {
+            if (args.ItemKey == itemKey)
+            {
+                invalidatedGenerations.Add(args.Generation);
+            }
+        }
+
+        PriceCache.OnGenerationInvalidated += Handler;
+        try
+        {
+            using (PriceCache.BeginBulkInvalidation())
+            {
+                PriceCache.InvalidateItem(itemKey);
+                PriceCache.InvalidateItem(itemKey);
+            }
+
+            Assert.Equal(2, invalidatedGenerations.Count);
+            Assert.NotEqual(invalidatedGenerations[0], invalidatedGenerations[1]);
+        }
+        finally
+        {
+            PriceCache.OnGenerationInvalidated -= Handler;
+        }
+    }
+
     private static string CreateItemKey() => $"test-{Guid.NewGuid():N}";
 }

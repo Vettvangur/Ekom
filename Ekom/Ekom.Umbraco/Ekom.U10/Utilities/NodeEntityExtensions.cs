@@ -80,35 +80,50 @@ public static class NodeEntityExtensions
         {
             return (T)(object)ProductHelper.GetProducts(val);
         }
-        if (typeof(T) == typeof(IEnumerable<string>) || typeof(T) == typeof(List<string>))
+        if (IsStringCollectionType<T>())
         {
-            if (string.IsNullOrWhiteSpace(val))
-            {
-                return (T)(object)Enumerable.Empty<string>();
-            }
-
-            IEnumerable<string> result;
-
-            // Try to detect JSON array
-            if (val.TrimStart().StartsWith("["))
-            {
-                result = JsonConvert.DeserializeObject<List<string>>(val) ?? Enumerable.Empty<string>();
-            }
-            else
-            {
-                // Assume comma-separated string
-                result = val.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x));
-            }
-
-            if (typeof(T) == typeof(List<string>))
-            {
-                return (T)(object)result.ToList();
-            }
-
-            return (T)(object)result;
+            return (T)(object)GetStringCollection(val, typeof(T));
         }
 
         return (T)(object)val;
+    }
+
+    private static bool IsStringCollectionType<T>()
+    {
+        var type = typeof(T);
+        return type == typeof(IEnumerable<string>)
+            || type == typeof(IReadOnlyCollection<string>)
+            || type == typeof(IReadOnlyList<string>)
+            || type == typeof(List<string>)
+            || type == typeof(string[]);
+    }
+
+    private static object GetStringCollection(string value, Type targetType)
+    {
+        List<string> values;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            values = [];
+        }
+        else if (value.TrimStart().StartsWith("[", StringComparison.Ordinal))
+        {
+            try
+            {
+                values = JsonConvert.DeserializeObject<List<string>>(value) ?? [];
+            }
+            catch (Newtonsoft.Json.JsonException)
+            {
+                values = [];
+            }
+        }
+        else
+        {
+            values = value
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
+        }
+
+        return targetType == typeof(string[]) ? values.ToArray() : values;
     }
 
 

@@ -29,6 +29,11 @@ public static class NodeEntityExtensions
             throw new ArgumentException("A property alias is required.", nameof(propertyAlias));
         }
 
+        if (IsStringCollectionType<T>())
+        {
+            return ConvertRawValue<T>(node.GetValue(propertyAlias, alias));
+        }
+
         if (string.IsNullOrWhiteSpace(alias))
         {
             var content = GetPublishedContent(node.Key);
@@ -68,7 +73,50 @@ public static class NodeEntityExtensions
             return (T)(object)GetLinks(value);
         }
 
+        if (IsStringCollectionType<T>())
+        {
+            return (T)(object)GetStringCollection(value, typeof(T));
+        }
+
         return default;
+    }
+
+    private static bool IsStringCollectionType<T>()
+    {
+        var type = typeof(T);
+        return type == typeof(IEnumerable<string>)
+            || type == typeof(IReadOnlyCollection<string>)
+            || type == typeof(IReadOnlyList<string>)
+            || type == typeof(List<string>)
+            || type == typeof(string[]);
+    }
+
+    private static object GetStringCollection(string value, Type targetType)
+    {
+        List<string> values;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            values = [];
+        }
+        else if (value.TrimStart().StartsWith("[", StringComparison.Ordinal))
+        {
+            try
+            {
+                values = JsonConvert.DeserializeObject<List<string>>(value) ?? [];
+            }
+            catch (JsonException)
+            {
+                values = [];
+            }
+        }
+        else
+        {
+            values = value
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
+        }
+
+        return targetType == typeof(string[]) ? values.ToArray() : values;
     }
 
     private static IPublishedContent? GetPublishedContent(Guid key)

@@ -301,6 +301,8 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
                         curRouteIndex![norm] = r.Key;
                     }
                 }
+
+                OnStoreCacheItemAdded(store, r.Key, item);
             }
             catch (Exception ex)
             {
@@ -316,6 +318,10 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
         }
 
         return count;
+    }
+
+    protected virtual void OnStoreCacheItemAdded(IStore store, Guid key, TItem item)
+    {
     }
 
     // -----------------------------
