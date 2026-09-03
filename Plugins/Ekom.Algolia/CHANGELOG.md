@@ -7,6 +7,10 @@
 * **algolia:** add optional variant-level product indexing for SKU search.
 * **algolia:** optionally update indexed availability and stock after stock changes.
 
+### Bug Fixes
+
+* **algolia:** send ecommerce conversion object data using Algolia's per-item schema.
+
 ## [0.2.49](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.48...Ekom.Algolia-v0.2.49) (2026-09-03)
 
 

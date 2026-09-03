@@ -65,6 +65,9 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
         if (!_options.Enabled || !_options.Events.Enabled || !_options.Events.AddedToCart)
             return Task.CompletedTask;
 
+        if (orderLine.Quantity <= 0)
+            return Task.CompletedTask;
+
         var userToken = GetUserToken(orderInfo);
         if (string.IsNullOrWhiteSpace(userToken))
             return Task.CompletedTask;
@@ -85,16 +88,8 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             Index = indexName,
             UserToken = userToken,
             ObjectIds = new[] { orderLine.ProductKey.ToString() },
-            QueryId = orderInfo.Tracking?.Algolia?.GetQueryId(orderLine.Key),
-            ObjectData =
-            [
-                new Dictionary<string, object?>
-                {
-                    ["quantity"] = orderLine.Quantity,
-                    ["value"] = orderLine.Amount.Value,
-                    ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
-                }
-            ]
+            Currency = orderInfo.StoreInfo.Currency.CurrencyValue,
+            ObjectData = [CreateObjectData(orderInfo, orderLine)]
         };
 
         return _insightsClient.SendEventsAsync(new[] { evt }, ct);
@@ -118,7 +113,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             localeOverride: orderInfo.StoreInfo.Culture,
             currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
-        var events = CreateOrderLineConversionEvents(orderInfo, userToken, indexName, "Started Checkout");
+        var events = CreateOrderConversionEvents(orderInfo, userToken, indexName, "Started Checkout");
         if (events.Count == 0)
             return Task.CompletedTask;
 
@@ -143,7 +138,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             localeOverride: orderInfo.StoreInfo.Culture,
             currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
-        var events = CreateOrderLineConversionEvents(orderInfo, userToken, indexName, "Purchased");
+        var events = CreateOrderConversionEvents(orderInfo, userToken, indexName, "Purchased");
         if (events.Count == 0)
             return Task.CompletedTask;
 
@@ -153,30 +148,43 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
     private string? GetUserToken(IOrderInfo orderInfo)
         => orderInfo.Tracking?.Algolia?.UserToken ?? _userTokenProvider.GetOrCreateUserToken();
 
-    private static IReadOnlyList<AlgoliaInsightsEvent> CreateOrderLineConversionEvents(
+    private static IReadOnlyList<AlgoliaInsightsEvent> CreateOrderConversionEvents(
         IOrderInfo orderInfo,
         string userToken,
         string indexName,
         string eventName)
         => orderInfo.OrderLines
-            .Select(orderLine => new AlgoliaInsightsEvent
+            .Where(orderLine => orderLine.Quantity > 0)
+            .Chunk(20)
+            .Select(orderLines => new AlgoliaInsightsEvent
             {
                 EventType = "conversion",
                 EventName = eventName,
                 Index = indexName,
                 UserToken = userToken,
-                ObjectIds = new[] { orderLine.ProductKey.ToString() },
-                QueryId = orderInfo.Tracking?.Algolia?.GetQueryId(orderLine.Key),
-                ObjectData =
-                [
-                    new Dictionary<string, object?>
-                    {
-                        ["quantity"] = orderLine.Quantity,
-                        ["value"] = orderLine.Amount.Value,
-                        ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
-                    }
-                ]
+                ObjectIds = orderLines.Select(orderLine => orderLine.ProductKey.ToString()).ToList(),
+                Currency = orderInfo.StoreInfo.Currency.CurrencyValue,
+                ObjectData = orderLines.Select(orderLine => CreateObjectData(orderInfo, orderLine)).ToList()
             })
             .ToList();
+
+    internal static IReadOnlyDictionary<string, object?> CreateObjectData(IOrderInfo orderInfo, IOrderLine orderLine)
+    {
+        var quantity = orderLine.Quantity;
+        var amount = orderLine.Amount;
+        var objectData = new Dictionary<string, object?>();
+        var queryId = orderInfo.Tracking?.Algolia?.GetQueryId(orderLine.Key);
+        if (!string.IsNullOrWhiteSpace(queryId))
+            objectData["queryID"] = queryId;
+
+        objectData["price"] = amount.Value / quantity;
+
+        var discount = amount.DiscountAmount.Value / quantity;
+        if (discount > 0)
+            objectData["discount"] = discount;
+
+        objectData["quantity"] = quantity;
+        return objectData;
+    }
 
 }
