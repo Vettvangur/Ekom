@@ -1,4 +1,5 @@
 using Ekom.AspNetCore;
+using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Tracking;
 using Ekom.Umb.Services;
@@ -25,6 +26,8 @@ public static class ApplicationBuilderExtensions
         services.AddHttpClient();
 
         services.AddTransient<IMemberService, MemberService>();
+        services.AddTransient<EkomCacheInitializer>();
+        services.AddSingleton<ICacheRefreshService, EkomCacheRefreshService>();
         services.AddTransient<INodeService, NodeService>();
         services.AddTransient<IImportService, ImportService>();
         services.AddTransient<ImportMediaService>();

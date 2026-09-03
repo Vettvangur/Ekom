@@ -5,7 +5,6 @@ namespace Ekom.Umb;
 
 internal sealed class EkomCacheInitializationHandler : INotificationHandler<UmbracoApplicationStartedNotification>
 {
-    private static readonly object InitializationLock = new();
     private readonly EkomCacheInitializer _cacheInitializer;
 
     public EkomCacheInitializationHandler(EkomCacheInitializer cacheInitializer)
@@ -15,9 +14,6 @@ internal sealed class EkomCacheInitializationHandler : INotificationHandler<Umbr
 
     public void Handle(UmbracoApplicationStartedNotification notification)
     {
-        lock (InitializationLock)
-        {
-            _cacheInitializer.Initialize(notification.IsRestarting);
-        }
+        _cacheInitializer.Initialize(notification.IsRestarting);
     }
 }

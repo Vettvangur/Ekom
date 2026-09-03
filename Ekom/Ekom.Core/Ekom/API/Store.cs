@@ -1,4 +1,3 @@
-using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
@@ -18,16 +17,16 @@ public class Store
     public static Store Instance => Configuration.Resolver.GetService<Store>();
 
     readonly IStoreService _storeSvc;
-    readonly Configuration _config;
+    readonly ICacheRefreshService _cacheRefreshService;
     /// <summary>
     /// ctor
     /// </summary>
     internal Store(
         IStoreService storeService,
-        Configuration config)
+        ICacheRefreshService cacheRefreshService)
     {
         _storeSvc = storeService;
-        _config = config;
+        _cacheRefreshService = cacheRefreshService;
     }
 
     /// <summary>
@@ -88,20 +87,7 @@ public class Store
 
     public void RefreshCache()
     {
-        foreach (ICache cacheEntry in _config.CacheList.Value)
-        {
-            cacheEntry.FillCache();
-        }
-
-        ICache? stockCache = _config.PerStoreStock
-            ? Configuration.Resolver.GetService<IPerStoreCache<StockData>>()
-            : Configuration.Resolver.GetService<IBaseCache<StockData>>()
-                as ICache;
-
-        stockCache?.FillCache();
-
-        Configuration.Resolver.GetService<ICouponCache>()?
-            .FillCache();
+        _cacheRefreshService.RefreshCache();
     }
 
 }

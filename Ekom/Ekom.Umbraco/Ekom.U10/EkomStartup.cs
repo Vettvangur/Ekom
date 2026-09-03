@@ -1,8 +1,6 @@
 using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Exceptions;
-using Ekom.Interfaces;
-using Ekom.Models;
 using Ekom.Payments;
 using Ekom.Repositories;
 using Ekom.Services;
@@ -133,7 +131,6 @@ public class RemoveCoreMemberSearchableTreeComposer : IComposer
 class EkomStartup : IComponent
 #pragma warning restore CA1001 // Types that own disposable fields should be disposable
 {
-    readonly Configuration _config;
     readonly ILogger _logger;
     readonly IServiceProvider _factory;
     readonly IMemoryCache _cache;
@@ -144,14 +141,12 @@ class EkomStartup : IComponent
     /// 
     /// </summary>
     public EkomStartup(
-        Configuration config,
         ILogger<EkomStartup> logger,
         IServiceProvider factory,
         IMemoryCache cache,
         IRuntimeState runtimeState,
         IOptions<RequestLocalizationOptions> requestLocalizationOptions)
     {
-        _config = config;
         _logger = logger;
         _factory = factory;
         _cache = cache;
@@ -184,24 +179,7 @@ class EkomStartup : IComponent
 
             orderRepo?.MigrateOrderTableAsync();
             orderRepo?.MigrateStockToDecimalAsync();
-            using var cacheInitializationScope = CacheInitializationScope.Begin();
-            using var priceCacheScope = PriceCache.BeginBulkInvalidation();
-
-            foreach (var cacheEntry in _config.CacheList.Value)
-            {
-                cacheEntry.FillCache();
-            }
-
-            // Controls which stock cache will be populated
-            var stockCache = _config.PerStoreStock
-                ? _factory.GetService<IPerStoreCache<StockData>>()
-                : _factory.GetService<IBaseCache<StockData>>()
-                as ICache;
-
-            stockCache?.FillCache();
-            
-            _factory.GetService<ICouponCache>()?
-                .FillCache();
+            _factory.GetRequiredService<EkomCacheInitializer>().Initialize(false);
 
             Payments.Events.SuccessAsync += CompleteCheckoutAsync;
 

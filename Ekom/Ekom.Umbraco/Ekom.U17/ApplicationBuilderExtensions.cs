@@ -1,4 +1,5 @@
 using Ekom.AspNetCore;
+using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Tracking;
 using Ekom.Umb.CatalogCollection.Services;
@@ -26,6 +27,7 @@ public static class ApplicationBuilderExtensions
 
         services.AddTransient<IMemberService, MemberService>();
         services.AddScoped<EkomCacheInitializer>();
+        services.AddSingleton<ICacheRefreshService, EkomCacheRefreshService>();
         services.AddSingleton<EkomCacheBuildContext>();
         services.AddSingleton<Umbraco17ContentCache>();
         services.AddTransient<INodeService, NodeService>();
