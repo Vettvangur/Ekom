@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.260](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.259...Ekom-v0.2.260) (2026-09-03)
+
+
+### Bug Fixes
+
+* **umbraco:** improve cache fill and string values ([#821](https://github.com/Vettvangur/Ekom/issues/821)) ([29f3b0f](https://github.com/Vettvangur/Ekom/commit/29f3b0f430d87d9e685e93d4c0e6aff951b95e00))
+
 ## [0.2.259](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.258...Ekom-v0.2.259) (2026-09-03)
 
 
