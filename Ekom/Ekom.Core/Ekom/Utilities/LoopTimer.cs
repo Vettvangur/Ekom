@@ -5,7 +5,8 @@ namespace Ekom.Utilities
 {
     public class LoopTimer
     {
-        private const int SampleSize = 100;  // Number of iterations to sample
+        private const int WarmupIterations = 100;
+        private const int SampleSize = 100;
         private const double Threshold = 0.005; // Time threshold in seconds (5ms)
 
         private readonly int _totalIterations;
@@ -13,6 +14,7 @@ namespace Ekom.Utilities
         private readonly Stopwatch _stopwatch = new();
         private readonly ILogger _logger;
         private readonly string _nodeAlias;
+        private int _iterations;
 
         public LoopTimer(int totalIterations, ILogger logger, string nodeAlias)
         {
@@ -35,7 +37,13 @@ namespace Ekom.Utilities
                 return;
             }
 
-            if (_sampleTimes.Count > SampleSize)
+            _iterations++;
+            if (_iterations <= WarmupIterations)
+            {
+                return;
+            }
+
+            if (_sampleTimes.Count >= SampleSize)
             {
                 return;
             }
@@ -55,7 +63,7 @@ namespace Ekom.Utilities
             if (averageTime > Threshold)
             {
                 _logger.LogWarning(
-                    $"WARNING: Estimated total time for {_totalIterations} iterations of {_nodeAlias}: {estimatedTotalTime} seconds. Average loop time for first {SampleSize} iterations is {averageTime * 1000} milliseconds, which exceeds the threshold of {Threshold * 1000} milliseconds.");
+                    $"WARNING: Estimated total time for {_totalIterations} iterations of {_nodeAlias}: {estimatedTotalTime} seconds. Average loop time for {SampleSize} iterations after a {WarmupIterations} iteration warmup is {averageTime * 1000} milliseconds, which exceeds the threshold of {Threshold * 1000} milliseconds.");
             }
 
 
