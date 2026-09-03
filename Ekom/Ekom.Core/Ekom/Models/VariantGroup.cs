@@ -1,4 +1,5 @@
 using Ekom.API;
+using Ekom.Cache;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -123,6 +124,9 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     {
         storeAlias = store.Alias;
 
-        Product?.InvalidateCache();
+        if (!CacheInitializationScope.IsActive)
+        {
+            Product?.InvalidateCache();
+        }
     }
 }

@@ -353,8 +353,11 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// <param name="store"></param>
     public Variant(UmbracoContent item, IStore store) : base(item, store)
     {
-        Product?.InvalidateCache();
-        PriceCache.InvalidateItem(Path);
+        if (!CacheInitializationScope.IsActive)
+        {
+            Product?.InvalidateCache();
+            PriceCache.InvalidateItem(Path);
+        }
 
         _priceValue = GetValue("price", Store.Alias) ?? string.Empty;
         OriginalPrice = CreateOriginalPrice();
