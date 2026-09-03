@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.261](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.260...Ekom-v0.2.261) (2026-09-03)
+
+
+### Performance Improvements
+
+* **cache:** skip startup invalidations ([#823](https://github.com/Vettvangur/Ekom/issues/823)) ([21202c3](https://github.com/Vettvangur/Ekom/commit/21202c302c1189efc242b1226f6fd3081c1106cc))
+
 ## [0.2.260](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.259...Ekom-v0.2.260) (2026-09-03)
 
 
