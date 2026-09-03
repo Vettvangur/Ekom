@@ -88,7 +88,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             Index = indexName,
             UserToken = userToken,
             ObjectIds = new[] { orderLine.ProductKey.ToString() },
-            Currency = orderInfo.StoreInfo.Currency.CurrencyValue,
+            Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
             ObjectData = [CreateObjectData(orderInfo, orderLine)]
         };
 
@@ -163,7 +163,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
                 Index = indexName,
                 UserToken = userToken,
                 ObjectIds = orderLines.Select(orderLine => orderLine.ProductKey.ToString()).ToList(),
-                Currency = orderInfo.StoreInfo.Currency.CurrencyValue,
+                Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
                 ObjectData = orderLines.Select(orderLine => CreateObjectData(orderInfo, orderLine)).ToList()
             })
             .ToList();
