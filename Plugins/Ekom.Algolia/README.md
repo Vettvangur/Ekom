@@ -188,7 +188,6 @@ public sealed class ProductSearchController
 | `Indexing:Products` | `bool` | `true` | Enables product indexing. |
 | `Indexing:Categories` | `bool` | `true` | Enables category indexing. |
 | `Indexing:Variants` | `bool` | `false` | Indexes product variants as separate product records so variant SKUs can be searched directly. |
-| `Indexing:EnableAvailabilityUpdates` | `bool` | `false` | Partially updates indexed availability after stock changes. When `Stores[*]:IncludeStock` is enabled, also updates the indexed stock amount. |
 | `Indexing:BatchSize` | `int` | `1000` | Batch size for Algolia save/replace/delete operations. |
 | `Indexing:ProductProperties` | `string[]` | `[]` | Additional product properties/metafields to include in product records. Supports modifiers documented below. |
 | `Indexing:AttributesForFaceting` | `string[]` | `[]` | Algolia facet expressions to preserve on product indexes, such as `filterOnly(categoryPageId)` or `searchable(brand)`. |
@@ -233,6 +232,7 @@ public sealed class ProductSearchController
 | `Stores` | `object[]` | `[]` | Store aliases supported by the plugin. Locale/currency are resolved from Ekom store data. |
 | `Stores[*]:Alias` | `string` | required | Ekom store alias. |
 | `Stores[*]:IncludeStock` | `bool` | `false` | Includes product stock in indexed records for this store. |
+| `Stores[*]:EnableAvailabilityUpdates` | `bool` | `false` | Partially updates indexed availability after stock changes for this store. When `IncludeStock` is enabled, also updates the indexed stock amount. |
 | `Stores[*]:LanguageSettings:QueryLanguages` | `string[]` | `[]` | ISO 639-1 languages used for language-specific query processing. |
 | `Stores[*]:LanguageSettings:IndexLanguages` | `string[]` | `[]` | ISO 639-1 languages used for language-specific indexing. |
 | `Stores[*]:LanguageSettings:RemoveStopWords` | `bool` | `null` | Enables or disables stop-word removal for this store's product indexes. |
@@ -289,15 +289,18 @@ Enable partial product-record updates when stock changes:
 {
   "Ekom": {
     "Algolia": {
-      "Indexing": {
-        "EnableAvailabilityUpdates": true
-      }
+      "Stores": [
+        {
+          "Alias": "Store",
+          "EnableAvailabilityUpdates": true
+        }
+      ]
     }
   }
 }
 ```
 
-Ekom updates `Available` only when effective sellable availability changes, including stock-buffer, backorder, and variant availability rules. For products with variants, the parent record becomes unavailable only when every variant is unavailable. If `Stores[*]:IncludeStock` is `true`, every stock change also partially updates `Stock`; indexed variant records additionally update `variantStock`. Existing records are updated only—stock changes never create incomplete Algolia records.
+Ekom updates `Available` only for stores with `Stores[*]:EnableAvailabilityUpdates` enabled, and only when effective sellable availability changes, including stock-buffer, backorder, and variant availability rules. For products with variants, the parent record becomes unavailable only when every variant is unavailable. If `Stores[*]:IncludeStock` is `true`, every stock change also partially updates `Stock`; indexed variant records additionally update `variantStock`. Existing records are updated only—stock changes never create incomplete Algolia records.
 
 ### Indexing triggers and API keys
 

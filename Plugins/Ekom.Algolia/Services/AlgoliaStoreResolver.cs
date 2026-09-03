@@ -46,6 +46,7 @@ internal sealed class AlgoliaStoreResolver
             Locale = ekomStore?.Culture?.Name,
             Currency = ekomStore?.Currency?.CurrencyValue,
             IncludeStock = configuredStore?.IncludeStock ?? false,
+            EnableAvailabilityUpdates = configuredStore?.EnableAvailabilityUpdates ?? false,
             Locales = locales,
             Currencies = currencies,
             LanguageSettings = configuredStore?.LanguageSettings ?? new(),
