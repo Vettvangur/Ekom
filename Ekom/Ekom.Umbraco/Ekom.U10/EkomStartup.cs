@@ -184,6 +184,7 @@ class EkomStartup : IComponent
 
             orderRepo?.MigrateOrderTableAsync();
             orderRepo?.MigrateStockToDecimalAsync();
+            using var priceCacheScope = PriceCache.BeginBulkInvalidation();
 
             foreach (var cacheEntry in _config.CacheList.Value)
             {

@@ -6,6 +6,8 @@ namespace Ekom.Cache;
 public static class PriceCache
 {
     private static readonly object _lock = new();
+    private static int _bulkInvalidationDepth;
+    private static bool _compactionPending;
 
     private static IMemoryCache? _cache;
 
@@ -62,7 +64,22 @@ public static class PriceCache
             new PriceGenerationEventArgs(itemKey, newGen)
         );
 
-        (Cache as MemoryCache)?.Compact(0.05);
+        if (DeferCompaction())
+        {
+            return;
+        }
+
+        CompactCache();
+    }
+
+    public static IDisposable BeginBulkInvalidation()
+    {
+        lock (_lock)
+        {
+            _bulkInvalidationDepth++;
+        }
+
+        return new BulkInvalidationScope();
     }
 
     public static void InvalidateAll()
@@ -78,6 +95,53 @@ public static class PriceCache
 
     public static event Func<PriceGenerationEventArgs, CancellationToken, ValueTask>? OnGenerationCreatedAsync;
     public static event EventHandler<PriceGenerationEventArgs>? OnGenerationInvalidated;
+
+    private static bool DeferCompaction()
+    {
+        lock (_lock)
+        {
+            if (_bulkInvalidationDepth == 0)
+            {
+                return false;
+            }
+
+            _compactionPending = true;
+            return true;
+        }
+    }
+
+    private static void CompactCache() => (_cache as MemoryCache)?.Compact(0.05);
+
+    private sealed class BulkInvalidationScope : IDisposable
+    {
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+
+            var compact = false;
+            lock (_lock)
+            {
+                _bulkInvalidationDepth--;
+                if (_bulkInvalidationDepth == 0 && _compactionPending)
+                {
+                    _compactionPending = false;
+                    compact = true;
+                }
+            }
+
+            if (compact)
+            {
+                CompactCache();
+            }
+        }
+    }
 
     private static async ValueTask<string> RaiseGenerationCreatedAsync(string itemKey, string gen, CancellationToken ct)
     {

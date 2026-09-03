@@ -46,29 +46,21 @@ class VariantCache : PerStoreCache<IVariant>
 
     protected override int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
     {
-        // base builds: Cache[store], IdIndex, SkuIndex
-        var count = base.FillStoreCache(store, results, nodeAlias);
+        _groupIndex[store.Alias] = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
+        _productIndex[store.Alias] = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
 
-        // rebuild group + product indexes for the store from the freshly built store cache
-        var gi = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
-        var pi = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
+        return base.FillStoreCache(store, results, nodeAlias);
+    }
 
-        if (Cache.TryGetValue(store.Alias, out var storeCache))
-        {
-            foreach (var kv in storeCache)
-            {
-                var key = kv.Key;
-                var v = kv.Value;
+    protected override void OnStoreCacheItemAdded(IStore store, Guid key, IVariant item)
+    {
+        GetStoreGroupIndex(store.Alias)
+            .GetOrAdd(item.VariantGroupId, _ => new ConcurrentDictionary<Guid, byte>())
+            .TryAdd(key, 0);
 
-                gi.GetOrAdd(v.VariantGroupId, _ => new ConcurrentDictionary<Guid, byte>()).TryAdd(key, 0);
-                pi.GetOrAdd(v.ProductId, _ => new ConcurrentDictionary<Guid, byte>()).TryAdd(key, 0);
-            }
-        }
-
-        _groupIndex[store.Alias] = gi;
-        _productIndex[store.Alias] = pi;
-
-        return count;
+        GetStoreProductIndex(store.Alias)
+            .GetOrAdd(item.ProductId, _ => new ConcurrentDictionary<Guid, byte>())
+            .TryAdd(key, 0);
     }
 
     public override void ClearCache()

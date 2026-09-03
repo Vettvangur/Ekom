@@ -60,6 +60,7 @@ internal sealed class EkomCacheInitializer
                 .Concat(rootNode.Descendants())
                 .ToList();
             using var cacheBuildScope = _cacheBuildContext.Begin(allNodes);
+            using var priceCacheScope = PriceCache.BeginBulkInvalidation();
 
             foreach (var cacheEntry in _config.CacheList.Value)
             {
