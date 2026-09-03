@@ -11,6 +11,13 @@
 
 * **algolia:** send ecommerce conversion object data using Algolia's per-item schema.
 
+## [0.2.51](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.50...Ekom.Algolia-v0.2.51) (2026-09-03)
+
+
+### Bug Fixes
+
+* **algolia:** send ISO currency for insights events ([#819](https://github.com/Vettvangur/Ekom/issues/819)) ([1ce2041](https://github.com/Vettvangur/Ekom/commit/1ce20417e98dc47fcb3d1527803d0a9b6836973e))
+
 ## [0.2.50](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.49...Ekom.Algolia-v0.2.50) (2026-09-03)
 
 
