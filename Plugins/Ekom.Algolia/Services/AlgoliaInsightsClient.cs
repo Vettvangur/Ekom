@@ -72,6 +72,9 @@ internal sealed class AlgoliaInsightsClient : IAlgoliaInsightsClient
         if (!string.IsNullOrWhiteSpace(evt.QueryId))
             json["queryID"] = evt.QueryId;
 
+        if (!string.IsNullOrWhiteSpace(evt.Currency))
+            json["currency"] = evt.Currency;
+
         if (evt.ObjectData != null && evt.ObjectData.Count > 0)
         {
             var data = new JsonArray();

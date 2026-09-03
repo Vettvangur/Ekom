@@ -9,6 +9,7 @@ public sealed class AlgoliaInsightsEvent
     public required IReadOnlyList<string> ObjectIds { get; init; }
 
     public string? QueryId { get; init; }
+    public string? Currency { get; init; }
     public DateTimeOffset? Timestamp { get; init; }
     public IReadOnlyList<IReadOnlyDictionary<string, object?>>? ObjectData { get; init; }
 }
