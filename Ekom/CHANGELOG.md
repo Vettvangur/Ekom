@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.259](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.258...Ekom-v0.2.259) (2026-09-03)
+
+
+### Bug Fixes
+
+* **algolia:** configure availability updates per store ([#814](https://github.com/Vettvangur/Ekom/issues/814)) ([5ac71b6](https://github.com/Vettvangur/Ekom/commit/5ac71b6f77764c576193ae8434cc9940ff8f41d1))
+
 ## [0.2.258](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.257...Ekom-v0.2.258) (2026-09-02)
 
 
