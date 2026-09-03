@@ -11,6 +11,13 @@
 
 * **algolia:** send ecommerce conversion object data using Algolia's per-item schema.
 
+## [0.2.50](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.49...Ekom.Algolia-v0.2.50) (2026-09-03)
+
+
+### Bug Fixes
+
+* **algolia:** send ecommerce conversion object data ([#817](https://github.com/Vettvangur/Ekom/issues/817)) ([87a77fc](https://github.com/Vettvangur/Ekom/commit/87a77fc5480ae6f1cc5284c52bb6dc898f0fc991))
+
 ## [0.2.49](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.48...Ekom.Algolia-v0.2.49) (2026-09-03)
 
 
