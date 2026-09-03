@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.262](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.261...Ekom-v0.2.262) (2026-09-03)
+
+
+### Bug Fixes
+
+* **cache:** rebuild on manual refresh ([#825](https://github.com/Vettvangur/Ekom/issues/825)) ([1cf4d73](https://github.com/Vettvangur/Ekom/commit/1cf4d732e1a2bac1513b9edaf471023b5f6883d0))
+
 ## [0.2.261](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.260...Ekom-v0.2.261) (2026-09-03)
 
 
