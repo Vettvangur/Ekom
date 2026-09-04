@@ -1,63 +1,98 @@
-angular.module("umbraco").controller("Ekom.Range", function ($scope, $http, $routeParams) {
+angular.module("umbraco").controller("Ekom.Range", function ($scope, ekmResources, $routeParams) {
 
   if ($routeParams.section !== 'content') { return; }
 
   $scope.model.hideLabel = false;
   $scope.fieldAlias = $scope.model.alias;
-
-  //$scope.currencies = [];
   $scope.stores = [];
+  $scope.ranges = {};
 
-  $http.get(Umbraco.Sys.ServerVariables.ekom.apiEndpoint + 'Stores').then(function (results) {
+  ekmResources.getStoresByNode($routeParams.id).then(function (stores) {
 
-    $scope.stores = results.data;
+    $scope.stores = stores;
+    var currentRanges = normalizeRanges($scope.model.value, stores);
 
-    // Set default ranges value from existing value
-    if (typeof $scope.model.value === 'object' && $scope.model.value !== null && $scope.model.value !== '') {
-      // If model value is json then return
+    stores.forEach(function (store) {
+      $scope.ranges[store.alias] = [];
 
-      if ($scope.model.value.hasOwnProperty('values')) {
+      store.currencies.forEach(function (currency) {
+        var range = getRange(currentRanges[store.alias], currency.currencyValue);
 
-        var temp1 = $scope.model.value.values;
-
-        Object.keys(temp1).forEach(key => temp1[key] = JSON.parse(temp1[key]));
-
-        $scope.ranges = temp1;
-
-      } else {
-        $scope.ranges = $scope.model.value;
-      }
-
-    } else {
-      // If model value is not json then return as decimal
-      if ($scope.model.value !== undefined) {
-        $scope.ranges = $scope.model.value.replace(/,/g, '.');
-      }
-    }
-
-    if ($scope.model.value === null || $scope.model.value === '' || $scope.model.value === undefined) {
-
-      $scope.ranges = {};
-
-      for (s = 0; $scope.stores.length > s; s += 1) {
-
-        let store = $scope.stores[s];
-
-        $scope.ranges[store.alias] = [];
-
-        for (c = 0; store.currencies.length > c; c += 1) {
-
-          $scope.ranges[store.alias].push({
-            currency: store.currencies[c].currencyValue,
-            value: 0
-          });
-
-        }
-
-      }
-
-    }
+        $scope.ranges[store.alias].push({
+          currency: currency.currencyValue,
+          value: range === undefined ? 0 : range
+        });
+      });
+    });
   });
+
+  function normalizeRanges(value, stores) {
+    if (value === null || value === undefined || value === '') {
+      return {};
+    }
+
+    if (typeof value !== 'object') {
+      var firstStore = stores[0];
+      var firstCurrency = firstStore && firstStore.currencies[0];
+
+      if (!firstStore || !firstCurrency) {
+        return {};
+      }
+
+      var primitiveRanges = {};
+      primitiveRanges[firstStore.alias] = [{
+        currency: firstCurrency.currencyValue,
+        value: parseRange(value)
+      }];
+      return primitiveRanges;
+    }
+
+    var source = value.values && typeof value.values === 'object'
+      ? value.values
+      : value;
+    var ranges = {};
+
+    Object.keys(source).forEach(function (storeAlias) {
+      var storeRanges = source[storeAlias];
+
+      if (typeof storeRanges === 'string') {
+        try {
+          storeRanges = JSON.parse(storeRanges);
+        } catch (error) {
+          storeRanges = [];
+        }
+      }
+
+      if (!Array.isArray(storeRanges)) {
+        return;
+      }
+
+      ranges[storeAlias] = storeRanges;
+    });
+
+    return ranges;
+  }
+
+  function getRange(ranges, currency) {
+    if (!Array.isArray(ranges)) {
+      return undefined;
+    }
+
+    var range = ranges.find(function (item) {
+      return item && (item.currency === currency || item.Currency === currency);
+    });
+
+    if (!range) {
+      return undefined;
+    }
+
+    return parseRange(range.value === undefined ? range.Value : range.value);
+  }
+
+  function parseRange(value) {
+    var parsed = parseFloat(String(value).replace(/,/g, '.'));
+    return isNaN(parsed) ? 0 : parsed;
+  }
 
   $scope.$on("formSubmitting", function () {
 

@@ -46,6 +46,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
     /// Umbraco Node Alias
     /// </summary>
     public abstract string NodeAlias { get; }
+    protected virtual string? StoreDisableFolderAlias => null;
 
     // -----------------------------
     // Primary per-store cache
@@ -194,16 +195,25 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
             var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
 
             List<UmbracoContent> results = nodeService.NodesByTypes(NodeAlias).ToList();
+            IReadOnlyDictionary<int, IReadOnlyList<UmbracoContent>>? ancestorsByNodeId = null;
+
+            if (!string.IsNullOrEmpty(StoreDisableFolderAlias))
+            {
+                ancestorsByNodeId = results.ToDictionary(
+                    node => node.Id,
+                    node => (IReadOnlyList<UmbracoContent>)nodeService.NodeAncestors(node.Id.ToString()).ToList());
+            }
+
             _logger.LogInformation("Filling per store cache for {NodeAlias}... Nodes: {Count}", NodeAlias, results.Count);
 
             if (storeParam == null)
             {
                 foreach (IStore store in _storeCache.Cache.Select(x => x.Value))
-                    count += FillStoreCache(store, results, NodeAlias);
+                    count += FillStoreCache(store, results, NodeAlias, ancestorsByNodeId);
             }
             else
             {
-                count += FillStoreCache(storeParam, results, NodeAlias);
+                count += FillStoreCache(storeParam, results, NodeAlias, ancestorsByNodeId);
             }
         }
         catch (Exception ex)
@@ -231,7 +241,11 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
     /// <summary>
     /// Fill the given store's cache of TItem (and optional indexes).
     /// </summary>
-    protected virtual int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
+    protected virtual int FillStoreCache(
+        IStore store,
+        List<UmbracoContent> results,
+        string nodeAlias,
+        IReadOnlyDictionary<int, IReadOnlyList<UmbracoContent>>? ancestorsByNodeId)
     {
         int count = 0;
 
@@ -259,7 +273,11 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
             try
             {
-                if (r.IsItemDisabled(store))
+                var isDisabled = ancestorsByNodeId != null
+                    ? r.IsItemDisabled(store, ancestorsByNodeId[r.Id])
+                    : r.IsItemDisabled(store);
+
+                if (isDisabled)
                     continue;
 
                 TItem? item = _objFac?.Create(r, store)

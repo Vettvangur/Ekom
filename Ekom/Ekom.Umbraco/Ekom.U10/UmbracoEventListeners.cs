@@ -156,6 +156,13 @@ class UmbracoEventListeners :
         {
             if (node.ContentType.Alias.StartsWith("ekm"))
             {
+                if (IsStoreDisableFolder(node.ContentType.Alias))
+                {
+                    RefreshCacheForRelatedNodes(node.Id);
+                    RevalidateAsync(node, cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
                 var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
                 var parentNode = _nodeService.NodeById(node.ParentId);
@@ -196,11 +203,11 @@ class UmbracoEventListeners :
 
                 cacheEntry?.Remove(node.Key);
 
-                var parentNode = _nodeService.NodeById(node.Id);
+                var parentNode = _nodeService.NodeById(node.ParentId);
 
                 cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode != null ? parentNode.Key : Guid.Empty, _richTextResolver));
 
-                if (node.ContentType.Alias == "ekmCategory")
+                if (node.ContentType.Alias == "ekmCategory" || IsStoreDisableFolder(node.ContentType.Alias))
                 {
                     RefreshCacheForRelatedNodes(node.Id);
                 }
@@ -241,6 +248,11 @@ class UmbracoEventListeners :
     {
         foreach (var node in args.DeletedEntities)
         {
+            foreach (var cache in _config.CacheList.Value)
+            {
+                cache.RemoveDescendants(node.Id);
+            }
+
             if (node.ContentType.Alias.StartsWith("ekm"))
             {
                 ClearMemoryCache(node);
@@ -261,6 +273,11 @@ class UmbracoEventListeners :
     {
         foreach (var node in args.MoveInfoCollection)
         {
+            foreach (var cache in _config.CacheList.Value)
+            {
+                cache.RemoveDescendants(node.Entity.Id);
+            }
+
             if (node.Entity.ContentType.Alias.StartsWith("ekm"))
             {
                 var cacheEntry = FindMatchingCache(node.Entity.ContentType.Alias);
@@ -274,6 +291,11 @@ class UmbracoEventListeners :
 
     private ICache? FindMatchingCache(string contentTypeAlias)
     {
+        if (IsStoreDisableFolder(contentTypeAlias))
+        {
+            return null;
+        }
+
         if (contentTypeAlias.Contains("ekmpaymentprovider", StringComparison.InvariantCulture))
         {
             return _config.CacheList.Value.FirstOrDefault(x
@@ -286,6 +308,14 @@ class UmbracoEventListeners :
             => !string.IsNullOrEmpty(x.NodeAlias)
                && contentTypeAlias.Equals(x.NodeAlias, StringComparison.InvariantCulture)
         );
+    }
+
+    private static bool IsStoreDisableFolder(string contentTypeAlias)
+    {
+        return contentTypeAlias is "ekmOrderDiscountsFolder"
+            or "ekmProductDiscountsFolder"
+            or "ekmPaymentProvidersFolder"
+            or "ekmShippingProvidersFolder";
     }
 
     private async Task UpdatePropertiesDefaultValuesAsync(

@@ -41,9 +41,13 @@ class ProductCache : PerStoreCache<IProduct>
     /// <summary>
     /// Rebuild store cache + Id/Sku indexes (base) AND rebuild our category index for that store.
     /// </summary>
-    protected override int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
+    protected override int FillStoreCache(
+        IStore store,
+        List<UmbracoContent> results,
+        string nodeAlias,
+        IReadOnlyDictionary<int, IReadOnlyList<UmbracoContent>>? ancestorsByNodeId)
     {
-        var count = base.FillStoreCache(store, results, nodeAlias);
+        var count = base.FillStoreCache(store, results, nodeAlias, ancestorsByNodeId);
 
         var idx = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
 

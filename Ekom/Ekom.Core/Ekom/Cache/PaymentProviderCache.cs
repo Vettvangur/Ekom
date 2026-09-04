@@ -1,15 +1,13 @@
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 
 namespace Ekom.Cache;
 
 class PaymentProviderCache : PerStoreCache<IPaymentProvider>
 {
     public override string NodeAlias { get; } = "ekmPaymentProvider";
+    protected override string? StoreDisableFolderAlias => "ekmPaymentProvidersFolder";
 
     public PaymentProviderCache(
         Configuration config,
@@ -19,63 +17,5 @@ class PaymentProviderCache : PerStoreCache<IPaymentProvider>
         IServiceProvider serviceProvider
     ) : base(config, logger, storeCache, perStoreFactory, serviceProvider)
     {
-    }
-
-    public override void FillCache(IStore storeParam = null)
-    {
-        if (!string.IsNullOrEmpty(NodeAlias))
-        {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            _logger.LogDebug("Starting to fill...");
-
-            int count = 0;
-
-            try
-            {
-                using var scope = _serviceScopeFactory.CreateScope();
-                var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
-
-                UmbracoContent? paymentProviderRoot = nodeService.NodesByTypes("ekmPaymentProviders").FirstOrDefault();
-
-                if (paymentProviderRoot == null)
-                {
-                    throw new Exception("Ekom payment providers node not found.");
-                }
-
-                List<UmbracoContent> results = nodeService.NodeChildren(paymentProviderRoot.Id.ToString()).ToList();
-
-                if (storeParam == null) // Startup initialization
-                {
-                    foreach (IStore? store in _storeCache.Cache.Select(x => x.Value))
-                    {
-                        count += FillStoreCache(store, results, NodeAlias);
-                    }
-                }
-                else // Triggered with dynamic addition/removal of store
-                {
-                    count += FillStoreCache(storeParam, results, NodeAlias);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Filling per store cache Failed for {NodeAlias}!", NodeAlias);
-            }
-
-            stopwatch.Stop();
-            _logger.LogInformation(
-                "Finished filling per store cache with {Count} items for {NodeAlias}. Time it took to fill: {Elapsed}",
-                count,
-                NodeAlias,
-                stopwatch.Elapsed
-            );
-        }
-        else
-        {
-            _logger.LogError(
-                "No NodeAlias, Can not fill cache."
-            );
-        }
     }
 }

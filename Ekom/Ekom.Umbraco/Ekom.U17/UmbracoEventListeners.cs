@@ -101,6 +101,13 @@ internal sealed class UmbracoEventListeners :
 
             ClearMemoryCache(node);
 
+            if (IsStoreDisableFolder(node.ContentType.Alias))
+            {
+                RefreshCacheForRelatedNodes(node.Id);
+                _ = RevalidateAsync(node, cancellationToken);
+                continue;
+            }
+
             var cacheEntry = FindMatchingCache(node.ContentType.Alias);
             var parentNode = _nodeService.NodeById(node.ParentId);
 
@@ -153,6 +160,8 @@ internal sealed class UmbracoEventListeners :
     {
         foreach (var node in notification.DeletedEntities)
         {
+            RemoveDescendantsFromCaches(node.Id);
+
             if (!node.ContentType.Alias.StartsWith("ekm", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -181,6 +190,12 @@ internal sealed class UmbracoEventListeners :
                 continue;
             }
 
+            if (IsStoreDisableFolder(node.ContentType.Alias))
+            {
+                RefreshCacheForRelatedNodes(node.Id);
+                continue;
+            }
+
             var cacheEntry = FindMatchingCache(node.ContentType.Alias);
             cacheEntry?.Remove(node.Key);
 
@@ -198,6 +213,8 @@ internal sealed class UmbracoEventListeners :
     {
         foreach (var node in notification.MoveInfoCollection)
         {
+            RemoveDescendantsFromCaches(node.Entity.Id);
+
             if (!node.Entity.ContentType.Alias.StartsWith("ekm", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -243,6 +260,11 @@ internal sealed class UmbracoEventListeners :
 
     private ICache? FindMatchingCache(string contentTypeAlias)
     {
+        if (IsStoreDisableFolder(contentTypeAlias))
+        {
+            return null;
+        }
+
         if (contentTypeAlias.Contains("ekmpaymentprovider", StringComparison.OrdinalIgnoreCase))
         {
             return _config.CacheList.Value.FirstOrDefault(x =>
@@ -253,6 +275,14 @@ internal sealed class UmbracoEventListeners :
         return _config.CacheList.Value.FirstOrDefault(x =>
             !string.IsNullOrEmpty(x.NodeAlias)
             && contentTypeAlias.Equals(x.NodeAlias, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsStoreDisableFolder(string contentTypeAlias)
+    {
+        return contentTypeAlias is "ekmOrderDiscountsFolder"
+            or "ekmProductDiscountsFolder"
+            or "ekmPaymentProvidersFolder"
+            or "ekmShippingProvidersFolder";
     }
 
     private void RefreshStoreForDomainRoot(int? rootContentId)

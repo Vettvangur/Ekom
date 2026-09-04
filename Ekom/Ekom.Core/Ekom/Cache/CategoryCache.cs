@@ -34,9 +34,13 @@ class CategoryCache : PerStoreCache<ICategory>
         => base.NormalizeRoute(route);
     protected override int GetId(ICategory item) => item.Id;
 
-    protected override int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
+    protected override int FillStoreCache(
+        IStore store,
+        List<UmbracoContent> results,
+        string nodeAlias,
+        IReadOnlyDictionary<int, IReadOnlyList<UmbracoContent>>? ancestorsByNodeId)
     {
-        var count = base.FillStoreCache(store, results, nodeAlias);
+        var count = base.FillStoreCache(store, results, nodeAlias, ancestorsByNodeId);
 
         RebuildIndexes(store.Alias);
 

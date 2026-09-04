@@ -44,12 +44,16 @@ class VariantCache : PerStoreCache<IVariant>
     private ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>> GetStoreProductIndex(string storeAlias) =>
         _productIndex.GetOrAdd(storeAlias, _ => new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>());
 
-    protected override int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
+    protected override int FillStoreCache(
+        IStore store,
+        List<UmbracoContent> results,
+        string nodeAlias,
+        IReadOnlyDictionary<int, IReadOnlyList<UmbracoContent>>? ancestorsByNodeId)
     {
         _groupIndex[store.Alias] = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
         _productIndex[store.Alias] = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
 
-        return base.FillStoreCache(store, results, nodeAlias);
+        return base.FillStoreCache(store, results, nodeAlias, ancestorsByNodeId);
     }
 
     protected override void OnStoreCacheItemAdded(IStore store, Guid key, IVariant item)
