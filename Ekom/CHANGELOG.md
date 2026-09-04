@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.263](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.262...Ekom-v0.2.263) (2026-09-04)
+
+
+### Features
+
+* **datatype:** add store-aware folders ([#828](https://github.com/Vettvangur/Ekom/issues/828)) ([851ddb6](https://github.com/Vettvangur/Ekom/commit/851ddb6ba6b02b69641578ba37b64aa5f5d2bd47))
+
 ## [0.2.262](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.261...Ekom-v0.2.262) (2026-09-03)
 
 
