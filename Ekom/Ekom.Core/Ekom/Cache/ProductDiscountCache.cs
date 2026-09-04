@@ -7,6 +7,7 @@ namespace Ekom.Cache;
 class ProductDiscountCache : PerStoreCache<IProductDiscount>
 {
     public override string NodeAlias { get; } = "ekmProductDiscount";
+    protected override string? StoreDisableFolderAlias => "ekmProductDiscountsFolder";
 
     public ProductDiscountCache(
         Configuration config,

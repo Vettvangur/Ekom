@@ -29,9 +29,13 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
     protected override bool EnableIdIndex => true;
     protected override int GetId(IVariantGroup item) => item.Id;
 
-    protected override int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
+    protected override int FillStoreCache(
+        IStore store,
+        List<UmbracoContent> results,
+        string nodeAlias,
+        IReadOnlyDictionary<int, IReadOnlyList<UmbracoContent>>? ancestorsByNodeId)
     {
-        var count = base.FillStoreCache(store, results, nodeAlias);
+        var count = base.FillStoreCache(store, results, nodeAlias, ancestorsByNodeId);
 
         var pi = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
 

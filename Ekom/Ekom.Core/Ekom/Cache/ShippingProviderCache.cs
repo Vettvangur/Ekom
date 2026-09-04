@@ -8,6 +8,7 @@ namespace Ekom.Cache;
 class ShippingProviderCache : PerStoreCache<IShippingProvider>
 {
     public override string NodeAlias { get; } = "ekmShippingProvider";
+    protected override string? StoreDisableFolderAlias => "ekmShippingProvidersFolder";
 
     public ShippingProviderCache(
         Configuration config,

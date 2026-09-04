@@ -1509,6 +1509,7 @@ class EnsureNodesExist : IAsyncComponent
                 #endregion
             }
 
+            EnsureDiscountAndProviderFolderContentTypes();
             EnsureSkuProductPickerDataType();
 
             _logger.LogDebug("Done");
@@ -1600,6 +1601,92 @@ class EnsureNodesExist : IAsyncComponent
         });
 
         SaveDataType(dataType);
+    }
+
+    private void EnsureDiscountAndProviderFolderContentTypes()
+    {
+        var disableDataType = GetDataType("Ekom Property Editor - Boolean - Stores");
+        if (disableDataType == null)
+        {
+            _logger.LogWarning("Cannot create Ekom provider and discount folder document types because the store Disable data type is missing.");
+            return;
+        }
+
+        var ekomContainer = EnsureContainerExists("Ekom");
+        var discountsContainer = EnsureContainerExists("Discounts", 2, ekomContainer.Id);
+        var paymentProvidersContainer = EnsureContainerExists("Payment Providers", 2, ekomContainer.Id);
+        var shippingProvidersContainer = EnsureContainerExists("Shipping Providers", 2, ekomContainer.Id);
+
+        EnsureFolderContentType("Order Discounts Folder", "ekmOrderDiscountsFolder", discountsContainer.Id, "ekmOrderDiscounts", "ekmOrderDiscount", disableDataType);
+        EnsureFolderContentType("Product Discounts Folder", "ekmProductDiscountsFolder", discountsContainer.Id, "ekmProductDiscounts", "ekmProductDiscount", disableDataType);
+        EnsureFolderContentType("Payment Providers Folder", "ekmPaymentProvidersFolder", paymentProvidersContainer.Id, "ekmPaymentProviders", "ekmPaymentProvider", disableDataType);
+        EnsureFolderContentType("Shipping Providers Folder", "ekmShippingProvidersFolder", shippingProvidersContainer.Id, "ekmShippingProviders", "ekmShippingProvider", disableDataType);
+    }
+
+    private void EnsureFolderContentType(
+        string name,
+        string folderAlias,
+        int containerId,
+        string parentAlias,
+        string childAlias,
+        IDataType disableDataType)
+    {
+        var parentContentType = _contentTypeService.Get(parentAlias);
+        var childContentType = _contentTypeService.Get(childAlias);
+
+        if (parentContentType == null || childContentType == null)
+        {
+            _logger.LogWarning("Cannot create Ekom folder document type {FolderAlias} because {ParentAlias} or {ChildAlias} is missing.", folderAlias, parentAlias, childAlias);
+            return;
+        }
+
+        var folderContentType = EnsureContentTypeExists(new ContentType(_shortStringHelper, containerId)
+        {
+            Name = name,
+            Alias = folderAlias,
+            Icon = "icon-folder",
+            AllowedContentTypes = new List<ContentTypeSort>
+            {
+                CreateContentTypeSort(childContentType, 1),
+            },
+            PropertyGroups = new PropertyGroupCollection(
+                new List<PropertyGroup>
+                {
+                    new PropertyGroup(new PropertyTypeCollection(
+                        true,
+                        new List<PropertyType>
+                        {
+                            new PropertyType(_shortStringHelper, disableDataType, "disable")
+                            {
+                                Name = "Disable",
+                            },
+                        }))
+                    {
+                        Alias = "stores",
+                        Name = "Stores",
+                        Type = PropertyGroupType.Tab,
+                    },
+                }),
+        });
+
+        EnsureAllowedContentType(parentContentType, folderContentType);
+        EnsureAllowedContentType(folderContentType, childContentType);
+    }
+
+    private void EnsureAllowedContentType(IContentType parentContentType, IContentType childContentType)
+    {
+        if (parentContentType.AllowedContentTypes.Any(x => x.Alias == childContentType.Alias))
+        {
+            return;
+        }
+
+        var sortOrder = parentContentType.AllowedContentTypes.Any()
+            ? parentContentType.AllowedContentTypes.Max(x => x.SortOrder) + 1
+            : 1;
+
+        parentContentType.AllowedContentTypes = parentContentType.AllowedContentTypes.Append(
+            CreateContentTypeSort(childContentType, sortOrder));
+        SaveContentType(parentContentType);
     }
 
     private IDataType GetDataType(Guid key)

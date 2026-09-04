@@ -77,6 +77,30 @@ public static class ContentExtensions
             }
         }
 
+        var storeDisableFolderAlias = item.ContentTypeAlias switch
+        {
+            "ekmOrderDiscount" => "ekmOrderDiscountsFolder",
+            "ekmProductDiscount" => "ekmProductDiscountsFolder",
+            "ekmPaymentProvider" => "ekmPaymentProvidersFolder",
+            "ekmShippingProvider" => "ekmShippingProvidersFolder",
+            _ => null,
+        };
+
+        if (storeDisableFolderAlias != null)
+        {
+            foreach (var ancestor in ancestors.Where(x => x.IsDocumentType(storeDisableFolderAlias)))
+            {
+                var disableField = ancestor.GetValue("disable", store.Alias);
+
+                if (!string.IsNullOrEmpty(disableField) && disableField.ConvertToBool())
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         if (item.ContentTypeAlias is not ("ekmProduct" or "ekmCategory" or "ekmProductVariantGroup"
             or "ekmProductVariant")) return false;
 
