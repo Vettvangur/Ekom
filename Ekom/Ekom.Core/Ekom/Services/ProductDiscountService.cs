@@ -74,11 +74,7 @@ class ProductDiscountService
         price = evalArgs.Price;
         categories = evalArgs.Categories;
 
-        if (!_productDiscountCache.Cache.TryGetValue(storeAlias, out var storeDiscounts)
-            || storeDiscounts.Count == 0)
-        {
-            return null;
-        }
+        _productDiscountCache.Cache.TryGetValue(storeAlias, out var storeDiscounts);
 
         var pathItems = string.IsNullOrWhiteSpace(path)
             ? Array.Empty<string>()
@@ -108,7 +104,7 @@ class ProductDiscountService
 
         var applicableDiscounts = new List<IProductDiscount>();
 
-        foreach (var kvp in storeDiscounts)
+        foreach (var kvp in storeDiscounts ?? [])
         {
             if (kvp.Value.Disabled)
                 continue;
