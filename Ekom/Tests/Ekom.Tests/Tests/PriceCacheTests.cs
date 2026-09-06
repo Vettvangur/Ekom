@@ -13,6 +13,7 @@ public class PriceCacheTests
 
         ValueTask Handler(PriceCache.PriceGenerationEventArgs args, CancellationToken ct)
         {
+            Assert.Null(args.StoreAlias);
             args.Generation = expectedGeneration;
             return ValueTask.CompletedTask;
         }
@@ -24,6 +25,32 @@ public class PriceCacheTests
             var generation = PriceCache.GetItemGeneration(itemKey);
 
             Assert.Equal(expectedGeneration, generation);
+        }
+        finally
+        {
+            PriceCache.OnGenerationCreatedAsync -= Handler;
+        }
+    }
+
+    [Fact]
+    public void GetItemGeneration_PassesStoreAliasToHandler()
+    {
+        var itemKey = CreateItemKey();
+        const string storeAlias = "store-a";
+        string? receivedStoreAlias = null;
+
+        ValueTask Handler(PriceCache.PriceGenerationEventArgs args, CancellationToken ct)
+        {
+            receivedStoreAlias = args.StoreAlias;
+            return ValueTask.CompletedTask;
+        }
+
+        PriceCache.OnGenerationCreatedAsync += Handler;
+        try
+        {
+            PriceCache.GetItemGeneration(itemKey, storeAlias);
+
+            Assert.Equal(storeAlias, receivedStoreAlias);
         }
         finally
         {
@@ -73,6 +100,7 @@ public class PriceCacheTests
 
         ValueTask Handler(PriceCache.PriceGenerationEventArgs args, CancellationToken ct)
         {
+            Assert.Null(args.StoreAlias);
             args.Generation = expectedGeneration;
             return ValueTask.CompletedTask;
         }
@@ -84,6 +112,32 @@ public class PriceCacheTests
             var generation = await PriceCache.GetItemGenerationAsync(itemKey);
 
             Assert.Equal(expectedGeneration, generation);
+        }
+        finally
+        {
+            PriceCache.OnGenerationCreatedAsync -= Handler;
+        }
+    }
+
+    [Fact]
+    public async Task GetItemGenerationAsync_PassesStoreAliasToHandler()
+    {
+        var itemKey = CreateItemKey();
+        const string storeAlias = "store-a";
+        string? receivedStoreAlias = null;
+
+        ValueTask Handler(PriceCache.PriceGenerationEventArgs args, CancellationToken ct)
+        {
+            receivedStoreAlias = args.StoreAlias;
+            return ValueTask.CompletedTask;
+        }
+
+        PriceCache.OnGenerationCreatedAsync += Handler;
+        try
+        {
+            await PriceCache.GetItemGenerationAsync(itemKey, storeAlias, CancellationToken.None);
+
+            Assert.Equal(storeAlias, receivedStoreAlias);
         }
         finally
         {
@@ -180,6 +234,31 @@ public class PriceCacheTests
 
             Assert.Equal(2, invalidatedGenerations.Count);
             Assert.NotEqual(invalidatedGenerations[0], invalidatedGenerations[1]);
+        }
+        finally
+        {
+            PriceCache.OnGenerationInvalidated -= Handler;
+        }
+    }
+
+    [Fact]
+    public void InvalidateItem_PassesStoreAliasToHandler()
+    {
+        var itemKey = CreateItemKey();
+        const string storeAlias = "store-a";
+        string? receivedStoreAlias = null;
+
+        void Handler(object? sender, PriceCache.PriceGenerationEventArgs args)
+        {
+            receivedStoreAlias = args.StoreAlias;
+        }
+
+        PriceCache.OnGenerationInvalidated += Handler;
+        try
+        {
+            PriceCache.InvalidateItem(itemKey, storeAlias);
+
+            Assert.Equal(storeAlias, receivedStoreAlias);
         }
         finally
         {

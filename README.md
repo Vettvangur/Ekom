@@ -233,7 +233,7 @@ X-Ekom-Api-Key: integration-secret
 `pricingContext` is an arbitrary string dictionary that is not interpreted by Ekom. While a line is priced, Ekom activates it as the ambient `Ekom.PricingContext` and forwards it into the pricing event args, so handlers in the site hosting Ekom can vary pricing per line:
 
 - `DiscountEvents.BeforeEvaluateDiscountsAsync` / `AfterApplicableDiscountsAsync` — `e.PricingContext` (e.g. drop discounts that do not apply to this audience)
-- `PriceCache.OnGenerationCreatedAsync` — `e.PricingContext` (fold context values into `e.Generation` so cached prices are partitioned per audience)
+- `PriceCache.OnGenerationCreatedAsync` — `e.PricingContext` and nullable `e.StoreAlias` (fold relevant values into `e.Generation` so cached prices are partitioned per audience)
 
 ```csharp
 discountEvents.AfterApplicableDiscountsAsync += (sender, e) =>
@@ -249,7 +249,8 @@ discountEvents.AfterApplicableDiscountsAsync += (sender, e) =>
 
 PriceCache.OnGenerationCreatedAsync += (e, ct) =>
 {
-    if (e.PricingContext.TryGetValue("customerGroup", out var group))
+    if (e.StoreAlias == "store-a" &&
+        e.PricingContext.TryGetValue("customerGroup", out var group))
     {
         e.Generation += $":{group}";
     }
@@ -259,6 +260,8 @@ PriceCache.OnGenerationCreatedAsync += (e, ct) =>
 ```
 
 Keys are matched case-insensitively and `PricingContext` is never null (empty when no context is active). Code that runs outside these events can inject `OrderDiscountCalculationContextAccessor` or read `Ekom.PricingContext.Current` directly.
+
+`StoreAlias` is supplied when product or variant pricing has a store context; it is null for legacy or cross-store cache operations.
 
 ### Tracking and consent
 

@@ -214,7 +214,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
             string itemKey = Path;
 
             string globalGen = PriceCache.GlobalGeneration;
-            string productGen = PriceCache.GetItemGeneration(itemKey);
+            string productGen = PriceCache.GetItemGeneration(itemKey, Store.Alias);
 
             string cacheKey =
                 $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}";
@@ -356,7 +356,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         if (!CacheInitializationScope.IsActive)
         {
             Product?.InvalidateCache();
-            PriceCache.InvalidateItem(Path);
+            PriceCache.InvalidateItem(Path, Store.Alias);
         }
 
         _priceValue = GetValue("price", Store.Alias) ?? string.Empty;

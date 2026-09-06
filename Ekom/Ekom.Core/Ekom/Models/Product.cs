@@ -365,7 +365,7 @@ public class Product : PerStoreNodeEntity, IProduct
             string productKey = Path;
 
             string globalGen = PriceCache.GlobalGeneration;
-            string productGen = PriceCache.GetItemGeneration(productKey);
+            string productGen = PriceCache.GetItemGeneration(productKey, Store.Alias);
 
             var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}";
 
@@ -583,7 +583,7 @@ public class Product : PerStoreNodeEntity, IProduct
 
     public void InvalidateCache()
     {
-        PriceCache.InvalidateItem(Path);
+        PriceCache.InvalidateItem(Path, Store.Alias);
         _cache.Clear();
     }
 
