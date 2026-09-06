@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.264](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.263...Ekom-v0.2.264) (2026-09-06)
+
+
+### Bug Fixes
+
+* **discounts:** allow dynamic discounts ([#830](https://github.com/Vettvangur/Ekom/issues/830)) ([9d62f14](https://github.com/Vettvangur/Ekom/commit/9d62f1429e11e1c8d81d795b3efe0b5287e79857))
+
 ## [0.2.263](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.262...Ekom-v0.2.263) (2026-09-04)
 
 
