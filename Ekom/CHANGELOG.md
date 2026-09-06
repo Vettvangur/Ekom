@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.265](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.264...Ekom-v0.2.265) (2026-09-06)
+
+
+### Features
+
+* **cache:** expose store aliases in price events ([#832](https://github.com/Vettvangur/Ekom/issues/832)) ([4267fc3](https://github.com/Vettvangur/Ekom/commit/4267fc3d9fee9397d3e28f1a2f85a301d1f658e2))
+
 ## [0.2.264](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.263...Ekom-v0.2.264) (2026-09-06)
 
 
