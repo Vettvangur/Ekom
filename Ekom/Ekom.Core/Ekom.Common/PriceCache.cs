@@ -32,27 +32,34 @@ public static class PriceCache
 
     private static readonly ConcurrentDictionary<string, string> _itemGenerations = new();
 
-    public static string GetItemGeneration(string itemKey)
+    public static string GetItemGeneration(string itemKey) => GetItemGeneration(itemKey, null);
+
+    public static string GetItemGeneration(string itemKey, string? storeAlias)
     {
         var gen = _itemGenerations.GetOrAdd(itemKey, _ => Guid.NewGuid().ToString("N"));
 
-        gen = RaiseGenerationCreatedAsync(itemKey, gen, CancellationToken.None).GetAwaiter().GetResult();
+        gen = RaiseGenerationCreatedAsync(itemKey, gen, storeAlias, CancellationToken.None).GetAwaiter().GetResult();
 
         return gen;
     }
 
-    public static async ValueTask<string> GetItemGenerationAsync(string itemKey, CancellationToken ct = default)
+    public static ValueTask<string> GetItemGenerationAsync(string itemKey, CancellationToken ct = default)
+        => GetItemGenerationAsync(itemKey, null, ct);
+
+    public static async ValueTask<string> GetItemGenerationAsync(string itemKey, string? storeAlias, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         var gen = _itemGenerations.GetOrAdd(itemKey, _ => Guid.NewGuid().ToString("N"));
 
-        gen = await RaiseGenerationCreatedAsync(itemKey, gen, ct).ConfigureAwait(false);
+        gen = await RaiseGenerationCreatedAsync(itemKey, gen, storeAlias, ct).ConfigureAwait(false);
 
         return gen;
     }
 
-    public static void InvalidateItem(string itemKey)
+    public static void InvalidateItem(string itemKey) => InvalidateItem(itemKey, null);
+
+    public static void InvalidateItem(string itemKey, string? storeAlias)
     {
         var newGen = Guid.NewGuid().ToString("N");
 
@@ -61,7 +68,7 @@ public static class PriceCache
 
         OnGenerationInvalidated?.Invoke(
             null,
-            new PriceGenerationEventArgs(itemKey, newGen)
+            new PriceGenerationEventArgs(itemKey, newGen, storeAlias)
         );
 
         if (DeferCompaction())
@@ -143,9 +150,13 @@ public static class PriceCache
         }
     }
 
-    private static async ValueTask<string> RaiseGenerationCreatedAsync(string itemKey, string gen, CancellationToken ct)
+    private static async ValueTask<string> RaiseGenerationCreatedAsync(
+        string itemKey,
+        string gen,
+        string? storeAlias,
+        CancellationToken ct)
     {
-        var args = new PriceGenerationEventArgs(itemKey, gen);
+        var args = new PriceGenerationEventArgs(itemKey, gen, storeAlias);
         var handlers = OnGenerationCreatedAsync;
 
         if (handlers is null)
@@ -163,6 +174,11 @@ public static class PriceCache
     public class PriceGenerationEventArgs : EventArgs
     {
         public string ItemKey { get; }
+
+        /// <summary>
+        /// Store alias associated with the price operation, or null when the store is unknown.
+        /// </summary>
+        public string? StoreAlias { get; }
         public string Generation { get; set; }
 
         /// <summary>
@@ -174,9 +190,15 @@ public static class PriceCache
         public IReadOnlyDictionary<string, string> PricingContext { get; }
 
         public PriceGenerationEventArgs(string itemKey, string generation)
+            : this(itemKey, generation, null)
+        {
+        }
+
+        public PriceGenerationEventArgs(string itemKey, string generation, string? storeAlias)
         {
             ItemKey = itemKey;
             Generation = generation;
+            StoreAlias = storeAlias;
             PricingContext = Ekom.PricingContext.CurrentOrEmpty;
         }
     }
