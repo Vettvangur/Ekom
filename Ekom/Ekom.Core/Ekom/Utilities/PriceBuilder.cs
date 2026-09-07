@@ -16,6 +16,19 @@ public static class PriceBuilder
         string? storeAlias,
         string? path,
         string[]? categories)
+        => BuildPricesSync(priceJson, storeCurrencies, vat, vatIncludedInPrice,
+            fallbackCurrency, storeAlias, path, categories, null);
+
+    public static List<IPrice> BuildPricesSync(
+        string priceJson,
+        List<CurrencyModel> storeCurrencies,
+        decimal vat,
+        bool vatIncludedInPrice,
+        CurrencyModel fallbackCurrency,
+        string? storeAlias,
+        string? path,
+        string[]? categories,
+        string? discountPriceJson)
     {
 
         var prices = new List<IPrice>();
@@ -39,7 +52,9 @@ public static class PriceBuilder
         if (!isArray)
         {
             IDiscount? disc = (!string.IsNullOrEmpty(path) && discountSvc != null)
-                ? discountSvc.GetProductDiscount(path!, storeAlias, priceJson, categories)
+                ? discountSvc.GetProductDiscount(path!, storeAlias, priceJson, categories,
+                    NativeDiscountPrice.Read(discountPriceJson, storeAlias, fallbackCurrency.CurrencyValue,
+                        (storeCurrencies.FirstOrDefault() ?? fallbackCurrency).CurrencyValue))
                 : null;
 
             prices.Add(new Price(
@@ -77,14 +92,18 @@ public static class PriceBuilder
             string? currStr = GetStringValue(currencyElement);
 
             var currency = (!string.IsNullOrEmpty(currStr)
-                    ? storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currStr)
+                    ? storeCurrencies.FirstOrDefault(x => string.Equals(x.CurrencyValue, currStr, StringComparison.OrdinalIgnoreCase))
                     : null)
                 ?? storeCurrencies.FirstOrDefault()
                 ?? fallbackCurrency;
 
             // ---- DISCOUNT ----
             IDiscount? disc = (!string.IsNullOrEmpty(path) && discountSvc != null)
-                ? discountSvc.GetProductDiscount(path!, storeAlias, priceStr, categories)
+                ? discountSvc.GetProductDiscount(path!, storeAlias, priceStr, categories,
+                    string.Equals(currStr, currency.CurrencyValue, StringComparison.OrdinalIgnoreCase)
+                        ? NativeDiscountPrice.Read(discountPriceJson, storeAlias, currency.CurrencyValue,
+                            (storeCurrencies.FirstOrDefault() ?? fallbackCurrency).CurrencyValue)
+                        : null)
                 : null;
 
             prices.Add(new Price(

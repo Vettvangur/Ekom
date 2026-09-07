@@ -256,7 +256,20 @@ public static class StringExtension
         CurrencyModel? fallbackCurrency = null,
         string? storeAlias = null,
         string? path = null,
-        string[]? categories = null
+        string[]? categories = null)
+        => GetPriceValues(priceJson, storeCurrencies, vat, vatIncludedInPrice,
+            fallbackCurrency, storeAlias, path, categories, null);
+
+    public static List<IPrice> GetPriceValues(
+        this string priceJson,
+        List<CurrencyModel> storeCurrencies,
+        decimal vat,
+        bool vatIncludedInPrice,
+        CurrencyModel? fallbackCurrency,
+        string? storeAlias,
+        string? path,
+        string[]? categories,
+        string? discountPriceJson
         )
     {
         var discountService = Configuration.Resolver.GetService<ProductDiscountService>();
@@ -269,7 +282,8 @@ public static class StringExtension
             foreach (JToken price in _prices)
             {
                 string? currencyValue = GetPropertyIgnoreCase(price, "Currency")?.Value<string>();
-                CurrencyModel? currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
+                CurrencyModel? currency = storeCurrencies.FirstOrDefault(x => string.Equals(
+                    x.CurrencyValue, currencyValue, StringComparison.OrdinalIgnoreCase)) ?? storeCurrencies.FirstOrDefault();
                 string? priceValue = GetPropertyIgnoreCase(price, "Price")?.Value<string>();
 
                 IDiscount? productDiscount = !string.IsNullOrEmpty(path) && discountService != null
@@ -278,7 +292,11 @@ public static class StringExtension
                             path,
                             storeAlias,
                             priceValue,
-                            categories
+                            categories,
+                            string.Equals(currencyValue, currency?.CurrencyValue, StringComparison.OrdinalIgnoreCase)
+                                ? NativeDiscountPrice.Read(discountPriceJson, storeAlias, currencyValue ?? string.Empty,
+                                    (storeCurrencies.FirstOrDefault() ?? fallbackCurrency)?.CurrencyValue ?? string.Empty)
+                                : null
                         )
                     : null;
 
@@ -309,7 +327,9 @@ public static class StringExtension
                     path,
                     storeAlias,
                     priceJson,
-                    categories
+                    categories,
+                    NativeDiscountPrice.Read(discountPriceJson, storeAlias, fallbackCurrency.CurrencyValue,
+                        (storeCurrencies.FirstOrDefault() ?? fallbackCurrency).CurrencyValue)
                 )
             : null;
 

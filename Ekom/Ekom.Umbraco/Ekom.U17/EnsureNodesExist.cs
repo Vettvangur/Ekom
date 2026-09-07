@@ -657,22 +657,28 @@ class EnsureNodesExist : IAsyncComponent
                                         Name = "Price",
                                         SortOrder = 4
                                     },
+                                    new PropertyType(_shortStringHelper, priceDt, "ekmDiscountPrice")
+                                    {
+                                        Name = "Discount Price",
+                                        Mandatory = false,
+                                        SortOrder = 5
+                                    },
                                     new PropertyType(_shortStringHelper, stockDt, "stock")
                                     {
                                         Name = "Stock",
-                                        SortOrder = 5
+                                        SortOrder = 6
                                     },
                                     new PropertyType(_shortStringHelper, booleanDt, "enableBackorder")
                                     {
                                         Name = "Enable Backorder",
                                         Description = "If set then the variant can be sold indefinitely",
-                                        SortOrder = 6
+                                        SortOrder = 7
                                     },
                                     new PropertyType(_shortStringHelper, numericDt, "vat")
                                     {
                                         Name = "VAT",
                                         Description = "%, override store VAT.",
-                                        SortOrder = 7
+                                        SortOrder = 8
                                     },
                                 }))
                             {
@@ -774,6 +780,11 @@ class EnsureNodesExist : IAsyncComponent
                                     new PropertyType(_shortStringHelper, priceDt, "price")
                                     {
                                         Name = "Price",
+                                    },
+                                    new PropertyType(_shortStringHelper, priceDt, "ekmDiscountPrice")
+                                    {
+                                        Name = "Discount Price",
+                                        Mandatory = false,
                                     },
                                     new PropertyType(_shortStringHelper, stockDt, "stock")
                                     {
@@ -1509,6 +1520,7 @@ class EnsureNodesExist : IAsyncComponent
                 #endregion
             }
 
+            EnsureDiscountPriceProperties();
             EnsureDiscountAndProviderFolderContentTypes();
             EnsureSkuProductPickerDataType();
 
@@ -1601,6 +1613,49 @@ class EnsureNodesExist : IAsyncComponent
         });
 
         SaveDataType(dataType);
+    }
+
+    private void EnsureDiscountPriceProperties()
+    {
+        foreach (var alias in new[] { "ekmProduct", "ekmProductVariant" })
+        {
+            var contentType = _contentTypeService.Get(alias);
+            if (contentType == null || contentType.CompositionPropertyTypes.Any(x =>
+                x.Alias.Equals("ekmDiscountPrice", StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            var group = contentType.PropertyGroups.FirstOrDefault(x =>
+                x.PropertyTypes.Any(p => p.Alias == "price"));
+            var price = group?.PropertyTypes.FirstOrDefault(x => x.Alias == "price");
+            if (group == null || price == null || price.PropertyEditorAlias != "Ekom.Price")
+            {
+                _logger.LogWarning("Cannot add Discount Price to {Alias} because a direct Ekom Price property group is missing.", alias);
+                continue;
+            }
+
+            var discountPrice = new PropertyType(_shortStringHelper, price.PropertyEditorAlias, price.ValueStorageType, "ekmDiscountPrice")
+            {
+                Name = "Discount Price",
+                DataTypeId = price.DataTypeId,
+                Variations = price.Variations,
+                Mandatory = false,
+                SortOrder = price.SortOrder + 1,
+            };
+
+            // Make room after Price without changing other groups or their relative ordering.
+            var sortOrder = discountPrice.SortOrder;
+            foreach (var property in group.PropertyTypes.OrderBy(x => x.SortOrder).SkipWhile(x => x != price).Skip(1))
+            {
+                property.SortOrder = Math.Max(property.SortOrder, ++sortOrder);
+                sortOrder = property.SortOrder;
+            }
+
+            group.PropertyTypes.Add(discountPrice);
+            SaveContentType(contentType);
+            _logger.LogInformation("Added Discount Price to content type {Alias}", alias);
+        }
     }
 
     private void EnsureDiscountAndProviderFolderContentTypes()
@@ -1949,6 +2004,16 @@ class EnsureNodesExist : IAsyncComponent
 
         if (ekmContentType == null)
         {
+            if (contentType.Alias == "ekmProduct")
+            {
+                // Product properties otherwise share the default sort order.
+                var sortOrder = 0;
+                foreach (var property in contentType.PropertyGroups.Single(x => x.Alias == "product").PropertyTypes)
+                {
+                    property.SortOrder = sortOrder++;
+                }
+            }
+
             ekmContentType = contentType;
             SaveContentType(ekmContentType);
             _logger.LogInformation(
