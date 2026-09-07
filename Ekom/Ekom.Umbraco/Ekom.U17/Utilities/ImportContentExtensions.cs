@@ -189,62 +189,29 @@ public static class ImportContentExtensions
     }
 
     public static void SetPrice(this IContent content, string storeAlias, string currency, decimal price)
+        => SetPrice(content, "price", storeAlias, currency, price);
+
+    public static void SetPrice(this IContent content, string propertyAlias, string storeAlias, string currency, decimal price)
     {
         ArgumentNullException.ThrowIfNull(content);
+        ArgumentException.ThrowIfNullOrEmpty(propertyAlias);
 
-        if (!content.HasProperty("price"))
+        if (!content.HasProperty(propertyAlias))
         {
             return;
         }
 
-        var fieldValue = content.GetValue<string>("price");
-        var currencyPriceRoot = new CurrencyPriceRoot();
-
+        var fieldValue = content.GetValue<string>(propertyAlias);
         try
         {
-            currencyPriceRoot = string.IsNullOrEmpty(fieldValue)
-                ? currencyPriceRoot
-                : JsonConvert.DeserializeObject<CurrencyPriceRoot>(fieldValue) ?? currencyPriceRoot;
-
-            var storeItems = currencyPriceRoot
-                .Where(x => x.Key.Equals(storeAlias, StringComparison.OrdinalIgnoreCase))
-                .SelectMany(x => x.Value)
-                .GroupBy(x => x.Currency, StringComparer.OrdinalIgnoreCase)
-                .Select(x => x.Last())
-                .ToList();
-
-            foreach (var key in currencyPriceRoot.Keys.Where(x => x.Equals(storeAlias, StringComparison.OrdinalIgnoreCase)).ToList())
-            {
-                currencyPriceRoot.Remove(key);
-            }
-
-            if (storeItems.Count == 0)
-            {
-                storeItems.Add(new CurrencyPrice(price, currency));
-                currencyPriceRoot.Add(storeAlias, storeItems);
-            }
-            else
-            {
-                var priceObject = storeItems.FirstOrDefault(x => x.Currency.Equals(currency, StringComparison.OrdinalIgnoreCase));
-                if (priceObject == null)
-                {
-                    storeItems.Add(new CurrencyPrice(price, currency));
-                }
-                else
-                {
-                    priceObject.Price = price;
-                }
-
-                currencyPriceRoot.Add(storeAlias, storeItems);
-            }
-
-            content.SetValue("price", JsonConvert.SerializeObject(currencyPriceRoot));
+            content.SetValue(propertyAlias, PriceHelper.SetPrice(fieldValue, price, currency, storeAlias));
             return;
         }
         catch
         {
-            currencyPriceRoot = new CurrencyPriceRoot();
         }
+
+        var currencyPriceRoot = new CurrencyPriceRoot();
 
         foreach (var store in API.Store.Instance.GetAllStores())
         {
@@ -279,7 +246,7 @@ public static class ImportContentExtensions
             currencyPriceRoot.Add(store.Alias, currencyPrices);
         }
 
-        content.SetValue("price", JsonConvert.SerializeObject(currencyPriceRoot));
+        content.SetValue(propertyAlias, JsonConvert.SerializeObject(currencyPriceRoot));
     }
 
     public static void SaveAndPublish(this IContentService contentService, IContent content, int userId = -1)

@@ -263,6 +263,20 @@ public class PriceTests
         Assert.Equal(0m, prices.Single(x => x.Currency.CurrencyValue == "en-US").OriginalValue);
     }
 
+    [Fact]
+    public void PriceHelper_SetPrice_ReturnsEkomPriceJson()
+    {
+        var serialized = PriceHelper.SetPrice(null, 99.95m, "is-IS", "store-a");
+        serialized = PriceHelper.SetPrice(serialized, 9.99m, "en-US", "store-a");
+
+        var prices = JsonConvert.DeserializeObject<CurrencyPriceRoot>(serialized);
+
+        Assert.NotNull(prices);
+        Assert.Single(prices);
+        Assert.Equal(99.95m, prices["store-a"].Single(x => x.Currency == "is-IS").Price);
+        Assert.Equal(9.99m, prices["store-a"].Single(x => x.Currency == "en-US").Price);
+    }
+
     [Theory]
     [InlineData(1538.42, 0.24, 4)]
     public void Isk_Diff_PerUnit_vs_PerTotal(decimal price, decimal vat, int qty)

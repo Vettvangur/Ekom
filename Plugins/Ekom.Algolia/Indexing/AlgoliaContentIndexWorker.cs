@@ -42,7 +42,23 @@ internal sealed class AlgoliaContentIndexWorker : BackgroundService
 
                 var drained = Drain(maxBatch * 10);
                 foreach (var chunk in drained.Chunk(maxBatch))
-                    await _executor.HandleAsync(chunk, stoppingToken).ConfigureAwait(false);
+                {
+                    try
+                    {
+                        await _executor.HandleAsync(chunk, stoppingToken).ConfigureAwait(false);
+                        CompleteJobs(chunk);
+                    }
+                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                    {
+                        CompleteJobs(chunk, canceled: true);
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        CompleteJobs(chunk, exception: ex);
+                        throw;
+                    }
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -65,5 +81,27 @@ internal sealed class AlgoliaContentIndexWorker : BackgroundService
             list.Add(job);
 
         return list;
+    }
+
+    private static void CompleteJobs(
+        IEnumerable<AlgoliaContentIndexJob> jobs,
+        Exception? exception = null,
+        bool canceled = false)
+    {
+        foreach (var job in jobs)
+        {
+            if (canceled)
+            {
+                job.Completion?.TrySetCanceled();
+            }
+            else if (exception is not null)
+            {
+                job.Completion?.TrySetException(exception);
+            }
+            else
+            {
+                job.Completion?.TrySetResult();
+            }
+        }
     }
 }

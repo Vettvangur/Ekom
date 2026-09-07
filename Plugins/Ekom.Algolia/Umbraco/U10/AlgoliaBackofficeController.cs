@@ -7,30 +7,29 @@ namespace Ekom.Algolia.Controllers;
 
 public class EkomAlgoliaBackofficeController : UmbracoAuthorizedApiController
 {
+    private readonly IAlgoliaFullIndexRebuildCoordinator _fullIndexRebuildCoordinator;
     private readonly IAlgoliaProductIndexService _algoliaProductIndexService;
     private readonly IAlgoliaCategoryIndexService _algoliaCategoryIndexService;
-    private readonly IAlgoliaContentIndexService _algoliaContentIndexService;
     private readonly ILogger<EkomAlgoliaBackofficeController> _logger;
 
     public EkomAlgoliaBackofficeController(
+        IAlgoliaFullIndexRebuildCoordinator fullIndexRebuildCoordinator,
         IAlgoliaProductIndexService algoliaProductIndexService,
         IAlgoliaCategoryIndexService algoliaCategoryIndexService,
-        IAlgoliaContentIndexService algoliaContentIndexService,
         ILogger<EkomAlgoliaBackofficeController> logger)
     {
+        _fullIndexRebuildCoordinator = fullIndexRebuildCoordinator;
         _algoliaProductIndexService = algoliaProductIndexService;
         _algoliaCategoryIndexService = algoliaCategoryIndexService;
-        _algoliaContentIndexService = algoliaContentIndexService;
         _logger = logger;
     }
 
     [HttpGet]
     [HttpPost]
-    public async Task<IActionResult> RebuildIndexesAsync(CancellationToken ct = default)
+    public IActionResult RebuildIndexesAsync()
     {
-        await _algoliaProductIndexService.RebuildAllAsync(ct).ConfigureAwait(false);
-        await _algoliaCategoryIndexService.RebuildAllAsync(ct).ConfigureAwait(false);
-        await _algoliaContentIndexService.RebuildAsync(ct: ct).ConfigureAwait(false);
+        if (!_fullIndexRebuildCoordinator.TryStart())
+            return Conflict(new { error = "An Algolia full reindex is already running." });
 
         _logger.LogInformation("Algolia manual reindex requested for all configured stores and content indexes.");
 
