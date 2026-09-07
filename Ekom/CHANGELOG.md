@@ -6,6 +6,13 @@
 
 * **discounts:** add native product and variant `ekmDiscountPrice` support using the Ekom Price datatype, competing with content and event-added discounts while preserving original prices.
 
+## [0.2.267](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.266...Ekom-v0.2.267) (2026-09-07)
+
+
+### Features
+
+* **discounts:** add native product discount prices ([#836](https://github.com/Vettvangur/Ekom/issues/836)) ([2fdbc46](https://github.com/Vettvangur/Ekom/commit/2fdbc462fcd2948bb87f580c443bba1b410ec141))
+
 ## [0.2.266](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.265...Ekom-v0.2.266) (2026-09-07)
 
 
