@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.266](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.265...Ekom-v0.2.266) (2026-09-07)
+
+
+### Features
+
+* **algolia:** coordinate full index rebuilds ([#834](https://github.com/Vettvangur/Ekom/issues/834)) ([1ec8184](https://github.com/Vettvangur/Ekom/commit/1ec8184d32ae9007d6ae1d014014a0cb21901172))
+
 ## [0.2.265](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.264...Ekom-v0.2.265) (2026-09-06)
 
 
