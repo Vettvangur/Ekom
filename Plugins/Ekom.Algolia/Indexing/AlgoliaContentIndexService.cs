@@ -5,6 +5,7 @@ public interface IAlgoliaContentIndexService
     Task UpdateByIdsAsync(IReadOnlyCollection<int> nodeIds, CancellationToken ct = default);
     Task DeleteByKeysAsync(IReadOnlyCollection<Guid> nodeKeys, CancellationToken ct = default);
     Task RebuildAsync(string? indexName = null, CancellationToken ct = default);
+    Task RebuildAndWaitAsync(string? indexName = null, CancellationToken ct = default);
 }
 
 internal sealed class AlgoliaContentIndexService : IAlgoliaContentIndexService
@@ -34,6 +35,14 @@ internal sealed class AlgoliaContentIndexService : IAlgoliaContentIndexService
 
     public Task RebuildAsync(string? indexName = null, CancellationToken ct = default)
         => EnqueueAsync(new AlgoliaContentIndexJob(AlgoliaContentIndexJobType.Rebuild, [], [], indexName), ct);
+
+    public async Task RebuildAndWaitAsync(string? indexName = null, CancellationToken ct = default)
+    {
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await EnqueueAsync(new AlgoliaContentIndexJob(AlgoliaContentIndexJobType.Rebuild, [], [], indexName, completion), ct)
+            .ConfigureAwait(false);
+        await completion.Task.ConfigureAwait(false);
+    }
 
     private async Task EnqueueAsync(AlgoliaContentIndexJob job, CancellationToken ct)
     {

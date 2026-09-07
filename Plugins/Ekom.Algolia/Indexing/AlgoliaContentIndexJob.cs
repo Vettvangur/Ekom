@@ -4,7 +4,8 @@ internal sealed record AlgoliaContentIndexJob(
     AlgoliaContentIndexJobType Type,
     IReadOnlyCollection<int> NodeIds,
     IReadOnlyCollection<Guid> NodeKeys,
-    string? IndexName = null);
+    string? IndexName = null,
+    TaskCompletionSource? Completion = null);
 
 internal enum AlgoliaContentIndexJobType
 {

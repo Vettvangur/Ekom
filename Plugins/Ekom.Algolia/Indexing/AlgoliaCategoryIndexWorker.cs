@@ -54,12 +54,15 @@ internal sealed class AlgoliaCategoryIndexWorker : BackgroundService
                         try
                         {
                             await _executor.HandleAsync(chunk, stoppingToken).ConfigureAwait(false);
+                            CompleteJobs(chunk);
                         }
                         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                         {
+                            CompleteJobs(chunk, canceled: true);
                         }
                         catch (Exception ex)
                         {
+                            CompleteJobs(chunk, exception: ex);
                             _logger.LogError(ex, "Algolia Category Indexer failed processing chunk size {ChunkSize}", chunk.Length);
                         }
                         finally
@@ -89,5 +92,27 @@ internal sealed class AlgoliaCategoryIndexWorker : BackgroundService
             list.Add(job);
 
         return list;
+    }
+
+    private static void CompleteJobs(
+        IEnumerable<AlgoliaCategoryIndexJob> jobs,
+        Exception? exception = null,
+        bool canceled = false)
+    {
+        foreach (var job in jobs)
+        {
+            if (canceled)
+            {
+                job.Completion?.TrySetCanceled();
+            }
+            else if (exception is not null)
+            {
+                job.Completion?.TrySetException(exception);
+            }
+            else
+            {
+                job.Completion?.TrySetResult();
+            }
+        }
     }
 }

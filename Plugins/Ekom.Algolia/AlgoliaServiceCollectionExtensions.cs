@@ -63,6 +63,7 @@ public static class AlgoliaServiceCollectionExtensions
         services.AddSingleton<IAlgoliaProductIndexQueue, AlgoliaProductIndexQueue>();
         services.AddSingleton<AlgoliaProductIndexExecutor>();
         services.AddSingleton<IAlgoliaProductIndexService, AlgoliaProductIndexService>();
+        services.AddSingleton<IAlgoliaFullIndexRebuildCoordinator, AlgoliaFullIndexRebuildCoordinator>();
         services.AddSingleton<AlgoliaProductIndexWorker>();
         services.AddHostedService(sp => sp.GetRequiredService<AlgoliaProductIndexWorker>());
 

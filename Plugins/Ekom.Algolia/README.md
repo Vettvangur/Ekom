@@ -737,6 +737,8 @@ Rebuild all configured store indexes:
 POST /umbraco/backoffice/api/EkomAlgoliaBackoffice/RebuildIndexes
 ```
 
+Only one full rebuild can run per application instance. A concurrent full-rebuild request returns `409 Conflict` until the active product, category, and content rebuilds finish.
+
 Rebuild one store:
 
 ```http

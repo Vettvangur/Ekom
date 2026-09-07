@@ -371,69 +371,38 @@ public static class ContentExtensions
     /// <param name="currency">Currency (is-IS, en-US)</param>
     /// <param name="price">Price as decimal</param>
     public static void SetPrice(this IContent content, string storeAlias, string currency, decimal price)
+        => SetPrice(content, "price", storeAlias, currency, price);
+
+    /// <summary>
+    /// Set price on an Ekom.Price property.
+    /// </summary>
+    /// <param name="content">IContent</param>
+    /// <param name="propertyAlias">Ekom.Price property alias</param>
+    /// <param name="storeAlias">Store alias</param>
+    /// <param name="currency">Currency (is-IS, en-US)</param>
+    /// <param name="price">Price as decimal</param>
+    public static void SetPrice(this IContent content, string propertyAlias, string storeAlias, string currency, decimal price)
     {
         if (content == null)
         {
             throw new ArgumentNullException(nameof(content));
         }
 
-        if (content.HasProperty("price"))
+        if (string.IsNullOrEmpty(propertyAlias))
+        {
+            throw new ArgumentNullException(nameof(propertyAlias));
+        }
+
+        if (content.HasProperty(propertyAlias))
         {
 
-            var fieldValue = content.GetValue<string>("price");
+            var fieldValue = content.GetValue<string>(propertyAlias);
 
-            CurrencyPrice priceObject = null;
             CurrencyPriceRoot currencyPriceRoot = new CurrencyPriceRoot();
 
             try
             {
-                currencyPriceRoot = string.IsNullOrEmpty(fieldValue) ? currencyPriceRoot : JsonConvert.DeserializeObject<CurrencyPriceRoot>(fieldValue);
-                var storeItems = currencyPriceRoot
-                    .Where(x => x.Key.Equals(storeAlias, StringComparison.OrdinalIgnoreCase))
-                    .SelectMany(x => x.Value)
-                    .GroupBy(x => x.Currency, StringComparer.OrdinalIgnoreCase)
-                    .Select(x => x.Last())
-                    .ToList();
-
-                foreach (var key in currencyPriceRoot.Keys.Where(x => x.Equals(storeAlias, StringComparison.OrdinalIgnoreCase)).ToList())
-                {
-                    currencyPriceRoot.Remove(key);
-                }
-
-                if (storeItems.Count > 0)
-                {
-                    // Ensure the storeItems list is not null and has elements
-                    if (storeItems.Any())
-                    {
-                        // Find the first item with the specified currency
-                        priceObject = storeItems.FirstOrDefault(z => z.Currency.Equals(currency, StringComparison.OrdinalIgnoreCase));
-
-                        if (priceObject != null)
-                        {
-                            priceObject.Price = price;
-                        }
-                        else
-                        {
-                            storeItems.Add(new CurrencyPrice(price, currency));
-                        }
-                    }
-                    else
-                    {
-                        storeItems.Add(new CurrencyPrice(price, currency));
-                    }
-
-                    currencyPriceRoot.Add(storeAlias, storeItems);
-                }
-                else
-                {
-                    currencyPriceRoot.Add(storeAlias,
-                        new List<CurrencyPrice>()
-                        {
-                            new(price, currency)
-                        });
-                }
-
-                content.SetValue("price", JsonConvert.SerializeObject(currencyPriceRoot));
+                content.SetValue(propertyAlias, PriceHelper.SetPrice(fieldValue, price, currency, storeAlias));
 
                 return;
 
@@ -482,7 +451,7 @@ public static class ContentExtensions
                 currencyPriceRoot.Add(store.Alias, currencyPrices);
             }
 
-            content.SetValue("price", JsonConvert.SerializeObject(currencyPriceRoot));
+            content.SetValue(propertyAlias, JsonConvert.SerializeObject(currencyPriceRoot));
         }
 
     }
