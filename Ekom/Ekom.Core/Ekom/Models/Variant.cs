@@ -153,29 +153,48 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// Gets the productDiscount for the specific Variant
     /// </summary>
     public IProductDiscount? ProductDiscount(string price)
+        => ProductDiscount(price, CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias) ?? Store.Currency);
+
+    public IProductDiscount? ProductDiscount(string price, CurrencyModel currency)
     {
+        var product = Product;
+        var source = GetDiscountSource(currency, product);
         return Configuration.Resolver.GetService<ProductDiscountService>()?
             .GetProductDiscount(
-                Path,
+                source.Path,
                 Store.Alias,
                 price,
-                Product?.Categories.Select(x => x.Id.ToString()).ToArray()
+                product?.Categories.Select(x => x.Id.ToString()).ToArray(),
+                NativeDiscountPrice.Read(source, Store, currency)
             );
     }
 
     public virtual async Task<IProductDiscount?> ProductDiscountAsync(string price, CancellationToken ct = default)
+        => await ProductDiscountAsync(price, ct, CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias) ?? Store.Currency).ConfigureAwait(false);
+
+    public virtual async Task<IProductDiscount?> ProductDiscountAsync(string price, CancellationToken ct, CurrencyModel currency)
     {
         var discountService = Configuration.Resolver.GetService<ProductDiscountService>();
         if (discountService == null)
             return null;
 
+        var product = Product;
+        var source = GetDiscountSource(currency, product);
         return await discountService.GetProductDiscountAsync(
-            Path,
+            source.Path,
             Store.Alias,
             price,
-            Product?.Categories.Select(x => x.Id.ToString()).ToArray(),
-            ct: ct
+            product?.Categories.Select(x => x.Id.ToString()).ToArray(),
+            ct: ct,
+            discountPrice: NativeDiscountPrice.Read(source, Store, currency)
         ).ConfigureAwait(false);
+    }
+
+    private INodeEntity GetDiscountSource(CurrencyModel currency, IProduct? product)
+    {
+        var ownPrice = NativeDiscountPrice.Read(_priceValue, Store.Alias, currency.CurrencyValue,
+            (Store.Currencies.FirstOrDefault() ?? Store.Currency).CurrencyValue);
+        return (ownPrice == null || ownPrice == 0) && product != null ? product : this;
     }
 
     /// <summary>
@@ -208,7 +227,8 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         get
         {
-            string[] categories = Product?.Categories.Select(x => x.Id.ToString()).ToArray()
+            var product = Product;
+            string[] categories = product?.Categories.Select(x => x.Id.ToString()).ToArray()
                                     ?? Array.Empty<string>();
 
             string itemKey = Path;
@@ -216,8 +236,13 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
             string globalGen = PriceCache.GlobalGeneration;
             string productGen = PriceCache.GetItemGeneration(itemKey, Store.Alias);
 
+            var sale = NativeDiscountPrice.Raw(this);
+            var parentGen = product == null ? string.Empty : PriceCache.GetItemGeneration(product.Path, Store.Alias);
+            var parentPrice = product?.Properties.GetPropertyValue("price", Store.Alias) ?? string.Empty;
+            var parentSale = NativeDiscountPrice.Raw(product);
+
             string cacheKey =
-                $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}";
+                $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={Store.Currency.CurrencyValue}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}:sale={CacheHelpers.Sha256(sale)}:parent={parentGen}:parentPrice={CacheHelpers.Sha256(parentPrice)}:parentSale={CacheHelpers.Sha256(parentSale)}";
 
             return CacheHelpers.GetOrCreateSingleFlight(
                 cacheKey,
@@ -232,26 +257,26 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
                         Store.Currency,
                         Store.Alias,
                         Path,
-                        categories
+                        categories,
+                        sale
                     );
 
-                    // --- Repair any zero-priced entries using Product.Prices ---
-                    if (Product != null)
+                    // Missing and zero base prices inherit the parent's price and selected discount together.
+                    if (product != null)
                     {
-                        var fallbackPrices = Product.BuildPricesFromRaw(categories);
+                        var fallbackPrices = product.BuildPricesFromRaw(categories);
 
-                        foreach (IPrice? p in prices.Where(x => x.OriginalValue == 0).ToList())
+                        foreach (var fallback in fallbackPrices)
                         {
-                            var replacement = fallbackPrices
-                                .FirstOrDefault(x => x.Currency.CurrencyValue == p.Currency.CurrencyValue);
-
-                            if (replacement != null)
+                            int index = prices.FindIndex(x => string.Equals(
+                                x.Currency.CurrencyValue, fallback.Currency.CurrencyValue, StringComparison.OrdinalIgnoreCase));
+                            if (index < 0)
                             {
-                                int index = prices.IndexOf(p);
-                                if (index >= 0)
-                                {
-                                    prices[index] = replacement;
-                                }
+                                prices.Add(fallback);
+                            }
+                            else if (prices[index].OriginalValue == 0)
+                            {
+                                prices[index] = fallback;
                             }
                         }
                     }

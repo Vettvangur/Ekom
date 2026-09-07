@@ -18,33 +18,38 @@ class ProductDiscountService
         string path,
         string? storeAlias,
         string inputPrice,
-        string[]? categories = null)
+        string[]? categories = null,
+        decimal? discountPrice = null)
         => GetProductDiscountCoreAsync(
             path,
             storeAlias,
             inputPrice,
             categories,
-            CancellationToken.None).GetAwaiter().GetResult();
+            CancellationToken.None,
+            discountPrice).GetAwaiter().GetResult();
 
     public virtual Task<IProductDiscount?> GetProductDiscountAsync(
         string path,
         string? storeAlias,
         string inputPrice,
         string[]? categories = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        decimal? discountPrice = null)
         => GetProductDiscountCoreAsync(
             path,
             storeAlias,
             inputPrice,
             categories,
-            ct);
+            ct,
+            discountPrice);
 
     private async Task<IProductDiscount?> GetProductDiscountCoreAsync(
         string path,
         string? storeAlias,
         string inputPrice,
         string[]? categories = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        decimal? discountPrice = null)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -125,6 +130,11 @@ class ProductDiscountService
                 applicableDiscounts.Add(kvp.Value);
         }
 
+        if (discountPrice is > 0 && discountPrice.Value < price)
+        {
+            applicableDiscounts.Add(new NativePriceDiscount(price - discountPrice.Value));
+        }
+
         var applicableArgs = new DiscountEvents.ProductDiscountApplicableEventArgs(
             path,
             storeAlias,
@@ -141,6 +151,23 @@ class ProductDiscountService
             return null;
 
         return SelectBestDiscount(applicableArgs.ApplicableDiscounts, price);
+    }
+
+    private sealed class NativePriceDiscount : OrderedDiscount, IProductDiscount
+    {
+        // Reserved feature identity, independent of price, currency, or request context.
+        internal NativePriceDiscount(decimal saving)
+            : base(new Guid("7dd69e20-92a4-4aab-8c81-f66f935d679c"), "Sale price", false,
+                saving, DiscountType.Fixed, [], [],
+                new Constraints(), false, false)
+        {
+        }
+
+        public decimal StartOfRange => 0;
+        public decimal EndOfRange => 0;
+        public bool Disabled => false;
+
+        int IComparable<IDiscount>.CompareTo(IDiscount? other) => other == null ? 1 : base.CompareTo(other);
     }
 
     internal static IProductDiscount? SelectBestDiscount(

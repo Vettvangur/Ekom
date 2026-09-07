@@ -263,6 +263,29 @@ Keys are matched case-insensitively and `PricingContext` is never null (empty wh
 
 `StoreAlias` is supplied when product or variant pricing has a store context; it is null for legacy or cross-store cache operations.
 
+### Product discount prices
+
+Products and variants support an optional **Discount Price** property (`ekmDiscountPrice`), placed below Price and using the same **Ekom Price** datatype. It is a target selling price, not an amount off, and uses the same VAT basis as the normal price.
+
+Ekom converts a valid positive target below the normal price into a fixed-saving product discount. It competes with applicable `ekmProductDiscount` discounts and discounts added by `AfterApplicableDiscountsAsync`; product discounts do not stack. For example, a normal price of 100 and discount price of 85 loses to a 20% product discount, resulting in 80. Original prices and existing order/coupon stacking rules are preserved.
+
+- Missing, empty, zero, negative, invalid, or non-reducing values do not create a discount.
+- The native candidate is present before `AfterApplicableDiscountsAsync`, so existing customer-discount handlers need no changes and may filter it like other candidates.
+- Independently priced variants use their own discount price. A variant inheriting the parent price for a currency also inherits the parent's selected discount.
+- Existing installations receive the missing property during schema initialization. Existing property definitions are preserved; content is not populated or republished.
+
+ERP integrations can sync the property using the normal store/currency price format:
+
+```json
+{
+  "myStore": [
+    { "Currency": "en-US", "Price": 85 }
+  ]
+}
+```
+
+Use the store's configured currency identifiers. Targets in currency arrays require a matching currency; scalar targets apply only to the first configured store currency. Use the structured format for multicurrency integrations. Customer-specific event discounts still require appropriate price-cache partitioning, as described above.
+
 ### Tracking and consent
 
 Ekom tracking supports order-level `Consent` and `Tracking` data for automatic GA4 and Meta purchase dispatch.
