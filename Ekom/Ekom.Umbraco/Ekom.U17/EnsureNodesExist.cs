@@ -1729,6 +1729,8 @@ class EnsureNodesExist : IAsyncComponent
         }
 
         SaveContentType(contentType);
+    }
+
     private void EnsureDiscountPriceProperties()
     {
         foreach (var alias in new[] { "ekmProduct", "ekmProductVariant" })
