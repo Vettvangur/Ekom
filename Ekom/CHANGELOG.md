@@ -7,6 +7,13 @@
 * **discounts:** add native product and variant `ekmDiscountPrice` support using the Ekom Price datatype, competing with content and event-added discounts while preserving original prices.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
+## [0.2.270](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.269...Ekom-v0.2.270) (2026-09-08)
+
+
+### Features
+
+* **warehouse:** optimize stock cache and mutations ([#844](https://github.com/Vettvangur/Ekom/issues/844)) ([f4fc786](https://github.com/Vettvangur/Ekom/commit/f4fc78621c04714a24260e19cdc72aac15d55c98))
+
 ## [0.2.269](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.268...Ekom-v0.2.269) (2026-09-08)
 
 
