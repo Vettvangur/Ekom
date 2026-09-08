@@ -93,6 +93,37 @@ public class AlgoliaProductIndexMapperTests
         Assert.Equal(expected, record!.Available);
     }
 
+    [Fact]
+    public void Maps_Formatted_And_Original_Prices()
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct();
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal("100 kr.", record!.PriceFormatted);
+        Assert.Equal("100 kr.", record.PriceWithVatFormatted);
+        Assert.Equal("80 kr.", record.PriceWithoutVatFormatted);
+        Assert.True(record.Discounted);
+        Assert.Equal(125m, record.OriginalPrice);
+        Assert.Equal("125 kr.", record.OriginalPriceFormatted);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Maps_Discounted_From_The_Resolved_Price(bool hasDiscount)
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct(hasDiscount: hasDiscount);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(hasDiscount, record!.Discounted);
+    }
+
     [Theory]
     [InlineData("0", false)]
     [InlineData("1", true)]
@@ -334,6 +365,12 @@ public class AlgoliaProductIndexMapperTests
         Assert.Equal([categoryKey.ToString("D")], variantRecord.CategoryPageId);
         Assert.Equal("variant-sku", Assert.IsType<string>(variantRecord.Data["variantSku"]));
         Assert.Equal("Variant title", Assert.IsType<string>(variantRecord.Data["variantTitle"]));
+        Assert.Equal("10 kr.", variantRecord.PriceFormatted);
+        Assert.Equal("10 kr.", variantRecord.PriceWithVatFormatted);
+        Assert.Equal("8 kr.", variantRecord.PriceWithoutVatFormatted);
+        Assert.True(variantRecord.Discounted);
+        Assert.Equal(12m, variantRecord.OriginalPrice);
+        Assert.Equal("12 kr.", variantRecord.OriginalPriceFormatted);
     }
 
     [Fact]
@@ -796,12 +833,15 @@ public class AlgoliaProductIndexMapperTests
         string description = "Description",
         string url = "/product",
         bool available = true,
+        bool hasDiscount = true,
         IReadOnlyList<Ekom.Models.IVariant>? variants = null)
     {
         var price = new Mock<Ekom.Models.IPrice>();
         price.SetupGet(x => x.Value).Returns(100m);
-        price.SetupGet(x => x.WithVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 100m));
-        price.SetupGet(x => x.WithoutVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 80m));
+        price.SetupGet(x => x.WithVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 100m && p.CurrencyString == "100 kr."));
+        price.SetupGet(x => x.WithoutVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 80m && p.CurrencyString == "80 kr."));
+        price.SetupGet(x => x.BeforeDiscount).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 125m && p.CurrencyString == "125 kr."));
+        price.SetupGet(x => x.HasDiscount).Returns(hasDiscount);
         price.SetupGet(x => x.Currency).Returns(new Ekom.Models.CurrencyModel { CurrencyValue = "ISK", CurrencyFormat = "0" });
 
         var product = new Mock<Ekom.Models.IProduct>();
@@ -845,8 +885,10 @@ public class AlgoliaProductIndexMapperTests
     {
         var price = new Mock<Ekom.Models.IPrice>();
         price.SetupGet(x => x.Value).Returns(10m);
-        price.SetupGet(x => x.WithVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 10m));
-        price.SetupGet(x => x.WithoutVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 8m));
+        price.SetupGet(x => x.WithVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 10m && p.CurrencyString == "10 kr."));
+        price.SetupGet(x => x.WithoutVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 8m && p.CurrencyString == "8 kr."));
+        price.SetupGet(x => x.BeforeDiscount).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 12m && p.CurrencyString == "12 kr."));
+        price.SetupGet(x => x.HasDiscount).Returns(true);
         price.SetupGet(x => x.Currency).Returns(new Ekom.Models.CurrencyModel { CurrencyValue = "ISK", CurrencyFormat = "0" });
 
         var variant = new Mock<Ekom.Models.IVariant>();

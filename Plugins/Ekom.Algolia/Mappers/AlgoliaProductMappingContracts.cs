@@ -13,6 +13,11 @@ public interface IAlgoliaProductIndexMapper
     }
 }
 
+public interface IAlgoliaProductIndexFilter
+{
+    bool ShouldIndex(IProduct product, AlgoliaResolvedStore store);
+}
+
 public interface IAlgoliaProductEnricher
 {
     int Order { get; }

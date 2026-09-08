@@ -20,6 +20,7 @@ internal sealed class AlgoliaProductIndexExecutor
     private readonly IAlgoliaQuerySuggestionsConfigurator _querySuggestionsConfigurator;
     private readonly AlgoliaSearchCacheVersionProvider _searchCacheVersions;
     private readonly IAlgoliaProductIndexMapper _mapper;
+    private readonly IReadOnlyList<IAlgoliaProductIndexFilter> _filters;
     private readonly ILogger<AlgoliaProductIndexExecutor> _logger;
 
     public AlgoliaProductIndexExecutor(
@@ -31,6 +32,7 @@ internal sealed class AlgoliaProductIndexExecutor
         IAlgoliaQuerySuggestionsConfigurator querySuggestionsConfigurator,
         AlgoliaSearchCacheVersionProvider searchCacheVersions,
         IAlgoliaProductIndexMapper mapper,
+        IEnumerable<IAlgoliaProductIndexFilter>? filters,
         ILogger<AlgoliaProductIndexExecutor> logger)
     {
         _client = client;
@@ -41,6 +43,7 @@ internal sealed class AlgoliaProductIndexExecutor
         _querySuggestionsConfigurator = querySuggestionsConfigurator;
         _searchCacheVersions = searchCacheVersions;
         _mapper = mapper;
+        _filters = (filters ?? Array.Empty<IAlgoliaProductIndexFilter>()).ToList();
         _logger = logger;
     }
 
@@ -139,6 +142,12 @@ internal sealed class AlgoliaProductIndexExecutor
             foreach (var product in products)
             {
                 ct.ThrowIfCancellationRequested();
+                if (!ShouldIndex(product, target))
+                {
+                    skippedProducts++;
+                    continue;
+                }
+
                 var mappedRecords = _mapper.MapRecords(product, target, indexName);
                 if (mappedRecords.Count > 0)
                     records.AddRange(mappedRecords);
@@ -212,15 +221,25 @@ internal sealed class AlgoliaProductIndexExecutor
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
             await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
+            var indexedProductKeys = new List<Guid>(products.Count);
 
             var skippedProducts = 0;
 
-
             foreach (var product in products)
             {
+                ct.ThrowIfCancellationRequested();
+                if (!ShouldIndex(product, target))
+                {
+                    skippedProducts++;
+                    continue;
+                }
+
                 var mappedRecords = _mapper.MapRecords(product, target, indexName);
                 if (mappedRecords.Count > 0)
+                {
                     records.AddRange(mappedRecords);
+                    indexedProductKeys.Add(product.Key);
+                }
                 else
                     skippedProducts++;
             }
@@ -252,7 +271,7 @@ internal sealed class AlgoliaProductIndexExecutor
                 target.Currency);
 
             if (_options.Indexing.Variants)
-                await DeleteByProductIdsAsync(indexName, products.Select(x => x.Key), waitForTasks: true, ct).ConfigureAwait(false);
+                await DeleteByProductIdsAsync(indexName, indexedProductKeys, waitForTasks: true, ct).ConfigureAwait(false);
 
             await _client.SaveObjectsAsync(
                 indexName: indexName,
@@ -400,6 +419,15 @@ internal sealed class AlgoliaProductIndexExecutor
             || settings.IndexLanguages.Count > 0
             || settings.RemoveStopWords.HasValue
             || settings.IgnorePlurals.HasValue;
+
+    internal static bool ShouldIndex(
+        IProduct product,
+        AlgoliaResolvedStore store,
+        IEnumerable<IAlgoliaProductIndexFilter> filters)
+        => filters.All(filter => filter.ShouldIndex(product, store));
+
+    private bool ShouldIndex(IProduct product, AlgoliaResolvedStore store)
+        => ShouldIndex(product, store, _filters);
 
     private static List<SupportedLanguage>? ParseLanguages(
         IReadOnlyCollection<string> languages,

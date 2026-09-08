@@ -1,6 +1,9 @@
 using Algolia.Search.Models.Search;
 using Ekom.Algolia;
 using Ekom.Algolia.Indexing;
+using Ekom.Algolia.Mappers;
+using Ekom.Models;
+using Moq;
 using Xunit;
 
 namespace Ekom.Tests.Tests;
@@ -142,5 +145,54 @@ public class AlgoliaProductIndexExecutorTests
         };
 
         Assert.True(AlgoliaProductIndexExecutor.HasLanguageSettings(settings));
+    }
+
+    [Fact]
+    public void Indexes_Product_When_All_Filters_Accept_It()
+    {
+        var product = new Mock<IProduct>().Object;
+        var store = new AlgoliaResolvedStore { Alias = "Store" };
+        var filters = new IAlgoliaProductIndexFilter[]
+        {
+            new ProductIndexFilter(true),
+            new ProductIndexFilter(true),
+        };
+
+        var result = AlgoliaProductIndexExecutor.ShouldIndex(product, store, filters);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void Indexes_Product_When_No_Filters_Are_Registered()
+    {
+        var product = new Mock<IProduct>().Object;
+        var store = new AlgoliaResolvedStore { Alias = "Store" };
+
+        var result = AlgoliaProductIndexExecutor.ShouldIndex(product, store, []);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void Does_Not_Index_Product_When_A_Filter_Rejects_It()
+    {
+        var product = new Mock<IProduct>().Object;
+        var store = new AlgoliaResolvedStore { Alias = "Store" };
+        var filters = new IAlgoliaProductIndexFilter[]
+        {
+            new ProductIndexFilter(true),
+            new ProductIndexFilter(false),
+        };
+
+        var result = AlgoliaProductIndexExecutor.ShouldIndex(product, store, filters);
+
+        Assert.False(result);
+    }
+
+    private sealed class ProductIndexFilter(bool shouldIndex) : IAlgoliaProductIndexFilter
+    {
+        public bool ShouldIndex(IProduct product, AlgoliaResolvedStore store)
+            => shouldIndex;
     }
 }
