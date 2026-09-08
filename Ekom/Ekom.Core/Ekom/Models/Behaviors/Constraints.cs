@@ -142,6 +142,13 @@ public class Constraints : IConstraints
     /// <summary>
     /// ctor
     /// </summary>
+    internal Constraints()
+    {
+        _manualStartRanges = [];
+        _manualEndRanges = [];
+        CountriesInZone = Array.Empty<string>();
+    }
+
     public Constraints(INodeEntity node)
     {
         _node = node;

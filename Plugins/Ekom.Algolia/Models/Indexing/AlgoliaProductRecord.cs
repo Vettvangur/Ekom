@@ -55,6 +55,23 @@ public sealed class AlgoliaProductRecord
     public decimal? PriceWithoutVat { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PriceFormatted { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PriceWithVatFormatted { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PriceWithoutVatFormatted { get; init; }
+
+    public bool Discounted { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public decimal? OriginalPrice { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? OriginalPriceFormatted { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Currency { get; init; }
 
     [JsonConverter(typeof(AlgoliaInt32Converter))]

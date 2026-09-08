@@ -28,21 +28,34 @@ public class Product : PerStoreNodeEntity, IProduct
     private readonly ConcurrentDictionary<string, Lazy<object>> _cache = new();
 
     public virtual IDiscount? ProductDiscount(string? price = null)
+        => ProductDiscount(price, CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias) ?? Store.Currency);
+
+    public virtual IDiscount? ProductDiscount(string? price, CurrencyModel currency)
     {
-        price = string.IsNullOrEmpty(price) ? OriginalPrice.OriginalValue.ToString() : price;
+        price = string.IsNullOrEmpty(price)
+            ? (NativeDiscountPrice.Read(_priceValue, Store.Alias, currency.CurrencyValue,
+                (Store.Currencies.FirstOrDefault() ?? Store.Currency).CurrencyValue) ?? 0).ToString(CultureInfo.InvariantCulture)
+            : price;
 
         return Configuration.Resolver.GetService<ProductDiscountService>()?
             .GetProductDiscount(
                 Path,
                 Store.Alias,
                 price,
-                categories.Select(x => x.Id.ToString()).ToArray()
+                categories.Select(x => x.Id.ToString()).ToArray(),
+                NativeDiscountPrice.Read(this, Store, currency)
             );
     }
 
     public virtual async Task<IDiscount?> ProductDiscountAsync(string? price = null, CancellationToken ct = default)
+        => await ProductDiscountAsync(price, ct, CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias) ?? Store.Currency).ConfigureAwait(false);
+
+    public virtual async Task<IDiscount?> ProductDiscountAsync(string? price, CancellationToken ct, CurrencyModel currency)
     {
-        price = string.IsNullOrEmpty(price) ? OriginalPrice.OriginalValue.ToString() : price;
+        price = string.IsNullOrEmpty(price)
+            ? (NativeDiscountPrice.Read(_priceValue, Store.Alias, currency.CurrencyValue,
+                (Store.Currencies.FirstOrDefault() ?? Store.Currency).CurrencyValue) ?? 0).ToString(CultureInfo.InvariantCulture)
+            : price;
 
         var discountService = Configuration.Resolver.GetService<ProductDiscountService>();
         if (discountService == null)
@@ -53,7 +66,8 @@ public class Product : PerStoreNodeEntity, IProduct
             Store.Alias,
             price,
             categories.Select(x => x.Id.ToString()).ToArray(),
-            ct: ct
+            ct: ct,
+            discountPrice: NativeDiscountPrice.Read(this, Store, currency)
         ).ConfigureAwait(false);
     }
 
@@ -367,7 +381,8 @@ public class Product : PerStoreNodeEntity, IProduct
             string globalGen = PriceCache.GlobalGeneration;
             string productGen = PriceCache.GetItemGeneration(productKey, Store.Alias);
 
-            var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}";
+            var sale = NativeDiscountPrice.Raw(this);
+            var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={storeCurrency.CurrencyValue}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}:sale={CacheHelpers.Sha256(sale)}";
 
             return CacheHelpers.GetOrCreateSingleFlight(
                 key,
@@ -379,7 +394,8 @@ public class Product : PerStoreNodeEntity, IProduct
                     storeCurrency,
                     Store.Alias,
                     Path,
-                    categories),
+                    categories,
+                    sale),
                 TimeSpan.FromHours(48)
             );
         }
@@ -403,7 +419,8 @@ public class Product : PerStoreNodeEntity, IProduct
             Store.Currency,
             Store.Alias,
             Path,
-            categories
+            categories,
+            NativeDiscountPrice.Raw(this)
         );
     }
 
