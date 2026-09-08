@@ -1,4 +1,6 @@
 import { UmbChangeEvent } from '@umbraco-cms/backoffice/event';
+import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
+import { UMB_DOCUMENT_WORKSPACE_CONTEXT } from '@umbraco-cms/backoffice/document';
 import type {
   ManifestPropertyEditorUi,
   UmbPropertyEditorConfigCollection,
@@ -18,10 +20,6 @@ type EkomStore = {
   currencies?: EkomCurrency[];
 };
 
-type EkomConfig = {
-  perStoreStock?: boolean;
-};
-
 type EkomCurrency = {
   currencyValue?: string;
   currencySymbol?: string;
@@ -30,7 +28,7 @@ type EkomCurrency = {
 
 type LegacyPriceValue = Record<string, unknown>;
 
-export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEditorUiElement {
+export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) implements UmbPropertyEditorUiElement {
   manifest?: ManifestPropertyEditorUi;
   name?: string;
   dataSourceAlias?: string;
@@ -41,7 +39,8 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
   private editor?: HTMLDivElement;
   private status?: HTMLParagraphElement;
   private stores: EkomStore[] = [];
-  private showStoreFieldsets = true;
+  private documentId = '';
+  private requestId = 0;
   private rawValue: unknown;
   private internalValue: PriceValue = {};
 
@@ -51,7 +50,10 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
 
   set value(value: unknown) {
     this.rawValue = value;
-    this.internalValue = this.normalizeValue(value);
+    const normalizedValue = this.normalizeValue(value);
+    this.internalValue = this.stores.length > 0
+      ? this.ensurePriceStructure(normalizedValue)
+      : normalizedValue;
     this.syncInputs();
   }
 
@@ -65,25 +67,55 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
   }
 
   override connectedCallback(): void {
+    super.connectedCallback();
     this.renderShell();
+    this.setStatus('Loading prices...');
     void this.loadStores();
+
+    this.consumeContext(UMB_DOCUMENT_WORKSPACE_CONTEXT, context => {
+      if (context == null) {
+        return;
+      }
+
+      this.updateDocumentId(context.getUnique());
+
+      this.observe(context.unique, value => this.updateDocumentId(value), 'ekomPriceDocumentId');
+    });
+  }
+
+  override disconnectedCallback(): void {
+    this.requestId++;
+    super.disconnectedCallback();
   }
 
   private async loadStores(): Promise<void> {
+    const documentId = this.documentId || this.getDocumentIdFromUrl();
+    if (documentId.length === 0) {
+      this.setStatus('Save the document before editing prices.');
+      return;
+    }
+
+    const requestId = ++this.requestId;
     this.setStatus('Loading prices...');
 
     try {
-      const [config, stores] = await Promise.all([
-        this.fetchJson<EkomConfig>('/ekom/backoffice/Config'),
-        this.fetchJson<EkomStore[]>(`/ekom/backoffice/Stores/${this.getNodeId()}`),
-      ]);
+      const stores = await this.fetchJson<EkomStore[]>(`/ekom/backoffice/Stores/${encodeURIComponent(documentId)}`);
+      if (requestId !== this.requestId) {
+        return;
+      }
 
-      this.showStoreFieldsets = config.perStoreStock !== false;
       this.stores = stores;
-      this.internalValue = this.ensurePriceStructure(this.normalizeValue(this.rawValue));
+      const currentValue = Object.keys(this.internalValue).length > 0
+        ? this.internalValue
+        : this.normalizeValue(this.rawValue);
+      this.internalValue = this.ensurePriceStructure(currentValue);
       this.renderPrices();
       this.setStatus('');
     } catch (error) {
+      if (requestId !== this.requestId) {
+        return;
+      }
+
       const message = error instanceof Error ? error.message : 'Could not load prices.';
       this.setStatus(message, true);
     }
@@ -164,6 +196,7 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
     }
 
     const fragment = document.createDocumentFragment();
+    const showStoreGroups = this.stores.length > 1;
 
     for (const store of this.stores) {
       const storeAlias = store.alias;
@@ -172,11 +205,9 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
         continue;
       }
 
-      const container = this.showStoreFieldsets
-        ? document.createElement('fieldset')
-        : document.createDocumentFragment();
+      const container = document.createElement(showStoreGroups ? 'fieldset' : 'div');
 
-      if (container instanceof HTMLFieldSetElement) {
+      if (showStoreGroups) {
         const legend = document.createElement('legend');
         legend.textContent = storeAlias;
         container.append(legend);
@@ -253,6 +284,7 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
       ...this.internalValue,
       [storeAlias]: prices,
     };
+    this.rawValue = this.internalValue;
 
     this.emitChange();
   }
@@ -262,7 +294,10 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
   }
 
   private ensurePriceStructure(value: PriceValue): PriceValue {
-    const nextValue: PriceValue = {};
+    const nextValue: PriceValue = Object.fromEntries(Object.entries(value).map(([storeAlias, prices]) => [
+      storeAlias,
+      prices.map(price => ({ ...price })),
+    ]));
 
     for (const store of this.stores) {
       const storeAlias = store.alias;
@@ -271,7 +306,7 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
         continue;
       }
 
-      nextValue[storeAlias] = [];
+      const prices = nextValue[storeAlias] ?? [];
 
       for (const currency of store.currencies ?? []) {
         const currencyValue = currency.currencyValue;
@@ -280,11 +315,15 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
           continue;
         }
 
-        nextValue[storeAlias].push({
-          Currency: currencyValue,
-          Price: value[storeAlias]?.find(item => item.Currency === currencyValue)?.Price ?? 0,
-        });
+        if (!prices.some(item => item.Currency === currencyValue)) {
+          prices.push({
+            Currency: currencyValue,
+            Price: 0,
+          });
+        }
       }
+
+      nextValue[storeAlias] = prices;
     }
 
     return nextValue;
@@ -395,28 +434,31 @@ export class EkomPriceEditorElement extends HTMLElement implements UmbPropertyEd
     this.dispatchEvent(new UmbChangeEvent());
   }
 
-  private getNodeId(): number {
+  private updateDocumentId(value: string | null | undefined): void {
+    if (value == null || value === this.documentId) {
+      return;
+    }
+
+    this.documentId = value;
+    void this.loadStores();
+  }
+
+  private getDocumentIdFromUrl(): string {
     const url = new URL(window.location.href);
     const explicitId = url.searchParams.get('id');
 
-    if (explicitId != null) {
-      const parsed = Number.parseInt(explicitId, 10);
-
-      if (!Number.isNaN(parsed)) {
-        return parsed;
-      }
+    if (explicitId != null && (/^\d+$/.test(explicitId) || this.isGuid(explicitId))) {
+      return explicitId;
     }
 
-    const numericPathPart = url.pathname
+    return url.pathname
       .split('/')
       .reverse()
-      .find(part => /^\d+$/.test(part));
+      .find(part => /^\d+$/.test(part) || this.isGuid(part)) ?? '';
+  }
 
-    if (numericPathPart == null) {
-      return 0;
-    }
-
-    return Number.parseInt(numericPathPart, 10);
+  private isGuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   }
 
   private parsePrice(value: unknown): number {

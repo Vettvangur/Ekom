@@ -87,6 +87,7 @@ internal sealed class UmbracoEventListeners :
             }
 
             await UpdateStockAsync(content, cancellationToken).ConfigureAwait(false);
+            await UpdateWarehouseStockAsync(content, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -350,6 +351,51 @@ internal sealed class UmbracoEventListeners :
         catch (JsonException ex)
         {
             _logger.LogError(ex, "Could not map stock value to stock request on node {NodeId}. Value: {StockValue}", content.Id, stockValue);
+        }
+    }
+
+    private async Task UpdateWarehouseStockAsync(IContent content, CancellationToken cancellationToken)
+    {
+        string? warehouseStockValue = content.GetValue<string>("warehouseStock");
+        string? sku = content.GetValue<string>("sku")?.Trim();
+
+        if (string.IsNullOrWhiteSpace(warehouseStockValue) || string.IsNullOrWhiteSpace(sku))
+        {
+            return;
+        }
+
+        try
+        {
+            WarehouseStockEditorValue? value = JsonConvert.DeserializeObject<WarehouseStockEditorValue>(warehouseStockValue);
+            if (value == null
+                || string.IsNullOrWhiteSpace(value.Sku)
+                || !string.Equals(value.Sku.Trim(), sku, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            foreach (WarehouseStockEditorItem item in (value.Items ?? Array.Empty<WarehouseStockEditorItem>())
+                .Where(item => item?.Balance.HasValue == true))
+            {
+                await Warehouse.Instance.SetAsync(
+                    item.StoreAlias,
+                    item.WarehouseKey,
+                    sku,
+                    item.Balance!.Value,
+                    cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Could not map warehouse stock value on node {NodeId}. Value: {WarehouseStockValue}", content.Id, warehouseStockValue);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Could not update warehouse stock on node {NodeId}", content.Id);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Could not update warehouse stock on node {NodeId}", content.Id);
         }
     }
 

@@ -148,6 +148,28 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `OrderDiscountCalculation:ApiKey` (string, required to enable): `POST /ekom/order-discounts/calculate` requires this value in the `X-Ekom-Api-Key` header. When missing or empty, the endpoint always returns unauthorized.
 - `Payments` (object): Provider-specific configuration used by payment providers.
 
+### Warehouse stock
+
+Warehouse stock is display-only inventory for U17 and U18. It does not change sellable stock, availability, reservations, or checkout deductions. Define warehouses on each published `ekmStore` node using the **Ekom Warehouse Editor** datatype. Visibility controls storefront display only; hidden warehouses can still receive balance updates. Warehouse balances are scoped by store alias, warehouse key, and a trimmed, case-insensitive SKU.
+
+Products and individual variants expose **Warehouse Stock** directly below **Stock Buffer**. These balances are persisted when the document is saved, using the same content-saving event flow as ordinary stock. Save a SKU before editing warehouse balances.
+
+Use `Ekom.API.Warehouse` for storefront and integration access:
+
+```csharp
+var warehouses = await Warehouse.Instance.GetWarehousesAsync("Store", ct);
+var balances = await Warehouse.Instance.GetAsync("Store", ["SKU-1", "SKU-2"], ct);
+
+await Warehouse.Instance.SetAsync(
+    storeAlias: "Store",
+    warehouseKey: warehouseKey,
+    sku: "SKU-1",
+    balance: 8m,
+    ct: ct);
+```
+
+Warehouse balances can also be imported through `ImportProduct.WarehouseStock` and `ImportVariant.WarehouseStock`. Imported entries overwrite supplied balances; omitted entries are unchanged. Changing a SKU does not move balances to the new SKU.
+
 ### Catalog search overrides
 
 Ekom resolves catalog search through `ICatalogSearchService`. The default Umbraco implementation is `CatalogSearchService`, registered as scoped by `AddEkom(...)`.

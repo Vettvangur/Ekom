@@ -35,8 +35,10 @@ public class EkomBackofficeApiController : ControllerBase
     private readonly INodeService _nodeService;
     private readonly IMemoryCache _memoryCache;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IWarehouseDefinitionService _warehouseDefinitionService;
+    private readonly API.Warehouse _warehouse;
 
-    public EkomBackofficeApiController(Configuration config, IUmbracoService umbracoService, IMetafieldService metafieldService, INodeService nodeService, IMemoryCache memoryCache, IServiceProvider serviceProvider)
+    public EkomBackofficeApiController(Configuration config, IUmbracoService umbracoService, IMetafieldService metafieldService, INodeService nodeService, IMemoryCache memoryCache, IServiceProvider serviceProvider, IWarehouseDefinitionService warehouseDefinitionService, API.Warehouse warehouse)
     {
         _config = config;
         _umbracoService = umbracoService;
@@ -44,6 +46,8 @@ public class EkomBackofficeApiController : ControllerBase
         _nodeService = nodeService;
         _memoryCache = memoryCache;
         _serviceProvider = serviceProvider;
+        _warehouseDefinitionService = warehouseDefinitionService;
+        _warehouse = warehouse;
     }
 
 
@@ -141,7 +145,7 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpGet]
     [Route("Stores/{id}")]
     [UmbracoUserAuthorize]
-    public async Task<IEnumerable<IStore>> GetStores([FromRoute] int id)
+    public async Task<IEnumerable<IStore>> GetStores([FromRoute] string id)
     {
         var cacheKey = $"Stores_{id}";
 
@@ -172,16 +176,6 @@ public class EkomBackofficeApiController : ControllerBase
     }
 
     private IEnumerable<IStore> LoadStores(string id)
-    {
-        var allStores = API.Store.Instance.GetAllStores();
-        var node = _nodeService.NodeById(id, true);
-        if (node == null)
-            return allStores;
-
-        return FilterEnabledStores(node, allStores);
-    }
-
-    private IEnumerable<IStore> LoadStores(int id)
     {
         var allStores = API.Store.Instance.GetAllStores();
         var node = _nodeService.NodeById(id, true);
@@ -279,6 +273,47 @@ public class EkomBackofficeApiController : ControllerBase
     public decimal GetStock(Guid id)
     {
         return API.Stock.Instance.GetStock(id);
+    }
+
+    [HttpGet]
+    [Route("WarehouseStock/{id:guid}")]
+    [UmbracoUserAuthorize]
+    [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+    public async Task<WarehouseStockEditorValue> GetWarehouseStock(Guid id, CancellationToken cancellationToken)
+    {
+        var node = _nodeService.NodeById(id, true);
+        string sku = node?.GetValue("sku")?.Trim() ?? string.Empty;
+
+        if (node == null || string.IsNullOrWhiteSpace(sku))
+        {
+            return new WarehouseStockEditorValue { Sku = sku };
+        }
+
+        var items = new List<WarehouseStockEditorItem>();
+        foreach (var store in LoadStores(id.ToString()))
+        {
+            foreach (var warehouse in _warehouseDefinitionService.GetPublishedWarehouses(store.Alias))
+            {
+                WarehouseStockBalance? stock = await _warehouse
+                    .GetAsync(store.Alias, warehouse.Key, sku, cancellationToken);
+
+                items.Add(new WarehouseStockEditorItem
+                {
+                    StoreAlias = store.Alias,
+                    WarehouseKey = warehouse.Key,
+                    Code = warehouse.Code,
+                    Name = warehouse.Name,
+                    Visible = warehouse.Visible,
+                    Balance = stock?.Balance,
+                });
+            }
+        }
+
+        return new WarehouseStockEditorValue
+        {
+            Sku = sku,
+            Items = items,
+        };
     }
 
     /// <summary>

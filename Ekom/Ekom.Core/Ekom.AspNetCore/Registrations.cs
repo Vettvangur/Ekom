@@ -65,6 +65,7 @@ static class Registrations
         services.AddScoped<ApiExceptionFilter>();
 
         services.AddTransient<IStoreService, StoreService>();
+        services.AddTransient<IWarehouseDefinitionService, WarehouseDefinitionService>();
         services.AddSingleton<OrderDiscountCalculationContextAccessor>();
 
         services.AddTransient<OrderService>();
@@ -104,6 +105,7 @@ static class Registrations
         services.AddTransient<CountriesRepository>();
         services.AddTransient<StockRepository>();
         services.AddTransient<DiscountStockRepository>();
+        services.AddTransient<WarehouseStockRepository>();
 
         services.AddTransient<ManagerRepository>();
         services.AddTransient<OrderRepository>();
@@ -202,6 +204,12 @@ static class Registrations
                 f.GetService<DiscountStockRepository>(),
                 f.GetService<IStoreService>(),
                 f.GetService<IPerStoreCache<StockData>>()
+            )
+        );
+        services.AddTransient<Warehouse>(f =>
+            new Warehouse(
+                f.GetRequiredService<WarehouseStockRepository>(),
+                f.GetRequiredService<IWarehouseDefinitionService>()
             )
         );
         services.AddTransient<Ekom.API.Store>(f =>
