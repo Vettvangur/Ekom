@@ -302,6 +302,25 @@ Enable partial product-record updates when stock changes:
 
 Ekom updates `Available` only for stores with `Stores[*]:EnableAvailabilityUpdates` enabled, and only when effective sellable availability changes, including stock-buffer, backorder, and variant availability rules. For products with variants, the parent record becomes unavailable only when every variant is unavailable. If `Stores[*]:IncludeStock` is `true`, every stock change also partially updates `Stock`; indexed variant records additionally update `variantStock`. Existing records are updated only—stock changes never create incomplete Algolia records.
 
+### Filter indexed products
+
+Register an `IAlgoliaProductIndexFilter` in the consuming solution to decide which products are indexed. Filters run after Ekom retrieves a product and before it maps the product for each resolved store, locale, and currency target. All registered filters must return `true` for the product to be indexed. Register filters as singletons because the indexing executor is a singleton.
+
+```csharp
+using Ekom.Algolia.Mappers;
+using Ekom.Models;
+
+public sealed class HiddenProductAlgoliaFilter : IAlgoliaProductIndexFilter
+{
+    public bool ShouldIndex(IProduct product, AlgoliaResolvedStore store)
+        => product.Available;
+}
+
+services.AddSingleton<IAlgoliaProductIndexFilter, HiddenProductAlgoliaFilter>();
+```
+
+Filters apply to full rebuilds and incremental product indexing. When a filter excludes a product during an incremental update, Ekom leaves any existing Algolia record unchanged; it is removed on the next full rebuild.
+
 ### Indexing triggers and API keys
 
 Product and category indexing is triggered from Umbraco content notifications for `ekmProduct` and `ekmCategory`.
@@ -492,12 +511,14 @@ Product records provide the following fields without requiring any `Indexing:Pro
 - Identity: `objectID`, `Sku`, `ProductId`, and `IsVariant`.
 - Content: `NodeName`, `Title`, `Summary`, `Description`, and `Url`.
 - Images: `image_url` and `ImageUrls`.
-- Pricing: `Price`, `PriceWithVat`, `PriceWithoutVat`, and `Currency`.
+- Pricing: `Price`, `PriceWithVat`, `PriceWithoutVat`, `PriceFormatted`, `PriceWithVatFormatted`, `PriceWithoutVatFormatted`, `Discounted`, `OriginalPrice`, `OriginalPriceFormatted`, and `Currency`.
 - Availability and ranking: `Available`, `ProductRanking`, and `CategoryRanking`.
 - Store context and dates: `StoreAlias`, `Locale`, `CreatedAt`, and `UpdatedAt`.
 - Categories: `categoryPageId`, `hierarchical_categories.lvl0`, additional hierarchy levels when present, and `category_paths`.
 
 Optional fields are omitted when no value is available. `Stock` is included only when `Stores[*]:IncludeStock` is enabled. Variant-specific fields are included when variant indexing is enabled, as described below.
+
+`PriceFormatted` and `PriceWithVatFormatted` use Ekom's currency formatting for the VAT-inclusive indexed price. `PriceWithoutVatFormatted` formats the VAT-exclusive indexed price. `Discounted` is `true` when Ekom has a discount configured for the resolved price. `OriginalPrice` and `OriginalPriceFormatted` represent the resolved price before discount using the store's configured display VAT basis.
 
 `Title` is a required top-level field. `NodeName` contains the Umbraco node name.
 
