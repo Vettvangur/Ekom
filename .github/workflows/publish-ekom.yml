@@ -38,36 +38,48 @@ jobs:
       - name: Restore U10 packages
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
           dotnet restore "Ekom/Ekom.Umbraco/Ekom.U10/Ekom.U10.csproj" -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
           dotnet restore "Ekom/Ekom.Web/Ekom.Web/Ekom.Web.csproj" -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
 
       - name: Build U10 packages (Release)
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
           dotnet build "Ekom/Ekom.Umbraco/Ekom.U10/Ekom.U10.csproj" -c Release --no-restore -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
           dotnet build "Ekom/Ekom.Web/Ekom.Web/Ekom.Web.csproj" -c Release --no-restore -p:TargetFramework=net8.0 -p:TargetFrameworks=net8.0
 
       - name: Restore U17 packages
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
           dotnet restore "Ekom/Ekom.Umbraco/Ekom.U17/Ekom.U17.csproj" -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
           dotnet restore "Ekom/Ekom.Web/Ekom.Web.U17/Ekom.Web.U17.csproj" -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
 
       - name: Build U17 packages (Release)
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
           dotnet build "Ekom/Ekom.Umbraco/Ekom.U17/Ekom.U17.csproj" -c Release --no-restore -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
           dotnet build "Ekom/Ekom.Web/Ekom.Web.U17/Ekom.Web.U17.csproj" -c Release --no-restore -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
 
       - name: Restore U18 packages
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
           dotnet restore "Ekom/Ekom.Umbraco/Ekom.U18/Ekom.U18.csproj" -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
           dotnet restore "Ekom/Ekom.Web/Ekom.Web.U18/Ekom.Web.U18.csproj" -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
 
       - name: Build U18 packages (Release)
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
           dotnet build "Ekom/Ekom.Umbraco/Ekom.U18/Ekom.U18.csproj" -c Release --no-restore -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
           dotnet build "Ekom/Ekom.Web/Ekom.Web.U18/Ekom.Web.U18.csproj" -c Release --no-restore -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
 
@@ -75,6 +87,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
 
           function Get-SemVerFromTag([string] $tag) {
             if ($tag -match 'v(?<ver>\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?)$') { return $Matches['ver'] }
@@ -108,6 +121,24 @@ jobs:
           dotnet restore "Ekom/Ekom.Web/Ekom.Web.U18/Ekom.Web.U18.csproj" -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
           dotnet pack "Ekom/Ekom.Umbraco/Ekom.U18/Ekom.U18.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
           dotnet pack "Ekom/Ekom.Web/Ekom.Web.U18/Ekom.Web.U18.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
+
+          $expectedPackages = @(
+            "Ekom.Common.$version.nupkg"
+            "Ekom.Core.$version.nupkg"
+            "Ekom.AspNetCore.$version.nupkg"
+            "Ekom.U10.$version.nupkg"
+            "Ekom.Web.$version.nupkg"
+            "Ekom.U17.$version.nupkg"
+            "Ekom.Web.U17.$version.nupkg"
+            "Ekom.U18.$version.nupkg"
+            "Ekom.Web.U18.$version.nupkg"
+          )
+          $missingPackages = $expectedPackages | Where-Object {
+            -not (Test-Path (Join-Path "artifacts" $_) -PathType Leaf)
+          }
+          if ($missingPackages) {
+            throw "Missing expected packages: $($missingPackages -join ', ')"
+          }
 
           Get-ChildItem -Path artifacts -Filter *.nupkg -File | Format-Table Name,Length
 
