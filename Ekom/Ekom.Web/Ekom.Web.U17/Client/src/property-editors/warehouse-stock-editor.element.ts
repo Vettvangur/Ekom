@@ -17,6 +17,7 @@ type WarehouseStockItem = {
   name: string;
   visible: boolean;
   balance: number | null;
+  isDirty: boolean;
 };
 
 export class EkomWarehouseStockEditorElement extends HTMLElement implements UmbPropertyEditorUiElement {
@@ -62,7 +63,8 @@ export class EkomWarehouseStockEditorElement extends HTMLElement implements UmbP
     this.setStatus('Loading warehouse stock...');
 
     try {
-      this.warehouseStock = await this.fetchJson<WarehouseStockValue>(`/ekom/backoffice/WarehouseStock/${contentKey}`);
+      const loadedStock = await this.fetchJson<WarehouseStockValue>(`/ekom/backoffice/WarehouseStock/${contentKey}`);
+      this.warehouseStock = this.mergePendingChanges(loadedStock, this.warehouseStock);
       this.renderStock();
 
       if (this.warehouseStock.sku.length === 0) {
@@ -164,20 +166,27 @@ export class EkomWarehouseStockEditorElement extends HTMLElement implements UmbP
     input.dataset.store = item.storeAlias;
     input.dataset.warehouse = item.warehouseKey;
     input.value = item.balance == null ? '' : String(item.balance);
-    input.addEventListener('input', () => this.setBalance(item.storeAlias, item.warehouseKey, input.value));
+    input.addEventListener('input', () => this.setBalance(item.storeAlias, item.warehouseKey, input));
 
     row.append(code, name, input);
     return row;
   }
 
-  private setBalance(storeAlias: string, warehouseKey: string, rawValue: string): void {
+  private setBalance(storeAlias: string, warehouseKey: string, input: HTMLInputElement): void {
+    const rawValue = input.value;
     const parsed = rawValue === '' ? null : Number(rawValue);
-    const balance = parsed == null || (Number.isFinite(parsed) && parsed >= 0) ? parsed : null;
+    if (parsed != null && (!Number.isFinite(parsed) || parsed < 0)) {
+      input.setCustomValidity('Balance must be a non-negative number.');
+      return;
+    }
+
+    input.setCustomValidity('');
+    const balance = parsed;
 
     this.warehouseStock = {
       ...this.warehouseStock,
       items: this.warehouseStock.items.map(item => item.storeAlias === storeAlias && item.warehouseKey === warehouseKey
-        ? { ...item, balance }
+        ? { ...item, balance, isDirty: true }
         : item),
     };
     this.dispatchEvent(new UmbChangeEvent());
@@ -192,8 +201,34 @@ export class EkomWarehouseStockEditorElement extends HTMLElement implements UmbP
     const stock = parsed as Partial<WarehouseStockValue>;
     return {
       sku: typeof stock.sku === 'string' ? stock.sku : '',
-      items: Array.isArray(stock.items) ? stock.items : [],
+      items: Array.isArray(stock.items)
+        ? stock.items
+          .filter(item => item != null && typeof item === 'object')
+          .map(item => ({ ...item, isDirty: item.isDirty === true }))
+        : [],
     };
+  }
+
+  private mergePendingChanges(loaded: WarehouseStockValue, current: WarehouseStockValue): WarehouseStockValue {
+    const pending = current.items.filter(item => item.isDirty);
+    const loadedIdentities = new Set(loaded.items.map(item => this.getIdentity(item)));
+
+    return {
+      ...loaded,
+      items: [
+        ...loaded.items.map(item => {
+          const pendingItem = pending.find(candidate => this.getIdentity(candidate) === this.getIdentity(item));
+          return pendingItem == null
+            ? { ...item, isDirty: false }
+            : { ...item, balance: pendingItem.balance, isDirty: true };
+        }),
+        ...pending.filter(item => !loadedIdentities.has(this.getIdentity(item))),
+      ],
+    };
+  }
+
+  private getIdentity(item: WarehouseStockItem): string {
+    return `${item.storeAlias.trim().toUpperCase()}|${item.warehouseKey.toUpperCase()}`;
   }
 
   private syncInputs(): void {

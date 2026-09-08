@@ -56,6 +56,7 @@ static class Registrations
         services.AddSingleton<IPerStoreCache<IShippingProvider>, ShippingProviderCache>();
         services.AddSingleton<IBaseCache<StockData>, StockCache>();
         services.AddSingleton<IPerStoreCache<StockData>, StockPerStoreCache>();
+        services.AddSingleton<WarehouseStockCache>();
 
         // The following database based caches are not strictly related to the preceding ones
         services.AddSingleton<ICouponCache, CouponCache>();
@@ -106,6 +107,7 @@ static class Registrations
         services.AddTransient<StockRepository>();
         services.AddTransient<DiscountStockRepository>();
         services.AddTransient<WarehouseStockRepository>();
+        services.AddTransient<IWarehouseStockRepository>(sp => sp.GetRequiredService<WarehouseStockRepository>());
 
         services.AddTransient<ManagerRepository>();
         services.AddTransient<OrderRepository>();
@@ -208,8 +210,9 @@ static class Registrations
         );
         services.AddTransient<Warehouse>(f =>
             new Warehouse(
-                f.GetRequiredService<WarehouseStockRepository>(),
-                f.GetRequiredService<IWarehouseDefinitionService>()
+                f.GetRequiredService<IWarehouseStockRepository>(),
+                f.GetRequiredService<IWarehouseDefinitionService>(),
+                f.GetRequiredService<WarehouseStockCache>()
             )
         );
         services.AddTransient<Ekom.API.Store>(f =>

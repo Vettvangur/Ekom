@@ -8,6 +8,7 @@ using Ekom.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
@@ -374,16 +375,71 @@ internal sealed class UmbracoEventListeners :
                 return;
             }
 
-            foreach (WarehouseStockEditorItem item in (value.Items ?? Array.Empty<WarehouseStockEditorItem>())
-                .Where(item => item?.Balance.HasValue == true))
+            IReadOnlyList<WarehouseStockEditorItem> items = (value.Items ?? Array.Empty<WarehouseStockEditorItem>())
+                .OfType<WarehouseStockEditorItem>()
+                .ToList();
+            List<WarehouseStockEditorItem> dirtyItems = items
+                .Where(item => item?.IsDirty == true)
+                .ToList();
+
+            if (dirtyItems.Count == 0)
             {
-                await Warehouse.Instance.SetAsync(
-                    item.StoreAlias,
-                    item.WarehouseKey,
-                    sku,
-                    item.Balance!.Value,
-                    cancellationToken).ConfigureAwait(false);
+                return;
             }
+
+            WarehouseStockBatchResult result = await Warehouse.Instance.UpdateAsync(
+                dirtyItems.Select(item => new WarehouseStockMutationRequest
+                {
+                    StoreAlias = item.StoreAlias,
+                    WarehouseKey = item.WarehouseKey,
+                    Sku = sku,
+                    Operation = item.Balance.HasValue
+                        ? WarehouseStockMutationOperation.Set
+                        : WarehouseStockMutationOperation.Clear,
+                    Balance = item.Balance,
+                }),
+                cancellationToken).ConfigureAwait(false);
+
+            foreach (WarehouseStockMutationResult failure in result.Entries
+                .Where(entry => entry.Status == WarehouseStockMutationStatus.Failed))
+            {
+                _logger.LogWarning(
+                    "Could not update warehouse stock on node {NodeId} for store {StoreAlias}, warehouse {WarehouseKey}, SKU {Sku}: {Error}",
+                    content.Id,
+                    failure.StoreAlias,
+                    failure.WarehouseKey,
+                    failure.Sku,
+                    failure.Error);
+            }
+
+            int mutationIndex = 0;
+            IReadOnlyList<WarehouseStockEditorItem> cleanItems = items.Select(item =>
+            {
+                bool isDirty = item.IsDirty
+                    && result.Entries[mutationIndex++].Status == WarehouseStockMutationStatus.Failed;
+
+                return new WarehouseStockEditorItem
+                {
+                    StoreAlias = item.StoreAlias,
+                    WarehouseKey = item.WarehouseKey,
+                    Code = item.Code,
+                    Name = item.Name,
+                    Visible = item.Visible,
+                    Balance = item.Balance,
+                    IsDirty = isDirty,
+                };
+            }).ToList();
+
+            content.SetValue("warehouseStock", JsonConvert.SerializeObject(
+                new WarehouseStockEditorValue
+                {
+                    Sku = value.Sku,
+                    Items = cleanItems,
+                },
+                new JsonSerializerSettings
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                }));
         }
         catch (JsonException ex)
         {

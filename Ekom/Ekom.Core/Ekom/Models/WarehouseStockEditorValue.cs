@@ -14,4 +14,5 @@ public sealed class WarehouseStockEditorItem
     public string Name { get; init; } = string.Empty;
     public bool Visible { get; init; }
     public decimal? Balance { get; init; }
+    public bool IsDirty { get; init; }
 }

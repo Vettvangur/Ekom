@@ -47,6 +47,7 @@ internal sealed class EkomCacheInitializer
                     : _factory.GetService<IBaseCache<StockData>>() as ICache;
 
                 stockCache?.FillCache();
+                _factory.GetRequiredService<WarehouseStockCache>().FillCache();
                 _factory.GetService<ICouponCache>()?.FillCache();
             }
             catch (Exception ex)

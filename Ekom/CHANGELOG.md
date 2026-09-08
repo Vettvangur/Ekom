@@ -5,6 +5,7 @@
 ### Features
 
 * **discounts:** add native product and variant `ekmDiscountPrice` support using the Ekom Price datatype, competing with content and event-added discounts while preserving original prices.
+* **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
 ## [0.2.269](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.268...Ekom-v0.2.269) (2026-09-08)
 
