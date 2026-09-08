@@ -1306,18 +1306,26 @@ public class ImportService : IImportService
             return;
         }
 
-        foreach (var warehouseStockByWarehouse in warehouseStock.GroupBy(stock => new { stock.StoreAlias, stock.WarehouseKey }))
+        WarehouseStockBatchResult result = _warehouse.UpdateAsync(warehouseStock
+                .Select(stock => new WarehouseStockMutationRequest
+                {
+                    StoreAlias = stock.StoreAlias,
+                    WarehouseKey = stock.WarehouseKey,
+                    Sku = sku,
+                    Operation = stock.Clear
+                        ? WarehouseStockMutationOperation.Clear
+                        : WarehouseStockMutationOperation.Set,
+                    Balance = stock.Clear ? null : stock.Balance,
+                }))
+            .GetAwaiter()
+            .GetResult();
+
+        if (result.Failed > 0)
         {
-            _warehouse.SetAsync(
-                    warehouseStockByWarehouse.Key.StoreAlias,
-                    warehouseStockByWarehouse.Key.WarehouseKey,
-                    warehouseStockByWarehouse.Select(stock => new WarehouseStockBalanceRequest
-                    {
-                        Sku = sku,
-                        Balance = stock.Balance,
-                    }))
-                .GetAwaiter()
-                .GetResult();
+            string errors = string.Join("; ", result.Entries
+                .Where(entry => entry.Status == WarehouseStockMutationStatus.Failed)
+                .Select(entry => $"{entry.StoreAlias}/{entry.WarehouseKey}/{entry.Sku}: {entry.Error}"));
+            throw new InvalidOperationException($"One or more warehouse stock imports failed: {errors}");
         }
     }
 

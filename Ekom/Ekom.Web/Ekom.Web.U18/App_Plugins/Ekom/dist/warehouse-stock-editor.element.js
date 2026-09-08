@@ -1,17 +1,17 @@
 var l = Object.defineProperty;
-var h = (u, i, e) => i in u ? l(u, i, { enumerable: !0, configurable: !0, writable: !0, value: e }) : u[i] = e;
-var n = (u, i, e) => h(u, typeof i != "symbol" ? i + "" : i, e);
+var h = (d, n, e) => n in d ? l(d, n, { enumerable: !0, configurable: !0, writable: !0, value: e }) : d[n] = e;
+var u = (d, n, e) => h(d, typeof n != "symbol" ? n + "" : n, e);
 import { UmbChangeEvent as p } from "@umbraco-cms/backoffice/event";
-class f extends HTMLElement {
+class m extends HTMLElement {
   constructor() {
     super(...arguments);
-    n(this, "manifest");
-    n(this, "name");
-    n(this, "dataSourceAlias");
-    n(this, "config");
-    n(this, "editor");
-    n(this, "status");
-    n(this, "warehouseStock", { sku: "", items: [] });
+    u(this, "manifest");
+    u(this, "name");
+    u(this, "dataSourceAlias");
+    u(this, "config");
+    u(this, "editor");
+    u(this, "status");
+    u(this, "warehouseStock", { sku: "", items: [] });
   }
   get value() {
     return this.warehouseStock;
@@ -36,10 +36,11 @@ class f extends HTMLElement {
     }
     this.setStatus("Loading warehouse stock...");
     try {
-      this.warehouseStock = await this.fetchJson(`/ekom/backoffice/WarehouseStock/${e}`), this.renderStock(), this.warehouseStock.sku.length === 0 ? this.setStatus("Save a SKU before editing warehouse stock.") : this.warehouseStock.items.length === 0 ? this.setStatus("No warehouses are configured for this product or variant.") : this.setStatus("");
+      const t = await this.fetchJson(`/ekom/backoffice/WarehouseStock/${e}`);
+      this.warehouseStock = this.mergePendingChanges(t, this.warehouseStock), this.renderStock(), this.warehouseStock.sku.length === 0 ? this.setStatus("Save a SKU before editing warehouse stock.") : this.warehouseStock.items.length === 0 ? this.setStatus("No warehouses are configured for this product or variant.") : this.setStatus("");
     } catch (t) {
-      const s = t instanceof Error ? t.message : "Could not load warehouse stock.";
-      this.setStatus(s, !0);
+      const r = t instanceof Error ? t.message : "Could not load warehouse stock.";
+      this.setStatus(r, !0);
     }
   }
   renderShell() {
@@ -70,19 +71,19 @@ class f extends HTMLElement {
   renderStock() {
     if (this.editor == null)
       return;
-    const e = document.createDocumentFragment(), t = [...new Set(this.warehouseStock.items.map((s) => s.storeAlias))];
-    for (const s of t) {
-      const a = document.createElement("fieldset"), r = document.createElement("legend");
-      r.textContent = s;
+    const e = document.createDocumentFragment(), t = [...new Set(this.warehouseStock.items.map((r) => r.storeAlias))];
+    for (const r of t) {
+      const a = document.createElement("fieldset"), s = document.createElement("legend");
+      s.textContent = r;
       const o = document.createElement("div");
       o.className = "header";
-      for (const d of ["Code", "Warehouse", "Balance"]) {
+      for (const i of ["Code", "Warehouse", "Balance"]) {
         const c = document.createElement("div");
-        c.textContent = d, o.append(c);
+        c.textContent = i, o.append(c);
       }
-      a.append(r, o);
-      for (const d of this.warehouseStock.items.filter((c) => c.storeAlias === s))
-        a.append(this.createRow(d));
+      a.append(s, o);
+      for (const i of this.warehouseStock.items.filter((c) => c.storeAlias === r))
+        a.append(this.createRow(i));
       e.append(a);
     }
     this.editor.replaceChildren(e), this.syncDisabledState();
@@ -90,36 +91,58 @@ class f extends HTMLElement {
   createRow(e) {
     const t = document.createElement("div");
     t.className = "row";
-    const s = document.createElement("div");
-    s.textContent = e.code;
+    const r = document.createElement("div");
+    r.textContent = e.code;
     const a = document.createElement("div");
     if (a.textContent = e.name, !e.visible) {
       const o = document.createElement("span");
       o.className = "hidden", o.textContent = " (Hidden)", a.append(o);
     }
-    const r = document.createElement("input");
-    return r.type = "number", r.min = "0", r.step = "any", r.placeholder = "Not set", r.dataset.store = e.storeAlias, r.dataset.warehouse = e.warehouseKey, r.value = e.balance == null ? "" : String(e.balance), r.addEventListener("input", () => this.setBalance(e.storeAlias, e.warehouseKey, r.value)), t.append(s, a, r), t;
+    const s = document.createElement("input");
+    return s.type = "number", s.min = "0", s.step = "any", s.placeholder = "Not set", s.dataset.store = e.storeAlias, s.dataset.warehouse = e.warehouseKey, s.value = e.balance == null ? "" : String(e.balance), s.addEventListener("input", () => this.setBalance(e.storeAlias, e.warehouseKey, s)), t.append(r, a, s), t;
   }
-  setBalance(e, t, s) {
-    const a = s === "" ? null : Number(s), r = a == null || Number.isFinite(a) && a >= 0 ? a : null;
+  setBalance(e, t, r) {
+    const a = r.value, s = a === "" ? null : Number(a);
+    if (s != null && (!Number.isFinite(s) || s < 0)) {
+      r.setCustomValidity("Balance must be a non-negative number.");
+      return;
+    }
+    r.setCustomValidity("");
+    const o = s;
     this.warehouseStock = {
       ...this.warehouseStock,
-      items: this.warehouseStock.items.map((o) => o.storeAlias === e && o.warehouseKey === t ? { ...o, balance: r } : o)
+      items: this.warehouseStock.items.map((i) => i.storeAlias === e && i.warehouseKey === t ? { ...i, balance: o, isDirty: !0 } : i)
     }, this.dispatchEvent(new p());
   }
   normalizeValue(e) {
     const t = typeof e == "string" ? this.tryParseJson(e) : e;
     if (t == null || typeof t != "object" || Array.isArray(t))
       return { sku: "", items: [] };
-    const s = t;
+    const r = t;
     return {
-      sku: typeof s.sku == "string" ? s.sku : "",
-      items: Array.isArray(s.items) ? s.items : []
+      sku: typeof r.sku == "string" ? r.sku : "",
+      items: Array.isArray(r.items) ? r.items.filter((a) => a != null && typeof a == "object").map((a) => ({ ...a, isDirty: a.isDirty === !0 })) : []
     };
+  }
+  mergePendingChanges(e, t) {
+    const r = t.items.filter((s) => s.isDirty), a = new Set(e.items.map((s) => this.getIdentity(s)));
+    return {
+      ...e,
+      items: [
+        ...e.items.map((s) => {
+          const o = r.find((i) => this.getIdentity(i) === this.getIdentity(s));
+          return o == null ? { ...s, isDirty: !1 } : { ...s, balance: o.balance, isDirty: !0 };
+        }),
+        ...r.filter((s) => !a.has(this.getIdentity(s)))
+      ]
+    };
+  }
+  getIdentity(e) {
+    return `${e.storeAlias.trim().toUpperCase()}|${e.warehouseKey.toUpperCase()}`;
   }
   syncInputs() {
     for (const e of this.querySelectorAll("input[data-warehouse]")) {
-      const t = this.warehouseStock.items.find((s) => s.storeAlias === e.dataset.store && s.warehouseKey === e.dataset.warehouse);
+      const t = this.warehouseStock.items.find((r) => r.storeAlias === e.dataset.store && r.warehouseKey === e.dataset.warehouse);
       e.value = (t == null ? void 0 : t.balance) == null ? "" : String(t.balance);
     }
   }
@@ -150,8 +173,8 @@ class f extends HTMLElement {
     return await t.json();
   }
 }
-customElements.define("ekom-warehouse-stock-editor", f);
+customElements.define("ekom-warehouse-stock-editor", m);
 export {
-  f as EkomWarehouseStockEditorElement,
-  f as default
+  m as EkomWarehouseStockEditorElement,
+  m as default
 };

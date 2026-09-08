@@ -19,7 +19,8 @@ public class WarehouseStockEditorValueTests
                   "code": "MAIN",
                   "name": "Main warehouse",
                   "visible": true,
-                  "balance": 0
+                  "balance": 0,
+                  "isDirty": true
                 },
                 {
                   "storeAlias": "default",
@@ -38,6 +39,8 @@ public class WarehouseStockEditorValueTests
         Assert.NotNull(value);
         Assert.Equal("ABC-123", value.Sku);
         Assert.Equal(0m, value.Items[0].Balance);
+        Assert.True(value.Items[0].IsDirty);
         Assert.Null(value.Items[1].Balance);
+        Assert.False(value.Items[1].IsDirty);
     }
 }

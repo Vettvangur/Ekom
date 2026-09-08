@@ -7,5 +7,6 @@ public class ImportWarehouseStock
 {
     public required string StoreAlias { get; set; }
     public required Guid WarehouseKey { get; set; }
-    public required decimal Balance { get; set; }
+    public decimal Balance { get; set; }
+    public bool Clear { get; set; }
 }
