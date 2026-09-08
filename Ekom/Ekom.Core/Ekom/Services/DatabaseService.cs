@@ -30,6 +30,8 @@ internal class DatabaseService
                 db.CreateTable<StockData>(tableOptions: TableOptions.CreateIfNotExists);
             }
 
+            EnsureWarehouseStockTable(db, dbSchema);
+
             if (!dbSchema.Tables.Any(x => x.TableName == "EkomOrdersActivityLog"))
             {
                 db.CreateTable<OrderActivityLog>(tableOptions: TableOptions.CreateIfNotExists);
@@ -66,6 +68,25 @@ internal class DatabaseService
             _logger.LogError(ex, "Failed to create tables");
         }
 
+    }
+
+    internal virtual void EnsureWarehouseStockTable()
+    {
+        using Repositories.DbContext db = _databaseFactory.GetDatabase();
+        LinqToDB.SchemaProvider.ISchemaProvider sp = db.DataProvider.GetSchemaProvider();
+        LinqToDB.SchemaProvider.DatabaseSchema dbSchema = sp.GetSchema(db);
+
+        EnsureWarehouseStockTable(db, dbSchema);
+    }
+
+    private static void EnsureWarehouseStockTable(
+        Repositories.DbContext db,
+        LinqToDB.SchemaProvider.DatabaseSchema dbSchema)
+    {
+        if (!dbSchema.Tables.Any(x => x.TableName == "EkomWarehouseStock"))
+        {
+            db.CreateTable<WarehouseStockData>(tableOptions: TableOptions.CreateIfNotExists);
+        }
     }
 
     internal virtual void EnsureOrderActivityLogTypeColumn()

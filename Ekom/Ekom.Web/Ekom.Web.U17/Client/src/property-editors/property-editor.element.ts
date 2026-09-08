@@ -1,4 +1,5 @@
 import { UmbChangeEvent } from '@umbraco-cms/backoffice/event';
+import { UMB_DOCUMENT_WORKSPACE_CONTEXT } from '@umbraco-cms/backoffice/document';
 import { createExtensionElement } from '@umbraco-cms/backoffice/extension-api';
 import { umbExtensionsRegistry } from '@umbraco-cms/backoffice/extension-registry';
 import { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
@@ -82,6 +83,8 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
   private wrappedDataType?: EkomDataType;
   private tabs: EkomTab[] = [];
   private currentTab?: EkomTab;
+  private documentId = '';
+  private loadRequestId = 0;
   private loading = true;
   private failed = false;
   private errorMessage = '';
@@ -128,6 +131,15 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
   override connectedCallback(): void {
     super.connectedCallback();
 
+    this.consumeContext(UMB_DOCUMENT_WORKSPACE_CONTEXT, context => {
+      if (context == null) {
+        return;
+      }
+
+      this.updateDocumentId(context.getUnique());
+      this.observe(context.unique, value => this.updateDocumentId(value), 'ekomPropertyDocumentId');
+    });
+
     this.consumeContext(UMB_PROPERTY_CONTEXT, context => {
       if (context == null) {
         return;
@@ -135,7 +147,14 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
 
       this.propertyContext = context as UmbPropertyContext<EkomPropertyValue>;
       this.observe(context.alias, alias => {
-        this.propertyAlias = alias ?? '';
+        const nextAlias = alias ?? '';
+
+        if (nextAlias === this.propertyAlias) {
+          return;
+        }
+
+        this.propertyAlias = nextAlias;
+        void this.load();
       }, 'ekomPropertyAlias');
     });
 
@@ -165,6 +184,7 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
       return;
     }
 
+    const requestId = ++this.loadRequestId;
     this.setLoading();
 
     try {
@@ -175,15 +195,20 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
         throw new Error('No wrapped data type has been configured for this Ekom property.');
       }
 
-      this.wrappedDataType = await this.fetchJson<EkomDataType>(`/ekom/backoffice/DataType/${wrappedGuid}`);
+      const wrappedDataType = await this.fetchJson<EkomDataType>(`/ekom/backoffice/DataType/${wrappedGuid}`);
       const useLanguages = Boolean(config.useLanguages);
-      this.internalValue.type = useLanguages ? 'Language' : 'Store';
-
       const contentKey = this.getContentKey();
-      this.tabs = useLanguages
+      const tabs = useLanguages
         ? await this.loadLanguageTabs(contentKey)
-        : await this.loadStoreTabs(this.getNodeId());
+        : await this.loadStoreTabs();
 
+      if (requestId !== this.loadRequestId) {
+        return;
+      }
+
+      this.wrappedDataType = wrappedDataType;
+      this.internalValue.type = useLanguages ? 'Language' : 'Store';
+      this.tabs = tabs;
       this.currentTab = this.getStoredTab() ?? this.tabs[0];
       this.loading = false;
       this.failed = false;
@@ -192,6 +217,10 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
       this.tryAutofillFromNodeName(this.propertyDatasetContext?.getName());
       await this.renderCurrentEditor();
     } catch (error) {
+      if (requestId !== this.loadRequestId) {
+        return;
+      }
+
       this.loading = false;
       this.failed = true;
       this.errorMessage = error instanceof Error ? error.message : 'Could not render the property.';
@@ -213,9 +242,9 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
       }));
   }
 
-  private async loadStoreTabs(nodeId: number): Promise<EkomTab[]> {
-    const id = this.propertyAlias === 'disable' ? 1 : nodeId;
-    const stores = await this.fetchJson<EkomStore[]>(`/ekom/backoffice/Stores/${id}`);
+  private async loadStoreTabs(): Promise<EkomTab[]> {
+    const id = this.propertyAlias === 'disable' ? '1' : this.getDocumentId();
+    const stores = await this.fetchJson<EkomStore[]>(`/ekom/backoffice/Stores/${encodeURIComponent(id)}`);
 
     return stores
       .filter(store => store.alias != null)
@@ -650,6 +679,19 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
     }
 
     return Number.parseInt(numericPathPart, 10);
+  }
+
+  private getDocumentId(): string {
+    return this.documentId || this.getContentKey() || String(this.getNodeId());
+  }
+
+  private updateDocumentId(value: string | null | undefined): void {
+    if (value == null || value === this.documentId) {
+      return;
+    }
+
+    this.documentId = value;
+    void this.load();
   }
 
   private getContentKey(): string | undefined {

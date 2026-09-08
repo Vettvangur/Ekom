@@ -195,6 +195,48 @@ const e = [
   },
   {
     type: "propertyEditorSchema",
+    alias: "Ekom.Warehouse",
+    name: "Ekom Warehouse Editor",
+    meta: {
+      defaultPropertyEditorUiAlias: "Ekom.PropertyEditorUi.Warehouse"
+    }
+  },
+  {
+    type: "propertyEditorUi",
+    alias: "Ekom.PropertyEditorUi.Warehouse",
+    name: "Ekom Warehouse Editor UI",
+    element: "/App_Plugins/Ekom/dist/warehouse-editor.element.js",
+    meta: {
+      label: "Ekom Warehouses",
+      propertyEditorSchemaAlias: "Ekom.Warehouse",
+      icon: "icon-box",
+      group: "Ekom",
+      supportsReadOnly: !0
+    }
+  },
+  {
+    type: "propertyEditorSchema",
+    alias: "Ekom.WarehouseStock",
+    name: "Ekom Warehouse Stock Editor",
+    meta: {
+      defaultPropertyEditorUiAlias: "Ekom.PropertyEditorUi.WarehouseStock"
+    }
+  },
+  {
+    type: "propertyEditorUi",
+    alias: "Ekom.PropertyEditorUi.WarehouseStock",
+    name: "Ekom Warehouse Stock Editor UI",
+    element: "/App_Plugins/Ekom/dist/warehouse-stock-editor.element.js",
+    meta: {
+      label: "Ekom Warehouse Stock",
+      propertyEditorSchemaAlias: "Ekom.WarehouseStock",
+      icon: "icon-box",
+      group: "Ekom",
+      supportsReadOnly: !0
+    }
+  },
+  {
+    type: "propertyEditorSchema",
     alias: "Ekom.SkuProductPicker",
     name: "Ekom SKU Product Picker",
     meta: {

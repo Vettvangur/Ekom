@@ -20,6 +20,24 @@ public sealed class EkomStockEditor : DataEditor
     }
 }
 
+[DataEditor("Ekom.Warehouse", ValueType = ValueTypes.Json)]
+public sealed class EkomWarehouseEditor : DataEditor
+{
+    public EkomWarehouseEditor(IDataValueEditorFactory dataValueEditorFactory)
+        : base(dataValueEditorFactory)
+    {
+    }
+}
+
+[DataEditor("Ekom.WarehouseStock", ValueType = ValueTypes.Json)]
+public sealed class EkomWarehouseStockEditor : DataEditor
+{
+    public EkomWarehouseStockEditor(IDataValueEditorFactory dataValueEditorFactory)
+        : base(dataValueEditorFactory)
+    {
+    }
+}
+
 [DataEditor("Ekom.Coupon", ValueType = ValueTypes.Json)]
 public sealed class EkomCouponEditor : DataEditor
 {

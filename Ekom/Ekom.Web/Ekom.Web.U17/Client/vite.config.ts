@@ -25,6 +25,8 @@ export function createViteConfig(sourceRoot: string, outDir: string) {
           'stock-editor.element': `${sourceRoot}/property-editors/stock-editor.element.ts`,
           'variant-count-workspace-footer-app.element': `${sourceRoot}/variants/variant-count-workspace-footer-app.element.ts`,
           'variants-workspace-view.element': `${sourceRoot}/variants/variants-workspace-view.element.ts`,
+          'warehouse-editor.element': `${sourceRoot}/property-editors/warehouse-editor.element.ts`,
+          'warehouse-stock-editor.element': `${sourceRoot}/property-editors/warehouse-stock-editor.element.ts`,
           'zone-picker.element': `${sourceRoot}/property-editors/zone-picker.element.ts`,
         },
         formats: ['es'],

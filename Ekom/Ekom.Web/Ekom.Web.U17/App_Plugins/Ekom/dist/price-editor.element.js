@@ -1,8 +1,10 @@
 var p = Object.defineProperty;
-var f = (l, u, e) => u in l ? p(l, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : l[u] = e;
-var a = (l, u, e) => f(l, typeof u != "symbol" ? u + "" : u, e);
-import { UmbChangeEvent as m } from "@umbraco-cms/backoffice/event";
-class y extends HTMLElement {
+var m = (l, c, e) => c in l ? p(l, c, { enumerable: !0, configurable: !0, writable: !0, value: e }) : l[c] = e;
+var a = (l, c, e) => m(l, typeof c != "symbol" ? c + "" : c, e);
+import { UmbChangeEvent as f } from "@umbraco-cms/backoffice/event";
+import { UmbElementMixin as y } from "@umbraco-cms/backoffice/element-api";
+import { UMB_DOCUMENT_WORKSPACE_CONTEXT as g } from "@umbraco-cms/backoffice/document";
+class b extends y(HTMLElement) {
   constructor() {
     super(...arguments);
     a(this, "manifest");
@@ -14,7 +16,8 @@ class y extends HTMLElement {
     a(this, "editor");
     a(this, "status");
     a(this, "stores", []);
-    a(this, "showStoreFieldsets", !0);
+    a(this, "documentId", "");
+    a(this, "requestId", 0);
     a(this, "rawValue");
     a(this, "internalValue", {});
   }
@@ -22,7 +25,9 @@ class y extends HTMLElement {
     return this.internalValue;
   }
   set value(e) {
-    this.rawValue = e, this.internalValue = this.normalizeValue(e), this.syncInputs();
+    this.rawValue = e;
+    const t = this.normalizeValue(e);
+    this.internalValue = this.stores.length > 0 ? this.ensurePriceStructure(t) : t, this.syncInputs();
   }
   get readonly() {
     return this.hasAttribute("readonly");
@@ -31,19 +36,33 @@ class y extends HTMLElement {
     this.toggleAttribute("readonly", e), this.syncDisabledState();
   }
   connectedCallback() {
-    this.renderShell(), this.loadStores();
+    super.connectedCallback(), this.renderShell(), this.setStatus("Loading prices..."), this.loadStores(), this.consumeContext(g, (e) => {
+      e != null && (this.updateDocumentId(e.getUnique()), this.observe(e.unique, (t) => this.updateDocumentId(t), "ekomPriceDocumentId"));
+    });
+  }
+  disconnectedCallback() {
+    this.requestId++, super.disconnectedCallback();
   }
   async loadStores() {
+    const e = this.documentId || this.getDocumentIdFromUrl();
+    if (e.length === 0) {
+      this.setStatus("Save the document before editing prices.");
+      return;
+    }
+    const t = ++this.requestId;
     this.setStatus("Loading prices...");
     try {
-      const [e, t] = await Promise.all([
-        this.fetchJson("/ekom/backoffice/Config"),
-        this.fetchJson(`/ekom/backoffice/Stores/${this.getNodeId()}`)
-      ]);
-      this.showStoreFieldsets = e.perStoreStock !== !1, this.stores = t, this.internalValue = this.ensurePriceStructure(this.normalizeValue(this.rawValue)), this.renderPrices(), this.setStatus("");
-    } catch (e) {
-      const t = e instanceof Error ? e.message : "Could not load prices.";
-      this.setStatus(t, !0);
+      const r = await this.fetchJson(`/ekom/backoffice/Stores/${encodeURIComponent(e)}`);
+      if (t !== this.requestId)
+        return;
+      this.stores = r;
+      const i = Object.keys(this.internalValue).length > 0 ? this.internalValue : this.normalizeValue(this.rawValue);
+      this.internalValue = this.ensurePriceStructure(i), this.renderPrices(), this.setStatus("");
+    } catch (r) {
+      if (t !== this.requestId)
+        return;
+      const i = r instanceof Error ? r.message : "Could not load prices.";
+      this.setStatus(i, !0);
     }
   }
   renderShell() {
@@ -114,19 +133,19 @@ class y extends HTMLElement {
   renderPrices() {
     if (this.editor == null)
       return;
-    const e = document.createDocumentFragment();
-    for (const t of this.stores) {
-      const r = t.alias;
-      if (r == null)
+    const e = document.createDocumentFragment(), t = this.stores.length > 1;
+    for (const r of this.stores) {
+      const i = r.alias;
+      if (i == null)
         continue;
-      const i = this.showStoreFieldsets ? document.createElement("fieldset") : document.createDocumentFragment();
-      if (i instanceof HTMLFieldSetElement) {
-        const n = document.createElement("legend");
-        n.textContent = r, i.append(n);
+      const n = document.createElement(t ? "fieldset" : "div");
+      if (t) {
+        const o = document.createElement("legend");
+        o.textContent = i, n.append(o);
       }
-      for (const n of t.currencies ?? [])
-        n.currencyValue != null && i.append(this.createPriceInput(r, n));
-      e.append(i);
+      for (const o of r.currencies ?? [])
+        o.currencyValue != null && n.append(this.createPriceInput(i, o));
+      e.append(n);
     }
     this.editor.replaceChildren(e), this.syncDisabledState();
   }
@@ -137,8 +156,8 @@ class y extends HTMLElement {
     o.htmlFor = n, o.textContent = t.isoCurrencySymbol ?? r;
     const s = document.createElement("input");
     s.type = "number", s.min = "0", s.step = "any", s.id = n, s.dataset.store = e, s.dataset.currency = r, s.value = String(this.getPrice(e, r)), s.addEventListener("input", () => this.setPrice(e, r, s.value));
-    const c = document.createElement("span");
-    return c.textContent = t.currencySymbol ?? "", i.append(o, s, c), i;
+    const u = document.createElement("span");
+    return u.textContent = t.currencySymbol ?? "", i.append(o, s, u), i;
   }
   setPrice(e, t, r) {
     const i = this.parsePrice(r);
@@ -153,27 +172,30 @@ class y extends HTMLElement {
     }), this.internalValue = {
       ...this.internalValue,
       [e]: o
-    }, this.emitChange();
+    }, this.rawValue = this.internalValue, this.emitChange();
   }
   getPrice(e, t) {
     var r, i;
     return ((i = (r = this.internalValue[e]) == null ? void 0 : r.find((n) => n.Currency === t)) == null ? void 0 : i.Price) ?? 0;
   }
   ensurePriceStructure(e) {
-    var r, i;
-    const t = {};
-    for (const n of this.stores) {
-      const o = n.alias;
-      if (o != null) {
-        t[o] = [];
-        for (const s of n.currencies ?? []) {
-          const c = s.currencyValue;
-          c != null && t[o].push({
-            Currency: c,
-            Price: ((i = (r = e[o]) == null ? void 0 : r.find((d) => d.Currency === c)) == null ? void 0 : i.Price) ?? 0
-          });
-        }
+    const t = Object.fromEntries(Object.entries(e).map(([r, i]) => [
+      r,
+      i.map((n) => ({ ...n }))
+    ]));
+    for (const r of this.stores) {
+      const i = r.alias;
+      if (i == null)
+        continue;
+      const n = t[i] ?? [];
+      for (const o of r.currencies ?? []) {
+        const s = o.currencyValue;
+        s != null && (n.some((u) => u.Currency === s) || n.push({
+          Currency: s,
+          Price: 0
+        }));
       }
+      t[i] = n;
     }
     return t;
   }
@@ -204,8 +226,8 @@ class y extends HTMLElement {
   transformLegacyValue(e) {
     var i, n, o;
     const t = {}, r = ((o = (n = (i = this.stores[0]) == null ? void 0 : i.currencies) == null ? void 0 : n[0]) == null ? void 0 : o.currencyValue) ?? "";
-    for (const [s, c] of Object.entries(e))
-      s === "undefined" || !this.isRecord(c) || (t[s] = Object.values(c).map((d) => {
+    for (const [s, u] of Object.entries(e))
+      s === "undefined" || !this.isRecord(u) || (t[s] = Object.values(u).map((d) => {
         const h = this.isRecord(d) && "Price" in d ? d.Price : d;
         return {
           Currency: r,
@@ -229,17 +251,17 @@ class y extends HTMLElement {
     this.status != null && (this.status.textContent = e, this.status.dataset.error = String(t));
   }
   emitChange() {
-    this.dispatchEvent(new m());
+    this.dispatchEvent(new f());
   }
-  getNodeId() {
+  updateDocumentId(e) {
+    e == null || e === this.documentId || (this.documentId = e, this.loadStores());
+  }
+  getDocumentIdFromUrl() {
     const e = new URL(window.location.href), t = e.searchParams.get("id");
-    if (t != null) {
-      const i = Number.parseInt(t, 10);
-      if (!Number.isNaN(i))
-        return i;
-    }
-    const r = e.pathname.split("/").reverse().find((i) => /^\d+$/.test(i));
-    return r == null ? 0 : Number.parseInt(r, 10);
+    return t != null && (/^\d+$/.test(t) || this.isGuid(t)) ? t : e.pathname.split("/").reverse().find((r) => /^\d+$/.test(r) || this.isGuid(r)) ?? "";
+  }
+  isGuid(e) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(e);
   }
   parsePrice(e) {
     if (e == null || e === "")
@@ -262,8 +284,8 @@ class y extends HTMLElement {
     return await t.json();
   }
 }
-customElements.define("ekom-price-editor", y);
+customElements.define("ekom-price-editor", b);
 export {
-  y as EkomPriceEditorElement,
-  y as default
+  b as EkomPriceEditorElement,
+  b as default
 };

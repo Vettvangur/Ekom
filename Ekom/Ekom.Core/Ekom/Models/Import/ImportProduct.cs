@@ -19,6 +19,7 @@ public class ImportProduct : ImportBase
     public Dictionary<string, object>? Summary { get; set; } = new Dictionary<string, object>();
     public List<ImportPrice> Price { get; set; } = new List<ImportPrice>();
     public List<ImportStock> Stock { get; set; } = new List<ImportStock>();
+    public List<ImportWarehouseStock> WarehouseStock { get; set; } = new List<ImportWarehouseStock>();
     public bool EnableBackorder { get; set; }
     public decimal? Vat { get; set; }
     public List<IImportMedia> Files { get; set; } = new List<IImportMedia>();

@@ -66,6 +66,34 @@ internal sealed class MigrationAddOrderActivityLogTypeColumn : MigrationBase
 #endif
 }
 
+#if UMBRACO_18
+internal sealed class MigrationCreateWarehouseStockTable : AsyncMigrationBase
+#else
+internal sealed class MigrationCreateWarehouseStockTable : MigrationBase
+#endif
+{
+    private readonly DatabaseService _databaseService;
+
+    public MigrationCreateWarehouseStockTable(DatabaseService databaseService, IMigrationContext context)
+        : base(context)
+    {
+        _databaseService = databaseService;
+    }
+
+#if UMBRACO_18
+    protected override Task MigrateAsync()
+    {
+        _databaseService.EnsureWarehouseStockTable();
+        return Task.CompletedTask;
+    }
+#else
+    protected override void Migrate()
+    {
+        _databaseService.EnsureWarehouseStockTable();
+    }
+#endif
+}
+
 internal sealed class EkomMigrationPlan : MigrationPlan
 {
     public EkomMigrationPlan()
@@ -76,6 +104,9 @@ internal sealed class EkomMigrationPlan : MigrationPlan
 
         From("1")
             .To<MigrationAddOrderActivityLogTypeColumn>("2");
+
+        From("2")
+            .To<MigrationCreateWarehouseStockTable>("3");
     }
 }
 
@@ -119,13 +150,19 @@ internal sealed class EnsureTablesExist : IAsyncComponent
         {
             _logger.LogInformation("Running initial database setup for Ekom.");
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
-            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "2");
+            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "3");
         }
         else if (currentState == "1")
         {
             _logger.LogInformation("Running Ekom database activity log type migration.");
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
-            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "2");
+            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "3");
+        }
+        else if (currentState == "2")
+        {
+            _logger.LogInformation("Running Ekom warehouse stock migration.");
+            await ExecuteMigrationPlanAsync().ConfigureAwait(false);
+            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "3");
         }
         else
         {

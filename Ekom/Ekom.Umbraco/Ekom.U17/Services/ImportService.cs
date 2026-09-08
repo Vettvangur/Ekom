@@ -1,5 +1,6 @@
 using Ekom.API;
 using Ekom.Events;
+using Ekom.Models;
 using Ekom.Models.Import;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -32,6 +33,7 @@ public class ImportService : IImportService
     private readonly ImportMediaService _importMediaService;
     private readonly ILogger<ImportService> _logger;
     private readonly Stock _stock;
+    private readonly Warehouse _warehouse;
     private readonly INodeService _nodeService;
 
     private IContentType? productContentType;
@@ -62,6 +64,7 @@ public class ImportService : IImportService
         IServerMessenger serverMessenger,
         ILogger<ImportService> logger,
         Stock stock,
+        Warehouse warehouse,
         ImportMediaService importMediaService,
         INodeService nodeService)
     {
@@ -72,6 +75,7 @@ public class ImportService : IImportService
         _serverMessenger = serverMessenger;
         _logger = logger;
         _stock = stock;
+        _warehouse = warehouse;
         _importMediaService = importMediaService;
         _nodeService = nodeService;
     }
@@ -1040,6 +1044,8 @@ public class ImportService : IImportService
                 }
             }
 
+            SaveWarehouseStock(importProduct.SKU, importProduct.WarehouseStock);
+
             var saveImages = false;
             var saveFiles = false;
 
@@ -1056,7 +1062,7 @@ public class ImportService : IImportService
                 }
             }
 
-            var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties", "Files", "Stock", "UpdateSlug" });
+            var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties", "Files", "Stock", "WarehouseStock", "UpdateSlug" });
 
             // If no changes are found and not creating then return,
             if (!forceUpdate && !HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
@@ -1224,6 +1230,8 @@ public class ImportService : IImportService
             }
         }
 
+        SaveWarehouseStock(importVariant.SKU, importVariant.WarehouseStock);
+
         var saveImages = false;
         var saveFiles = false;
 
@@ -1234,7 +1242,7 @@ public class ImportService : IImportService
             saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, mediaIndex, ImportMediaTypes.File, ImportMediaContentTypes.files, preserveExistingValues: importVariant.PreserveExistingValues);
         }
 
-        var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files", "Stock" });
+        var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files", "Stock", "WarehouseStock" });
 
         // If no changes are found and not creating then return,
         if (!forceUpdate && !HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
@@ -1289,6 +1297,28 @@ public class ImportService : IImportService
 
         variantsSaved.Add(importVariant);
         
+    }
+
+    private void SaveWarehouseStock(string? sku, List<ImportWarehouseStock> warehouseStock)
+    {
+        if (string.IsNullOrWhiteSpace(sku) || !warehouseStock.Any())
+        {
+            return;
+        }
+
+        foreach (var warehouseStockByWarehouse in warehouseStock.GroupBy(stock => new { stock.StoreAlias, stock.WarehouseKey }))
+        {
+            _warehouse.SetAsync(
+                    warehouseStockByWarehouse.Key.StoreAlias,
+                    warehouseStockByWarehouse.Key.WarehouseKey,
+                    warehouseStockByWarehouse.Select(stock => new WarehouseStockBalanceRequest
+                    {
+                        Sku = sku,
+                        Balance = stock.Balance,
+                    }))
+                .GetAwaiter()
+                .GetResult();
+        }
     }
 
     private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1, bool preserveExistingValues = false)

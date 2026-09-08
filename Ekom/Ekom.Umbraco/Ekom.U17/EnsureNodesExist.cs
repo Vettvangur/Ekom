@@ -43,6 +43,8 @@ class EnsureNodesExist : IAsyncComponent
     private const string EkomPropertyEditorUiAlias = "Ekom.PropertyEditorUi.Property";
     private const string EkomSkuProductPickerEditorUiAlias = "Ekom.PropertyEditorUi.SkuProductPicker";
     private const string EkomStockEditorUiAlias = "Ekom.PropertyEditorUi.Stock";
+    private const string EkomWarehouseEditorUiAlias = "Ekom.PropertyEditorUi.Warehouse";
+    private const string EkomWarehouseStockEditorUiAlias = "Ekom.PropertyEditorUi.WarehouseStock";
     private const string EkomZoneEditorUiAlias = "Ekom.PropertyEditorUi.Zone";
     private static readonly JsonSerializerOptions ConfigurationSerializerOptions = new()
     {
@@ -1511,6 +1513,8 @@ class EnsureNodesExist : IAsyncComponent
 
             EnsureDiscountAndProviderFolderContentTypes();
             EnsureSkuProductPickerDataType();
+            EnsureWarehouseDataTypeAndStoreProperty();
+            EnsureWarehouseStockDataTypeAndProductProperties();
 
             _logger.LogDebug("Done");
         }
@@ -1601,6 +1605,118 @@ class EnsureNodesExist : IAsyncComponent
         });
 
         SaveDataType(dataType);
+    }
+
+    private void EnsureWarehouseDataTypeAndStoreProperty()
+    {
+        if (!_propertyEditorCollection.TryGet("Ekom.Warehouse", out IDataEditor? warehouseEditor)
+            || _contentTypeService.Get("ekmStore") is not { } storeContentType)
+        {
+            return;
+        }
+
+        var dataTypeContainer = EnsureDataTypeContainerExists();
+        var warehouseDataType = EnsureDataTypeExists(new DataType(warehouseEditor, _configurationEditorJsonSerializer, dataTypeContainer.Id)
+        {
+            Name = "Ekom Warehouse Editor",
+            EditorUiAlias = EkomWarehouseEditorUiAlias,
+        });
+
+        if (storeContentType.PropertyTypes.Any(property => property.Alias == "warehouses"))
+        {
+            return;
+        }
+
+        storeContentType.AddPropertyType(new PropertyType(_shortStringHelper, warehouseDataType, "warehouses")
+        {
+            Name = "Warehouses",
+        }, "store");
+        SaveContentType(storeContentType);
+    }
+
+    private void EnsureWarehouseStockDataTypeAndProductProperties()
+    {
+        if (!_propertyEditorCollection.TryGet("Ekom.WarehouseStock", out IDataEditor? warehouseStockEditor))
+        {
+            return;
+        }
+
+        IDataType? stockBufferDataType = GetDataType("Ekom Property Editor - Numeric - Stores");
+        if (stockBufferDataType == null)
+        {
+            return;
+        }
+
+        var dataTypeContainer = EnsureDataTypeContainerExists();
+        var warehouseStockDataType = EnsureDataTypeExists(new DataType(warehouseStockEditor, _configurationEditorJsonSerializer, dataTypeContainer.Id)
+        {
+            Name = "Ekom Warehouse Stock Editor",
+            EditorUiAlias = EkomWarehouseStockEditorUiAlias,
+        });
+
+        EnsureWarehouseStockProperties("ekmProduct", "product", stockBufferDataType, warehouseStockDataType);
+        EnsureWarehouseStockProperties("ekmProductVariant", "variant", stockBufferDataType, warehouseStockDataType);
+    }
+
+    private void EnsureWarehouseStockProperties(
+        string contentTypeAlias,
+        string groupAlias,
+        IDataType stockBufferDataType,
+        IDataType warehouseStockDataType)
+    {
+        if (_contentTypeService.Get(contentTypeAlias) is not { } contentType)
+        {
+            return;
+        }
+
+        IPropertyType? stockProperty = contentType.PropertyTypes.FirstOrDefault(property => property.Alias == "stock");
+        if (stockProperty == null)
+        {
+            return;
+        }
+
+        IPropertyType? stockBufferProperty = contentType.PropertyTypes.FirstOrDefault(property => property.Alias == "ekmStockBuffer");
+        if (stockBufferProperty == null)
+        {
+            stockBufferProperty = new PropertyType(_shortStringHelper, stockBufferDataType, "ekmStockBuffer")
+            {
+                Name = "Stock Buffer",
+                Description = "Reduces the available stock by this amount",
+            };
+            contentType.AddPropertyType(stockBufferProperty, groupAlias);
+        }
+
+        IPropertyType? warehouseStockProperty = contentType.PropertyTypes.FirstOrDefault(property => property.Alias == "warehouseStock");
+        if (warehouseStockProperty == null)
+        {
+            warehouseStockProperty = new PropertyType(_shortStringHelper, warehouseStockDataType, "warehouseStock")
+            {
+                Name = "Warehouse Stock",
+                Description = "Display-only stock balances for the product SKU",
+            };
+            contentType.AddPropertyType(warehouseStockProperty, groupAlias);
+        }
+
+        var group = contentType.PropertyGroups.FirstOrDefault(propertyGroup => propertyGroup.Alias == groupAlias);
+        if (group == null)
+        {
+            return;
+        }
+
+        var properties = group.PropertyTypes
+            .OrderBy(property => property.SortOrder)
+            .Where(property => property.Alias is not ("ekmStockBuffer" or "warehouseStock"))
+            .ToList();
+        int stockIndex = properties.FindIndex(property => property.Alias == "stock");
+        properties.Insert(stockIndex + 1, stockBufferProperty);
+        properties.Insert(stockIndex + 2, warehouseStockProperty);
+
+        for (int index = 0; index < properties.Count; index++)
+        {
+            properties[index].SortOrder = index;
+        }
+
+        SaveContentType(contentType);
     }
 
     private void EnsureDiscountAndProviderFolderContentTypes()
@@ -1856,6 +1972,8 @@ class EnsureNodesExist : IAsyncComponent
             ["Ekom Property Editor - Content Picker"] = EkomPropertyEditorUiAlias,
             ["Ekom Property Editor - Textarea"] = EkomPropertyEditorUiAlias,
             ["Ekom Stock Editor"] = EkomStockEditorUiAlias,
+            ["Ekom Warehouse Editor"] = EkomWarehouseEditorUiAlias,
+            ["Ekom Warehouse Stock Editor"] = EkomWarehouseStockEditorUiAlias,
             ["Ekom Cache Editor"] = EkomCacheEditorUiAlias,
             ["Ekom Currency Picker"] = EkomCurrencyEditorUiAlias,
             ["Ekom Country Picker"] = EkomCountryEditorUiAlias,
