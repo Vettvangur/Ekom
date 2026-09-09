@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+* **discounts:** treat missing constraints on legacy and custom discounts as unrestricted when creating ordered discounts.
+
 ### Features
 
 * **discounts:** add native product and variant `ekmDiscountPrice` support using the Ekom Price datatype, competing with content and event-added discounts while preserving original prices.

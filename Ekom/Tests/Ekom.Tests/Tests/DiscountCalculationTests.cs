@@ -65,6 +65,31 @@ public class DiscountCalculationTests
     }
 
     [Fact]
+    public void OrderedDiscount_LegacyNullConstraintsAreNormalizedAsUnrestricted()
+    {
+        var legacyDiscount = new OrderedDiscount(
+            Guid.NewGuid(),
+            "Legacy discount",
+            false,
+            10m,
+            DiscountType.Fixed,
+            [],
+            [],
+            null,
+            false,
+            false);
+
+        var result = new OrderedDiscount(legacyDiscount);
+
+        Assert.Empty(legacyDiscount.Constraints.StartRanges);
+        Assert.Empty(legacyDiscount.Constraints.EndRanges);
+        Assert.Empty(legacyDiscount.Constraints.CountriesInZone);
+        Assert.Empty(result.Constraints.StartRanges);
+        Assert.Empty(result.Constraints.EndRanges);
+        Assert.Empty(result.Constraints.CountriesInZone);
+    }
+
+    [Fact]
     public void SelectDiscount_UsesMonetaryValueForMixedDiscountTypes()
     {
         using var configurationScope = new ConfigurationScope();

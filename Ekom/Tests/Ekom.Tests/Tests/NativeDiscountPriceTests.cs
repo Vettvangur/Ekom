@@ -163,7 +163,7 @@ public class NativeDiscountPriceTests
         customer.SetupGet(x => x.Key).Returns(Guid.NewGuid());
         customer.SetupGet(x => x.Type).Returns(customerType);
         customer.SetupGet(x => x.Amount).Returns(customerAmount);
-        customer.SetupGet(x => x.Constraints).Returns(new Constraints());
+        customer.SetupGet(x => x.Constraints).Returns((IConstraints)null!);
         int calls = 0;
         Guid nativeKey = Guid.Empty;
         fixture.Events.AfterApplicableDiscountsAsync += (_, args) =>
