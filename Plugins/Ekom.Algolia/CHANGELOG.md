@@ -13,6 +13,13 @@
 
 * **algolia:** send ecommerce conversion object data using Algolia's per-item schema.
 
+## [0.2.55](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.54...Ekom.Algolia-v0.2.55) (2026-09-11)
+
+
+### Bug Fixes
+
+* **algolia:** coordinate store rebuilds ([#850](https://github.com/Vettvangur/Ekom/issues/850)) ([96ba031](https://github.com/Vettvangur/Ekom/commit/96ba031122f6fd5f87865427ca7f02d10d9187bd))
+
 ## [0.2.54](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.53...Ekom.Algolia-v0.2.54) (2026-09-11)
 
 
