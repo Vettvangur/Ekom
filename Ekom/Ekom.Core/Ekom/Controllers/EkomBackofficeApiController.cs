@@ -188,40 +188,7 @@ public class EkomBackofficeApiController : ControllerBase
     private IEnumerable<IStore> FilterEnabledStores(UmbracoContent node, IEnumerable<IStore> allStores)
     {
         var ancestors = _nodeService.GetAllCatalogAncestors(node);
-        var disabledAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var result = new List<IStore>();
-
-        foreach (var store in allStores)
-        {
-            var alias = store.Alias;
-
-            // First check if this store is disabled on the node itself
-            var isSelfDisabled = node.Properties.GetValue("disable", alias).IsBoolean();
-            if (isSelfDisabled)
-            {
-                disabledAliases.Add(alias);
-                continue;
-            }
-
-            // Skip ancestor check if already disabled
-            bool isDisabledInAncestors = false;
-            foreach (var ancestor in ancestors)
-            {
-                if (ancestor.Properties.GetValue("disable", alias).IsBoolean())
-                {
-                    isDisabledInAncestors = true;
-                    disabledAliases.Add(alias);
-                    break;
-                }
-            }
-
-            if (!isDisabledInAncestors)
-            {
-                result.Add(store);
-            }
-        }
-
-        return result;
+        return BackofficeStoreAvailability.FilterEnabledStores(node, ancestors, allStores);
     }
 
     /// <summary>
