@@ -8,6 +8,7 @@ using Ekom.Tracking;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
@@ -1616,25 +1617,55 @@ partial class OrderService
             throw new OrderInfoNotFoundException();
         }
 
+        var reservations = Configuration.Resolver.GetRequiredService<CheckoutReservationService>();
+        if (!string.Equals(storeAlias, orderInfo.StoreInfo.Alias, StringComparison.Ordinal))
+            throw new StockException("Reservation store does not match the order.");
+        var scope = CheckoutPreparationScope.Current;
+        if (scope != null && scope.Order.UniqueId != orderInfo.UniqueId)
+            throw new StockException("Cannot attach another order during checkout preparation.");
+        var ownership = scope?.Ownership ?? await reservations.AcquirePreparationAsync(orderInfo.UniqueId, ct).ConfigureAwait(false);
+        var unlock = true;
+        var requested = reservationIds.Concat(System.Text.Json.JsonSerializer.Deserialize<string[]>(ownership.ProtectedIds)!)
+            .Distinct(StringComparer.Ordinal).ToArray();
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        var entered = false;
         try
         {
-            var added = reservationIds.Except(orderInfo.ReservationIds, StringComparer.Ordinal).ToArray();
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
+            entered = true;
+            await reservations.AssociateAsync(orderInfo, requested, ownership, ct).ConfigureAwait(false);
+            var added = requested.Except(orderInfo.ReservationIds, StringComparer.Ordinal).ToArray();
             orderInfo._hangfireJobs.AddRange(added);
             try
             {
+                unlock = false;
                 await UpdateOrderAndOrderInfoAsync(orderInfo, ct: ct, reservationPersistence: true).ConfigureAwait(false);
+                if (scope != null && scope.CompensationSaves.Count == 0)
+                {
+                    scope.CompensationSaves.Add(async () =>
+                    {
+                        orderInfo._hangfireJobs.RemoveAll(scope.Created.Contains);
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, ct: CancellationToken.None, reservationPersistence: true).ConfigureAwait(false);
+                    });
+                }
+                else if (scope == null)
+                {
+                    await reservations.ProtectPreparationAsync(ownership, orderInfo.ReservationIds, CancellationToken.None).ConfigureAwait(false);
+                    unlock = true;
+                }
             }
             catch
             {
+                if (scope != null) scope.UncertainSave = true;
                 orderInfo._hangfireJobs.RemoveAll(added.Contains);
                 throw;
             }
         }
         finally
         {
-            semaphore.Release();
+            if (entered) semaphore.Release();
+            if (scope == null && unlock)
+                await reservations.ReleasePreparationAsync(ownership, CancellationToken.None).ConfigureAwait(false);
         }
     }
 

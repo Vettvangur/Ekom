@@ -207,6 +207,7 @@ public class CheckoutControllerService
         var original = order.ReservationIds.ToHashSet(StringComparer.Ordinal);
         var ids = original.ToList();
         var ownership = await reservations.AcquirePreparationAsync(order.UniqueId, ct).ConfigureAwait(false);
+        using var scope = new CheckoutPreparationScope(reservations, ownership, order);
         original.UnionWith(JsonSerializer.Deserialize<string[]>(ownership.ProtectedIds)!);
         foreach (var id in original)
             if (!ids.Contains(id)) ids.Add(id);
@@ -220,9 +221,22 @@ public class CheckoutControllerService
             response = await ProcessCouponsAsync(request, order, ids, ct).ConfigureAwait(false);
             if (response != null) return (response, null);
             var title = await CreateOrderTitleAsync(request, order, store, ct).ConfigureAwait(false);
+            foreach (var id in order.ReservationIds.Concat(scope.Created).Concat(scope.Reused))
+                if (!ids.Contains(id)) ids.Add(id);
+            // Older hooks may defer attachment by only adding wrapper IDs to hangfireJobs.
+            if (scope.Created.Count != 0)
+                await reservations.AssociateAsync(order, ids, ownership, ct).ConfigureAwait(false);
+            var requirements = await reservations.GetRequirementsAsync(order, ct, scope.IncludeInventoryRequirements).ConfigureAwait(false);
+            await reservations.PrepareAsync(order.UniqueId, requirements, ids, ct,
+                createReservations: false, validateInventory: false, validateDiscounts: false).ConfigureAwait(false);
             persistenceStarted = true;
             await PersistReservationsAsync(ids, order, ct).ConfigureAwait(false);
             prepared = true;
+            foreach (var id in order.ReservationIds)
+                if (!ids.Contains(id)) ids.Add(id);
+            requirements = await reservations.GetRequirementsAsync(order, ct, scope.IncludeInventoryRequirements).ConfigureAwait(false);
+            await reservations.PrepareAsync(order.UniqueId, requirements, ids, ct,
+                createReservations: false, validateInventory: false, validateDiscounts: false).ConfigureAwait(false);
             // Keep ownership if protecting the committed save fails. Releasing or allowing
             // takeover at that point would make an uncertain save unsafe to compensate.
             await reservations.ProtectPreparationAsync(ownership, ids, CancellationToken.None).ConfigureAwait(false);
@@ -235,9 +249,10 @@ public class CheckoutControllerService
             // compensate only this preparation, even if the request was cancelled.
             // A thrown save may have committed without acknowledgement. Keep ownership
             // and holds in that case; a later request must not adopt or compensate them.
-            if (!prepared && !persistenceStarted)
+            if (!prepared && !persistenceStarted && !scope.UncertainSave)
             {
-                await reservations.ReleaseAsync(ids.Where(x => !original.Contains(x)), CancellationToken.None).ConfigureAwait(false);
+                await reservations.ReleaseAsync(scope.Created.Where(x => !original.Contains(x)), CancellationToken.None).ConfigureAwait(false);
+                foreach (var save in scope.CompensationSaves) await save().ConfigureAwait(false);
                 canUnlock = true;
             }
             if (canUnlock)
@@ -392,20 +407,14 @@ public class CheckoutControllerService
 
         try
         {
-            if (Config.ReservationsEnabled || order.ReservationIds.Any())
-            {
-                var reservations = _factory.GetRequiredService<CheckoutReservationService>();
-                var requirements = await reservations.GetRequirementsAsync(order, ct).ConfigureAwait(false);
-                // Outstanding holds remain authoritative when the opt-in is switched off.
-                // Preparation also reserves line discounts so their use cannot fail after payment.
-                await reservations.PrepareAsync(order.UniqueId, requirements, hangfireJobs, ct,
-                    Config.ReservationsEnabled, proccessingEventArgs.StockValidation)
-                    .ConfigureAwait(false);
-            }
-            else if (proccessingEventArgs.StockValidation)
-            {
-                await Stock.Instance.ValidateOrderStockAsync(order, ct);
-            }
+            var reservations = _factory.GetRequiredService<CheckoutReservationService>();
+            var includeInventory = Config.ReservationsEnabled || proccessingEventArgs.StockValidation;
+            if (CheckoutPreparationScope.Current is { } scope) scope.IncludeInventoryRequirements = includeInventory;
+            var requirements = await reservations.GetRequirementsAsync(order, ct, includeInventory).ConfigureAwait(false);
+            // Recovery and verification run even when automatic reservations are disabled.
+            await reservations.PrepareAsync(order.UniqueId, requirements, hangfireJobs, ct,
+                Config.ReservationsEnabled, proccessingEventArgs.StockValidation,
+                validateDiscounts: Config.ReservationsEnabled).ConfigureAwait(false);
         }
         catch (NotEnoughLineStockException ex)
         {

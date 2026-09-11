@@ -601,7 +601,7 @@ public partial class Order
     public Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, string? storeAlias = null, CancellationToken ct = default)
         => AddReservationsToOrderAsync(hangfireJobs, orderInfo, storeAlias, ct);
 
-    /// <summary>Persist explicit reservation IDs on an order; does not create or consume reservations.</summary>
+    /// <summary>Validate and persist order-owned reservations, or associate trusted legacy holds from the current checkout preparation.</summary>
     public async Task AddReservationsToOrderAsync(IEnumerable<string> reservationIds, IOrderInfo orderInfo, string? storeAlias = null, CancellationToken ct = default)
     {
         if (reservationIds == null)
@@ -611,12 +611,7 @@ public partial class Order
 
         if (string.IsNullOrEmpty(storeAlias))
         {
-            IStore? store = _storeSvc.GetStoreFromCache();
-
-            if (store != null)
-            {
-                storeAlias = store.Alias;
-            }
+            storeAlias = orderInfo?.StoreInfo.Alias;
         }
         if (orderInfo == null)
         {
@@ -635,7 +630,7 @@ public partial class Order
     public Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, CancellationToken ct = default)
         => AddReservationsToOrderAsync(storeAlias, hangfireJobs, orderInfo, ct);
 
-    /// <summary>Persist explicit reservation IDs on an order in a specific store.</summary>
+    /// <summary>Validate and persist reservations on an order in a specific store. Arbitrary unowned IDs cannot be attached.</summary>
     public async Task AddReservationsToOrderAsync(string storeAlias, IEnumerable<string> reservationIds, IOrderInfo orderInfo, CancellationToken ct = default)
     {
         if (reservationIds == null)

@@ -146,9 +146,11 @@ compensate holds. The row also retains the IDs protected by successful persisten
 a later request with a stale order snapshot cannot release those IDs on failure.
 Ownership is retained until compensation finishes or persisted IDs are protected.
 
-Partial preparation failure before persistence releases unprotected holds, including
-failures in later hooks or title creation. Cancellation does not cancel compensation.
-Once persistence starts, a thrown save can mean an uncertain commit: ownership and
+Partial preparation failure releases holds created by that preparation, including
+legacy holds immediately saved by a line hook. Their IDs are removed from the order
+before ownership is released. Earlier submitted/recovered holds and their order
+associations are preserved. Cancellation does not cancel compensation.
+Once a save starts, a thrown save can mean an uncertain commit: ownership and
 holds are retained for reconciliation rather than released. Reservation attachment
 saves log post-commit cache and subscriber failures without reporting a failed save;
 pre-save errors still propagate. Previously persisted holds are preserved on retries.
@@ -165,7 +167,9 @@ still depends on the payment integration; stock idempotency is not charge idempo
 Completion validates each attached reservation's order ID, stock kind/key, exact stock
 identity, store, coupon and aggregate quantity against the order's eligible requirements.
 Checkout-created holds additionally carry a requirements fingerprint. Explicit holds must
-include the order ID and matching store metadata; unassociated legacy IDs are rejected.
+include the order ID and matching store metadata. Legacy product/variant wrappers called
+inside the current preparation can be atomically associated when attached (see below);
+arbitrary unowned IDs are rejected.
 Changing the stock scope (for example `PerStoreStock`) during payment requires reconciliation.
 
 In both checkout modes, a SQL transaction consumes verified active holds, deducts only
@@ -175,6 +179,11 @@ retained independently of reservation cleanup to recognize duplicate stock compl
 `CompleteCheckoutEventArgs.StockValidation=false` skips uncovered inventory deductions,
 but still verifies/consumes existing holds and applies line discount stock policy.
 Turning `Enabled` off never causes existing holds to be deducted again.
+Preparation verifies IDs supplied by hooks, IDs saved directly on the order, and recovered
+order-owned holds, even with `Enabled=false` and without a call to the base line hook.
+It verifies again after the final save, before invoking the payment hook. Completion also
+recovers owned holds when order metadata is incomplete and inventory validation is disabled.
+Completion and external attachment reject an order with an active preparation owner.
 
 Order status updates, coupon mark-used, activity logs, checkout events and external payment
 effects are outside this stock transaction and may run again on callback retries. Subscribers
@@ -193,6 +202,78 @@ payment state, preserve any attached/submitted IDs in `ProtectedIds`, and only t
 There is currently no admin API or automatic recovery job for this operation. Deploy
 all checkout nodes with this protocol; older nodes and custom direct reservation/order
 mutations do not participate in ownership coordination.
+
+### Wholesale-only backorders and legacy overrides
+
+Register the public `Ekom.Services.ICheckoutStockPolicy` to use the same eligibility rule
+in normal preparation, legacy reservation attachment, and payment completion. The default
+policy retains the existing exemption for **all** backorder lines. A custom controller
+that exempts only wholesale customers **must register its policy explicitly**; Ekom cannot
+infer arbitrary override intent. Policy implementations are shared singletons and must be
+thread-safe, using durable order/customer data rather than the current HTTP user.
+
+For an integration whose trusted customer model exposes `customer.IsDistributor`:
+
+```csharp
+using Ekom.Models;
+using Ekom.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+public sealed class WholesaleCheckoutStockPolicy : ICheckoutStockPolicy
+{
+    public bool RequiresStock(IOrderInfo order, IOrderLine line)
+    {
+        var wholesale = order.CustomerInformation.Customer.Properties
+            .TryGetValue("isDistributor", out var value)
+            && string.Equals(value, "true", StringComparison.Ordinal);
+        return !(line.Product.Backorder && wholesale);
+    }
+}
+
+// In your application's service registrations, after registering Ekom:
+services.Replace(ServiceDescriptor.Singleton<ICheckoutStockPolicy,
+    WholesaleCheckoutStockPolicy>());
+```
+
+At the start of your existing `ProcessOrderLinesAsync` override, persist the eligibility
+snapshot from your authenticated, server-resolved customer record:
+
+```csharp
+order.CustomerInformation.Customer.Properties["isDistributor"] =
+    customer.IsDistributor ? "true" : "false";
+var wholesale = customer.IsDistributor;
+
+// In the existing line loop:
+if (line.Product.Backorder && wholesale) continue;
+// Keep your product/selected-variant lookup and Stock >= line.Quantity validation.
+var id = await Stock.Instance.ReserveStockAsync(stockKey, -line.Quantity, ct: ct);
+await Order.Instance.AddHangfireJobsToOrderAsync([id], order, ct: ct);
+```
+
+The flag must come from trusted customer data, not a posted checkout field. The existing
+order-save path persists these properties so completion uses the same snapshot on another
+node, without a logged-in customer. The controller constructor and protected hook signatures
+are unchanged. This override does not need to call `base.ProcessOrderLinesAsync` or add IDs
+to the passed `ICollection<string> hangfireJobs`. For new integrations using the base line
+hook, populate the same durable flag before invoking the base hook.
+
+During preparation, `ReserveStockAsync` carries a private preparation capability and a
+legacy-origin marker. `AddReservationsToOrderAsync` and its Hangfire aliases conditionally
+associate only that scope's newly created rows in a serializable SQL transaction. Attachment
+checks order ownership, stock identity/key/kind, store, coupon, aggregate quantity, active
+state and expiry. A failed batch rolls back the whole association. Retries reuse matching
+active holds without extending expiry; a later line failure compensates new holds even
+when the override immediately saved them. Competing preparations cannot adopt those holds
+while their owner is still working or compensating.
+
+Outside checkout preparation, explicitly create an order-owned hold using
+`IStockReservationService` with `OrderId` and the order's `StoreAlias`, then attach its ID.
+Generic unowned holds (including wrappers called outside the preparation scope) cannot be
+claimed by passing their IDs to an order API. These APIs remain server-side integration
+APIs: callers must authorize access to the order. They are not authorization endpoints for
+untrusted reservation IDs. Changing the eligibility snapshot after reservation causes
+requirements verification to fail and requires reconciliation.
 
 ## Compatibility
 

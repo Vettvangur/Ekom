@@ -73,8 +73,7 @@ class CheckoutService
 
             if (!await _checkoutReservations.IsCompletedAsync(key, ct).ConfigureAwait(false))
             {
-                var requirements = await _checkoutReservations.GetRequirementsAsync(oi, ct,
-                    model.StockValidation || oi.ReservationIds.Any()).ConfigureAwait(false);
+                var requirements = await _checkoutReservations.GetRequirementsAsync(oi, ct, model.StockValidation).ConfigureAwait(false);
                 await _checkoutReservations.CompleteStockAsync(key, requirements, oi.ReservationIds, model.StockValidation, ct)
                     .ConfigureAwait(false);
             }

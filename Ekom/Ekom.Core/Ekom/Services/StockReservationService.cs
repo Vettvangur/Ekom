@@ -120,7 +120,7 @@ internal sealed class StockReservationService : IStockReservationService
         if (result.Status == StockReservationStatus.Created && !row.IsDiscount)
         {
             var stockStore = stockId == row.Key.ToString() ? null : row.StoreAlias;
-            await _publisher.PublishAsync(row.Key, stockStore, stockId, oldStock, oldStock - row.Quantity, ct).ConfigureAwait(false);
+            await _publisher.PublishAsync(row.Key, stockStore, stockId, oldStock, decimal.Round(oldStock - row.Quantity, 2), ct).ConfigureAwait(false);
         }
         return Record(result);
     }
@@ -190,7 +190,7 @@ internal sealed class StockReservationService : IStockReservationService
             // Derive cache scope from the persisted stock identity, even after configuration changes.
             var store = restored.StockUniqueId == restored.Key.ToString() ? null : restored.StoreAlias;
             await _publisher.PublishAsync(restored.Key, store, restored.StockUniqueId,
-                oldStock, oldStock + restored.Quantity, ct).ConfigureAwait(false);
+                oldStock, decimal.Round(oldStock + restored.Quantity, 2), ct).ConfigureAwait(false);
         }
         return Record(result);
     }

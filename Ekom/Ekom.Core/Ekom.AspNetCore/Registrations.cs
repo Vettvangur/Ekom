@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Threading.RateLimiting;
 
@@ -105,6 +106,7 @@ static class Registrations
         services.AddSingleton<StockChangePublisher>();
         services.AddSingleton<IStockReservationService, StockReservationService>();
         services.AddSingleton<CheckoutReservationService>();
+        services.TryAddSingleton<ICheckoutStockPolicy, DefaultCheckoutStockPolicy>();
         services.AddHostedService<StockReservationWorker>();
 
         services.AddTransient<CountriesRepository>();

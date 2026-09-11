@@ -298,7 +298,7 @@ public partial class Stock
     /// <returns>Reservation ID</returns>
     public async Task<string> ReserveStockAsync(Guid key, decimal value, TimeSpan timeSpan = default, CancellationToken ct = default)
     {
-        return await ReserveStockAsync(key, ResolveStockStore(null), value, timeSpan, ct).ConfigureAwait(false);
+        return await ReserveStockAsync(key, CheckoutPreparationScope.Current?.Order.StoreInfo.Alias ?? ResolveStockStore(null), value, timeSpan, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -315,6 +315,11 @@ public partial class Stock
     public async Task<string> ReserveStockAsync(Guid key, string storeAlias, decimal value, TimeSpan timeSpan = default, CancellationToken ct = default)
     {
         if (value >= 0) throw new ArgumentOutOfRangeException(nameof(value), "Reserve stock called with non-negative value");
+        if (CheckoutPreparationScope.Current is { } preparation)
+            return await preparation.Service.ReserveLegacyAsync(preparation, new StockReservationRequest
+            {
+                Key = key, Quantity = -value, StoreAlias = storeAlias, Duration = timeSpan,
+            }, ct).ConfigureAwait(false);
         var result = await _reservations.ReserveAsync(new StockReservationRequest
         {
             Key = key, Quantity = -value, StoreAlias = ResolveStockStore(storeAlias), Duration = timeSpan,

@@ -580,10 +580,10 @@ public sealed class StockReservationTests
                 Mock.Of<IStoreService>(), _perStoreCache.Object, Service, Publisher(config));
         }
 
-        public CheckoutReservationService NewCheckout(Configuration? configuration = null)
+        public CheckoutReservationService NewCheckout(Configuration? configuration = null, ICheckoutStockPolicy? policy = null)
         {
             var config = configuration ?? Config(_perStore);
-            return new CheckoutReservationService(Factory, config, Service, Publisher(config));
+            return new CheckoutReservationService(Factory, config, Service, Publisher(config), policy);
         }
 
         public async Task<Guid> SeedAsync(decimal stock, string? store = null, Guid? key = null)

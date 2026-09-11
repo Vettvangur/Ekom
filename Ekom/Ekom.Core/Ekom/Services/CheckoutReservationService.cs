@@ -17,22 +17,31 @@ internal sealed class CheckoutReservationService
     private readonly Configuration _config;
     private readonly IStockReservationService _reservations;
     private readonly StockChangePublisher _publisher;
+    private readonly ICheckoutStockPolicy _policy;
 
     public CheckoutReservationService(DatabaseFactory database, Configuration config,
-        IStockReservationService reservations, StockChangePublisher publisher)
+        IStockReservationService reservations, StockChangePublisher publisher, ICheckoutStockPolicy? policy = null)
     {
         _database = database;
         _config = config;
         _reservations = reservations;
         _publisher = publisher;
+        _policy = policy ?? new DefaultCheckoutStockPolicy();
     }
 
     internal async Task<IReadOnlyList<StockReservationRequest>> GetRequirementsAsync(IOrderInfo order, CancellationToken ct, bool includeInventory = true)
     {
+        if (!includeInventory)
+        {
+            // Disabling uncovered inventory validation must not hide recovered holds.
+            await using var db = _database.GetDatabase();
+            includeInventory = order.ReservationIds.Any() || await db.StockReservations.AnyAsync(
+                x => x.OrderId == order.UniqueId.ToString() && x.State != StockReservationState.Released, ct).ConfigureAwait(false);
+        }
         var requests = new List<StockReservationRequest>();
         foreach (var line in order.OrderLines)
         {
-            if (includeInventory && !line.Product.Backorder)
+            if (includeInventory && _policy.RequiresStock(order, line))
             {
                 var product = await Catalog.Instance.GetProductAsync(line.ProductKey, order.StoreInfo.Alias, raiseEvent: false, ct: ct)
                     .ConfigureAwait(false) ?? throw new StockException($"Product {line.ProductKey} is missing.");
@@ -105,7 +114,7 @@ internal sealed class CheckoutReservationService
             if (row.PaymentAttemptId?.StartsWith("checkout-stock:", StringComparison.Ordinal) == true &&
                 row.PaymentAttemptId != Fingerprint(requirements))
                 throw new StockException("Order stock requirements changed after reservation; payment requires reconciliation.");
-            if (row.State is StockReservationState.Released or StockReservationState.Expired ||
+            if (row.State is not (StockReservationState.Active or StockReservationState.Consumed) ||
                 (row.State == StockReservationState.Active && row.ExpiresUtc <= DateTime.UtcNow))
                 throw new StockException($"Reservation {id} is released or expired; payment requires reconciliation.");
             rows.Add(row);
@@ -119,7 +128,8 @@ internal sealed class CheckoutReservationService
     }
 
     internal async Task PrepareAsync(Guid orderId, IReadOnlyList<StockReservationRequest> requirements,
-        ICollection<string> ids, CancellationToken ct, bool createReservations = true, bool validateInventory = true)
+        ICollection<string> ids, CancellationToken ct, bool createReservations = true, bool validateInventory = true,
+        bool validateDiscounts = true)
     {
         await using var db = _database.GetDatabase();
         if (await db.GetTable<CheckoutStockCompletionData>().AnyAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false))
@@ -129,22 +139,28 @@ internal sealed class CheckoutReservationService
         // may be retried, but an expired payment hold must never silently become a fresh payment attempt.
         var fingerprint = Fingerprint(requirements);
         var owned = await db.StockReservations.Where(x => x.OrderId == orderId.ToString() &&
-            x.PaymentAttemptId != null && x.PaymentAttemptId.StartsWith("checkout-stock:") &&
             x.State != StockReservationState.Released).ToListAsync(ct).ConfigureAwait(false);
-        if (owned.Any(x => x.PaymentAttemptId != fingerprint))
+        if (owned.Any(x => x.PaymentAttemptId != null && x.PaymentAttemptId.StartsWith("checkout-stock:", StringComparison.Ordinal) && x.PaymentAttemptId != fingerprint))
             throw new StockException("Order stock requirements changed during payment; reconcile the existing attempt first.");
         foreach (var row in owned)
+        {
+            if (CheckoutPreparationScope.Current is { } scope && !scope.Created.Contains(row.Id)) scope.Reused.Add(row.Id);
             if (!ids.Contains(row.Id)) ids.Add(row.Id);
+        }
         var existing = await ReadAndVerifyAsync(db, orderId, requirements, ids, ct).ConfigureAwait(false);
         if (existing.Any(x => x.State == StockReservationState.Consumed))
             throw new StockException("Order reservations have already been consumed; do not start another payment.");
+
+        // Existing (including recovered) holds require complete discount coverage checks,
+        // even when automatic creation or this caller's optional validation is disabled.
+        validateDiscounts |= existing.Count != 0;
 
         var created = new List<string>();
         try
         {
             foreach (var request in requirements)
             {
-                if (!request.IsDiscount && !validateInventory) continue;
+                if (request.IsDiscount ? !validateDiscounts : !validateInventory) continue;
                 var remaining = request.Quantity - existing.Where(x => Identity(x) == Identity(request)).Sum(x => x.Quantity);
                 if (remaining == 0) continue;
                 var stockId = StockId(request);
@@ -170,7 +186,11 @@ internal sealed class CheckoutReservationService
                 if (result.Status is not (StockReservationStatus.Created or StockReservationStatus.AlreadyExists) ||
                     result.State != StockReservationState.Active || result.ExpiresUtc <= DateTime.UtcNow)
                     throw new StockException($"Unable to prepare checkout reservation: {result.Status}, {result.State}.");
-                if (result.Status == StockReservationStatus.Created) created.Add(result.ReservationId!);
+                if (result.Status == StockReservationStatus.Created)
+                {
+                    created.Add(result.ReservationId!);
+                    CheckoutPreparationScope.Current?.Created.Add(result.ReservationId!);
+                }
                 if (!ids.Contains(result.ReservationId!)) ids.Add(result.ReservationId!);
             }
         }
@@ -193,6 +213,69 @@ internal sealed class CheckoutReservationService
         if (errors.Count != 0) throw new AggregateException("Checkout reservation compensation failed; expiry will retry active holds.", errors);
     }
 
+    internal async Task<string> ReserveLegacyAsync(CheckoutPreparationScope scope, StockReservationRequest request, CancellationToken ct)
+    {
+        var requirements = await GetRequirementsAsync(scope.Order, ct).ConfigureAwait(false);
+        var expected = requirements.SingleOrDefault(x => Identity(x) == Identity(request));
+        if (expected == null || request.Quantity > expected.Quantity)
+            throw new StockException("Legacy reservation does not match the shared checkout stock policy.");
+        await using var db = _database.GetDatabase();
+        var owned = await db.StockReservations.Where(x => x.OrderId == scope.Order.UniqueId.ToString() &&
+            x.State != StockReservationState.Released).ToListAsync(ct).ConfigureAwait(false);
+        await ReadAndVerifyAsync(db, scope.Order.UniqueId, requirements, owned.Select(x => x.Id), ct).ConfigureAwait(false);
+        var reusable = owned.FirstOrDefault(x => Identity(x) == Identity(request) && x.Quantity == request.Quantity &&
+            x.State == StockReservationState.Active && !scope.Reused.Contains(x.Id));
+        if (reusable != null)
+        {
+            scope.Reused.Add(reusable.Id);
+            return reusable.Id;
+        }
+        var result = await _reservations.ReserveAsync(request with
+        {
+            StoreAlias = scope.Order.StoreInfo.Alias,
+            MinimumRemainingStock = expected.MinimumRemainingStock,
+            PaymentAttemptId = "legacy-preparation:" + scope.Ownership.Owner,
+        }, ct).ConfigureAwait(false);
+        if (result.Status == StockReservationStatus.InsufficientStock) throw new NotEnoughStockException("Not enough stock to reserve.");
+        if (result.Status != StockReservationStatus.Created) throw new StockException("Unable to create legacy reservation.");
+        scope.Created.Add(result.ReservationId!);
+        scope.Reused.Add(result.ReservationId!);
+        return result.ReservationId!;
+    }
+
+    // Association is SQL-atomic and only grants ownership to rows created by the current
+    // legacy wrapper capability. Generic unowned reservation IDs are never adopted.
+    internal async Task AssociateAsync(IOrderInfo order, IEnumerable<string> ids, CheckoutPreparationData ownership, CancellationToken ct)
+    {
+        var scope = CheckoutPreparationScope.Current;
+        var requirements = await GetRequirementsAsync(order, ct, (scope?.IncludeInventoryRequirements ?? true) || ids.Any()).ConfigureAwait(false);
+        await StockReservationService.RetryAsync(async () =>
+        {
+            await using var db = _database.GetDatabase();
+            await using var tx = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+            if (!await db.GetTable<CheckoutPreparationData>().AnyAsync(x => x.OrderId == order.UniqueId && x.Owner == ownership.Owner, ct).ConfigureAwait(false))
+                throw new StockException("Reservation attachment requires preparation ownership.");
+            if (await db.GetTable<CheckoutStockCompletionData>().AnyAsync(x => x.OrderId == order.UniqueId, ct).ConfigureAwait(false))
+                throw new StockException("Cannot attach reservations to a completed order.");
+            foreach (var id in ids.Distinct(StringComparer.Ordinal))
+            {
+                if (scope?.Ownership.Owner == ownership.Owner && scope.Created.Contains(id))
+                {
+                    await db.StockReservations.Where(x => x.Id == id && x.OrderId == null &&
+                        x.PaymentAttemptId == "legacy-preparation:" + ownership.Owner && x.State == StockReservationState.Active && x.ExpiresUtc > DateTime.UtcNow)
+                        .Set(x => x.OrderId, order.UniqueId.ToString()).Set(x => x.PaymentAttemptId, Fingerprint(requirements))
+                        .UpdateAsync(ct).ConfigureAwait(false);
+                }
+            }
+            var owned = await db.StockReservations.Where(x => x.OrderId == order.UniqueId.ToString() && x.State != StockReservationState.Released)
+                .Select(x => x.Id).ToListAsync(ct).ConfigureAwait(false);
+            var rows = await ReadAndVerifyAsync(db, order.UniqueId, requirements, owned.Concat(ids), ct).ConfigureAwait(false);
+            if (rows.Any(x => x.State != StockReservationState.Active)) throw new StockException("Only active holds can be attached before payment.");
+            await tx.CommitAsync(ct).ConfigureAwait(false);
+            return true;
+        }, ct).ConfigureAwait(false);
+    }
+
     internal async Task<bool> CompleteStockAsync(Guid orderId, IReadOnlyList<StockReservationRequest> requirements,
         IEnumerable<string> reservationIds, bool validateInventory, CancellationToken ct)
     {
@@ -205,7 +288,11 @@ internal sealed class CheckoutReservationService
             await using var tx = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
             if (await db.GetTable<CheckoutStockCompletionData>().AnyAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false))
                 return false;
-            var rows = await ReadAndVerifyAsync(db, orderId, requirements, ids, ct).ConfigureAwait(false);
+            if (await db.GetTable<CheckoutPreparationData>().AnyAsync(x => x.OrderId == orderId && x.Owner != null, ct).ConfigureAwait(false))
+                throw new StockException("Cannot complete stock while checkout preparation is in progress.");
+            var recovered = await db.StockReservations.Where(x => x.OrderId == orderId.ToString() && x.State != StockReservationState.Released)
+                .Select(x => x.Id).ToListAsync(ct).ConfigureAwait(false);
+            var rows = await ReadAndVerifyAsync(db, orderId, requirements, ids.Concat(recovered), ct).ConfigureAwait(false);
             var now = DateTime.UtcNow;
             foreach (var row in rows.Where(x => x.State == StockReservationState.Active))
             {
@@ -231,7 +318,7 @@ internal sealed class CheckoutReservationService
                     var old = await db.StockData.Where(x => x.UniqueId == stockId).Select(x => x.Stock).FirstOrDefaultAsync(ct).ConfigureAwait(false);
                     affected = await db.StockData.Where(x => x.UniqueId == stockId && x.Stock >= remaining + request.MinimumRemainingStock)
                         .Set(x => x.Stock, x => Math.Round(x.Stock - remaining, 2)).Set(x => x.UpdateDate, now).UpdateAsync(ct).ConfigureAwait(false);
-                    changes.Add((request, old, old - remaining));
+                    changes.Add((request, old, decimal.Round(old - remaining, 2)));
                 }
                 if (affected != 1) throw new NotEnoughStockException($"Not enough stock for {stockId}.");
             }

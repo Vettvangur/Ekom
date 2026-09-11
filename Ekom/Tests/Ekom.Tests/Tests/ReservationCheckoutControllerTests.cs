@@ -23,6 +23,110 @@ namespace Ekom.Tests.Tests;
 [Collection("Reservations")]
 public sealed class ReservationCheckoutControllerTests
 {
+    [Theory]
+    [InlineData("lines", false, false)]
+    [InlineData("lines", true, false)]
+    [InlineData("lines", false, true)]
+    [InlineData("lines", true, true)]
+    [InlineData("coupons", false, false)]
+    [InlineData("coupons", true, false)]
+    [InlineData("coupons", false, true)]
+    [InlineData("coupons", true, true)]
+    [InlineData("save", false, false)]
+    [InlineData("save", true, false)]
+    [InlineData("save", false, true)]
+    [InlineData("save", true, true)]
+    public async Task DisabledCreationStillValidatesUncoveredDiscountStockWithExistingHolds(string stage, bool coupon, bool recovered)
+    {
+        using var f = new Fixture(false);
+        await f.SeedAsync();
+        var discount = new OrderedDiscount(Guid.NewGuid(), "discount", false, 1, default, [], [], new Constraints(), !coupon, false);
+        var lines = Enumerable.Range(0, 2).Select(_ =>
+        {
+            var line = Line(f.Product.Key, new OrderedProduct(f.Product, null, f.StoreInfo), 3);
+            line.SetupGet(x => x.Discount).Returns(discount);
+            if (coupon) line.SetupGet(x => x.Coupon).Returns("ExactCoupon");
+            return line.Object;
+        }).ToArray();
+        f.Order.SetupGet(x => x.OrderLines).Returns(lines);
+        var requirements = await f.Checkout.GetRequirementsAsync(f.Order.Object, default);
+        var inventoryHold = await f.Database.Service.ReserveAsync(requirements.Single(x => !x.IsDiscount));
+        var discountRequest = requirements.Single(x => x.IsDiscount);
+        await f.Database.SeedDiscountAsync(discount.Key, discountRequest.Coupon, stage == "lines" ? 1 : 2);
+        var discountHold = await f.Database.Service.ReserveAsync(discountRequest with { Quantity = 1 });
+        var originalIds = new[] { inventoryHold.ReservationId!, discountHold.ReservationId! };
+        if (!recovered) f.Ids.AddRange(originalIds);
+
+        async Task ExhaustDiscountAsync()
+        {
+            using var db = f.Database.Factory.GetDatabase();
+            await db.DiscountStockData.Set(x => x.Stock, 0).UpdateAsync();
+        }
+        var controller = f.Controller();
+        if (stage == "coupons") controller.BeforeCoupons = ExhaustDiscountAsync;
+        if (stage == "save") controller.PersistAction = _ => ExhaustDiscountAsync();
+
+        if (stage == "lines")
+            Assert.Equal(530, (await controller.PayAsync(new PaymentRequest(), "en-US", f.Order.Object)).HttpStatusCode);
+        else
+            await Assert.ThrowsAsync<NotEnoughStockException>(() => controller.PayAsync(new PaymentRequest(), "en-US", f.Order.Object));
+        Assert.False(controller.PaymentCalled);
+        Assert.Equal(stage == "save", controller.Saved);
+        Assert.Equal(4, await f.Database.StockAsync(f.Product.Key));
+        using var verify = f.Database.Factory.GetDatabase();
+        var holds = await verify.StockReservations.ToListAsync();
+        Assert.Equal(2, holds.Count);
+        Assert.All(holds, row =>
+        {
+            Assert.Contains(row.Id, originalIds);
+            Assert.Equal(StockReservationState.Active, row.State);
+            Assert.Equal(f.Order.Object.UniqueId.ToString(), row.OrderId);
+        });
+        var ownership = await verify.GetTable<CheckoutPreparationData>().SingleAsync();
+        Assert.Equal(stage == "save", ownership.Owner != null);
+        if (!recovered || stage == "save") Assert.Equal(originalIds.Order(), f.Ids.Order());
+    }
+
+    [Theory]
+    [InlineData("active")]
+    [InlineData("expired")]
+    [InlineData("consumed")]
+    [InlineData("quantity")]
+    public async Task DisabledAutomaticReservationsRecoverAndVerifyBeforePayment(string state)
+    {
+        using var f = new Fixture(false);
+        await f.SeedAsync();
+        var requirements = await f.Checkout.GetRequirementsAsync(f.Order.Object, default);
+        var hold = await f.Database.Service.ReserveAsync(requirements.Single() with { Quantity = state == "quantity" ? 4 : 3 });
+        if (state == "expired") await f.Database.MakeDueAsync(hold.ReservationId!);
+        if (state == "consumed") await f.Database.Service.ConsumeAsync(hold.ReservationId!);
+        var controller = f.Controller();
+        if (state == "active")
+        {
+            await controller.PayAsync(new PaymentRequest(), "en-US", f.Order.Object);
+            Assert.Equal(hold.ReservationId, Assert.Single(controller.IdsAtPayment));
+        }
+        else
+        {
+            await Assert.ThrowsAsync<StockException>(() => controller.PayAsync(new PaymentRequest(), "en-US", f.Order.Object));
+            Assert.False(controller.PaymentCalled);
+        }
+        Assert.Equal(state == "quantity" ? 6 : 7, await f.Database.StockAsync(f.Product.Key));
+    }
+
+    [Fact]
+    public async Task HoldExpiredDuringPersistenceIsVerifiedAgainBeforePayment()
+    {
+        using var f = new Fixture(true);
+        await f.SeedAsync();
+        var controller = f.Controller();
+        controller.PersistAction = ids => f.Database.MakeDueAsync(ids.Single());
+        await Assert.ThrowsAsync<StockException>(() => controller.PayAsync(new PaymentRequest(), "en-US", f.Order.Object));
+        Assert.False(controller.PaymentCalled);
+        using var db = f.Database.Factory.GetDatabase();
+        Assert.NotNull((await db.GetTable<CheckoutPreparationData>().SingleAsync()).Owner);
+    }
+
     [Fact]
     public async Task AnotherNodeCannotAdoptHoldsUntilFailingOwnerFinishesCompensation()
     {
