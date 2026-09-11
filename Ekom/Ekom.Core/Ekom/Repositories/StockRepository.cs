@@ -118,7 +118,7 @@ class StockRepository
         await using DbContext db = _databaseFactory.GetDatabase();
 
         string hangfireArgument = await db.FromSql<string>(
-                "SELECT Arguments FROM [HangFire].[Job] WHERE Id = {0} AND StateName = {1}",
+                "SELECT Arguments AS [t1] FROM [HangFire].[Job] WHERE Id = {0} AND StateName = {1}",
                 jobId,
                 "Scheduled"
             )
