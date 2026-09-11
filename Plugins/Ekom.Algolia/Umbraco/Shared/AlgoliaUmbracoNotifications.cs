@@ -61,6 +61,9 @@ internal sealed class AlgoliaUmbracoNotifications :
 
     public async Task HandleAsync(ContentPublishedNotification notification, CancellationToken cancellationToken)
     {
+        if (AlgoliaIndexingScope.IsSuppressed)
+            return;
+
         _logger.LogDebug("Algolia received ContentPublishedNotification with {Count} published entities.", notification.PublishedEntities.Count());
 
         foreach (var entity in notification.PublishedEntities)
@@ -69,6 +72,9 @@ internal sealed class AlgoliaUmbracoNotifications :
 
     public async Task HandleAsync(ContentUnpublishedNotification notification, CancellationToken cancellationToken)
     {
+        if (AlgoliaIndexingScope.IsSuppressed)
+            return;
+
         _logger.LogDebug("Algolia received ContentUnpublishedNotification with {Count} unpublished entities.", notification.UnpublishedEntities.Count());
 
         foreach (var entity in notification.UnpublishedEntities)
@@ -77,6 +83,9 @@ internal sealed class AlgoliaUmbracoNotifications :
 
     public async Task HandleAsync(ContentMovedToRecycleBinNotification notification, CancellationToken cancellationToken)
     {
+        if (AlgoliaIndexingScope.IsSuppressed)
+            return;
+
         _logger.LogDebug("Algolia received ContentMovedToRecycleBinNotification with {Count} entities.", notification.MoveInfoCollection.Count());
 
         foreach (var entity in notification.MoveInfoCollection.Select(x => x.Entity))
@@ -85,6 +94,9 @@ internal sealed class AlgoliaUmbracoNotifications :
 
     public async Task HandleAsync(ContentDeletedNotification notification, CancellationToken cancellationToken)
     {
+        if (AlgoliaIndexingScope.IsSuppressed)
+            return;
+
         _logger.LogDebug("Algolia received ContentDeletedNotification with {Count} deleted entities.", notification.DeletedEntities.Count());
 
         foreach (var entity in notification.DeletedEntities)
