@@ -584,26 +584,7 @@ internal sealed class VariantAppService : IVariantAppService
         }
 
         var ancestors = _nodeService.GetAllCatalogAncestors(node);
-        var stores = new List<IStore>();
-
-        foreach (var store in allStores)
-        {
-            var alias = store.Alias;
-
-            if (node.Properties.GetValue("disable", alias).IsBoolean())
-            {
-                continue;
-            }
-
-            if (ancestors.Any(ancestor => ancestor.Properties.GetValue("disable", alias).IsBoolean()))
-            {
-                continue;
-            }
-
-            stores.Add(store);
-        }
-
-        return stores;
+        return BackofficeStoreAvailability.FilterEnabledStores(node, ancestors, allStores);
     }
 
     private IReadOnlyList<UmbracoLanguage> LoadVariantLanguages(IReadOnlyList<VariantManagerStore> stores)
