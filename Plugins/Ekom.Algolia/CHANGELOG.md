@@ -13,6 +13,13 @@
 
 * **algolia:** send ecommerce conversion object data using Algolia's per-item schema.
 
+## [0.2.56](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.55...Ekom.Algolia-v0.2.56) (2026-09-11)
+
+
+### Features
+
+* **reservations:** replace Hangfire with native SQL reservations ([#858](https://github.com/Vettvangur/Ekom/issues/858)) ([5e5e095](https://github.com/Vettvangur/Ekom/commit/5e5e09545a7349cf9067a3e3588ab856972488bf))
+
 ## [0.2.55](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.54...Ekom.Algolia-v0.2.55) (2026-09-11)
 
 
