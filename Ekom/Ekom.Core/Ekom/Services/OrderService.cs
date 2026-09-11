@@ -1445,7 +1445,8 @@ partial class OrderService
     private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(
         OrderInfo orderInfo,
         bool fireOnOrderUpdatedEvents = true,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        bool reservationPersistence = false)
     {
         try
         {
@@ -1523,8 +1524,24 @@ partial class OrderService
                 line.InvalidateAmount();
             }
 
-            await _orderRepository.UpdateOrderAsync(orderData, ct)
+            await _orderRepository.UpdateOrderAsync(orderData, reservationPersistence, ct)
                 .ConfigureAwait(false);
+
+            if (reservationPersistence)
+            {
+                await OrderPersistenceNotifications.RunAsync(orderInfo.UniqueId, _logger,
+                    () => { UpdateOrderInfoInCache(orderInfo); return Task.CompletedTask; },
+                    () =>
+                    {
+                        if (fireOnOrderUpdatedEvents)
+                            OrderEvents.OnOrderUpdated(this, new OrderUpdatedEventArgs { OrderInfo = orderInfo });
+                        return Task.CompletedTask;
+                    },
+                    () => fireOnOrderUpdatedEvents
+                        ? OrderEvents.OnOrderUpdatedAsync(this, new OrderUpdatedEventArgs { OrderInfo = orderInfo }, ct)
+                        : Task.CompletedTask).ConfigureAwait(false);
+                return orderInfo;
+            }
 
             UpdateOrderInfoInCache(orderInfo);
 
@@ -1589,7 +1606,10 @@ partial class OrderService
             Configuration.orderInfoCacheTime);
     }
 
-    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, OrderInfo orderInfo, CancellationToken ct = default)
+    public Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, OrderInfo orderInfo, CancellationToken ct = default)
+        => AddReservationsToOrderAsync(storeAlias, hangfireJobs, orderInfo, ct);
+
+    public async Task AddReservationsToOrderAsync(string storeAlias, IEnumerable<string> reservationIds, OrderInfo orderInfo, CancellationToken ct = default)
     {
         if (orderInfo == null)
         {
@@ -1600,10 +1620,17 @@ partial class OrderService
         await semaphore.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            orderInfo._hangfireJobs.AddRange(hangfireJobs);
-
-            await UpdateOrderAndOrderInfoAsync(orderInfo, ct: ct)
-                .ConfigureAwait(false);
+            var added = reservationIds.Except(orderInfo.ReservationIds, StringComparer.Ordinal).ToArray();
+            orderInfo._hangfireJobs.AddRange(added);
+            try
+            {
+                await UpdateOrderAndOrderInfoAsync(orderInfo, ct: ct, reservationPersistence: true).ConfigureAwait(false);
+            }
+            catch
+            {
+                orderInfo._hangfireJobs.RemoveAll(added.Contains);
+                throw;
+            }
         }
         finally
         {
@@ -1611,7 +1638,10 @@ partial class OrderService
         }
     }
 
-    public async Task RemoveHangfireJobsToOrderAsync(string storeAlias, CancellationToken ct)
+    public Task RemoveHangfireJobsToOrderAsync(string storeAlias, CancellationToken ct)
+        => RemoveReservationsFromOrderAsync(storeAlias, ct);
+
+    public async Task RemoveReservationsFromOrderAsync(string storeAlias, CancellationToken ct)
     {
         var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 

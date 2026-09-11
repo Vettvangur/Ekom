@@ -86,39 +86,30 @@ public partial class Stock
 
     /// <summary>
     /// Reserve stock for the given timespan.
-    /// Rollback is scheduled using Hangfire
+    /// Expiry is persisted in SQL, including the exact coupon identity.
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
     /// <param name="coupon">Leave empty to update discount master stock</param>
     /// <param name="timeSpan">How long to reserve, if unspecified, uses appSettings or Ekom default</param>
-    /// <returns>Hangfire Job Id</returns>
+    /// <returns>Reservation ID</returns>
     public async Task<string> ReserveDiscountStockAsync(Guid key, int value, string coupon = null, TimeSpan timeSpan = default(TimeSpan))
     {
         if (value >= 0) throw new ArgumentOutOfRangeException();
-        if (timeSpan == default(TimeSpan))
+        var result = await _reservations.ReserveAsync(new StockReservationRequest
         {
-            timeSpan = _config.ReservationTimeout;
-        }
-
-        await UpdateDiscountStockAsync(key, value, coupon)
-            .ConfigureAwait(false);
-
-        string jobId = Hangfire.BackgroundJob.Schedule(() =>
-            UpdateDiscountStockHangfire(key, -value),
-            timeSpan
-        );
-
-        return jobId;
+            Key = key, Quantity = -(decimal)value, IsDiscount = true, Coupon = coupon, Duration = timeSpan,
+        }).ConfigureAwait(false);
+        return RequireReservation(result);
     }
 
     /// <summary>
-    /// Allows hangfire to serialise the method call to database
+    /// Synchronous compatibility wrapper for direct discount stock increments.
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
     public static void UpdateDiscountStockHangfire(Guid key, int value)
     {
-        Instance.UpdateDiscountStockAsync(key, value).Wait();
+        Instance.UpdateDiscountStockAsync(key, value).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 }

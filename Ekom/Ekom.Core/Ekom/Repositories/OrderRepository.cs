@@ -52,12 +52,22 @@ class OrderRepository
     }
 
     public async Task UpdateOrderAsync(OrderData orderData, CancellationToken ct = default)
+        => await UpdateOrderAsync(orderData, false, ct).ConfigureAwait(false);
+
+    internal async Task UpdateOrderAsync(OrderData orderData, bool reservationPersistence, CancellationToken ct)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
         await db.UpdateAsync(orderData, token: ct).ConfigureAwait(false);
         //Clear cache after update.
-        _memoryCache.Remove(orderData.UniqueId);
+        if (reservationPersistence)
+            await OrderPersistenceNotifications.RunAsync(orderData.UniqueId, _logger, () =>
+            {
+                _memoryCache.Remove(orderData.UniqueId);
+                return Task.CompletedTask;
+            }).ConfigureAwait(false);
+        else
+            _memoryCache.Remove(orderData.UniqueId);
     }
 
 

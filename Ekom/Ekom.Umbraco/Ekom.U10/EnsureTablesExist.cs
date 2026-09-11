@@ -52,6 +52,14 @@ class MigrationAddOrderActivityLogTypeColumn : MigrationBase
     }
 }
 
+class MigrationCreateStockReservationTable : MigrationBase
+{
+    private readonly DatabaseService _databaseService;
+    public MigrationCreateStockReservationTable(DatabaseService databaseService, IMigrationContext context) : base(context)
+        => _databaseService = databaseService;
+    protected override void Migrate() => _databaseService.EnsureStockReservationTable();
+}
+
 class EkomMigrationPlan : MigrationPlan
 {
     public const string OrderDataUniqueIndex = "IX_EkomOrders_UniqueId";
@@ -64,6 +72,8 @@ class EkomMigrationPlan : MigrationPlan
 
         From("1")
             .To<MigrationAddOrderActivityLogTypeColumn>("2");
+
+        From("2").To<MigrationCreateStockReservationTable>("native-reservations-v1");
     }
 }
 
@@ -111,7 +121,7 @@ class EnsureTablesExist : IComponent
             var upgrader = new Upgrader(new EkomMigrationPlan());
             upgrader.Execute(_migrationPlanExecutor, scopeProvider, keyValueService);
 
-            keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "2");
+            keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "native-reservations-v1");
         }
         else if (currentState == "1")
         {
@@ -120,7 +130,11 @@ class EnsureTablesExist : IComponent
             var upgrader = new Upgrader(new EkomMigrationPlan());
             upgrader.Execute(_migrationPlanExecutor, scopeProvider, keyValueService);
 
-            keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "2");
+            keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "native-reservations-v1");
+        }
+        else if (currentState == "2")
+        {
+            new Upgrader(new EkomMigrationPlan()).Execute(_migrationPlanExecutor, scopeProvider, keyValueService);
         }
         else
         {
@@ -128,6 +142,7 @@ class EnsureTablesExist : IComponent
         }
 
         _dbService.EnsureOrderActivityLogTypeColumn();
+        _dbService.EnsureStockReservationTable();
 
         logger.LogDebug("Done");
     }

@@ -1,6 +1,7 @@
 using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Services;
 using Ekom.Umb.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -43,6 +44,8 @@ internal sealed class EkomCacheInitializer
     {
         lock (InitializationLock)
         {
+            var readiness = _factory.GetRequiredService<StockReservationReadiness>();
+            readiness.Initializing();
             try
             {
                 if (isRestarting)
@@ -79,6 +82,7 @@ internal sealed class EkomCacheInitializer
 
                 _factory.GetRequiredService<WarehouseStockCache>().FillCache();
                 _factory.GetService<ICouponCache>()?.FillCache();
+                readiness.Initialized();
             }
             catch (Exception ex)
             {

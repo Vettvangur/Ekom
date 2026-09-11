@@ -120,38 +120,13 @@ public class CheckoutControllerService
             return responseHandler(res);
         }
 
-        // Reset hangfire jobs in cases where user cancels on payment page and changes cart f.x.
-        if (order.HangfireJobs.Any())
+        var preparation = await PrepareStockAsync(paymentRequest, order, store, ct).ConfigureAwait(false);
+        if (preparation.Response != null)
         {
-            foreach (string job in order.HangfireJobs)
-            {
-                await Stock.Instance.RollbackJobAsync(job, ct).ConfigureAwait(false);
-            }
-
-            await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias).ConfigureAwait(false);
+            return responseHandler(preparation.Response);
         }
 
-        List<string> hangfireJobs = new List<string>();
-        res = await ProcessOrderLinesAsync(paymentRequest, order, hangfireJobs, ct).ConfigureAwait(false);
-
-        if (res != null)
-        {
-            return responseHandler(res);
-        }
-
-        res = await ProcessCouponsAsync(paymentRequest, order, hangfireJobs, ct).ConfigureAwait(false);
-
-        if (res != null)
-        {
-            return responseHandler(res);
-        }
-
-        // save job ids to sql for retrieval after checkout completion
-        await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, order, order.StoreInfo.Alias, ct:ct).ConfigureAwait(false);
-
-        string orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store, ct)
-            .ConfigureAwait(false);
-        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, orderTitle, ct)
+        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, preparation.Title!, ct)
             .ConfigureAwait(false);
         return responseHandler(result);
     }
@@ -174,6 +149,7 @@ public class CheckoutControllerService
     {
         Logger.LogInformation("Checkout Pay - Payment request start ");
 
+        Culture = culture;
         if (!string.IsNullOrEmpty(Culture))
         {
             CultureInfo cultureInfo = new CultureInfo(Culture);
@@ -198,6 +174,7 @@ public class CheckoutControllerService
         order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order, ct: ct).ConfigureAwait(false);
 
         CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order, ct).ConfigureAwait(false);
+        if (res != null) return res;
 
         Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " Customer: " + +order.CustomerInformation.Customer.UserId
             + " ," + order.CustomerInformation.Customer.UserName + " Payment Provider: " + paymentRequest.PaymentProvider);
@@ -211,32 +188,65 @@ public class CheckoutControllerService
             ct)
             .ConfigureAwait(false);
 
-        if (order.HangfireJobs.Any())
-        {
-            foreach (string job in order.HangfireJobs)
-            {
-                await Stock.Instance.RollbackJobAsync(job, ct).ConfigureAwait(false);
-            }
+        if (res != null) return res;
+        var preparation = await PrepareStockAsync(paymentRequest, order, store, ct).ConfigureAwait(false);
+        if (preparation.Response != null) return preparation.Response;
 
-            await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias, ct: ct).ConfigureAwait(false);
-        }
-
-        var hangfireJobs = new List<string>();
-
-        res = await ProcessOrderLinesAsync(paymentRequest, order, hangfireJobs, ct: ct).ConfigureAwait(false);
-
-        res = await ProcessCouponsAsync(paymentRequest, order, hangfireJobs, ct: ct).ConfigureAwait(false);
-
-        // save job ids to sql for retrieval after checkout completion
-        await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, order, storeAlias).ConfigureAwait(false);
-
-        string orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store, ct: ct)
-            .ConfigureAwait(false);
-        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, orderTitle, ct: ct)
+        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, preparation.Title!, ct: ct)
             .ConfigureAwait(false);
 
         return result;
     }
+
+    private async Task<(CheckoutResponse? Response, string? Title)> PrepareStockAsync(
+        PaymentRequest request, IOrderInfo order, IStore store, CancellationToken ct)
+    {
+        var reservations = _factory.GetRequiredService<CheckoutReservationService>();
+        if (await reservations.IsCompletedAsync(order.UniqueId, ct).ConfigureAwait(false))
+            throw new StockException("Order has already completed stock processing; do not start another payment.");
+        var original = order.ReservationIds.ToHashSet(StringComparer.Ordinal);
+        var ids = original.ToList();
+        var ownership = await reservations.AcquirePreparationAsync(order.UniqueId, ct).ConfigureAwait(false);
+        original.UnionWith(JsonSerializer.Deserialize<string[]>(ownership.ProtectedIds)!);
+        foreach (var id in original)
+            if (!ids.Contains(id)) ids.Add(id);
+        var prepared = false;
+        var persistenceStarted = false;
+        var canUnlock = false;
+        try
+        {
+            var response = await ProcessOrderLinesAsync(request, order, ids, ct).ConfigureAwait(false);
+            if (response != null) return (response, null);
+            response = await ProcessCouponsAsync(request, order, ids, ct).ConfigureAwait(false);
+            if (response != null) return (response, null);
+            var title = await CreateOrderTitleAsync(request, order, store, ct).ConfigureAwait(false);
+            persistenceStarted = true;
+            await PersistReservationsAsync(ids, order, ct).ConfigureAwait(false);
+            prepared = true;
+            // Keep ownership if protecting the committed save fails. Releasing or allowing
+            // takeover at that point would make an uncertain save unsafe to compensate.
+            await reservations.ProtectPreparationAsync(ownership, ids, CancellationToken.None).ConfigureAwait(false);
+            canUnlock = true;
+            return (null, title);
+        }
+        finally
+        {
+            // Payment has not been submitted yet. Preserve existing holds on a retry and
+            // compensate only this preparation, even if the request was cancelled.
+            // A thrown save may have committed without acknowledgement. Keep ownership
+            // and holds in that case; a later request must not adopt or compensate them.
+            if (!prepared && !persistenceStarted)
+            {
+                await reservations.ReleaseAsync(ids.Where(x => !original.Contains(x)), CancellationToken.None).ConfigureAwait(false);
+                canUnlock = true;
+            }
+            if (canUnlock)
+                await reservations.ReleasePreparationAsync(ownership, CancellationToken.None).ConfigureAwait(false);
+        }
+    }
+
+    internal virtual Task PersistReservationsAsync(IEnumerable<string> ids, IOrderInfo order, CancellationToken ct)
+        => Order.Instance.AddReservationsToOrderAsync(ids, order, order.StoreInfo.Alias, ct);
 
     protected virtual Task<CheckoutResponse?> PrepareCheckoutAsync(PaymentRequest paymentRequest, IOrderInfo? orderInfo, CancellationToken ct)
     {
@@ -372,22 +382,27 @@ public class CheckoutControllerService
     {
         #region Stock
 
-        CheckoutEvents.OnProcessing(this, new ProcessingEventArgs
-        {
-            OrderInfo = order
-        });
-
         var proccessingEventArgs = new ProcessingEventArgs
         {
             OrderInfo = order
         };
 
+        CheckoutEvents.OnProcessing(this, proccessingEventArgs);
         await CheckoutEvents.OnProcessingAsync(this, proccessingEventArgs, ct);
 
         try
         {
-            // Only validate, remove stock in CheckoutService
-            if (proccessingEventArgs.StockValidation)
+            if (Config.ReservationsEnabled || order.ReservationIds.Any())
+            {
+                var reservations = _factory.GetRequiredService<CheckoutReservationService>();
+                var requirements = await reservations.GetRequirementsAsync(order, ct).ConfigureAwait(false);
+                // Outstanding holds remain authoritative when the opt-in is switched off.
+                // Preparation also reserves line discounts so their use cannot fail after payment.
+                await reservations.PrepareAsync(order.UniqueId, requirements, hangfireJobs, ct,
+                    Config.ReservationsEnabled, proccessingEventArgs.StockValidation)
+                    .ConfigureAwait(false);
+            }
+            else if (proccessingEventArgs.StockValidation)
             {
                 await Stock.Instance.ValidateOrderStockAsync(order, ct);
             }
