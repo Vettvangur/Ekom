@@ -5,6 +5,7 @@ namespace Ekom.Algolia.Indexing;
 public interface IAlgoliaFullIndexRebuildCoordinator
 {
     bool TryStart();
+    bool TryStartStore(string storeAlias);
 }
 
 public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuildCoordinator
@@ -13,7 +14,9 @@ public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuil
     private readonly IAlgoliaCategoryIndexService _categoryIndexService;
     private readonly IAlgoliaContentIndexService _contentIndexService;
     private readonly ILogger<AlgoliaFullIndexRebuildCoordinator> _logger;
-    private int _isRunning;
+    private readonly HashSet<string> _activeStoreRebuilds = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _sync = new();
+    private bool _isFullRebuildRunning;
 
     public AlgoliaFullIndexRebuildCoordinator(
         IAlgoliaProductIndexService productIndexService,
@@ -29,16 +32,36 @@ public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuil
 
     public bool TryStart()
     {
-        if (Interlocked.CompareExchange(ref _isRunning, 1, 0) != 0)
+        lock (_sync)
         {
-            return false;
+            if (_isFullRebuildRunning || _activeStoreRebuilds.Count > 0)
+                return false;
+
+            _isFullRebuildRunning = true;
         }
 
-        _ = Task.Run(RunAsync, CancellationToken.None);
+        _ = Task.Run(RunFullAsync, CancellationToken.None);
         return true;
     }
 
-    private async Task RunAsync()
+    public bool TryStartStore(string storeAlias)
+    {
+        if (string.IsNullOrWhiteSpace(storeAlias))
+            return false;
+
+        storeAlias = storeAlias.Trim();
+
+        lock (_sync)
+        {
+            if (_isFullRebuildRunning || !_activeStoreRebuilds.Add(storeAlias))
+                return false;
+        }
+
+        _ = Task.Run(() => RunStoreAsync(storeAlias), CancellationToken.None);
+        return true;
+    }
+
+    private async Task RunFullAsync()
     {
         try
         {
@@ -55,7 +78,29 @@ public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuil
         }
         finally
         {
-            Volatile.Write(ref _isRunning, 0);
+            lock (_sync)
+                _isFullRebuildRunning = false;
+        }
+    }
+
+    private async Task RunStoreAsync(string storeAlias)
+    {
+        try
+        {
+            await Task.WhenAll(
+                _productIndexService.RebuildStoreAndWaitAsync(storeAlias),
+                _categoryIndexService.RebuildStoreAndWaitAsync(storeAlias)).ConfigureAwait(false);
+
+            _logger.LogInformation("Algolia manual store reindex completed for store {Store}.", storeAlias);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Algolia manual store reindex failed for store {Store}.", storeAlias);
+        }
+        finally
+        {
+            lock (_sync)
+                _activeStoreRebuilds.Remove(storeAlias);
         }
     }
 }
