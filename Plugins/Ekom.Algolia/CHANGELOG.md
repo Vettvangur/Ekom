@@ -6,6 +6,7 @@
 
 * **algolia:** add optional variant-level product indexing for SKU search.
 * **algolia:** optionally update indexed availability and stock after stock changes.
+* **algolia:** prevent concurrent rebuilds for the same store.
 
 ### Bug Fixes
 

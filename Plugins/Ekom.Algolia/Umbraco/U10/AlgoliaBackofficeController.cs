@@ -8,19 +8,13 @@ namespace Ekom.Algolia.Controllers;
 public class EkomAlgoliaBackofficeController : UmbracoAuthorizedApiController
 {
     private readonly IAlgoliaFullIndexRebuildCoordinator _fullIndexRebuildCoordinator;
-    private readonly IAlgoliaProductIndexService _algoliaProductIndexService;
-    private readonly IAlgoliaCategoryIndexService _algoliaCategoryIndexService;
     private readonly ILogger<EkomAlgoliaBackofficeController> _logger;
 
     public EkomAlgoliaBackofficeController(
         IAlgoliaFullIndexRebuildCoordinator fullIndexRebuildCoordinator,
-        IAlgoliaProductIndexService algoliaProductIndexService,
-        IAlgoliaCategoryIndexService algoliaCategoryIndexService,
         ILogger<EkomAlgoliaBackofficeController> logger)
     {
         _fullIndexRebuildCoordinator = fullIndexRebuildCoordinator;
-        _algoliaProductIndexService = algoliaProductIndexService;
-        _algoliaCategoryIndexService = algoliaCategoryIndexService;
         _logger = logger;
     }
 
@@ -38,13 +32,13 @@ public class EkomAlgoliaBackofficeController : UmbracoAuthorizedApiController
 
     [HttpGet]
     [HttpPost]
-    public async Task<IActionResult> RebuildStoreIndexesAsync([FromQuery] string storeAlias, CancellationToken ct = default)
+    public IActionResult RebuildStoreIndexesAsync([FromQuery] string storeAlias)
     {
         if (string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest(new { error = "Store alias is required." });
 
-        await _algoliaProductIndexService.RebuildStoreAsync(storeAlias, ct).ConfigureAwait(false);
-        await _algoliaCategoryIndexService.RebuildStoreAsync(storeAlias, ct).ConfigureAwait(false);
+        if (!_fullIndexRebuildCoordinator.TryStartStore(storeAlias))
+            return Conflict(new { error = $"An Algolia reindex is already running for store '{storeAlias}'." });
 
         _logger.LogInformation("Algolia manual reindex requested for store {StoreAlias}.", storeAlias);
 
