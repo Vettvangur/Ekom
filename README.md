@@ -78,7 +78,14 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
   "ShareBasket": false,
   "BasketCookieLifetime": 1,
   "CustomImage": "images",
-  "ReservationTimeout": 30,
+  "Reservations": {
+    "Enabled": false,
+    "Timeout": 30,
+    "PollInterval": "00:00:30",
+    "BatchSize": 100,
+    "WorkerEnabled": true,
+    "CompletedRetention": "7.00:00:00"
+  },
   "CategoryRootLevel": 3,
   "VatCalcRounding": "AwayFromZero",
   "VatRoundingScope": "PerUnit",
@@ -126,7 +133,9 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `ShareBasket` (bool, default `false`): Share baskets between stores; requires same currencies across stores.
 - `BasketCookieLifetime` (number, days, default `1`): Order cookie lifespan in days.
 - `CustomImage` (string, default `images`): Media folder alias for product images.
-- `ReservationTimeout` (number, minutes, default `30`): Checkout reservation timeout in minutes.
+- `Reservations.Enabled` (boolean, default `false`): Opt in to reserving eligible checkout inventory and line discount/coupon stock before payment. Existing holds are honored even after disabling this setting. Explicit reservation APIs remain available in either mode.
+- `Reservations.Timeout` (number, minutes, default `30`): Reservation lifetime. The public virtual `Configuration.ReservationTimeout` uses this value first, then legacy `Ekom:ReservationTimeout`, then 30 minutes.
+- `Reservations`: Also configures the independent expiry worker (`WorkerEnabled` defaults to `true`); see [stock reservations](docs/stock-reservations.md) for lifecycle, retry and compatibility details.
 - `CategoryRootLevel` (int, default `3`): Minimum Umbraco level for categories.
 - `VatCalcRounding` (Rounding enum, default `AwayFromZero`): `None`, `RoundDown`, `RoundUp`, `RoundToEven`, `AwayFromZero`.
 - `VatRoundingScope` (VatRoundingScope enum, default `PerUnit`): `PerUnit`, `PerTotal`.

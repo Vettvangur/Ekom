@@ -3,7 +3,7 @@ using Ekom.Models;
 using Ekom.Services;
 using LinqToDB;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using System.Data;
 
 namespace Ekom.Repositories;
 
@@ -57,9 +57,13 @@ class StockRepository
         // Run synchronously to ensure that callers can expect a db record present after method runs
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        await db.InsertAsync(stockData, token: ct).ConfigureAwait(false);
-
-        return stockData;
+        return await StockReservationService.RetryAsync(async () =>
+        {
+            var existing = await db.StockData.FirstOrDefaultAsync(x => x.UniqueId == uniqueId, ct).ConfigureAwait(false);
+            if (existing != null) return existing;
+            await db.InsertAsync(stockData, token: ct).ConfigureAwait(false);
+            return stockData;
+        }, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -87,52 +91,44 @@ class StockRepository
     /// <returns></returns>
     public async Task<decimal> SetAsync(string uniqueId, decimal value, decimal oldValue, CancellationToken ct = default)
     {
-        StockData stockDataFromRepo = await GetStockByUniqueIdAsync(uniqueId, ct).ConfigureAwait(false);
-
-        if (stockDataFromRepo.Stock != oldValue)
-        {
-            _logger.LogError($"The database and cache are out of sync! OrderLine: " + uniqueId + " Stock Sent it: " + oldValue + " Current DB Stock: " + stockDataFromRepo.Stock);
-            //throw new StockException()
-            //{
-            //    RepoValue = stockDataFromRepo.Stock,
-            //};
-        }
-
-        stockDataFromRepo.Stock = value;
-        stockDataFromRepo.UpdateDate = DateTime.Now;
-
-        // Called synchronously and hopefully contained by a locking construct
-        await using DbContext db = _databaseFactory.GetDatabase();
-        await db.UpdateAsync(stockDataFromRepo, token: ct).ConfigureAwait(false);
-        return stockDataFromRepo.Stock;
+        await MutateAsync(uniqueId, value, increment: false, ct).ConfigureAwait(false);
+        return value;
     }
 
-    /// <summary>
-    /// Rollback scheduled stock reservation.
-    /// </summary>
-    /// <param name="jobId"></param>
-    /// <param name="ct">Cancellation token</param>
-    /// <exception cref="StockException"></exception>
-    public async Task RollBackJob(string jobId, CancellationToken ct = default)
+    /// <summary>Returns the committed mutation's previous value. Never calculates a delta from cache.</summary>
+    public Task<decimal> MutateAsync(string uniqueId, decimal value, bool increment, CancellationToken ct = default)
     {
-        await using DbContext db = _databaseFactory.GetDatabase();
-
-        string hangfireArgument = await db.FromSql<string>(
-                "SELECT Arguments AS [t1] FROM [HangFire].[Job] WHERE Id = {0} AND StateName = {1}",
-                jobId,
-                "Scheduled"
-            )
-            .FirstOrDefaultAsync(ct)
-            .ConfigureAwait(false);
-
-        if (!string.IsNullOrEmpty(hangfireArgument))
+        return StockReservationService.RetryAsync(async () =>
         {
-            List<string>? arguments = JsonConvert.DeserializeObject<List<string>>(hangfireArgument);
-
-            Guid key = new Guid(JsonConvert.DeserializeObject<string>(arguments.FirstOrDefault()));
-            decimal stock = Convert.ToDecimal(arguments.LastOrDefault());
-
-            await API.Stock.Instance.IncrementStockAsync(key, stock, ct).ConfigureAwait(false);
-        }
+            await using var db = _databaseFactory.GetDatabase();
+            await using var tx = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+            var row = await db.StockData.FirstOrDefaultAsync(x => x.UniqueId == uniqueId, ct).ConfigureAwait(false);
+            var oldValue = row?.Stock ?? 0;
+            if (row != null && (increment ? value == 0 : value == oldValue))
+            {
+                await tx.CommitAsync(ct).ConfigureAwait(false);
+                return oldValue;
+            }
+            var now = DateTime.Now;
+            if (row == null)
+            {
+                if (increment && value < 0) throw new NotEnoughStockException($"Not enough stock available for {uniqueId}.");
+                await db.InsertAsync(new StockData { UniqueId = uniqueId, Stock = value, CreateDate = now, UpdateDate = now }, token: ct).ConfigureAwait(false);
+            }
+            else if (increment)
+            {
+                var affected = await db.StockData.Where(x => x.UniqueId == uniqueId && x.Stock + value >= 0)
+                    .Set(x => x.Stock, x => Math.Round(x.Stock + value, 2)).Set(x => x.UpdateDate, now).UpdateAsync(ct).ConfigureAwait(false);
+                if (affected != 1) throw new NotEnoughStockException($"Not enough stock available for {uniqueId}.");
+            }
+            else
+            {
+                // An explicit set intentionally replaces the SQL balance, including concurrent reservations.
+                await db.StockData.Where(x => x.UniqueId == uniqueId).Set(x => x.Stock, value)
+                    .Set(x => x.UpdateDate, now).UpdateAsync(ct).ConfigureAwait(false);
+            }
+            await tx.CommitAsync(ct).ConfigureAwait(false);
+            return oldValue;
+        }, ct);
     }
 }

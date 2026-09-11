@@ -286,7 +286,11 @@ public class Configuration
     /// Give value in minutes when overriding default
     /// </summary>
     public virtual TimeSpan ReservationTimeout
-        => TimeSpan.FromMinutes(double.Parse(_configuration["Ekom:ReservationTimeout"] ?? "30"));
+        => TimeSpan.FromMinutes(double.Parse(_configuration["Ekom:Reservations:Timeout"]
+            ?? _configuration["Ekom:ReservationTimeout"] ?? "30", System.Globalization.CultureInfo.InvariantCulture));
+
+    public virtual bool ReservationsEnabled
+        => bool.TryParse(_configuration["Ekom:Reservations:Enabled"], out var enabled) && enabled;
 
     /// <summary>
     /// Should Ekom create a ekmCustomerData table and use it to store customer + order data 

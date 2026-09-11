@@ -14,13 +14,12 @@ namespace Ekom.Services;
 class CheckoutService
 {
     readonly ILogger<CheckoutService> _logger;
-    readonly Configuration _config;
-    readonly DiscountStockRepository _discountStockRepo;
     readonly OrderRepository _orderRepo;
     readonly CouponRepository _couponRepo;
     readonly OrderService _orderService;
     readonly IOrderActivityLogService _orderActivityLogService;
     readonly IMailService _mailService;
+    readonly CheckoutReservationService _checkoutReservations;
 
     public CheckoutService(
         ILogger<CheckoutService> logger,
@@ -30,16 +29,17 @@ class CheckoutService
         OrderService orderService,
         DiscountStockRepository discountStockRepo,
         IOrderActivityLogService orderActivityLogService,
-        IMailService mailService)
+        IMailService mailService,
+        IStockReservationService reservations,
+        CheckoutReservationService checkoutReservations)
     {
         _logger = logger;
-        _config = config;
         _orderRepo = orderRepo;
         _couponRepo = couponRepo;
         _orderService = orderService;
-        _discountStockRepo = discountStockRepo;
         _orderActivityLogService = orderActivityLogService;
         _mailService = mailService;
+        _checkoutReservations = checkoutReservations;
     }
 
     public async Task CompleteAsync(Guid key, CancellationToken ct = default)
@@ -71,15 +71,11 @@ class CheckoutService
             CheckoutEvents.OnCompleteCheckout(this, model);
             await CheckoutEvents.OnCompleteCheckoutAsync(this, model);
 
-            // Currently unused
-            foreach (string job in oi.HangfireJobs)
+            if (!await _checkoutReservations.IsCompletedAsync(key, ct).ConfigureAwait(false))
             {
-                Stock.Instance.CancelRollback(job);
-            }
-
-            if (model.StockValidation)
-            {
-                await ProcessOrderLinesStockAsync(oi).ConfigureAwait(false);
+                var requirements = await _checkoutReservations.GetRequirementsAsync(oi, ct, model.StockValidation).ConfigureAwait(false);
+                await _checkoutReservations.CompleteStockAsync(key, requirements, oi.ReservationIds, model.StockValidation, ct)
+                    .ConfigureAwait(false);
             }
 
             if (oi.Discount != null)
@@ -103,33 +99,6 @@ class CheckoutService
                 }
             }
 
-            foreach (IOrderLine? line in oi.OrderLines.Where(line => line.Discount != null))
-            {
-                if (!string.IsNullOrEmpty(line.Coupon))
-                {
-                    string id = $"{line.Discount.Key}_{line.Coupon}";
-                    await _discountStockRepo.UpdateAsync(id, -1)
-                        .ConfigureAwait(false);
-                }
-
-                if (line.Discount.HasMasterStock)
-                {
-                    await _discountStockRepo.UpdateAsync(line.Discount.Key.ToString(), -1)
-                        .ConfigureAwait(false);
-                }
-
-                try
-                {
-                    //discount eventar virka ekki (vilt líklega hlusta frekar eftir coupon, þurfum þá coupon klasa og henda honum á orderinfo og orderline og breyta "öllu")
-                    //line.Discount?.OnCouponApply();
-                }
-#pragma warning disable CA1031 // Do not catch general exception types
-                catch (Exception) // Swallow all event subscriber exceptions
-#pragma warning restore CA1031 // Do not catch general exception types
-                {
-                    //_logger.LogError(ex);
-                }
-            }
             if (model.UpdateOrderStatus)
             {
                 await _orderService.ChangeOrderStatusAsync(o.UniqueId, OrderStatus.ReadyForDispatch)
@@ -188,93 +157,4 @@ class CheckoutService
         }
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    private async Task ProcessOrderLinesStockAsync(IOrderInfo order)
-    {
-        string storeAlias = order.StoreInfo.Alias;
-
-        foreach (IOrderLine line in order.OrderLines)
-        {
-            if (!line.Product.Backorder)
-            {
-                IProduct? product = await Catalog.Instance.GetProductAsync(line.ProductKey, storeAlias, raiseEvent: false)
-                    .ConfigureAwait(false);
-
-                if (product == null)
-                {
-                    throw new ArgumentNullException(nameof(product));
-                }
-
-                if (line.Product.VariantGroups.Any())
-                {
-                    foreach (OrderedVariant? variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
-                    {
-                        IVariant? catalogVariant = Catalog.Instance.GetVariant(variant.Key, storeAlias);
-
-                        if (catalogVariant == null)
-                        {
-                            throw new ArgumentNullException(nameof(catalogVariant));
-                        }
-
-                        decimal variantStock = StockBufferHelper.GetEffectiveStock(Stock.Instance.GetStock(variant.Key, storeAlias), product, catalogVariant);
-
-                        if (variantStock >= line.Quantity)
-                        {
-                            await Stock.Instance.IncrementStockAsync(variant.Key, storeAlias, (line.Quantity * -1))
-                                .ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            _logger.LogError("Variant Stock error on line {OrderLineKey} with variant {VariantKey} in store {StoreAlias}. Stock: {Stock}. Quantity: {Quantity}", line.Key, variant.Key, storeAlias, variantStock, line.Quantity);
-                            throw new NotEnoughLineStockException("Stock error ")
-                            {
-                                OrderLineKey = line.Key,
-                                Variant = true,
-                            };
-                        }
-                    }
-                }
-                else
-                {
-                    decimal productStock = StockBufferHelper.GetEffectiveStock(Stock.Instance.GetStock(line.ProductKey, storeAlias), product);
-
-                    if (productStock >= line.Quantity)
-                    {
-                        //if (_config.ReservationTimeout.Seconds <= 0)
-                        //{
-                        //    await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1));
-                        //}
-                        //else
-                        //{
-                        //    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
-                        //}
-                        await Stock.Instance.IncrementStockAsync(line.ProductKey, storeAlias, (line.Quantity * -1))
-                            .ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        _logger.LogError("Product Stock error on line {OrderLineKey} with product {ProductKey} in store {StoreAlias}. Stock: {Stock}. Quantity: {Quantity}", line.Key, line.ProductKey, storeAlias, productStock, line.Quantity);
-                        throw new NotEnoughLineStockException("Stock error ")
-                        {
-                            OrderLineKey = line.Key,
-                        };
-                    }
-                }
-            }
-
-            // How does this work ? we dont have a coupon per orderline!
-            //if (line.Discount != null)
-            //{
-            //    hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
-
-            //    if (line.Discount.HasMasterStock)
-            //    {
-            //        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
-            //    }
-            //}
-        }
-    }
 }

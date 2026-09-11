@@ -195,51 +195,6 @@
           "Lucene.Net.Replicator": "4.8.0-beta00017"
         }
       },
-      "Hangfire": {
-        "type": "Transitive",
-        "resolved": "1.8.18",
-        "contentHash": "EY+UqMHTOQAtdjeJf3jlnj8MpENyDPTpA6OHMncucVlkaongZjrx+gCN4bgma7vD3BNHqfQ7irYrfE5p1DOBEQ==",
-        "dependencies": {
-          "Hangfire.AspNetCore": "[1.8.18]",
-          "Hangfire.Core": "[1.8.18]",
-          "Hangfire.SqlServer": "[1.8.18]"
-        }
-      },
-      "Hangfire.AspNetCore": {
-        "type": "Transitive",
-        "resolved": "1.8.18",
-        "contentHash": "5D6Do0qgoAnakvh4KnKwhIoUzFU84Z0sCYMB+Sit+ygkpL1P6JGYDcd/9vDBcfr5K3JqBxD4Zh2IK2LOXuuiaw==",
-        "dependencies": {
-          "Hangfire.NetCore": "[1.8.18]"
-        }
-      },
-      "Hangfire.Core": {
-        "type": "Transitive",
-        "resolved": "1.8.18",
-        "contentHash": "oNAkV8QQoYg5+vM2M024NBk49EhTO2BmKDLuQaKNew23RpH9OUGtKDl1KldBdDJrD8TMFzjhWCArol3igd2i2w==",
-        "dependencies": {
-          "Newtonsoft.Json": "11.0.1"
-        }
-      },
-      "Hangfire.NetCore": {
-        "type": "Transitive",
-        "resolved": "1.8.18",
-        "contentHash": "3KAV9AZ1nqQHC54qR4buNEEKRmQJfq+lODtZxUk5cdi68lV8+9K2f4H1/mIfDlPpgjPFjEfCobNoi2+TIpKySw==",
-        "dependencies": {
-          "Hangfire.Core": "[1.8.18]",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.0.0",
-          "Microsoft.Extensions.Hosting.Abstractions": "3.0.0",
-          "Microsoft.Extensions.Logging.Abstractions": "3.0.0"
-        }
-      },
-      "Hangfire.SqlServer": {
-        "type": "Transitive",
-        "resolved": "1.8.18",
-        "contentHash": "yBfI2ygYfN/31rOrahfOFHee1mwTrG0ppsmK9awCS0mAr2GEaB9eyYqg/lURgZy8AA8UVJVs5nLHa2hc1pDAVQ==",
-        "dependencies": {
-          "Hangfire.Core": "[1.8.18]"
-        }
-      },
       "HtmlAgilityPack": {
         "type": "Transitive",
         "resolved": "1.12.4",
@@ -1636,7 +1591,7 @@
       "ekom.aspnetcore": {
         "type": "Project",
         "dependencies": {
-          "Ekom.Core": "[0.2.187, )"
+          "Ekom.Core": "[0.2.270, )"
         }
       },
       "ekom.common": {
@@ -1651,9 +1606,8 @@
         "dependencies": {
           "Azure.Identity": "[1.17.1, )",
           "CommonServiceLocator": "[2.0.7, )",
-          "Ekom.Common": "[0.2.187, )",
+          "Ekom.Common": "[0.2.270, )",
           "Ekom.Payments.Core": "[0.2.83, )",
-          "Hangfire": "[1.8.18, )",
           "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "[8.0.11, )",
           "Microsoft.Data.SqlClient": "[6.1.2, )",
           "Microsoft.Data.Sqlite": "[8.0.11, )",
@@ -1665,7 +1619,7 @@
       "ekom.u17": {
         "type": "Project",
         "dependencies": {
-          "Ekom.AspNetCore": "[0.2.187, )",
+          "Ekom.AspNetCore": "[0.2.270, )",
           "Ekom.Payments.U17": "[0.2.83, )",
           "Umbraco.Cms.Api.Common": "[17.0.0, 18.0.0)",
           "Umbraco.Cms.Core": "[17.0.0, 18.0.0)",
@@ -1854,51 +1808,6 @@
           "Lucene.Net.QueryParser": "4.8.0-beta00017",
           "Lucene.Net.Replicator": "4.8.0-beta00017",
           "System.Threading.AccessControl": "8.0.0"
-        }
-      },
-      "Hangfire": {
-        "type": "Transitive",
-        "resolved": "1.8.18",
-        "contentHash": "EY+UqMHTOQAtdjeJf3jlnj8MpENyDPTpA6OHMncucVlkaongZjrx+gCN4bgma7vD3BNHqfQ7irYrfE5p1DOBEQ==",
-        "dependencies": {
-          "Hangfire.AspNetCore": "[1.8.18]",
-          "Hangfire.Core": "[1.8.18]",
-          "Hangfire.SqlServer": "[1.8.18]"
-        }
-      },
-      "Hangfire.AspNetCore": {
-        "type": "Transitive",
-        "resolved": "1.8.18",
-        "contentHash": "5D6Do0qgoAnakvh4KnKwhIoUzFU84Z0sCYMB+Sit+ygkpL1P6JGYDcd/9vDBcfr5K3JqBxD4Zh2IK2LOXuuiaw==",
-        "dependencies": {
-          "Hangfire.NetCore": "[1.8.18]"
-        }
-      },
-      "Hangfire.Core": {
-        "type": "Transitive",
-        "resolved": "1.8.18",
-        "contentHash": "oNAkV8QQoYg5+vM2M024NBk49EhTO2BmKDLuQaKNew23RpH9OUGtKDl1KldBdDJrD8TMFzjhWCArol3igd2i2w==",
-        "dependencies": {
-          "Newtonsoft.Json": "11.0.1"
-        }
-      },
-      "Hangfire.NetCore": {
-        "type": "Transitive",
-        "resolved": "1.8.18",
-        "contentHash": "3KAV9AZ1nqQHC54qR4buNEEKRmQJfq+lODtZxUk5cdi68lV8+9K2f4H1/mIfDlPpgjPFjEfCobNoi2+TIpKySw==",
-        "dependencies": {
-          "Hangfire.Core": "[1.8.18]",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.0.0",
-          "Microsoft.Extensions.Hosting.Abstractions": "3.0.0",
-          "Microsoft.Extensions.Logging.Abstractions": "3.0.0"
-        }
-      },
-      "Hangfire.SqlServer": {
-        "type": "Transitive",
-        "resolved": "1.8.18",
-        "contentHash": "yBfI2ygYfN/31rOrahfOFHee1mwTrG0ppsmK9awCS0mAr2GEaB9eyYqg/lURgZy8AA8UVJVs5nLHa2hc1pDAVQ==",
-        "dependencies": {
-          "Hangfire.Core": "[1.8.18]"
         }
       },
       "HtmlAgilityPack": {
@@ -3453,7 +3362,7 @@
       "ekom.aspnetcore": {
         "type": "Project",
         "dependencies": {
-          "Ekom.Core": "[0.2.188, )"
+          "Ekom.Core": "[0.2.270, )"
         }
       },
       "ekom.common": {
@@ -3468,9 +3377,8 @@
         "dependencies": {
           "Azure.Identity": "[1.17.1, )",
           "CommonServiceLocator": "[2.0.7, )",
-          "Ekom.Common": "[0.2.188, )",
+          "Ekom.Common": "[0.2.270, )",
           "Ekom.Payments.Core": "[0.2.83, )",
-          "Hangfire": "[1.8.18, )",
           "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "[8.0.11, )",
           "Microsoft.Data.SqlClient": "[6.1.2, )",
           "Microsoft.Data.Sqlite": "[8.0.11, )",
@@ -3484,7 +3392,7 @@
       "ekom.u10": {
         "type": "Project",
         "dependencies": {
-          "Ekom.AspNetCore": "[0.2.188, )",
+          "Ekom.AspNetCore": "[0.2.270, )",
           "Ekom.Payments.U10": "[0.2.83, )",
           "Umbraco.Cms.Api.Common": "[13.13.0, )",
           "Umbraco.Cms.Core": "[13.13.0, )",

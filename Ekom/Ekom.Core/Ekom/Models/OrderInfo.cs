@@ -51,7 +51,9 @@ public class OrderInfo : IOrderInfo
             Giftcards = orderInfoJObject[nameof(Giftcards)]?.ToObject<List<Giftcard>>() ?? new List<Giftcard>();
             Discount = CreateOrderedDiscountFromJson(orderInfoJObject[nameof(Discount)]);
             Coupon = orderInfoJObject[nameof(Coupon)]?.ToObject<string>();
-            _hangfireJobs = orderInfoJObject[nameof(HangfireJobs)]?.ToObject<List<string>>();
+            var reservations = orderInfoJObject[nameof(ReservationIds)] as JArray
+                ?? orderInfoJObject[nameof(HangfireJobs)] as JArray;
+            _hangfireJobs = reservations?.ToObject<List<string>>() ?? new List<string>();
         }
     }
 
@@ -377,12 +379,27 @@ public class OrderInfo : IOrderInfo
     /// <inheritdoc />
     public OrderStatus OrderStatus => _orderData.OrderStatus;
 
-    internal List<string> _hangfireJobs { get; set; } = new List<string>();
+    private List<string> _reservationIds = new();
+    private IReadOnlyCollection<string>? _reservationIdsView;
+    internal List<string> _hangfireJobs
+    {
+        get => _reservationIds;
+        set
+        {
+            _reservationIds = value ?? new List<string>();
+            _reservationIdsView = null;
+        }
+    }
+    public IReadOnlyCollection<string> ReservationIds
+    {
+        get => _reservationIdsView ??= _reservationIds.AsReadOnly();
+        internal set => _hangfireJobs = value.ToList();
+    }
+    /// <summary>Compatibility alias; both JSON names represent the same collection.</summary>
     public IReadOnlyCollection<string> HangfireJobs
     {
-        get => _hangfireJobs.AsReadOnly();
-
-        internal set => _hangfireJobs = value.ToList();
+        get => ReservationIds;
+        internal set => ReservationIds = value;
     }
 
     public IEnumerable<IProduct> RelatedProducts(int count = 4)

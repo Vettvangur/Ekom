@@ -107,10 +107,11 @@ public interface IOrderInfo
     ICalculatedPrice ProductDiscountAmountWithOutVat { get; }
 
     /// <summary>
-    /// A collection of hangfire job ids linked to this order,
-    /// each job id represents a stock reservation for a store item or discount.
+    /// Compatibility alias for stock reservation IDs linked to this order.
     /// </summary>
     IReadOnlyCollection<string> HangfireJobs { get; }
+    /// <summary>Stock reservation IDs. Defaults to the legacy property for existing implementations.</summary>
+    IReadOnlyCollection<string> ReservationIds => HangfireJobs;
     string OrderNumber { get; }
 
     /// <summary>

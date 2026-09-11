@@ -8,6 +8,7 @@ using Ekom.Tracking;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
@@ -1445,7 +1446,8 @@ partial class OrderService
     private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(
         OrderInfo orderInfo,
         bool fireOnOrderUpdatedEvents = true,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        bool reservationPersistence = false)
     {
         try
         {
@@ -1523,8 +1525,24 @@ partial class OrderService
                 line.InvalidateAmount();
             }
 
-            await _orderRepository.UpdateOrderAsync(orderData, ct)
+            await _orderRepository.UpdateOrderAsync(orderData, reservationPersistence, ct)
                 .ConfigureAwait(false);
+
+            if (reservationPersistence)
+            {
+                await OrderPersistenceNotifications.RunAsync(orderInfo.UniqueId, _logger,
+                    () => { UpdateOrderInfoInCache(orderInfo); return Task.CompletedTask; },
+                    () =>
+                    {
+                        if (fireOnOrderUpdatedEvents)
+                            OrderEvents.OnOrderUpdated(this, new OrderUpdatedEventArgs { OrderInfo = orderInfo });
+                        return Task.CompletedTask;
+                    },
+                    () => fireOnOrderUpdatedEvents
+                        ? OrderEvents.OnOrderUpdatedAsync(this, new OrderUpdatedEventArgs { OrderInfo = orderInfo }, ct)
+                        : Task.CompletedTask).ConfigureAwait(false);
+                return orderInfo;
+            }
 
             UpdateOrderInfoInCache(orderInfo);
 
@@ -1589,29 +1607,72 @@ partial class OrderService
             Configuration.orderInfoCacheTime);
     }
 
-    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, OrderInfo orderInfo, CancellationToken ct = default)
+    public Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, OrderInfo orderInfo, CancellationToken ct = default)
+        => AddReservationsToOrderAsync(storeAlias, hangfireJobs, orderInfo, ct);
+
+    public async Task AddReservationsToOrderAsync(string storeAlias, IEnumerable<string> reservationIds, OrderInfo orderInfo, CancellationToken ct = default)
     {
         if (orderInfo == null)
         {
             throw new OrderInfoNotFoundException();
         }
 
+        var reservations = Configuration.Resolver.GetRequiredService<CheckoutReservationService>();
+        if (!string.Equals(storeAlias, orderInfo.StoreInfo.Alias, StringComparison.Ordinal))
+            throw new StockException("Reservation store does not match the order.");
+        var scope = CheckoutPreparationScope.Current;
+        if (scope != null && scope.Order.UniqueId != orderInfo.UniqueId)
+            throw new StockException("Cannot attach another order during checkout preparation.");
+        var ownership = scope?.Ownership ?? await reservations.AcquirePreparationAsync(orderInfo.UniqueId, ct).ConfigureAwait(false);
+        var unlock = true;
+        var requested = reservationIds.Concat(System.Text.Json.JsonSerializer.Deserialize<string[]>(ownership.ProtectedIds)!)
+            .Distinct(StringComparer.Ordinal).ToArray();
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        var entered = false;
         try
         {
-            orderInfo._hangfireJobs.AddRange(hangfireJobs);
-
-            await UpdateOrderAndOrderInfoAsync(orderInfo, ct: ct)
-                .ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
+            entered = true;
+            await reservations.AssociateAsync(orderInfo, requested, ownership, ct).ConfigureAwait(false);
+            var added = requested.Except(orderInfo.ReservationIds, StringComparer.Ordinal).ToArray();
+            orderInfo._hangfireJobs.AddRange(added);
+            try
+            {
+                unlock = false;
+                await UpdateOrderAndOrderInfoAsync(orderInfo, ct: ct, reservationPersistence: true).ConfigureAwait(false);
+                if (scope != null && scope.CompensationSaves.Count == 0)
+                {
+                    scope.CompensationSaves.Add(async () =>
+                    {
+                        orderInfo._hangfireJobs.RemoveAll(scope.Created.Contains);
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, ct: CancellationToken.None, reservationPersistence: true).ConfigureAwait(false);
+                    });
+                }
+                else if (scope == null)
+                {
+                    await reservations.ProtectPreparationAsync(ownership, orderInfo.ReservationIds, CancellationToken.None).ConfigureAwait(false);
+                    unlock = true;
+                }
+            }
+            catch
+            {
+                if (scope != null) scope.UncertainSave = true;
+                orderInfo._hangfireJobs.RemoveAll(added.Contains);
+                throw;
+            }
         }
         finally
         {
-            semaphore.Release();
+            if (entered) semaphore.Release();
+            if (scope == null && unlock)
+                await reservations.ReleasePreparationAsync(ownership, CancellationToken.None).ConfigureAwait(false);
         }
     }
 
-    public async Task RemoveHangfireJobsToOrderAsync(string storeAlias, CancellationToken ct)
+    public Task RemoveHangfireJobsToOrderAsync(string storeAlias, CancellationToken ct)
+        => RemoveReservationsFromOrderAsync(storeAlias, ct);
+
+    public async Task RemoveReservationsFromOrderAsync(string storeAlias, CancellationToken ct)
     {
         var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 

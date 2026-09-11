@@ -9,6 +9,14 @@
 
 ### Features
 
+* **checkout:** validate uncovered line discount availability with existing/recovered holds even when automatic reservation creation is disabled, including final prepayment checks; enforce configured product/variant stock buffers in legacy reservation wrappers.
+* **checkout:** add injectable `ICheckoutStockPolicy` for shared preparation/completion eligibility, with documented wholesale-only backorder integration.
+* **checkout:** support no-base legacy line overrides that immediately attach `ReserveStockAsync` holds, using SQL-validated scope-bound association, compensation of newly persisted holds, and retry preservation of prior associations.
+* **checkout:** verify directly saved and recovered holds before payment even when automatic reservations are disabled; recover completion holds with inventory validation disabled and block completion during active preparation.
+* **checkout:** coordinate preparation ownership and protected reservation IDs in SQL across nodes; preserve ownership on uncertain persistence and log reservation-save post-commit notification failures without compensating committed holds.
+* **stock:** replace Hangfire reservations with durable SQL Server/SQLite reservations and an automatically registered expiry worker; retain compatibility APIs and JSON, add neutral order reservation APIs and creation idempotency. Default checkout remains non-reserving.
+* **checkout:** add opt-in `Reservations.Enabled` checkout holds, nested numeric `Reservations.Timeout` with legacy fallback, preparation compensation and retry reuse. Verify reservation ownership/stock coverage and atomically consume holds, deduct uncovered inventory/line discounts, and record a durable stock-completion receipt to prevent repeated deductions.
+* **stock:** perform increments using conditional SQL arithmetic and publish cache/events after commit to avoid cache-based lost updates and mutation retries after notification failures.
 * **discounts:** add native product and variant `ekmDiscountPrice` support using the Ekom Price datatype, competing with content and event-added discounts while preserving original prices.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 

@@ -9,10 +9,12 @@ internal class DatabaseService
 {
     readonly DatabaseFactory _databaseFactory;
     readonly ILogger<DatabaseService> _logger;
-    public DatabaseService(DatabaseFactory databaseFactory, ILogger<DatabaseService> logger)
+    readonly StockReservationReadiness _reservationReadiness;
+    public DatabaseService(DatabaseFactory databaseFactory, ILogger<DatabaseService> logger, StockReservationReadiness reservationReadiness)
     {
         _databaseFactory = databaseFactory;
         _logger = logger;
+        _reservationReadiness = reservationReadiness;
     }
 
     internal virtual void CreateTables()
@@ -31,6 +33,7 @@ internal class DatabaseService
             }
 
             EnsureWarehouseStockTable(db, dbSchema);
+            EnsureStockReservationTable();
 
             if (!dbSchema.Tables.Any(x => x.TableName == "EkomOrdersActivityLog"))
             {
@@ -77,6 +80,33 @@ internal class DatabaseService
         LinqToDB.SchemaProvider.DatabaseSchema dbSchema = sp.GetSchema(db);
 
         EnsureWarehouseStockTable(db, dbSchema);
+    }
+
+    internal virtual void EnsureStockReservationTable()
+    {
+        using var db = _databaseFactory.GetDatabase();
+        db.CreateTable<StockReservationData>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<CheckoutStockCompletionData>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<CheckoutPreparationData>(tableOptions: TableOptions.CreateIfNotExists);
+        // Separate idempotent index creation also repairs a partially completed schema setup.
+        if (_databaseFactory.IsSqlServer)
+        {
+            db.Execute(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_EkomStockReservation_CreationKey' AND object_id = OBJECT_ID('EkomStockReservation'))
+    CREATE UNIQUE INDEX IX_EkomStockReservation_CreationKey ON EkomStockReservation (CreationKey);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_EkomStockReservation_Expiry' AND object_id = OBJECT_ID('EkomStockReservation'))
+    CREATE INDEX IX_EkomStockReservation_Expiry ON EkomStockReservation (State, ExpiresUtc);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_EkomStockReservation_Completed' AND object_id = OBJECT_ID('EkomStockReservation'))
+    CREATE INDEX IX_EkomStockReservation_Completed ON EkomStockReservation (CompletedUtc);");
+        }
+        else
+        {
+            db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS IX_EkomStockReservation_CreationKey ON EkomStockReservation (CreationKey)");
+            db.Execute("CREATE INDEX IF NOT EXISTS IX_EkomStockReservation_Expiry ON EkomStockReservation (State, ExpiresUtc)");
+            db.Execute("CREATE INDEX IF NOT EXISTS IX_EkomStockReservation_Completed ON EkomStockReservation (CompletedUtc)");
+        }
+        // Readiness is set only after all required indexes exist; migration failures propagate.
+        _reservationReadiness.SchemaReady();
     }
 
     private static void EnsureWarehouseStockTable(

@@ -11,7 +11,6 @@ using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Tracking;
 using Ekom.Utilities;
-using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -19,6 +18,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Threading.RateLimiting;
 
@@ -102,6 +102,12 @@ static class Registrations
         services.AddTransient<Ekom.Services.IMailService, MailService>();
         services.AddTransient<EkomPayments>();
         services.AddTransient<DatabaseService>();
+        services.AddSingleton<StockReservationReadiness>();
+        services.AddSingleton<StockChangePublisher>();
+        services.AddSingleton<IStockReservationService, StockReservationService>();
+        services.AddSingleton<CheckoutReservationService>();
+        services.TryAddSingleton<ICheckoutStockPolicy, DefaultCheckoutStockPolicy>();
+        services.AddHostedService<StockReservationWorker>();
 
         services.AddTransient<CountriesRepository>();
         services.AddTransient<StockRepository>();
@@ -205,7 +211,9 @@ static class Registrations
                 f.GetService<StockRepository>(),
                 f.GetService<DiscountStockRepository>(),
                 f.GetService<IStoreService>(),
-                f.GetService<IPerStoreCache<StockData>>()
+                f.GetService<IPerStoreCache<StockData>>(),
+                f.GetRequiredService<IStockReservationService>(),
+                f.GetRequiredService<StockChangePublisher>()
             )
         );
         services.AddTransient<Warehouse>(f =>
@@ -238,17 +246,11 @@ static class Registrations
         services.Configure<EkomOptions>(config.GetSection("Ekom"));
         services.Configure<TrackingOptions>(config.GetSection("Ekom:Tracking"));
         services.Configure<OrderDiscountCalculationOptions>(config.GetSection("Ekom:OrderDiscountCalculation"));
+        services.Configure<StockReservationOptions>(config.GetSection("Ekom:Reservations"));
 
         services.Configure<MvcOptions>(mvcOptions =>
         {
             mvcOptions.Filters.Add<HttpResponseExceptionFilter>();
-        });
-
-        var connectionString = config.GetConnectionString("umbracoDbDSN");
-
-        services.AddHangfire(config =>
-        {
-            config.UseSqlServerStorage(connectionString);
         });
 
         services.AddRateLimiter(options =>

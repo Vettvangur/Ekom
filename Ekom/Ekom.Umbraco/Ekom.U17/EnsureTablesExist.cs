@@ -94,6 +94,26 @@ internal sealed class MigrationCreateWarehouseStockTable : MigrationBase
 #endif
 }
 
+#if UMBRACO_18
+internal sealed class MigrationCreateStockReservationTable : AsyncMigrationBase
+#else
+internal sealed class MigrationCreateStockReservationTable : MigrationBase
+#endif
+{
+    private readonly DatabaseService _databaseService;
+    public MigrationCreateStockReservationTable(DatabaseService databaseService, IMigrationContext context) : base(context)
+        => _databaseService = databaseService;
+#if UMBRACO_18
+    protected override Task MigrateAsync()
+    {
+        _databaseService.EnsureStockReservationTable();
+        return Task.CompletedTask;
+    }
+#else
+    protected override void Migrate() => _databaseService.EnsureStockReservationTable();
+#endif
+}
+
 internal sealed class EkomMigrationPlan : MigrationPlan
 {
     public EkomMigrationPlan()
@@ -107,6 +127,7 @@ internal sealed class EkomMigrationPlan : MigrationPlan
 
         From("2")
             .To<MigrationCreateWarehouseStockTable>("3");
+        From("3").To<MigrationCreateStockReservationTable>("native-reservations-v1");
     }
 }
 
@@ -150,25 +171,30 @@ internal sealed class EnsureTablesExist : IAsyncComponent
         {
             _logger.LogInformation("Running initial database setup for Ekom.");
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
-            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "3");
+            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "native-reservations-v1");
         }
         else if (currentState == "1")
         {
             _logger.LogInformation("Running Ekom database activity log type migration.");
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
-            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "3");
+            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "native-reservations-v1");
         }
         else if (currentState == "2")
         {
             _logger.LogInformation("Running Ekom warehouse stock migration.");
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
-            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "3");
+            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "native-reservations-v1");
+        }
+        else if (currentState == "3")
+        {
+            await ExecuteMigrationPlanAsync().ConfigureAwait(false);
         }
         else
         {
             _databaseService.CreateTables();
         }
 
+        _databaseService.EnsureStockReservationTable();
         _logger.LogDebug("Done");
     }
 

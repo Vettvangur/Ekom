@@ -598,27 +598,26 @@ public partial class Order
     /// <param name="orderInfo">orderInfo</param>
     /// <param name="storeAlias">storeAlias</param>
     /// <param name="ct">CancellationToken</param>
-    public async Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, string? storeAlias = null, CancellationToken ct = default)
+    public Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, string? storeAlias = null, CancellationToken ct = default)
+        => AddReservationsToOrderAsync(hangfireJobs, orderInfo, storeAlias, ct);
+
+    /// <summary>Validate and persist order-owned reservations, or associate trusted legacy holds from the current checkout preparation.</summary>
+    public async Task AddReservationsToOrderAsync(IEnumerable<string> reservationIds, IOrderInfo orderInfo, string? storeAlias = null, CancellationToken ct = default)
     {
-        if (hangfireJobs == null)
+        if (reservationIds == null)
         {
-            throw new ArgumentNullException(nameof(hangfireJobs));
+            throw new ArgumentNullException(nameof(reservationIds));
         }
 
         if (string.IsNullOrEmpty(storeAlias))
         {
-            IStore? store = _storeSvc.GetStoreFromCache();
-
-            if (store != null)
-            {
-                storeAlias = store.Alias;
-            }
+            storeAlias = orderInfo?.StoreInfo.Alias;
         }
         if (orderInfo == null)
         {
             throw new ArgumentNullException("OrderInfo is null", nameof(orderInfo));
         }
-        await AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo, ct: ct)
+        await AddReservationsToOrderAsync(storeAlias, reservationIds, orderInfo, ct: ct)
             .ConfigureAwait(false);
     }
     /// <summary>
@@ -628,11 +627,15 @@ public partial class Order
     /// <param name="hangfireJobs">Job IDs to add</param>
     /// <param name="orderInfo">orderInfo</param>
     /// <param name="ct">CancellationToken</param>
-    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, CancellationToken ct = default)
+    public Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, CancellationToken ct = default)
+        => AddReservationsToOrderAsync(storeAlias, hangfireJobs, orderInfo, ct);
+
+    /// <summary>Validate and persist reservations on an order in a specific store. Arbitrary unowned IDs cannot be attached.</summary>
+    public async Task AddReservationsToOrderAsync(string storeAlias, IEnumerable<string> reservationIds, IOrderInfo orderInfo, CancellationToken ct = default)
     {
-        if (hangfireJobs == null)
+        if (reservationIds == null)
         {
-            throw new ArgumentNullException(nameof(hangfireJobs));
+            throw new ArgumentNullException(nameof(reservationIds));
         }
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -643,7 +646,7 @@ public partial class Order
             throw new ArgumentNullException("OrderInfo is null", nameof(orderInfo));
         }
 
-        await _orderService.AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo as OrderInfo, ct)
+        await _orderService.AddReservationsToOrderAsync(storeAlias, reservationIds, orderInfo as OrderInfo, ct)
             .ConfigureAwait(false);
     }
 
@@ -651,14 +654,18 @@ public partial class Order
     /// Remove all hangfire job ids to <see cref="IOrderInfo"/> and db
     /// </summary>
     /// <param name="storeAlias"></param>
-    public async Task RemoveHangfireJobsFromOrderAsync(string storeAlias, CancellationToken ct = default)
+    public Task RemoveHangfireJobsFromOrderAsync(string storeAlias, CancellationToken ct = default)
+        => RemoveReservationsFromOrderAsync(storeAlias, ct);
+
+    /// <summary>Clear the order's reservation IDs; does not release or consume stock.</summary>
+    public async Task RemoveReservationsFromOrderAsync(string storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        await _orderService.RemoveHangfireJobsToOrderAsync(storeAlias, ct)
+        await _orderService.RemoveReservationsFromOrderAsync(storeAlias, ct)
             .ConfigureAwait(false);
     }
 
