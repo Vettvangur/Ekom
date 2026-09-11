@@ -325,6 +325,19 @@ Filters apply to full rebuilds and incremental product indexing. When a filter e
 
 Product and category indexing is triggered from Umbraco content notifications for `ekmProduct` and `ekmCategory`.
 
+To avoid incremental indexing during a bulk import or a batch of direct `IContentService` changes, wrap the work in an `AlgoliaIndexingScope`. The scope suppresses notification-driven indexing and stock availability updates only for its current asynchronous execution flow. Dispose it before starting a full rebuild.
+
+```csharp
+using Ekom.Algolia.Indexing;
+
+using (AlgoliaIndexingScope.Suppress())
+{
+    importService.FullSync(data);
+}
+
+fullIndexRebuildCoordinator.TryStart();
+```
+
 Search requests use `SearchApiKey`. Indexing, settings updates, replicas, delete operations, and query suggestion provisioning use `AdminApiKey`.
 
 ```json

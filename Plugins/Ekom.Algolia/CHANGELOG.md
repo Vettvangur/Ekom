@@ -7,10 +7,18 @@
 * **algolia:** add optional variant-level product indexing for SKU search.
 * **algolia:** optionally update indexed availability and stock after stock changes.
 * **algolia:** prevent concurrent rebuilds for the same store.
+* **algolia:** add scoped suppression for automatic incremental indexing during bulk changes.
 
 ### Bug Fixes
 
 * **algolia:** send ecommerce conversion object data using Algolia's per-item schema.
+
+## [0.2.54](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.53...Ekom.Algolia-v0.2.54) (2026-09-11)
+
+
+### Features
+
+* **algolia:** suppress incremental indexing ([#848](https://github.com/Vettvangur/Ekom/issues/848)) ([cb85923](https://github.com/Vettvangur/Ekom/commit/cb85923e2fe0e57ed9cc2242e09ce077fcb2f67c))
 
 ## [0.2.53](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.52...Ekom.Algolia-v0.2.53) (2026-09-08)
 
