@@ -12,21 +12,15 @@ namespace Ekom.Algolia.Controllers;
 public class EkomAlgoliaBackofficeController : ControllerBase
 {
     private readonly IAlgoliaFullIndexRebuildCoordinator _fullIndexRebuildCoordinator;
-    private readonly IAlgoliaProductIndexService _algoliaProductIndexService;
-    private readonly IAlgoliaCategoryIndexService _algoliaCategoryIndexService;
     private readonly ISecurityService _securityService;
     private readonly ILogger<EkomAlgoliaBackofficeController> _logger;
 
     public EkomAlgoliaBackofficeController(
         IAlgoliaFullIndexRebuildCoordinator fullIndexRebuildCoordinator,
-        IAlgoliaProductIndexService algoliaProductIndexService,
-        IAlgoliaCategoryIndexService algoliaCategoryIndexService,
         ISecurityService securityService,
         ILogger<EkomAlgoliaBackofficeController> logger)
     {
         _fullIndexRebuildCoordinator = fullIndexRebuildCoordinator;
-        _algoliaProductIndexService = algoliaProductIndexService;
-        _algoliaCategoryIndexService = algoliaCategoryIndexService;
         _securityService = securityService;
         _logger = logger;
     }
@@ -48,7 +42,7 @@ public class EkomAlgoliaBackofficeController : ControllerBase
 
     [HttpGet("RebuildStoreIndexes")]
     [HttpPost("RebuildStoreIndexes")]
-    public async Task<IActionResult> RebuildStoreIndexesAsync([FromQuery] string storeAlias, CancellationToken ct = default)
+    public IActionResult RebuildStoreIndexesAsync([FromQuery] string storeAlias)
     {
         if (!_securityService.IsCurrentUserAdmin())
             return Forbid();
@@ -56,8 +50,8 @@ public class EkomAlgoliaBackofficeController : ControllerBase
         if (string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest(new { error = "Store alias is required." });
 
-        await _algoliaProductIndexService.RebuildStoreAsync(storeAlias, ct).ConfigureAwait(false);
-        await _algoliaCategoryIndexService.RebuildStoreAsync(storeAlias, ct).ConfigureAwait(false);
+        if (!_fullIndexRebuildCoordinator.TryStartStore(storeAlias))
+            return Conflict(new { error = $"An Algolia reindex is already running for store '{storeAlias}'." });
 
         _logger.LogInformation("Algolia manual reindex requested for store {StoreAlias}.", storeAlias);
 

@@ -8,6 +8,7 @@ public interface IAlgoliaProductIndexService
     Task EnqueueProductAsync(string storeAlias, Guid productKey, bool isPublished, CancellationToken ct = default);
     Task EnqueueProductsAsync(string storeAlias, IReadOnlyCollection<Guid> productKeys, bool isPublished, CancellationToken ct = default);
     Task RebuildStoreAsync(string storeAlias, CancellationToken ct = default);
+    Task RebuildStoreAndWaitAsync(string storeAlias, CancellationToken ct = default);
     Task RebuildAllAsync(CancellationToken ct = default);
     Task RebuildAllAndWaitAsync(CancellationToken ct = default);
 }
@@ -133,6 +134,25 @@ internal sealed class AlgoliaProductIndexService : IAlgoliaProductIndexService
         }, CancellationToken.None);
 
         return Task.CompletedTask;
+    }
+
+    public async Task RebuildStoreAndWaitAsync(string storeAlias, CancellationToken ct = default)
+    {
+        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
+            return;
+
+        if (string.IsNullOrWhiteSpace(storeAlias))
+            return;
+
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var job = new AlgoliaProductIndexJob(
+            AlgoliaProductIndexJobType.RebuildStore,
+            storeAlias,
+            Array.Empty<Guid>(),
+            completion);
+
+        await _queue.EnqueueAsync(job, ct).ConfigureAwait(false);
+        await completion.Task.ConfigureAwait(false);
     }
 
     public Task RebuildAllAsync(CancellationToken ct = default)

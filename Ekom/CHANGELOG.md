@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+* **backoffice:** keep stores available when products are disabled so their values can still be edited; store selectors, node languages, warehouse editors, and the variant manager now respect only category disable settings on the current node and its ancestors.
+* **discounts:** treat missing constraints on legacy and custom discounts as unrestricted when creating ordered discounts.
+
 ### Features
 
 * **checkout:** validate uncovered line discount availability with existing/recovered holds even when automatic reservation creation is disabled, including final prepayment checks; enforce configured product/variant stock buffers in legacy reservation wrappers.
@@ -14,6 +19,34 @@
 * **stock:** perform increments using conditional SQL arithmetic and publish cache/events after commit to avoid cache-based lost updates and mutation retries after notification failures.
 * **discounts:** add native product and variant `ekmDiscountPrice` support using the Ekom Price datatype, competing with content and event-added discounts while preserving original prices.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
+
+## [0.2.274](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.273...Ekom-v0.2.274) (2026-09-11)
+
+
+### Bug Fixes
+
+* **backoffice:** filter editor stores by category disable state ([#859](https://github.com/Vettvangur/Ekom/issues/859)) ([61b1f34](https://github.com/Vettvangur/Ekom/commit/61b1f340858bec22ea9de7b0166fddff1d02fcb6))
+
+## [0.2.273](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.272...Ekom-v0.2.273) (2026-09-11)
+
+
+### Bug Fixes
+
+* stock rollback sql parameters ([#856](https://github.com/Vettvangur/Ekom/issues/856)) ([5a1aceb](https://github.com/Vettvangur/Ekom/commit/5a1aceb87eb51529fad51463b73f1a0d2499c6b3))
+
+## [0.2.272](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.271...Ekom-v0.2.272) (2026-09-11)
+
+
+### Bug Fixes
+
+* **stock:** use positional parameters in rollback job query ([#852](https://github.com/Vettvangur/Ekom/issues/852)) ([2b2830a](https://github.com/Vettvangur/Ekom/commit/2b2830af00c1860cf7283f0bf1357bb5d1e50cdc))
+
+## [0.2.271](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.270...Ekom-v0.2.271) (2026-09-09)
+
+
+### Bug Fixes
+
+* **discounts:** handle missing ordered constraints ([#846](https://github.com/Vettvangur/Ekom/issues/846)) ([0324407](https://github.com/Vettvangur/Ekom/commit/03244071cd030b54ff8fa0a47beffe6303710d19))
 
 ## [0.2.270](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.269...Ekom-v0.2.270) (2026-09-08)
 

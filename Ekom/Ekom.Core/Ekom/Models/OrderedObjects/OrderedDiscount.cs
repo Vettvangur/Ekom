@@ -19,7 +19,7 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
         DiscountType type,
         List<string> discountItems,
         List<string> excludeDiscountItems,
-        Constraints constraints,
+        Constraints? constraints,
         bool hasMasterStock,
         bool globalDiscount)
     {
@@ -30,7 +30,7 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
         Amount = amount;
         Title = title;
         Type = type;
-        Constraints = constraints;
+        Constraints = constraints ?? new Constraints();
         HasMasterStock = hasMasterStock;
         GlobalDiscount = globalDiscount;
     }
@@ -48,7 +48,9 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
         ExcludeDiscountItems = discount.ExcludeDiscountItems;
         Amount = discount.Amount;
         Type = discount.Type;
-        Constraints = new Constraints(discount.Constraints);
+        Constraints = discount.Constraints is { } constraints
+            ? new Constraints(constraints)
+            : new Constraints();
         HasMasterStock = discount.HasMasterStock;
         GlobalDiscount = discount.GlobalDiscount;
     }

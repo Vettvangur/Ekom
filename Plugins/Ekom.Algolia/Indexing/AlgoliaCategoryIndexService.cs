@@ -8,6 +8,7 @@ public interface IAlgoliaCategoryIndexService
     Task EnqueueCategoryAsync(string storeAlias, Guid categoryKey, bool isPublished, CancellationToken ct = default);
     Task EnqueueCategoriesAsync(string storeAlias, IReadOnlyCollection<Guid> categoryKeys, bool isPublished, CancellationToken ct = default);
     Task RebuildStoreAsync(string storeAlias, CancellationToken ct = default);
+    Task RebuildStoreAndWaitAsync(string storeAlias, CancellationToken ct = default);
     Task RebuildAllAsync(CancellationToken ct = default);
     Task RebuildAllAndWaitAsync(CancellationToken ct = default);
 }
@@ -91,6 +92,25 @@ internal sealed class AlgoliaCategoryIndexService : IAlgoliaCategoryIndexService
         }, CancellationToken.None);
 
         return Task.CompletedTask;
+    }
+
+    public async Task RebuildStoreAndWaitAsync(string storeAlias, CancellationToken ct = default)
+    {
+        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Categories)
+            return;
+
+        if (string.IsNullOrWhiteSpace(storeAlias))
+            return;
+
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var job = new AlgoliaCategoryIndexJob(
+            AlgoliaCategoryIndexJobType.RebuildStore,
+            storeAlias,
+            Array.Empty<Guid>(),
+            completion);
+
+        await _queue.EnqueueAsync(job, ct).ConfigureAwait(false);
+        await completion.Task.ConfigureAwait(false);
     }
 
     public Task RebuildAllAsync(CancellationToken ct = default)
