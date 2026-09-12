@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.102](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.101...Ekom.Klaviyo-v0.2.102) (2026-09-11)
+
+
+### Features
+
+* **reservations:** replace Hangfire with native SQL reservations ([#858](https://github.com/Vettvangur/Ekom/issues/858)) ([5e5e095](https://github.com/Vettvangur/Ekom/commit/5e5e09545a7349cf9067a3e3588ab856972488bf))
+
 ## [0.2.101](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.100...Ekom.Klaviyo-v0.2.101) (2026-09-02)
 
 
