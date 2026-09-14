@@ -1,5 +1,12 @@
 {
   "pullRequestTitlePattern": "chore${scope}: release ${component} ${version}",
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "Ekom.Mailchimp",
+      "components": ["Ekom.Mailchimp", "Ekom.Mailchimp.U18"]
+    }
+  ],
   "packages": {
     "Ekom": {
       "path": "Ekom",
@@ -39,6 +46,22 @@
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
       "bootstrap-sha": "135a8af01a63f7a55f4a730c82b8c1005d362d41"
+    },
+    "Plugins/Ekom.Mailchimp": {
+      "component": "Ekom.Mailchimp",
+      "package-name": "Ekom.Mailchimp",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "changelog-path": "CHANGELOG.md",
+      "initial-version": "1.0.0"
+    },
+    "Plugins/Ekom.Mailchimp/U18": {
+      "component": "Ekom.Mailchimp.U18",
+      "package-name": "Ekom.Mailchimp.U18",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "skip-changelog": true,
+      "initial-version": "1.0.0"
     }
   }
 }
