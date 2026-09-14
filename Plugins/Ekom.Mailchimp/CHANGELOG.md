@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.1.0...Ekom.Mailchimp-v1.2.0) (2026-09-14)
+
+
+### Bug Fixes
+
+* **mailchimp:** correct U18 package version parsing ([#871](https://github.com/Vettvangur/Ekom/issues/871)) ([1dff81c](https://github.com/Vettvangur/Ekom/commit/1dff81c50325b10630965f2b08fc29c4d9b8b437))
+
 ## [1.1.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.0.0...Ekom.Mailchimp-v1.1.0) (2026-09-14)
 
 
