@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.1.0...Ekom.Mailchimp-v1.2.0) (2026-09-14)
+
+
+### Miscellaneous Chores
+
+* **Ekom.Mailchimp:** Synchronize Ekom.Mailchimp versions
+
 ## [1.1.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.0.0...Ekom.Mailchimp-v1.1.0) (2026-09-14)
 
 
