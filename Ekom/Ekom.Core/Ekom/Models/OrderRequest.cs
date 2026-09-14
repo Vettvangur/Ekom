@@ -13,6 +13,16 @@ public class OrderRequest
     public string? AlgoliaQueryId { get; set; }
     public OrderConsent? Consent { get; set; }
     public OrderTracking? Tracking { get; set; }
+    public IReadOnlyList<LinkedOrderLineRequest> LinkedProducts { get; set; } = [];
+}
+
+public sealed class LinkedOrderLineRequest
+{
+    public required Guid ProductId { get; set; }
+    public Guid? VariantId { get; set; }
+    public decimal Quantity { get; set; } = 1;
+    public IReadOnlyDictionary<string, string> CustomData { get; set; }
+        = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 }
 
 public class OrderlineRequest

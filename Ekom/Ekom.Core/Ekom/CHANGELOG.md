@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* extend the add-to-order endpoint with atomic parent and linked child order lines
+
 ## [0.2.13](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.12...Ekom-v0.2.13) (2026-01-20)
 
 

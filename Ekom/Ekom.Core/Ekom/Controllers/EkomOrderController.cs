@@ -110,6 +110,36 @@ public partial class EkomOrderController : ControllerBase
         }
 
         customData.Remove("algoliaQueryId");
+        customData.Remove("linkedProducts");
+
+        if (request.LinkedProducts?.Count > 0)
+        {
+            if (request.LinkedProducts.Any(x => x == null))
+            {
+                return BadRequest("Linked products cannot contain null entries.");
+            }
+
+            IReadOnlyCollection<LinkedOrderLineRequest> linkedProducts = request.LinkedProducts
+                .Select(SanitizeLinkedOrderLineRequest)
+                .ToArray();
+
+            IOrderInfo linkedOrderInfo = await _order.AddLinkedOrderLinesAsync(
+                request.ProductId,
+                request.Quantity,
+                request.StoreAlias,
+                linkedProducts,
+                new AddOrderSettings
+                {
+                    OrderAction = OrderAction.New,
+                    VariantKey = request.VariantId,
+                    CustomData = customData,
+                    AlgoliaQueryId = request.AlgoliaQueryId,
+                    Consent = request.Consent,
+                    Tracking = request.Tracking
+                }, ct);
+
+            return Ok(linkedOrderInfo);
+        }
 
         IOrderInfo orderInfo = await _order.AddOrderLineAsync(
             request.ProductId,
@@ -127,6 +157,24 @@ public partial class EkomOrderController : ControllerBase
 
         return Ok(orderInfo);
 
+    }
+
+    private static LinkedOrderLineRequest SanitizeLinkedOrderLineRequest(LinkedOrderLineRequest request)
+    {
+        IReadOnlyDictionary<string, string> requestCustomData = request.CustomData
+            ?? new Dictionary<string, string>();
+        var customData = requestCustomData.ToDictionary(
+            x => x.Key,
+            x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value ?? string.Empty),
+            StringComparer.OrdinalIgnoreCase);
+
+        return new LinkedOrderLineRequest
+        {
+            ProductId = request.ProductId,
+            VariantId = request.VariantId,
+            Quantity = request.Quantity,
+            CustomData = customData,
+        };
     }
 
     /// <summary>
