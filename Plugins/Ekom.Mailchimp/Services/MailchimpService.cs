@@ -9,16 +9,19 @@ namespace Ekom.Mailchimp.Services;
 
 internal sealed class MailchimpService : IMailchimpService
 {
+    private readonly IMailchimpConfigurationResolver _configurationResolver;
     private readonly IMailchimpDispatcher _dispatcher;
     private readonly IEnumerable<IMailchimpPurchaseEnricher> _enrichers;
     private readonly MailchimpOptions _options;
 
     public MailchimpService(
         IOptions<MailchimpOptions> options,
+        IMailchimpConfigurationResolver configurationResolver,
         IMailchimpDispatcher dispatcher,
         IEnumerable<IMailchimpPurchaseEnricher> enrichers)
     {
         _options = options.Value;
+        _configurationResolver = configurationResolver;
         _dispatcher = dispatcher;
         _enrichers = enrichers;
     }
@@ -28,7 +31,9 @@ internal sealed class MailchimpService : IMailchimpService
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.StoreAlias);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Email);
-        return !_options.Enabled || !_options.Subscriptions.Enabled
+        return !_options.Enabled
+            || !_options.Subscriptions.Enabled
+            || !_configurationResolver.TryResolve(request.StoreAlias, requireEcommerceStore: false, out _)
             ? ValueTask.CompletedTask
             : _dispatcher.EnqueueAsync(new SubscribeWorkItem(request), ct);
     }
@@ -38,7 +43,9 @@ internal sealed class MailchimpService : IMailchimpService
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.StoreAlias);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Email);
-        return !_options.Enabled || !_options.Subscriptions.Enabled
+        return !_options.Enabled
+            || !_options.Subscriptions.Enabled
+            || !_configurationResolver.TryResolve(request.StoreAlias, requireEcommerceStore: false, out _)
             ? ValueTask.CompletedTask
             : _dispatcher.EnqueueAsync(new UnsubscribeWorkItem(request), ct);
     }
@@ -46,11 +53,31 @@ internal sealed class MailchimpService : IMailchimpService
     public async ValueTask TrackPurchaseAsync(MailchimpPurchase purchase, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(purchase);
-        if (!_options.Enabled || !_options.Purchases.Enabled)
+        if (!_options.Enabled
+            || !_options.Purchases.Enabled
+            || !_configurationResolver.TryResolve(purchase.StoreAlias, requireEcommerceStore: true, out _))
         {
             return;
         }
 
+        await TrackResolvedPurchaseAsync(purchase, ct).ConfigureAwait(false);
+    }
+
+    public ValueTask TrackPurchaseAsync(IOrderInfo order, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(order);
+        if (!_options.Enabled
+            || !_options.Purchases.Enabled
+            || !_configurationResolver.TryResolve(order.StoreInfo.Alias, requireEcommerceStore: true, out _))
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        return TrackResolvedPurchaseAsync(order.ToMailchimpPurchase(_options), ct);
+    }
+
+    private async ValueTask TrackResolvedPurchaseAsync(MailchimpPurchase purchase, CancellationToken ct)
+    {
         MailchimpPurchase enrichedPurchase = purchase;
         foreach (IMailchimpPurchaseEnricher enricher in _enrichers)
         {
@@ -60,16 +87,5 @@ internal sealed class MailchimpService : IMailchimpService
 
         MailchimpPurchaseValidator.Validate(enrichedPurchase);
         await _dispatcher.EnqueueAsync(new PurchaseWorkItem(enrichedPurchase), ct).ConfigureAwait(false);
-    }
-
-    public ValueTask TrackPurchaseAsync(IOrderInfo order, CancellationToken ct = default)
-    {
-        ArgumentNullException.ThrowIfNull(order);
-        if (!_options.Enabled || !_options.Purchases.Enabled)
-        {
-            return ValueTask.CompletedTask;
-        }
-
-        return TrackPurchaseAsync(order.ToMailchimpPurchase(_options), ct);
     }
 }

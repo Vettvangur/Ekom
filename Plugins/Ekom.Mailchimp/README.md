@@ -43,9 +43,31 @@ Mailchimp Marketing API integration for Ekom. The first release supports audienc
 
 `Stores` is an array of per-store overrides. Each `Alias` is matched against the Ekom store alias case-insensitively. A store can override `ApiKey`, `ServerPrefix`, `AudienceId`, `EcommerceStoreId`, and `SiteBaseUrl`; omitted values fall back to the corresponding global value. Global credentials can be omitted when every store supplies its complete configuration.
 
+Global and store-level values can be mixed. For example, each store can provide its own API key while sharing global audience and e-commerce store IDs. A root `ApiKey` is not required when every used store provides one:
+
+```json
+{
+  "Ekom": {
+    "Mailchimp": {
+      "Enabled": true,
+      "AudienceId": "shared-audience-id",
+      "EcommerceStoreId": "shared-mailchimp-store-id",
+      "Stores": [
+        {
+          "Alias": "HVerslun",
+          "ApiKey": "store-specific-key-us21"
+        }
+      ]
+    }
+  }
+}
+```
+
 `ServerPrefix` is inferred from the suffix of a standard Mailchimp API key, such as `us1` in `your-api-key-us1`. Set it explicitly when the API key does not contain the server prefix.
 
 Use the standard ASP.NET Core configuration key format for environment variables and secrets. Array entries use zero-based indexes; for example, `Ekom__Mailchimp__Stores__0__ApiKey` sets the API key for the first configured store.
+
+Missing operational values do not prevent the application from starting. Each missing setting is logged once for the affected store, and work for that store is ignored before it reaches the queue. Configured stores are checked during startup; missing global fallback values for an unlisted alias are logged when that alias is first used. Stores are evaluated independently, and a missing `EcommerceStoreId` disables purchase tracking without disabling subscriptions. Invalid dispatcher settings remain startup errors. Duplicate or blank store aliases are also startup errors when Mailchimp and at least one feature are enabled.
 
 Register the integration during application startup. The options are read from `Ekom:Mailchimp`.
 
@@ -245,4 +267,4 @@ Automatic tracking requires `Enabled`, `Purchases:Enabled`, and `Purchases:Track
 
 ### Queueing and failures
 
-Service calls perform immediate guard checks and enqueue work; purchase payloads are also validated before queueing. They do not wait for Mailchimp to process the operation, so configuration, subscription payload, and API failures can occur asynchronously. The dispatcher uses a bounded in-memory queue and retries transient HTTP and network failures. When the queue is full, new work is dropped with a warning rather than blocking checkout. Remote failures are logged, including details from `MailchimpApiException`. Work still queued during process shutdown is not durable; call the relevant service method again to replay the operation safely.
+Service calls perform immediate guard and configuration checks before queueing; purchase payloads are also validated before queueing. They do not wait for Mailchimp to process the operation, so remote API failures occur asynchronously. The dispatcher uses a bounded in-memory queue and retries transient HTTP and network failures. When the queue is full, new work is dropped with a warning rather than blocking checkout. Remote failures are logged, including details from `MailchimpApiException`. Work still queued during process shutdown is not durable; call the relevant service method again to replay the operation safely.

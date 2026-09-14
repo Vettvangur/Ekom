@@ -82,13 +82,15 @@ public sealed class MailchimpClientTests
         return new MailchimpEcommerceClient(CreateResolver(), httpClient);
     }
 
-    private static MailchimpConfigurationResolver CreateResolver() => new(Options.Create(new MailchimpOptions
-    {
-        Enabled = true,
-        ApiKey = "secret-us1",
-        AudienceId = "audience",
-        EcommerceStoreId = "store",
-    }));
+    private static MailchimpConfigurationResolver CreateResolver() => new(
+        Options.Create(new MailchimpOptions
+        {
+            Enabled = true,
+            ApiKey = "secret-us1",
+            AudienceId = "audience",
+            EcommerceStoreId = "store",
+        }),
+        NullLogger<MailchimpConfigurationResolver>.Instance);
 
     private static MailchimpPurchase CreatePurchase() => new()
     {

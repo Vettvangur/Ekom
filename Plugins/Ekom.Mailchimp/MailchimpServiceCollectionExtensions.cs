@@ -26,6 +26,7 @@ public static class MailchimpServiceCollectionExtensions
         services.AddSingleton<MailchimpHttpClient>();
 
         services.AddSingleton<IMailchimpConfigurationResolver, MailchimpConfigurationResolver>();
+        services.AddHostedService<MailchimpConfigurationStartupService>();
         services.AddSingleton<IMailchimpAudienceClient, MailchimpAudienceClient>();
         services.AddSingleton<IMailchimpEcommerceClient, MailchimpEcommerceClient>();
 
