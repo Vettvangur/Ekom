@@ -66,44 +66,82 @@ or after adding the linked group.
 
 ## Razor MVC form
 
-The form can collect an extra value and submit the nested JSON expected by the
-existing endpoint. Replace the example product keys with values from your model.
+Use `BeginEkomForm` so the form action, antiforgery token, and other form context are
+generated in the same way as the standard product form. Include every value needed by
+the parent and linked lines as a named form control. At submission time, build the
+payload from the complete form before converting the linked-line controls to the nested
+JSON expected by the endpoint.
+
+Replace the example model properties with values from your product view model.
 
 ```cshtml
-<form id="add-personalized-shirt">
+@using System.Globalization
+
+@{
+    var culture = CultureInfo.CurrentCulture.Name;
+}
+
+@using (Html.BeginEkomForm(
+    FormType.AddToOrderProduct,
+    htmlAttributes: new Dictionary<string, object>
+    {
+        { "id", "add-personalized-shirt" },
+        { "class", "product__add-form" }
+    }))
+{
     <input type="hidden" name="storeAlias" value="@Model.Product.Store.Alias" />
     <input type="hidden" name="productId" value="@Model.Product.Key" />
-    <input type="number" name="quantity" value="1" min="1" />
+    <input type="hidden" name="variantId" value="@Model.SelectedVariantKey" />
+    <input type="hidden" name="action" value="@OrderAction.AddOrUpdate" />
+    <input type="hidden" name="algoliaQueryId" value="@Model.AlgoliaQueryId" />
+
+    <label for="quantity">Quantity</label>
+    <input id="quantity" type="number" name="quantity" value="1" min="1" />
+
+    <label for="orderline-reference">Parent reference</label>
+    <input id="orderline-reference" name="orderlineReference" />
+
+    <input type="hidden" name="linkedProductId" value="@Model.MarkingProductKey" />
+    <input type="hidden" name="linkedVariantId" value="@Model.MarkingVariantKey" />
+    <input type="hidden" name="linkedQuantity" value="1" />
 
     <label for="marking-name">Name printed on the shirt</label>
-    <input id="marking-name" name="markingName" maxlength="50" />
+    <input id="marking-name" name="linkedOrderlineName" maxlength="50" />
 
     <button type="submit">Add to basket</button>
-</form>
+}
 
 <script>
     document.getElementById('add-personalized-shirt').addEventListener('submit', async event => {
         event.preventDefault();
 
-        const form = new FormData(event.currentTarget);
-        const payload = {
-            storeAlias: form.get('storeAlias'),
-            productId: form.get('productId'),
-            quantity: Number(form.get('quantity')),
-            linkedProducts: [
-                {
-                    productId: '@Model.MarkingProductKey',
-                    quantity: 1,
-                    customData: {
-                        orderlineName: form.get('markingName')
-                    }
-                }
-            ]
-        };
+        const form = event.currentTarget;
+        const payload = Object.fromEntries(new FormData(form).entries());
 
-        const response = await fetch('/ekom/order/add', {
+        payload.quantity = Number(payload.quantity);
+        payload.linkedProducts = [
+            {
+                productId: payload.linkedProductId,
+                variantId: payload.linkedVariantId || null,
+                quantity: Number(payload.linkedQuantity),
+                customData: {
+                    orderlineName: payload.linkedOrderlineName
+                }
+            }
+        ];
+
+        delete payload.linkedProductId;
+        delete payload.linkedVariantId;
+        delete payload.linkedQuantity;
+        delete payload.linkedOrderlineName;
+
+        const response = await fetch(form.action, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Culture': '@culture'
+            },
             body: JSON.stringify(payload)
         });
 
@@ -116,6 +154,12 @@ existing endpoint. Replace the example product keys with values from your model.
     });
 </script>
 ```
+
+`FormData` includes all successful named controls in the generated Ekom form, including
+the antiforgery field and any additional parent `orderline*` values. The child-only
+controls are removed from the root payload after they have been mapped to
+`linkedProducts`. If a form uses repeated names, handle those fields explicitly because
+`Object.fromEntries` retains only the last value for each name.
 
 ## Basket behavior
 
