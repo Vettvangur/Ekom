@@ -19,5 +19,3 @@
 
 * **mailchimp:** add U17 support and publish workflows ([#866](https://github.com/Vettvangur/Ekom/issues/866)) ([708fb23](https://github.com/Vettvangur/Ekom/commit/708fb230533a89199b26f1ca72379bd68350f41f))
 * **release:** register linked Mailchimp packages ([#867](https://github.com/Vettvangur/Ekom/issues/867)) ([18e430f](https://github.com/Vettvangur/Ekom/commit/18e430fba5fba924afa2c3d663d6e4bce1d10970))
-
-## Changelog
