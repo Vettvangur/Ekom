@@ -157,6 +157,13 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `OrderDiscountCalculation:ApiKey` (string, required to enable): `POST /ekom/order-discounts/calculate` requires this value in the `X-Ekom-Api-Key` header. When missing or empty, the endpoint always returns unauthorized.
 - `Payments` (object): Provider-specific configuration used by payment providers.
 
+### Linked order lines
+
+The existing `POST /ekom/order/add` endpoint can atomically add a new parent line
+with multiple independently quantified child products. Linked children can carry
+their own `orderline*` custom data and are removed automatically with their parent.
+See [linked order lines](docs/linked-order-lines.md) for HTTP and Razor MVC examples.
+
 ### Warehouse stock
 
 Warehouse stock is display-only inventory for U17 and U18. It does not change sellable stock, availability, reservations, or checkout deductions. Define warehouses on each published `ekmStore` node using the **Ekom Warehouse Editor** datatype. Visibility controls storefront display only; hidden warehouses can still receive balance updates. Warehouse balances are scoped by store alias, warehouse key, and a trimmed, case-insensitive SKU. All storefront reads use an in-memory snapshot loaded during Ekom cache initialization and manual cache refreshes.

@@ -1,0 +1,29 @@
+meta {
+  name: Add Linked Products
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/ekom/order/add
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "productId": "11111111-1111-1111-1111-111111111111",
+    "storeAlias": "store",
+    "quantity": 1,
+    "linkedProducts": [
+      {
+        "productId": "33333333-3333-3333-3333-333333333333",
+        "quantity": 1,
+        "customData": {
+          "orderlineName": "Anna",
+          "orderlineText": "Team 2026"
+        }
+      }
+    ]
+  }
+}

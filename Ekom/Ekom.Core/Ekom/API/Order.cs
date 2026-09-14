@@ -400,6 +400,50 @@ public partial class Order
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Adds a new parent order line and new order lines linked to it as one operation.
+    /// </summary>
+    /// <param name="productId">The parent product identifier.</param>
+    /// <param name="quantity">The parent quantity.</param>
+    /// <param name="storeAlias">The store alias.</param>
+    /// <param name="linkedProducts">Products to create and link to the new parent line.</param>
+    /// <param name="settings">Optional parent order-line configuration.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The updated order.</returns>
+    public async Task<IOrderInfo> AddLinkedOrderLinesAsync(
+        Guid productId,
+        decimal quantity,
+        string storeAlias,
+        IReadOnlyCollection<LinkedOrderLineRequest> linkedProducts,
+        AddOrderSettings? settings = null,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(linkedProducts);
+
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            IStore? store = _storeSvc.GetStoreFromCache();
+
+            if (store != null)
+            {
+                storeAlias = store.Alias;
+            }
+        }
+
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
+        }
+
+        return await _orderService.AddLinkedOrderLinesAsync(
+            productId,
+            quantity,
+            storeAlias,
+            linkedProducts,
+            settings ?? new AddOrderSettings(),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task<IOrderInfo> AddGiftcardAsync(
         Giftcard giftcard,
         string storeAlias,
