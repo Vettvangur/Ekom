@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.2.1...Ekom.Mailchimp-v1.2.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* **mailchimp:** allow store-specific configuration ([#878](https://github.com/Vettvangur/Ekom/issues/878)) ([91f98b0](https://github.com/Vettvangur/Ekom/commit/91f98b00eb5e9188182a8c9b5dff5983e77b7e81))
+
 ## [1.2.1](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.2.0...Ekom.Mailchimp-v1.2.1) (2026-09-14)
 
 
