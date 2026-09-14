@@ -2,6 +2,8 @@
 
 Mailchimp Marketing API integration for Ekom. The first release supports audience subscriptions, unsubscriptions, and completed-purchase conversion tracking.
 
+`Ekom.Mailchimp` supports Umbraco 17 on .NET 10 and reusable integration services on .NET 8. Use `Ekom.Mailchimp.U18` for Umbraco 18.
+
 ## Configuration
 
 ```json

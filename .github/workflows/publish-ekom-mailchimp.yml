@@ -1,0 +1,93 @@
+name: publish-ekom-mailchimp
+
+on:
+  push:
+    tags:
+      - "Ekom.Mailchimp-v*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish-ekom-mailchimp:
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'Ekom.Mailchimp-v')
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Read Ekom package version
+        id: ekom-version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          [xml]$props = Get-Content "Ekom/Directory.Build.props"
+          $version = $props.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw "Could not read Ekom package version." }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Restore (force NuGet references)
+        run: dotnet restore "Plugins/Ekom.Mailchimp/Ekom.Mailchimp.csproj" --source "https://api.nuget.org/v3/index.json" -p:UseProjectReferences=false -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
+
+      - name: Build (Release, force NuGet references)
+        run: dotnet build "Plugins/Ekom.Mailchimp/Ekom.Mailchimp.csproj" -c Release --no-restore -p:UseProjectReferences=false -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
+
+      - name: Pack Ekom.Mailchimp (force NuGet references)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          function Get-SemVerFromTag([string] $tag) {
+            if ($tag -match '^Ekom\.Mailchimp-v(?<ver>\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?)$') { return $Matches['ver'] }
+            throw "Could not parse SemVer from tag '$tag'"
+          }
+
+          $tag = "${{ github.ref_name }}"
+          $version = Get-SemVerFromTag $tag
+
+          if (Test-Path "artifacts") { Remove-Item "artifacts" -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+
+          Write-Host "Packing Ekom.Mailchimp with PackageVersion=$version (tag $tag)"
+
+          dotnet pack "Plugins/Ekom.Mailchimp/Ekom.Mailchimp.csproj" `
+            -c Release `
+            --no-build `
+            -o artifacts `
+            -p:PackageVersion=$version `
+            -p:UseProjectReferences=false `
+            -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
+
+          Get-ChildItem -Path artifacts -Filter "Ekom.Mailchimp*.nupkg" -File | Format-Table Name,Length
+
+      - name: NuGet Login (OIDC)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: Vettvangur
+
+      - name: Push Ekom.Mailchimp to NuGet.org
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $pkgs = Get-ChildItem -Path "artifacts" -Filter "Ekom.Mailchimp*.nupkg" -File
+          if (-not $pkgs) { throw "No Ekom.Mailchimp .nupkg files found under artifacts/." }
+
+          foreach ($p in $pkgs) {
+            Write-Host "Pushing $($p.Name)"
+            dotnet nuget push "$($p.FullName)" `
+              --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" `
+              --source "https://api.nuget.org/v3/index.json" `
+              --skip-duplicate
+
+            if ($LASTEXITCODE -ne 0) { throw "dotnet nuget push failed for $($p.Name)" }
+          }
