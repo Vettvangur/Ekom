@@ -1,6 +1,5 @@
 {
   "pullRequestTitlePattern": "chore${scope}: release ${component} ${version}",
-  "last-release-sha": "bcd4a66b2d30d6ff32e5e853f6582da046c1da8e",
   "plugins": [
     {
       "type": "linked-versions",

@@ -1,5 +1,6 @@
 using Ekom.Algolia;
 using Ekom.Klaviyo;
+using Ekom.Mailchimp;
 using Ekom.Services;
 using Ekom.Site.U17;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
@@ -17,6 +18,7 @@ builder.CreateUmbracoBuilder()
 builder.Services.AddTransient<IProductFilterService, CustomProductFilterService>();
 builder.Services.AddKlaviyo();
 builder.Services.AddAlgolia();
+builder.Services.AddMailchimp();
 
 var app = builder.Build();
 
