@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>Ekom.Mailchimp.U18</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Vettvangur</Authors>
+    <Company>Vettvangur</Company>
+    <Description>Mailchimp integration for Ekom on Umbraco 18.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+    <PackageTags>ekom;umbraco;mailchimp;ecommerce</PackageTags>
+    <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>images/VV_Logo.png</PackageIcon>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DefineConstants>$(DefineConstants);UMBRACO_18</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <ProjectReference Include="..\Ekom.Mailchimp.csproj" />
+    <ProjectReference Include="..\..\..\Ekom\Ekom.Umbraco\Ekom.U18\Ekom.U18.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Umbraco\Shared\**\*.cs" Link="Umbraco\Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Umbraco\U18\**\*.cs" Link="Umbraco\U18\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\CHANGELOG.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\..\VV_Logo.png" Link="VV_Logo.png" Pack="true" PackagePath="images/" />
+  </ItemGroup>
+
+</Project>
