@@ -14,6 +14,24 @@ Mailchimp Marketing API integration for Ekom. The first release supports audienc
       "ApiKey": "your-api-key-us1",
       "AudienceId": "audience-id",
       "EcommerceStoreId": "stable-mailchimp-store-id",
+      "SiteBaseUrl": "https://www.example.com",
+      "Stores": [
+        {
+          "Alias": "iceland",
+          "ApiKey": "iceland-api-key-us1",
+          "AudienceId": "iceland-audience-id",
+          "EcommerceStoreId": "iceland-mailchimp-store-id",
+          "SiteBaseUrl": "https://www.example.is"
+        },
+        {
+          "Alias": "united-kingdom",
+          "ApiKey": "united-kingdom-api-key",
+          "ServerPrefix": "us2",
+          "AudienceId": "united-kingdom-audience-id",
+          "EcommerceStoreId": "united-kingdom-mailchimp-store-id",
+          "SiteBaseUrl": "https://www.example.co.uk"
+        }
+      ],
       "Purchases": {
         "Enabled": true,
         "TrackCompletedCheckouts": true
@@ -23,7 +41,11 @@ Mailchimp Marketing API integration for Ekom. The first release supports audienc
 }
 ```
 
-`ServerPrefix` is inferred from the suffix of a standard Mailchimp API key. It can be set explicitly. Values can be overridden for individual Ekom stores under `Stores` by matching `Alias`.
+`Stores` is an array of per-store overrides. Each `Alias` is matched against the Ekom store alias case-insensitively. A store can override `ApiKey`, `ServerPrefix`, `AudienceId`, `EcommerceStoreId`, and `SiteBaseUrl`; omitted values fall back to the corresponding global value. Global credentials can be omitted when every store supplies its complete configuration.
+
+`ServerPrefix` is inferred from the suffix of a standard Mailchimp API key, such as `us1` in `your-api-key-us1`. Set it explicitly when the API key does not contain the server prefix.
+
+Use the standard ASP.NET Core configuration key format for environment variables and secrets. Array entries use zero-based indexes; for example, `Ekom__Mailchimp__Stores__0__ApiKey` sets the API key for the first configured store.
 
 Register the integration during application startup with `builder.Services.AddMailchimp();`. The Umbraco package automatically registers the completed-checkout event component.
 
