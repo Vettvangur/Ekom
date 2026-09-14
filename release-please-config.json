@@ -1,5 +1,6 @@
 {
   "pullRequestTitlePattern": "chore${scope}: release ${component} ${version}",
+  "last-release-sha": "bcd4a66b2d30d6ff32e5e853f6582da046c1da8e",
   "plugins": [
     {
       "type": "linked-versions",
@@ -61,7 +62,14 @@
       "include-component-in-tag": true,
       "release-type": "simple",
       "skip-changelog": true,
-      "initial-version": "1.0.0"
+      "initial-version": "1.0.0",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Ekom.Mailchimp.U18.csproj",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ]
     }
   }
 }
