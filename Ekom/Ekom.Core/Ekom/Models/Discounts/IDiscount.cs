@@ -40,6 +40,22 @@ public interface IDiscount : IComparable<IDiscount>
     /// </summary>
     IReadOnlyCollection<string> ExcludeDiscountItems { get; }
     /// <summary>
+    /// The products that count towards a quantity-based order discount.
+    /// </summary>
+    IReadOnlyCollection<string> QualifyingItems => Array.Empty<string>();
+    /// <summary>
+    /// Controls how qualifying quantities activate this order discount.
+    /// </summary>
+    OrderDiscountQuantityMode QuantityDiscountMode => OrderDiscountQuantityMode.None;
+    /// <summary>
+    /// Whole qualifying units required to activate the quantity rule.
+    /// </summary>
+    int RequiredQuantity => 0;
+    /// <summary>
+    /// Whole reward units discounted for each completed repeating group.
+    /// </summary>
+    int RewardQuantity => 0;
+    /// <summary>
     /// Gets the unique key identifier.
     /// </summary>
     /// <value>

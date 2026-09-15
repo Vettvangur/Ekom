@@ -22,6 +22,7 @@ public class OrderDiscountCalculationLineResult
     public required string Sku { get; set; }
     public string? VariantSku { get; set; }
     public decimal Quantity { get; set; }
+    public decimal DiscountedQuantity { get; set; }
     public bool CouponApplicable { get; set; }
     public decimal UnitPriceBeforeDiscount { get; set; }
     public decimal LineTotalBeforeDiscount { get; set; }

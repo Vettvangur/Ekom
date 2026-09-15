@@ -107,6 +107,45 @@ public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNo
         }
     }
 
+    public virtual IReadOnlyCollection<string> QualifyingItems
+    {
+        get
+        {
+            var returnList = new List<string>();
+
+            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var umbSvc = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
+
+            var nodes = Properties.GetPropertyValue("qualifyingItems");
+            returnList.AddRange(umbSvc.GetContent(nodes));
+
+            return returnList.AsReadOnly();
+        }
+    }
+
+    public virtual OrderDiscountQuantityMode QuantityDiscountMode
+    {
+        get
+        {
+            var value = Properties.GetPropertyValue("quantityDiscountMode");
+
+            using var scope = Configuration.Resolver.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var umbSvc = scope.ServiceProvider.GetRequiredService<IUmbracoService>();
+            value = umbSvc.GetDataType(value) ?? value;
+
+            return Enum.TryParse(value, ignoreCase: true, out OrderDiscountQuantityMode mode)
+                && Enum.IsDefined(mode)
+                    ? mode
+                    : OrderDiscountQuantityMode.None;
+        }
+    }
+
+    public virtual int RequiredQuantity
+        => ParsePositiveWholeNumber(Properties.GetPropertyValue("requiredQuantity"));
+
+    public virtual int RewardQuantity
+        => ParsePositiveWholeNumber(Properties.GetPropertyValue("rewardQuantity"));
+
     /// <summary>
     /// Means this couponless discount will be automatically applied to orders that match it's constraints
     /// We can not currently filter by discounts without a coupon since the linking is from Coupon -> Order.
@@ -148,6 +187,9 @@ public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNo
     {
         Constraints = new Constraints(this);
     }
+
+    private static int ParsePositiveWholeNumber(string value)
+        => int.TryParse(value, out var result) && result > 0 ? result : 0;
 
     public IReadOnlyCollection<CurrencyValue> Discounts
     {

@@ -10,7 +10,6 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
     /// <summary>
     /// 
     /// </summary>
-    [JsonConstructor]
     public OrderedDiscount(
         Guid key,
         string title,
@@ -22,6 +21,40 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
         Constraints? constraints,
         bool hasMasterStock,
         bool globalDiscount)
+        : this(
+            key,
+            title,
+            stackable,
+            amount,
+            type,
+            discountItems,
+            excludeDiscountItems,
+            constraints,
+            hasMasterStock,
+            globalDiscount,
+            OrderDiscountQuantityMode.None,
+            null,
+            0,
+            0)
+    {
+    }
+
+    [JsonConstructor]
+    public OrderedDiscount(
+        Guid key,
+        string title,
+        bool stackable,
+        decimal amount,
+        DiscountType type,
+        List<string> discountItems,
+        List<string> excludeDiscountItems,
+        Constraints? constraints,
+        bool hasMasterStock,
+        bool globalDiscount,
+        OrderDiscountQuantityMode quantityDiscountMode,
+        List<string>? qualifyingItems,
+        int requiredQuantity,
+        int rewardQuantity)
     {
         Key = key;
         Stackable = stackable;
@@ -33,6 +66,10 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
         Constraints = constraints ?? new Constraints();
         HasMasterStock = hasMasterStock;
         GlobalDiscount = globalDiscount;
+        QuantityDiscountMode = quantityDiscountMode;
+        QualifyingItems = qualifyingItems ?? [];
+        RequiredQuantity = requiredQuantity;
+        RewardQuantity = rewardQuantity;
     }
 
     /// <summary>
@@ -53,6 +90,10 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
             : new Constraints();
         HasMasterStock = discount.HasMasterStock;
         GlobalDiscount = discount.GlobalDiscount;
+        QuantityDiscountMode = discount.QuantityDiscountMode;
+        QualifyingItems = discount.QualifyingItems;
+        RequiredQuantity = discount.RequiredQuantity;
+        RewardQuantity = discount.RewardQuantity;
     }
 
     /// <summary>
@@ -67,6 +108,14 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
     public IReadOnlyCollection<string> DiscountItems { get; }
 
     public IReadOnlyCollection<string> ExcludeDiscountItems { get; }
+
+    public IReadOnlyCollection<string> QualifyingItems { get; }
+
+    public OrderDiscountQuantityMode QuantityDiscountMode { get; }
+
+    public int RequiredQuantity { get; }
+
+    public int RewardQuantity { get; }
     /// <summary>
     /// Ranges
     /// </summary>

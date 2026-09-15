@@ -60,21 +60,38 @@ public class OrderLine : IOrderLine
     /// <summary>
     /// Line price with discount and quantity and variant modifications
     /// </summary>
-    private IPrice CalculateAmount() { 
+    private IPrice CalculateAmount()
+    {
+        using var calculationScope = OrderPricingCalculationScope.Enter(OrderInfo);
+        return CalculateAmount(calculationScope.Allocations);
+    }
 
+    internal IPrice CalculateAmount(IReadOnlyDictionary<Guid, decimal>? orderDiscountAllocations)
+    {
         var orderlinePrice = Variant != null ? Variant.Price : Product.Price;
 
         OrderedDiscount? discount = orderlinePrice.Discount;
+        decimal? discountedQuantity = null;
 
-        if (OrderInfo?.Discount != null &&
-            DiscountApplicability.MatchesLineTargets(this, OrderInfo.Discount))
+        if (OrderInfo?.Discount != null)
         {
-            discount = SelectDiscount(
-                orderlinePrice,
-                OrderInfo.Discount,
-                Vat,
-                OrderInfo.StoreInfo.VatIncludedInPrice,
-                Quantity);
+            var allocations = orderDiscountAllocations
+                ?? OrderDiscountQuantityAllocator.Allocate(OrderInfo, OrderInfo.Discount);
+            if (allocations.TryGetValue(Key, out var allocatedQuantity) && allocatedQuantity > 0)
+            {
+                discount = SelectDiscount(
+                    orderlinePrice,
+                    OrderInfo.Discount,
+                    Vat,
+                    OrderInfo.StoreInfo.VatIncludedInPrice,
+                    Quantity,
+                    allocatedQuantity);
+
+                if (discount?.Key == OrderInfo.Discount.Key)
+                {
+                    discountedQuantity = allocatedQuantity;
+                }
+            }
         }
 
         Discount = discount;
@@ -98,7 +115,8 @@ public class OrderLine : IOrderLine
             Vat,
             OrderInfo.StoreInfo.VatIncludedInPrice,
             discount,
-            Quantity);
+            Quantity,
+            discountedQuantity: discountedQuantity);
     }
 
     internal static OrderedDiscount? SelectDiscount(
@@ -106,7 +124,8 @@ public class OrderLine : IOrderLine
         OrderedDiscount orderDiscount,
         decimal vat,
         bool vatIncludedInPrice,
-        decimal quantity)
+        decimal quantity,
+        decimal? discountedQuantity = null)
     {
         if (orderDiscount.Stackable || !orderlinePrice.HasDiscount)
         {
@@ -119,7 +138,8 @@ public class OrderLine : IOrderLine
             orderlinePrice.Discount,
             vat,
             vatIncludedInPrice,
-            quantity)
+            quantity,
+            discountedQuantity)
                 ? orderDiscount
                 : orderlinePrice.Discount;
     }

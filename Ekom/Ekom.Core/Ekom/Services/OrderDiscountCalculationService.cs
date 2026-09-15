@@ -56,10 +56,6 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         var calculation = await CreateOrderInfoAsync(request.Lines, store, ct).ConfigureAwait(false);
         var orderInfo = calculation.OrderInfo;
         var lineSnapshots = calculation.Lines;
-        var couponLineTargets = orderInfo.orderLines
-            .Select(line => DiscountApplicability.MatchesLineTargets(line, discount, _nodeService))
-            .ToArray();
-
         var messages = new List<string>();
         // Use the per-line snapshots (each priced under its own PricingContext) for the order total
         // instead of orderInfo.OrderLineTotal, which would re-price every line with no context.
@@ -67,11 +63,29 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         var orderDiscountConstraintsMet = DiscountApplicability.AreOrderConstraintsMet(orderInfo, discount, orderLineTotal);
 
         OrderedDiscount? orderedDiscount = null;
+        IReadOnlyDictionary<Guid, decimal> allocations = new Dictionary<Guid, decimal>();
         if (orderDiscountConstraintsMet)
         {
             orderedDiscount = new OrderedDiscount(discount);
-            orderInfo.Discount = orderedDiscount;
-            orderInfo.Coupon = couponCode;
+            var effectiveUnitPrices = lineSnapshots.ToDictionary(
+                line => line.LineKey,
+                line => orderedDiscount.Stackable
+                    ? line.DiscountedUnitPrice
+                    : line.OriginalUnitPrice);
+            allocations = OrderDiscountQuantityAllocator.Allocate(
+                orderInfo,
+                orderedDiscount,
+                _nodeService,
+                effectiveUnitPrices);
+            if (allocations.Count > 0)
+            {
+                orderInfo.Discount = orderedDiscount;
+                orderInfo.Coupon = couponCode;
+            }
+            else
+            {
+                messages.Add("Discount quantity requirements are not valid for the supplied order lines.");
+            }
         }
         else
         {
@@ -82,7 +96,8 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         for (var index = 0; index < orderInfo.orderLines.Count; index++)
         {
             var line = orderInfo.orderLines[index];
-            var couponApplicable = orderDiscountConstraintsMet && couponLineTargets[index];
+            var discountedQuantity = allocations.GetValueOrDefault(line.Key);
+            var couponApplicable = orderDiscountConstraintsMet && discountedQuantity > 0;
 
             // OrderLine.Amount recalculates on every access, so the line's PricingContext must be
             // active here too or the "after discount" price would be evaluated for a different audience
@@ -90,7 +105,7 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
             IPrice amount;
             using (PricingContext.Activate(lineSnapshots[index].RequestLine.PricingContext))
             {
-                amount = line.Amount;
+                amount = line.CalculateAmount(allocations);
             }
 
             var lineTotalBeforeDiscount = lineSnapshots[index].LineTotalBeforeDiscount;
@@ -107,6 +122,7 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
                 Sku = line.Product.SKU,
                 VariantSku = line.Variant?.SKU,
                 Quantity = line.Quantity,
+                DiscountedQuantity = discountedQuantity,
                 CouponApplicable = couponApplicable,
                 UnitPriceBeforeDiscount = line.Quantity == 0 ? 0 : lineTotalBeforeDiscount / line.Quantity,
                 LineTotalBeforeDiscount = lineTotalBeforeDiscount,
@@ -122,7 +138,7 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
 
         return new OrderDiscountCalculationResult
         {
-            Applied = orderDiscountConstraintsMet && hasAppliedLines,
+            Applied = orderDiscountConstraintsMet && allocations.Count > 0 && hasAppliedLines,
             OrderConstraintsMet = orderDiscountConstraintsMet,
             HasApplicableLines = hasApplicableLines,
             CouponCode = couponCode,
@@ -257,10 +273,14 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         OrderDiscountCalculationLineRequest requestLine,
         OrderLine orderLine)
     {
+        var unitPrice = orderLine.Variant?.Price ?? orderLine.Product.Price;
         var productOnlyAmount = orderLine.Amount;
 
         return new OrderDiscountCalculationLineSnapshot(
             requestLine,
+            orderLine.Key,
+            unitPrice.OriginalValue,
+            unitPrice.Value,
             productOnlyAmount.Value);
     }
 
@@ -300,6 +320,9 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
 
     private sealed record OrderDiscountCalculationLineSnapshot(
         OrderDiscountCalculationLineRequest RequestLine,
+        Guid LineKey,
+        decimal OriginalUnitPrice,
+        decimal DiscountedUnitPrice,
         decimal LineTotalBeforeDiscount);
 
 }

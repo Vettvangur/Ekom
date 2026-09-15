@@ -1466,7 +1466,11 @@ partial class OrderService
                 ApplyConsentAndTracking(orderInfo, null, null, replaceExisting: false);
             }
 
-            string serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.Settings);
+            string serializedOrderInfo;
+            using (OrderPricingCalculationScope.Enter(orderInfo))
+            {
+                serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.Settings);
+            }
 
             OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct)
                 .ConfigureAwait(false);
