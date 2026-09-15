@@ -32,8 +32,17 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($version)) { throw "Could not read Ekom package version." }
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
+      - name: Pack Ekom U18 dependency locally
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $version = "${{ steps.ekom-version.outputs.version }}"
+          New-Item -ItemType Directory -Force -Path local-packages | Out-Null
+          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U18/Ekom.U18.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
+          dotnet nuget add source "$PWD/local-packages" --name local-ekom
+
       - name: Restore (force NuGet references)
-        run: dotnet restore "Plugins/Ekom.Mailchimp/U18/Ekom.Mailchimp.U18.csproj" --source "https://api.nuget.org/v3/index.json" -p:UseProjectReferences=false -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
+        run: dotnet restore "Plugins/Ekom.Mailchimp/U18/Ekom.Mailchimp.U18.csproj" -p:UseProjectReferences=false -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
 
       - name: Build (Release, force NuGet references)
         run: dotnet build "Plugins/Ekom.Mailchimp/U18/Ekom.Mailchimp.U18.csproj" -c Release --no-restore -p:UseProjectReferences=false -p:EkomPackageVersion=${{ steps.ekom-version.outputs.version }}
