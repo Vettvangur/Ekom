@@ -138,8 +138,8 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
-            return OrderLines?.Any() == true
-                ? OrderLines.Where(x => x.Settings != null ? x.Settings.CountToTotal : true).Sum(x => x.Quantity)
+            return orderLines.Count > 0
+                ? orderLines.Where(x => x.Settings != null ? x.Settings.CountToTotal : true).Sum(x => x.Quantity)
                 : 0;
         }
     }
@@ -153,6 +153,7 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
             decimal amount = OrderLines.Sum(line => line.Amount.Value);
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
@@ -163,6 +164,7 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
             decimal amount = OrderLines.Sum(line => line.Amount.WithoutVat.Value);
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
@@ -170,13 +172,19 @@ public class OrderInfo : IOrderInfo
     }
 
 
-    private Price LinePriceWithOrderDiscount(IOrderLine line)
+    private Price LinePriceWithOrderDiscount(
+        IOrderLine line,
+        IReadOnlyDictionary<Guid, decimal> allocations)
     {
         OrderedDiscount? discount = Discount;
+        decimal? discountedQuantity = null;
         if (discount != null)
         {
-            // Filters order discounts to their applicable include/exclude targets.
-            if (!DiscountApplicability.MatchesLineTargets(line, discount))
+            if (allocations.TryGetValue(line.Key, out var allocatedQuantity) && allocatedQuantity > 0)
+            {
+                discountedQuantity = allocatedQuantity;
+            }
+            else
             {
                 discount = null;
             }
@@ -188,7 +196,8 @@ public class OrderInfo : IOrderInfo
             line.Vat,
             StoreInfo.VatIncludedInPrice,
             discount,
-            line.Quantity
+            line.Quantity,
+            discountedQuantity: discountedQuantity
         );
     }
 
@@ -197,7 +206,7 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
-
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
             var amount = OrderLines.Sum(x => x.Amount.BeforeDiscount.Value);
 
             return new Price(amount, StoreInfo.Currency, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
@@ -209,8 +218,10 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
-            var subTotalWithOutVat = OrderLines.Sum(x => x.Amount.WithoutVat.Value);
-            var subTotalWithVat = OrderLines.Sum(x => x.Amount.WithVat.Value);
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
+            var lines = OrderLines;
+            var subTotalWithOutVat = lines.Sum(x => x.Amount.WithoutVat.Value);
+            var subTotalWithVat = lines.Sum(x => x.Amount.WithVat.Value);
 
             var vatAmount = (subTotalWithVat - subTotalWithOutVat);
 
@@ -236,11 +247,12 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
             decimal amount = OrderLines.Sum(line =>
             {
                 if (line.Discount == null)
                 {
-                    var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
+                    var lineWithOrderDiscount = LinePriceWithOrderDiscount(line, calculationScope.Allocations);
                     return lineWithOrderDiscount.WithoutVat.Value;  // line net (already rounded per-line)
                 }
                 return line.Amount.WithoutVat.Value;
@@ -258,6 +270,7 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
             var discountAmount = OrderLines.Sum(x => x.Amount.BeforeDiscount.Value - x.Amount.AfterDiscount.Value);
 
             return new CalculatedPrice(
@@ -270,6 +283,7 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
             var discountAmount = OrderLines.Sum(x => x.Amount.BeforeDiscountWithOutVat.Value - x.Amount.AfterDiscountWithOutVat.Value);
 
             return new CalculatedPrice(
@@ -319,6 +333,7 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
             decimal amount = OrderLines.Sum(line =>
             {
                 if (line.Discount == null
@@ -329,7 +344,7 @@ public class OrderInfo : IOrderInfo
                 // at the same time as OrderLines have a discount applied.
                 || Discount?.Stackable == false)
                 {
-                    Price lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
+                    Price lineWithOrderDiscount = LinePriceWithOrderDiscount(line, calculationScope.Allocations);
 
                     return lineWithOrderDiscount.Value;
                 }

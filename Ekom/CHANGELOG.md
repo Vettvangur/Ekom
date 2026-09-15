@@ -18,6 +18,7 @@
 * **checkout:** add opt-in `Reservations.Enabled` checkout holds, nested numeric `Reservations.Timeout` with legacy fallback, preparation compensation and retry reuse. Verify reservation ownership/stock coverage and atomically consume holds, deduct uncovered inventory/line discounts, and record a durable stock-completion receipt to prevent repeated deductions.
 * **stock:** perform increments using conditional SQL arithmetic and publish cache/events after commit to avoid cache-based lost updates and mutation retries after notification failures.
 * **discounts:** add native product and variant `ekmDiscountPrice` support using the Ekom Price datatype, competing with content and event-added discounts while preserving original prices.
+* **discounts:** add threshold and repeating quantity-based order discounts with whole-unit, cheapest-first reward allocation.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
 ## [0.2.276](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.275...Ekom-v0.2.276) (2026-09-14)

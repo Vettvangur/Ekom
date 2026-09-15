@@ -37,7 +37,12 @@ public class Price : IPrice
         _storeVatIncludedInPrices = vatIncludedInPrice;
         OriginalValue = jObject[nameof(OriginalValue)].Value<decimal>();
         Discount = jObject[nameof(Discount)]?.ToObject<OrderedDiscount>();
-        Quantity = jObject[nameof(Quantity)]?.Value<int>() ?? 1;
+        Quantity = jObject[nameof(Quantity)]?.Value<decimal>() ?? 1;
+        var discountedQuantity = jObject[nameof(DiscountedQuantity)]?.Value<decimal>()
+            ?? (Discount != null ? Quantity : 0);
+        DiscountedQuantity = Discount == null
+            ? 0
+            : Math.Min(Math.Max(discountedQuantity, 0), Math.Max(Quantity, 0));
         DiscountAlwaysBeforeVAT = jObject[nameof(DiscountAlwaysBeforeVAT)]?.Value<bool>() ?? false;
         HasDiscount = Discount != null;
     }
@@ -55,6 +60,28 @@ public class Price : IPrice
         bool discountAlwaysBeforeVat = false
     )
         : this(
+            price,
+            currency,
+            vat,
+            vatIncludedInPrice,
+            discount,
+            quantity,
+            discountedQuantity: null,
+            discountAlwaysBeforeVat)
+    {
+    }
+
+    public Price(
+        string price,
+        CurrencyModel currency,
+        decimal vat,
+        bool vatIncludedInPrice,
+        OrderedDiscount? discount,
+        decimal quantity,
+        decimal? discountedQuantity,
+        bool discountAlwaysBeforeVat = false
+    )
+        : this(
             decimal.Parse(
                 string.IsNullOrEmpty(price)
                     ? "0"
@@ -66,6 +93,7 @@ public class Price : IPrice
             vatIncludedInPrice,
             discount,
             quantity,
+            discountedQuantity,
             discountAlwaysBeforeVat)
     {
     }
@@ -82,6 +110,28 @@ public class Price : IPrice
         decimal quantity = 1,
         bool discountAlwaysBeforeVat = false
     )
+        : this(
+            price,
+            currency,
+            vat,
+            vatIncludedInPrice,
+            discount,
+            quantity,
+            discountedQuantity: null,
+            discountAlwaysBeforeVat)
+    {
+    }
+
+    public Price(
+        decimal price,
+        CurrencyModel currency,
+        decimal vat,
+        bool vatIncludedInPrice,
+        OrderedDiscount? discount,
+        decimal quantity,
+        decimal? discountedQuantity,
+        bool discountAlwaysBeforeVat = false
+    )
     {
         OriginalValue = price;
         Currency = currency;
@@ -89,6 +139,9 @@ public class Price : IPrice
         _storeVatIncludedInPrices = vatIncludedInPrice;
         Discount = discount;
         Quantity = quantity;
+        DiscountedQuantity = discount == null
+            ? 0
+            : Math.Min(Math.Max(discountedQuantity ?? quantity, 0), Math.Max(quantity, 0));
         DiscountAlwaysBeforeVAT = discountAlwaysBeforeVat;
         HasDiscount = discount != null;
     }
@@ -102,6 +155,7 @@ public class Price : IPrice
 
     public decimal OriginalValue { get; }
     public decimal Quantity { get; }
+    public decimal DiscountedQuantity { get; }
     public bool HasDiscount { get; }
 
     public ICalculatedPrice BeforeDiscount
@@ -204,13 +258,34 @@ public class Price : IPrice
             //    price = Math.Round(price);
             //}
 
-            return price;
+            return Math.Max(0, price);
         }
     }
 
     private (decimal Net, decimal Vat, decimal Gross) ComputeLineTotals(bool applyDiscount)
     {
-        decimal unit = applyDiscount ? DiscountedValue : OriginalValue;
+        if (!applyDiscount || Discount == null || DiscountedQuantity >= Quantity)
+        {
+            return ComputeTotals(applyDiscount ? DiscountedValue : OriginalValue, Quantity);
+        }
+
+        if (!perUnit)
+        {
+            var total = DiscountedValue * DiscountedQuantity
+                + OriginalValue * (Quantity - DiscountedQuantity);
+            return ComputeTotals(total, 1);
+        }
+
+        var discountedTotals = ComputeTotals(DiscountedValue, DiscountedQuantity);
+        var fullPriceTotals = ComputeTotals(OriginalValue, Quantity - DiscountedQuantity);
+        return (
+            discountedTotals.Net + fullPriceTotals.Net,
+            discountedTotals.Vat + fullPriceTotals.Vat,
+            discountedTotals.Gross + fullPriceTotals.Gross);
+    }
+
+    private (decimal Net, decimal Vat, decimal Gross) ComputeTotals(decimal unit, decimal quantity)
+    {
         string iso = Currency.ISOCurrencySymbol;
 
         if (_storeVatIncludedInPrices)
@@ -224,7 +299,7 @@ public class Price : IPrice
                             // 1) derive UNIT net (with currency policy rounding)
                             var unitNet = Calculator.WithoutVat(unit, _storeVAT, iso);
                             // 2) line net
-                            var net = unitNet * Quantity;
+                            var net = unitNet * quantity;
                             // 3) line VAT (recomputed & rounded at line level)
                             var vat = Calculator.VatAmountFromWithoutVat(net, _storeVAT, iso);
                             // 4) line gross (may differ from sticker × qty)
@@ -240,7 +315,7 @@ public class Price : IPrice
                             {
                                 // WithVat(x, 0) returns currency-rounded amount (e.g., whole krónur for ISK)
                                 var roundedUnitGross = Calculator.WithVat(unit, 0m, iso);
-                                var grossValue = roundedUnitGross * Quantity;
+                                var grossValue = roundedUnitGross * quantity;
 
                                 // No tax at 0%: net == gross, vat == 0
                                 return (grossValue, 0m, grossValue);
@@ -248,16 +323,16 @@ public class Price : IPrice
 
                             // Per-unit residuals; keep sticker gross = unit × qty
                             var (unitNet, unitVat) = Calculator.SplitVatFromGrossPerUnit(unit, _storeVAT, iso);
-                            var net = unitNet * Quantity;
-                            var vat = unitVat * Quantity;
-                            var gross = unit * Quantity; // preserve sticker exactly
+                            var net = unitNet * quantity;
+                            var vat = unitVat * quantity;
+                            var gross = unit * quantity; // preserve sticker exactly
                             return (net, vat, gross);
                         }
                 }
             }
             else // PerTotal
             {
-                var grossRaw = unit * Quantity;
+                var grossRaw = unit * quantity;
                 var net = Calculator.WithoutVat(grossRaw, _storeVAT, iso);
                 var vat = Calculator.VatAmountFromWithoutVat(net, _storeVAT, iso);
                 var gross = net + vat;
@@ -272,14 +347,14 @@ public class Price : IPrice
                 var unitGross = Calculator.WithVat(unit, _storeVAT, iso);
                 var unitVat = unitGross - unit;
 
-                var net = unit * Quantity;
-                var vat = unitVat * Quantity;
-                var gross = unitGross * Quantity;
+                var net = unit * quantity;
+                var vat = unitVat * quantity;
+                var gross = unitGross * quantity;
                 return (net, vat, gross);
             }
             else
             {
-                var net = unit * Quantity;
+                var net = unit * quantity;
                 var vat = Calculator.VatAmountFromWithoutVat(net, _storeVAT, iso);
                 var gross = net + vat;
                 return (net, vat, gross);

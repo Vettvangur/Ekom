@@ -409,6 +409,12 @@ class EnsureNodesExist : IComponent
                     },
                 });
 
+                var quantityDiscountModeDt = EnsureDataTypeExists(new DataType(dropdownEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
+                {
+                    Name = "Ekom Quantity Discount Mode",
+                    Configuration = CreateQuantityDiscountModeConfiguration(),
+                });
+
                 var variantGroupDt = EnsureDataTypeExists(new DataType(multiNodeEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Variant Group Picker",
@@ -970,6 +976,30 @@ class EnsureNodesExist : IComponent
                                             SortOrder = 10,
                                             Description = "This couponless discount will be automatically applied to orders that match it's constraints"
                                         },
+                                        new PropertyType(_shortStringHelper, quantityDiscountModeDt, "quantityDiscountMode")
+                                        {
+                                            Name = "Quantity Discount Mode",
+                                            SortOrder = 11,
+                                            Description = "None uses normal discounts. Threshold discounts all eligible items after the requirement; Repeating unlocks rewards per group."
+                                        },
+                                        new PropertyType(_shortStringHelper, multinodeCatalogDt, "qualifyingItems")
+                                        {
+                                            Name = "Qualifying Items",
+                                            SortOrder = 12,
+                                            Description = "Products and categories whose whole-unit quantities count towards this discount."
+                                        },
+                                        new PropertyType(_shortStringHelper, numericDt, "requiredQuantity")
+                                        {
+                                            Name = "Required Quantity",
+                                            SortOrder = 13,
+                                            Description = "Number of whole qualifying items required before rewards are discounted."
+                                        },
+                                        new PropertyType(_shortStringHelper, numericDt, "rewardQuantity")
+                                        {
+                                            Name = "Reward Quantity",
+                                            SortOrder = 14,
+                                            Description = "Whole units discounted for each completed group in Repeating mode."
+                                        },
                                     }))
                                 {
                                     Alias = "settings",
@@ -1470,6 +1500,7 @@ class EnsureNodesExist : IComponent
             }
 
             EnsureDiscountPriceProperties();
+            EnsureOrderDiscountQuantityProperties();
             EnsureDiscountAndProviderFolderContentTypes();
 
             _logger.LogDebug("Done");
@@ -1562,6 +1593,70 @@ class EnsureNodesExist : IComponent
             _logger.LogInformation("Added Discount Price to content type {Alias}", alias);
         }
     }
+
+    private void EnsureOrderDiscountQuantityProperties()
+    {
+        var contentType = _contentTypeService.Get("ekmOrderDiscount");
+        var catalogDataType = _dataTypeService.GetDataType("Ekom Catalog Picker");
+        var numericDataType = _dataTypeService.GetDataType(new Guid("2e6d3631-066e-44b8-aec4-96f09099b2b5"));
+
+        if (contentType == null
+            || catalogDataType == null
+            || numericDataType == null
+            || !_propertyEditorCollection.TryGet("Umbraco.DropDown.Flexible", out IDataEditor? dropdownEditor))
+        {
+            return;
+        }
+
+        var quantityModeDataType = EnsureDataTypeExists(new DataType(
+            dropdownEditor,
+            _configurationEditorJsonSerializer,
+            EnsureDataTypeContainerExists().Id)
+        {
+            Name = "Ekom Quantity Discount Mode",
+            Configuration = CreateQuantityDiscountModeConfiguration(),
+        });
+        var group = contentType.PropertyGroups.FirstOrDefault(x => x.Alias == "settings");
+        if (group == null)
+        {
+            return;
+        }
+
+        AddProperty("quantityDiscountMode", "Quantity Discount Mode", quantityModeDataType, 11);
+        AddProperty("qualifyingItems", "Qualifying Items", catalogDataType, 12,
+            "Products and categories whose whole-unit quantities count towards this discount.");
+        AddProperty("requiredQuantity", "Required Quantity", numericDataType, 13);
+        AddProperty("rewardQuantity", "Reward Quantity", numericDataType, 14,
+            "Whole units discounted for each completed group in Repeating mode.");
+
+        _contentTypeService.Save(contentType);
+
+        void AddProperty(string alias, string name, IDataType dataType, int sortOrder, string? description = null)
+        {
+            if (contentType.CompositionPropertyTypes.Any(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            group.PropertyTypes.Add(new PropertyType(_shortStringHelper, dataType, alias)
+            {
+                Name = name,
+                Description = description,
+                SortOrder = sortOrder,
+            });
+        }
+    }
+
+    private static DropDownFlexibleConfiguration CreateQuantityDiscountModeConfiguration()
+        => new()
+        {
+            Items = new List<ValueListConfiguration.ValueListItem>
+            {
+                new() { Id = 1, Value = nameof(OrderDiscountQuantityMode.None) },
+                new() { Id = 2, Value = nameof(OrderDiscountQuantityMode.Threshold) },
+                new() { Id = 3, Value = nameof(OrderDiscountQuantityMode.Repeating) },
+            },
+        };
 
     private void EnsureDiscountAndProviderFolderContentTypes()
     {

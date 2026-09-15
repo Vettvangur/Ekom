@@ -81,6 +81,11 @@ public interface IPrice : IVatPrice, ICloneable
     CurrencyModel Currency { get; }
 
     public bool HasDiscount { get; }
+
+    /// <summary>
+    /// Quantity represented by this price that receives its discount.
+    /// </summary>
+    decimal DiscountedQuantity => 0;
 }
 
 /// <summary>

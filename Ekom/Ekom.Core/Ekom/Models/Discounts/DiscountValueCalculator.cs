@@ -28,23 +28,25 @@ internal static class DiscountValueCalculator
         IDiscount current,
         decimal vat,
         bool vatIncludedInPrice,
-        decimal quantity)
+        decimal quantity,
+        decimal? candidateDiscountedQuantity = null)
     {
         ArgumentNullException.ThrowIfNull(price);
         ArgumentNullException.ThrowIfNull(candidate);
         ArgumentNullException.ThrowIfNull(current);
 
-        decimal candidateTotal = CreatePrice(candidate).Value;
-        decimal currentTotal = CreatePrice(current).Value;
+        decimal candidateTotal = CreatePrice(candidate, candidateDiscountedQuantity).Value;
+        decimal currentTotal = CreatePrice(current, null).Value;
         return candidateTotal < currentTotal;
 
-        Price CreatePrice(IDiscount discount)
+        Price CreatePrice(IDiscount discount, decimal? discountedQuantity)
             => new(
                 discount.Stackable ? price.Value : price.OriginalValue,
                 price.Currency,
                 vat,
                 vatIncludedInPrice,
                 discount as OrderedDiscount ?? new OrderedDiscount(discount),
-                quantity);
+                quantity,
+                discountedQuantity: discountedQuantity);
     }
 }

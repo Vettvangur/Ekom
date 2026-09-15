@@ -606,9 +606,9 @@ partial class OrderService
 
             // Reset to previous discounts
             orderInfo.Discount = prevOrderDiscount;
-            for (int x = 0; x < orderInfo.OrderLines.Count; x++)
+            for (int x = 0; x < orderInfo.orderLines.Count; x++)
             {
-                orderInfo.orderLines[x].Discount = prevDiscounts.ElementAt(x);
+                orderInfo.orderLines[x].Discount = prevDiscounts[x];
             }
 
             return result;
@@ -709,14 +709,14 @@ partial class OrderService
     /// </summary>
     private void VerifyDiscounts(OrderInfo orderInfo)
     {
+        using var calculationScope = OrderPricingCalculationScope.Enter(orderInfo);
         decimal total = orderInfo.OrderLineTotal.Value;
         string storeAlias = orderInfo.StoreInfo.Alias;
 
         // Verify order discount constraints
-        if (orderInfo.Discount?.Constraints != null
-        && !orderInfo.Discount.Constraints.IsValid(
-            storeAlias,
-            total))
+        if (orderInfo.Discount != null
+            && (!DiscountApplicability.AreOrderConstraintsMet(orderInfo, orderInfo.Discount, total)
+                || calculationScope.Allocations.Count == 0))
         {
             RemoveDiscountFromOrder(orderInfo);
         }
@@ -740,7 +740,7 @@ partial class OrderService
             if (line.Discount?.Constraints != null)
             {
                 if (line.Discount?.Constraints.IsValid(storeAlias, total) == false
-                || !IsDiscountApplicable(orderInfo, line, line.Discount))
+                || !DiscountApplicability.IsDiscountApplicable(orderInfo, line, line.Discount, total))
                 {
                     RemoveDiscountFromOrderLine(line);
                 }
@@ -757,7 +757,7 @@ partial class OrderService
     private bool IsDiscountApplicable(IOrderInfo orderInfo, IDiscount discount)
     {
         return DiscountApplicability.AreOrderConstraintsMet(orderInfo, discount)
-            && orderInfo.OrderLines.Any(line => DiscountApplicability.MatchesLineTargets(line, discount));
+            && OrderDiscountQuantityAllocator.Allocate(orderInfo, discount).Count > 0;
     }
 
 

@@ -2,12 +2,92 @@ using Ekom.Models;
 using Ekom.Tests.Objects;
 using Ekom.Utilities;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Ekom.Tests.Tests;
 
 public class PriceTests
 {
+    [Fact]
+    public void PercentageDiscount_CanApplyToPartOfLineQuantity()
+    {
+        using var configurationScope = new ConfigurationScope();
+        var currency = Currency("en-US");
+        var discount = CreateDiscount(DiscountType.Percentage, 0.2m);
+
+        var price = new Price(100m, currency, 0m, true, discount, 3m, discountedQuantity: 1m);
+
+        Assert.Equal(300m, price.BeforeDiscount.Value);
+        Assert.Equal(280m, price.AfterDiscount.Value);
+        Assert.Equal(20m, price.DiscountAmount.Value);
+        Assert.Equal(1m, price.DiscountedQuantity);
+    }
+
+    [Fact]
+    public void FixedPartialDiscount_CannotReduceRewardedUnitBelowZero()
+    {
+        using var configurationScope = new ConfigurationScope();
+        var currency = Currency("en-US");
+        var discount = CreateDiscount(DiscountType.Fixed, 200m);
+
+        var price = new Price(100m, currency, 0m, true, discount, 2m, discountedQuantity: 1m);
+
+        Assert.Equal(100m, price.AfterDiscount.Value);
+        Assert.Equal(100m, price.DiscountAmount.Value);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PartialDiscount_PerTotalRoundsVatOnce(bool vatIncludedInPrice)
+    {
+        using var configurationScope = new ConfigurationScope(
+            ("Ekom:VatCalcRounding", "RoundToEven"),
+            ("Ekom:VatRoundingScope", "PerTotal"));
+        var currency = Currency("is-IS");
+        var discount = CreateDiscount(DiscountType.Percentage, 0.2m);
+        var price = new Price(1538.42m, currency, 0.24m, vatIncludedInPrice, discount, 4m, discountedQuantity: 1m);
+        var blendedTotal = 1538.42m * 3m + 1538.42m * 0.8m;
+        var expected = new Price(blendedTotal, currency, 0.24m, vatIncludedInPrice);
+
+        Assert.Equal(expected.WithoutVat.Value, price.WithoutVat.Value);
+        Assert.Equal(expected.Vat.Value, price.Vat.Value);
+        Assert.Equal(expected.WithVat.Value, price.WithVat.Value);
+    }
+
+    [Theory]
+    [InlineData(-1, 0)]
+    [InlineData(3, 2)]
+    public void JsonConstructor_ClampsDiscountedQuantity(decimal serializedQuantity, decimal expectedQuantity)
+    {
+        using var configurationScope = new ConfigurationScope();
+        var currency = Currency("en-US");
+        var json = new JObject
+        {
+            [nameof(Price.OriginalValue)] = 100m,
+            [nameof(Price.Quantity)] = 2m,
+            [nameof(Price.DiscountedQuantity)] = serializedQuantity,
+            [nameof(Price.Discount)] = new JObject
+            {
+                [nameof(OrderedDiscount.Key)] = Guid.NewGuid(),
+                [nameof(OrderedDiscount.Title)] = "Discount",
+                [nameof(OrderedDiscount.Stackable)] = false,
+                [nameof(OrderedDiscount.Amount)] = 0.2m,
+                [nameof(OrderedDiscount.Type)] = (int)DiscountType.Percentage,
+                [nameof(OrderedDiscount.DiscountItems)] = new JArray(),
+                [nameof(OrderedDiscount.ExcludeDiscountItems)] = new JArray(),
+                [nameof(OrderedDiscount.Constraints)] = null,
+                [nameof(OrderedDiscount.HasMasterStock)] = false,
+                [nameof(OrderedDiscount.GlobalDiscount)] = false,
+            },
+        };
+
+        var price = new Price(json, currency, 0m, true);
+
+        Assert.Equal(expectedQuantity, price.DiscountedQuantity);
+    }
+
     // --- test data: stores × rounding × quantity ---
     public static IEnumerable<object[]> Matrix()
     {
@@ -42,6 +122,9 @@ public class PriceTests
 
     private static CurrencyModel Currency(string culture, string format = "C") =>
         new CurrencyModel { CurrencyValue = culture, CurrencyFormat = format };
+
+    private static OrderedDiscount CreateDiscount(DiscountType type, decimal amount)
+        => new(Guid.NewGuid(), "Discount", false, amount, type, [], [], new Constraints(), false, false);
 
     // faithful to Calculator.PerformVatRounding + EkomRounding
     private static decimal EkomExpected(decimal val, string iso, Rounding rounding, int decimals = 0)

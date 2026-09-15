@@ -323,6 +323,25 @@ Keys are matched case-insensitively and `PricingContext` is never null (empty wh
 
 `StoreAlias` is supplied when product or variant pricing has a store context; it is null for legacy or cross-store cache operations.
 
+### Quantity-based order discounts
+
+Order discounts can use whole-item quantities to determine which units receive the discount. Configure these fields on an `ekmOrderDiscount`:
+
+- **Quantity Discount Mode**:
+  - `None`: use normal order-discount behavior.
+  - `Threshold`: after **Required Quantity** qualifying units are present, discount every whole eligible reward unit.
+  - `Repeating`: each complete group of **Required Quantity** qualifying units unlocks **Reward Quantity** discounted units.
+- **Qualifying Items**: products or categories whose quantities count toward the requirement.
+- **Required Quantity**: the positive whole-unit activation threshold.
+- **Reward Quantity**: positive whole units unlocked per completed group in `Repeating` mode; ignored by `Threshold`.
+- **Discount Items** and **Exclude Discount Items** define the reward pool.
+
+Fractional quantities are rounded down for qualification and allocation. A line matching multiple qualifying selectors is counted once. When a repeating rule unlocks fewer units than are eligible, Ekom discounts the cheapest eligible units first; remaining units retain their normal price. If an equal or better product discount wins on a selected line, the quantity reward moves to the next eligible line. Qualifying and reward selections may overlap.
+
+Quantity rules require non-empty qualifying and discount item selections and a positive required quantity. Repeating rules also require a positive reward quantity. Invalid rules do not apply. The order discount calculation API reports each line's allocation in `discountedQuantity`.
+
+For example, for "buy 3, get 1 discounted", select `Repeating`, set **Required Quantity** to `3`, and set **Reward Quantity** to `1`.
+
 ### Product discount prices
 
 Products and variants support an optional **Discount Price** property (`ekmDiscountPrice`), placed below Price and using the same **Ekom Price** datatype. It is a target selling price, not an amount off, and uses the same VAT basis as the normal price.

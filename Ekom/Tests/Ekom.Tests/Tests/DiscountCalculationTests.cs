@@ -90,6 +90,44 @@ public class DiscountCalculationTests
     }
 
     [Fact]
+    public void OrderedDiscount_LegacyConstructorDefaultsToNoQuantityRule()
+    {
+        var discount = CreateOrderedDiscount(DiscountType.Percentage, 0.2m);
+
+        Assert.Equal(OrderDiscountQuantityMode.None, discount.QuantityDiscountMode);
+        Assert.Empty(discount.QualifyingItems);
+        Assert.Equal(0, discount.RequiredQuantity);
+        Assert.Equal(0, discount.RewardQuantity);
+    }
+
+    [Fact]
+    public void OrderedDiscount_CopiesQuantityRule()
+    {
+        var original = new OrderedDiscount(
+            Guid.NewGuid(),
+            "Quantity discount",
+            false,
+            0.2m,
+            DiscountType.Percentage,
+            ["20"],
+            [],
+            new Constraints(),
+            false,
+            false,
+            OrderDiscountQuantityMode.Repeating,
+            ["10"],
+            3,
+            1);
+
+        var copy = new OrderedDiscount(original);
+
+        Assert.Equal(OrderDiscountQuantityMode.Repeating, copy.QuantityDiscountMode);
+        Assert.Equal(["10"], copy.QualifyingItems);
+        Assert.Equal(3, copy.RequiredQuantity);
+        Assert.Equal(1, copy.RewardQuantity);
+    }
+
+    [Fact]
     public void SelectDiscount_UsesMonetaryValueForMixedDiscountTypes()
     {
         using var configurationScope = new ConfigurationScope();
