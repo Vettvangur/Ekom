@@ -21,6 +21,13 @@
 * **discounts:** add threshold and repeating quantity-based order discounts with whole-unit, cheapest-first reward allocation.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
+## [0.2.277](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.276...Ekom-v0.2.277) (2026-09-15)
+
+
+### Features
+
+* **discounts:** add quantity-based order discounts ([#880](https://github.com/Vettvangur/Ekom/issues/880)) ([5b4dfae](https://github.com/Vettvangur/Ekom/commit/5b4dfae8c5ee7b607f87f0ed73c78b69c973c768))
+
 ## [0.2.276](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.275...Ekom-v0.2.276) (2026-09-14)
 
 
