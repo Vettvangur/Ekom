@@ -114,7 +114,12 @@ public sealed class EkomTrackingMiddlewareTests
             StoredTracking = new OrderTracking
             {
                 Source = "google",
-                Campaign = "spring-sale"
+                Campaign = "spring-sale",
+                Mailchimp = new MailchimpOrderTracking
+                {
+                    CampaignId = "mailchimp-campaign",
+                    TrackingCode = "prec"
+                }
             }
         };
         var responseFeature = new TestHttpResponseFeature();
@@ -138,8 +143,197 @@ public sealed class EkomTrackingMiddlewareTests
         Assert.Equal("google", trackingCookieService.LastWrittenTracking!.Source);
         Assert.Equal("spring-sale", trackingCookieService.LastWrittenTracking.Campaign);
         Assert.Equal("123.456", trackingCookieService.LastWrittenTracking.Ga4.ClientId);
+        Assert.Equal("mailchimp-campaign", trackingCookieService.LastWrittenTracking.Mailchimp.CampaignId);
+        Assert.Equal("prec", trackingCookieService.LastWrittenTracking.Mailchimp.TrackingCode);
         Assert.True(preConsentTrackingSessionService.ClearCalled);
         Assert.Null(preConsentTrackingSessionService.StoredTracking);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_Retains_Mailchimp_Tracking_Until_Marketing_Consent_Is_Granted()
+    {
+        var trackingCookieService = new TestTrackingCookieService(captured: new OrderTracking
+        {
+            Ga4 = new Ga4OrderTracking
+            {
+                ClientId = "123.456"
+            }
+        });
+        var preConsentTrackingSessionService = new TestPreConsentTrackingSessionService
+        {
+            StoredTracking = new OrderTracking
+            {
+                Source = "mailchimp",
+                Mailchimp = new MailchimpOrderTracking
+                {
+                    CampaignId = "mailchimp-campaign",
+                    TrackingCode = "prec"
+                }
+            }
+        };
+        var responseFeature = new TestHttpResponseFeature();
+        var httpContext = CreateHttpContext(responseFeature);
+
+        var sut = new EkomTrackingMiddleware(
+            async context =>
+            {
+                context.Response.ContentType = "text/html; charset=utf-8";
+                await responseFeature.FireOnStartingAsync();
+                responseFeature.HasStarted = true;
+            },
+            CreateOptions(),
+            new TestTrackingConsentService(analytics: true, marketing: false),
+            trackingCookieService,
+            preConsentTrackingSessionService);
+
+        await sut.InvokeAsync(httpContext);
+
+        Assert.NotNull(trackingCookieService.LastWrittenTracking);
+        Assert.Equal("mailchimp", trackingCookieService.LastWrittenTracking!.Source);
+        Assert.False(trackingCookieService.LastWrittenTracking.Mailchimp.HasData());
+        Assert.NotNull(preConsentTrackingSessionService.StoredTracking);
+        Assert.Null(preConsentTrackingSessionService.StoredTracking!.Source);
+        Assert.Equal("mailchimp-campaign", preConsentTrackingSessionService.StoredTracking.Mailchimp.CampaignId);
+        Assert.Equal("prec", preConsentTrackingSessionService.StoredTracking.Mailchimp.TrackingCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_Preserves_First_Mailchimp_Campaign_After_Marketing_Consent()
+    {
+        var trackingCookieService = new TestTrackingCookieService(
+            captured: new OrderTracking
+            {
+                Mailchimp = new MailchimpOrderTracking
+                {
+                    CampaignId = "later-campaign",
+                    TrackingCode = "prec"
+                }
+            },
+            existing: new OrderTracking
+            {
+                Mailchimp = new MailchimpOrderTracking
+                {
+                    CampaignId = "first-campaign",
+                    TrackingCode = "prec"
+                }
+            });
+        var responseFeature = new TestHttpResponseFeature();
+        var httpContext = CreateHttpContext(responseFeature);
+
+        var sut = new EkomTrackingMiddleware(
+            async context =>
+            {
+                context.Response.ContentType = "text/html; charset=utf-8";
+                await responseFeature.FireOnStartingAsync();
+                responseFeature.HasStarted = true;
+            },
+            CreateOptions(),
+            new TestTrackingConsentService(analytics: false, marketing: true),
+            trackingCookieService,
+            new TestPreConsentTrackingSessionService());
+
+        await sut.InvokeAsync(httpContext);
+
+        Assert.NotNull(trackingCookieService.LastWrittenTracking);
+        Assert.Equal("first-campaign", trackingCookieService.LastWrittenTracking!.Mailchimp.CampaignId);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_Removes_Mailchimp_Tracking_From_Cookie_When_Marketing_Consent_Is_Revoked()
+    {
+        var trackingCookieService = new TestTrackingCookieService(
+            preConsentCaptured: new OrderTracking
+            {
+                Mailchimp = new MailchimpOrderTracking
+                {
+                    CampaignId = "later-campaign",
+                    TrackingCode = "prec"
+                }
+            },
+            existing: new OrderTracking
+            {
+                Mailchimp = new MailchimpOrderTracking
+                {
+                    CampaignId = "first-campaign",
+                    TrackingCode = "prec"
+                }
+            });
+        var preConsentTrackingSessionService = new TestPreConsentTrackingSessionService();
+        var responseFeature = new TestHttpResponseFeature();
+        var httpContext = CreateHttpContext(responseFeature);
+
+        var sut = new EkomTrackingMiddleware(
+            async context =>
+            {
+                context.Response.ContentType = "text/html; charset=utf-8";
+                await responseFeature.FireOnStartingAsync();
+                responseFeature.HasStarted = true;
+            },
+            CreateOptions(),
+            new TestTrackingConsentService(analytics: false, marketing: false),
+            trackingCookieService,
+            preConsentTrackingSessionService);
+
+        await sut.InvokeAsync(httpContext);
+
+        Assert.NotNull(trackingCookieService.LastWrittenTracking);
+        Assert.False(trackingCookieService.LastWrittenTracking!.Mailchimp.HasData());
+        Assert.NotNull(preConsentTrackingSessionService.StoredTracking);
+        Assert.Equal("first-campaign", preConsentTrackingSessionService.StoredTracking!.Mailchimp.CampaignId);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("later-campaign")]
+    public async Task InvokeAsync_Retains_Existing_Mailchimp_Tracking_During_Analytics_Only_Consent(
+        string? preConsentCampaignId)
+    {
+        var trackingCookieService = new TestTrackingCookieService(
+            captured: new OrderTracking
+            {
+                Ga4 = new Ga4OrderTracking { ClientId = "123.456" }
+            },
+            existing: new OrderTracking
+            {
+                Mailchimp = new MailchimpOrderTracking
+                {
+                    CampaignId = "first-campaign",
+                    TrackingCode = "prec"
+                }
+            });
+        var preConsentTrackingSessionService = new TestPreConsentTrackingSessionService();
+        if (preConsentCampaignId is not null)
+        {
+            preConsentTrackingSessionService.StoredTracking = new OrderTracking
+            {
+                Mailchimp = new MailchimpOrderTracking
+                {
+                    CampaignId = preConsentCampaignId,
+                    TrackingCode = "prec"
+                }
+            };
+        }
+        var responseFeature = new TestHttpResponseFeature();
+        var httpContext = CreateHttpContext(responseFeature);
+
+        var sut = new EkomTrackingMiddleware(
+            async context =>
+            {
+                context.Response.ContentType = "text/html; charset=utf-8";
+                await responseFeature.FireOnStartingAsync();
+                responseFeature.HasStarted = true;
+            },
+            CreateOptions(),
+            new TestTrackingConsentService(analytics: true, marketing: false),
+            trackingCookieService,
+            preConsentTrackingSessionService);
+
+        await sut.InvokeAsync(httpContext);
+
+        Assert.NotNull(trackingCookieService.LastWrittenTracking);
+        Assert.False(trackingCookieService.LastWrittenTracking!.Mailchimp.HasData());
+        Assert.NotNull(preConsentTrackingSessionService.StoredTracking);
+        Assert.Equal("first-campaign", preConsentTrackingSessionService.StoredTracking!.Mailchimp.CampaignId);
     }
 
     private static IOptions<TrackingOptions> CreateOptions()
@@ -164,18 +358,23 @@ public sealed class EkomTrackingMiddlewareTests
     private sealed class TestTrackingCookieService : ITrackingCookieService
     {
         private readonly OrderTracking? _captured;
+        private readonly OrderTracking? _existing;
         private readonly OrderTracking? _preConsentCaptured;
 
-        public TestTrackingCookieService(OrderTracking? captured = null, OrderTracking? preConsentCaptured = null)
+        public TestTrackingCookieService(
+            OrderTracking? captured = null,
+            OrderTracking? preConsentCaptured = null,
+            OrderTracking? existing = null)
         {
             _captured = captured;
             _preConsentCaptured = preConsentCaptured;
+            _existing = existing;
         }
 
         public OrderTracking? LastWrittenTracking { get; private set; }
 
         public OrderTracking? ReadCookie(HttpContext httpContext)
-            => null;
+            => _existing;
 
         public void WriteCookie(HttpContext httpContext, OrderTracking tracking)
         {

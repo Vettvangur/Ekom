@@ -19,6 +19,7 @@
 * **stock:** perform increments using conditional SQL arithmetic and publish cache/events after commit to avoid cache-based lost updates and mutation retries after notification failures.
 * **discounts:** add native product and variant `ekmDiscountPrice` support using the Ekom Price datatype, competing with content and event-added discounts while preserving original prices.
 * **discounts:** add threshold and repeating quantity-based order discounts with whole-unit, cheapest-first reward allocation.
+* **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
 ## [0.2.277](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.276...Ekom-v0.2.277) (2026-09-15)

@@ -53,19 +53,33 @@ public sealed class OrderTrackingService : IOrderTrackingService
     public void ApplyTracking(OrderInfo orderInfo, OrderTracking tracking, bool replaceExisting)
     {
         if (!replaceExisting && orderInfo.Tracking?.HasData() == true)
+        {
+            RemoveMailchimpAttributionWithoutConsent(orderInfo);
             return;
+        }
 
         orderInfo.Tracking = tracking.Clone();
+        RemoveMailchimpAttributionWithoutConsent(orderInfo);
     }
 
     public void ApplyConsent(OrderInfo orderInfo, OrderConsent consent, bool replaceExisting)
     {
         if (!replaceExisting && orderInfo.Consent != null)
         {
+            RemoveMailchimpAttributionWithoutConsent(orderInfo);
             return;
         }
 
         orderInfo.Consent = consent.Clone();
+        RemoveMailchimpAttributionWithoutConsent(orderInfo);
+    }
+
+    private static void RemoveMailchimpAttributionWithoutConsent(OrderInfo orderInfo)
+    {
+        if (orderInfo.Consent?.Marketing != true && orderInfo.Tracking is not null)
+        {
+            orderInfo.Tracking.Mailchimp = new MailchimpOrderTracking();
+        }
     }
 
     public void ValidateManualReplacement(IOrderInfo orderInfo)
