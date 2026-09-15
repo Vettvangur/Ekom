@@ -1,6 +1,6 @@
 # Ekom.Mailchimp
 
-Mailchimp Marketing API integration for Ekom. The first release supports audience subscriptions, unsubscriptions, and completed-purchase conversion tracking.
+Mailchimp Marketing API integration for Ekom. It supports audience tags, subscriptions, unsubscriptions, and completed-purchase conversion tracking.
 
 `Ekom.Mailchimp` supports Umbraco 17 on .NET 10 and reusable integration services on .NET 8. Use `Ekom.Mailchimp.U18` for Umbraco 18.
 
@@ -99,7 +99,7 @@ The Umbraco package automatically registers the completed-checkout event compone
 
 ### Inject the service
 
-`IMailchimpService` is the public entry point for subscriptions and purchases.
+`IMailchimpService` is the public entry point for audience tags, subscriptions, and purchases.
 
 ```csharp
 using Ekom.Mailchimp.Services;
@@ -109,6 +109,18 @@ public sealed class CustomerMarketingService(IMailchimpService mailchimp)
     private readonly IMailchimpService _mailchimp = mailchimp;
 }
 ```
+
+### Fetch audience tags
+
+Fetch tags from the globally configured `AudienceId` for use in forms or other customer preference interfaces:
+
+```csharp
+using Ekom.Mailchimp.Models;
+
+IReadOnlyList<MailchimpTag> tags = await _mailchimp.GetTagsAsync(cancellationToken);
+```
+
+Successful responses are cached in memory for five minutes. Store-specific overrides are not used for this operation. If Mailchimp or subscriptions are disabled, the method returns an empty list. Mailchimp API, network, cancellation, configuration, and invalid-response errors are propagated to the caller.
 
 ### Subscribe a contact
 

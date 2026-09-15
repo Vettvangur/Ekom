@@ -1,6 +1,8 @@
 using Ekom.Mailchimp.Clients;
+using Ekom.Mailchimp.Exceptions;
 using Ekom.Mailchimp.Http;
 using Ekom.Mailchimp.Models;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using System.Net;
@@ -12,10 +14,75 @@ namespace Ekom.Mailchimp.Tests;
 public sealed class MailchimpClientTests
 {
     [Fact]
+    public async Task GetTagsAsync_ReturnsAndCachesGlobalAudienceTags()
+    {
+        using var handler = new RecordingHandler
+        {
+            ResponseBody = """
+                {
+                  "tags": [
+                    { "id": 1, "name": "News" },
+                    { "id": 2, "name": "Offers" }
+                  ],
+                  "total_items": 2
+                }
+                """,
+        };
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        MailchimpAudienceClient client = CreateAudienceClient(handler, cache);
+
+        IReadOnlyList<MailchimpTag> first = await client.GetTagsAsync(CancellationToken.None);
+        IReadOnlyList<MailchimpTag> second = await client.GetTagsAsync(CancellationToken.None);
+
+        Assert.Equal(
+            [new MailchimpTag { Id = 1, Name = "News" }, new MailchimpTag { Id = 2, Name = "Offers" }],
+            first);
+        Assert.Same(first, second);
+        RecordedRequest request = Assert.Single(handler.Requests);
+        Assert.Equal(HttpMethod.Get, request.Method);
+        Assert.EndsWith("/lists/audience/tag-search", request.Uri.AbsolutePath, StringComparison.Ordinal);
+        Assert.Empty(request.Uri.Query);
+    }
+
+    [Fact]
+    public async Task GetTagsAsync_InvalidResponsesAreNotCached()
+    {
+        using var handler = new RecordingHandler();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        MailchimpAudienceClient client = CreateAudienceClient(handler, cache);
+
+        await Assert.ThrowsAsync<System.Text.Json.JsonException>(
+            () => client.GetTagsAsync(CancellationToken.None));
+        await Assert.ThrowsAsync<System.Text.Json.JsonException>(
+            () => client.GetTagsAsync(CancellationToken.None));
+
+        Assert.Equal(2, handler.Requests.Count);
+    }
+
+    [Fact]
+    public async Task GetTagsAsync_ApiFailuresAreNotCached()
+    {
+        using var handler = new RecordingHandler
+        {
+            ResponseStatusCode = HttpStatusCode.ServiceUnavailable,
+        };
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        MailchimpAudienceClient client = CreateAudienceClient(handler, cache);
+
+        await Assert.ThrowsAsync<MailchimpApiException>(
+            () => client.GetTagsAsync(CancellationToken.None));
+        await Assert.ThrowsAsync<MailchimpApiException>(
+            () => client.GetTagsAsync(CancellationToken.None));
+
+        Assert.Equal(2, handler.Requests.Count);
+    }
+
+    [Fact]
     public async Task SubscribeAsync_UpsertsMemberAndAppliesTags()
     {
         using var handler = new RecordingHandler();
-        MailchimpAudienceClient client = CreateAudienceClient(handler);
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        MailchimpAudienceClient client = CreateAudienceClient(handler, cache);
 
         await client.SubscribeAsync(new MailchimpSubscribeRequest
         {
@@ -70,10 +137,12 @@ public sealed class MailchimpClientTests
         Assert.Equal(1, order["lines"]![0]!["quantity"]!.GetValue<int>());
     }
 
-    private static MailchimpAudienceClient CreateAudienceClient(HttpMessageHandler handler)
+    private static MailchimpAudienceClient CreateAudienceClient(
+        HttpMessageHandler handler,
+        IMemoryCache memoryCache)
     {
         var httpClient = new MailchimpHttpClient(new TestHttpClientFactory(handler), NullLogger<MailchimpHttpClient>.Instance);
-        return new MailchimpAudienceClient(CreateResolver(), httpClient);
+        return new MailchimpAudienceClient(CreateResolver(), httpClient, memoryCache);
     }
 
     private static MailchimpEcommerceClient CreateEcommerceClient(HttpMessageHandler handler)
@@ -123,6 +192,8 @@ public sealed class MailchimpClientTests
     private sealed class RecordingHandler : HttpMessageHandler
     {
         public List<RecordedRequest> Requests { get; } = [];
+        public string ResponseBody { get; init; } = "{}";
+        public HttpStatusCode ResponseStatusCode { get; init; } = HttpStatusCode.OK;
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -134,9 +205,9 @@ public sealed class MailchimpClientTests
                 request.RequestUri!,
                 body,
                 request.Headers.Authorization));
-            return new HttpResponseMessage(HttpStatusCode.OK)
+            return new HttpResponseMessage(ResponseStatusCode)
             {
-                Content = new StringContent("{}"),
+                Content = new StringContent(ResponseBody),
             };
         }
     }

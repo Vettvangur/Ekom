@@ -1,3 +1,4 @@
+using Ekom.Mailchimp.Clients;
 using Ekom.Mailchimp.Dispatching;
 using Ekom.Mailchimp.Enrichers;
 using Ekom.Mailchimp.Mappers;
@@ -9,6 +10,7 @@ namespace Ekom.Mailchimp.Services;
 
 internal sealed class MailchimpService : IMailchimpService
 {
+    private readonly IMailchimpAudienceClient _audienceClient;
     private readonly IMailchimpConfigurationResolver _configurationResolver;
     private readonly IMailchimpDispatcher _dispatcher;
     private readonly IEnumerable<IMailchimpPurchaseEnricher> _enrichers;
@@ -17,14 +19,21 @@ internal sealed class MailchimpService : IMailchimpService
     public MailchimpService(
         IOptions<MailchimpOptions> options,
         IMailchimpConfigurationResolver configurationResolver,
+        IMailchimpAudienceClient audienceClient,
         IMailchimpDispatcher dispatcher,
         IEnumerable<IMailchimpPurchaseEnricher> enrichers)
     {
         _options = options.Value;
         _configurationResolver = configurationResolver;
+        _audienceClient = audienceClient;
         _dispatcher = dispatcher;
         _enrichers = enrichers;
     }
+
+    public Task<IReadOnlyList<MailchimpTag>> GetTagsAsync(CancellationToken ct = default)
+        => !_options.Enabled || !_options.Subscriptions.Enabled
+            ? Task.FromResult<IReadOnlyList<MailchimpTag>>(Array.Empty<MailchimpTag>())
+            : _audienceClient.GetTagsAsync(ct);
 
     public ValueTask SubscribeAsync(MailchimpSubscribeRequest request, CancellationToken ct = default)
     {

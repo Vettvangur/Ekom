@@ -6,6 +6,45 @@ namespace Ekom.Mailchimp.Tests;
 public sealed class MailchimpConfigurationTests
 {
     [Fact]
+    public void ResolveGlobal_IgnoresStoreOverrides()
+    {
+        var options = new MailchimpOptions
+        {
+            Enabled = true,
+            ApiKey = "global-us1",
+            AudienceId = "global-audience",
+        };
+        options.Stores.Add(new MailchimpStoreOptions
+        {
+            Alias = "is",
+            ApiKey = "store-us20",
+            AudienceId = "store-audience",
+        });
+        var resolver = new MailchimpConfigurationResolver(
+            Options.Create(options),
+            NullLogger<MailchimpConfigurationResolver>.Instance);
+
+        MailchimpStoreConfiguration configuration = resolver.ResolveGlobal();
+
+        Assert.Equal("global-us1", configuration.ApiKey);
+        Assert.Equal("us1", configuration.ServerPrefix);
+        Assert.Equal("global-audience", configuration.AudienceId);
+    }
+
+    [Fact]
+    public void ResolveGlobal_MissingGlobalConfigurationThrows()
+    {
+        var resolver = new MailchimpConfigurationResolver(
+            Options.Create(new MailchimpOptions { Enabled = true }),
+            NullLogger<MailchimpConfigurationResolver>.Instance);
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => resolver.ResolveGlobal());
+
+        Assert.Equal("Global Mailchimp configuration is incomplete.", exception.Message);
+    }
+
+    [Fact]
     public void Resolve_UsesStoreOverridesAndDerivesServerPrefix()
     {
         var mailchimpOptions = new MailchimpOptions

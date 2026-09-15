@@ -7,6 +7,7 @@ namespace Ekom.Mailchimp;
 
 internal interface IMailchimpConfigurationResolver
 {
+    MailchimpStoreConfiguration ResolveGlobal(bool requireEcommerceStore = false);
     MailchimpStoreConfiguration Resolve(string storeAlias, bool requireEcommerceStore = false);
     bool TryResolve(
         string storeAlias,
@@ -46,6 +47,16 @@ internal sealed class MailchimpConfigurationResolver : IMailchimpConfigurationRe
         throw new InvalidOperationException($"Mailchimp configuration is incomplete for store '{storeAlias}'.");
     }
 
+    public MailchimpStoreConfiguration ResolveGlobal(bool requireEcommerceStore = false)
+    {
+        if (TryResolveCore("global", null, requireEcommerceStore, out MailchimpStoreConfiguration? configuration))
+        {
+            return configuration;
+        }
+
+        throw new InvalidOperationException("Global Mailchimp configuration is incomplete.");
+    }
+
     public bool TryResolve(
         string storeAlias,
         bool requireEcommerceStore,
@@ -56,11 +67,20 @@ internal sealed class MailchimpConfigurationResolver : IMailchimpConfigurationRe
         MailchimpStoreOptions? store = _options.Stores.FirstOrDefault(x =>
             string.Equals(x.Alias, storeAlias, StringComparison.OrdinalIgnoreCase));
 
+        return TryResolveCore(storeAlias, store, requireEcommerceStore, out configuration);
+    }
+
+    private bool TryResolveCore(
+        string configurationAlias,
+        MailchimpStoreOptions? store,
+        bool requireEcommerceStore,
+        [NotNullWhen(true)] out MailchimpStoreConfiguration? configuration)
+    {
         bool isValid = true;
         string apiKey = store?.ApiKey ?? _options.ApiKey ?? string.Empty;
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            LogMissingSetting(storeAlias, nameof(MailchimpOptions.ApiKey));
+            LogMissingSetting(configurationAlias, nameof(MailchimpOptions.ApiKey));
             isValid = false;
         }
 
@@ -68,21 +88,21 @@ internal sealed class MailchimpConfigurationResolver : IMailchimpConfigurationRe
         if (string.IsNullOrWhiteSpace(serverPrefix)
             && !TryGetServerPrefix(apiKey, out serverPrefix))
         {
-            LogMissingSetting(storeAlias, nameof(MailchimpOptions.ServerPrefix));
+            LogMissingSetting(configurationAlias, nameof(MailchimpOptions.ServerPrefix));
             isValid = false;
         }
 
         string audienceId = store?.AudienceId ?? _options.AudienceId ?? string.Empty;
         if (string.IsNullOrWhiteSpace(audienceId))
         {
-            LogMissingSetting(storeAlias, nameof(MailchimpOptions.AudienceId));
+            LogMissingSetting(configurationAlias, nameof(MailchimpOptions.AudienceId));
             isValid = false;
         }
 
         string ecommerceStoreId = store?.EcommerceStoreId ?? _options.EcommerceStoreId ?? string.Empty;
         if (requireEcommerceStore && string.IsNullOrWhiteSpace(ecommerceStoreId))
         {
-            LogMissingSetting(storeAlias, nameof(MailchimpOptions.EcommerceStoreId));
+            LogMissingSetting(configurationAlias, nameof(MailchimpOptions.EcommerceStoreId));
             isValid = false;
         }
 
@@ -93,7 +113,7 @@ internal sealed class MailchimpConfigurationResolver : IMailchimpConfigurationRe
         }
 
         configuration = new MailchimpStoreConfiguration(
-            storeAlias,
+            configurationAlias,
             apiKey,
             serverPrefix,
             audienceId,
