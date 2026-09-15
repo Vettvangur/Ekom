@@ -3,6 +3,7 @@ Ekom
  
 [![Nuget](https://img.shields.io/nuget/vpre/Ekom.U10?color=ed0f0f)](https://www.nuget.org/packages/Ekom.U10/)
 [![Nuget](https://img.shields.io/nuget/vpre/Ekom.U17?color=ed0f0f)](https://www.nuget.org/packages/Ekom.U17/)
+[![Nuget](https://img.shields.io/nuget/vpre/Ekom.U18?color=ed0f0f)](https://www.nuget.org/packages/Ekom.U18/)
 [![Nuget](https://img.shields.io/nuget/vpre/Ekom.Klaviyo?color=ed0f0f)](https://www.nuget.org/packages/Ekom.Klaviyo/)
 [![Nuget](https://img.shields.io/nuget/vpre/Ekom.Algolia?color=ed0f0f)](https://www.nuget.org/packages/Ekom.Algolia/)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
@@ -15,12 +16,26 @@ Ekom
 Open Source Ecommerce package for Umbraco
 </h2>
 
-Supports Umbraco 13 and Umbraco 17.
+Supports Umbraco 13, Umbraco 17, and Umbraco 18.
 
-Ekom is a versatile and fully customizable eCommerce solution that is free to use forever. This package has been built with ASP NET Core, focusing on performance and security, and is compatible with Umbraco 13 and Umbraco 17.
+Ekom is a versatile and fully customizable eCommerce solution that is free to use forever. This package has been built with ASP NET Core, focusing on performance and security, and is compatible with Umbraco 13, Umbraco 17, and Umbraco 18.
 
 ## Installation
 Install the package that matches your Umbraco version, then install the matching Ekom web assets package into your site's main project (the project containing `wwwroot`).
+
+### Umbraco 18
+
+**NuGet:** [https://www.nuget.org/packages/Ekom.U18](https://www.nuget.org/packages/Ekom.U18)
+
+```bash
+dotnet add package Ekom.U18
+dotnet add package Ekom.Web.U18
+```
+
+```powershell
+PM> Install-Package Ekom.U18
+PM> Install-Package Ekom.Web.U18
+```
 
 ### Umbraco 17
 
