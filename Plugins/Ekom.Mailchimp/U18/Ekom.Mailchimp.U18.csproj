@@ -8,7 +8,7 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Ekom.Mailchimp.U18</PackageId>
-    <Version>1.3.0</Version>
+    <Version>1.4.0</Version>
     <Authors>Vettvangur</Authors>
     <Company>Vettvangur</Company>
     <Description>Mailchimp integration for Ekom on Umbraco 18.</Description>
