@@ -1,3 +1,4 @@
+using Ekom.Mailchimp.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,19 @@ namespace Ekom.Mailchimp.Tests;
 
 public sealed class MailchimpHostTests
 {
+    [Fact]
+    public void AddMailchimp_RegistersPublicService()
+    {
+        using IHost host = Host.CreateDefaultBuilder()
+            .ConfigureServices(services => services.AddMailchimp())
+            .Build();
+        using IServiceScope scope = host.Services.CreateScope();
+
+        IMailchimpService service = scope.ServiceProvider.GetRequiredService<IMailchimpService>();
+
+        Assert.NotNull(service);
+    }
+
     [Fact]
     public async Task Host_StartsWithMissingOperationalConfiguration()
     {

@@ -22,6 +22,7 @@ public static class MailchimpServiceCollectionExtensions
 
         options.ValidateOnStart();
         services.AddSingleton<IValidateOptions<MailchimpOptions>, MailchimpOptionsValidator>();
+        services.AddMemoryCache();
         services.AddHttpClient("Ekom.Mailchimp", client => client.Timeout = TimeSpan.FromSeconds(30));
         services.AddSingleton<MailchimpHttpClient>();
 

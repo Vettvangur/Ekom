@@ -1,3 +1,4 @@
+using Ekom.Mailchimp.Clients;
 using Ekom.Mailchimp.Dispatching;
 using Ekom.Mailchimp.Models;
 using Ekom.Mailchimp.Services;
@@ -8,6 +9,64 @@ namespace Ekom.Mailchimp.Tests;
 
 public sealed class MailchimpServiceTests
 {
+    [Fact]
+    public async Task GetTagsAsync_ReturnsGlobalAudienceTagsDirectly()
+    {
+        var options = new MailchimpOptions
+        {
+            Enabled = true,
+            ApiKey = "key-us1",
+            AudienceId = "audience",
+        };
+        var audienceClient = new RecordingAudienceClient
+        {
+            Tags = [new MailchimpTag { Id = 1, Name = "News" }],
+        };
+        MailchimpService service = CreateService(
+            options,
+            new RecordingMailchimpDispatcher(),
+            audienceClient);
+
+        IReadOnlyList<MailchimpTag> tags = await service.GetTagsAsync();
+
+        Assert.Equal(audienceClient.Tags, tags);
+        Assert.Equal(1, audienceClient.GetTagsCalls);
+    }
+
+    [Fact]
+    public async Task GetTagsAsync_DisabledReturnsEmptyWithoutCallingClient()
+    {
+        var audienceClient = new RecordingAudienceClient();
+        MailchimpService service = CreateService(
+            new MailchimpOptions(),
+            new RecordingMailchimpDispatcher(),
+            audienceClient);
+
+        IReadOnlyList<MailchimpTag> tags = await service.GetTagsAsync();
+
+        Assert.Empty(tags);
+        Assert.Equal(0, audienceClient.GetTagsCalls);
+    }
+
+    [Fact]
+    public async Task GetTagsAsync_SubscriptionsDisabledReturnsEmptyWithoutCallingClient()
+    {
+        var audienceClient = new RecordingAudienceClient();
+        MailchimpService service = CreateService(
+            new MailchimpOptions
+            {
+                Enabled = true,
+                Subscriptions = new MailchimpSubscriptionOptions { Enabled = false },
+            },
+            new RecordingMailchimpDispatcher(),
+            audienceClient);
+
+        IReadOnlyList<MailchimpTag> tags = await service.GetTagsAsync();
+
+        Assert.Empty(tags);
+        Assert.Equal(0, audienceClient.GetTagsCalls);
+    }
+
     [Fact]
     public async Task SubscribeAsync_MissingAudienceConfigurationDoesNotEnqueue()
     {
@@ -102,13 +161,19 @@ public sealed class MailchimpServiceTests
 
     private static MailchimpService CreateService(
         MailchimpOptions options,
-        IMailchimpDispatcher dispatcher)
+        IMailchimpDispatcher dispatcher,
+        IMailchimpAudienceClient? audienceClient = null)
     {
         var wrappedOptions = Options.Create(options);
         var resolver = new MailchimpConfigurationResolver(
             wrappedOptions,
             NullLogger<MailchimpConfigurationResolver>.Instance);
-        return new MailchimpService(wrappedOptions, resolver, dispatcher, []);
+        return new MailchimpService(
+            wrappedOptions,
+            resolver,
+            audienceClient ?? new RecordingAudienceClient(),
+            dispatcher,
+            []);
     }
 
     private static MailchimpPurchase CreatePurchase(string storeAlias) => new()
@@ -148,5 +213,23 @@ public sealed class MailchimpServiceTests
             Items.Add(item);
             return ValueTask.CompletedTask;
         }
+    }
+
+    private sealed class RecordingAudienceClient : IMailchimpAudienceClient
+    {
+        public IReadOnlyList<MailchimpTag> Tags { get; init; } = [];
+        public int GetTagsCalls { get; private set; }
+
+        public Task<IReadOnlyList<MailchimpTag>> GetTagsAsync(CancellationToken ct)
+        {
+            GetTagsCalls++;
+            return Task.FromResult(Tags);
+        }
+
+        public Task SubscribeAsync(MailchimpSubscribeRequest request, CancellationToken ct)
+            => Task.CompletedTask;
+
+        public Task UnsubscribeAsync(MailchimpUnsubscribeRequest request, CancellationToken ct)
+            => Task.CompletedTask;
     }
 }

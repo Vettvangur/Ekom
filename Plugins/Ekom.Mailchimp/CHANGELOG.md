@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* **mailchimp:** expose cached global audience tags through `IMailchimpService`
+
 ## [1.2.2](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.2.1...Ekom.Mailchimp-v1.2.2) (2026-09-14)
 
 
