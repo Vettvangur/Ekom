@@ -6,6 +6,13 @@
 
 * **mailchimp:** expose cached global audience tags through `IMailchimpService`
 
+## [1.3.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.2.2...Ekom.Mailchimp-v1.3.0) (2026-09-15)
+
+
+### Features
+
+* **mailchimp:** expose cached audience tags ([#883](https://github.com/Vettvangur/Ekom/issues/883)) ([4a39019](https://github.com/Vettvangur/Ekom/commit/4a39019c96d3f2b6acb44fe824992f69fabd1b8a))
+
 ## [1.2.2](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.2.1...Ekom.Mailchimp-v1.2.2) (2026-09-14)
 
 
