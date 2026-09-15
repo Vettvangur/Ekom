@@ -168,7 +168,7 @@ public ValueTask TrackOrderAsync(IOrderInfo order, CancellationToken cancellatio
     => _mailchimp.TrackPurchaseAsync(order, cancellationToken);
 ```
 
-The standard mapping reads marketing consent from `customerMailchimpConsentToSubscribe`, the Mailchimp campaign ID from `mc_cid`, and the tracking code from `mc_tc`. Relative product and image URLs use the configured `SiteBaseUrl`.
+The standard mapping reads subscription consent from `customerMailchimpConsentToSubscribe`. Ekom automatically captures `mc_cid` and the supported `mc_tc=prec` value from the visitor's landing URL as first-touch attribution. Before marketing consent, those values remain in the pre-consent session; after consent, they are promoted to the `EkomTracking` cookie and persisted with the basket/order. Withdrawing marketing consent removes Mailchimp attribution from the tracking cookie and unfinished order, and the mapper suppresses both persisted and legacy attribution without consent. With consent, the mapper prefers persisted tracking and retains matching customer properties as a backward-compatible fallback. Relative product and image URLs use the configured `SiteBaseUrl`.
 
 ### Track a purchase directly
 

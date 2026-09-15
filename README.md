@@ -384,6 +384,8 @@ Use the store's configured currency identifiers. Targets in currency arrays requ
 
 Ekom tracking supports order-level `Consent` and `Tracking` data for automatic GA4 and Meta purchase dispatch.
 
+Mailchimp landing parameters `mc_cid` and the supported `mc_tc=prec` value are also captured as first-touch attribution. They remain in the pre-consent session until marketing consent is granted, then move into the `EkomTracking` cookie and are persisted with the basket/order for the Mailchimp purchase integration. Withdrawing marketing consent moves cookie attribution back to the pre-consent session and clears it from unfinished orders.
+
 - `Ekom:Tracking:Enabled` turns tracking features on or off.
 - `Ekom:Tracking:CaptureEnabled` controls whether Ekom captures consent and browser tracking data from incoming requests.
 - `Ekom:Tracking:LogEventData` controls whether all outbound GA4 and Meta event payloads are logged before dispatch.

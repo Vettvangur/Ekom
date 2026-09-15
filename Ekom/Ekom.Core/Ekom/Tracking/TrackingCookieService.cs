@@ -83,6 +83,10 @@ public sealed class TrackingCookieService : ITrackingCookieService
         tracking.Ga4.SessionId = _trackingConsentService.CanCaptureAnalytics(consent) ? ParseGaSessionId(cookies) : null;
         tracking.Meta.Fbp = _trackingConsentService.CanCaptureMarketing(consent) ? ValueOrNull(cookies["_fbp"]) : null;
         tracking.Meta.Fbc = _trackingConsentService.CanCaptureMarketing(consent) ? ValueOrNull(cookies["_fbc"]) ?? BuildFbc(ValueOrNull(request.Query["fbclid"])) : null;
+        if (!_trackingConsentService.CanCaptureMarketing(consent))
+        {
+            tracking.Mailchimp = new MailchimpOrderTracking();
+        }
 
         return tracking.HasData() ? tracking : null;
     }
@@ -107,6 +111,13 @@ public sealed class TrackingCookieService : ITrackingCookieService
             ClickIdType = !string.IsNullOrWhiteSpace(gclid) ? "gclid" : !string.IsNullOrWhiteSpace(fbclid) ? "fbclid" : null,
             LandingUrl = request.GetEncodedUrl(),
             Referrer = ValueOrNull(request.Headers.Referer.ToString()),
+            Mailchimp = new MailchimpOrderTracking
+            {
+                CampaignId = ValueOrNull(query["mc_cid"]),
+                TrackingCode = string.Equals(ValueOrNull(query["mc_tc"]), "prec", StringComparison.Ordinal)
+                    ? "prec"
+                    : null
+            },
             Ga4 = new Ga4OrderTracking
             {
                 Data = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)

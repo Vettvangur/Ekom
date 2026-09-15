@@ -16,6 +16,7 @@ public sealed class OrderTracking
     public string? CaptureMethod { get; set; }
     public Ga4OrderTracking Ga4 { get; set; } = new();
     public MetaOrderTracking Meta { get; set; } = new();
+    public MailchimpOrderTracking Mailchimp { get; set; } = new();
     public AlgoliaOrderTracking Algolia { get; set; } = new();
 
     public bool HasData()
@@ -29,6 +30,7 @@ public sealed class OrderTracking
         || !string.IsNullOrWhiteSpace(Referrer)
         || Ga4.HasData()
         || Meta.HasData()
+        || Mailchimp?.HasData() == true
         || Algolia?.HasData() == true;
 
     public OrderTracking Clone()
@@ -48,6 +50,7 @@ public sealed class OrderTracking
             CaptureMethod = CaptureMethod,
             Ga4 = Ga4.Clone(),
             Meta = Meta.Clone(),
+            Mailchimp = Mailchimp?.Clone() ?? new(),
             Algolia = Algolia?.Clone() ?? new()
         };
 }
@@ -89,6 +92,23 @@ public sealed class MetaOrderTracking
             Fbp = Fbp,
             Fbc = Fbc,
             Data = new Dictionary<string, string?>(Data, StringComparer.OrdinalIgnoreCase)
+        };
+}
+
+public sealed class MailchimpOrderTracking
+{
+    public string? CampaignId { get; set; }
+    public string? TrackingCode { get; set; }
+
+    public bool HasData()
+        => !string.IsNullOrWhiteSpace(CampaignId)
+        || !string.IsNullOrWhiteSpace(TrackingCode);
+
+    public MailchimpOrderTracking Clone()
+        => new()
+        {
+            CampaignId = CampaignId,
+            TrackingCode = TrackingCode
         };
 }
 

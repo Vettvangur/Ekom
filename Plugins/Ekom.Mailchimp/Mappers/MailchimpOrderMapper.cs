@@ -6,6 +6,10 @@ namespace Ekom.Mailchimp.Mappers;
 
 public static class MailchimpOrderMapper
 {
+    private const string MailchimpTrackingPropertyName = "Mailchimp";
+    private const string CampaignIdPropertyName = "CampaignId";
+    private const string TrackingCodePropertyName = "TrackingCode";
+
     public static MailchimpPurchase ToMailchimpPurchase(this IOrderInfo order, MailchimpOptions options)
     {
         ArgumentNullException.ThrowIfNull(order);
@@ -49,10 +53,8 @@ public static class MailchimpOrderMapper
             },
             BillingAddress = billingAddress,
             ShippingAddress = shippingAddress,
-            CampaignId = NullIfWhiteSpace(customer.Value("mc_cid")),
-            TrackingCode = string.Equals(customer.Value("mc_tc"), "prec", StringComparison.Ordinal)
-                ? "prec"
-                : null,
+            CampaignId = ResolveCampaignId(order.Tracking, customer, order.Consent?.Marketing == true),
+            TrackingCode = ResolveTrackingCode(order.Tracking, customer, order.Consent?.Marketing == true),
             Lines = order.OrderLines.Select(x => ToPurchaseLine(x, siteBaseUrl)).ToArray(),
         };
     }
@@ -139,4 +141,40 @@ public static class MailchimpOrderMapper
 
     private static string? NullIfWhiteSpace(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    internal static string? ResolveCampaignId(
+        OrderTracking? tracking,
+        Customer customer,
+        bool hasMarketingConsent)
+        => hasMarketingConsent
+            ? NullIfWhiteSpace(ReadMailchimpTrackingValue(tracking, CampaignIdPropertyName))
+                ?? NullIfWhiteSpace(customer.Value("mc_cid"))
+            : null;
+
+    internal static string? ResolveTrackingCode(
+        OrderTracking? tracking,
+        Customer customer,
+        bool hasMarketingConsent)
+        => hasMarketingConsent
+            ? NormalizeTrackingCode(ReadMailchimpTrackingValue(tracking, TrackingCodePropertyName))
+                ?? NormalizeTrackingCode(customer.Value("mc_tc"))
+            : null;
+
+    private static string? ReadMailchimpTrackingValue(OrderTracking? tracking, string propertyName)
+    {
+        // Reflection keeps the plugin compatible with Ekom versions from before Mailchimp tracking was added.
+        object? mailchimpTracking = tracking?
+            .GetType()
+            .GetProperty(MailchimpTrackingPropertyName)?
+            .GetValue(tracking);
+        return mailchimpTracking?
+            .GetType()
+            .GetProperty(propertyName)?
+            .GetValue(mailchimpTracking) as string;
+    }
+
+    private static string? NormalizeTrackingCode(string? value)
+        => string.Equals(NullIfWhiteSpace(value), "prec", StringComparison.Ordinal)
+            ? "prec"
+            : null;
 }
