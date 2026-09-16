@@ -20,6 +20,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.59](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.58...Ekom.Algolia-v0.2.59) (2026-09-16)
+
+
+### Bug Fixes
+
+* **algolia:** add safe collections fallback ([#895](https://github.com/Vettvangur/Ekom/issues/895)) ([646e895](https://github.com/Vettvangur/Ekom/commit/646e895fb232ac3dc64b4711b93e92bedeea4840))
+
 ## [0.2.58](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.57...Ekom.Algolia-v0.2.58) (2026-09-16)
 
 
