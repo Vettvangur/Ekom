@@ -174,9 +174,9 @@ public sealed class ProductSearchController
             ]
           },
           "SearchableAttributes": [
-            "Title",
-            "Sku",
-            "unordered(Summary)"
+            "title",
+            "sku",
+            "unordered(summary)"
           ],
           "Collections": {
             "Enabled": true
@@ -335,16 +335,16 @@ Configure searchable attributes independently for each store. The list applies t
 "Stores": [
   {
     "Alias": "StoreA",
-    "SearchableAttributes": ["Title", "Sku", "unordered(Summary)"]
+    "SearchableAttributes": ["title", "sku", "unordered(summary)"]
   },
   {
     "Alias": "StoreB",
-    "SearchableAttributes": ["Title", "attributes.brand"]
+    "SearchableAttributes": ["title", "attributes.brand"]
   }
 ]
 ```
 
-Attribute names are case-sensitive, and their order controls priority. Algolia syntax such as `unordered(Description)` and comma-grouped attributes is supported. If the list is omitted, empty, or contains only whitespace, the plugin doesn't send `searchableAttributes`, so values configured in the Algolia UI remain unchanged.
+Attribute names are case-sensitive, and built-in product properties are serialized with camel-case names such as `title`, `sku`, and `summary`. Algolia syntax such as `unordered(description)` and comma-grouped attributes is supported. Their order controls priority. If the list is omitted, empty, or contains only whitespace, the plugin doesn't send `searchableAttributes`, so values configured in the Algolia UI remain unchanged.
 
 ### Sorted replicas
 
