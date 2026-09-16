@@ -14,6 +14,7 @@ internal sealed class AlgoliaProductIndexExecutor
 {
     private readonly ISearchClient _client;
     private readonly AlgoliaIndexReplacementService _indexReplacementService;
+    private readonly IAlgoliaTransformationWriteService _transformationWrites;
     private readonly AlgoliaOptions _options;
     private readonly AlgoliaStoreResolver _storeResolver;
     private readonly IndexNameBuilder _indexNameBuilder;
@@ -26,6 +27,7 @@ internal sealed class AlgoliaProductIndexExecutor
     public AlgoliaProductIndexExecutor(
         ISearchClient client,
         AlgoliaIndexReplacementService indexReplacementService,
+        IAlgoliaTransformationWriteService transformationWrites,
         IOptions<AlgoliaOptions> options,
         AlgoliaStoreResolver storeResolver,
         IndexNameBuilder indexNameBuilder,
@@ -37,6 +39,7 @@ internal sealed class AlgoliaProductIndexExecutor
     {
         _client = client;
         _indexReplacementService = indexReplacementService;
+        _transformationWrites = transformationWrites;
         _options = options.Value;
         _storeResolver = storeResolver;
         _indexNameBuilder = indexNameBuilder;
@@ -283,6 +286,7 @@ internal sealed class AlgoliaProductIndexExecutor
 
             await SaveProductRecordsAsync(
                 _client,
+                _transformationWrites,
                 indexName,
                 records,
                 batchSize,
@@ -424,6 +428,7 @@ internal sealed class AlgoliaProductIndexExecutor
 
     internal static Task SaveProductRecordsAsync<T>(
         ISearchClient client,
+        IAlgoliaTransformationWriteService transformationWrites,
         string indexName,
         IReadOnlyCollection<T> records,
         int batchSize,
@@ -431,13 +436,12 @@ internal sealed class AlgoliaProductIndexExecutor
         CancellationToken ct)
         where T : class
         => useTransformation
-            ? client.SaveObjectsWithTransformationAsync(
-                indexName: indexName,
-                objects: records,
-                waitForTasks: true,
-                batchSize: batchSize,
-                options: null,
-                cancellationToken: ct)
+            ? transformationWrites.SaveAsync(
+                indexName,
+                records,
+                batchSize,
+                chunkedOptions: null,
+                ct)
             : client.SaveObjectsAsync(
                 indexName: indexName,
                 objects: records,

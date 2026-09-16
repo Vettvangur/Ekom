@@ -12,16 +12,19 @@ internal sealed class AlgoliaIndexReplacementService
     private const int DefaultMaxRetries = 800;
 
     private readonly ISearchClient _client;
+    private readonly IAlgoliaTransformationWriteService _transformationWrites;
     private readonly AlgoliaOptions _options;
     private readonly ILogger<AlgoliaIndexReplacementService> _logger;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _indexLocks = new(StringComparer.Ordinal);
 
     public AlgoliaIndexReplacementService(
         ISearchClient client,
+        IAlgoliaTransformationWriteService transformationWrites,
         IOptions<AlgoliaOptions> options,
         ILogger<AlgoliaIndexReplacementService> logger)
     {
         _client = client;
+        _transformationWrites = transformationWrites;
         _options = options.Value;
         _logger = logger;
     }
@@ -53,6 +56,9 @@ internal sealed class AlgoliaIndexReplacementService
             ? _options.Replacement.MaxRetries
             : DefaultMaxRetries;
         var effectiveBatchSize = batchSize > 0 ? batchSize : 1000;
+        var operationBatchSize = useTransformation
+            ? _transformationWrites.GetEffectiveBatchSize(effectiveBatchSize)
+            : effectiveBatchSize;
         var chunkedOptions = new ChunkedHelperOptions { MaxRetries = maxRetries };
 
         try
@@ -64,21 +70,19 @@ internal sealed class AlgoliaIndexReplacementService
                 indexExists ? "replacing" : "creating",
                 indexName,
                 records.Count,
-                effectiveBatchSize,
+                operationBatchSize,
                 maxRetries);
 
             if (indexExists)
             {
                 if (useTransformation)
                 {
-                    await _client.ReplaceAllObjectsWithTransformationAsync(
-                        indexName: indexName,
-                        objects: records,
-                        batchSize: effectiveBatchSize,
-                        scopes: null,
-                        options: null,
-                        cancellationToken: ct,
-                        chunkedOptions: chunkedOptions).ConfigureAwait(false);
+                    await _transformationWrites.ReplaceAllAsync(
+                        indexName,
+                        records,
+                        effectiveBatchSize,
+                        chunkedOptions,
+                        ct).ConfigureAwait(false);
                 }
                 else
                 {
@@ -96,14 +100,12 @@ internal sealed class AlgoliaIndexReplacementService
             {
                 if (useTransformation)
                 {
-                    await _client.SaveObjectsWithTransformationAsync(
-                        indexName: indexName,
-                        objects: records,
-                        waitForTasks: true,
-                        batchSize: effectiveBatchSize,
-                        options: null,
-                        cancellationToken: ct,
-                        chunkedOptions: chunkedOptions).ConfigureAwait(false);
+                    await _transformationWrites.SaveAsync(
+                        indexName,
+                        records,
+                        effectiveBatchSize,
+                        chunkedOptions,
+                        ct).ConfigureAwait(false);
                 }
                 else
                 {
@@ -137,7 +139,7 @@ internal sealed class AlgoliaIndexReplacementService
                 indexName,
                 stopwatch.Elapsed.TotalSeconds,
                 records.Count,
-                effectiveBatchSize,
+                operationBatchSize,
                 maxRetries);
             throw;
         }
