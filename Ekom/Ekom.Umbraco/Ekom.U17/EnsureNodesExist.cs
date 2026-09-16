@@ -796,6 +796,11 @@ class EnsureNodesExist : IAsyncComponent
                                         Name = "Discount Price",
                                         Mandatory = false,
                                     },
+                                    new PropertyType(_shortStringHelper, booleanDt, "disableDiscounts")
+                                    {
+                                        Name = "Disable Discounts",
+                                        Description = "Prevent this product and its variants from receiving or qualifying for discounts.",
+                                    },
                                     new PropertyType(_shortStringHelper, stockDt, "stock")
                                     {
                                         Name = "Stock",
@@ -1555,6 +1560,7 @@ class EnsureNodesExist : IAsyncComponent
             }
 
             EnsureDiscountPriceProperties();
+            EnsureDisableDiscountsProperty();
             EnsureOrderDiscountQuantityProperties();
             EnsureDiscountAndProviderFolderContentTypes();
             EnsureSkuProductPickerDataType();
@@ -1805,6 +1811,27 @@ class EnsureNodesExist : IAsyncComponent
             SaveContentType(contentType);
             _logger.LogInformation("Added Discount Price to content type {Alias}", alias);
         }
+    }
+
+    private void EnsureDisableDiscountsProperty()
+    {
+        var contentType = _contentTypeService.Get("ekmProduct");
+        var booleanDataType = GetDataType(new Guid("92897bc6-a5f3-4ffe-ae27-f2e7e33dda49"));
+        if (contentType == null
+            || booleanDataType == null
+            || contentType.CompositionPropertyTypes.Any(x =>
+                x.Alias.Equals("disableDiscounts", StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        contentType.AddPropertyType(new PropertyType(_shortStringHelper, booleanDataType, "disableDiscounts")
+        {
+            Name = "Disable Discounts",
+            Description = "Prevent this product and its variants from receiving or qualifying for discounts.",
+        }, "product");
+        SaveContentType(contentType);
+        _logger.LogInformation("Added Disable Discounts to content type ekmProduct");
     }
 
     private void EnsureOrderDiscountQuantityProperties()

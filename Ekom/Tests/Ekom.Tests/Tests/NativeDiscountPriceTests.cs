@@ -255,6 +255,25 @@ public class NativeDiscountPriceTests
     }
 
     [Fact]
+    public async Task DisableDiscounts_SuppressesProductAndVariantDiscounts()
+    {
+        using var fixture = new Fixture();
+        var product = fixture.Product("100", "80", disableDiscounts: true);
+        var variant = new TestVariant(
+            Content("120", "90", "-1,100,200,300,400"),
+            fixture.Store,
+            product);
+
+        Assert.True(product.DisableDiscounts);
+        Assert.False(Assert.Single(product.Prices).HasDiscount);
+        Assert.Null(product.ProductDiscount());
+        Assert.Null(await product.ProductDiscountAsync());
+        Assert.False(Assert.Single(variant.Prices).HasDiscount);
+        Assert.Null(variant.ProductDiscount("120"));
+        Assert.Null(await variant.ProductDiscountAsync("120"));
+    }
+
+    [Fact]
     public void Prices_CacheTracksOwnAndInheritedTargetChanges()
     {
         using var fixture = new Fixture();
@@ -281,7 +300,11 @@ public class NativeDiscountPriceTests
         Assert.Equal(80m, Assert.Single(productPrices).AfterDiscount.Value);
     }
 
-    private static UmbracoContent Content(string price, string target, string path = "-1,100,200")
+    private static UmbracoContent Content(
+        string price,
+        string target,
+        string path = "-1,100,200",
+        bool disableDiscounts = false)
         => new(new Dictionary<string, string>(), new Dictionary<string, string>
         {
             ["id"] = path.Split(',')[^1],
@@ -298,6 +321,7 @@ public class NativeDiscountPriceTests
             ["sku"] = "native-price-test",
             ["price"] = price,
             ["ekmDiscountPrice"] = target,
+            ["disableDiscounts"] = disableDiscounts.ToString(),
         });
 
     private sealed class TestVariant(UmbracoContent content, IStore store, IProduct product) : Variant(content, store)
@@ -349,7 +373,8 @@ public class NativeDiscountPriceTests
             });
         }
 
-        public TestProduct Product(string price, string target) => new(Content(price, target), Store);
+        public TestProduct Product(string price, string target, bool disableDiscounts = false)
+            => new(Content(price, target, disableDiscounts: disableDiscounts), Store);
 
         public void Dispose()
         {

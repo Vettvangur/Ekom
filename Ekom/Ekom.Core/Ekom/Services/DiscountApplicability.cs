@@ -13,7 +13,7 @@ internal static class DiscountApplicability
             return false;
         }
 
-        return AreConstraintsMet(orderInfo, discount);
+        return AreConstraintsMet(orderInfo, discount, GetDiscountEligibleOrderLineTotal(orderInfo));
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ internal static class DiscountApplicability
             orderInfo,
             orderLine,
             discount,
-            orderInfo.OrderLineTotal.Value,
+            GetDiscountEligibleOrderLineTotal(orderInfo),
             nodeService);
 
     internal static bool IsDiscountApplicable(
@@ -51,6 +51,11 @@ internal static class DiscountApplicability
         decimal orderLineTotal,
         INodeService? nodeService = null)
     {
+        if (orderLine.Product.DisableDiscounts)
+        {
+            return false;
+        }
+
         if (discount.Constraints != null
             && !discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderLineTotal))
         {
@@ -65,11 +70,16 @@ internal static class DiscountApplicability
         return MatchesLineTargets(orderLine, discount, nodeService);
     }
 
-    private static bool AreConstraintsMet(IOrderInfo orderInfo, IDiscount discount)
+    internal static decimal GetDiscountEligibleOrderLineTotal(IOrderInfo orderInfo)
     {
-        return discount.Constraints == null
-            || discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value);
+        return orderInfo.OrderLines
+            .Where(line => !line.Product.DisableDiscounts)
+            .Sum(line => line.Amount.Value);
     }
+
+    private static bool AreConstraintsMet(IOrderInfo orderInfo, IDiscount discount, decimal orderLineTotal)
+        => discount.Constraints == null
+            || discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderLineTotal);
 
     public static bool MatchesLineTargets(
         IOrderLine orderLine,

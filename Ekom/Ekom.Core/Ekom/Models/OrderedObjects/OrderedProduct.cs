@@ -58,6 +58,8 @@ public class OrderedProduct
     }
     public IDiscount ProductDiscount { get; }
 
+    public bool DisableDiscounts => Properties.GetPropertyValue("disableDiscounts").IsBoolean();
+
     public string Title
     {
         get
@@ -246,6 +248,7 @@ public class OrderedProduct
         StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
         Dictionary<string, string> productDictionary = product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        productDictionary["disableDiscounts"] = product.DisableDiscounts.ToString();
 
         if (orderDynamic != null && !string.IsNullOrEmpty(orderDynamic.Title))
         {
@@ -265,14 +268,14 @@ public class OrderedProduct
 
         if (orderDynamic != null && orderDynamic.Prices != null && orderDynamic.Prices.Any())
         {
-            Prices = orderDynamic.Prices;
+            Prices = orderDynamic.Prices.ToList();
         }
         else
         {
             Prices = product.Prices.ToList();
         }
 
-        ProductDiscount = Price?.Discount is { } discount ? new OrderedDiscount(discount) : null;
+        ProductDiscount = !DisableDiscounts && Price?.Discount is { } discount ? new OrderedDiscount(discount) : null;
 
         if (variant != null)
         {
@@ -288,6 +291,8 @@ public class OrderedProduct
         {
             VariantGroups = Enumerable.Empty<OrderedVariantGroup>();
         }
+
+        RemoveDiscountsFromPrices();
     }
 
     /// <summary>
@@ -298,11 +303,12 @@ public class OrderedProduct
         StoreInfo = storeInfo;
 
         JObject productPropertiesObject = JObject.Parse(productJson);
-        ProductDiscount = productPropertiesObject[nameof(ProductDiscount)]?
+        var productDiscount = productPropertiesObject[nameof(ProductDiscount)]?
             .ToObject<IDiscount>(EkomJsonDotNet.Serializer);
 
         Properties = new ReadOnlyDictionary<string, string>(
             productPropertiesObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
+        ProductDiscount = DisableDiscounts ? null : productDiscount;
 
         JToken? pricesObj = productPropertiesObject[nameof(Prices)];
 
@@ -367,6 +373,39 @@ public class OrderedProduct
         else
         {
             VariantGroups = Enumerable.Empty<OrderedVariantGroup>();
+        }
+
+        RemoveDiscountsFromPrices();
+    }
+
+    private void RemoveDiscountsFromPrices()
+    {
+        if (!DisableDiscounts)
+        {
+            return;
+        }
+
+        for (var index = 0; index < Prices.Count; index++)
+        {
+            var price = Prices[index];
+            Prices[index] = new Price(
+                price.OriginalValue,
+                price.Currency,
+                Vat,
+                StoreInfo.VatIncludedInPrice);
+        }
+
+        foreach (var variant in VariantGroups.SelectMany(group => group.Variants))
+        {
+            for (var index = 0; index < variant.Prices.Count; index++)
+            {
+                var price = variant.Prices[index];
+                variant.Prices[index] = new Price(
+                    price.OriginalValue,
+                    price.Currency,
+                    variant.Vat,
+                    StoreInfo.VatIncludedInPrice);
+            }
         }
     }
 }

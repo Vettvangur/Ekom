@@ -32,6 +32,11 @@ public class Product : PerStoreNodeEntity, IProduct
 
     public virtual IDiscount? ProductDiscount(string? price, CurrencyModel currency)
     {
+        if (DisableDiscounts)
+        {
+            return null;
+        }
+
         price = string.IsNullOrEmpty(price)
             ? (NativeDiscountPrice.Read(_priceValue, Store.Alias, currency.CurrencyValue,
                 (Store.Currencies.FirstOrDefault() ?? Store.Currency).CurrencyValue) ?? 0).ToString(CultureInfo.InvariantCulture)
@@ -52,6 +57,11 @@ public class Product : PerStoreNodeEntity, IProduct
 
     public virtual async Task<IDiscount?> ProductDiscountAsync(string? price, CancellationToken ct, CurrencyModel currency)
     {
+        if (DisableDiscounts)
+        {
+            return null;
+        }
+
         price = string.IsNullOrEmpty(price)
             ? (NativeDiscountPrice.Read(_priceValue, Store.Alias, currency.CurrencyValue,
                 (Store.Currencies.FirstOrDefault() ?? Store.Currency).CurrencyValue) ?? 0).ToString(CultureInfo.InvariantCulture)
@@ -91,6 +101,9 @@ public class Product : PerStoreNodeEntity, IProduct
     /// </summary>
 
     public string Slug => GetValue("slug", Store.Alias);
+
+    /// <inheritdoc />
+    public virtual bool DisableDiscounts => GetValue("disableDiscounts").IsBoolean();
 
     /// <summary>
     /// Get the current product Stock
@@ -382,7 +395,7 @@ public class Product : PerStoreNodeEntity, IProduct
             string productGen = PriceCache.GetItemGeneration(productKey, Store.Alias);
 
             var sale = NativeDiscountPrice.Raw(this);
-            var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={storeCurrency.CurrencyValue}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}:sale={CacheHelpers.Sha256(sale)}";
+            var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={storeCurrency.CurrencyValue}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}:sale={CacheHelpers.Sha256(sale)}:disabled={DisableDiscounts}";
 
             return CacheHelpers.GetOrCreateSingleFlight(
                 key,
@@ -395,7 +408,8 @@ public class Product : PerStoreNodeEntity, IProduct
                     Store.Alias,
                     Path,
                     categories,
-                    sale),
+                    sale,
+                    DisableDiscounts),
                 TimeSpan.FromHours(48)
             );
         }
@@ -420,7 +434,8 @@ public class Product : PerStoreNodeEntity, IProduct
             Store.Alias,
             Path,
             categories,
-            NativeDiscountPrice.Raw(this)
+            NativeDiscountPrice.Raw(this),
+            DisableDiscounts
         );
     }
 

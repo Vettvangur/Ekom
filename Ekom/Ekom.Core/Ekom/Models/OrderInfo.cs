@@ -176,7 +176,7 @@ public class OrderInfo : IOrderInfo
         IOrderLine line,
         IReadOnlyDictionary<Guid, decimal> allocations)
     {
-        OrderedDiscount? discount = Discount;
+        OrderedDiscount? discount = line.Product.DisableDiscounts ? null : Discount;
         decimal? discountedQuantity = null;
         if (discount != null)
         {
@@ -297,7 +297,9 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
-            decimal amount = OrderLines.Sum(line => line.Product.Price.DiscountAmount.Value);
+            decimal amount = OrderLines
+                .Where(line => !line.Product.DisableDiscounts)
+                .Sum(line => line.Product.Price.DiscountAmount.Value);
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }
@@ -322,7 +324,9 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
-            decimal amount = OrderLines.Sum(line => (line.Product.Price.BeforeDiscountWithOutVat.Value - line.Product.Price.AfterDiscountWithOutVat.Value));
+            decimal amount = OrderLines
+                .Where(line => !line.Product.DisableDiscounts)
+                .Sum(line => line.Product.Price.BeforeDiscountWithOutVat.Value - line.Product.Price.AfterDiscountWithOutVat.Value);
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }

@@ -70,6 +70,19 @@ public class OrderLine : IOrderLine
     {
         var orderlinePrice = Variant != null ? Variant.Price : Product.Price;
 
+        if (Product.DisableDiscounts)
+        {
+            Discount = null;
+            Coupon = null;
+            return new Price(
+                orderlinePrice.OriginalValue,
+                OrderInfo.StoreInfo.Currency,
+                Vat,
+                OrderInfo.StoreInfo.VatIncludedInPrice,
+                null,
+                Quantity);
+        }
+
         OrderedDiscount? discount = orderlinePrice.Discount;
         decimal? discountedQuantity = null;
 
@@ -180,7 +193,7 @@ public class OrderLine : IOrderLine
         OrderInfo = orderInfo;
         OrderLineInfo = orderLineInfo;
         Product = new OrderedProduct(productJson, orderInfo.StoreInfo);
-        Discount = discount ?? Variant?.Price.Discount ?? Product.Price.Discount;
+        Discount = Product.DisableDiscounts ? null : discount ?? Variant?.Price.Discount ?? Product.Price.Discount;
         Settings = settings;
     }
 
@@ -200,7 +213,7 @@ public class OrderLine : IOrderLine
         Quantity = quantity;
         Key = lineId;
         Product = new OrderedProduct(product, variant, orderInfo.StoreInfo, orderDynamic);
-        Discount = Variant?.Price.Discount ?? Product.Price.Discount;
+        Discount = Product.DisableDiscounts ? null : Variant?.Price.Discount ?? Product.Price.Discount;
         OrderLineInfo = new OrderLineInfo()
         {
             Properties = orderLineData

@@ -19,6 +19,7 @@
 * **stock:** perform increments using conditional SQL arithmetic and publish cache/events after commit to avoid cache-based lost updates and mutation retries after notification failures.
 * **discounts:** add native product and variant `ekmDiscountPrice` support using the Ekom Price datatype, competing with content and event-added discounts while preserving original prices.
 * **discounts:** add threshold and repeating quantity-based order discounts with whole-unit, cheapest-first reward allocation.
+* **discounts:** add a global product setting that disables product, coupon, and order discounts for the product and its variants, excluding protected lines from quantity and minimum-spend qualification.
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
