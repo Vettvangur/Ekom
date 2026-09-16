@@ -17,6 +17,13 @@
 
 * **algolia:** send ecommerce conversion object data using Algolia's per-item schema.
 
+## [0.2.57](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.56...Ekom.Algolia-v0.2.57) (2026-09-16)
+
+
+### Features
+
+* **algolia:** support per-store indexing presets ([#888](https://github.com/Vettvangur/Ekom/issues/888)) ([cb431a6](https://github.com/Vettvangur/Ekom/commit/cb431a6639e64a40d9d4f84b3e7a17aead643016))
+
 ## [0.2.56](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.55...Ekom.Algolia-v0.2.56) (2026-09-11)
 
 
