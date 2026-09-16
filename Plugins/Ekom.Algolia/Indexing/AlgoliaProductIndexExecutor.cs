@@ -267,6 +267,7 @@ internal sealed class AlgoliaProductIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
+            await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
             var indexedProductKeys = new List<Guid>(products.Count);
 
@@ -323,8 +324,6 @@ internal sealed class AlgoliaProductIndexExecutor
 
             try
             {
-                await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
-
                 if (target.Indexing.Variants)
                     await DeleteByProductIdsAsync(indexName, indexedProductKeys, waitForTasks: true, ct).ConfigureAwait(false);
 

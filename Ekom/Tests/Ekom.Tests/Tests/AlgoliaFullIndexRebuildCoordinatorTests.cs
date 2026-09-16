@@ -102,6 +102,46 @@ public class AlgoliaFullIndexRebuildCoordinatorTests
     }
 
     [Fact]
+    public async Task Full_Rebuild_Continues_Remaining_Stages_After_Failure()
+    {
+        var calls = new ConcurrentQueue<string>();
+        var productService = new BlockingProductIndexService(calls);
+        var categoryService = new BlockingCategoryIndexService(calls);
+        var contentService = new BlockingContentIndexService(calls);
+        var coordinator = CreateCoordinator(productService, categoryService, contentService);
+
+        Assert.True(coordinator.TryStart());
+        Assert.True(await WaitForConditionAsync(() => calls.Count == 1));
+        productService.Fail();
+
+        Assert.True(await WaitForConditionAsync(() => calls.Count == 2));
+        categoryService.Complete();
+
+        Assert.True(await WaitForConditionAsync(() => calls.Count == 3));
+        contentService.Complete();
+
+        Assert.Equal(["products", "categories", "content"], calls);
+    }
+
+    [Fact]
+    public async Task Full_Rebuild_Does_Not_Continue_Remaining_Stages_After_Cancellation()
+    {
+        var calls = new ConcurrentQueue<string>();
+        var productService = new BlockingProductIndexService(calls);
+        var categoryService = new BlockingCategoryIndexService(calls);
+        var contentService = new BlockingContentIndexService(calls);
+        var coordinator = CreateCoordinator(productService, categoryService, contentService);
+
+        Assert.True(coordinator.TryStart());
+        Assert.True(await WaitForConditionAsync(() => calls.Count == 1));
+        productService.Cancel();
+
+        await Task.Delay(50);
+        Assert.Equal(["products"], calls);
+        Assert.True(await WaitForStartAsync(coordinator));
+    }
+
+    [Fact]
     public async Task TryStartStore_RejectsDuplicateStoreUntilCurrentRunCompletes()
     {
         var productService = new BlockingProductIndexService();
@@ -137,6 +177,25 @@ public class AlgoliaFullIndexRebuildCoordinatorTests
         Assert.True(await WaitForStartStoreAsync(coordinator, "StoreA"));
         productService.CompleteStore("StoreA");
         categoryService.CompleteStore("StoreA");
+    }
+
+    [Fact]
+    public async Task Store_Rebuild_Runs_Stages_Sequentially()
+    {
+        var calls = new ConcurrentQueue<string>();
+        var productService = new BlockingProductIndexService(calls);
+        var categoryService = new BlockingCategoryIndexService(calls);
+        var coordinator = CreateCoordinator(productService, categoryService);
+
+        Assert.True(coordinator.TryStartStore("Store"));
+        Assert.True(await WaitForConditionAsync(() => calls.Count == 1));
+        Assert.Equal(["products:Store"], calls);
+
+        productService.CompleteStore("Store");
+        Assert.True(await WaitForConditionAsync(() => calls.Count == 2));
+        Assert.Equal(["products:Store", "categories:Store"], calls);
+
+        categoryService.CompleteStore("Store");
     }
 
     [Fact]
@@ -253,6 +312,7 @@ public class AlgoliaFullIndexRebuildCoordinatorTests
             return _completion.Task;
         }
         public void Complete() => _completion.TrySetResult();
+        public void Cancel() => _completion.TrySetCanceled();
         public void CompleteStore(string storeAlias) => GetStoreCompletion(storeAlias).TrySetResult();
         public void Fail() => _completion.TrySetException(new InvalidOperationException());
 
