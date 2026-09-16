@@ -16,6 +16,9 @@
 ### Bug Fixes
 
 * **algolia:** send ecommerce conversion object data using Algolia's per-item schema.
+* **algolia:** fall back to Search API indexing when an index has no Collections task.
+* **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
+* **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
 ## [0.2.57](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.56...Ekom.Algolia-v0.2.57) (2026-09-16)
 

@@ -97,9 +97,9 @@ public class AlgoliaIndexReplacementServiceTests
         client.Verify(
             x => x.SaveObjectsWithTransformationAsync(
                 "products",
-                It.Is<IEnumerable<object>>(objects => ReferenceEquals(objects, records)),
+                It.Is<IEnumerable<object>>(objects => objects.Single() is TestRecord),
                 true,
-                1000,
+                250,
                 null,
                 cts.Token,
                 It.Is<ChunkedHelperOptions>(options => options.MaxRetries == 800)),
@@ -133,7 +133,7 @@ public class AlgoliaIndexReplacementServiceTests
             x => x.ReplaceAllObjectsWithTransformationAsync(
                 "products",
                 It.Is<IEnumerable<object>>(objects => ReferenceEquals(objects, records)),
-                500,
+                250,
                 null,
                 null,
                 cts.Token,
@@ -152,19 +152,32 @@ public class AlgoliaIndexReplacementServiceTests
     }
 
     private static AlgoliaIndexReplacementService CreateService(ISearchClient client, int maxRetries)
-        => new(
-            client,
-            Options.Create(new AlgoliaOptions
+    {
+        var options = Options.Create(new AlgoliaOptions
+        {
+            ApplicationId = "app-id",
+            AdminApiKey = "admin-key",
+            SearchApiKey = "search-key",
+            Replacement = new AlgoliaIndexReplacementOptions
             {
-                ApplicationId = "app-id",
-                AdminApiKey = "admin-key",
-                SearchApiKey = "search-key",
-                Replacement = new AlgoliaIndexReplacementOptions
-                {
-                    MaxRetries = maxRetries,
-                },
-            }),
+                MaxRetries = maxRetries,
+            },
+            Transformation = new AlgoliaTransformationWriteOptions
+            {
+                RetryBaseDelayMilliseconds = 0,
+            },
+        });
+        var transformationWrites = new AlgoliaTransformationWriteService(
+            client,
+            options,
+            NullLogger<AlgoliaTransformationWriteService>.Instance);
+
+        return new AlgoliaIndexReplacementService(
+            client,
+            transformationWrites,
+            options,
             NullLogger<AlgoliaIndexReplacementService>.Instance);
+    }
 
     private sealed class TestRecord
     {

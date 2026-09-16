@@ -3,6 +3,7 @@ using Ekom.Algolia.Mappers;
 using Ekom.Algolia.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using Algolia.Search.Clients;
@@ -32,12 +33,15 @@ public static class AlgoliaServiceCollectionExtensions
                 return new SearchClient(opt.ApplicationId, opt.AdminApiKey);
 
             var region = ResolveTransformationRegion(opt.TransformationRegion);
+            var loggerFactory = opt.Transformation.EnableSdkLogging
+                ? sp.GetRequiredService<ILoggerFactory>()
+                : NullLoggerFactory.Instance;
 
             return SearchClient.WithTransformation(
                 opt.ApplicationId,
                 opt.AdminApiKey,
                 new TransformationOptions(region),
-                sp.GetRequiredService<ILoggerFactory>());
+                loggerFactory);
         });
 
         services.AddSingleton<IAlgoliaQueryClient, AlgoliaQueryClient>();
@@ -63,6 +67,7 @@ public static class AlgoliaServiceCollectionExtensions
         services.AddSingleton<IndexNameBuilder>();
         services.AddSingleton<ContentIndexNameResolver>();
         services.AddSingleton<AlgoliaStoreResolver>();
+        services.AddSingleton<IAlgoliaTransformationWriteService, AlgoliaTransformationWriteService>();
         services.AddSingleton<AlgoliaIndexReplacementService>();
         services.AddSingleton<AlgoliaSearchCacheVersionProvider>();
         services.AddSingleton<AlgoliaSearchCacheKeyBuilder>();

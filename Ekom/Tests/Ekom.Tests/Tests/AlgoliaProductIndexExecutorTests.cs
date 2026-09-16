@@ -4,6 +4,8 @@ using Ekom.Algolia;
 using Ekom.Algolia.Indexing;
 using Ekom.Algolia.Mappers;
 using Ekom.Models;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -186,11 +188,21 @@ public class AlgoliaProductIndexExecutorTests
     public async Task Uses_Configured_Product_Write_Path(bool useTransformation)
     {
         var client = new Mock<ISearchClient>();
+        var transformationWrites = new AlgoliaTransformationWriteService(
+            client.Object,
+            Options.Create(new AlgoliaOptions
+            {
+                ApplicationId = "app-id",
+                AdminApiKey = "admin-key",
+                SearchApiKey = "search-key",
+            }),
+            NullLogger<AlgoliaTransformationWriteService>.Instance);
         var records = new[] { new TestRecord() };
         using var cts = new CancellationTokenSource();
 
         await AlgoliaProductIndexExecutor.SaveProductRecordsAsync(
             client.Object,
+            transformationWrites,
             "products",
             records,
             100,
@@ -200,7 +212,7 @@ public class AlgoliaProductIndexExecutorTests
         client.Verify(
             x => x.SaveObjectsWithTransformationAsync(
                 "products",
-                It.Is<IEnumerable<object>>(objects => ReferenceEquals(objects, records)),
+                It.Is<IEnumerable<object>>(objects => objects.Single() is TestRecord),
                 true,
                 100,
                 null,

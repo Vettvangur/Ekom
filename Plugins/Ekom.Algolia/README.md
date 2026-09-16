@@ -81,6 +81,12 @@ public sealed class ProductSearchController
       "Replacement": {
         "MaxRetries": 800
       },
+      "Transformation": {
+        "MaxBatchSize": 250,
+        "MaxAttempts": 3,
+        "RetryBaseDelayMilliseconds": 1000,
+        "EnableSdkLogging": false
+      },
       "Indexing": {
         "Dispatching": {
           "MaxBatchSize": 100,
@@ -206,7 +212,11 @@ public sealed class ProductSearchController
 | `AnalyticsRegion` | `string` | `null` | Algolia analytics region for query suggestions, usually `us` or `eu`. If omitted, the plugin tries both. |
 | `TransformationRegion` | `string` | `eu` | Algolia transformation region used by collection-enabled stores. Must be `eu` or `us`. |
 | `Environment` | `string` | `prod` | Environment segment used in generated index names. |
-| `Replacement:MaxRetries` | `int` | `800` | Maximum number of status polling retries while atomically replacing an existing index. |
+| `Replacement:MaxRetries` | `int` | `800` | Maximum number of Algolia task-status polling retries while atomically replacing an existing index. This doesn't retry failed uploads. |
+| `Transformation:MaxBatchSize` | `int` | `250` | Maximum records per collection transformation batch. Smaller configured indexing batches remain unchanged. |
+| `Transformation:MaxAttempts` | `int` | `3` | Maximum attempts for collection transformation writes that fail with a transient transport error. |
+| `Transformation:RetryBaseDelayMilliseconds` | `int` | `1000` | Initial delay before retrying a transient transformation failure. Later retries use exponential backoff capped at 30 seconds. |
+| `Transformation:EnableSdkLogging` | `bool` | `false` | Enables all logging from the shared Algolia SDK client, including high-volume HTTP request and task-polling logs. Ekom lifecycle and error logs remain enabled when this is `false`. |
 | `Indexing:Enabled` | `bool` | `true` | Enables indexing features for stores without a store-level `Indexing` section. |
 | `Indexing:Products` | `bool` | `true` | Enables product indexing. |
 | `Indexing:Categories` | `bool` | `true` | Enables category indexing. |
@@ -325,7 +335,11 @@ Enable Collections only for stores whose product indexes are connected to an Alg
 }
 ```
 
-The transformation region must be `eu` or `us`. Configure no other Push connectors for the same collection indexes. The plugin adds `_collections` to `attributesForFaceting` but doesn't map or overwrite the attribute in product records. Collection-enabled writes don't fall back to direct index writes if the transformation request fails.
+The transformation region must be `eu` or `us`. Configure no other Push connectors for the same collection indexes. The plugin adds `_collections` to `attributesForFaceting` but doesn't map or overwrite the attribute in product records. Collection-enabled writes are capped at `Transformation:MaxBatchSize` and transient transport failures are retried according to the transformation settings.
+
+If Algolia reports that no Collections task exists for the exact index, the plugin logs a warning and uses the Search API for that operation. This allows the first index rebuild to complete before any collection has been created. Once Algolia creates the Collections task, later writes automatically use the Collections pipeline. Other transformation errors still fail without falling back, and the warning should be investigated if Collections already exist for the index.
+
+Algolia SDK logging is disabled by default to avoid emitting every task-polling request during long rebuilds. Set `Transformation:EnableSdkLogging` to `true` temporarily when diagnosing SDK behavior; this enables all logging for the shared SDK client and can be high-volume. Ekom logs each exact index when a rebuild or update starts, completes, fails, or is submitted without waiting for publication.
 
 ### Per-store searchable attributes
 
@@ -890,7 +904,7 @@ Rebuild all configured store indexes:
 POST /umbraco/backoffice/api/EkomAlgoliaBackoffice/RebuildIndexes
 ```
 
-Only one full rebuild can run per application instance. A concurrent full-rebuild request returns `409 Conflict` until the active product, category, and content rebuilds finish. A store rebuild is also rejected with `409 Conflict` while a full rebuild or another rebuild for that store is active. Rebuilds for different stores can run concurrently.
+Only one full rebuild can run per application instance. A concurrent full-rebuild request returns `409 Conflict` until the active product, category, and content rebuilds finish. Manual full rebuilds process products, categories, and content sequentially to limit Algolia indexing pressure. If one stage fails, the remaining stages are still attempted before the rebuild is reported as failed. A store rebuild is also rejected with `409 Conflict` while a full rebuild or another rebuild for that store is active. Store rebuilds process products before categories; rebuilds for different stores can run concurrently.
 
 Rebuild one store:
 

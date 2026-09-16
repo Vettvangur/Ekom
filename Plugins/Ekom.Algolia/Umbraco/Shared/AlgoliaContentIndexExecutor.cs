@@ -6,6 +6,7 @@ using Ekom.Algolia.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Diagnostics;
 using System.Globalization;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PropertyEditors;
@@ -154,8 +155,35 @@ internal sealed class AlgoliaContentIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
             var batchSize = _options.ContentIndexing.BatchSize <= 0 ? 1000 : _options.ContentIndexing.BatchSize;
-            var indexedCount = await ReplaceAllObjectsAsync(resolvedIndexName, documents, batchSize, ct).ConfigureAwait(false);
-            _logger.LogInformation("Rebuilt Algolia content index {IndexName} with {Count} documents.", resolvedIndexName, indexedCount);
+            var stopwatch = Stopwatch.StartNew();
+            _logger.LogInformation(
+                "Algolia content index rebuild started. IndexName={IndexName} Documents={DocumentCount}",
+                resolvedIndexName,
+                documents.Count);
+
+            try
+            {
+                var indexedCount = await ReplaceAllObjectsAsync(resolvedIndexName, documents, batchSize, ct).ConfigureAwait(false);
+                _logger.LogInformation(
+                    "Algolia content index rebuild completed. IndexName={IndexName} Documents={DocumentCount} DurationMilliseconds={DurationMilliseconds}",
+                    resolvedIndexName,
+                    indexedCount,
+                    stopwatch.ElapsedMilliseconds);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Algolia content index rebuild failed. IndexName={IndexName} Documents={DocumentCount} DurationMilliseconds={DurationMilliseconds}",
+                    resolvedIndexName,
+                    documents.Count,
+                    stopwatch.ElapsedMilliseconds);
+                throw;
+            }
         }
 
         _searchCacheVersions.InvalidateStore("content");

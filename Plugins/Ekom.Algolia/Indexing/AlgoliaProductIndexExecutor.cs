@@ -7,6 +7,7 @@ using Algolia.Search.Models.Search;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Algolia.Search.Clients;
+using System.Diagnostics;
 
 namespace Ekom.Algolia.Indexing;
 
@@ -14,6 +15,7 @@ internal sealed class AlgoliaProductIndexExecutor
 {
     private readonly ISearchClient _client;
     private readonly AlgoliaIndexReplacementService _indexReplacementService;
+    private readonly IAlgoliaTransformationWriteService _transformationWrites;
     private readonly AlgoliaOptions _options;
     private readonly AlgoliaStoreResolver _storeResolver;
     private readonly IndexNameBuilder _indexNameBuilder;
@@ -26,6 +28,7 @@ internal sealed class AlgoliaProductIndexExecutor
     public AlgoliaProductIndexExecutor(
         ISearchClient client,
         AlgoliaIndexReplacementService indexReplacementService,
+        IAlgoliaTransformationWriteService transformationWrites,
         IOptions<AlgoliaOptions> options,
         AlgoliaStoreResolver storeResolver,
         IndexNameBuilder indexNameBuilder,
@@ -37,6 +40,7 @@ internal sealed class AlgoliaProductIndexExecutor
     {
         _client = client;
         _indexReplacementService = indexReplacementService;
+        _transformationWrites = transformationWrites;
         _options = options.Value;
         _storeResolver = storeResolver;
         _indexNameBuilder = indexNameBuilder;
@@ -168,23 +172,59 @@ internal sealed class AlgoliaProductIndexExecutor
 
             var batchSize = store.Indexing.BatchSize <= 0 ? 1000 : store.Indexing.BatchSize;
 
+            var stopwatch = Stopwatch.StartNew();
+            var configuredWriteMode = target.Collections.Enabled ? "CollectionsPreferred" : "SearchApi";
+
             _logger.LogInformation(
-                "Algolia rebuild store {Store} locale {Locale} currency {Currency} -> {IndexName}. Records={Count}",
+                "Algolia product index rebuild started. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Records={RecordCount} SkippedProducts={SkippedProductCount} ConfiguredWriteMode={ConfiguredWriteMode}",
+                indexName,
                 target.Alias,
                 target.Locale,
                 target.Currency,
-                indexName,
-                records.Count);
+                records.Count,
+                skippedProducts,
+                configuredWriteMode);
 
-            await _indexReplacementService.ReplaceAllAsync(
-                indexName,
-                records,
-                batchSize,
-                target.Collections.Enabled,
-                ct).ConfigureAwait(false);
+            try
+            {
+                await _indexReplacementService.ReplaceAllAsync(
+                    indexName,
+                    records,
+                    batchSize,
+                    target.Collections.Enabled,
+                    ct).ConfigureAwait(false);
 
-            await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
-            await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
+                await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
+                await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
+
+                _logger.LogInformation(
+                    "Algolia product index rebuild completed. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Records={RecordCount} ConfiguredWriteMode={ConfiguredWriteMode} DurationMilliseconds={DurationMilliseconds}",
+                    indexName,
+                    target.Alias,
+                    target.Locale,
+                    target.Currency,
+                    records.Count,
+                    configuredWriteMode,
+                    stopwatch.ElapsedMilliseconds);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Algolia product index rebuild failed. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Records={RecordCount} ConfiguredWriteMode={ConfiguredWriteMode} DurationMilliseconds={DurationMilliseconds}",
+                    indexName,
+                    target.Alias,
+                    target.Locale,
+                    target.Currency,
+                    records.Count,
+                    configuredWriteMode,
+                    stopwatch.ElapsedMilliseconds);
+                throw;
+            }
         }
 
         _searchCacheVersions.InvalidateStore(store.Alias);
@@ -227,7 +267,6 @@ internal sealed class AlgoliaProductIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
-            await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
             var indexedProductKeys = new List<Guid>(products.Count);
 
@@ -271,25 +310,63 @@ internal sealed class AlgoliaProductIndexExecutor
             
             }
 
-            _logger.LogDebug(
-                "Algolia upsert {Count} products to {IndexName} for locale {Locale} currency {Currency}",
-                records.Count,
+            var stopwatch = Stopwatch.StartNew();
+            var configuredWriteMode = target.Collections.Enabled ? "CollectionsPreferred" : "SearchApi";
+            _logger.LogInformation(
+                "Algolia product index update started. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Records={RecordCount} ConfiguredWriteMode={ConfiguredWriteMode}",
                 indexName,
+                target.Alias,
                 target.Locale,
-                target.Currency);
+                target.Currency,
+                records.Count,
+                configuredWriteMode);
 
-            if (target.Indexing.Variants)
-                await DeleteByProductIdsAsync(indexName, indexedProductKeys, waitForTasks: true, ct).ConfigureAwait(false);
+            try
+            {
+                await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
 
-            await SaveProductRecordsAsync(
-                _client,
-                indexName,
-                records,
-                batchSize,
-                target.Collections.Enabled,
-                ct).ConfigureAwait(false);
+                if (target.Indexing.Variants)
+                    await DeleteByProductIdsAsync(indexName, indexedProductKeys, waitForTasks: true, ct).ConfigureAwait(false);
 
-            await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
+                await SaveProductRecordsAsync(
+                    _client,
+                    _transformationWrites,
+                    indexName,
+                    records,
+                    batchSize,
+                    target.Collections.Enabled,
+                    ct).ConfigureAwait(false);
+
+                await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
+
+                _logger.LogInformation(
+                    "Algolia product index update completed. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Records={RecordCount} ConfiguredWriteMode={ConfiguredWriteMode} DurationMilliseconds={DurationMilliseconds}",
+                    indexName,
+                    target.Alias,
+                    target.Locale,
+                    target.Currency,
+                    records.Count,
+                    configuredWriteMode,
+                    stopwatch.ElapsedMilliseconds);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Algolia product index update failed. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Records={RecordCount} ConfiguredWriteMode={ConfiguredWriteMode} DurationMilliseconds={DurationMilliseconds}",
+                    indexName,
+                    target.Alias,
+                    target.Locale,
+                    target.Currency,
+                    records.Count,
+                    configuredWriteMode,
+                    stopwatch.ElapsedMilliseconds);
+                throw;
+            }
         }
 
         _searchCacheVersions.InvalidateStore(store.Alias);
@@ -312,14 +389,16 @@ internal sealed class AlgoliaProductIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
-            await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
 
-            _logger.LogDebug(
-                "Algolia delete {Count} products from {IndexName} for locale {Locale} currency {Currency}",
-                ids.Count,
+            _logger.LogInformation(
+                "Algolia product index delete started. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Products={ProductCount}",
                 indexName,
+                target.Alias,
                 target.Locale,
-                target.Currency);
+                target.Currency,
+                ids.Count);
+
+            await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
 
             if (target.Indexing.Variants)
             {
@@ -335,6 +414,21 @@ internal sealed class AlgoliaProductIndexExecutor
                     options: null,
                     cancellationToken: ct).ConfigureAwait(false);
             }
+
+            _logger.LogInformation(
+                "Algolia product index delete submitted. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Products={ProductCount}",
+                indexName,
+                target.Alias,
+                target.Locale,
+                target.Currency,
+                ids.Count);
+
+            _logger.LogDebug(
+                "Algolia delete {Count} products from index {IndexName} for locale {Locale} currency {Currency}",
+                ids.Count,
+                indexName,
+                target.Locale,
+                target.Currency);
 
             await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
         }
@@ -376,10 +470,11 @@ internal sealed class AlgoliaProductIndexExecutor
             return;
 
         _logger.LogDebug(
-            "Algolia configuring {ReplicaCount} replicas for {IndexName} in store {Store}.",
+            "Algolia configuring {ReplicaCount} replicas for index {IndexName} in store {Store}. ReplicaIndexNames={ReplicaIndexNames}",
             replicas.Count,
             primaryIndexName,
-            store.Alias);
+            store.Alias,
+            replicas.Select(x => x.Name).ToArray());
 
         var primarySettings = new IndexSettings
         {
@@ -424,6 +519,7 @@ internal sealed class AlgoliaProductIndexExecutor
 
     internal static Task SaveProductRecordsAsync<T>(
         ISearchClient client,
+        IAlgoliaTransformationWriteService transformationWrites,
         string indexName,
         IReadOnlyCollection<T> records,
         int batchSize,
@@ -431,13 +527,12 @@ internal sealed class AlgoliaProductIndexExecutor
         CancellationToken ct)
         where T : class
         => useTransformation
-            ? client.SaveObjectsWithTransformationAsync(
-                indexName: indexName,
-                objects: records,
-                waitForTasks: true,
-                batchSize: batchSize,
-                options: null,
-                cancellationToken: ct)
+            ? transformationWrites.SaveAsync(
+                indexName,
+                records,
+                batchSize,
+                chunkedOptions: null,
+                ct)
             : client.SaveObjectsAsync(
                 indexName: indexName,
                 objects: records,

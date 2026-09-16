@@ -1,5 +1,7 @@
 using Ekom.Algolia.Indexing;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Collections.Concurrent;
 using Xunit;
 
 namespace Ekom.Tests.Tests;
@@ -47,6 +49,56 @@ public class AlgoliaFullIndexRebuildCoordinatorTests
         contentService.Complete();
 
         Assert.True(await WaitForStartAsync(coordinator));
+    }
+
+    [Fact]
+    public async Task Full_Rebuild_Runs_Stages_Sequentially()
+    {
+        var calls = new ConcurrentQueue<string>();
+        var productService = new BlockingProductIndexService(calls);
+        var categoryService = new BlockingCategoryIndexService(calls);
+        var contentService = new BlockingContentIndexService(calls);
+        var coordinator = CreateCoordinator(productService, categoryService, contentService);
+
+        Assert.True(coordinator.TryStart());
+        Assert.True(await WaitForConditionAsync(() => calls.Count == 1));
+        Assert.Equal(["products"], calls);
+
+        productService.Complete();
+        Assert.True(await WaitForConditionAsync(() => calls.Count == 2));
+        Assert.Equal(["products", "categories"], calls);
+
+        categoryService.Complete();
+        Assert.True(await WaitForConditionAsync(() => calls.Count == 3));
+        Assert.Equal(["products", "categories", "content"], calls);
+
+        contentService.Complete();
+    }
+
+    [Fact]
+    public async Task Full_Rebuild_Logs_Stage_And_Run_Lifecycle()
+    {
+        var productService = new BlockingProductIndexService();
+        var categoryService = new BlockingCategoryIndexService();
+        var contentService = new BlockingContentIndexService();
+        var logger = new RecordingLogger<AlgoliaFullIndexRebuildCoordinator>();
+        var coordinator = new AlgoliaFullIndexRebuildCoordinator(
+            productService,
+            categoryService,
+            contentService,
+            logger);
+
+        productService.Complete();
+        categoryService.Complete();
+        contentService.Complete();
+        Assert.True(coordinator.TryStart());
+
+        Assert.True(await WaitForConditionAsync(
+            () => logger.Messages.Any(x => x.Contains("Algolia full rebuild completed", StringComparison.Ordinal))));
+        Assert.Contains(logger.Messages, x => x.Contains("Stage=products", StringComparison.Ordinal) && x.Contains("stage started", StringComparison.Ordinal));
+        Assert.Contains(logger.Messages, x => x.Contains("Stage=products", StringComparison.Ordinal) && x.Contains("stage completed", StringComparison.Ordinal));
+        Assert.Contains(logger.Messages, x => x.Contains("Stage=categories", StringComparison.Ordinal) && x.Contains("stage completed", StringComparison.Ordinal));
+        Assert.Contains(logger.Messages, x => x.Contains("Stage=content", StringComparison.Ordinal) && x.Contains("stage completed", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -163,16 +215,43 @@ public class AlgoliaFullIndexRebuildCoordinatorTests
         return false;
     }
 
+    private static async Task<bool> WaitForConditionAsync(Func<bool> condition)
+    {
+        for (var attempt = 0; attempt < 50; attempt++)
+        {
+            if (condition())
+                return true;
+
+            await Task.Delay(10);
+        }
+
+        return false;
+    }
+
     private sealed class BlockingProductIndexService : IAlgoliaProductIndexService
     {
         private readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly ConcurrentQueue<string>? _calls;
+
+        public BlockingProductIndexService(ConcurrentQueue<string>? calls = null)
+        {
+            _calls = calls;
+        }
 
         public Task EnqueueProductAsync(string storeAlias, Guid productKey, bool isPublished, CancellationToken ct = default) => Task.CompletedTask;
         public Task EnqueueProductsAsync(string storeAlias, IReadOnlyCollection<Guid> productKeys, bool isPublished, CancellationToken ct = default) => Task.CompletedTask;
         public Task RebuildStoreAsync(string storeAlias, CancellationToken ct = default) => Task.CompletedTask;
-        public Task RebuildStoreAndWaitAsync(string storeAlias, CancellationToken ct = default) => GetStoreCompletion(storeAlias).Task;
+        public Task RebuildStoreAndWaitAsync(string storeAlias, CancellationToken ct = default)
+        {
+            _calls?.Enqueue($"products:{storeAlias}");
+            return GetStoreCompletion(storeAlias).Task;
+        }
         public Task RebuildAllAsync(CancellationToken ct = default) => Task.CompletedTask;
-        public Task RebuildAllAndWaitAsync(CancellationToken ct = default) => _completion.Task;
+        public Task RebuildAllAndWaitAsync(CancellationToken ct = default)
+        {
+            _calls?.Enqueue("products");
+            return _completion.Task;
+        }
         public void Complete() => _completion.TrySetResult();
         public void CompleteStore(string storeAlias) => GetStoreCompletion(storeAlias).TrySetResult();
         public void Fail() => _completion.TrySetException(new InvalidOperationException());
@@ -197,13 +276,27 @@ public class AlgoliaFullIndexRebuildCoordinatorTests
     private sealed class BlockingCategoryIndexService : IAlgoliaCategoryIndexService
     {
         private readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly ConcurrentQueue<string>? _calls;
+
+        public BlockingCategoryIndexService(ConcurrentQueue<string>? calls = null)
+        {
+            _calls = calls;
+        }
 
         public Task EnqueueCategoryAsync(string storeAlias, Guid categoryKey, bool isPublished, CancellationToken ct = default) => Task.CompletedTask;
         public Task EnqueueCategoriesAsync(string storeAlias, IReadOnlyCollection<Guid> categoryKeys, bool isPublished, CancellationToken ct = default) => Task.CompletedTask;
         public Task RebuildStoreAsync(string storeAlias, CancellationToken ct = default) => Task.CompletedTask;
-        public Task RebuildStoreAndWaitAsync(string storeAlias, CancellationToken ct = default) => GetStoreCompletion(storeAlias).Task;
+        public Task RebuildStoreAndWaitAsync(string storeAlias, CancellationToken ct = default)
+        {
+            _calls?.Enqueue($"categories:{storeAlias}");
+            return GetStoreCompletion(storeAlias).Task;
+        }
         public Task RebuildAllAsync(CancellationToken ct = default) => Task.CompletedTask;
-        public Task RebuildAllAndWaitAsync(CancellationToken ct = default) => _completion.Task;
+        public Task RebuildAllAndWaitAsync(CancellationToken ct = default)
+        {
+            _calls?.Enqueue("categories");
+            return _completion.Task;
+        }
         public void Complete() => _completion.TrySetResult();
         public void CompleteStore(string storeAlias) => GetStoreCompletion(storeAlias).TrySetResult();
 
@@ -227,11 +320,38 @@ public class AlgoliaFullIndexRebuildCoordinatorTests
     private sealed class BlockingContentIndexService : IAlgoliaContentIndexService
     {
         private readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly ConcurrentQueue<string>? _calls;
+
+        public BlockingContentIndexService(ConcurrentQueue<string>? calls = null)
+        {
+            _calls = calls;
+        }
 
         public Task UpdateByIdsAsync(IReadOnlyCollection<int> nodeIds, CancellationToken ct = default) => Task.CompletedTask;
         public Task DeleteByKeysAsync(IReadOnlyCollection<Guid> nodeKeys, CancellationToken ct = default) => Task.CompletedTask;
         public Task RebuildAsync(string? indexName = null, CancellationToken ct = default) => Task.CompletedTask;
-        public Task RebuildAndWaitAsync(string? indexName = null, CancellationToken ct = default) => _completion.Task;
+        public Task RebuildAndWaitAsync(string? indexName = null, CancellationToken ct = default)
+        {
+            _calls?.Enqueue("content");
+            return _completion.Task;
+        }
         public void Complete() => _completion.TrySetResult();
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public ConcurrentQueue<string> Messages { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+            => Messages.Enqueue(formatter(state, exception));
     }
 }
