@@ -18,6 +18,7 @@ public sealed class AlgoliaOptions
     public AlgoliaIndexingOptions Indexing { get; set; } = new();
     public AlgoliaContentIndexingOptions ContentIndexing { get; set; } = new();
     public AlgoliaIndexReplacementOptions Replacement { get; set; } = new();
+    public AlgoliaTransformationWriteOptions Transformation { get; set; } = new();
     public AlgoliaEventsOptions Events { get; set; } = new();
     public AlgoliaSearchOptions Search { get; set; } = new();
 
@@ -27,6 +28,14 @@ public sealed class AlgoliaOptions
 public sealed class AlgoliaIndexReplacementOptions
 {
     public int MaxRetries { get; set; } = 800;
+}
+
+public sealed class AlgoliaTransformationWriteOptions
+{
+    public int MaxBatchSize { get; set; } = 250;
+    public int MaxAttempts { get; set; } = 3;
+    public int RetryBaseDelayMilliseconds { get; set; } = 1000;
+    public bool EnableSdkLogging { get; set; }
 }
 
 public sealed class AlgoliaIndexingOptions

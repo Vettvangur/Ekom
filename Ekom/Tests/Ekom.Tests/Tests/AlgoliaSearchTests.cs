@@ -22,6 +22,10 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:AdminApiKey"] = "admin-key",
                 ["Ekom:Algolia:SearchApiKey"] = "search-key",
                 ["Ekom:Algolia:Replacement:MaxRetries"] = "400",
+                ["Ekom:Algolia:Transformation:MaxBatchSize"] = "200",
+                ["Ekom:Algolia:Transformation:MaxAttempts"] = "4",
+                ["Ekom:Algolia:Transformation:RetryBaseDelayMilliseconds"] = "500",
+                ["Ekom:Algolia:Transformation:EnableSdkLogging"] = "true",
                 ["Ekom:Algolia:Search:Enabled"] = "true",
                 ["Ekom:Algolia:Search:Products"] = "true",
                 ["Ekom:Algolia:Search:Categories"] = "true",
@@ -61,6 +65,10 @@ public class AlgoliaSearchTests
 
         Assert.Equal("search-key", options.SearchApiKey);
         Assert.Equal(400, options.Replacement.MaxRetries);
+        Assert.Equal(200, options.Transformation.MaxBatchSize);
+        Assert.Equal(4, options.Transformation.MaxAttempts);
+        Assert.Equal(500, options.Transformation.RetryBaseDelayMilliseconds);
+        Assert.True(options.Transformation.EnableSdkLogging);
         Assert.True(options.Search.Categories);
         Assert.True(options.Search.QuerySuggestions);
         Assert.True(options.Search.IncludeUserToken);
@@ -135,6 +143,22 @@ public class AlgoliaSearchTests
         Assert.False(otherStore.Collections.Enabled);
         Assert.Null(otherStore.Indexing);
         Assert.Equal("eu", options.TransformationRegion);
+    }
+
+    [Fact]
+    public void Uses_Safe_Transformation_Defaults()
+    {
+        var options = new AlgoliaOptions
+        {
+            ApplicationId = "app-id",
+            AdminApiKey = "admin-key",
+            SearchApiKey = "search-key",
+        };
+
+        Assert.Equal(250, options.Transformation.MaxBatchSize);
+        Assert.Equal(3, options.Transformation.MaxAttempts);
+        Assert.Equal(1000, options.Transformation.RetryBaseDelayMilliseconds);
+        Assert.False(options.Transformation.EnableSdkLogging);
     }
 
     [Theory]

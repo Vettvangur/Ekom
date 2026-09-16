@@ -65,10 +65,10 @@ public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuil
     {
         try
         {
-            await Task.WhenAll(
-                _productIndexService.RebuildAllAndWaitAsync(),
-                _categoryIndexService.RebuildAllAndWaitAsync(),
-                _contentIndexService.RebuildAndWaitAsync()).ConfigureAwait(false);
+            await RunStagesAsync(
+                ("products", () => _productIndexService.RebuildAllAndWaitAsync()),
+                ("categories", () => _categoryIndexService.RebuildAllAndWaitAsync()),
+                ("content", () => _contentIndexService.RebuildAndWaitAsync())).ConfigureAwait(false);
 
             _logger.LogInformation("Algolia manual full reindex completed.");
         }
@@ -87,9 +87,9 @@ public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuil
     {
         try
         {
-            await Task.WhenAll(
-                _productIndexService.RebuildStoreAndWaitAsync(storeAlias),
-                _categoryIndexService.RebuildStoreAndWaitAsync(storeAlias)).ConfigureAwait(false);
+            await RunStagesAsync(
+                ("products", () => _productIndexService.RebuildStoreAndWaitAsync(storeAlias)),
+                ("categories", () => _categoryIndexService.RebuildStoreAndWaitAsync(storeAlias))).ConfigureAwait(false);
 
             _logger.LogInformation("Algolia manual store reindex completed for store {Store}.", storeAlias);
         }
@@ -102,5 +102,32 @@ public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuil
             lock (_sync)
                 _activeStoreRebuilds.Remove(storeAlias);
         }
+    }
+
+    private async Task RunStagesAsync(params (string Name, Func<Task> Run)[] stages)
+    {
+        var failures = new List<Exception>();
+
+        foreach (var stage in stages)
+        {
+            try
+            {
+                await stage.Run().ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                failures.Add(new InvalidOperationException($"Algolia {stage.Name} rebuild stage failed.", ex));
+                _logger.LogWarning(
+                    "Algolia {Stage} rebuild stage failed; continuing with the remaining stages.",
+                    stage.Name);
+            }
+        }
+
+        if (failures.Count > 0)
+            throw new AggregateException("One or more Algolia rebuild stages failed.", failures);
     }
 }
