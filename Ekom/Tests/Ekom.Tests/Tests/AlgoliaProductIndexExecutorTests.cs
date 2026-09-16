@@ -1,3 +1,4 @@
+using Algolia.Search.Clients;
 using Algolia.Search.Models.Search;
 using Ekom.Algolia;
 using Ekom.Algolia.Indexing;
@@ -10,6 +11,214 @@ namespace Ekom.Tests.Tests;
 
 public class AlgoliaProductIndexExecutorTests
 {
+    [Fact]
+    public void Sorted_Replica_Type_Defaults_To_Virtual()
+    {
+        var replica = new AlgoliaSortedReplicaOptions { Attribute = "price" };
+
+        Assert.Equal(AlgoliaReplicaType.Virtual, replica.Type);
+    }
+
+    [Theory]
+    [InlineData(AlgoliaReplicaType.Virtual, "virtual(replica.products.price)")]
+    [InlineData(AlgoliaReplicaType.Standard, "replica.products.price")]
+    public void Formats_Replica_Reference_For_Configured_Type(AlgoliaReplicaType type, string expected)
+    {
+        var replica = new AlgoliaSortedReplicaOptions
+        {
+            Attribute = "price",
+            Type = type,
+        };
+
+        var reference = AlgoliaProductIndexExecutor.BuildReplicaReference("replica.products.price", replica);
+
+        Assert.Equal(expected, reference);
+    }
+
+    [Fact]
+    public void Configures_Virtual_Replica_With_Custom_Ranking_And_Supported_Language_Settings()
+    {
+        var replica = new AlgoliaSortedReplicaOptions
+        {
+            Attribute = "price",
+            Direction = AlgoliaSortDirection.Desc,
+        };
+        var store = new AlgoliaResolvedStore
+        {
+            Alias = "Store",
+            LanguageSettings = new AlgoliaLanguageSettingsOptions
+            {
+                QueryLanguages = ["is"],
+                IndexLanguages = ["is"],
+                RemoveStopWords = true,
+                IgnorePlurals = true,
+            },
+        };
+
+        var settings = AlgoliaProductIndexExecutor.BuildReplicaSettings(
+            replica,
+            variants: true,
+            attributesForFaceting: ["filterOnly(categoryPageId)"],
+            store: store,
+            searchableAttributes: ["Title", "Sku"]);
+
+        Assert.Equal(["desc(price)"], settings.CustomRanking);
+        Assert.Null(settings.Ranking);
+        Assert.Null(settings.AttributeForDistinct);
+        Assert.Null(settings.AttributesForFaceting);
+        Assert.Null(settings.SearchableAttributes);
+        Assert.Equal([SupportedLanguage.Is], settings.QueryLanguages);
+        Assert.Null(settings.IndexLanguages);
+        Assert.True(settings.RemoveStopWords!.AsBool());
+        Assert.True(settings.IgnorePlurals!.AsBool());
+    }
+
+    [Fact]
+    public void Configures_Standard_Replica_With_Exhaustive_Ranking_And_Index_Settings()
+    {
+        var replica = new AlgoliaSortedReplicaOptions
+        {
+            Attribute = "price",
+            Direction = AlgoliaSortDirection.Asc,
+            Type = AlgoliaReplicaType.Standard,
+        };
+        var store = new AlgoliaResolvedStore
+        {
+            Alias = "Store",
+            LanguageSettings = new AlgoliaLanguageSettingsOptions
+            {
+                QueryLanguages = ["is"],
+                IndexLanguages = ["is"],
+            },
+        };
+
+        var settings = AlgoliaProductIndexExecutor.BuildReplicaSettings(
+            replica,
+            variants: true,
+            attributesForFaceting: ["filterOnly(categoryPageId)"],
+            store: store,
+            searchableAttributes: ["Title", "Sku"]);
+
+        Assert.Equal("asc(price)", settings.Ranking![0]);
+        Assert.Null(settings.CustomRanking);
+        Assert.Equal("ProductId", settings.AttributeForDistinct);
+        Assert.Equal(["filterOnly(categoryPageId)"], settings.AttributesForFaceting);
+        Assert.Equal(["Title", "Sku"], settings.SearchableAttributes);
+        Assert.Equal([SupportedLanguage.Is], settings.QueryLanguages);
+        Assert.Equal([SupportedLanguage.Is], settings.IndexLanguages);
+    }
+
+    [Fact]
+    public void Normalizes_Configured_Searchable_Attributes_Without_Changing_Order()
+    {
+        var attributes = AlgoliaProductIndexExecutor.BuildSearchableAttributes(
+            [" Title ", "", "Sku", "Title", "  ", "unordered(Summary)"]);
+
+        Assert.Equal(["Title", "Sku", "unordered(Summary)"], attributes);
+    }
+
+    [Theory]
+    [InlineData()]
+    [InlineData("", " ")]
+    public void Omits_Searchable_Attributes_When_No_Values_Are_Configured(params string[] attributes)
+    {
+        var result = AlgoliaProductIndexExecutor.BuildSearchableAttributes(attributes);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void Carries_Searchable_Attributes_To_Each_Store_Index_Target()
+    {
+        var store = new AlgoliaResolvedStore
+        {
+            Alias = "Store",
+            Indexing = new AlgoliaIndexingOptions { BatchSize = 250 },
+            HasIndexingOverride = true,
+            SearchableAttributes = ["Title", "Sku"],
+            Collections = new AlgoliaCollectionsOptions { Enabled = true },
+        };
+
+        var target = store.WithSelection("is-IS", "ISK");
+
+        Assert.Equal(["Title", "Sku"], target.SearchableAttributes);
+        Assert.True(target.Collections.Enabled);
+        Assert.Equal(250, target.Indexing.BatchSize);
+        Assert.True(target.HasIndexingOverride);
+    }
+
+    [Fact]
+    public void Adds_Collections_Facet_When_Not_Configured()
+    {
+        var attributes = new List<string> { "filterOnly(ProductId)" };
+
+        AlgoliaProductIndexExecutor.EnsureCollectionsFacet(attributes);
+
+        Assert.Equal(["filterOnly(ProductId)", "_collections"], attributes);
+    }
+
+    [Theory]
+    [InlineData("_collections")]
+    [InlineData("filterOnly(_collections)")]
+    [InlineData("afterDistinct(searchable(_collections))")]
+    public void Does_Not_Duplicate_Configured_Collections_Facet(string configured)
+    {
+        var attributes = new List<string> { configured };
+
+        AlgoliaProductIndexExecutor.EnsureCollectionsFacet(attributes);
+
+        Assert.Equal([configured], attributes);
+    }
+
+    [Fact]
+    public void Adds_Exact_Collections_Facet_When_Configured_Casing_Differs()
+    {
+        var attributes = new List<string> { "_Collections" };
+
+        AlgoliaProductIndexExecutor.EnsureCollectionsFacet(attributes);
+
+        Assert.Equal(["_Collections", "_collections"], attributes);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Uses_Configured_Product_Write_Path(bool useTransformation)
+    {
+        var client = new Mock<ISearchClient>();
+        var records = new[] { new TestRecord() };
+        using var cts = new CancellationTokenSource();
+
+        await AlgoliaProductIndexExecutor.SaveProductRecordsAsync(
+            client.Object,
+            "products",
+            records,
+            100,
+            useTransformation,
+            cts.Token);
+
+        client.Verify(
+            x => x.SaveObjectsWithTransformationAsync(
+                "products",
+                It.Is<IEnumerable<object>>(objects => ReferenceEquals(objects, records)),
+                true,
+                100,
+                null,
+                cts.Token,
+                null),
+            useTransformation ? Times.Once : Times.Never);
+        client.Verify(
+            x => x.SaveObjectsAsync(
+                "products",
+                records,
+                true,
+                100,
+                null,
+                cts.Token,
+                null),
+            useTransformation ? Times.Never : Times.Once);
+    }
+
     [Fact]
     public void Configures_Product_Facets_Without_Distinct_When_Variants_Are_Disabled()
     {
@@ -194,5 +403,9 @@ public class AlgoliaProductIndexExecutorTests
     {
         public bool ShouldIndex(IProduct product, AlgoliaResolvedStore store)
             => shouldIndex;
+    }
+
+    private sealed class TestRecord
+    {
     }
 }

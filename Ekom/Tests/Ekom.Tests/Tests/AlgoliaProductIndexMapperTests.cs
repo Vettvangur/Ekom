@@ -374,6 +374,27 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Fact]
+    public void MapRecords_Uses_Each_Stores_Indexing_Configuration()
+    {
+        var mapper = CreateMapper(indexVariants: false);
+        var product = CreateProduct(variants: [CreateVariant().Object]);
+        var productOnlyStore = CreateStore();
+        var variantStore = new AlgoliaResolvedStore
+        {
+            Alias = "variant-store",
+            HasIndexingOverride = true,
+            Indexing = new AlgoliaIndexingOptions { Variants = true },
+        };
+
+        var productOnlyRecords = mapper.MapRecords(product.Object, productOnlyStore, "products");
+        var variantRecords = mapper.MapRecords(product.Object, variantStore, "products");
+
+        Assert.Single(productOnlyRecords);
+        Assert.Equal(2, variantRecords.Count);
+        Assert.Contains(variantRecords, record => record.IsVariant);
+    }
+
+    [Fact]
     public void MapRecords_Strips_Html_From_Variant_Description()
     {
         var mapper = CreateMapper(productProperties: ["description|striphtml"], indexVariants: true);

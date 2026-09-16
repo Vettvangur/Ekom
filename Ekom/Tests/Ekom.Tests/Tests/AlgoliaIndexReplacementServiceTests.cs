@@ -81,6 +81,76 @@ public class AlgoliaIndexReplacementServiceTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task Saves_New_Index_Through_Transformation_When_Enabled()
+    {
+        var client = new Mock<ISearchClient>();
+        var records = new[] { new TestRecord() };
+        using var cts = new CancellationTokenSource();
+        client
+            .Setup(x => x.IndexExistsAsync("products", cts.Token))
+            .ReturnsAsync(false);
+        var service = CreateService(client.Object, maxRetries: 800);
+
+        await service.ReplaceAllAsync("products", records, 1000, useTransformation: true, cts.Token);
+
+        client.Verify(
+            x => x.SaveObjectsWithTransformationAsync(
+                "products",
+                It.Is<IEnumerable<object>>(objects => ReferenceEquals(objects, records)),
+                true,
+                1000,
+                null,
+                cts.Token,
+                It.Is<ChunkedHelperOptions>(options => options.MaxRetries == 800)),
+            Times.Once);
+        client.Verify(
+            x => x.SaveObjectsAsync(
+                It.IsAny<string>(),
+                It.IsAny<IEnumerable<TestRecord>>(),
+                It.IsAny<bool>(),
+                It.IsAny<int>(),
+                null,
+                It.IsAny<CancellationToken>(),
+                It.IsAny<ChunkedHelperOptions>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Replaces_Existing_Index_Through_Transformation_When_Enabled()
+    {
+        var client = new Mock<ISearchClient>();
+        var records = new[] { new TestRecord() };
+        using var cts = new CancellationTokenSource();
+        client
+            .Setup(x => x.IndexExistsAsync("products", cts.Token))
+            .ReturnsAsync(true);
+        var service = CreateService(client.Object, maxRetries: 321);
+
+        await service.ReplaceAllAsync("products", records, 500, useTransformation: true, cts.Token);
+
+        client.Verify(
+            x => x.ReplaceAllObjectsWithTransformationAsync(
+                "products",
+                It.Is<IEnumerable<object>>(objects => ReferenceEquals(objects, records)),
+                500,
+                null,
+                null,
+                cts.Token,
+                It.Is<ChunkedHelperOptions>(options => options.MaxRetries == 321)),
+            Times.Once);
+        client.Verify(
+            x => x.ReplaceAllObjectsAsync(
+                It.IsAny<string>(),
+                It.IsAny<IEnumerable<TestRecord>>(),
+                It.IsAny<int>(),
+                null,
+                null,
+                It.IsAny<CancellationToken>(),
+                It.IsAny<ChunkedHelperOptions>()),
+            Times.Never);
+    }
+
     private static AlgoliaIndexReplacementService CreateService(ISearchClient client, int maxRetries)
         => new(
             client,

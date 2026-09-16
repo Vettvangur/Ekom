@@ -47,7 +47,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
         if (jobs.Count == 0)
             return;
 
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Categories)
+        if (!_options.Enabled)
             return;
 
         var byStore = jobs.GroupBy(j => j.StoreAlias, StringComparer.OrdinalIgnoreCase);
@@ -58,6 +58,9 @@ internal sealed class AlgoliaCategoryIndexExecutor
 
             var store = _storeResolver.Resolve(storeGroup.Key);
             var storeJobs = storeGroup.ToList();
+
+            if (!store.Indexing.Enabled || !store.Indexing.Categories)
+                continue;
 
             if (storeJobs.Any(j => j.Type == AlgoliaCategoryIndexJobType.RebuildStore))
             {
@@ -113,7 +116,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
             if (records.Count == 0)
                 continue;
 
-            var batchSize = _options.Indexing.BatchSize <= 0 ? 1000 : _options.Indexing.BatchSize;
+            var batchSize = store.Indexing.BatchSize <= 0 ? 1000 : store.Indexing.BatchSize;
 
             await _indexReplacementService.ReplaceAllAsync(indexName, records, batchSize, ct).ConfigureAwait(false);
 
@@ -155,7 +158,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
             return;
         }
 
-        var batchSize = _options.Indexing.BatchSize <= 0 ? 1000 : _options.Indexing.BatchSize;
+        var batchSize = store.Indexing.BatchSize <= 0 ? 1000 : store.Indexing.BatchSize;
 
         foreach (var target in ExpandTargets(store))
         {

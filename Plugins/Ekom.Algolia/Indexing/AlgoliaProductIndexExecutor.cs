@@ -52,7 +52,7 @@ internal sealed class AlgoliaProductIndexExecutor
         if (jobs.Count == 0)
             return;
 
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
+        if (!_options.Enabled)
             return;
 
         _logger.LogDebug("Algolia executor handling {Count} queued jobs.", jobs.Count);
@@ -66,6 +66,9 @@ internal sealed class AlgoliaProductIndexExecutor
             var storeAlias = storeGroup.Key;
             var store = _storeResolver.Resolve(storeAlias);
             var storeJobs = storeGroup.ToList();
+
+            if (!store.Indexing.Enabled || !store.Indexing.Products)
+                continue;
 
             _logger.LogDebug(
                 "Algolia executor resolved store {Store}. Locale={Locale}, Currency={Currency}, Locales={LocaleCount}, Currencies={CurrencyCount}, Jobs={JobCount}",
@@ -119,7 +122,7 @@ internal sealed class AlgoliaProductIndexExecutor
 
     private async Task RebuildStoreAsync(AlgoliaResolvedStore store, CancellationToken ct)
     {
-        if (!_options.Indexing.Enabled || !_options.Indexing.Products)
+        if (!store.Indexing.Enabled || !store.Indexing.Products)
             return;
 
         var query = new ProductQuery { RaiseEvents = false };
@@ -163,7 +166,7 @@ internal sealed class AlgoliaProductIndexExecutor
                 records.Count,
                 skippedProducts);
 
-            var batchSize = _options.Indexing.BatchSize <= 0 ? 1000 : _options.Indexing.BatchSize;
+            var batchSize = store.Indexing.BatchSize <= 0 ? 1000 : store.Indexing.BatchSize;
 
             _logger.LogInformation(
                 "Algolia rebuild store {Store} locale {Locale} currency {Currency} -> {IndexName}. Records={Count}",
@@ -173,7 +176,12 @@ internal sealed class AlgoliaProductIndexExecutor
                 indexName,
                 records.Count);
 
-            await _indexReplacementService.ReplaceAllAsync(indexName, records, batchSize, ct).ConfigureAwait(false);
+            await _indexReplacementService.ReplaceAllAsync(
+                indexName,
+                records,
+                batchSize,
+                target.Collections.Enabled,
+                ct).ConfigureAwait(false);
 
             await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
             await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
@@ -213,7 +221,7 @@ internal sealed class AlgoliaProductIndexExecutor
             return;
         }
 
-        var batchSize = _options.Indexing.BatchSize <= 0 ? 1000 : _options.Indexing.BatchSize;
+        var batchSize = store.Indexing.BatchSize <= 0 ? 1000 : store.Indexing.BatchSize;
 
         foreach (var target in store.ExpandIndexTargets())
         {
@@ -270,16 +278,16 @@ internal sealed class AlgoliaProductIndexExecutor
                 target.Locale,
                 target.Currency);
 
-            if (_options.Indexing.Variants)
+            if (target.Indexing.Variants)
                 await DeleteByProductIdsAsync(indexName, indexedProductKeys, waitForTasks: true, ct).ConfigureAwait(false);
 
-            await _client.SaveObjectsAsync(
-                indexName: indexName,
-                objects: records,
-                batchSize: batchSize,
-                waitForTasks: true,
-                options: null,
-                cancellationToken: ct).ConfigureAwait(false);
+            await SaveProductRecordsAsync(
+                _client,
+                indexName,
+                records,
+                batchSize,
+                target.Collections.Enabled,
+                ct).ConfigureAwait(false);
 
             await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
         }
@@ -298,7 +306,7 @@ internal sealed class AlgoliaProductIndexExecutor
         _logger.LogDebug("Algolia delete requested for store {Store} with {Count} product keys.", store.Alias, keys.Count);
 
         var ids = keys.Select(k => k.ToString()).ToList();
-        var batchSize = _options.Indexing.BatchSize <= 0 ? 1000 : _options.Indexing.BatchSize;
+        var batchSize = store.Indexing.BatchSize <= 0 ? 1000 : store.Indexing.BatchSize;
 
         foreach (var target in store.ExpandIndexTargets())
         {
@@ -313,7 +321,7 @@ internal sealed class AlgoliaProductIndexExecutor
                 target.Locale,
                 target.Currency);
 
-            if (_options.Indexing.Variants)
+            if (target.Indexing.Variants)
             {
                 await DeleteByProductIdsAsync(indexName, keys, waitForTasks: false, ct).ConfigureAwait(false);
             }
@@ -336,12 +344,21 @@ internal sealed class AlgoliaProductIndexExecutor
 
     private async Task EnsureIndexSettingsAsync(AlgoliaResolvedStore store, string primaryIndexName, CancellationToken ct)
     {
-        var attributesForFaceting = BuildAttributesForFaceting(_options.Indexing);
+        var indexing = store.Indexing;
+        var attributesForFaceting = BuildAttributesForFaceting(indexing);
+        if (store.Collections.Enabled)
+            EnsureCollectionsFacet(attributesForFaceting);
+
+        var searchableAttributes = BuildSearchableAttributes(store.SearchableAttributes);
         var hasLanguageSettings = HasLanguageSettings(store.LanguageSettings);
-        if (_options.Indexing.SortedReplicas.Count == 0 && attributesForFaceting.Count == 0 && !hasLanguageSettings)
+        if (!store.HasIndexingOverride
+            && indexing.SortedReplicas.Count == 0
+            && attributesForFaceting.Count == 0
+            && searchableAttributes is null
+            && !hasLanguageSettings)
             return;
 
-        var replicas = _options.Indexing.SortedReplicas
+        var replicas = indexing.SortedReplicas
             .Where(x => !string.IsNullOrWhiteSpace(x.Attribute))
             .Select(x => new
             {
@@ -351,7 +368,11 @@ internal sealed class AlgoliaProductIndexExecutor
             .DistinctBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (replicas.Count == 0 && attributesForFaceting.Count == 0 && !hasLanguageSettings)
+        if (!store.HasIndexingOverride
+            && replicas.Count == 0
+            && attributesForFaceting.Count == 0
+            && searchableAttributes is null
+            && !hasLanguageSettings)
             return;
 
         _logger.LogDebug(
@@ -362,9 +383,12 @@ internal sealed class AlgoliaProductIndexExecutor
 
         var primarySettings = new IndexSettings
         {
-            Replicas = replicas.Select(x => x.Name).ToList(),
-            AttributeForDistinct = _options.Indexing.Variants ? "ProductId" : null,
-            AttributesForFaceting = attributesForFaceting.Count > 0 ? attributesForFaceting : null,
+            Replicas = replicas.Select(x => BuildReplicaReference(x.Name, x.Options)).ToList(),
+            AttributeForDistinct = indexing.Variants ? "ProductId" : null,
+            AttributesForFaceting = attributesForFaceting.Count > 0 || store.HasIndexingOverride
+                ? attributesForFaceting
+                : null,
+            SearchableAttributes = searchableAttributes,
         };
         ApplyLanguageSettings(primarySettings, store);
 
@@ -377,13 +401,12 @@ internal sealed class AlgoliaProductIndexExecutor
 
         foreach (var replica in replicas)
         {
-            var replicaSettings = new IndexSettings
-            {
-                Ranking = BuildReplicaRanking(replica.Options),
-                AttributeForDistinct = _options.Indexing.Variants ? "ProductId" : null,
-                AttributesForFaceting = attributesForFaceting.Count > 0 ? attributesForFaceting : null,
-            };
-            ApplyLanguageSettings(replicaSettings, store);
+            var replicaSettings = BuildReplicaSettings(
+                replica.Options,
+                indexing.Variants,
+                attributesForFaceting,
+                store,
+                searchableAttributes);
 
             await _client.SetSettingsAsync(
                 replica.Name,
@@ -394,7 +417,82 @@ internal sealed class AlgoliaProductIndexExecutor
         }
     }
 
+    internal static string BuildReplicaReference(string replicaName, AlgoliaSortedReplicaOptions replica)
+        => replica.Type == AlgoliaReplicaType.Virtual
+            ? $"virtual({replicaName})"
+            : replicaName;
+
+    internal static Task SaveProductRecordsAsync<T>(
+        ISearchClient client,
+        string indexName,
+        IReadOnlyCollection<T> records,
+        int batchSize,
+        bool useTransformation,
+        CancellationToken ct)
+        where T : class
+        => useTransformation
+            ? client.SaveObjectsWithTransformationAsync(
+                indexName: indexName,
+                objects: records,
+                waitForTasks: true,
+                batchSize: batchSize,
+                options: null,
+                cancellationToken: ct)
+            : client.SaveObjectsAsync(
+                indexName: indexName,
+                objects: records,
+                waitForTasks: true,
+                batchSize: batchSize,
+                options: null,
+                cancellationToken: ct);
+
+    internal static IndexSettings BuildReplicaSettings(
+        AlgoliaSortedReplicaOptions replica,
+        bool variants,
+        List<string> attributesForFaceting,
+        AlgoliaResolvedStore store,
+        List<string>? searchableAttributes = null)
+    {
+        var settings = replica.Type == AlgoliaReplicaType.Virtual
+            ? new IndexSettings
+            {
+                CustomRanking = [BuildReplicaSort(replica)],
+            }
+            : new IndexSettings
+            {
+                Ranking = BuildReplicaRanking(replica),
+                AttributeForDistinct = variants ? "ProductId" : null,
+                AttributesForFaceting = attributesForFaceting.Count > 0 || store.HasIndexingOverride
+                    ? attributesForFaceting
+                    : null,
+                SearchableAttributes = searchableAttributes,
+            };
+
+        ApplyLanguageSettings(settings, store, includeIndexLanguages: replica.Type == AlgoliaReplicaType.Standard);
+        return settings;
+    }
+
+    internal static List<string>? BuildSearchableAttributes(IReadOnlyCollection<string>? attributes)
+    {
+        if (attributes is null || attributes.Count == 0)
+            return null;
+
+        var searchableAttributes = attributes
+            .Where(attribute => !string.IsNullOrWhiteSpace(attribute))
+            .Select(attribute => attribute.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        return searchableAttributes.Count > 0 ? searchableAttributes : null;
+    }
+
     internal static void ApplyLanguageSettings(IndexSettings indexSettings, AlgoliaResolvedStore store)
+        => ApplyLanguageSettings(indexSettings, store, includeIndexLanguages: true);
+
+    private static void ApplyLanguageSettings(
+        IndexSettings indexSettings,
+        AlgoliaResolvedStore store,
+        bool includeIndexLanguages)
     {
         var languageSettings = store.LanguageSettings;
 
@@ -402,10 +500,12 @@ internal sealed class AlgoliaProductIndexExecutor
             languageSettings.QueryLanguages,
             nameof(languageSettings.QueryLanguages),
             store.Alias);
-        indexSettings.IndexLanguages = ParseLanguages(
-            languageSettings.IndexLanguages,
-            nameof(languageSettings.IndexLanguages),
-            store.Alias);
+        indexSettings.IndexLanguages = includeIndexLanguages
+            ? ParseLanguages(
+                languageSettings.IndexLanguages,
+                nameof(languageSettings.IndexLanguages),
+                store.Alias)
+            : null;
         indexSettings.RemoveStopWords = languageSettings.RemoveStopWords.HasValue
             ? new RemoveStopWords(languageSettings.RemoveStopWords.Value)
             : null;
@@ -491,6 +591,27 @@ internal sealed class AlgoliaProductIndexExecutor
             .ToList();
     }
 
+    internal static void EnsureCollectionsFacet(List<string> attributesForFaceting)
+    {
+        if (!attributesForFaceting.Any(IsCollectionsFacet))
+            attributesForFaceting.Add("_collections");
+    }
+
+    private static bool IsCollectionsFacet(string expression)
+    {
+        var value = expression.Trim();
+        while (value.EndsWith(')'))
+        {
+            var openParenthesis = value.IndexOf("(", StringComparison.Ordinal);
+            if (openParenthesis < 0)
+                break;
+
+            value = value[(openParenthesis + 1)..^1].Trim();
+        }
+
+        return value.Equals("_collections", StringComparison.Ordinal);
+    }
+
     private async Task DeleteByProductIdsAsync(string indexName, IEnumerable<Guid> productKeys, bool waitForTasks, CancellationToken ct)
     {
         foreach (var productKey in productKeys.Distinct())
@@ -516,11 +637,9 @@ internal sealed class AlgoliaProductIndexExecutor
 
     private static List<string> BuildReplicaRanking(AlgoliaSortedReplicaOptions replica)
     {
-        var direction = replica.Direction == AlgoliaSortDirection.Desc ? "desc" : "asc";
-
         return
         [
-            $"{direction}({replica.Attribute})",
+            BuildReplicaSort(replica),
             "typo",
             "geo",
             "words",
@@ -530,5 +649,11 @@ internal sealed class AlgoliaProductIndexExecutor
             "exact",
             "custom"
         ];
+    }
+
+    private static string BuildReplicaSort(AlgoliaSortedReplicaOptions replica)
+    {
+        var direction = replica.Direction == AlgoliaSortDirection.Desc ? "desc" : "asc";
+        return $"{direction}({replica.Attribute})";
     }
 }

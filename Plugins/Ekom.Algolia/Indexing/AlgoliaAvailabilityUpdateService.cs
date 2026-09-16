@@ -15,6 +15,7 @@ internal sealed class AlgoliaAvailabilityUpdateService
     private readonly AlgoliaOptions _options;
     private readonly AlgoliaStoreResolver _storeResolver;
     private readonly IndexNameBuilder _indexNameBuilder;
+    private readonly IAlgoliaProductIndexService _productIndexService;
     private readonly AlgoliaSearchCacheVersionProvider _searchCacheVersions;
     private readonly ILogger<AlgoliaAvailabilityUpdateService> _logger;
 
@@ -23,6 +24,7 @@ internal sealed class AlgoliaAvailabilityUpdateService
         IOptions<AlgoliaOptions> options,
         AlgoliaStoreResolver storeResolver,
         IndexNameBuilder indexNameBuilder,
+        IAlgoliaProductIndexService productIndexService,
         AlgoliaSearchCacheVersionProvider searchCacheVersions,
         ILogger<AlgoliaAvailabilityUpdateService> logger)
     {
@@ -30,13 +32,14 @@ internal sealed class AlgoliaAvailabilityUpdateService
         _options = options.Value;
         _storeResolver = storeResolver;
         _indexNameBuilder = indexNameBuilder;
+        _productIndexService = productIndexService;
         _searchCacheVersions = searchCacheVersions;
         _logger = logger;
     }
 
     public async Task UpdateAsync(StockChangedEventArgs args, CancellationToken ct)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
+        if (!_options.Enabled)
             return;
 
         var storeAliases = string.IsNullOrWhiteSpace(args.StoreAlias)
@@ -64,13 +67,19 @@ internal sealed class AlgoliaAvailabilityUpdateService
     private async Task UpdateStoreAsync(StockChangedEventArgs args, string storeAlias, CancellationToken ct)
     {
         var store = _storeResolver.Resolve(storeAlias);
-        if (!store.EnableAvailabilityUpdates)
+        if (!store.Indexing.Enabled || !store.Indexing.Products || !store.EnableAvailabilityUpdates)
             return;
 
         var product = await Catalog.Instance.GetProductAsync(args.Key, store.Alias, raiseEvent: false, ct: ct).ConfigureAwait(false);
 
         if (product is not null)
         {
+            if (store.Collections.Enabled)
+            {
+                await _productIndexService.EnqueueProductAsync(store.Alias, product.Key, isPublished: true, ct).ConfigureAwait(false);
+                return;
+            }
+
             var attributes = CreateProductAttributes(product, args, store.IncludeStock);
             await PartialUpdateAsync(store, product.Key.ToString(), attributes, ct).ConfigureAwait(false);
             return;
@@ -81,12 +90,18 @@ internal sealed class AlgoliaAvailabilityUpdateService
         if (variant is null || parentProduct is null)
             return;
 
+        if (store.Collections.Enabled)
+        {
+            await _productIndexService.EnqueueProductAsync(store.Alias, parentProduct.Key, isPublished: true, ct).ConfigureAwait(false);
+            return;
+        }
+
         var variantWasAvailable = IsVariantAvailable(variant, parentProduct, args.OldValue);
         var variantIsAvailable = variant.Available;
         var productWasAvailable = WasProductAvailable(parentProduct, variant, variantWasAvailable);
         var productIsAvailable = parentProduct.Available;
 
-        if (_options.Indexing.Variants)
+        if (store.Indexing.Variants)
         {
             var variantAttributes = new Dictionary<string, object?>();
             if (store.IncludeStock)

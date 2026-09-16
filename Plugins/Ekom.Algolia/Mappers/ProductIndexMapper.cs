@@ -9,7 +9,7 @@ namespace Ekom.Algolia.Mappers;
 
 internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 {
-    private readonly AlgoliaOptions _options;
+    private readonly AlgoliaIndexingOptions _defaultIndexing;
     private readonly IReadOnlyList<IAlgoliaProductEnricher> _enrichers;
     private readonly IReadOnlyList<IAlgoliaProductFieldConverter> _converters;
 
@@ -18,7 +18,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         IEnumerable<IAlgoliaProductEnricher>? enrichers = null,
         IEnumerable<IAlgoliaProductFieldConverter>? converters = null)
     {
-        _options = options.Value;
+        _defaultIndexing = options.Value.Indexing;
         _enrichers = (enrichers ?? Array.Empty<IAlgoliaProductEnricher>())
             .OrderBy(e => e.Order)
             .ToList();
@@ -39,7 +39,8 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var categoryLevels = BuildCategoryLevels(product, locale);
         var nodeName = GetNodeName(product);
         var facetAttributes = BuildProductFacetAttributes(product, store, baseIndexName);
-        if (!_options.Indexing.Variants)
+        var indexing = GetIndexing(store);
+        if (!indexing.Variants)
         {
             AddVariantFacetAttributes(product, store, baseIndexName, facetAttributes);
         }
@@ -183,12 +184,13 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         if (productRecord is null)
             return [];
 
-        if (!_options.Indexing.Variants)
+        var indexing = GetIndexing(store);
+        if (!indexing.Variants)
             return [productRecord];
 
         var records = new List<AlgoliaProductRecord> { productRecord };
         var configuredFields = BuildAllowedProperties(product, store);
-        var variantFacetAttributes = BuildVariantFacetAttributes();
+        var variantFacetAttributes = BuildVariantFacetAttributes(indexing);
 
         foreach (var variant in product.AllVariants)
         {
@@ -307,10 +309,11 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
     private Dictionary<string, ConfiguredField> BuildAllowedProperties(IProduct product, AlgoliaResolvedStore store)
     {
-        if (_options.Indexing.ProductProperties.Count == 0)
+        var indexing = GetIndexing(store);
+        if (indexing.ProductProperties.Count == 0)
             return new Dictionary<string, ConfiguredField>(StringComparer.OrdinalIgnoreCase);
 
-        return _options.Indexing.ProductProperties
+        return indexing.ProductProperties
             .Select(ConfiguredField.Parse)
             .Where(f => !string.IsNullOrWhiteSpace(f.Alias))
             .GroupBy(f => f.Alias, StringComparer.OrdinalIgnoreCase)
@@ -321,7 +324,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
     {
         var attributes = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var field in BuildConfiguredFields(_options.Indexing.FacetAttributes).Values)
+        foreach (var field in BuildConfiguredFields(GetIndexing(store).FacetAttributes).Values)
         {
             var converted = ResolveConfiguredValue(product, store, field);
             var context = new AlgoliaProductFieldContext(product, store, field.Alias, baseIndexName);
@@ -336,11 +339,11 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         return attributes;
     }
 
-    private IReadOnlyList<ConfiguredVariantFacet> BuildVariantFacetAttributes()
+    private static IReadOnlyList<ConfiguredVariantFacet> BuildVariantFacetAttributes(AlgoliaIndexingOptions indexing)
     {
         var attributes = new Dictionary<string, ConfiguredVariantFacet>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var (outputAlias, source) in _options.Indexing.VariantFacetAttributes)
+        foreach (var (outputAlias, source) in indexing.VariantFacetAttributes)
         {
             var configuredAttribute = ConfiguredVariantFacet.Parse(outputAlias, source);
             if (!string.IsNullOrWhiteSpace(configuredAttribute.OutputAlias)
@@ -359,7 +362,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         string baseIndexName,
         Dictionary<string, object?> attributes)
     {
-        foreach (var configuredAttribute in BuildVariantFacetAttributes())
+        foreach (var configuredAttribute in BuildVariantFacetAttributes(GetIndexing(store)))
         {
             var values = product.AllVariants
                 .Select(variant => ResolveVariantFacetValue(variant, store, configuredAttribute))
@@ -380,6 +383,9 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
 
         RemoveEmptyValues(attributes);
     }
+
+    private AlgoliaIndexingOptions GetIndexing(AlgoliaResolvedStore store)
+        => store.HasIndexingOverride ? store.Indexing : _defaultIndexing;
 
     private static IEnumerable<object?> FlattenFacetValue(object? value)
     {

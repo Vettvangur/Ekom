@@ -8,6 +8,10 @@
 * **algolia:** optionally update indexed availability and stock after stock changes.
 * **algolia:** prevent concurrent rebuilds for the same store.
 * **algolia:** add scoped suppression for automatic incremental indexing during bulk changes.
+* **algolia:** support standard and virtual sorted replicas, defaulting to virtual replicas.
+* **algolia:** support per-store searchable attributes for product indexes and standard replicas.
+* **algolia:** support indexing products through Algolia Collections transformations per store.
+* **algolia:** allow complete indexing configuration per store with backward-compatible global fallback.
 
 ### Bug Fixes
 
