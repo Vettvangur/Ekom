@@ -101,7 +101,7 @@ internal sealed class AlgoliaEkomEvents : IComponent
 
     private async Task OnStockChangedAsync(object sender, StockChangedEventArgs args, CancellationToken ct)
     {
-        if (AlgoliaIndexingScope.IsSuppressed || !_options.Enabled || !_options.Indexing.Enabled)
+        if (AlgoliaIndexingScope.IsSuppressed || !_options.Enabled)
             return;
 
         using var scope = _scopeFactory.CreateScope();

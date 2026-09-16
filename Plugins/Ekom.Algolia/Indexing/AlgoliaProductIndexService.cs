@@ -1,3 +1,4 @@
+using Ekom.Algolia.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -17,15 +18,18 @@ internal sealed class AlgoliaProductIndexService : IAlgoliaProductIndexService
 {
     private readonly IAlgoliaProductIndexQueue _queue;
     private readonly AlgoliaOptions _options;
+    private readonly AlgoliaStoreResolver _storeResolver;
     private readonly ILogger<AlgoliaProductIndexService> _logger;
 
     public AlgoliaProductIndexService(
         IAlgoliaProductIndexQueue queue,
         IOptions<AlgoliaOptions> options,
+        AlgoliaStoreResolver storeResolver,
         ILogger<AlgoliaProductIndexService> logger)
     {
         _queue = queue;
         _options = options.Value;
+        _storeResolver = storeResolver;
         _logger = logger;
     }
 
@@ -34,7 +38,7 @@ internal sealed class AlgoliaProductIndexService : IAlgoliaProductIndexService
 
     public Task EnqueueProductsAsync(string storeAlias, IReadOnlyCollection<Guid> productKeys, bool isPublished, CancellationToken ct = default)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
+        if (!_options.Enabled)
         {
             _logger.LogDebug(
                 "Algolia enqueue skipped because indexing is disabled. Store={Store}, Published={IsPublished}, Keys={Count}",
@@ -53,6 +57,10 @@ internal sealed class AlgoliaProductIndexService : IAlgoliaProductIndexService
                 productKeys.Count);
             return Task.CompletedTask;
         }
+
+        var indexing = _storeResolver.Resolve(storeAlias).Indexing;
+        if (!indexing.Enabled || !indexing.Products)
+            return Task.CompletedTask;
 
         var type = isPublished ? AlgoliaProductIndexJobType.Upsert : AlgoliaProductIndexJobType.Delete;
         var job = new AlgoliaProductIndexJob(type, storeAlias, productKeys);
@@ -105,10 +113,14 @@ internal sealed class AlgoliaProductIndexService : IAlgoliaProductIndexService
 
     public Task RebuildStoreAsync(string storeAlias, CancellationToken ct = default)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
+        if (!_options.Enabled)
             return Task.CompletedTask;
 
         if (string.IsNullOrWhiteSpace(storeAlias))
+            return Task.CompletedTask;
+
+        var indexing = _storeResolver.Resolve(storeAlias).Indexing;
+        if (!indexing.Enabled || !indexing.Products)
             return Task.CompletedTask;
 
         var job = new AlgoliaProductIndexJob(AlgoliaProductIndexJobType.RebuildStore, storeAlias, Array.Empty<Guid>());
@@ -138,10 +150,14 @@ internal sealed class AlgoliaProductIndexService : IAlgoliaProductIndexService
 
     public async Task RebuildStoreAndWaitAsync(string storeAlias, CancellationToken ct = default)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
+        if (!_options.Enabled)
             return;
 
         if (string.IsNullOrWhiteSpace(storeAlias))
+            return;
+
+        var indexing = _storeResolver.Resolve(storeAlias).Indexing;
+        if (!indexing.Enabled || !indexing.Products)
             return;
 
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -157,12 +173,16 @@ internal sealed class AlgoliaProductIndexService : IAlgoliaProductIndexService
 
     public Task RebuildAllAsync(CancellationToken ct = default)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
+        if (!_options.Enabled)
             return Task.CompletedTask;
 
         foreach (var store in _options.Stores)
         {
             if (string.IsNullOrWhiteSpace(store.Alias))
+                continue;
+
+            var indexing = _storeResolver.Resolve(store.Alias).Indexing;
+            if (!indexing.Enabled || !indexing.Products)
                 continue;
 
             var job = new AlgoliaProductIndexJob(AlgoliaProductIndexJobType.RebuildStore, store.Alias, Array.Empty<Guid>());
@@ -177,13 +197,17 @@ internal sealed class AlgoliaProductIndexService : IAlgoliaProductIndexService
 
     public async Task RebuildAllAndWaitAsync(CancellationToken ct = default)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
+        if (!_options.Enabled)
             return;
 
         var completions = new List<Task>();
         foreach (var store in _options.Stores)
         {
             if (string.IsNullOrWhiteSpace(store.Alias))
+                continue;
+
+            var indexing = _storeResolver.Resolve(store.Alias).Indexing;
+            if (!indexing.Enabled || !indexing.Products)
                 continue;
 
             var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

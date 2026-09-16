@@ -1,3 +1,4 @@
+using Algolia.Search.Clients;
 using Algolia.Search.Models.Search;
 using Ekom.Algolia;
 using Ekom.Algolia.Models.Search;
@@ -84,6 +85,98 @@ public class AlgoliaSearchTests
         Assert.Equal("SearchIndex", options.ContentIndexing.Indexes.Single().IndexName);
         Assert.Equal("article", options.ContentIndexing.Indexes.Single().ContentTypes.Single().Alias);
         Assert.Equal(["title", "publishedAt|unix"], options.ContentIndexing.Indexes.Single().ContentTypes.Single().Properties);
+    }
+
+    [Fact]
+    public void Binds_Algolia_Replica_And_Per_Store_Options()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Ekom:Algolia:Indexing:SortedReplicas:0:Attribute"] = "price",
+                ["Ekom:Algolia:Indexing:SortedReplicas:0:Direction"] = "Desc",
+                ["Ekom:Algolia:Indexing:SortedReplicas:1:Attribute"] = "createdDateInDKUnix",
+                ["Ekom:Algolia:Indexing:SortedReplicas:1:Type"] = "Standard",
+                ["Ekom:Algolia:Stores:0:Alias"] = "Store",
+                ["Ekom:Algolia:Stores:0:SearchableAttributes:0"] = "Title",
+                ["Ekom:Algolia:Stores:0:SearchableAttributes:1"] = "Sku",
+                ["Ekom:Algolia:Stores:0:Collections:Enabled"] = "true",
+                ["Ekom:Algolia:Stores:0:Indexing:Enabled"] = "true",
+                ["Ekom:Algolia:Stores:0:Indexing:Products"] = "false",
+                ["Ekom:Algolia:Stores:0:Indexing:Variants"] = "true",
+                ["Ekom:Algolia:Stores:0:Indexing:BatchSize"] = "250",
+                ["Ekom:Algolia:Stores:0:Indexing:ProductProperties:0"] = "storeProperty",
+                ["Ekom:Algolia:Stores:0:Indexing:SortedReplicas:0:Attribute"] = "title",
+                ["Ekom:Algolia:Stores:1:Alias"] = "OtherStore",
+                ["Ekom:Algolia:Stores:1:SearchableAttributes:0"] = "Summary",
+            })
+            .Build();
+
+        var options = config.GetSection("Ekom:Algolia").Get<AlgoliaOptions>();
+
+        Assert.NotNull(options);
+        var sortedReplicas = options.Indexing.SortedReplicas.ToList();
+        Assert.Equal(AlgoliaReplicaType.Virtual, sortedReplicas[0].Type);
+        Assert.Equal(AlgoliaSortDirection.Desc, sortedReplicas[0].Direction);
+        Assert.Equal(AlgoliaReplicaType.Standard, sortedReplicas[1].Type);
+        var store = options.Stores.Single(x => x.Alias == "Store");
+        Assert.Equal(["Title", "Sku"], store.SearchableAttributes);
+        Assert.True(store.Collections.Enabled);
+        Assert.NotNull(store.Indexing);
+        Assert.True(store.Indexing.Enabled);
+        Assert.False(store.Indexing.Products);
+        Assert.True(store.Indexing.Categories);
+        Assert.True(store.Indexing.Variants);
+        Assert.Equal(250, store.Indexing.BatchSize);
+        Assert.Equal(["storeProperty"], store.Indexing.ProductProperties);
+        Assert.Equal("title", Assert.Single(store.Indexing.SortedReplicas).Attribute);
+        var otherStore = options.Stores.Single(x => x.Alias == "OtherStore");
+        Assert.Equal(["Summary"], otherStore.SearchableAttributes);
+        Assert.False(otherStore.Collections.Enabled);
+        Assert.Null(otherStore.Indexing);
+        Assert.Equal("eu", options.TransformationRegion);
+    }
+
+    [Theory]
+    [InlineData(null, "eu")]
+    [InlineData("", "eu")]
+    [InlineData(" EU ", "eu")]
+    [InlineData("US", "us")]
+    public void Resolves_Transformation_Region(string? configured, string expected)
+    {
+        var region = AlgoliaServiceCollectionExtensions.ResolveTransformationRegion(configured);
+
+        Assert.Equal(expected, region);
+    }
+
+    [Fact]
+    public void Rejects_Unsupported_Transformation_Region()
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+            AlgoliaServiceCollectionExtensions.ResolveTransformationRegion("ap"));
+    }
+
+    [Fact]
+    public void Does_Not_Validate_Transformation_Region_When_Plugin_Is_Disabled()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Ekom:Algolia:Enabled"] = "false",
+                ["Ekom:Algolia:ApplicationId"] = "app-id",
+                ["Ekom:Algolia:AdminApiKey"] = "admin-key",
+                ["Ekom:Algolia:TransformationRegion"] = "ap",
+                ["Ekom:Algolia:Stores:0:Alias"] = "Store",
+                ["Ekom:Algolia:Stores:0:Collections:Enabled"] = "true",
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddAlgolia();
+
+        using var provider = services.BuildServiceProvider();
+
+        Assert.NotNull(provider.GetRequiredService<ISearchClient>());
     }
 
     [Fact]

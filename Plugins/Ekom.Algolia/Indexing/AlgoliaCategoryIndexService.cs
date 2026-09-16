@@ -1,3 +1,4 @@
+using Ekom.Algolia.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -17,15 +18,18 @@ internal sealed class AlgoliaCategoryIndexService : IAlgoliaCategoryIndexService
 {
     private readonly IAlgoliaCategoryIndexQueue _queue;
     private readonly AlgoliaOptions _options;
+    private readonly AlgoliaStoreResolver _storeResolver;
     private readonly ILogger<AlgoliaCategoryIndexService> _logger;
 
     public AlgoliaCategoryIndexService(
         IAlgoliaCategoryIndexQueue queue,
         IOptions<AlgoliaOptions> options,
+        AlgoliaStoreResolver storeResolver,
         ILogger<AlgoliaCategoryIndexService> logger)
     {
         _queue = queue;
         _options = options.Value;
+        _storeResolver = storeResolver;
         _logger = logger;
     }
 
@@ -34,10 +38,14 @@ internal sealed class AlgoliaCategoryIndexService : IAlgoliaCategoryIndexService
 
     public Task EnqueueCategoriesAsync(string storeAlias, IReadOnlyCollection<Guid> categoryKeys, bool isPublished, CancellationToken ct = default)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Categories)
+        if (!_options.Enabled)
             return Task.CompletedTask;
 
         if (string.IsNullOrWhiteSpace(storeAlias) || categoryKeys.Count == 0)
+            return Task.CompletedTask;
+
+        var indexing = _storeResolver.Resolve(storeAlias).Indexing;
+        if (!indexing.Enabled || !indexing.Categories)
             return Task.CompletedTask;
 
         var type = isPublished ? AlgoliaCategoryIndexJobType.Upsert : AlgoliaCategoryIndexJobType.Delete;
@@ -66,10 +74,14 @@ internal sealed class AlgoliaCategoryIndexService : IAlgoliaCategoryIndexService
 
     public Task RebuildStoreAsync(string storeAlias, CancellationToken ct = default)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Categories)
+        if (!_options.Enabled)
             return Task.CompletedTask;
 
         if (string.IsNullOrWhiteSpace(storeAlias))
+            return Task.CompletedTask;
+
+        var indexing = _storeResolver.Resolve(storeAlias).Indexing;
+        if (!indexing.Enabled || !indexing.Categories)
             return Task.CompletedTask;
 
         var job = new AlgoliaCategoryIndexJob(AlgoliaCategoryIndexJobType.RebuildStore, storeAlias, Array.Empty<Guid>());
@@ -96,10 +108,14 @@ internal sealed class AlgoliaCategoryIndexService : IAlgoliaCategoryIndexService
 
     public async Task RebuildStoreAndWaitAsync(string storeAlias, CancellationToken ct = default)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Categories)
+        if (!_options.Enabled)
             return;
 
         if (string.IsNullOrWhiteSpace(storeAlias))
+            return;
+
+        var indexing = _storeResolver.Resolve(storeAlias).Indexing;
+        if (!indexing.Enabled || !indexing.Categories)
             return;
 
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -115,12 +131,16 @@ internal sealed class AlgoliaCategoryIndexService : IAlgoliaCategoryIndexService
 
     public Task RebuildAllAsync(CancellationToken ct = default)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Categories)
+        if (!_options.Enabled)
             return Task.CompletedTask;
 
         foreach (var store in _options.Stores)
         {
             if (string.IsNullOrWhiteSpace(store.Alias))
+                continue;
+
+            var indexing = _storeResolver.Resolve(store.Alias).Indexing;
+            if (!indexing.Enabled || !indexing.Categories)
                 continue;
 
             var job = new AlgoliaCategoryIndexJob(AlgoliaCategoryIndexJobType.RebuildStore, store.Alias, Array.Empty<Guid>());
@@ -135,13 +155,17 @@ internal sealed class AlgoliaCategoryIndexService : IAlgoliaCategoryIndexService
 
     public async Task RebuildAllAndWaitAsync(CancellationToken ct = default)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Categories)
+        if (!_options.Enabled)
             return;
 
         var completions = new List<Task>();
         foreach (var store in _options.Stores)
         {
             if (string.IsNullOrWhiteSpace(store.Alias))
+                continue;
+
+            var indexing = _storeResolver.Resolve(store.Alias).Indexing;
+            if (!indexing.Enabled || !indexing.Categories)
                 continue;
 
             var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

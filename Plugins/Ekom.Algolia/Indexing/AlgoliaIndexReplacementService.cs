@@ -26,10 +26,19 @@ internal sealed class AlgoliaIndexReplacementService
         _logger = logger;
     }
 
+    public Task ReplaceAllAsync<T>(
+        string indexName,
+        IReadOnlyCollection<T> records,
+        int batchSize,
+        CancellationToken ct)
+        where T : class
+        => ReplaceAllAsync(indexName, records, batchSize, useTransformation: false, ct);
+
     public async Task ReplaceAllAsync<T>(
         string indexName,
         IReadOnlyCollection<T> records,
         int batchSize,
+        bool useTransformation,
         CancellationToken ct)
         where T : class
     {
@@ -60,25 +69,53 @@ internal sealed class AlgoliaIndexReplacementService
 
             if (indexExists)
             {
-                await _client.ReplaceAllObjectsAsync(
-                    indexName: indexName,
-                    objects: records,
-                    batchSize: effectiveBatchSize,
-                    scopes: null,
-                    options: null,
-                    cancellationToken: ct,
-                    chunkedOptions: chunkedOptions).ConfigureAwait(false);
+                if (useTransformation)
+                {
+                    await _client.ReplaceAllObjectsWithTransformationAsync(
+                        indexName: indexName,
+                        objects: records,
+                        batchSize: effectiveBatchSize,
+                        scopes: null,
+                        options: null,
+                        cancellationToken: ct,
+                        chunkedOptions: chunkedOptions).ConfigureAwait(false);
+                }
+                else
+                {
+                    await _client.ReplaceAllObjectsAsync(
+                        indexName: indexName,
+                        objects: records,
+                        batchSize: effectiveBatchSize,
+                        scopes: null,
+                        options: null,
+                        cancellationToken: ct,
+                        chunkedOptions: chunkedOptions).ConfigureAwait(false);
+                }
             }
             else
             {
-                await _client.SaveObjectsAsync(
-                    indexName: indexName,
-                    objects: records,
-                    waitForTasks: true,
-                    batchSize: effectiveBatchSize,
-                    options: null,
-                    cancellationToken: ct,
-                    chunkedOptions: chunkedOptions).ConfigureAwait(false);
+                if (useTransformation)
+                {
+                    await _client.SaveObjectsWithTransformationAsync(
+                        indexName: indexName,
+                        objects: records,
+                        waitForTasks: true,
+                        batchSize: effectiveBatchSize,
+                        options: null,
+                        cancellationToken: ct,
+                        chunkedOptions: chunkedOptions).ConfigureAwait(false);
+                }
+                else
+                {
+                    await _client.SaveObjectsAsync(
+                        indexName: indexName,
+                        objects: records,
+                        waitForTasks: true,
+                        batchSize: effectiveBatchSize,
+                        options: null,
+                        cancellationToken: ct,
+                        chunkedOptions: chunkedOptions).ConfigureAwait(false);
+                }
             }
 
             _logger.LogInformation(

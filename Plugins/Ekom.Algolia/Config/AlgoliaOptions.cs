@@ -11,6 +11,7 @@ public sealed class AlgoliaOptions
     public required string SearchApiKey { get; init; }
     public string? InsightsApiKey { get; init; }
     public string? AnalyticsRegion { get; init; }
+    public string TransformationRegion { get; init; } = "eu";
 
     public string Environment { get; init; } = "prod";
 
@@ -141,9 +142,31 @@ public sealed class AlgoliaDispatcherOptions
 public sealed class AlgoliaStoreOptions
 {
     public required string Alias { get; set; }
+    public AlgoliaStoreIndexingOptions? Indexing { get; init; }
     public bool IncludeStock { get; set; }
     public bool EnableAvailabilityUpdates { get; set; }
+    public IReadOnlyCollection<string> SearchableAttributes { get; init; } = [];
+    public AlgoliaCollectionsOptions Collections { get; init; } = new();
     public AlgoliaLanguageSettingsOptions LanguageSettings { get; init; } = new();
+}
+
+public sealed class AlgoliaStoreIndexingOptions
+{
+    public bool Enabled { get; set; } = true;
+    public bool Products { get; set; } = true;
+    public bool Categories { get; set; } = true;
+    public bool Variants { get; set; }
+    public int BatchSize { get; set; } = 1000;
+    public IReadOnlyCollection<string> ProductProperties { get; init; } = [];
+    public IReadOnlyCollection<string> AttributesForFaceting { get; init; } = [];
+    public IReadOnlyCollection<string> FacetAttributes { get; init; } = [];
+    public Dictionary<string, string> VariantFacetAttributes { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+    public IReadOnlyCollection<AlgoliaSortedReplicaOptions> SortedReplicas { get; init; } = [];
+}
+
+public sealed class AlgoliaCollectionsOptions
+{
+    public bool Enabled { get; init; }
 }
 
 public sealed class AlgoliaLanguageSettingsOptions
@@ -163,6 +186,10 @@ public sealed class AlgoliaResolvedStore
     public bool EnableAvailabilityUpdates { get; init; }
     public IReadOnlyList<string> Locales { get; init; } = [];
     public IReadOnlyList<string> Currencies { get; init; } = [];
+    public AlgoliaIndexingOptions Indexing { get; init; } = new();
+    public bool HasIndexingOverride { get; init; }
+    public IReadOnlyCollection<string> SearchableAttributes { get; init; } = [];
+    public AlgoliaCollectionsOptions Collections { get; init; } = new();
     public AlgoliaLanguageSettingsOptions LanguageSettings { get; init; } = new();
 
     public IReadOnlyList<AlgoliaResolvedStore> ExpandIndexTargets()
@@ -190,6 +217,10 @@ public sealed class AlgoliaResolvedStore
             EnableAvailabilityUpdates = EnableAvailabilityUpdates,
             Locales = Locales,
             Currencies = Currencies,
+            Indexing = Indexing,
+            HasIndexingOverride = HasIndexingOverride,
+            SearchableAttributes = SearchableAttributes,
+            Collections = Collections,
             LanguageSettings = LanguageSettings,
         };
 }
@@ -198,12 +229,19 @@ public sealed class AlgoliaSortedReplicaOptions
 {
     public required string Attribute { get; set; }
     public AlgoliaSortDirection Direction { get; set; } = AlgoliaSortDirection.Asc;
+    public AlgoliaReplicaType Type { get; set; } = AlgoliaReplicaType.Virtual;
 }
 
 public enum AlgoliaSortDirection
 {
     Asc,
     Desc
+}
+
+public enum AlgoliaReplicaType
+{
+    Virtual,
+    Standard
 }
 
 public enum AlgoliaIndexKind

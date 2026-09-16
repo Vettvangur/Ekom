@@ -49,7 +49,32 @@ internal sealed class AlgoliaStoreResolver
             EnableAvailabilityUpdates = configuredStore?.EnableAvailabilityUpdates ?? false,
             Locales = locales,
             Currencies = currencies,
+            Indexing = ResolveIndexing(configuredStore?.Indexing),
+            HasIndexingOverride = configuredStore?.Indexing is not null,
+            SearchableAttributes = configuredStore?.SearchableAttributes ?? [],
+            Collections = configuredStore?.Collections ?? new(),
             LanguageSettings = configuredStore?.LanguageSettings ?? new(),
+        };
+    }
+
+    private AlgoliaIndexingOptions ResolveIndexing(AlgoliaStoreIndexingOptions? storeIndexing)
+    {
+        if (storeIndexing is null)
+            return _options.Indexing;
+
+        return new AlgoliaIndexingOptions
+        {
+            Enabled = storeIndexing.Enabled,
+            Products = storeIndexing.Products,
+            Categories = storeIndexing.Categories,
+            Variants = storeIndexing.Variants,
+            BatchSize = storeIndexing.BatchSize,
+            ProductProperties = storeIndexing.ProductProperties,
+            AttributesForFaceting = storeIndexing.AttributesForFaceting,
+            FacetAttributes = storeIndexing.FacetAttributes,
+            VariantFacetAttributes = storeIndexing.VariantFacetAttributes,
+            SortedReplicas = storeIndexing.SortedReplicas,
+            Dispatching = _options.Indexing.Dispatching,
         };
     }
 

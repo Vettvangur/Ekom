@@ -1,4 +1,5 @@
 using Ekom.Algolia.Indexing;
+using Ekom.Algolia.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Composing;
@@ -39,6 +40,7 @@ internal sealed class AlgoliaUmbracoNotifications :
     private readonly IContentService _contentService;
     private readonly IServerRoleAccessor _serverRoleAccessor;
     private readonly AlgoliaOptions _options;
+    private readonly AlgoliaStoreResolver _storeResolver;
     private readonly ILogger<AlgoliaUmbracoNotifications> _logger;
 
     public AlgoliaUmbracoNotifications(
@@ -48,6 +50,7 @@ internal sealed class AlgoliaUmbracoNotifications :
         IContentService contentService,
         IServerRoleAccessor serverRoleAccessor,
         IOptions<AlgoliaOptions> options,
+        AlgoliaStoreResolver storeResolver,
         ILogger<AlgoliaUmbracoNotifications> logger)
     {
         _productIndexer = productIndexer;
@@ -56,6 +59,7 @@ internal sealed class AlgoliaUmbracoNotifications :
         _contentService = contentService;
         _serverRoleAccessor = serverRoleAccessor;
         _options = options.Value;
+        _storeResolver = storeResolver;
         _logger = logger;
     }
 
@@ -108,7 +112,7 @@ internal sealed class AlgoliaUmbracoNotifications :
         if (string.Equals(entity.ContentType.Alias, ProductAlias, StringComparison.OrdinalIgnoreCase))
             return EnqueueProductAsync(entity, isPublished, ct);
 
-        if (_options.Indexing.Variants && IsProductVariantContent(entity.ContentType.Alias))
+        if (IsProductVariantContent(entity.ContentType.Alias) && AnyStoreIndexesVariants())
             return EnqueueVariantProductAsync(entity, isPublished, ct);
 
         if (string.Equals(entity.ContentType.Alias, CategoryAlias, StringComparison.OrdinalIgnoreCase))
@@ -135,7 +139,7 @@ internal sealed class AlgoliaUmbracoNotifications :
             isPublished,
             _options.Stores.Count);
 
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
+        if (!_options.Enabled)
         {
             _logger.LogDebug("Algolia disabled; skipping ekmProduct {Id}.", entity.Id);
             return;
@@ -191,7 +195,7 @@ internal sealed class AlgoliaUmbracoNotifications :
 
     private async Task EnqueueCategoryAsync(IContent entity, bool isPublished, CancellationToken ct)
     {
-        if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Categories)
+        if (!_options.Enabled)
         {
             _logger.LogDebug("Algolia disabled; skipping ekmCategory {Id}.", entity.Id);
             return;
@@ -215,6 +219,13 @@ internal sealed class AlgoliaUmbracoNotifications :
             }
         }
     }
+
+    private bool AnyStoreIndexesVariants()
+        => _options.Enabled
+            && _options.Stores
+                .Where(store => !string.IsNullOrWhiteSpace(store.Alias))
+                .Select(store => _storeResolver.Resolve(store.Alias).Indexing)
+                .Any(indexing => indexing.Enabled && indexing.Products && indexing.Variants);
 
     private Task EnqueueContentAsync(IContent entity, bool isPublished, CancellationToken ct)
     {

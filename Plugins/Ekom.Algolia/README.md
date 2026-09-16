@@ -76,23 +76,12 @@ public sealed class ProductSearchController
       "SearchApiKey": "SEARCH_API_KEY",
       "InsightsApiKey": "INSIGHTS_API_KEY",
       "AnalyticsRegion": "eu",
+      "TransformationRegion": "eu",
       "Environment": "prod",
       "Replacement": {
         "MaxRetries": 800
       },
       "Indexing": {
-        "Enabled": true,
-        "Products": true,
-        "Categories": true,
-        "Variants": false,
-        "BatchSize": 1000,
-        "ProductProperties": [
-          "channels|array",
-          "packageCount|int",
-          "weight|decimal",
-          "publishedAt|unix",
-          "description|striphtml"
-        ],
         "Dispatching": {
           "MaxBatchSize": 100,
           "FlushIntervalSeconds": 2,
@@ -159,6 +148,39 @@ public sealed class ProductSearchController
       "Stores": [
         {
           "Alias": "Store",
+          "Indexing": {
+            "Enabled": true,
+            "Products": true,
+            "Categories": true,
+            "Variants": false,
+            "BatchSize": 1000,
+            "ProductProperties": [
+              "channels|array",
+              "packageCount|int",
+              "weight|decimal",
+              "publishedAt|unix",
+              "description|striphtml"
+            ],
+            "SortedReplicas": [
+              {
+                "Attribute": "price",
+                "Direction": "Asc"
+              },
+              {
+                "Attribute": "createdDateInDKUnix",
+                "Direction": "Desc",
+                "Type": "Standard"
+              }
+            ]
+          },
+          "SearchableAttributes": [
+            "Title",
+            "Sku",
+            "unordered(Summary)"
+          ],
+          "Collections": {
+            "Enabled": true
+          },
           "LanguageSettings": {
             "QueryLanguages": ["en"],
             "IndexLanguages": ["en"],
@@ -182,9 +204,10 @@ public sealed class ProductSearchController
 | `SearchApiKey` | `string` | required | API key used by `IAlgoliaSearchService` search requests. |
 | `InsightsApiKey` | `string` | `null` | Optional key for Insights events. Falls back to `AdminApiKey` when omitted. |
 | `AnalyticsRegion` | `string` | `null` | Algolia analytics region for query suggestions, usually `us` or `eu`. If omitted, the plugin tries both. |
+| `TransformationRegion` | `string` | `eu` | Algolia transformation region used by collection-enabled stores. Must be `eu` or `us`. |
 | `Environment` | `string` | `prod` | Environment segment used in generated index names. |
 | `Replacement:MaxRetries` | `int` | `800` | Maximum number of status polling retries while atomically replacing an existing index. |
-| `Indexing:Enabled` | `bool` | `true` | Enables indexing features. |
+| `Indexing:Enabled` | `bool` | `true` | Enables indexing features for stores without a store-level `Indexing` section. |
 | `Indexing:Products` | `bool` | `true` | Enables product indexing. |
 | `Indexing:Categories` | `bool` | `true` | Enables category indexing. |
 | `Indexing:Variants` | `bool` | `false` | Indexes product variants as separate product records so variant SKUs can be searched directly. |
@@ -193,7 +216,7 @@ public sealed class ProductSearchController
 | `Indexing:AttributesForFaceting` | `string[]` | `[]` | Algolia facet expressions to preserve on product indexes, such as `filterOnly(categoryPageId)` or `searchable(brand)`. |
 | `Indexing:FacetAttributes` | `string[]` | `[]` | Product properties/metafields to include under `attributes` and configure as facets. |
 | `Indexing:VariantFacetAttributes` | `object` | `{}` | Maps facet output names to `variant:` or `variantGroup:` property sources. |
-| `Indexing:SortedReplicas` | `object[]` | `[]` | Replica definitions using `Attribute` and `Direction` (`Asc` or `Desc`). |
+| `Indexing:SortedReplicas` | `object[]` | `[]` | Sorted replica definitions. Each entry uses `Attribute`, `Direction` (`Asc` or `Desc`), and optional `Type` (`Virtual` or `Standard`). `Type` defaults to `Virtual`. |
 | `Indexing:Dispatching:MaxBatchSize` | `int` | `100` | Maximum queued jobs processed in one worker batch. |
 | `Indexing:Dispatching:FlushIntervalSeconds` | `int` | `2` | Worker delay between queue flushes. |
 | `Indexing:Dispatching:MaxQueueSize` | `int` | `10000` | Maximum in-memory queue size. |
@@ -231,14 +254,110 @@ public sealed class ProductSearchController
 | `Events:Purchase` | `bool` | `true` | Sends purchase conversion events. |
 | `Stores` | `object[]` | `[]` | Store aliases supported by the plugin. Locale/currency are resolved from Ekom store data. |
 | `Stores[*]:Alias` | `string` | required | Ekom store alias. |
+| `Stores[*]:Indexing` | `object` | `null` | Complete indexing configuration for this store. When present, it replaces the global `Indexing` section except for global `Dispatching`. |
+| `Stores[*]:Indexing:*` | same as `Indexing:*` | same as global defaults | Supports `Enabled`, `Products`, `Categories`, `Variants`, `BatchSize`, product/facet fields, and sorted replicas. Omitted members use defaults rather than individual global values. |
 | `Stores[*]:IncludeStock` | `bool` | `false` | Includes product stock in indexed records for this store. |
 | `Stores[*]:EnableAvailabilityUpdates` | `bool` | `false` | Partially updates indexed availability after stock changes for this store. When `IncludeStock` is enabled, also updates the indexed stock amount. |
+| `Stores[*]:SearchableAttributes` | `string[]` | `[]` | Ordered searchable attributes for this store's product indexes and standard replicas. When omitted or empty, the plugin preserves the setting managed in Algolia. |
+| `Stores[*]:Collections:Enabled` | `bool` | `false` | Routes product writes through the Algolia transformation pipeline for this store. |
 | `Stores[*]:LanguageSettings:QueryLanguages` | `string[]` | `[]` | ISO 639-1 languages used for language-specific query processing. |
 | `Stores[*]:LanguageSettings:IndexLanguages` | `string[]` | `[]` | ISO 639-1 languages used for language-specific indexing. |
 | `Stores[*]:LanguageSettings:RemoveStopWords` | `bool` | `null` | Enables or disables stop-word removal for this store's product indexes. |
 | `Stores[*]:LanguageSettings:IgnorePlurals` | `bool` | `null` | Enables or disables matching singular, plural, and inflected forms for this store's product indexes. |
 
 ## Usage notes
+
+### Per-store indexing
+
+The top-level `Indexing` section remains supported and is the fallback for every store without its own `Indexing` section. Add a complete `Indexing` section to a store when its product data, facets, variants, replicas, or batch size differ:
+
+```json
+{
+  "Indexing": {
+    "Enabled": false,
+    "Dispatching": {
+      "MaxBatchSize": 100,
+      "FlushIntervalSeconds": 2,
+      "MaxQueueSize": 10000,
+      "MaxConcurrency": 2
+    }
+  },
+  "Stores": [
+    {
+      "Alias": "StoreA",
+      "Indexing": {
+        "Enabled": true,
+        "Products": true,
+        "Categories": true,
+        "Variants": true,
+        "BatchSize": 500,
+        "ProductProperties": ["brand", "description|striphtml"],
+        "FacetAttributes": ["brand"],
+        "SortedReplicas": [
+          { "Attribute": "price", "Direction": "Asc" }
+        ]
+      }
+    },
+    {
+      "Alias": "StoreB"
+    }
+  ]
+}
+```
+
+`StoreA` uses its complete local section and can enable indexing even when global `Indexing:Enabled` is `false`. `StoreB` uses the global section. Store-level collections and dictionaries replace global values; an empty value means none. Dispatching is always global because all stores share the same queues and workers. `Ekom:Algolia:Enabled` remains the master switch for the entire plugin. Rebuild a store after changing settings that alter its record or index schema.
+
+### Algolia Collections
+
+Enable Collections only for stores whose product indexes are connected to an Algolia Collection. Product rebuilds, incremental writes, and stock-driven updates for those stores are sent through Algolia's transformation pipeline so Algolia can maintain the managed `_collections` attribute.
+
+```json
+{
+  "TransformationRegion": "eu",
+  "Stores": [
+    {
+      "Alias": "Store",
+      "Collections": {
+        "Enabled": true
+      }
+    }
+  ]
+}
+```
+
+The transformation region must be `eu` or `us`. Configure no other Push connectors for the same collection indexes. The plugin adds `_collections` to `attributesForFaceting` but doesn't map or overwrite the attribute in product records. Collection-enabled writes don't fall back to direct index writes if the transformation request fails.
+
+### Per-store searchable attributes
+
+Configure searchable attributes independently for each store. The list applies to every locale/currency product index generated for that store and to its standard replicas. Virtual replicas inherit searchable attributes from their primary index.
+
+```json
+"Stores": [
+  {
+    "Alias": "StoreA",
+    "SearchableAttributes": ["Title", "Sku", "unordered(Summary)"]
+  },
+  {
+    "Alias": "StoreB",
+    "SearchableAttributes": ["Title", "attributes.brand"]
+  }
+]
+```
+
+Attribute names are case-sensitive, and their order controls priority. Algolia syntax such as `unordered(Description)` and comma-grouped attributes is supported. If the list is omitted, empty, or contains only whitespace, the plugin doesn't send `searchableAttributes`, so values configured in the Algolia UI remain unchanged.
+
+### Sorted replicas
+
+Sorted replicas default to `Virtual`, which uses Algolia relevant sorting without duplicating records. Set `Type` to `Standard` when exhaustive sorting is required. Virtual replicas use the configured attribute as custom ranking, while standard replicas place it first in the ranking formula.
+
+```json
+"SortedReplicas": [
+  { "Attribute": "price", "Direction": "Asc" },
+  { "Attribute": "price", "Direction": "Desc", "Type": "Standard" }
+]
+```
+
+Changing `Type` doesn't change the generated replica index name. Existing entries without `Type` are provisioned as virtual replicas after upgrading; set `Type` to `Standard` to retain exhaustive sorting. Virtual replicas require an Algolia plan that supports relevant sorting.
 
 ### Insights user-token correlation with InstantSearch
 
@@ -369,7 +488,7 @@ When `Search:QuerySuggestions` is enabled, the plugin provisions the separate `q
 
 ### Per-store language settings
 
-Configure Algolia's language processing separately for each store. These settings are applied to the store's primary product indexes and sorted replicas. Algolia recommends configuring both `QueryLanguages` and `IndexLanguages` so query-time and index-time processing are consistent.
+Configure Algolia's language processing separately for each store. These settings are applied to the store's primary product indexes and sorted replicas. Virtual replicas inherit index-time settings from the primary because Algolia doesn't allow `IndexLanguages` to be changed directly on them. Algolia recommends configuring both `QueryLanguages` and `IndexLanguages` so query-time and index-time processing are consistent.
 
 ```json
 {

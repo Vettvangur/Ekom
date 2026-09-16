@@ -2,9 +2,10 @@ using Ekom.Algolia.Indexing;
 using Ekom.Algolia.Mappers;
 using Ekom.Algolia.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Algolia.Search.Clients;
 using System.Net.Http.Headers;
+using Algolia.Search.Clients;
 
 namespace Ekom.Algolia;
 
@@ -27,7 +28,16 @@ public static class AlgoliaServiceCollectionExtensions
         services.AddSingleton<ISearchClient>(sp =>
         {
             var opt = sp.GetRequiredService<IOptions<AlgoliaOptions>>().Value;
-            return new SearchClient(opt.ApplicationId, opt.AdminApiKey);
+            if (!opt.Enabled || !opt.Stores.Any(store => store.Collections.Enabled))
+                return new SearchClient(opt.ApplicationId, opt.AdminApiKey);
+
+            var region = ResolveTransformationRegion(opt.TransformationRegion);
+
+            return SearchClient.WithTransformation(
+                opt.ApplicationId,
+                opt.AdminApiKey,
+                new TransformationOptions(region),
+                sp.GetRequiredService<ILoggerFactory>());
         });
 
         services.AddSingleton<IAlgoliaQueryClient, AlgoliaQueryClient>();
@@ -84,5 +94,17 @@ public static class AlgoliaServiceCollectionExtensions
         services.AddSingleton<IAlgoliaSearchService, AlgoliaSearchService>();
 
         return services;
+    }
+
+    internal static string ResolveTransformationRegion(string? region)
+    {
+        var normalized = string.IsNullOrWhiteSpace(region) ? "eu" : region.Trim();
+
+        if (normalized.Equals("eu", StringComparison.OrdinalIgnoreCase))
+            return "eu";
+        if (normalized.Equals("us", StringComparison.OrdinalIgnoreCase))
+            return "us";
+
+        throw new InvalidOperationException("Algolia TransformationRegion must be 'eu' or 'us' when Collections are enabled.");
     }
 }
