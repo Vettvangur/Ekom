@@ -6,6 +6,7 @@ using Ekom.API;
 using Ekom.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Diagnostics;
 
 namespace Ekom.Algolia.Indexing;
 
@@ -117,15 +118,42 @@ internal sealed class AlgoliaCategoryIndexExecutor
                 continue;
 
             var batchSize = store.Indexing.BatchSize <= 0 ? 1000 : store.Indexing.BatchSize;
-
-            await _indexReplacementService.ReplaceAllAsync(indexName, records, batchSize, ct).ConfigureAwait(false);
-
+            var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation(
-                "Algolia rebuild store {Store} locale {Locale} -> {IndexName}. Categories={Count}",
+                "Algolia category index rebuild started. IndexName={IndexName} Store={Store} Locale={Locale} Records={RecordCount}",
+                indexName,
                 target.Alias,
                 target.Locale,
-                indexName,
                 records.Count);
+
+            try
+            {
+                await _indexReplacementService.ReplaceAllAsync(indexName, records, batchSize, ct).ConfigureAwait(false);
+
+                _logger.LogInformation(
+                    "Algolia category index rebuild completed. IndexName={IndexName} Store={Store} Locale={Locale} Records={RecordCount} DurationMilliseconds={DurationMilliseconds}",
+                    indexName,
+                    target.Alias,
+                    target.Locale,
+                    records.Count,
+                    stopwatch.ElapsedMilliseconds);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Algolia category index rebuild failed. IndexName={IndexName} Store={Store} Locale={Locale} Records={RecordCount} DurationMilliseconds={DurationMilliseconds}",
+                    indexName,
+                    target.Alias,
+                    target.Locale,
+                    records.Count,
+                    stopwatch.ElapsedMilliseconds);
+                throw;
+            }
         }
 
         _searchCacheVersions.InvalidateStore(store.Alias);
@@ -173,6 +201,13 @@ internal sealed class AlgoliaCategoryIndexExecutor
 
             if (records.Count > 0)
             {
+                _logger.LogInformation(
+                    "Algolia category index update started. IndexName={IndexName} Store={Store} Locale={Locale} Records={RecordCount}",
+                    indexName,
+                    target.Alias,
+                    target.Locale,
+                    records.Count);
+
                 await _client.SaveObjectsAsync(
                     indexName: indexName,
                     objects: records,
@@ -180,6 +215,13 @@ internal sealed class AlgoliaCategoryIndexExecutor
                     batchSize: batchSize,
                     options: null,
                     cancellationToken: ct).ConfigureAwait(false);
+
+                _logger.LogInformation(
+                    "Algolia category index update submitted. IndexName={IndexName} Store={Store} Locale={Locale} Records={RecordCount}",
+                    indexName,
+                    target.Alias,
+                    target.Locale,
+                    records.Count);
             }
         }
 
@@ -201,12 +243,26 @@ internal sealed class AlgoliaCategoryIndexExecutor
             ct.ThrowIfCancellationRequested();
 
             var indexName = _indexNameBuilder.BuildPrimary(CategoriesEntity, target, currencyOverride: string.Empty);
+            _logger.LogInformation(
+                "Algolia category index delete started. IndexName={IndexName} Store={Store} Locale={Locale} Categories={CategoryCount}",
+                indexName,
+                target.Alias,
+                target.Locale,
+                objectIds.Count);
+
             await _client.DeleteObjectsAsync(
                 indexName,
                 objectIds,
                 waitForTasks: false,
                 options: null,
                 cancellationToken: ct).ConfigureAwait(false);
+
+            _logger.LogInformation(
+                "Algolia category index delete submitted. IndexName={IndexName} Store={Store} Locale={Locale} Categories={CategoryCount}",
+                indexName,
+                target.Alias,
+                target.Locale,
+                objectIds.Count);
         }
 
         _searchCacheVersions.InvalidateStore(store.Alias);

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Ekom.Algolia.Indexing;
 
@@ -63,18 +64,34 @@ public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuil
 
     private async Task RunFullAsync()
     {
+        var stopwatch = Stopwatch.StartNew();
+        _logger.LogInformation("Algolia full rebuild started.");
+
         try
         {
             await RunStagesAsync(
+                "Full",
+                storeAlias: null,
                 ("products", () => _productIndexService.RebuildAllAndWaitAsync()),
                 ("categories", () => _categoryIndexService.RebuildAllAndWaitAsync()),
                 ("content", () => _contentIndexService.RebuildAndWaitAsync())).ConfigureAwait(false);
 
-            _logger.LogInformation("Algolia manual full reindex completed.");
+            _logger.LogInformation(
+                "Algolia full rebuild completed. DurationMilliseconds={DurationMilliseconds}",
+                stopwatch.ElapsedMilliseconds);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning(
+                "Algolia full rebuild canceled. DurationMilliseconds={DurationMilliseconds}",
+                stopwatch.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Algolia manual full reindex failed.");
+            _logger.LogError(
+                ex,
+                "Algolia full rebuild failed. DurationMilliseconds={DurationMilliseconds}",
+                stopwatch.ElapsedMilliseconds);
         }
         finally
         {
@@ -85,17 +102,36 @@ public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuil
 
     private async Task RunStoreAsync(string storeAlias)
     {
+        var stopwatch = Stopwatch.StartNew();
+        _logger.LogInformation("Algolia store rebuild started. Store={Store}", storeAlias);
+
         try
         {
             await RunStagesAsync(
+                "Store",
+                storeAlias,
                 ("products", () => _productIndexService.RebuildStoreAndWaitAsync(storeAlias)),
                 ("categories", () => _categoryIndexService.RebuildStoreAndWaitAsync(storeAlias))).ConfigureAwait(false);
 
-            _logger.LogInformation("Algolia manual store reindex completed for store {Store}.", storeAlias);
+            _logger.LogInformation(
+                "Algolia store rebuild completed. Store={Store} DurationMilliseconds={DurationMilliseconds}",
+                storeAlias,
+                stopwatch.ElapsedMilliseconds);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning(
+                "Algolia store rebuild canceled. Store={Store} DurationMilliseconds={DurationMilliseconds}",
+                storeAlias,
+                stopwatch.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Algolia manual store reindex failed for store {Store}.", storeAlias);
+            _logger.LogError(
+                ex,
+                "Algolia store rebuild failed. Store={Store} DurationMilliseconds={DurationMilliseconds}",
+                storeAlias,
+                stopwatch.ElapsedMilliseconds);
         }
         finally
         {
@@ -104,15 +140,31 @@ public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuil
         }
     }
 
-    private async Task RunStagesAsync(params (string Name, Func<Task> Run)[] stages)
+    private async Task RunStagesAsync(
+        string scope,
+        string? storeAlias,
+        params (string Name, Func<Task> Run)[] stages)
     {
         var failures = new List<Exception>();
 
         foreach (var stage in stages)
         {
+            var stopwatch = Stopwatch.StartNew();
+            _logger.LogInformation(
+                "Algolia rebuild stage started. Stage={Stage} Scope={Scope} Store={Store}",
+                stage.Name,
+                scope,
+                storeAlias);
+
             try
             {
                 await stage.Run().ConfigureAwait(false);
+                _logger.LogInformation(
+                    "Algolia rebuild stage completed. Stage={Stage} Scope={Scope} Store={Store} DurationMilliseconds={DurationMilliseconds}",
+                    stage.Name,
+                    scope,
+                    storeAlias,
+                    stopwatch.ElapsedMilliseconds);
             }
             catch (OperationCanceledException)
             {
@@ -121,9 +173,13 @@ public sealed class AlgoliaFullIndexRebuildCoordinator : IAlgoliaFullIndexRebuil
             catch (Exception ex)
             {
                 failures.Add(new InvalidOperationException($"Algolia {stage.Name} rebuild stage failed.", ex));
-                _logger.LogWarning(
-                    "Algolia {Stage} rebuild stage failed; continuing with the remaining stages.",
-                    stage.Name);
+                _logger.LogError(
+                    ex,
+                    "Algolia rebuild stage failed; continuing with remaining stages. Stage={Stage} Scope={Scope} Store={Store} DurationMilliseconds={DurationMilliseconds}",
+                    stage.Name,
+                    scope,
+                    storeAlias,
+                    stopwatch.ElapsedMilliseconds);
             }
         }
 

@@ -65,8 +65,8 @@ internal sealed class AlgoliaIndexReplacementService
         {
             var indexExists = await _client.IndexExistsAsync(indexName, ct).ConfigureAwait(false);
 
-            _logger.LogInformation(
-                "Algolia {Operation} index {IndexName}. Records={RecordCount} BatchSize={BatchSize} MaxRetries={MaxRetries}",
+            _logger.LogDebug(
+                "Algolia index record replacement started. Operation={Operation} IndexName={IndexName} Records={RecordCount} BatchSize={BatchSize} MaxRetries={MaxRetries}",
                 indexExists ? "replacing" : "creating",
                 indexName,
                 records.Count,
@@ -120,12 +120,12 @@ internal sealed class AlgoliaIndexReplacementService
                 }
             }
 
-            _logger.LogInformation(
-                "Algolia index {IndexName} {Operation} completed in {DurationSeconds:F2} seconds. Records={RecordCount}",
-                indexName,
+            _logger.LogDebug(
+                "Algolia index record replacement completed. Operation={Operation} IndexName={IndexName} Records={RecordCount} DurationMilliseconds={DurationMilliseconds}",
                 indexExists ? "replacement" : "creation",
-                stopwatch.Elapsed.TotalSeconds,
-                records.Count);
+                indexName,
+                records.Count,
+                stopwatch.ElapsedMilliseconds);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -133,9 +133,9 @@ internal sealed class AlgoliaIndexReplacementService
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            _logger.LogDebug(
                 ex,
-                "Algolia index operation failed for {IndexName} after {DurationSeconds:F2} seconds. Records={RecordCount} BatchSize={BatchSize} MaxRetries={MaxRetries}",
+                "Algolia index record replacement failed. IndexName={IndexName} DurationSeconds={DurationSeconds:F2} Records={RecordCount} BatchSize={BatchSize} MaxRetries={MaxRetries}",
                 indexName,
                 stopwatch.Elapsed.TotalSeconds,
                 records.Count,

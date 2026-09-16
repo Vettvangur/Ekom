@@ -1,4 +1,5 @@
 using Ekom.Algolia.Indexing;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Collections.Concurrent;
 using Xunit;
@@ -72,6 +73,32 @@ public class AlgoliaFullIndexRebuildCoordinatorTests
         Assert.Equal(["products", "categories", "content"], calls);
 
         contentService.Complete();
+    }
+
+    [Fact]
+    public async Task Full_Rebuild_Logs_Stage_And_Run_Lifecycle()
+    {
+        var productService = new BlockingProductIndexService();
+        var categoryService = new BlockingCategoryIndexService();
+        var contentService = new BlockingContentIndexService();
+        var logger = new RecordingLogger<AlgoliaFullIndexRebuildCoordinator>();
+        var coordinator = new AlgoliaFullIndexRebuildCoordinator(
+            productService,
+            categoryService,
+            contentService,
+            logger);
+
+        productService.Complete();
+        categoryService.Complete();
+        contentService.Complete();
+        Assert.True(coordinator.TryStart());
+
+        Assert.True(await WaitForConditionAsync(
+            () => logger.Messages.Any(x => x.Contains("Algolia full rebuild completed", StringComparison.Ordinal))));
+        Assert.Contains(logger.Messages, x => x.Contains("Stage=products", StringComparison.Ordinal) && x.Contains("stage started", StringComparison.Ordinal));
+        Assert.Contains(logger.Messages, x => x.Contains("Stage=products", StringComparison.Ordinal) && x.Contains("stage completed", StringComparison.Ordinal));
+        Assert.Contains(logger.Messages, x => x.Contains("Stage=categories", StringComparison.Ordinal) && x.Contains("stage completed", StringComparison.Ordinal));
+        Assert.Contains(logger.Messages, x => x.Contains("Stage=content", StringComparison.Ordinal) && x.Contains("stage completed", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -369,5 +396,22 @@ public class AlgoliaFullIndexRebuildCoordinatorTests
             return _completion.Task;
         }
         public void Complete() => _completion.TrySetResult();
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public ConcurrentQueue<string> Messages { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+            => Messages.Enqueue(formatter(state, exception));
     }
 }

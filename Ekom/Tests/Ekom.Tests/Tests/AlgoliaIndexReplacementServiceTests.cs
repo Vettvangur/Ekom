@@ -151,9 +151,7 @@ public class AlgoliaIndexReplacementServiceTests
             Times.Never);
     }
 
-    private static AlgoliaIndexReplacementService CreateService(
-        ISearchClient client,
-        int maxRetries)
+    private static AlgoliaIndexReplacementService CreateService(ISearchClient client, int maxRetries)
     {
         var options = Options.Create(new AlgoliaOptions
         {
