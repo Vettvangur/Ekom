@@ -29,6 +29,20 @@ public static class PriceBuilder
         string? path,
         string[]? categories,
         string? discountPriceJson)
+        => BuildPricesSync(priceJson, storeCurrencies, vat, vatIncludedInPrice,
+            fallbackCurrency, storeAlias, path, categories, discountPriceJson, false);
+
+    public static List<IPrice> BuildPricesSync(
+        string priceJson,
+        List<CurrencyModel> storeCurrencies,
+        decimal vat,
+        bool vatIncludedInPrice,
+        CurrencyModel fallbackCurrency,
+        string? storeAlias,
+        string? path,
+        string[]? categories,
+        string? discountPriceJson,
+        bool disableDiscounts)
     {
 
         var prices = new List<IPrice>();
@@ -51,7 +65,7 @@ public static class PriceBuilder
         var isArray = priceJson.AsSpan().TrimStart().StartsWith("[");
         if (!isArray)
         {
-            IDiscount? disc = (!string.IsNullOrEmpty(path) && discountSvc != null)
+            IDiscount? disc = (!disableDiscounts && !string.IsNullOrEmpty(path) && discountSvc != null)
                 ? discountSvc.GetProductDiscount(path!, storeAlias, priceJson, categories,
                     NativeDiscountPrice.Read(discountPriceJson, storeAlias, fallbackCurrency.CurrencyValue,
                         (storeCurrencies.FirstOrDefault() ?? fallbackCurrency).CurrencyValue))
@@ -98,7 +112,7 @@ public static class PriceBuilder
                 ?? fallbackCurrency;
 
             // ---- DISCOUNT ----
-            IDiscount? disc = (!string.IsNullOrEmpty(path) && discountSvc != null)
+            IDiscount? disc = (!disableDiscounts && !string.IsNullOrEmpty(path) && discountSvc != null)
                 ? discountSvc.GetProductDiscount(path!, storeAlias, priceStr, categories,
                     string.Equals(currStr, currency.CurrencyValue, StringComparison.OrdinalIgnoreCase)
                         ? NativeDiscountPrice.Read(discountPriceJson, storeAlias, currency.CurrencyValue,

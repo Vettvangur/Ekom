@@ -158,6 +158,11 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     public IProductDiscount? ProductDiscount(string price, CurrencyModel currency)
     {
         var product = Product;
+        if (product?.DisableDiscounts == true)
+        {
+            return null;
+        }
+
         var source = GetDiscountSource(currency, product);
         return Configuration.Resolver.GetService<ProductDiscountService>()?
             .GetProductDiscount(
@@ -174,11 +179,16 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
 
     public virtual async Task<IProductDiscount?> ProductDiscountAsync(string price, CancellationToken ct, CurrencyModel currency)
     {
+        var product = Product;
+        if (product?.DisableDiscounts == true)
+        {
+            return null;
+        }
+
         var discountService = Configuration.Resolver.GetService<ProductDiscountService>();
         if (discountService == null)
             return null;
 
-        var product = Product;
         var source = GetDiscountSource(currency, product);
         return await discountService.GetProductDiscountAsync(
             source.Path,
@@ -242,7 +252,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
             var parentSale = NativeDiscountPrice.Raw(product);
 
             string cacheKey =
-                $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={Store.Currency.CurrencyValue}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}:sale={CacheHelpers.Sha256(sale)}:parent={parentGen}:parentPrice={CacheHelpers.Sha256(parentPrice)}:parentSale={CacheHelpers.Sha256(parentSale)}";
+                $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={Store.Currency.CurrencyValue}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}:sale={CacheHelpers.Sha256(sale)}:parent={parentGen}:parentPrice={CacheHelpers.Sha256(parentPrice)}:parentSale={CacheHelpers.Sha256(parentSale)}:disabled={product?.DisableDiscounts == true}";
 
             return CacheHelpers.GetOrCreateSingleFlight(
                 cacheKey,
@@ -258,7 +268,8 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
                         Store.Alias,
                         Path,
                         categories,
-                        sale
+                        sale,
+                        product?.DisableDiscounts == true
                     );
 
                     // Missing and zero base prices inherit the parent's price and selected discount together.

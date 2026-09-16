@@ -710,7 +710,7 @@ partial class OrderService
     private void VerifyDiscounts(OrderInfo orderInfo)
     {
         using var calculationScope = OrderPricingCalculationScope.Enter(orderInfo);
-        decimal total = orderInfo.OrderLineTotal.Value;
+        decimal total = DiscountApplicability.GetDiscountEligibleOrderLineTotal(orderInfo);
         string storeAlias = orderInfo.StoreInfo.Alias;
 
         // Verify order discount constraints
@@ -737,7 +737,11 @@ partial class OrderService
         // Verify order line discount constraints
         foreach (OrderLine line in orderInfo.orderLines)
         {
-            if (line.Discount?.Constraints != null)
+            if (line.Product.DisableDiscounts)
+            {
+                RemoveDiscountFromOrderLine(line);
+            }
+            else if (line.Discount?.Constraints != null)
             {
                 if (line.Discount?.Constraints.IsValid(storeAlias, total) == false
                 || !DiscountApplicability.IsDiscountApplicable(orderInfo, line, line.Discount, total))

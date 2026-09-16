@@ -166,7 +166,7 @@ public class OrderedVariant
 
         if (orderDynamic != null && orderDynamic.VariantPrices != null && orderDynamic.VariantPrices.Any())
         {
-            Prices = orderDynamic.VariantPrices;
+            Prices = orderDynamic.VariantPrices.ToList();
         }
 
         Properties = new ReadOnlyDictionary<string, string>(

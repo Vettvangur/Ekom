@@ -28,7 +28,9 @@ internal static class OrderDiscountQuantityAllocator
             return new Dictionary<Guid, decimal>();
         }
 
-        var orderLines = orderInfo.OrderLines;
+        var orderLines = orderInfo.OrderLines
+            .Where(line => !line.Product.DisableDiscounts)
+            .ToList();
         using var nodeServiceScope = orderLines.Any(line =>
             !string.IsNullOrWhiteSpace(line.Product.Properties.GetValue("categories")))
                 ? ResolveNodeService(ref nodeService)

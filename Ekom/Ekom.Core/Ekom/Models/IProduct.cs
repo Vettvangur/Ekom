@@ -14,6 +14,11 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     IPrice Price { get; }
 
     /// <summary>
+    /// Gets whether discounts are disabled for this product and its variants.
+    /// </summary>
+    bool DisableDiscounts => false;
+
+    /// <summary>
     /// Gets the prices.
     /// </summary>
     /// <value>

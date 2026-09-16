@@ -1340,8 +1340,13 @@ partial class OrderService
                         orderInfo.StoreInfo,
                         settings.OrderDynamicRequest);
 
-                    orderLine.Discount = orderLine.Variant?.Price.Discount
-                        ?? orderLine.Product.Price.Discount;
+                    orderLine.Discount = orderLine.Product.DisableDiscounts
+                        ? null
+                        : orderLine.Variant?.Price.Discount ?? orderLine.Product.Price.Discount;
+                    if (orderLine.Product.DisableDiscounts)
+                    {
+                        orderLine.Coupon = null;
+                    }
                 }
             }
             else

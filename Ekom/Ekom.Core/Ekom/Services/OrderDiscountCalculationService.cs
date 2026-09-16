@@ -59,8 +59,14 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         var messages = new List<string>();
         // Use the per-line snapshots (each priced under its own PricingContext) for the order total
         // instead of orderInfo.OrderLineTotal, which would re-price every line with no context.
-        var orderLineTotal = lineSnapshots.Sum(line => line.LineTotalBeforeDiscount);
-        var orderDiscountConstraintsMet = DiscountApplicability.AreOrderConstraintsMet(orderInfo, discount, orderLineTotal);
+        var subTotal = lineSnapshots.Sum(line => line.LineTotalBeforeDiscount);
+        var discountEligibleTotal = lineSnapshots
+            .Where(line => !line.DisableDiscounts)
+            .Sum(line => line.LineTotalBeforeDiscount);
+        var orderDiscountConstraintsMet = DiscountApplicability.AreOrderConstraintsMet(
+            orderInfo,
+            discount,
+            discountEligibleTotal);
 
         OrderedDiscount? orderedDiscount = null;
         IReadOnlyDictionary<Guid, decimal> allocations = new Dictionary<Guid, decimal>();
@@ -145,7 +151,7 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
             DiscountId = discount.Key,
             DiscountTitle = discount.Title,
             Currency = store.Currency.CurrencyValue,
-            SubTotal = orderLineTotal,
+            SubTotal = subTotal,
             DiscountTotal = lineResults.Sum(line => line.DiscountAmount),
             GrandTotal = lineResults.Sum(line => line.LineTotalAfterDiscount),
             Lines = lineResults,
@@ -279,6 +285,7 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
         return new OrderDiscountCalculationLineSnapshot(
             requestLine,
             orderLine.Key,
+            orderLine.Product.DisableDiscounts,
             unitPrice.OriginalValue,
             unitPrice.Value,
             productOnlyAmount.Value);
@@ -321,6 +328,7 @@ public sealed class OrderDiscountCalculationService : IOrderDiscountCalculationS
     private sealed record OrderDiscountCalculationLineSnapshot(
         OrderDiscountCalculationLineRequest RequestLine,
         Guid LineKey,
+        bool DisableDiscounts,
         decimal OriginalUnitPrice,
         decimal DiscountedUnitPrice,
         decimal LineTotalBeforeDiscount);

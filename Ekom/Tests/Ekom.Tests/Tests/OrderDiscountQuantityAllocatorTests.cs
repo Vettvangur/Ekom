@@ -144,6 +144,111 @@ public class OrderDiscountQuantityAllocatorTests
     }
 
     [Fact]
+    public void Repeating_DisabledProductDoesNotQualifyOrReceiveReward()
+    {
+        var disabledQualifier = CreateLine("10", 3m, 25m, disableDiscounts: true);
+        var rewardLine = CreateLine("20", 1m, 50m);
+        var order = CreateOrder(disabledQualifier.Object, rewardLine.Object);
+        var discount = CreateDiscount(
+            OrderDiscountQuantityMode.Repeating,
+            3,
+            1,
+            ["10"],
+            ["10", "20"]);
+
+        var result = OrderDiscountQuantityAllocator.Allocate(order.Object, discount);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void None_DisabledProductDoesNotReceiveDiscount()
+    {
+        var disabledLine = CreateLine("10", 1m, 25m, disableDiscounts: true);
+        var eligibleLine = CreateLine("20", 1m, 50m);
+        var order = CreateOrder(disabledLine.Object, eligibleLine.Object);
+        var discount = CreateDiscount(OrderDiscountQuantityMode.None, 0, 0, [], ["10", "20"]);
+
+        var result = OrderDiscountQuantityAllocator.Allocate(order.Object, discount);
+
+        Assert.False(result.ContainsKey(disabledLine.Object.Key));
+        Assert.Equal(1m, result[eligibleLine.Object.Key]);
+    }
+
+    [Fact]
+    public void OrderConstraints_ExcludeDisabledProductsFromMinimumSpend()
+    {
+        var disabledLine = CreateLine("10", 1m, 100m, disableDiscounts: true);
+        var eligibleLine = CreateLine("20", 1m, 25m);
+        var order = CreateOrder(disabledLine.Object, eligibleLine.Object);
+        var discount = CreateDiscount(OrderDiscountQuantityMode.None, 0, 0, [], ["20"]);
+        var constraints = new Mock<IConstraints>();
+        constraints.Setup(x => x.IsValid("en-US", It.IsAny<decimal>()))
+            .Returns((string _, decimal amount) => amount >= 50m);
+        discount.Constraints = constraints.Object;
+
+        var result = DiscountApplicability.AreOrderConstraintsMet(order.Object, discount);
+
+        Assert.False(result);
+        constraints.Verify(x => x.IsValid("en-US", 25m), Times.Once);
+    }
+
+    [Fact]
+    public void Applicability_DisabledProductNeverMatchesDiscount()
+    {
+        var disabledLine = CreateLine("10", 1m, 25m, disableDiscounts: true);
+        var order = CreateOrder(disabledLine.Object);
+        var discount = CreateDiscount(OrderDiscountQuantityMode.None, 0, 0, [], ["10"]);
+
+        var result = DiscountApplicability.IsDiscountApplicable(
+            order.Object,
+            disabledLine.Object,
+            discount);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void OrderedProduct_DisabledProductRemovesPersistedPriceDiscount()
+    {
+        var productDiscount = CreateDiscount(OrderDiscountQuantityMode.None, 0, 0, [], []);
+
+        var line = CreateLine(
+            "10",
+            1m,
+            25m,
+            productDiscount: productDiscount,
+            disableDiscounts: true);
+
+        Assert.False(line.Object.Product.Price.HasDiscount);
+        Assert.Null(line.Object.Product.ProductDiscount);
+    }
+
+    [Fact]
+    public void OrderedProduct_DisabledProductDoesNotMutateDynamicPrices()
+    {
+        var storeInfo = CreateStoreInfo();
+        var discount = CreateDiscount(OrderDiscountQuantityMode.None, 0, 0, [], []);
+        var dynamicPrice = new Price(25m, storeInfo.Currency, 0, true, discount);
+        var dynamicPrices = new List<IPrice> { dynamicPrice };
+        var product = new Mock<IProduct>();
+        product.SetupGet(x => x.DisableDiscounts).Returns(true);
+        product.SetupGet(x => x.Properties).Returns(new Dictionary<string, string>
+        {
+            ["__Key"] = Guid.NewGuid().ToString(),
+            ["__Path"] = "10",
+        });
+        product.SetupGet(x => x.Prices).Returns(dynamicPrices);
+        var request = new OrderDynamicRequest { Prices = dynamicPrices };
+
+        var orderedProduct = new OrderedProduct(product.Object, null, storeInfo, request);
+
+        Assert.True(dynamicPrice.HasDiscount);
+        Assert.Same(dynamicPrice, Assert.Single(dynamicPrices));
+        Assert.False(orderedProduct.Price.HasDiscount);
+    }
+
+    [Fact]
     public void PricingScope_ReusesAllocationForNestedCalculations()
     {
         var orderLineReads = 0;
@@ -244,7 +349,8 @@ public class OrderDiscountQuantityAllocatorTests
         decimal quantity,
         decimal unitPrice,
         string? categories = null,
-        OrderedDiscount? productDiscount = null)
+        OrderedDiscount? productDiscount = null,
+        bool disableDiscounts = false)
     {
         var storeInfo = CreateStoreInfo();
         var currency = storeInfo.Currency;
@@ -260,12 +366,16 @@ public class OrderDiscountQuantityAllocatorTests
         }
 
         product.SetupGet(x => x.Properties).Returns(properties);
+        product.SetupGet(x => x.DisableDiscounts).Returns(disableDiscounts);
         product.SetupGet(x => x.Prices).Returns([new Price(unitPrice, currency, 0, true, productDiscount)]);
         var orderedProduct = new OrderedProduct(product.Object, null, storeInfo);
+        var amount = new Mock<IPrice>();
+        amount.SetupGet(x => x.Value).Returns(unitPrice * quantity);
         var line = new Mock<IOrderLine>();
         line.SetupGet(x => x.Key).Returns(Guid.NewGuid());
         line.SetupGet(x => x.Product).Returns(orderedProduct);
         line.SetupGet(x => x.Quantity).Returns(quantity);
+        line.SetupGet(x => x.Amount).Returns(amount.Object);
         return line;
     }
 
