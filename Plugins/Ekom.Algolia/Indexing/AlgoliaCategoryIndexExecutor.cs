@@ -129,6 +129,11 @@ internal sealed class AlgoliaCategoryIndexExecutor
             try
             {
                 await _indexReplacementService.ReplaceAllAsync(indexName, records, batchSize, ct).ConfigureAwait(false);
+                await AlgoliaCustomRankingSettings.ApplyAsync(
+                    _client,
+                    indexName,
+                    target.Indexing.CategoryCustomRanking,
+                    ct).ConfigureAwait(false);
 
                 _logger.LogInformation(
                     "Algolia category index rebuild completed. IndexName={IndexName} Store={Store} Locale={Locale} Records={RecordCount} DurationMilliseconds={DurationMilliseconds}",
@@ -193,6 +198,11 @@ internal sealed class AlgoliaCategoryIndexExecutor
             ct.ThrowIfCancellationRequested();
 
             var indexName = _indexNameBuilder.BuildPrimary(CategoriesEntity, target, currencyOverride: string.Empty);
+            await AlgoliaCustomRankingSettings.ApplyAsync(
+                _client,
+                indexName,
+                target.Indexing.CategoryCustomRanking,
+                ct).ConfigureAwait(false);
             var records = categories
                 .Select(category => _mapper.Map(category, target, indexName))
                 .Where(record => record is not null)
@@ -243,6 +253,11 @@ internal sealed class AlgoliaCategoryIndexExecutor
             ct.ThrowIfCancellationRequested();
 
             var indexName = _indexNameBuilder.BuildPrimary(CategoriesEntity, target, currencyOverride: string.Empty);
+            await AlgoliaCustomRankingSettings.ApplyAsync(
+                _client,
+                indexName,
+                target.Indexing.CategoryCustomRanking,
+                ct).ConfigureAwait(false);
             _logger.LogInformation(
                 "Algolia category index delete started. IndexName={IndexName} Store={Store} Locale={Locale} Categories={CategoryCount}",
                 indexName,

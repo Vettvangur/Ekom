@@ -52,6 +52,8 @@ public class AlgoliaStoreResolverTests
                 Variants = true,
                 BatchSize = 250,
                 ProductProperties = ["globalProperty"],
+                ProductCustomRanking = ["desc(globalProductRank)"],
+                CategoryCustomRanking = ["asc(globalCategoryRank)"],
                 Dispatching = dispatching,
             },
             Stores =
@@ -65,6 +67,8 @@ public class AlgoliaStoreResolverTests
                         Products = true,
                         Categories = true,
                         ProductProperties = ["storeProperty"],
+                        ProductCustomRanking = ["desc(storeProductRank)"],
+                        CategoryCustomRanking = ["asc(storeCategoryRank)"],
                     },
                 },
             ],
@@ -79,6 +83,8 @@ public class AlgoliaStoreResolverTests
         Assert.False(store.Indexing.Variants);
         Assert.Equal(1000, store.Indexing.BatchSize);
         Assert.Equal(["storeProperty"], store.Indexing.ProductProperties);
+        Assert.Equal(["desc(storeProductRank)"], store.Indexing.ProductCustomRanking);
+        Assert.Equal(["asc(storeCategoryRank)"], store.Indexing.CategoryCustomRanking);
         Assert.Empty(store.Indexing.FacetAttributes);
         Assert.Empty(store.Indexing.SortedReplicas);
         Assert.Same(dispatching, store.Indexing.Dispatching);

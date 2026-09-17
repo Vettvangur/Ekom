@@ -123,6 +123,7 @@ internal sealed class AlgoliaContentIndexExecutor
         var allCultures = await GetAllCulturesAsync().ConfigureAwait(false);
         var contentTypes = await GetContentTypesAsync().ConfigureAwait(false);
         var documentsByIndex = new Dictionary<string, List<AlgoliaContentRecord>>(StringComparer.OrdinalIgnoreCase);
+        var customRankingByIndex = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var index in indexes)
         {
@@ -140,6 +141,7 @@ internal sealed class AlgoliaContentIndexExecutor
                 foreach (var (culture, content) in upsertsByCulture)
                 {
                     var resolvedIndexName = _indexNameResolver.Resolve(index.IndexName, culture);
+                    customRankingByIndex[resolvedIndexName] = index.CustomRanking;
                     if (!documentsByIndex.TryGetValue(resolvedIndexName, out var documents))
                     {
                         documents = [];
@@ -164,6 +166,11 @@ internal sealed class AlgoliaContentIndexExecutor
             try
             {
                 var indexedCount = await ReplaceAllObjectsAsync(resolvedIndexName, documents, batchSize, ct).ConfigureAwait(false);
+                await AlgoliaCustomRankingSettings.ApplyAsync(
+                    _client,
+                    resolvedIndexName,
+                    customRankingByIndex[resolvedIndexName],
+                    ct).ConfigureAwait(false);
                 _logger.LogInformation(
                     "Algolia content index rebuild completed. IndexName={IndexName} Documents={DocumentCount} DurationMilliseconds={DurationMilliseconds}",
                     resolvedIndexName,
@@ -214,6 +221,11 @@ internal sealed class AlgoliaContentIndexExecutor
                     continue;
 
                 var indexName = _indexNameResolver.Resolve(index.IndexName, culture);
+                await AlgoliaCustomRankingSettings.ApplyAsync(
+                    _client,
+                    indexName,
+                    index.CustomRanking,
+                    ct).ConfigureAwait(false);
                 await SaveObjectsAsync(indexName, documents, ct).ConfigureAwait(false);
             }
 
@@ -248,6 +260,11 @@ internal sealed class AlgoliaContentIndexExecutor
             return;
 
         var indexName = _indexNameResolver.Resolve(index.IndexName, culture);
+        await AlgoliaCustomRankingSettings.ApplyAsync(
+            _client,
+            indexName,
+            index.CustomRanking,
+            ct).ConfigureAwait(false);
         await _client.DeleteObjectsAsync(indexName, ids, batchSize: 1000, waitForTasks: false, cancellationToken: ct).ConfigureAwait(false);
     }
 
