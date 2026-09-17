@@ -1,599 +1,98 @@
-<h1 align="center">
-Ekom
- 
-[![Nuget](https://img.shields.io/nuget/vpre/Ekom.U10?color=ed0f0f)](https://www.nuget.org/packages/Ekom.U10/)
-[![Nuget](https://img.shields.io/nuget/vpre/Ekom.U17?color=ed0f0f)](https://www.nuget.org/packages/Ekom.U17/)
-[![Nuget](https://img.shields.io/nuget/vpre/Ekom.U18?color=ed0f0f)](https://www.nuget.org/packages/Ekom.U18/)
-[![Nuget](https://img.shields.io/nuget/vpre/Ekom.Klaviyo?color=ed0f0f)](https://www.nuget.org/packages/Ekom.Klaviyo/)
-[![Nuget](https://img.shields.io/nuget/vpre/Ekom.Algolia?color=ed0f0f)](https://www.nuget.org/packages/Ekom.Algolia/)
-[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
-[![Publish Ekom.Klaviyo](https://github.com/Vettvangur/Ekom/actions/workflows/publish-ekom-klaviyo.yml/badge.svg?branch=Ekom)](https://github.com/Vettvangur/Ekom/actions/workflows/publish-ekom-klaviyo.yml)
-[![Publish Ekom.Algolia](https://github.com/Vettvangur/Ekom/actions/workflows/publish-ekom-algolia.yml/badge.svg?branch=Ekom)](https://github.com/Vettvangur/Ekom/actions/workflows/publish-ekom-algolia.yml)
+# Ekom
 
-</h1>
+[![Ekom.U10](https://img.shields.io/nuget/vpre/Ekom.U10?label=Ekom.U10)](https://www.nuget.org/packages/Ekom.U10/)
+[![Ekom.U17](https://img.shields.io/nuget/vpre/Ekom.U17?label=Ekom.U17)](https://www.nuget.org/packages/Ekom.U17/)
+[![Ekom.U18](https://img.shields.io/nuget/vpre/Ekom.U18?label=Ekom.U18)](https://www.nuget.org/packages/Ekom.U18/)
+[![Ekom.Algolia](https://img.shields.io/nuget/vpre/Ekom.Algolia?label=Algolia)](https://www.nuget.org/packages/Ekom.Algolia/)
+[![Ekom.Klaviyo](https://img.shields.io/nuget/vpre/Ekom.Klaviyo?label=Klaviyo)](https://www.nuget.org/packages/Ekom.Klaviyo/)
+[![Ekom.Mailchimp](https://img.shields.io/nuget/vpre/Ekom.Mailchimp?label=Mailchimp)](https://www.nuget.org/packages/Ekom.Mailchimp/)
+[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/Vettvangur/Ekom/blob/Ekom/LICENSE)
 
-<h2 align="center">
-Open Source Ecommerce package for Umbraco
-</h2>
+Ekom is a free, open-source ecommerce platform for Umbraco. It provides a customizable catalog, baskets and orders, checkout and payment-provider integration, discounts, stock management, multi-store support, tracking, and headless APIs.
 
-Supports Umbraco 13, Umbraco 17, and Umbraco 18.
+**Product website:** [ekomcommerce.com](https://www.ekomcommerce.com/)
 
-Ekom is a versatile and fully customizable eCommerce solution that is free to use forever. This package has been built with ASP NET Core, focusing on performance and security, and is compatible with Umbraco 13, Umbraco 17, and Umbraco 18.
+**Documentation:** [Browse the Ekom documentation](https://github.com/Vettvangur/Ekom/tree/Ekom/docs)
+
+## Supported platforms
+
+| Umbraco | .NET | Runtime package | Backoffice assets |
+| --- | --- | --- | --- |
+| 13 | 8 | `Ekom.U10` | `Ekom.Web` |
+| 17 | 10 | `Ekom.U17` | `Ekom.Web.U17` |
+| 18 | 10 | `Ekom.U18` | `Ekom.Web.U18` |
+
+`Ekom.U10` is the retained package name for the Umbraco 13 integration. It does not mean that the current package supports Umbraco 10.
+
+See the [compatibility guide](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/getting-started/compatibility.md) for package and framework details.
 
 ## Installation
-Install the package that matches your Umbraco version, then install the matching Ekom web assets package into your site's main project (the project containing `wwwroot`).
+
+Install both the runtime package and matching web-assets package in the site's main project—the project that contains `wwwroot`.
 
 ### Umbraco 18
-
-**NuGet:** [https://www.nuget.org/packages/Ekom.U18](https://www.nuget.org/packages/Ekom.U18)
 
 ```bash
 dotnet add package Ekom.U18
 dotnet add package Ekom.Web.U18
 ```
 
-```powershell
-PM> Install-Package Ekom.U18
-PM> Install-Package Ekom.Web.U18
-```
-
 ### Umbraco 17
-
-**NuGet:** [https://www.nuget.org/packages/Ekom.U17](https://www.nuget.org/packages/Ekom.U17)
 
 ```bash
 dotnet add package Ekom.U17
 dotnet add package Ekom.Web.U17
 ```
 
-```powershell
-PM> Install-Package Ekom.U17
-PM> Install-Package Ekom.Web.U17
-```
-
 ### Umbraco 13
-
-**NuGet:** [https://www.nuget.org/packages/Ekom.U10](https://www.nuget.org/packages/Ekom.U10)
 
 ```bash
 dotnet add package Ekom.U10
 dotnet add package Ekom.Web
 ```
 
-```powershell
-PM> Install-Package Ekom.U10
-PM> Install-Package Ekom.Web
-```
-
-## Some of the key featured of Ekom includes:
-
-- 100% free and open source forever.
-- Support for both B2B (Business to Business) and B2C (Business to Customer) transactions
-- Headless capabilities, allowing for more flexibility in frontend design and development
-- Multilingual and multicurrency support, making it suitable for international businesses
-- A powerful order management system
-- Out-of-the-box support for multiple payment providers, along with the ability to plug in additional providers as needed
-- Flexible shipping provider configurations, including the ability to connect with external services
-- The capability to set up flexible discounts
-- Support for complex variants, a crucial feature for eCommerce platforms
-- Integration support with external systems like Microsoft Dynamics Business Central, Dynamics AX, DK, Salesforce, and others
-- Advanced inventory management tools
-- Built with ASP NET Core with focus on performance and security
-- The ability to be extended as per your business requirements
-- And many more features....
-
-## Appsettings configuration
-
-All Ekom settings live under the `Ekom` section in `appsettings.json`.
-
-```json
-"Ekom": {
-  "PerStoreStock": false,
-  "ExamineSearchIndex": "ExternalIndex",
-  "ShareBasket": false,
-  "BasketCookieLifetime": 1,
-  "CustomImage": "images",
-  "Reservations": {
-    "Enabled": false,
-    "Timeout": 30,
-    "PollInterval": "00:00:30",
-    "BatchSize": 100,
-    "WorkerEnabled": true,
-    "CompletedRetention": "7.00:00:00"
-  },
-  "CategoryRootLevel": 3,
-  "VatCalcRounding": "AwayFromZero",
-  "VatRoundingScope": "PerUnit",
-  "VatIncludedPerUnitPolicy": "PreserveStickerGross",
-  "ApplyVatOnShipping": true,
-  "UserBasket": false,
-  "DisableStock": false,
-  "AbsoluteUrls": true,
-  "DefaultProductOrderBy": "DateDesc",
-  "GlobalCatalog": false,
-  "EmailNotifications": "orders@example.com",
-  "CustomerData": false,
-  "OrderDiscountCalculation": {
-    "ApiKey": "integration-secret"
-  },
-  "Manager": {
-    "SectionAccessGroup": "ekom,commerce-admins",
-    "StoreGroupPermissions": {
-      "store1": [ "group-a", "group-b" ]
-    }
-  },
-  "VariantApp": {
-    "VariantGroups": [ "color" ],
-    "Variants": [ "material" ]
-  },
-  "Headless": {
-    "ReValidateApis": [
-      { "Store": "store1", "Url": "https://example.com/api/revalidate", "Secret": "secret" }
-    ]
-  },
-  "Payments": {
-    "valitor": {
-      "merchantId": "1",
-      "verificationCode": "xxxxx",
-      "merchantName": "",
-      "paymentPageUrl": "https://paymentweb.uat.valitor.is/"
-    }
-  }
-}
-```
-
-- `PerStoreStock` (bool, default `false`): Use per-store stock cache instead of product/variant stock.
-- `ExamineSearchIndex` (string, default `ExternalIndex`): Examine index name used for search.
-- `ExamineSearchNormalizedFields` (list, default `nodeName`, `title`, `pageTitle`, `sku`, `searchTags`, `summary`, `description`): Examine fields duplicated into `*_normalized` fields so catalog search can match diacritics and symbol-separated terms more reliably.
-- `ShareBasket` (bool, default `false`): Share baskets between stores; requires same currencies across stores.
-- `BasketCookieLifetime` (number, days, default `1`): Order cookie lifespan in days.
-- `CustomImage` (string, default `images`): Media folder alias for product images.
-- `Reservations.Enabled` (boolean, default `false`): Opt in to reserving eligible checkout inventory and line discount/coupon stock before payment. Existing holds are honored even after disabling this setting. Explicit reservation APIs remain available in either mode.
-- `Reservations.Timeout` (number, minutes, default `30`): Reservation lifetime. The public virtual `Configuration.ReservationTimeout` uses this value first, then legacy `Ekom:ReservationTimeout`, then 30 minutes.
-- `Reservations`: Also configures the independent expiry worker (`WorkerEnabled` defaults to `true`); see [stock reservations](docs/stock-reservations.md) for lifecycle, retry and compatibility details.
-- `CategoryRootLevel` (int, default `3`): Minimum Umbraco level for categories.
-- `VatCalcRounding` (Rounding enum, default `AwayFromZero`): `None`, `RoundDown`, `RoundUp`, `RoundToEven`, `AwayFromZero`.
-- `VatRoundingScope` (VatRoundingScope enum, default `PerUnit`): `PerUnit`, `PerTotal`.
-- `VatIncludedPerUnitPolicy` (VatIncludedPerUnitPolicy enum, default `PreserveStickerGross`): `PreserveStickerGross`, `LineLevelVat`.
-- `ApplyVatOnShipping` (bool, default `false`): Apply VAT to shipping costs.
-- `UserBasket` (bool, default `false`): Single basket per member stored on the member "orderId".
-- `DisableStock` (bool, default `false`): Disable stock checks.
-- `AbsoluteUrls` (bool, default `false`): Force backoffice URLs to be absolute for multi-site setups.
-- `DefaultProductOrderBy` (OrderBy enum, default `DateDesc`): See `Ekom.Utilities.Enums.OrderBy` values for options.
-- `GlobalCatalog` (bool, default `false`): If product not found in current store, search other stores.
-- `EmailNotifications` (string, optional): Override Umbraco email for `MailService` notifications.
-- `CustomerData` (bool, default `false`): Store checkout customer data in `ekmCustomerData` table.
-- `Manager:SectionAccessGroup` (CSV string): Backoffice groups that can access the manager section.
-- `Manager:StoreGroupPermissions` (object): Store alias to allowed group list mapping.
-- `VariantApp:VariantGroups` (list): Textstring property aliases from `ekmProductVariantGroup` to show in the variant group drawer.
-- `VariantApp:Variants` (list): Textstring property aliases from `ekmProductVariant` to show in the variant drawer.
-- `SectionAccessRules` (CSV string, legacy): Backwards-compatible alias for `Manager:SectionAccessGroup`.
-- `Headless:ReValidateApis` (list): Items with `Store`, `Url`, `Secret` for headless revalidation.
-- `OrderDiscountCalculation:ApiKey` (string, required to enable): `POST /ekom/order-discounts/calculate` requires this value in the `X-Ekom-Api-Key` header. When missing or empty, the endpoint always returns unauthorized.
-- `Payments` (object): Provider-specific configuration used by payment providers.
-
-### Linked order lines
-
-The existing `POST /ekom/order/add` endpoint can atomically add a new parent line
-with multiple independently quantified child products. Linked children can carry
-their own `orderline*` custom data and are removed automatically with their parent.
-See [linked order lines](docs/linked-order-lines.md) for HTTP and Razor MVC examples.
-
-### Warehouse stock
-
-Warehouse stock is display-only inventory for U17 and U18. It does not change sellable stock, availability, reservations, or checkout deductions. Define warehouses on each published `ekmStore` node using the **Ekom Warehouse Editor** datatype. Visibility controls storefront display only; hidden warehouses can still receive balance updates. Warehouse balances are scoped by store alias, warehouse key, and a trimmed, case-insensitive SKU. All storefront reads use an in-memory snapshot loaded during Ekom cache initialization and manual cache refreshes.
-
-Products and individual variants expose **Warehouse Stock** directly below **Stock Buffer**. These balances are persisted when the document is saved, using the same content-saving event flow as ordinary stock. Save a SKU before editing warehouse balances.
-
-Use `Ekom.API.Warehouse` for storefront and integration access:
-
-```csharp
-var warehouses = await Warehouse.Instance.GetWarehousesAsync("Store", ct);
-var balances = await Warehouse.Instance.GetAsync("Store", ["SKU-1", "SKU-2"], ct);
-var levels = await Warehouse.Instance.GetForSkuAsync("Store", "SKU-1", ct);
-
-await Warehouse.Instance.SetAsync(
-    storeAlias: "Store",
-    warehouseKey: warehouseKey,
-    sku: "SKU-1",
-    balance: 8m,
-    ct: ct);
-
-await Warehouse.Instance.ClearAsync("Store", warehouseKey, "SKU-1", ct);
-
-var result = await Warehouse.Instance.UpdateAsync([
-    new WarehouseStockMutationRequest
-    {
-        StoreAlias = "Store",
-        WarehouseKey = warehouseKey,
-        Sku = "SKU-1",
-        Balance = 12m,
-    },
-    new WarehouseStockMutationRequest
-    {
-        StoreAlias = "Store",
-        WarehouseKey = secondaryWarehouseKey,
-        Sku = "SKU-1",
-        Operation = WarehouseStockMutationOperation.Clear,
-    },
-], ct);
-```
-
-Sets whose balance is already cached are not written again and preserve their `UpdateDate`. Batch updates return inserted, updated, cleared, unchanged, and failed entries; validation and persistence failures are isolated per entry.
-
-Warehouse balances can also be imported through `ImportProduct.WarehouseStock` and `ImportVariant.WarehouseStock`. Set `Balance` to update an entry or `Clear` to `true` to remove it. Omitted entries are unchanged. Changing a SKU does not move balances to the new SKU.
-
-### Catalog search overrides
-
-Ekom resolves catalog search through `ICatalogSearchService`. The default Umbraco implementation is `CatalogSearchService`, registered as scoped by `AddEkom(...)`.
-
-`ICatalogSearchService` is async-only and exposes three override points:
-
-- `ProductQueryAsync(...)`: product search used by product listings and `Catalog.ProductSearchAsync(...)`. Override this when an external product search provider should return matching Ekom product IDs.
-- `PublicQueryAsync(...)`: public-facing search returning `SearchResultEntity` records. Override this for autocomplete, site search, or mixed product/category result cards.
-- `InternalQueryAsync(...)`: backoffice/internal search, including the Umbraco searchable tree. Override this when internal CMS search should use a custom provider/index.
-
-To replace search completely, register your implementation after `AddEkom(...)`:
-
-```csharp
-services.AddEkom(configuration);
-services.AddScoped<ICatalogSearchService, CustomCatalogSearchService>();
-```
-
-Example implementation:
-
-```csharp
-using Ekom.Models;
-using Ekom.Services;
-
-public sealed class CustomCatalogSearchService : ICatalogSearchService
-{
-    public async Task<(IEnumerable<int> Ids, long Total)> ProductQueryAsync(
-        SearchRequest req,
-        CancellationToken ct = default)
-    {
-        var ids = await SearchProductsInExternalIndexAsync(req, ct);
-        return (ids, ids.Count());
-    }
-
-    public async Task<(IEnumerable<SearchResultEntity> Results, long Total)> PublicQueryAsync(
-        SearchRequest req,
-        CancellationToken ct = default)
-    {
-        var results = await SearchPublicContentAsync(req, ct);
-        return (results, results.Count());
-    }
-
-    public async Task<(IEnumerable<SearchResultEntity> Results, long Total)> InternalQueryAsync(
-        SearchRequest req,
-        CancellationToken ct = default)
-    {
-        var results = await SearchBackofficeContentAsync(req, ct);
-        return (results, results.Count());
-    }
-}
-```
-
-If you only need to customize part of the default Examine behavior, inherit from `CatalogSearchService` and override the relevant async method. Register the derived type for `ICatalogSearchService` after `AddEkom(...)`.
-
-### Order discount calculation API
-
-Use the order discount calculation API to quote an order-level coupon discount without creating or loading an order. The public API accepts a coupon code only; Ekom resolves the linked discount internally.
-
-```http
-POST /ekom/order-discounts/calculate
-X-Ekom-Api-Key: integration-secret
-```
-
-```json
-{
-  "couponCode": "12345",
-  "storeAlias": "Store",
-  "lines": [
-    {
-      "clientLineId": "basket-line-1",
-      "sku": "SKU-123",
-      "variantSku": "VARIANT-SKU-123",
-      "quantity": 1,
-      "pricingContext": {
-        "customerGroup": "member"
-      }
-    }
-  ]
-}
-```
-
-`variantSku`, `clientLineId` and `pricingContext` are optional. `clientLineId` is echoed back on each result line so callers can map results to their own basket lines. Configure `Ekom:OrderDiscountCalculation:ApiKey` to enable the endpoint; callers must send the same value in `X-Ekom-Api-Key`.
-
-`pricingContext` is an arbitrary string dictionary that is not interpreted by Ekom. While a line is priced, Ekom activates it as the ambient `Ekom.PricingContext` and forwards it into the pricing event args, so handlers in the site hosting Ekom can vary pricing per line:
-
-- `DiscountEvents.BeforeEvaluateDiscountsAsync` / `AfterApplicableDiscountsAsync` — `e.PricingContext` (e.g. drop discounts that do not apply to this audience)
-- `PriceCache.OnGenerationCreatedAsync` — `e.PricingContext` and nullable `e.StoreAlias` (fold relevant values into `e.Generation` so cached prices are partitioned per audience)
-
-```csharp
-discountEvents.AfterApplicableDiscountsAsync += (sender, e) =>
-{
-    var isMember = e.PricingContext.TryGetValue("customerGroup", out var group) && group == "member";
-    if (!isMember)
-    {
-        e.ApplicableDiscounts.RemoveAll(d => d.Title == "memberDiscount");
-    }
-
-    return Task.CompletedTask;
-};
-
-PriceCache.OnGenerationCreatedAsync += (e, ct) =>
-{
-    if (e.StoreAlias == "store-a" &&
-        e.PricingContext.TryGetValue("customerGroup", out var group))
-    {
-        e.Generation += $":{group}";
-    }
-
-    return ValueTask.CompletedTask;
-};
-```
-
-Keys are matched case-insensitively and `PricingContext` is never null (empty when no context is active). Code that runs outside these events can inject `OrderDiscountCalculationContextAccessor` or read `Ekom.PricingContext.Current` directly.
-
-`StoreAlias` is supplied when product or variant pricing has a store context; it is null for legacy or cross-store cache operations.
-
-### Quantity-based order discounts
-
-Order discounts can use whole-item quantities to determine which units receive the discount. Configure these fields on an `ekmOrderDiscount`:
-
-- **Quantity Discount Mode**:
-  - `None`: use normal order-discount behavior.
-  - `Threshold`: after **Required Quantity** qualifying units are present, discount every whole eligible reward unit.
-  - `Repeating`: each complete group of **Required Quantity** qualifying units unlocks **Reward Quantity** discounted units.
-- **Qualifying Items**: products or categories whose quantities count toward the requirement.
-- **Required Quantity**: the positive whole-unit activation threshold.
-- **Reward Quantity**: positive whole units unlocked per completed group in `Repeating` mode; ignored by `Threshold`.
-- **Discount Items** and **Exclude Discount Items** define the reward pool.
-
-Fractional quantities are rounded down for qualification and allocation. A line matching multiple qualifying selectors is counted once. When a repeating rule unlocks fewer units than are eligible, Ekom discounts the cheapest eligible units first; remaining units retain their normal price. If an equal or better product discount wins on a selected line, the quantity reward moves to the next eligible line. Qualifying and reward selections may overlap.
-
-Quantity rules require non-empty qualifying and discount item selections and a positive required quantity. Repeating rules also require a positive reward quantity. Invalid rules do not apply. The order discount calculation API reports each line's allocation in `discountedQuantity`.
-
-For example, for "buy 3, get 1 discounted", select `Repeating`, set **Required Quantity** to `3`, and set **Reward Quantity** to `1`.
-
-### Product discount prices
-
-Products and variants support an optional **Discount Price** property (`ekmDiscountPrice`), placed below Price and using the same **Ekom Price** datatype. It is a target selling price, not an amount off, and uses the same VAT basis as the normal price.
-
-Ekom converts a valid positive target below the normal price into a fixed-saving product discount. It competes with applicable `ekmProductDiscount` discounts and discounts added by `AfterApplicableDiscountsAsync`; product discounts do not stack. For example, a normal price of 100 and discount price of 85 loses to a 20% product discount, resulting in 80. Original prices and existing order/coupon stacking rules are preserved.
-
-- Missing, empty, zero, negative, invalid, or non-reducing values do not create a discount.
-- The native candidate is present before `AfterApplicableDiscountsAsync`, so existing customer-discount handlers need no changes and may filter it like other candidates.
-- Independently priced variants use their own discount price. A variant inheriting the parent price for a currency also inherits the parent's selected discount.
-- Existing installations receive the missing property during schema initialization. Existing property definitions are preserved; content is not populated or republished.
-
-ERP integrations can sync the property using the normal store/currency price format:
-
-```json
-{
-  "myStore": [
-    { "Currency": "en-US", "Price": 85 }
-  ]
-}
-```
-
-Use the store's configured currency identifiers. Targets in currency arrays require a matching currency; scalar targets apply only to the first configured store currency. Use the structured format for multicurrency integrations. Customer-specific event discounts still require appropriate price-cache partitioning, as described above.
-
-### Tracking and consent
-
-Ekom tracking supports order-level `Consent` and `Tracking` data for automatic GA4 and Meta purchase dispatch.
-
-Mailchimp landing parameters `mc_cid` and the supported `mc_tc=prec` value are also captured as first-touch attribution. They remain in the pre-consent session until marketing consent is granted, then move into the `EkomTracking` cookie and are persisted with the basket/order for the Mailchimp purchase integration. Withdrawing marketing consent moves cookie attribution back to the pre-consent session and clears it from unfinished orders.
-
-- `Ekom:Tracking:Enabled` turns tracking features on or off.
-- `Ekom:Tracking:CaptureEnabled` controls whether Ekom captures consent and browser tracking data from incoming requests.
-- `Ekom:Tracking:LogEventData` controls whether all outbound GA4 and Meta event payloads are logged before dispatch.
-- `Ekom:Tracking:LogPurchaseEventData` controls whether only outbound GA4 and Meta purchase payloads are logged before dispatch.
-- `Ekom:Tracking:CookieName` and `Ekom:Tracking:CookieLifetimeDays` control Ekom's own tracking cookie.
-- `Ekom:Tracking:SiteBaseUrl` is the fallback base URL when no landing URL or store-specific base URL can be resolved.
-- `Ekom:Tracking:Stores` lets you override the fallback base URL per store alias.
-- `Ekom:Tracking:Consent` defines the default consent cookie/header names and fallback values.
-- `Ekom:Tracking:Consent:Stores` lets you override consent handling per store alias.
-- Consent is resolved through a chain of `ITrackingConsentResolver` services.
-- The first resolver that returns a value wins; if none resolve, Ekom falls back to the configured fallback values.
-- CookieHub consent resolution is built in. Set the relevant consent cookie name(s) to `cookiehub` for any store that uses CookieHub.
-- `Ekom:Tracking:Ga4` configures GA4 purchase dispatching per store.
-- `Ekom:Tracking:Meta` configures Meta purchase dispatching per store.
-
-Full tracking config example:
-
-```json
-"Tracking": {
-  "Enabled": true,
-  "CaptureEnabled": true,
-  "LogEventData": false,
-  "LogPurchaseEventData": false,
-  "CookieName": "EkomTracking",
-  "CookieLifetimeDays": 30,
-  "SiteBaseUrl": "https://www.example.com",
-  "Stores": [
-    {
-      "Alias": "Store",
-      "SiteBaseUrl": "https://store.example.com"
-    }
-  ],
-  "Consent": {
-    "FallbackAnalyticsConsent": false,
-    "FallbackMarketingConsent": false,
-    "AnalyticsCookieName": "ekom_consent_analytics",
-    "AnalyticsHeaderName": "X-Ekom-Consent-Analytics",
-    "MarketingCookieName": "ekom_consent_marketing",
-    "MarketingHeaderName": "X-Ekom-Consent-Marketing",
-    "Stores": [
-      {
-        "Alias": "Store",
-        "AnalyticsCookieName": "cookiehub",
-        "MarketingCookieName": "cookiehub"
-      }
-    ]
-  },
-  "Ga4": {
-    "Enabled": true,
-    "Testing": false,
-    "UseDebugEndpoint": false,
-    "DebugMode": false,
-    "Events": {
-      "AddedToCart": false,
-      "RemovedFromCart": false,
-      "StartedCheckout": false,
-      "AddedShippingInfo": false,
-      "AddedPaymentInfo": false
-    },
-    "Dispatching": {
-      "Capacity": 1000,
-      "MaxConcurrency": 2
-    },
-    "Stores": [
-      {
-        "Alias": "Store",
-        "MeasurementId": "G-XXXXXXXXXX",
-        "ApiSecret": "your-ga4-api-secret"
-      }
-    ]
-  },
-  "Meta": {
-    "Enabled": true,
-    "Testing": false,
-    "Events": {
-      "AddedToCart": false,
-      "RemovedFromCart": false,
-      "StartedCheckout": false,
-      "AddedShippingInfo": false,
-      "AddedPaymentInfo": false
-    },
-    "Dispatching": {
-      "Capacity": 1000,
-      "MaxConcurrency": 2
-    },
-    "Stores": [
-      {
-        "Alias": "Store",
-        "PixelId": "123456789012345",
-        "AccessToken": "your-meta-access-token",
-        "TestEventCode": "TEST12345"
-      }
-    ]
-  }
-}
-```
-
-Notes:
-
-- `Ga4:Stores[*]` uses `MeasurementId` and `ApiSecret` for Measurement Protocol purchase events.
-- `Ga4:Events:AddedToCart`, `Ga4:Events:RemovedFromCart`, `Ga4:Events:StartedCheckout`, `Ga4:Events:AddedShippingInfo`, and `Ga4:Events:AddedPaymentInfo` enable `add_to_cart`, `remove_from_cart`, `begin_checkout`, `add_shipping_info`, and `add_payment_info` events. All default to `false`.
-- `Meta:Stores[*]` uses `PixelId` and `AccessToken` for Conversion API purchase events.
-- `Meta:Events:AddedToCart`, `Meta:Events:RemovedFromCart`, `Meta:Events:StartedCheckout`, `Meta:Events:AddedShippingInfo`, and `Meta:Events:AddedPaymentInfo` enable `AddToCart`, `RemoveFromCart`, `InitiateCheckout`, `AddShippingInfo`, and `AddPaymentInfo` events. All default to `false`.
-- `Ga4:Testing` sends events through the GA4 debug endpoint.
-- `Meta:Events:AddedToCart` and `Meta:Events:StartedCheckout` enable `AddToCart` and `InitiateCheckout` events. Both default to `false`.
-- `Ga4:UseDebugEndpoint` sends events through GA4's debug endpoint and enables debug-response validation.
-- `Ga4:DebugMode` adds `debug_mode: true` to GA4 event parameters.
-- `Ga4:Testing` is retained for backward compatibility. When the new GA4 settings are omitted, `Testing: true` enables both behaviors.
-- `Meta:Testing` uses `TestEventCode` when configured for the store.
-- `Dispatching:Capacity` and `Dispatching:MaxConcurrency` control the background queue used for provider dispatching.
-- Meta uses the captured landing URL first, then `Tracking:Stores[*]:SiteBaseUrl`, and finally `Tracking:SiteBaseUrl` for `event_source_url`.
-- GA4 sends VAT-exclusive list unit prices in `items[*]:price`, with per-unit discounts in `items[*]:discount`, and derives event `value` from the discounted item totals. Applied order and line coupons are sent in GA4 coupon fields. Purchase `tax` and shipping are sent separately; payment fees are excluded from the GA4 event value.
-- GA4 monetary values are rounded to the store currency's decimal precision before dispatch.
-- GA4 adds `engagement_time_msec: 1` only when analytics consent and a captured GA session ID are available.
-- GA4 maps captured UTM values to `campaign_source`, `campaign_medium`, `campaign_name`, `campaign_term`, and `campaign_content`.
-
-Default consent config example:
-
-```json
-"Tracking": {
-  "Consent": {
-    "FallbackAnalyticsConsent": false,
-    "FallbackMarketingConsent": false,
-    "AnalyticsCookieName": "ekom_consent_analytics",
-    "AnalyticsHeaderName": "X-Ekom-Consent-Analytics",
-    "MarketingCookieName": "ekom_consent_marketing",
-    "MarketingHeaderName": "X-Ekom-Consent-Marketing"
-  }
-}
-```
-
-Store-specific override example:
-
-```json
-"Tracking": {
-  "Consent": {
-    "FallbackAnalyticsConsent": false,
-    "FallbackMarketingConsent": false,
-    "Stores": [
-      {
-        "Alias": "Store",
-        "AnalyticsCookieName": "cookiehub",
-        "MarketingCookieName": "cookiehub"
-      }
-    ]
-  }
-}
-```
-
-When a store points `AnalyticsCookieName` and/or `MarketingCookieName` to `cookiehub`, Ekom automatically reads the CookieHub cookie, decodes its JSON payload, and maps CookieHub categories to `OrderConsent`. Additional notes and config examples are available in `Samples/U10/Ekom.Site/CookieHubConsentResolver.md`.
-
-### Manager access rules
-
-- A user can open the Ekom manager when they belong to `Manager:SectionAccessGroup` or to any group configured under `Manager:StoreGroupPermissions`.
-- Store access is still checked per store. A user only sees and can query stores where one of their groups matches that store's configured group list.
-- Stores missing from `Manager:StoreGroupPermissions` are denied.
-- Umbraco administrators bypass these restrictions and can access all stores.
-
-Example:
-
-```json
-"Manager": {
-  "SectionAccessGroup": "ekom",
-  "StoreGroupPermissions": {
-    "Store": ["StoreGroup"],
-    "Store2": ["Store2Group"]
-  }
-}
-```
-
-With this setup:
-
-- members of `ekom` can access the manager section
-- members of `StoreGroup` can access the manager and work only with `Store`
-- members of `Store2Group` can access the manager and work only with `Store2`
-- users without a matching group cannot access the related store
-
-### Variant App custom fields
-
-The backoffice Variant App can expose extra editable textstring properties in the variant group and variant drawers. Configure the property aliases under `Ekom:VariantApp`; labels and required validation come from the Umbraco document type property settings.
-
-```json
-"VariantApp": {
-  "VariantGroups": [ "color" ],
-  "Variants": [ "material", "size" ]
-}
-```
-
-Only Umbraco textstring properties are rendered. See [Variant App custom fields](docs/variant-app.md) for full setup notes.
-
-## Plugins
-- https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Klaviyo
-- https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Algolia
+Ekom registers itself through its Umbraco composer. A standard installation does not call `AddEkom(...)` manually.
+
+Continue with the [installation guide](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/getting-started/installation.md) and [quick start](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/getting-started/quick-start.md).
+
+## Features
+
+- Multi-store, multilingual, and multicurrency catalogs
+- Products, variants, metafields, categories, search, and imports
+- B2C and B2B baskets, orders, checkout, and order management
+- Extensible payment and shipping providers
+- Product, order, quantity, and coupon discounts
+- Primary stock, native SQL reservations, and display-only warehouse stock
+- Headless catalog, order, provider, and checkout APIs
+- GA4 and Meta tracking with consent handling
+- Algolia, Klaviyo, and Mailchimp integrations
+- Extension points for events, search, pricing, stock policies, and manager actions
 
 ## Documentation
 
-[Link to documentation](https://vettvangur.gitbook.io/ekom/)
+- [Getting started](https://github.com/Vettvangur/Ekom/tree/Ekom/docs/getting-started)
+- [Architecture](https://github.com/Vettvangur/Ekom/tree/Ekom/docs/architecture)
+- [Feature guides](https://github.com/Vettvangur/Ekom/tree/Ekom/docs/guides)
+- [API and configuration reference](https://github.com/Vettvangur/Ekom/tree/Ekom/docs/reference)
+- [Manager](https://github.com/Vettvangur/Ekom/tree/Ekom/docs/manager)
+- [Samples](https://github.com/Vettvangur/Ekom/tree/Ekom/docs/samples)
+- [Upgrading](https://github.com/Vettvangur/Ekom/tree/Ekom/docs/upgrading)
+- [Contributing](https://github.com/Vettvangur/Ekom/tree/Ekom/docs/contributing)
 
-## Contributing
+## Integrations
 
-We use squash merges and Conventional Commit style PR titles so release-please can generate release PRs.
+- [Ekom.Algolia](https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Algolia)
+- [Ekom.Klaviyo](https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Klaviyo)
+- [Ekom.Mailchimp](https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Mailchimp)
 
-If you must use merge commits, every individual commit message still has to be Conventional Commits.
+Provider packages may have their own compatibility requirements. Confirm those before upgrading Ekom or Umbraco.
 
-Example PR titles:
+## Development and releases
 
-```text
-feat: add vat rounding settings to docs
-fix: handle null payment provider in checkout
-chore: update dependencies
-```
+See [contributor setup](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/contributing/setup.md) and [build, test, and release](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/contributing/build-test-release.md).
+
+The canonical Ekom release history is in [`Ekom/CHANGELOG.md`](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/CHANGELOG.md). Pull requests use squash merges and Conventional Commit-style titles so release-please can prepare releases.
+
+## License
+
+Ekom is available under the [MIT License](https://github.com/Vettvangur/Ekom/blob/Ekom/LICENSE).

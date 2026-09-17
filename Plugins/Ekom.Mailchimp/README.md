@@ -2,7 +2,23 @@
 
 Mailchimp Marketing API integration for Ekom. It supports audience tags, subscriptions, unsubscriptions, and completed-purchase conversion tracking.
 
-`Ekom.Mailchimp` supports Umbraco 17 on .NET 10 and reusable integration services on .NET 8. Use `Ekom.Mailchimp.U18` for Umbraco 18.
+## Install
+
+Choose the package that matches the application:
+
+| Package | Target | Integration |
+| --- | --- | --- |
+| `Ekom.Mailchimp` | .NET 8 | Reusable services with `Ekom.Core`; no Umbraco event component |
+| `Ekom.Mailchimp` | .NET 10 and Umbraco 17 | Services plus the Ekom completed-checkout event component through `Ekom.U17` |
+| `Ekom.Mailchimp.U18` | .NET 10 and Umbraco 18 | Services plus the Ekom completed-checkout event component through `Ekom.U18` |
+
+```shell
+dotnet add package Ekom.Mailchimp
+# Umbraco 18:
+dotnet add package Ekom.Mailchimp.U18
+```
+
+Both packages expose the same `AddMailchimp` registration and `Ekom:Mailchimp` options. Calling `AddMailchimp` is required in every host; the Umbraco packages automatically register only the completed-checkout event component.
 
 ## Configuration
 
@@ -35,6 +51,15 @@ Mailchimp Marketing API integration for Ekom. It supports audience tags, subscri
       "Purchases": {
         "Enabled": true,
         "TrackCompletedCheckouts": true
+      },
+      "Subscriptions": {
+        "Enabled": true
+      },
+      "Dispatching": {
+        "MaxQueueSize": 1000,
+        "MaxConcurrency": 3,
+        "MaxAttempts": 4,
+        "InitialRetryDelaySeconds": 2
       }
     }
   }
@@ -65,6 +90,17 @@ Global and store-level values can be mixed. For example, each store can provide 
 
 `ServerPrefix` is inferred from the suffix of a standard Mailchimp API key, such as `us1` in `your-api-key-us1`. Set it explicitly when the API key does not contain the server prefix.
 
+`Subscriptions:Enabled` defaults to `true` and controls audience tag retrieval, subscriptions, and unsubscriptions. `Purchases:Enabled` also defaults to `true`; `Purchases:TrackCompletedCheckouts` defaults to `false`.
+
+Dispatcher settings apply to the shared bounded in-memory work queue:
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `Dispatching:MaxQueueSize` | `1000` | Maximum queued work items. New work is dropped with a warning when the queue is full. |
+| `Dispatching:MaxConcurrency` | `3` | Maximum number of work items processed concurrently. |
+| `Dispatching:MaxAttempts` | `4` | Maximum attempts for transient HTTP and network failures, including the initial request. |
+| `Dispatching:InitialRetryDelaySeconds` | `2` | Initial retry delay; subsequent retries use exponential backoff. |
+
 Use the standard ASP.NET Core configuration key format for environment variables and secrets. Array entries use zero-based indexes; for example, `Ekom__Mailchimp__Stores__0__ApiKey` sets the API key for the first configured store.
 
 Missing operational values do not prevent the application from starting. Each missing setting is logged once for the affected store, and work for that store is ignored before it reaches the queue. Configured stores are checked during startup; missing global fallback values for an unlisted alias are logged when that alias is first used. Stores are evaluated independently, and a missing `EcommerceStoreId` disables purchase tracking without disabling subscriptions. Invalid dispatcher settings remain startup errors. Duplicate or blank store aliases are also startup errors when Mailchimp and at least one feature are enabled.
@@ -93,7 +129,7 @@ builder.Services.AddMailchimp(options =>
 });
 ```
 
-The Umbraco package automatically registers the completed-checkout event component. Calling `AddMailchimp` is still required.
+The Umbraco 17 and Umbraco 18 packages automatically register the completed-checkout event component. Calling `AddMailchimp` is still required.
 
 ## Usage
 

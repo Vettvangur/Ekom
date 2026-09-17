@@ -1,8 +1,8 @@
 <h1 align="center">
 Ekom Klaviyo Plugin
- 
+
 [![Nuget](https://img.shields.io/nuget/vpre/Ekom.Klaviyo?color=ed0f0f)](https://www.nuget.org/packages/Ekom.Klaviyo/)
-[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green)](../../LICENSE)
 
 </h1>
 
@@ -10,45 +10,76 @@ Ekom Klaviyo Plugin
 
 This document describes the configuration options for the Klaviyo integration, including event tracking (orders) and catalog synchronization.
 
-The configuration is typically placed in `appsettings.json` or an environment-specific configuration file.
+## Install
+
+Choose the package that matches the Ekom/Umbraco application:
+
+| Package | Target | Ekom dependency |
+|-----|-----|-----|
+| `Ekom.Klaviyo` | .NET 8 (Ekom.U10/Umbraco 13) or .NET 10 (Umbraco 17) | `Ekom.U10` or `Ekom.U17`, selected by target framework |
+| `Ekom.Klaviyo.U18` | .NET 10 and Umbraco 18 | `Ekom.U18` |
+
+```shell
+dotnet add package Ekom.Klaviyo
+# Umbraco 18:
+dotnet add package Ekom.Klaviyo.U18
+```
+
+Register the services during application startup. This is required for both packages; the Umbraco composers register controllers and event handlers, not the service collection.
+
+```csharp
+using Ekom.Klaviyo;
+
+builder.Services.AddKlaviyo();
+```
+
+The configuration is read from `Ekom:Klaviyo` in `appsettings.json` or an environment-specific configuration file.
 
 ---
 
 ## Root Configuration
 
 ```json
-"Klaviyo": {
-  "Enabled": true,
-  "PrivateApiKey": "secret",
-  "ApiBaseUrl": "https://a.klaviyo.com",
-  "Revision": "2026-01-15",
-  "ProfileExternalIdProperty": "email",
-  "SiteBaseUrl": "https://vettvangur.is",
-  "ImageBaseUrl": "https://images.vettvangur.is",
-  "Testing": false,
-  "Stores": [],
-  "Orders": {},
-  "Subscriptions": {},
-  "Catalog": {},
-  "Tracking": {}
+{
+  "Ekom": {
+    "Klaviyo": {
+      "Enabled": true,
+      "PrivateApiKey": "secret",
+      "ApiBaseUrl": "https://a.klaviyo.com",
+      "Revision": "2026-01-15",
+      "ProfileExternalIdProperty": "email",
+      "SiteBaseUrl": "https://vettvangur.is",
+      "ImageBaseUrl": "https://images.vettvangur.is",
+      "Testing": false,
+      "Stores": [
+        {
+          "Alias": "Store"
+        }
+      ],
+      "Orders": {},
+      "Subscriptions": {},
+      "Catalog": {},
+      "Tracking": {}
+    }
+  }
 }
 ```
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `Enabled` | `bool` | Master switch. If `false`, Disable Klaviyo plugin. |
-| `PrivateApiKey` | `string` | Klaviyo **Private API Key** used for authentication. |
-| `ApiBaseUrl` | `string` | Klaviyo API base URL. Usually `https://a.klaviyo.com`. |
-| `Revision` | `string` | Klaviyo API revision header (required). |
-| `ProfileExternalIdProperty` | `string` | Default Email property used as the external ID for profiles. Other options: , `phone`, `username`, any property on customer `customerExternalId` . |
-| `SiteBaseUrl` | `string` | Public site base URL used to generate product and checkout URLs. |
-| `ImageBaseUrl` | `string` | Optional public image base URL used to generate product image URLs. Falls back to `SiteBaseUrl` when empty. |
-| `Testing` | `bool` | If `true`, enables testing mode (Events will be sent to same event but with Test at the end. "Placed Order Test"). |
-| `Stores` | `array` | Optional per-store configuration. If empty the first store will be used. |
-| `Orders` | `object` | Orders tracking configuration. |
-| `Subscriptions` | `object` | Profile subscription and list configuration. |
-| `Catalog` | `object` | Product catalog synchronization configuration. |
-| `Tracking` | `object` | Custom event tracking configuration. |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `Enabled` | `bool` | `true` | Master switch. The plugin is disabled during post-configuration if no stores or revision are configured. |
+| `PrivateApiKey` | `string` | `null` | Global Klaviyo private API key used when a store does not override it. Current post-configuration also requires this global value to keep catalog synchronization enabled when orders are enabled or catalog mode is `ApiPush`; store-only keys are not sufficient for that check. |
+| `ApiBaseUrl` | `string` | `https://a.klaviyo.com` | Klaviyo API base URL. |
+| `Revision` | `string` | required | Klaviyo API revision header. |
+| `ProfileExternalIdProperty` | `string` | `email` | Customer property used as the profile external ID; for example `email`, `phone`, `username`, or a custom customer property. |
+| `SiteBaseUrl` | `string` | required | Public site base URL used to generate product URLs. |
+| `ImageBaseUrl` | `string` | `null` | Optional public image base URL. Falls back to `SiteBaseUrl` when empty. |
+| `Testing` | `bool` | `false` | Appends ` Test` to generated event names, for example `Placed Order Test`. |
+| `Stores` | `array` | `[]` | Per-store configuration. At least one store is required; the first is the feed default when `storeAlias` is omitted. |
+| `Orders` | `object` | see below | Order event configuration. |
+| `Subscriptions` | `object` | see below | Profile subscription and list configuration. |
+| `Catalog` | `object` | see below | Product catalog synchronization configuration. |
+| `Tracking` | `object` | see below | Custom event tracking configuration. |
 
 
 ## Stores
@@ -56,18 +87,20 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
 ```json
 "Stores": [
   {
-    "StoreAlias": "Store",
-    // "PrivateApiKey": "xxx",
-    // "ListId": "LIST_ID"
+    "Alias": "Store",
+    "PrivateApiKey": "store-specific-key",
+    "ListId": "LIST_ID",
+    "CheckoutUrl": "https://example.com/checkout"
   }
 ]
 ```
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `StoreAlias` | `string` | Store identifier (must match Ekom store alias). |
-| `PrivateApiKey` | `string` | Optional API key override for this store. |
-| `ListId` | `string` | Optional list ID override for this store. |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `Alias` | `string` | required | Store identifier; must match an Ekom store alias. |
+| `PrivateApiKey` | `string` | `null` | API key override for this store. |
+| `ListId` | `string` | `null` | Subscription list ID override for this store. |
+| `CheckoutUrl` | `string` | `null` | Checkout URL included in placed-order and started-checkout payloads for this store. |
 
 Use this when:
 
@@ -80,28 +113,32 @@ Use this when:
 ```json
 "Orders": {
   "Enabled": true,
-  "TrackingPlacedOrders": true,
+  "TrackingPlacedOrders": false,
   "Dispatching": {
     "MaxBatchSize": 100,
     "FlushIntervalSeconds": 2,
-    "MaxQueueSize": 10000
+    "MaxQueueSize": 10000,
+    "MaxConcurrency": 3
   }
 }
 ```
 
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `Enabled` | `bool` | Enables Klaviyo event tracking. |
-| `TrackingPlacedOrders` | `bool` | Enables automatic tracking of *Placed Order* events in Ekom Complete Checkout Event. |
-| `Dispatching` | `object` | Background dispatching settings. |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `Enabled` | `bool` | `true` | Enables Klaviyo order event tracking. |
+| `TrackingPlacedOrders` | `bool` | `false` | Enables automatic *Placed Order* tracking from the Ekom complete-checkout event. |
+| `Dispatching` | `object` | see below | Background dispatching settings. |
 
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `MaxBatchSize` | `int` | Maximum number of queued events processed per dispatch cycle. |
-| `FlushIntervalSeconds` | `int` | Interval in seconds between dispatcher flushes. |
-| `MaxQueueSize` | `int` | Maximum number of queued events before backpressure applies. |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `MaxBatchSize` | `int` | `100` | Maximum number of queued events processed per dispatch cycle. |
+| `FlushIntervalSeconds` | `int` | `2` | Interval in seconds between dispatcher flushes. |
+| `MaxQueueSize` | `int` | `10000` | Maximum number of queued events before backpressure applies. |
+| `MaxConcurrency` | `int` | `3` | Maximum concurrent sends for a dispatcher. |
+
+The same dispatcher defaults apply independently under `Orders`, `Subscriptions`, `Catalog`, and `Tracking`.
 
 
 ## Subscriptions
@@ -113,16 +150,17 @@ Use this when:
   "Dispatching": {
     "MaxBatchSize": 100,
     "FlushIntervalSeconds": 2,
-    "MaxQueueSize": 10000
+    "MaxQueueSize": 10000,
+    "MaxConcurrency": 3
   }
 }
 ```
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `Enabled` | `bool` | Enables profile upsert and list add operations. |
-| `DefaultListId` | `string` | Optional global list ID used when no store list is set. |
-| `Dispatching` | `object` | Background dispatching settings. |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `Enabled` | `bool` | `true` | Enables profile upsert and subscription operations. |
+| `DefaultListId` | `string` | `null` | Global list ID used when no explicit or store list is set. |
+| `Dispatching` | `object` | see dispatcher defaults above | Background dispatching settings. |
 
 List resolution precedence:
 
@@ -139,29 +177,36 @@ If none are set, profiles are not added to a list.
 "Catalog": {
   "Enabled": true,
   "ShowPrice": true,
-  "ShowInventory": true,
+  "ShowInventory": false,
   "InventoryPolicy": 2,
-  "ImageCrop": "?width=400&height=500&rmode=BoxPad&format=webp",
+  "ImageCrop": "",
+  "Username": "feed-user",
+  "Password": "feed-password",
   "Dispatching": {
     "MaxBatchSize": 100,
     "FlushIntervalSeconds": 2,
-    "MaxQueueSize": 10000
+    "MaxQueueSize": 10000,
+    "MaxConcurrency": 3
   },
-  "SyncMode": "ApiPush",
-  "DeleteMode": "Hard"
+  "SyncMode": "FeedPull",
+  "DeleteMode": "Soft"
 }
 ```
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `Enabled` | `bool` | Enables catalog synchronization. |
-| `ShowPrice` | `bool` | Includes product prices in catalog items. |
-| `ShowInventory` | `bool` | Includes inventory levels in catalog items. |
-| `InventoryPolicy` | `int` | Inventory handling policy (implementation-specific). |
-| `ImageCrop` | `string` | Query string appended to product image URLs. |
-| `Dispatching` | `object` | Background dispatching settings. |
-| `SyncMode` | `string` | Catalog sync strategy (`ApiPush` or `FeedPull`). |
-| `DeleteMode` | `string` | Product deletion behavior (`Hard` or `Soft`). |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `Enabled` | `bool` | `true` | Enables catalog synchronization. |
+| `ShowPrice` | `bool` | `true` | Includes product prices in feed items. |
+| `ShowInventory` | `bool` | `false` | Includes inventory levels in feed items. |
+| `Username` | `string` | `null` | Optional HTTP Basic username for the feed endpoint. |
+| `Password` | `string` | `null` | Optional HTTP Basic password for the feed endpoint. Authentication is required if either value is set. |
+| `InventoryPolicy` | `int` | `2` | Inventory handling policy used by feed mapping. |
+| `ImageCrop` | `string` | `""` | Query string appended to product image URLs. |
+| `Dispatching` | `object` | see dispatcher defaults above | Background dispatching settings for API push. |
+| `SyncMode` | `string` | `FeedPull` | Catalog sync strategy (`ApiPush` or `FeedPull`). |
+| `DeleteMode` | `string` | `Soft` | API-push product deletion behavior (`Hard` or `Soft`). |
+
+With `FeedPull`, Klaviyo reads `GET /ekom/klaviyo/product/feed?storeAlias=Store&culture=en-US`. Both query parameters are optional: the first configured store and its default culture are used when omitted. The endpoint is available only when the plugin and catalog are enabled and `SyncMode` is `FeedPull`; responses are cached for 60 minutes. Configure Klaviyo feed credentials from `Catalog:Username` and `Catalog:Password` when Basic authentication is required.
 
 Feed pull uses the current Ekom product price for `price`. When a product discount is active, the original price, discount price, discount amount, and discount state are also included in `custom_attributes`.
 
@@ -200,26 +245,36 @@ KlaviyoProductFeedEvents.ProductFeedProductsLoadingAsync += async (args, ct) =>
   "Dispatching": {
     "MaxBatchSize": 100,
     "FlushIntervalSeconds": 2,
-    "MaxQueueSize": 10000
+    "MaxQueueSize": 10000,
+    "MaxConcurrency": 3
   }
 }
 ```
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `Enabled` | `bool` | Enables custom event tracking. |
-| `Search` | `bool` | Enables *Search* tracking. |
-| `AddedToCart` | `bool` | Enables *Added to Cart* tracking. |
-| `ViewedCategory` | `bool` | Enables *Viewed Category* tracking. |
-| `ViewedProduct` | `bool` | Enables *Viewed Product* tracking. |
-| `ActiveOnSite` | `bool` | Enables *Active on Site* tracking. |
-| `StartedCheckout` | `bool` | Enables *Started Checkout* tracking. |
-| `Dispatching` | `object` | Background dispatching settings. |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `Enabled` | `bool` | `true` | Enables custom event tracking. |
+| `Search` | `bool` | `false` | Enables *Search* tracking. |
+| `AddedToCart` | `bool` | `false` | Enables *Added to Cart* tracking. |
+| `ViewedCategory` | `bool` | `false` | Enables *Viewed Category* tracking. |
+| `ViewedProduct` | `bool` | `false` | Enables *Viewed Product* tracking. |
+| `ActiveOnSite` | `bool` | `false` | Enables *Active on Site* tracking. |
+| `StartedCheckout` | `bool` | `false` | Enables *Started Checkout* tracking. |
+| `Dispatching` | `object` | see dispatcher defaults above | Background dispatching settings. |
+
+## Public services
+
+`AddKlaviyo` registers these scoped entry points:
+
+- `IKlaviyoProfilesService` upserts profiles, subscribes or unsubscribes consent, and looks profiles and list memberships up by ID, email, or phone number.
+- `IKlaviyoTrackingService` queues the supported tracking events when their individual switches are enabled.
+- `IKlaviyoOrderService` queues placed orders. Its fulfilled, cancelled, and refunded methods are currently present on the interface but are not implemented.
+- `IKlaviyoEventService` sends project-specific or raw events directly and only requires the root `Enabled` switch.
 
 
 ## Generic Events
 
-Use `IKlaviyoEventService` to send project-specific events that are not built into the package. Generic events require a store alias and only depend on the global `Klaviyo:Enabled` setting; they do not require `Tracking:Enabled` to be enabled.
+Use `IKlaviyoEventService` to send project-specific events that are not built into the package. Generic events require a store alias and only depend on the global `Ekom:Klaviyo:Enabled` setting; they do not require `Tracking:Enabled` to be enabled.
 
 ```csharp
 using Ekom.Klaviyo.Models.Events;
@@ -406,30 +461,41 @@ public sealed class ConsentAuditEnricher : IKlaviyoProfilesEnricher
 ## Typical Production Setup
 
 ```json
-"Klaviyo": {
-  "Enabled": true,
-  "PrivateApiKey": "<secure-secret>",
-  "ApiBaseUrl": "https://a.klaviyo.com",
-  "Revision": "2023-10-15",
-  "SiteBaseUrl": "https://example.com",
-  "ImageBaseUrl": "https://images.example.com",
-  "Orders": {
-    "Enabled": true,
-    "TrackingPlacedOrders": true,
-    "Dispatching": {
-      "MaxBatchSize": 100,
-      "FlushIntervalSeconds": 2,
-      "MaxQueueSize": 10000
+{
+  "Ekom": {
+    "Klaviyo": {
+      "Enabled": true,
+      "PrivateApiKey": "<secure-secret>",
+      "ApiBaseUrl": "https://a.klaviyo.com",
+      "Revision": "2026-01-15",
+      "SiteBaseUrl": "https://example.com",
+      "ImageBaseUrl": "https://images.example.com",
+      "Stores": [
+        {
+          "Alias": "Store",
+          "CheckoutUrl": "https://example.com/checkout"
+        }
+      ],
+      "Orders": {
+        "Enabled": true,
+        "TrackingPlacedOrders": true,
+        "Dispatching": {
+          "MaxBatchSize": 100,
+          "FlushIntervalSeconds": 2,
+          "MaxQueueSize": 10000,
+          "MaxConcurrency": 3
+        }
+      },
+      "Catalog": {
+        "Enabled": true,
+        "ShowPrice": true,
+        "ShowInventory": false,
+        "SyncMode": "ApiPush",
+        "DeleteMode": "Soft"
       }
-    },
-  "Catalog": {
-    "Enabled": true,
-    "ShowPrice": true,
-    "ShowInventory": true,
-    "SyncMode": "ApiPush",
-    "DeleteMode": "Hard"
+    }
   }
 }
 ```
 
-[Link to documentation](https://vettvangur.gitbook.io/ekom/)
+See the [Ekom documentation](../../docs/README.md) and [Ekom product website](https://www.ekomcommerce.com/) for core platform guidance.

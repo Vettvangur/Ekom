@@ -4,18 +4,18 @@ This file orients coding agents working in this repository.
 
 ## Scope
 - Repo root: `D:\Ekom\Ekom`
-- Primary plugin: `Plugins/Ekom.Klaviyo`
+- Plugins: `Plugins/Ekom.Algolia`, `Plugins/Ekom.Klaviyo`, and `Plugins/Ekom.Mailchimp`
 - Tests live in: `Ekom/Tests/Ekom.Tests`
 - Solutions: `Ekom Build.sln`, `Ekom Site.sln`
 
 ## Build / Lint / Test
 - Restore: `dotnet restore "Ekom Build.sln"`
-- Build all: `dotnet build "Ekom Build.sln"`
+- Build the build solution: `dotnet build "Ekom Build.sln"`
 - Build site solution: `dotnet build "Ekom Site.sln"`
 - Build plugin only: `dotnet build "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj"`
 - Pack plugin: `dotnet pack "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj"`
 - Tests (all): `dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj"`
-- Tests via solution: `dotnet test "Ekom Build.sln"`
+- Tests via site solution: `dotnet test "Ekom Site.sln"`
 - Single test by name: `dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj" --filter "FullyQualifiedName~PriceTests"`
 - Single test by class+method: `dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj" --filter "FullyQualifiedName=Ekom.Tests.Tests.PriceTests.Can_Calculate"`
 - Run one trait (if used): `dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj" --filter "Category=Unit"`
@@ -23,10 +23,11 @@ This file orients coding agents working in this repository.
 - Format: no formatter configured; respect `.editorconfig`
 
 ## Dependencies / Restore Notes
-- .NET SDK: net8.0 (projects target net8.0).
-- Plugin uses lock file; keep `Plugins/Ekom.Klaviyo/packages.lock.json`.
-- `Plugins/Ekom.Klaviyo/Directory.Build.props` and `Ekom/Directory.Build.props` set `UseProjectReferences`.
-- When `UseProjectReferences=true`, plugin references `Ekom/Ekom.Umbraco/Ekom.U10/Ekom.U10.csproj`; otherwise uses NuGet.
+- SDKs: .NET 8 and .NET 10; target frameworks vary by Umbraco/package line.
+- Node.js/npm are required to build the U17 and U18 web-assets projects.
+- Klaviyo uses a lock file; keep `Plugins/Ekom.Klaviyo/packages.lock.json`.
+- Plugin and Ekom `Directory.Build.props` files set `UseProjectReferences`.
+- With `UseProjectReferences=true`, plugin targets reference the matching local Ekom project: U10 or Core on .NET 8, U17 on .NET 10, and U18 from each plugin's U18 project. Otherwise they use NuGet packages.
 
 ## Repo-Specific Rules (Cursor/Copilot)
 - No `.cursor/rules/`, `.cursorrules`, or `.github/copilot-instructions.md` found.
@@ -145,6 +146,6 @@ dotnet pack "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj"
 ## Notes
 - If adding new projects, update solutions and lock files as needed.
 - Keep API revisions and base URLs configurable via options.
-- This repo supports Umbraco 10+; avoid older APIs.
+- This repo supports Umbraco 13, 17, and 18. `Ekom.U10` is the retained package name for Umbraco 13.
 - For local dev with plugin, confirm UseProjectReferences value.
 - Update this file when build/test conventions change.
