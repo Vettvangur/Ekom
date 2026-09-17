@@ -12,6 +12,7 @@
 * **algolia:** support per-store searchable attributes for product indexes and standard replicas.
 * **algolia:** support indexing products through Algolia Collections transformations per store.
 * **algolia:** allow complete indexing configuration per store with backward-compatible global fallback.
+* **algolia:** configure custom ranking for product, category, and content indexes.
 
 ### Bug Fixes
 
@@ -19,6 +20,13 @@
 * **algolia:** fall back to Search API indexing when an index has no Collections task.
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
+
+## [0.2.60](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.59...Ekom.Algolia-v0.2.60) (2026-09-17)
+
+
+### Features
+
+* **algolia:** configure custom ranking ([#897](https://github.com/Vettvangur/Ekom/issues/897)) ([f1661f1](https://github.com/Vettvangur/Ekom/commit/f1661f1d77229a5cdd8545999372c73e5e854792))
 
 ## [0.2.59](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.58...Ekom.Algolia-v0.2.59) (2026-09-16)
 

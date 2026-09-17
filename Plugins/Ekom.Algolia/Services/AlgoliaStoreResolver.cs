@@ -70,6 +70,8 @@ internal sealed class AlgoliaStoreResolver
             Variants = storeIndexing.Variants,
             BatchSize = storeIndexing.BatchSize,
             ProductProperties = storeIndexing.ProductProperties,
+            ProductCustomRanking = storeIndexing.ProductCustomRanking,
+            CategoryCustomRanking = storeIndexing.CategoryCustomRanking,
             AttributesForFaceting = storeIndexing.AttributesForFaceting,
             FacetAttributes = storeIndexing.FacetAttributes,
             VariantFacetAttributes = storeIndexing.VariantFacetAttributes,

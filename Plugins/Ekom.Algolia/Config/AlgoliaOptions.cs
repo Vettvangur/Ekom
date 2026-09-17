@@ -48,6 +48,8 @@ public sealed class AlgoliaIndexingOptions
     public int BatchSize { get; set; } = 1000;
 
     public IReadOnlyCollection<string> ProductProperties { get; init; } = [];
+    public IReadOnlyCollection<string> ProductCustomRanking { get; init; } = [];
+    public IReadOnlyCollection<string> CategoryCustomRanking { get; init; } = [];
     public IReadOnlyCollection<string> AttributesForFaceting { get; init; } = [];
     public IReadOnlyCollection<string> FacetAttributes { get; init; } = [];
     public Dictionary<string, string> VariantFacetAttributes { get; init; } = new(StringComparer.OrdinalIgnoreCase);
@@ -81,6 +83,7 @@ public enum AlgoliaOversizedRecordBehavior
 public sealed class AlgoliaContentIndexOptions
 {
     public required string IndexName { get; set; }
+    public IReadOnlyCollection<string> CustomRanking { get; init; } = [];
     public IReadOnlyCollection<AlgoliaContentTypeOptions> ContentTypes { get; init; } = [];
 }
 
@@ -167,6 +170,8 @@ public sealed class AlgoliaStoreIndexingOptions
     public bool Variants { get; set; }
     public int BatchSize { get; set; } = 1000;
     public IReadOnlyCollection<string> ProductProperties { get; init; } = [];
+    public IReadOnlyCollection<string> ProductCustomRanking { get; init; } = [];
+    public IReadOnlyCollection<string> CategoryCustomRanking { get; init; } = [];
     public IReadOnlyCollection<string> AttributesForFaceting { get; init; } = [];
     public IReadOnlyCollection<string> FacetAttributes { get; init; } = [];
     public Dictionary<string, string> VariantFacetAttributes { get; init; } = new(StringComparer.OrdinalIgnoreCase);
