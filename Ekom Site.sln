@@ -56,6 +56,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Algolia.U18", "Plugins
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Klaviyo.U18", "Plugins\Ekom.Klaviyo\U18\Ekom.Klaviyo.U18.csproj", "{DA8BFCB0-44D2-4732-BBA2-5CB974348A36}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Mailchimp", "Plugins\Ekom.Mailchimp\Ekom.Mailchimp.csproj", "{FC802CF9-DA97-4091-BCE1-B07F0BC17EA0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Mailchimp.Tests", "Plugins\Ekom.Mailchimp.Tests\Ekom.Mailchimp.Tests.csproj", "{D9800724-EC82-4A6D-B776-6FB38EFE4E37}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -128,6 +132,14 @@ Global
 		{DA8BFCB0-44D2-4732-BBA2-5CB974348A36}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA8BFCB0-44D2-4732-BBA2-5CB974348A36}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA8BFCB0-44D2-4732-BBA2-5CB974348A36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC802CF9-DA97-4091-BCE1-B07F0BC17EA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC802CF9-DA97-4091-BCE1-B07F0BC17EA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC802CF9-DA97-4091-BCE1-B07F0BC17EA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC802CF9-DA97-4091-BCE1-B07F0BC17EA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9800724-EC82-4A6D-B776-6FB38EFE4E37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9800724-EC82-4A6D-B776-6FB38EFE4E37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9800724-EC82-4A6D-B776-6FB38EFE4E37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9800724-EC82-4A6D-B776-6FB38EFE4E37}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -150,6 +162,8 @@ Global
 		{A90CE839-E690-473B-AA3B-A70C4845A77E} = {E41F0609-EAE2-42E8-B22D-7A54A36482E6}
 		{2CE377DF-B24B-405E-9CD8-9284CD7089A5} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{DA8BFCB0-44D2-4732-BBA2-5CB974348A36} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{FC802CF9-DA97-4091-BCE1-B07F0BC17EA0} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{D9800724-EC82-4A6D-B776-6FB38EFE4E37} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {411ECB7B-B382-43CA-8534-05EA8ED2F48D}

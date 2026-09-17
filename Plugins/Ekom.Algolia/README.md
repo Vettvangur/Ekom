@@ -18,7 +18,20 @@ Algolia integration plugin for Ekom (Umbraco).
 
 ## Install
 
-Register services:
+Choose the NuGet package that matches the Ekom/Umbraco application:
+
+| Package | Target | Ekom dependency |
+| --- | --- | --- |
+| `Ekom.Algolia` | .NET 8 (Ekom.U10/Umbraco 13) or .NET 10 (Umbraco 17) | `Ekom.U10` or `Ekom.U17`, selected by target framework |
+| `Ekom.Algolia.U18` | .NET 10 and Umbraco 18 | `Ekom.U18` |
+
+```shell
+dotnet add package Ekom.Algolia
+# Umbraco 18:
+dotnet add package Ekom.Algolia.U18
+```
+
+Both packages expose the same configuration and services. Register services explicitly; the Umbraco composers register notifications and Ekom event handlers, not the service collection:
 
 ```csharp
 using Ekom.Algolia;
@@ -99,6 +112,12 @@ public sealed class ProductSearchController
         "Enabled": true,
         "EnforcePublisherOnly": true,
         "BatchSize": 1000,
+        "Dispatching": {
+          "MaxBatchSize": 100,
+          "FlushIntervalSeconds": 2,
+          "MaxQueueSize": 10000,
+          "MaxConcurrency": 2
+        },
         "OversizedRecords": {
           "Behavior": "Fail",
           "MaxSizeBytes": 100000
@@ -232,7 +251,12 @@ public sealed class ProductSearchController
 | `Indexing:Dispatching:MaxQueueSize` | `int` | `10000` | Maximum in-memory queue size. |
 | `Indexing:Dispatching:MaxConcurrency` | `int` | `2` | Maximum indexing worker concurrency. |
 | `ContentIndexing:Enabled` | `bool` | `false` | Enables standard Umbraco content indexing. |
+| `ContentIndexing:EnforcePublisherOnly` | `bool` | `true` | Skips notification-driven standard content indexing on Umbraco subscriber and unknown server roles. |
 | `ContentIndexing:BatchSize` | `int` | `1000` | Batch size for content index rebuild operations. |
+| `ContentIndexing:Dispatching:MaxBatchSize` | `int` | `100` | Maximum queued content jobs processed in one worker batch. |
+| `ContentIndexing:Dispatching:FlushIntervalSeconds` | `int` | `2` | Content worker delay between queue flushes. Values below one are treated as one second. |
+| `ContentIndexing:Dispatching:MaxQueueSize` | `int` | `10000` | Maximum content indexing queue size. Values at or below zero fall back to `10000`. |
+| `ContentIndexing:Dispatching:MaxConcurrency` | `int` | `2` | Present in the shared dispatcher options but not currently used by the single-reader content worker. |
 | `ContentIndexing:OversizedRecords:Behavior` | `Fail` or `Skip` | `Fail` | Fails content indexing or skips records that exceed the configured size limit. |
 | `ContentIndexing:OversizedRecords:MaxSizeBytes` | `int` | `100000` | Maximum serialized UTF-8 size of one content record. |
 | `ContentIndexing:Indexes` | `object[]` | `[]` | Content indexes to maintain. Index names resolve as `{IndexName}.{Environment}.{Culture}`. |
@@ -454,6 +478,28 @@ services.AddSingleton<IAlgoliaProductIndexFilter, HiddenProductAlgoliaFilter>();
 
 Filters apply to full rebuilds and incremental product indexing. When a filter excludes a product during an incremental update, Ekom leaves any existing Algolia record unchanged; it is removed on the next full rebuild.
 
+### Mapping extension points
+
+The public mapper contracts under `Ekom.Algolia.Mappers` support project-specific records without changing the plugin:
+
+- `IAlgoliaProductEnricher`, `IAlgoliaCategoryEnricher`, and `IAlgoliaContentEnricher` modify mapped records. Multiple implementations run in ascending `Order`.
+- `IAlgoliaProductFieldConverter` converts configured product properties and `IAlgoliaContentPropertyValueConverter` converts configured Umbraco properties. Converters run in ascending `Order`; each converter whose `CanHandle` returns `true` receives the current value.
+- `IAlgoliaProductIndexFilter` excludes products before mapping, as shown above.
+- `IAlgoliaProductIndexMapper` and `IAlgoliaCategoryIndexMapper` are the public mapper abstractions. `AddAlgolia` registers the built-in implementations, which can be replaced in DI when the complete mapping must change.
+
+Register enrichers, converters, and filters as singletons because the indexing executors and built-in mappers are singletons:
+
+```csharp
+using Ekom.Algolia.Mappers;
+
+services.AddAlgolia();
+services.AddSingleton<IAlgoliaProductEnricher, ProductSearchEnricher>();
+services.AddSingleton<IAlgoliaCategoryEnricher, CategorySearchEnricher>();
+services.AddSingleton<IAlgoliaContentEnricher, ContentSearchEnricher>();
+services.AddSingleton<IAlgoliaProductFieldConverter, ProductFieldConverter>();
+services.AddSingleton<IAlgoliaContentPropertyValueConverter, ContentPropertyConverter>();
+```
+
 ### Indexing triggers and API keys
 
 Product and category indexing is triggered from Umbraco content notifications for `ekmProduct` and `ekmCategory`.
@@ -629,7 +675,7 @@ Other search methods target their own index types:
 
 Search cache keys include the resolved index name and serialized Algolia query payload, so SDK options such as filters, facets, page, and hits-per-page affect caching.
 
-`Search:IncludeUserToken` sends user context to Algolia. The default provider uses authenticated username first, then session ID, then request trace identifier.
+`Search:IncludeUserToken` sends user context to Algolia. The default provider reads or creates an opaque random value in the first-party `ekom_algolia_user_token` cookie; it does not derive the token from a username or other personally identifiable information.
 
 `Search:VaryCacheByUserToken` controls whether that token also affects cache keys. Leave it `false` for shared cache when results are not personalized. Set it to `true` when Algolia personalization changes result order or content per user.
 
