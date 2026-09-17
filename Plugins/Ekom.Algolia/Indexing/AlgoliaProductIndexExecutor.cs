@@ -443,11 +443,13 @@ internal sealed class AlgoliaProductIndexExecutor
             EnsureCollectionsFacet(attributesForFaceting);
 
         var searchableAttributes = BuildSearchableAttributes(store.SearchableAttributes);
+        var customRanking = AlgoliaCustomRankingSettings.Normalize(indexing.ProductCustomRanking);
         var hasLanguageSettings = HasLanguageSettings(store.LanguageSettings);
         if (!store.HasIndexingOverride
             && indexing.SortedReplicas.Count == 0
             && attributesForFaceting.Count == 0
             && searchableAttributes is null
+            && customRanking is null
             && !hasLanguageSettings)
             return;
 
@@ -465,6 +467,7 @@ internal sealed class AlgoliaProductIndexExecutor
             && replicas.Count == 0
             && attributesForFaceting.Count == 0
             && searchableAttributes is null
+            && customRanking is null
             && !hasLanguageSettings)
             return;
 
@@ -483,6 +486,7 @@ internal sealed class AlgoliaProductIndexExecutor
                 ? attributesForFaceting
                 : null,
             SearchableAttributes = searchableAttributes,
+            CustomRanking = customRanking,
         };
         ApplyLanguageSettings(primarySettings, store);
 

@@ -88,6 +88,14 @@ public sealed class ProductSearchController
         "EnableSdkLogging": false
       },
       "Indexing": {
+        "ProductCustomRanking": [
+          "desc(available)",
+          "desc(productRanking)",
+          "desc(categoryRanking)"
+        ],
+        "CategoryCustomRanking": [
+          "asc(sortOrder)"
+        ],
         "Dispatching": {
           "MaxBatchSize": 100,
           "FlushIntervalSeconds": 2,
@@ -106,6 +114,9 @@ public sealed class ProductSearchController
         "Indexes": [
           {
             "IndexName": "SearchIndex",
+            "CustomRanking": [
+              "desc(updateDateUnixSecond)"
+            ],
             "ContentTypes": [
               {
                 "Alias": "article",
@@ -160,6 +171,12 @@ public sealed class ProductSearchController
             "Categories": true,
             "Variants": false,
             "BatchSize": 1000,
+            "ProductCustomRanking": [
+              "desc(productRanking)"
+            ],
+            "CategoryCustomRanking": [
+              "asc(sortOrder)"
+            ],
             "ProductProperties": [
               "channels|array",
               "packageCount|int",
@@ -223,6 +240,8 @@ public sealed class ProductSearchController
 | `Indexing:Variants` | `bool` | `false` | Indexes product variants as separate product records so variant SKUs can be searched directly. |
 | `Indexing:BatchSize` | `int` | `1000` | Batch size for Algolia save/replace/delete operations. |
 | `Indexing:ProductProperties` | `string[]` | `[]` | Additional product properties/metafields to include in product records. Supports modifiers documented below. |
+| `Indexing:ProductCustomRanking` | `string[]` | `[]` | Ordered Algolia custom-ranking expressions applied to primary product indexes, such as `desc(productRanking)`. Omit or leave empty to preserve the setting managed in Algolia. |
+| `Indexing:CategoryCustomRanking` | `string[]` | `[]` | Ordered Algolia custom-ranking expressions applied to primary category indexes, such as `asc(sortOrder)`. Omit or leave empty to preserve the setting managed in Algolia. |
 | `Indexing:AttributesForFaceting` | `string[]` | `[]` | Algolia facet expressions to preserve on product indexes, such as `filterOnly(categoryPageId)` or `searchable(brand)`. |
 | `Indexing:FacetAttributes` | `string[]` | `[]` | Product properties/metafields to include under `attributes` and configure as facets. |
 | `Indexing:VariantFacetAttributes` | `object` | `{}` | Maps facet output names to `variant:` or `variantGroup:` property sources. |
@@ -236,6 +255,7 @@ public sealed class ProductSearchController
 | `ContentIndexing:OversizedRecords:Behavior` | `Fail` or `Skip` | `Fail` | Fails content indexing or skips records that exceed the configured size limit. |
 | `ContentIndexing:OversizedRecords:MaxSizeBytes` | `int` | `100000` | Maximum serialized UTF-8 size of one content record. |
 | `ContentIndexing:Indexes` | `object[]` | `[]` | Content indexes to maintain. Index names resolve as `{IndexName}.{Environment}.{Culture}`. |
+| `ContentIndexing:Indexes[*]:CustomRanking` | `string[]` | `[]` | Ordered Algolia custom-ranking expressions applied to each resolved primary content index. Omit or leave empty to preserve the setting managed in Algolia. |
 | `ContentIndexing:Indexes[*]:ContentTypes[*]:Alias` | `string` | required | Umbraco content type alias to include in the content index. |
 | `ContentIndexing:Indexes[*]:ContentTypes[*]:Properties` | `string[]` | `[]` | Property aliases to index. Use `|unix` or `|unixms` for numeric dates, or `|striphtml` for searchable plain text from rich-text values. |
 | `Search:Enabled` | `bool` | `true` | Enables Algolia search services. |
@@ -265,7 +285,7 @@ public sealed class ProductSearchController
 | `Stores` | `object[]` | `[]` | Store aliases supported by the plugin. Locale/currency are resolved from Ekom store data. |
 | `Stores[*]:Alias` | `string` | required | Ekom store alias. |
 | `Stores[*]:Indexing` | `object` | `null` | Complete indexing configuration for this store. When present, it replaces the global `Indexing` section except for global `Dispatching`. |
-| `Stores[*]:Indexing:*` | same as `Indexing:*` | same as global defaults | Supports `Enabled`, `Products`, `Categories`, `Variants`, `BatchSize`, product/facet fields, and sorted replicas. Omitted members use defaults rather than individual global values. |
+| `Stores[*]:Indexing:*` | same as `Indexing:*` | same as global defaults | Supports `Enabled`, `Products`, `Categories`, `Variants`, `BatchSize`, product/facet fields, custom ranking, and sorted replicas. Omitted members use defaults rather than individual global values. |
 | `Stores[*]:IncludeStock` | `bool` | `false` | Includes product stock in indexed records for this store. |
 | `Stores[*]:EnableAvailabilityUpdates` | `bool` | `false` | Partially updates indexed availability after stock changes for this store. When `IncludeStock` is enabled, also updates the indexed stock amount. |
 | `Stores[*]:SearchableAttributes` | `string[]` | `[]` | Ordered searchable attributes for this store's product indexes and standard replicas. When omitted or empty, the plugin preserves the setting managed in Algolia. |
@@ -315,7 +335,38 @@ The top-level `Indexing` section remains supported and is the fallback for every
 }
 ```
 
-`StoreA` uses its complete local section and can enable indexing even when global `Indexing:Enabled` is `false`. `StoreB` uses the global section. Store-level collections and dictionaries replace global values; an empty value means none. Dispatching is always global because all stores share the same queues and workers. `Ekom:Algolia:Enabled` remains the master switch for the entire plugin. Rebuild a store after changing settings that alter its record or index schema.
+`StoreA` uses its complete local section and can enable indexing even when global `Indexing:Enabled` is `false`. `StoreB` uses the global section. Store-level collections, dictionaries, and custom-ranking lists replace global values. Dispatching is always global because all stores share the same queues and workers. `Ekom:Algolia:Enabled` remains the master switch for the entire plugin. Rebuild a store after changing settings that alter its record or index schema.
+
+### Custom ranking
+
+Configure Algolia custom-ranking expressions in priority order. Product settings apply to every primary locale/currency index generated from the corresponding global or per-store indexing configuration. Category settings apply to each locale-specific category index. Content settings apply to every culture-specific index resolved from that content-index entry.
+
+```json
+{
+  "Indexing": {
+    "ProductCustomRanking": [
+      "desc(available)",
+      "desc(productRanking)",
+      "desc(categoryRanking)"
+    ],
+    "CategoryCustomRanking": [
+      "asc(sortOrder)"
+    ]
+  },
+  "ContentIndexing": {
+    "Indexes": [
+      {
+        "IndexName": "SearchIndex",
+        "CustomRanking": [
+          "desc(updateDateUnixSecond)"
+        ]
+      }
+    ]
+  }
+}
+```
+
+Expressions use Algolia's `asc(attribute)` or `desc(attribute)` syntax, and attribute names are case-sensitive. The plugin trims entries, removes blank values and duplicates, and preserves order. If a property is omitted, empty, or contains only whitespace, the existing Algolia setting remains unmanaged. Settings are sent only to primary indexes and aren't forwarded to replicas.
 
 ### Algolia Collections
 

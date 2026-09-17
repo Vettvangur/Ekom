@@ -38,6 +38,8 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:Search:Cache:DurationMinutes"] = "15",
                 ["Ekom:Algolia:Search:Cache:CacheEmptyResults"] = "false",
                 ["Ekom:Algolia:Indexing:AttributesForFaceting:0"] = "filterOnly(categoryPageId)",
+                ["Ekom:Algolia:Indexing:ProductCustomRanking:0"] = "desc(ProductRanking)",
+                ["Ekom:Algolia:Indexing:CategoryCustomRanking:0"] = "asc(SortOrder)",
                 ["Ekom:Algolia:Indexing:FacetAttributes:0"] = "metafield:material",
                 ["Ekom:Algolia:Indexing:VariantFacetAttributes:color"] = "variantGroup:title",
                 ["Ekom:Algolia:Indexing:VariantFacetAttributes:size"] = "variant:title",
@@ -51,6 +53,7 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:ContentIndexing:OversizedRecords:Behavior"] = "Skip",
                 ["Ekom:Algolia:ContentIndexing:OversizedRecords:MaxSizeBytes"] = "90000",
                 ["Ekom:Algolia:ContentIndexing:Indexes:0:IndexName"] = "SearchIndex",
+                ["Ekom:Algolia:ContentIndexing:Indexes:0:CustomRanking:0"] = "desc(PublishedDate)",
                 ["Ekom:Algolia:ContentIndexing:Indexes:0:ContentTypes:0:Alias"] = "article",
                 ["Ekom:Algolia:ContentIndexing:Indexes:0:ContentTypes:0:Properties:0"] = "title",
                 ["Ekom:Algolia:ContentIndexing:Indexes:0:ContentTypes:0:Properties:1"] = "publishedAt|unix"
@@ -78,6 +81,8 @@ public class AlgoliaSearchTests
         Assert.Equal(15, options.Search.Cache.DurationMinutes);
         Assert.False(options.Search.Cache.CacheEmptyResults);
         Assert.Equal(["filterOnly(categoryPageId)"], options.Indexing.AttributesForFaceting);
+        Assert.Equal(["desc(ProductRanking)"], options.Indexing.ProductCustomRanking);
+        Assert.Equal(["asc(SortOrder)"], options.Indexing.CategoryCustomRanking);
         Assert.Equal(["metafield:material"], options.Indexing.FacetAttributes);
         Assert.Equal("variantGroup:title", options.Indexing.VariantFacetAttributes["color"]);
         Assert.Equal("variant:title", options.Indexing.VariantFacetAttributes["size"]);
@@ -91,6 +96,7 @@ public class AlgoliaSearchTests
         Assert.Equal(AlgoliaOversizedRecordBehavior.Skip, options.ContentIndexing.OversizedRecords.Behavior);
         Assert.Equal(90_000, options.ContentIndexing.OversizedRecords.MaxSizeBytes);
         Assert.Equal("SearchIndex", options.ContentIndexing.Indexes.Single().IndexName);
+        Assert.Equal(["desc(PublishedDate)"], options.ContentIndexing.Indexes.Single().CustomRanking);
         Assert.Equal("article", options.ContentIndexing.Indexes.Single().ContentTypes.Single().Alias);
         Assert.Equal(["title", "publishedAt|unix"], options.ContentIndexing.Indexes.Single().ContentTypes.Single().Properties);
     }
@@ -114,6 +120,8 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:Stores:0:Indexing:Variants"] = "true",
                 ["Ekom:Algolia:Stores:0:Indexing:BatchSize"] = "250",
                 ["Ekom:Algolia:Stores:0:Indexing:ProductProperties:0"] = "storeProperty",
+                ["Ekom:Algolia:Stores:0:Indexing:ProductCustomRanking:0"] = "desc(ProductRanking)",
+                ["Ekom:Algolia:Stores:0:Indexing:CategoryCustomRanking:0"] = "asc(SortOrder)",
                 ["Ekom:Algolia:Stores:0:Indexing:SortedReplicas:0:Attribute"] = "title",
                 ["Ekom:Algolia:Stores:1:Alias"] = "OtherStore",
                 ["Ekom:Algolia:Stores:1:SearchableAttributes:0"] = "Summary",
@@ -137,6 +145,8 @@ public class AlgoliaSearchTests
         Assert.True(store.Indexing.Variants);
         Assert.Equal(250, store.Indexing.BatchSize);
         Assert.Equal(["storeProperty"], store.Indexing.ProductProperties);
+        Assert.Equal(["desc(ProductRanking)"], store.Indexing.ProductCustomRanking);
+        Assert.Equal(["asc(SortOrder)"], store.Indexing.CategoryCustomRanking);
         Assert.Equal("title", Assert.Single(store.Indexing.SortedReplicas).Attribute);
         var otherStore = options.Stores.Single(x => x.Alias == "OtherStore");
         Assert.Equal(["Summary"], otherStore.SearchableAttributes);
@@ -159,6 +169,8 @@ public class AlgoliaSearchTests
         Assert.Equal(3, options.Transformation.MaxAttempts);
         Assert.Equal(1000, options.Transformation.RetryBaseDelayMilliseconds);
         Assert.False(options.Transformation.EnableSdkLogging);
+        Assert.Empty(options.Indexing.ProductCustomRanking);
+        Assert.Empty(options.Indexing.CategoryCustomRanking);
     }
 
     [Theory]
