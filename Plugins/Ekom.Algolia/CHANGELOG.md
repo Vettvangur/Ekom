@@ -17,6 +17,7 @@
 
 ### Bug Fixes
 
+* **algolia:** classify add-to-cart and purchase Insights conversions with ecommerce event subtypes.
 * **algolia:** send ecommerce conversion object data using Algolia's per-item schema.
 * **algolia:** fall back to Search API indexing when an index has no Collections task.
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.

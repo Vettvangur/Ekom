@@ -489,7 +489,7 @@ await fetch('/ekom/order/add', {
 });
 ```
 
-The stored token is used for Ekom's add-to-cart, checkout, and purchase Insights events. Ekom sends the persisted query ID with its matching order-line object data, together with VAT-inclusive unit price, optional unit discount, quantity, and the order currency. Checkout and purchase events group up to 20 order lines per Algolia event. The Order Info tracking view shows an Algolia subsection only when this data exists.
+The stored token is used for Ekom's add-to-cart, checkout, and purchase Insights events. Add-to-cart and purchase conversions use Algolia's `addToCart` and `purchase` event subtypes so they are classified as ecommerce events. Ekom sends the persisted query ID with its matching order-line object data, together with VAT-inclusive unit price, optional unit discount, quantity, and the order currency. Checkout and purchase events group up to 20 order lines per Algolia event. The Order Info tracking view shows an Algolia subsection only when this data exists.
 
 ### Stock availability updates
 

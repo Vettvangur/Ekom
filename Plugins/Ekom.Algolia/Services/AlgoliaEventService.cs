@@ -15,6 +15,8 @@ public interface IAlgoliaEventService
 internal sealed class AlgoliaEventService : IAlgoliaEventService
 {
     private const string ProductsEntity = "products";
+    private const string AddToCartEventSubtype = "addToCart";
+    private const string PurchaseEventSubtype = "purchase";
 
     private readonly AlgoliaOptions _options;
     private readonly AlgoliaStoreResolver _storeResolver;
@@ -84,6 +86,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
         var evt = new AlgoliaInsightsEvent
         {
             EventType = "conversion",
+            EventSubtype = AddToCartEventSubtype,
             EventName = "Added To Cart",
             Index = indexName,
             UserToken = userToken,
@@ -113,7 +116,12 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             localeOverride: orderInfo.StoreInfo.Culture,
             currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
-        var events = CreateOrderConversionEvents(orderInfo, userToken, indexName, "Started Checkout");
+        var events = CreateOrderConversionEvents(
+            orderInfo,
+            userToken,
+            indexName,
+            "Started Checkout",
+            eventSubtype: null);
         if (events.Count == 0)
             return Task.CompletedTask;
 
@@ -138,7 +146,12 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             localeOverride: orderInfo.StoreInfo.Culture,
             currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
-        var events = CreateOrderConversionEvents(orderInfo, userToken, indexName, "Purchased");
+        var events = CreateOrderConversionEvents(
+            orderInfo,
+            userToken,
+            indexName,
+            "Purchased",
+            PurchaseEventSubtype);
         if (events.Count == 0)
             return Task.CompletedTask;
 
@@ -152,13 +165,15 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
         IOrderInfo orderInfo,
         string userToken,
         string indexName,
-        string eventName)
+        string eventName,
+        string? eventSubtype)
         => orderInfo.OrderLines
             .Where(orderLine => orderLine.Quantity > 0)
             .Chunk(20)
             .Select(orderLines => new AlgoliaInsightsEvent
             {
                 EventType = "conversion",
+                EventSubtype = eventSubtype,
                 EventName = eventName,
                 Index = indexName,
                 UserToken = userToken,
