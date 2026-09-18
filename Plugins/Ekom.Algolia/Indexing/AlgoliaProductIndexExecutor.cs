@@ -607,9 +607,7 @@ internal sealed class AlgoliaProductIndexExecutor
         indexSettings.RemoveStopWords = languageSettings.RemoveStopWords.HasValue
             ? new RemoveStopWords(languageSettings.RemoveStopWords.Value)
             : null;
-        indexSettings.IgnorePlurals = languageSettings.IgnorePlurals.HasValue
-            ? new IgnorePlurals(languageSettings.IgnorePlurals.Value)
-            : null;
+        indexSettings.IgnorePlurals = BuildIgnorePlurals(languageSettings, store.Alias);
     }
 
     internal static bool HasLanguageSettings(AlgoliaLanguageSettingsOptions settings)
@@ -617,6 +615,26 @@ internal sealed class AlgoliaProductIndexExecutor
             || settings.IndexLanguages.Count > 0
             || settings.RemoveStopWords.HasValue
             || settings.IgnorePlurals.HasValue;
+
+    private static IgnorePlurals? BuildIgnorePlurals(
+        AlgoliaLanguageSettingsOptions settings,
+        string storeAlias)
+    {
+        if (!settings.IgnorePlurals.HasValue)
+            return null;
+
+        if (!settings.IgnorePlurals.Value)
+            return new IgnorePlurals(false);
+
+        var languages = ParseLanguages(
+            settings.IgnorePluralsLanguages,
+            nameof(settings.IgnorePluralsLanguages),
+            storeAlias);
+
+        return languages is { Count: > 0 }
+            ? new IgnorePlurals(languages)
+            : new IgnorePlurals(true);
+    }
 
     internal static bool ShouldIndex(
         IProduct product,

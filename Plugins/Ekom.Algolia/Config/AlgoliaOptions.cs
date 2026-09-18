@@ -189,6 +189,7 @@ public sealed class AlgoliaLanguageSettingsOptions
     public IReadOnlyCollection<string> IndexLanguages { get; init; } = [];
     public bool? RemoveStopWords { get; init; }
     public bool? IgnorePlurals { get; init; }
+    public IReadOnlyCollection<string> IgnorePluralsLanguages { get; init; } = [];
 }
 
 public sealed class AlgoliaResolvedStore

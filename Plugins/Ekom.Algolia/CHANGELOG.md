@@ -13,6 +13,7 @@
 * **algolia:** support indexing products through Algolia Collections transformations per store.
 * **algolia:** allow complete indexing configuration per store with backward-compatible global fallback.
 * **algolia:** configure custom ranking for product, category, and content indexes.
+* **algolia:** support language-specific plural handling for product indexes.
 
 ### Bug Fixes
 

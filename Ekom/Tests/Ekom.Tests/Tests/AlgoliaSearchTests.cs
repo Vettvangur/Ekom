@@ -49,6 +49,7 @@ public class AlgoliaSearchTests
                 ["Ekom:Algolia:Stores:0:LanguageSettings:IndexLanguages:0"] = "is",
                 ["Ekom:Algolia:Stores:0:LanguageSettings:RemoveStopWords"] = "true",
                 ["Ekom:Algolia:Stores:0:LanguageSettings:IgnorePlurals"] = "true",
+                ["Ekom:Algolia:Stores:0:LanguageSettings:IgnorePluralsLanguages:0"] = "is",
                 ["Ekom:Algolia:ContentIndexing:Enabled"] = "true",
                 ["Ekom:Algolia:ContentIndexing:OversizedRecords:Behavior"] = "Skip",
                 ["Ekom:Algolia:ContentIndexing:OversizedRecords:MaxSizeBytes"] = "90000",
@@ -92,6 +93,7 @@ public class AlgoliaSearchTests
         Assert.Equal(["is"], store.LanguageSettings.IndexLanguages);
         Assert.True(store.LanguageSettings.RemoveStopWords);
         Assert.True(store.LanguageSettings.IgnorePlurals);
+        Assert.Equal(["is"], store.LanguageSettings.IgnorePluralsLanguages);
         Assert.True(options.ContentIndexing.Enabled);
         Assert.Equal(AlgoliaOversizedRecordBehavior.Skip, options.ContentIndexing.OversizedRecords.Behavior);
         Assert.Equal(90_000, options.ContentIndexing.OversizedRecords.MaxSizeBytes);

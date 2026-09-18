@@ -227,7 +227,8 @@ public sealed class ProductSearchController
             "QueryLanguages": ["en"],
             "IndexLanguages": ["en"],
             "RemoveStopWords": true,
-            "IgnorePlurals": true
+            "IgnorePlurals": true,
+            "IgnorePluralsLanguages": ["en"]
           }
         }
       ]
@@ -318,6 +319,7 @@ public sealed class ProductSearchController
 | `Stores[*]:LanguageSettings:IndexLanguages` | `string[]` | `[]` | ISO 639-1 languages used for language-specific indexing. |
 | `Stores[*]:LanguageSettings:RemoveStopWords` | `bool` | `null` | Enables or disables stop-word removal for this store's product indexes. |
 | `Stores[*]:LanguageSettings:IgnorePlurals` | `bool` | `null` | Enables or disables matching singular, plural, and inflected forms for this store's product indexes. |
+| `Stores[*]:LanguageSettings:IgnorePluralsLanguages` | `string[]` | `[]` | Limits plural handling to these ISO 639-1 languages when `IgnorePlurals` is `true`. |
 
 ## Usage notes
 
@@ -612,7 +614,8 @@ Configure Algolia's language processing separately for each store. These setting
             "QueryLanguages": ["is"],
             "IndexLanguages": ["is"],
             "RemoveStopWords": false,
-            "IgnorePlurals": true
+            "IgnorePlurals": true,
+            "IgnorePluralsLanguages": ["is"]
           }
         },
         {
@@ -621,7 +624,8 @@ Configure Algolia's language processing separately for each store. These setting
             "QueryLanguages": ["en"],
             "IndexLanguages": ["en"],
             "RemoveStopWords": true,
-            "IgnorePlurals": true
+            "IgnorePlurals": true,
+            "IgnorePluralsLanguages": ["en"]
           }
         }
       ]
@@ -630,7 +634,7 @@ Configure Algolia's language processing separately for each store. These setting
 }
 ```
 
-Language values are validated against Algolia's supported ISO 639-1 language codes. Omitted boolean settings preserve Algolia's defaults; explicitly setting them to `false` disables the corresponding processing. These settings don't apply to standard content or query-suggestions indexes.
+Language values are validated against Algolia's supported ISO 639-1 language codes. When `IgnorePlurals` is `true`, a non-empty `IgnorePluralsLanguages` collection limits plural handling to those languages; without that collection, Algolia applies the boolean setting normally. Omitted boolean settings preserve Algolia's defaults, even when plural languages are configured. Explicitly setting `IgnorePlurals` to `false` disables plural handling while retaining the configured language list. These settings don't apply to standard content or query-suggestions indexes.
 
 ### Oversized content records
 
