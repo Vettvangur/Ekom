@@ -69,6 +69,9 @@ internal sealed class AlgoliaInsightsClient : IAlgoliaInsightsClient
             ["objectIDs"] = new JsonArray(evt.ObjectIds.Select(o => JsonValue.Create(o)).ToArray())
         };
 
+        if (!string.IsNullOrWhiteSpace(evt.EventSubtype))
+            json["eventSubtype"] = evt.EventSubtype;
+
         if (!string.IsNullOrWhiteSpace(evt.QueryId))
             json["queryID"] = evt.QueryId;
 

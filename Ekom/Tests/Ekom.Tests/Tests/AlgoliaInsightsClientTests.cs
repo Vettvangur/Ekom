@@ -12,10 +12,10 @@ namespace Ekom.Tests.Tests;
 public class AlgoliaInsightsClientTests
 {
     [Theory]
-    [InlineData("Added To Cart")]
-    [InlineData("Started Checkout")]
-    [InlineData("Purchased")]
-    public async Task Sends_Ecommerce_Conversion_Object_Data_As_Array(string eventName)
+    [InlineData("Added To Cart", "addToCart")]
+    [InlineData("Started Checkout", null)]
+    [InlineData("Purchased", "purchase")]
+    public async Task Sends_Ecommerce_Conversion_Object_Data_As_Array(string eventName, string? eventSubtype)
     {
         using var handler = new CapturingHandler();
         using var httpClient = new HttpClient(handler)
@@ -26,6 +26,7 @@ public class AlgoliaInsightsClientTests
         var evt = new AlgoliaInsightsEvent
         {
             EventType = "conversion",
+            EventSubtype = eventSubtype,
             EventName = eventName,
             Index = "products",
             UserToken = "user-token",
@@ -56,8 +57,13 @@ public class AlgoliaInsightsClientTests
         Assert.Equal(2m, objectData[0].GetProperty("discount").GetDecimal());
         Assert.Equal(3m, objectData[0].GetProperty("quantity").GetDecimal());
         var sentEvent = document.RootElement.GetProperty("events")[0];
+        Assert.Equal("conversion", sentEvent.GetProperty("eventType").GetString());
         Assert.Equal("USD", sentEvent.GetProperty("currency").GetString());
         Assert.False(sentEvent.TryGetProperty("queryID", out _));
+        if (eventSubtype == null)
+            Assert.False(sentEvent.TryGetProperty("eventSubtype", out _));
+        else
+            Assert.Equal(eventSubtype, sentEvent.GetProperty("eventSubtype").GetString());
     }
 
     [Fact]

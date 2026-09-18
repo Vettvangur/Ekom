@@ -54,6 +54,7 @@ public class AlgoliaProductIndexExecutorTests
                 IndexLanguages = ["is"],
                 RemoveStopWords = true,
                 IgnorePlurals = true,
+                IgnorePluralsLanguages = ["is"],
             },
         };
 
@@ -72,7 +73,7 @@ public class AlgoliaProductIndexExecutorTests
         Assert.Equal([SupportedLanguage.Is], settings.QueryLanguages);
         Assert.Null(settings.IndexLanguages);
         Assert.True(settings.RemoveStopWords!.AsBool());
-        Assert.True(settings.IgnorePlurals!.AsBool());
+        Assert.Equal([SupportedLanguage.Is], settings.IgnorePlurals!.AsListSupportedLanguage());
     }
 
     [Fact]
@@ -91,6 +92,8 @@ public class AlgoliaProductIndexExecutorTests
             {
                 QueryLanguages = ["is"],
                 IndexLanguages = ["is"],
+                IgnorePlurals = true,
+                IgnorePluralsLanguages = ["is"],
             },
         };
 
@@ -108,6 +111,7 @@ public class AlgoliaProductIndexExecutorTests
         Assert.Equal(["Title", "Sku"], settings.SearchableAttributes);
         Assert.Equal([SupportedLanguage.Is], settings.QueryLanguages);
         Assert.Equal([SupportedLanguage.Is], settings.IndexLanguages);
+        Assert.Equal([SupportedLanguage.Is], settings.IgnorePlurals!.AsListSupportedLanguage());
     }
 
     [Fact]
@@ -334,6 +338,104 @@ public class AlgoliaProductIndexExecutorTests
         Assert.Equal([SupportedLanguage.Is], settings.IndexLanguages);
         Assert.True(settings.RemoveStopWords!.AsBool());
         Assert.False(settings.IgnorePlurals!.AsBool());
+    }
+
+    [Fact]
+    public void Applies_Ignore_Plurals_To_Configured_Languages()
+    {
+        var store = new AlgoliaResolvedStore
+        {
+            Alias = "Store",
+            LanguageSettings = new AlgoliaLanguageSettingsOptions
+            {
+                IgnorePlurals = true,
+                IgnorePluralsLanguages = ["is", "en"],
+            },
+        };
+        var settings = new IndexSettings();
+
+        AlgoliaProductIndexExecutor.ApplyLanguageSettings(settings, store);
+
+        Assert.Equal(
+            [SupportedLanguage.Is, SupportedLanguage.En],
+            settings.IgnorePlurals!.AsListSupportedLanguage());
+    }
+
+    [Fact]
+    public void Applies_Ignore_Plurals_Boolean_When_No_Languages_Are_Configured()
+    {
+        var store = new AlgoliaResolvedStore
+        {
+            Alias = "Store",
+            LanguageSettings = new AlgoliaLanguageSettingsOptions
+            {
+                IgnorePlurals = true,
+            },
+        };
+        var settings = new IndexSettings();
+
+        AlgoliaProductIndexExecutor.ApplyLanguageSettings(settings, store);
+
+        Assert.True(settings.IgnorePlurals!.AsBool());
+    }
+
+    [Fact]
+    public void Disabled_Ignore_Plurals_Does_Not_Apply_Configured_Languages()
+    {
+        var store = new AlgoliaResolvedStore
+        {
+            Alias = "Store",
+            LanguageSettings = new AlgoliaLanguageSettingsOptions
+            {
+                IgnorePlurals = false,
+                IgnorePluralsLanguages = ["is"],
+            },
+        };
+        var settings = new IndexSettings();
+
+        AlgoliaProductIndexExecutor.ApplyLanguageSettings(settings, store);
+
+        Assert.False(settings.IgnorePlurals!.AsBool());
+    }
+
+    [Fact]
+    public void Omits_Ignore_Plurals_When_Toggle_Is_Not_Configured()
+    {
+        var store = new AlgoliaResolvedStore
+        {
+            Alias = "Store",
+            LanguageSettings = new AlgoliaLanguageSettingsOptions
+            {
+                IgnorePluralsLanguages = ["is"],
+            },
+        };
+        var settings = new IndexSettings();
+
+        AlgoliaProductIndexExecutor.ApplyLanguageSettings(settings, store);
+
+        Assert.Null(settings.IgnorePlurals);
+        Assert.False(AlgoliaProductIndexExecutor.HasLanguageSettings(store.LanguageSettings));
+    }
+
+    [Fact]
+    public void Rejects_Unsupported_Ignore_Plurals_Language_When_Enabled()
+    {
+        var store = new AlgoliaResolvedStore
+        {
+            Alias = "Store",
+            LanguageSettings = new AlgoliaLanguageSettingsOptions
+            {
+                IgnorePlurals = true,
+                IgnorePluralsLanguages = ["invalid"],
+            },
+        };
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            AlgoliaProductIndexExecutor.ApplyLanguageSettings(new IndexSettings(), store));
+
+        Assert.Contains("invalid", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("Store", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("IgnorePluralsLanguages", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
