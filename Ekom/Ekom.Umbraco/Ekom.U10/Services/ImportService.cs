@@ -1084,7 +1084,10 @@ public class ImportService : IImportService
 
             if (!importProduct.PreserveExistingValues)
             {
-                productContent.SetProperty("summary", importProduct.Summary);
+                if (productContent.HasProperty("summary"))
+                {
+                    productContent.SetProperty("summary", importProduct.Summary);
+                }
                 productContent.SetProperty("description", importProduct.Description);
             }
 
