@@ -215,12 +215,6 @@ internal sealed class NodeService : INodeService
             return Array.Empty<UmbracoContent>();
         }
 
-        var cachedAncestors = GetCachedCatalogAncestors(item).ToList();
-        if (cachedAncestors.Count > 0)
-        {
-            return cachedAncestors;
-        }
-
         using var cref = _context.EnsureUmbracoContext();
         var node = GetNodeById(item.Id, true);
 
@@ -232,32 +226,6 @@ internal sealed class NodeService : INodeService
         ancestors.Reverse();
 
         return ancestors.Select(x => new Umbraco17Content(x)).ToList();
-    }
-
-    private IEnumerable<UmbracoContent> GetCachedCatalogAncestors(UmbracoContent item)
-    {
-        if (string.IsNullOrWhiteSpace(item.Path))
-        {
-            yield break;
-        }
-
-        foreach (var value in item.Path.Split(','))
-        {
-            if (!int.TryParse(value, out var id))
-            {
-                continue;
-            }
-
-            if (!_contentCache.TryGetById(id, out var content) || content == null)
-            {
-                continue;
-            }
-
-            if (content.IsDocumentType("ekmCategory") || content.IsDocumentType("ekmProduct"))
-            {
-                yield return content;
-            }
-        }
     }
 
     public IPublishedContent? GetNodeById(int id, bool preview = false)
