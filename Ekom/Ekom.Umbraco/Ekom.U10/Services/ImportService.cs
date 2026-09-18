@@ -522,7 +522,7 @@ public class ImportService : IImportService
             {
                 allUmbracoCategories.Add(content);
             }
-            
+
 
             var newParent = string.IsNullOrEmpty(importCategory.ParentIdentifier) ? umbracoRootContent : allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importCategory.ParentIdentifier);
 
@@ -1071,7 +1071,10 @@ public class ImportService : IImportService
                 return;
             }
 
-            productContent.SetProperty("title", importProduct.Title);
+            if (!importProduct.PreserveExistingValues || create)
+            {
+                productContent.SetProperty("title", importProduct.Title);
+            }
 
             if (importProduct.Slug != null && importProduct.Slug.Any())
             {
@@ -1088,6 +1091,7 @@ public class ImportService : IImportService
                 {
                     productContent.SetProperty("summary", importProduct.Summary);
                 }
+
                 productContent.SetProperty("description", importProduct.Description);
             }
 
