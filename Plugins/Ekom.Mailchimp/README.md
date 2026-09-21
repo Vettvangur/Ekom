@@ -1,6 +1,6 @@
 # Ekom.Mailchimp
 
-Mailchimp Marketing API integration for Ekom. It supports audience tags, subscriptions, unsubscriptions, and completed-purchase conversion tracking.
+Mailchimp integration for Ekom. It supports Marketing API audience tags, subscriptions, completed-purchase conversion tracking, and queued Mailchimp Transactional (Mandrill) messages.
 
 ## Install
 
@@ -55,6 +55,21 @@ Both packages expose the same `AddMailchimp` registration and `Ekom:Mailchimp` o
       "Subscriptions": {
         "Enabled": true
       },
+      "Transactional": {
+        "Enabled": true,
+        "ApiKey": "your-mandrill-transactional-key",
+        "DefaultFromEmail": "orders@example.com",
+        "DefaultFromName": "Example Store",
+        "DefaultReplyTo": "support@example.com",
+        "Dispatching": {
+          "MaxQueueSize": 1000,
+          "MaxConcurrency": 3,
+          "MaxAttempts": 4,
+          "InitialRetryDelaySeconds": 2,
+          "MaxMessageBytes": 9437184,
+          "MaxQueueBytes": 67108864
+        }
+      },
       "Dispatching": {
         "MaxQueueSize": 1000,
         "MaxConcurrency": 3,
@@ -66,7 +81,7 @@ Both packages expose the same `AddMailchimp` registration and `Ekom:Mailchimp` o
 }
 ```
 
-`Stores` is an array of per-store overrides. Each `Alias` is matched against the Ekom store alias case-insensitively. A store can override `ApiKey`, `ServerPrefix`, `AudienceId`, `EcommerceStoreId`, and `SiteBaseUrl`; omitted values fall back to the corresponding global value. Global credentials can be omitted when every store supplies its complete configuration.
+`Stores` is an array of per-store overrides. Each `Alias` is matched against the Ekom store alias case-insensitively. A store can override `ApiKey`, `ServerPrefix`, `AudienceId`, `EcommerceStoreId`, and `SiteBaseUrl`; omitted values fall back to the corresponding global value. Global credentials can be omitted when every store supplies its complete configuration. A nested `Transactional` object can independently override `Enabled`, `ApiKey`, `DefaultFromEmail`, `DefaultFromName`, and `DefaultReplyTo` for that store.
 
 Global and store-level values can be mixed. For example, each store can provide its own API key while sharing global audience and e-commerce store IDs. A root `ApiKey` is not required when every used store provides one:
 
@@ -92,6 +107,8 @@ Global and store-level values can be mixed. For example, each store can provide 
 
 `Subscriptions:Enabled` defaults to `true` and controls audience tag retrieval, subscriptions, and unsubscriptions. `Purchases:Enabled` also defaults to `true`; `Purchases:TrackCompletedCheckouts` defaults to `false`.
 
+`Transactional:Enabled` defaults to `false`. Its API key is a Mailchimp Transactional (Mandrill) key, not the Mailchimp Marketing API key. Activate Mailchimp Transactional and authenticate the sending domain before enabling this feature. A sender can be supplied on each message or through the configured defaults.
+
 Dispatcher settings apply to the shared bounded in-memory work queue:
 
 | Setting | Default | Description |
@@ -100,6 +117,8 @@ Dispatcher settings apply to the shared bounded in-memory work queue:
 | `Dispatching:MaxConcurrency` | `3` | Maximum number of work items processed concurrently. |
 | `Dispatching:MaxAttempts` | `4` | Maximum attempts for transient HTTP and network failures, including the initial request. |
 | `Dispatching:InitialRetryDelaySeconds` | `2` | Initial retry delay; subsequent retries use exponential backoff. |
+
+Transactional messages use a separate queue configured under `Transactional:Dispatching`. It has the same queue, concurrency, attempt, and delay defaults. `MaxMessageBytes` defaults to 9 MiB and limits the complete serialized JSON request, including Base64-encoded attachments and images, below Mandrill's 10 MB API limit. `MaxQueueBytes` defaults to 64 MiB and limits the serialized size retained by queued and in-flight messages independently of the item-count limit.
 
 Use the standard ASP.NET Core configuration key format for environment variables and secrets. Array entries use zero-based indexes; for example, `Ekom__Mailchimp__Stores__0__ApiKey` sets the API key for the first configured store.
 
@@ -309,10 +328,80 @@ builder.Services.AddMailchimp();
 builder.Services.AddScoped<IMailchimpPurchaseEnricher, FulfillmentStatusEnricher>();
 ```
 
+### Queue a transactional message
+
+Inject `IMailchimpTransactionalService` to queue raw or Mailchimp-template messages without waiting for Mandrill. The result reports whether the message was queued or skipped locally.
+
+```csharp
+using Ekom.Mailchimp.Models;
+using Ekom.Mailchimp.Services;
+
+public sealed class ReceiptService(IMailchimpTransactionalService mailchimp)
+{
+    public ValueTask<MailchimpTransactionalEnqueueResult> QueueReceiptAsync(
+        byte[] receipt,
+        CancellationToken cancellationToken)
+        => mailchimp.QueueMessageAsync(new MailchimpTransactionalMessage
+        {
+            StoreAlias = "default",
+            CorrelationId = "order-123",
+            Subject = "Your receipt",
+            Html = "<p>Thank you for your order.</p><img src=\"cid:store-logo\">",
+            Text = "Thank you for your order.",
+            Recipients =
+            [
+                new MailchimpTransactionalRecipient
+                {
+                    Email = "person@example.com",
+                    MergeVariables = new Dictionary<string, object?> { ["ORDER_NUMBER"] = "123" },
+                },
+            ],
+            Tags = ["receipt"],
+            Metadata = new Dictionary<string, object?> { ["order_id"] = "123" },
+            Attachments =
+            [
+                new MailchimpTransactionalContent
+                {
+                    Name = "receipt.pdf",
+                    ContentType = "application/pdf",
+                    Content = receipt,
+                },
+            ],
+            InlineImages =
+            [
+                new MailchimpTransactionalContent
+                {
+                    Name = "store-logo",
+                    ContentType = "image/png",
+                    Content = File.ReadAllBytes("store-logo.png"),
+                },
+            ],
+        }, cancellationToken);
+}
+```
+
+Use `QueueTemplateAsync` for a template stored in Mailchimp Transactional:
+
+```csharp
+MailchimpTransactionalEnqueueResult result = await mailchimp.QueueTemplateAsync(
+    new MailchimpTransactionalTemplateMessage
+    {
+        StoreAlias = "default",
+        CorrelationId = "order-123",
+        TemplateName = "order-confirmation",
+        Recipients = [new MailchimpTransactionalRecipient { Email = "person@example.com" }],
+        GlobalMergeVariables = new Dictionary<string, object?> { ["ORDER_NUMBER"] = "123" },
+        TemplateContent = new Dictionary<string, string> { ["heading"] = "Thank you" },
+    },
+    cancellationToken);
+```
+
+The enqueue operation performs no network I/O and uses non-blocking `TryWrite` for channel admission. Local validation, defensive copying, Base64 size calculation, and JSON size validation still run synchronously, so enqueue cost increases with message and attachment size. `Queued` means accepted by the in-memory queue, not delivered. Messages can be lost when the queue is full, the process stops, or the worker exhausts its retries. Explicit `429`/`5xx` responses and clearly pre-send connection failures are retried. Ambiguous timeouts are not retried because Mandrill has no idempotency key and a retry could send a duplicate email. Attachment and image buffers are copied before queueing and therefore consume queue memory.
+
 ### Automatic checkout tracking
 
 Automatic tracking requires `Enabled`, `Purchases:Enabled`, and `Purchases:TrackCompletedCheckouts` to be `true`. Product and variant records referenced by the order are upserted before the order. Replaying an order with the same IDs is safe because purchase tracking uses idempotent Mailchimp commerce upserts.
 
 ### Queueing and failures
 
-Service calls perform immediate guard and configuration checks before queueing; purchase payloads are also validated before queueing. They do not wait for Mailchimp to process the operation, so remote API failures occur asynchronously. The dispatcher uses a bounded in-memory queue and retries transient HTTP and network failures. When the queue is full, new work is dropped with a warning rather than blocking checkout. Remote failures are logged, including details from `MailchimpApiException`. Work still queued during process shutdown is not durable; call the relevant service method again to replay the operation safely.
+Marketing service calls perform immediate guard and configuration checks before queueing; purchase payloads are also validated before queueing. They do not wait for Mailchimp to process the operation, so remote API failures occur asynchronously. The dispatcher uses a bounded in-memory queue and retries transient HTTP and network failures. When the queue is full, new work is dropped with a warning rather than blocking checkout. Remote failures are logged, including details from `MailchimpApiException`. Work still queued during process shutdown is not durable; call the relevant service method again to replay idempotent Marketing operations safely. Transactional messages use the stricter retry behavior described above and should not be blindly replayed after an ambiguous outcome.

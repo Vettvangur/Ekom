@@ -17,8 +17,30 @@ public sealed class MailchimpHostTests
         using IServiceScope scope = host.Services.CreateScope();
 
         IMailchimpService service = scope.ServiceProvider.GetRequiredService<IMailchimpService>();
+        IMailchimpTransactionalService transactionalService = scope.ServiceProvider
+            .GetRequiredService<IMailchimpTransactionalService>();
 
         Assert.NotNull(service);
+        Assert.NotNull(transactionalService);
+    }
+
+    [Fact]
+    public async Task Host_StartsWithOnlyTransactionalConfiguration()
+    {
+        using IHost host = Host.CreateDefaultBuilder()
+            .ConfigureServices(services => services.AddMailchimp(options =>
+            {
+                options.Enabled = true;
+                options.Subscriptions.Enabled = false;
+                options.Purchases.Enabled = false;
+                options.Transactional.Enabled = true;
+                options.Transactional.ApiKey = "transactional-key";
+                options.Transactional.DefaultFromEmail = "orders@example.com";
+            }))
+            .Build();
+
+        await host.StartAsync();
+        await host.StopAsync();
     }
 
     [Fact]
