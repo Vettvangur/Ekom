@@ -4,6 +4,7 @@
 
 ### Features
 
+* **mailchimp:** add queued raw and template Mailchimp Transactional messages with attachments and inline images
 * **mailchimp:** expose cached global audience tags through `IMailchimpService`
 * **mailchimp:** automatically use consent-aware, first-touch `mc_cid` and `mc_tc` order attribution
 

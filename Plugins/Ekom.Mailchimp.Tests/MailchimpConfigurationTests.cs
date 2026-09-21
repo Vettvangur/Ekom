@@ -181,6 +181,18 @@ public sealed class MailchimpConfigurationTests
     }
 
     [Fact]
+    public void Validate_RejectsTransactionalMessageLimitAtMandrillLimit()
+    {
+        var options = new MailchimpOptions();
+        options.Transactional.Dispatching.MaxMessageBytes = 10_000_000;
+
+        ValidateOptionsResult result = new MailchimpOptionsValidator().Validate(null, options);
+
+        Assert.True(result.Failed);
+        Assert.Contains(result.Failures, x => x.Contains("MaxMessageBytes", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void TryResolve_MissingEcommerceStore_AllowsAudienceButRejectsPurchase()
     {
         var options = Options.Create(new MailchimpOptions
@@ -235,7 +247,10 @@ public sealed class MailchimpConfigurationTests
         });
         var logger = new RecordingLogger<MailchimpConfigurationResolver>();
         var resolver = new MailchimpConfigurationResolver(options, logger);
-        var service = new MailchimpConfigurationStartupService(options, resolver);
+        var transactionalResolver = new MailchimpTransactionalConfigurationResolver(
+            options,
+            NullLogger<MailchimpTransactionalConfigurationResolver>.Instance);
+        var service = new MailchimpConfigurationStartupService(options, resolver, transactionalResolver);
 
         await service.StartAsync(CancellationToken.None);
         await service.StartAsync(CancellationToken.None);
@@ -246,6 +261,98 @@ public sealed class MailchimpConfigurationTests
         Assert.Contains(logger.Errors, x => x.Contains("ServerPrefix", StringComparison.Ordinal));
         Assert.Contains(logger.Errors, x => x.Contains("AudienceId", StringComparison.Ordinal));
         Assert.Contains(logger.Errors, x => x.Contains("EcommerceStoreId", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TransactionalResolver_UsesStoreOverridesAndGlobalFallbacks()
+    {
+        var mailchimpOptions = new MailchimpOptions
+        {
+            Enabled = true,
+            Transactional = new MailchimpTransactionalOptions
+            {
+                Enabled = true,
+                ApiKey = "global-transactional-key",
+                DefaultFromEmail = "orders@example.com",
+                DefaultFromName = "Global Store",
+            },
+        };
+        mailchimpOptions.Stores.Add(new MailchimpStoreOptions
+        {
+            Alias = "is",
+            Transactional = new MailchimpStoreTransactionalOptions
+            {
+                ApiKey = "is-transactional-key",
+                DefaultFromName = "Iceland Store",
+            },
+        });
+        var resolver = new MailchimpTransactionalConfigurationResolver(
+            Options.Create(mailchimpOptions),
+            NullLogger<MailchimpTransactionalConfigurationResolver>.Instance);
+
+        bool resolved = resolver.TryResolve("IS", out MailchimpTransactionalStoreConfiguration? configuration);
+
+        Assert.True(resolved);
+        Assert.NotNull(configuration);
+        Assert.Equal("is-transactional-key", configuration.ApiKey);
+        Assert.Equal("orders@example.com", configuration.DefaultFromEmail);
+        Assert.Equal("Iceland Store", configuration.DefaultFromName);
+    }
+
+    [Fact]
+    public void TransactionalResolver_StoreCanEnableTransactionalFeature()
+    {
+        var mailchimpOptions = new MailchimpOptions { Enabled = true };
+        mailchimpOptions.Stores.Add(new MailchimpStoreOptions
+        {
+            Alias = "is",
+            Transactional = new MailchimpStoreTransactionalOptions
+            {
+                Enabled = true,
+                ApiKey = "is-transactional-key",
+            },
+        });
+        var resolver = new MailchimpTransactionalConfigurationResolver(
+            Options.Create(mailchimpOptions),
+            NullLogger<MailchimpTransactionalConfigurationResolver>.Instance);
+
+        bool resolved = resolver.TryResolve("is", out _);
+
+        Assert.True(resolved);
+    }
+
+    [Fact]
+    public void TransactionalResolver_BlankStoreValuesUseGlobalFallbacks()
+    {
+        var mailchimpOptions = new MailchimpOptions
+        {
+            Enabled = true,
+            Transactional = new MailchimpTransactionalOptions
+            {
+                Enabled = true,
+                ApiKey = "global-key",
+                DefaultFromEmail = "orders@example.com",
+            },
+        };
+        mailchimpOptions.Stores.Add(new MailchimpStoreOptions
+        {
+            Alias = "is",
+            Transactional = new MailchimpStoreTransactionalOptions
+            {
+                ApiKey = " ",
+                DefaultFromEmail = " ",
+            },
+        });
+        var resolver = new MailchimpTransactionalConfigurationResolver(
+            Options.Create(mailchimpOptions),
+            NullLogger<MailchimpTransactionalConfigurationResolver>.Instance);
+
+        bool resolved = resolver.TryResolve("is", out MailchimpTransactionalStoreConfiguration? configuration);
+
+        Assert.True(resolved);
+        Assert.NotNull(configuration);
+        Assert.Equal("global-key", configuration.ApiKey);
+        Assert.Equal("orders@example.com", configuration.DefaultFromEmail);
     }
 
     [Fact]
