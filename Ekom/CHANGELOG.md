@@ -9,6 +9,7 @@
 
 ### Features
 
+* **imports:** add per-product primary-category preservation for editor-managed product placement.
 * **checkout:** validate uncovered line discount availability with existing/recovered holds even when automatic reservation creation is disabled, including final prepayment checks; enforce configured product/variant stock buffers in legacy reservation wrappers.
 * **checkout:** add injectable `ICheckoutStockPolicy` for shared preparation/completion eligibility, with documented wholesale-only backorder integration.
 * **checkout:** support no-base legacy line overrides that immediately attach `ReserveStockAsync` holds, using SQL-validated scope-bound association, compensation of newly persisted holds, and retry preservation of prior associations.
