@@ -386,6 +386,7 @@ partial class OrderService
         var OrderStatusEventModel = new OrderStatusEventArgs()
         {
             OrderUniqueId = uniqueId,
+            OrderInfo = new OrderInfo(order),
             PreviousStatus = oldStatus,
             Status = status,
             ClearCustomerOrderReference = true
@@ -407,9 +408,10 @@ partial class OrderService
         await _orderRepository.UpdateOrderAsync(order, ct)
             .ConfigureAwait(false);
 
-        _memoryCache.Set<OrderInfo>(
+        var orderInfo = new OrderInfo(order);
+        _memoryCache.Set(
             uniqueId.ToString(),
-            new OrderInfo(order),
+            orderInfo,
             Configuration.orderInfoCacheTime);
 
         if (settings.FireOnOrderStatusChangingEvent)
@@ -417,6 +419,7 @@ partial class OrderService
             OrderEvents.OnOrderStatusChanged(this, new OrderStatusEventArgs
             {
                 OrderUniqueId = uniqueId,
+                OrderInfo = orderInfo,
                 PreviousStatus = oldStatus,
                 Status = status,
             });
@@ -424,6 +427,7 @@ partial class OrderService
             await OrderEvents.OnOrderStatusChangedAsync(this, new OrderStatusEventArgs
             {
                 OrderUniqueId = uniqueId,
+                OrderInfo = orderInfo,
                 PreviousStatus = oldStatus,
                 Status = status,
             }, ct);

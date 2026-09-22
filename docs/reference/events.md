@@ -72,6 +72,7 @@ Legacy synchronous variants exist for order updated/updating, status changing/ch
 Important mutable arguments:
 
 - `OrderStatusEventArgs.Status` can change the requested status; `ClearCustomerOrderReference` defaults to true.
+- `OrderStatusEventArgs.OrderInfo` provides the current order. The changing event receives it before persistence and the changed event receives it after persistence.
 - `AddingOrderlineEventArgs` can change settings, product, variant, quantity, action, and order.
 - Customer updating/updated arguments carry a replaceable `OrderInfo` and form dictionary.
 - `OrderSettings.FireEvents` is the master switch for mutations made through `Order`; `FireOnOrderUpdatedEvent` and `ChangeOrderSettings.FireOnOrderStatusChangingEvent` narrow it further.
@@ -100,6 +101,10 @@ Warehouse balances and discount stock do not publish this event.
 ## Tracking events
 
 `TrackingEvents.Ga4PurchasePreparingAsync` and `MetaPurchasePreparingAsync` run before purchase payload dispatch. Their arguments contain mutable `OrderInfo` and request objects, a case-insensitive `Properties` dictionary, and `Cancel`. Setting `Cancel = true` suppresses that dispatch.
+
+## Manager action events
+
+`OrderManagerEvents.ActionExecutedAsync` runs after an `IOrderManagerActionProvider` returns a successful result, including a downloadable file. Its arguments include the order, action key, backoffice user name, and execution result. It does not run for unknown actions or bad-request results. Filter by action key when handling a specific action, such as a carrier label. Handler failures fail the manager action response.
 
 ## Handler guidance
 
