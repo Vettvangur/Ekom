@@ -99,6 +99,8 @@ Ekom combines actions from all registered providers. It ignores actions with bla
 
 An action can be disabled, request confirmation, and return either a message, a bad-request message, or a downloadable file. Listing and execution are both authorized against the order's store. The current backoffice identity name is passed to the executing provider.
 
+After a successful action, `OrderManagerEvents.ActionExecutedAsync` runs with the order, action key, current backoffice user name, and execution result. Subscribe once at application startup and filter by action key to run follow-up work for a shipping-label action. Handler failures fail the action response, so handlers should be idempotent.
+
 ## Access failures
 
 If a user can open the manager but receives a forbidden response for a store or order, review [Access and permissions](access-and-permissions.md). In particular, a non-empty store permission map denies every omitted store.

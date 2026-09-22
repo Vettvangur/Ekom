@@ -1,3 +1,4 @@
+using Ekom.Events;
 using Ekom.Models;
 using Ekom.Models.Manager;
 using Microsoft.Extensions.Logging;
@@ -57,6 +58,17 @@ public sealed class OrderManagerActionService : IOrderManagerActionService
 
             if (result != null)
             {
+                if (result is not OrderManagerActionBadRequestResult)
+                {
+                    await OrderManagerEvents.OnActionExecutedAsync(this, new OrderManagerActionExecutedEventArgs
+                    {
+                        OrderInfo = orderInfo,
+                        ActionKey = actionKey,
+                        UserName = userName,
+                        Result = result
+                    }, ct).ConfigureAwait(false);
+                }
+
                 return result;
             }
         }
