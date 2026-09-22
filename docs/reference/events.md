@@ -102,6 +102,10 @@ Warehouse balances and discount stock do not publish this event.
 
 `TrackingEvents.Ga4PurchasePreparingAsync` and `MetaPurchasePreparingAsync` run before purchase payload dispatch. Their arguments contain mutable `OrderInfo` and request objects, a case-insensitive `Properties` dictionary, and `Cancel`. Setting `Cancel = true` suppresses that dispatch.
 
+## Manager action events
+
+`OrderManagerEvents.ActionExecutedAsync` runs after an `IOrderManagerActionProvider` returns a successful result, including a downloadable file. Its arguments include the order, action key, backoffice user name, and execution result. It does not run for unknown actions or bad-request results. Filter by action key when handling a specific action, such as a carrier label. Handler failures fail the manager action response.
+
 ## Handler guidance
 
 - Honor cancellation tokens in static async events.

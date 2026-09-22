@@ -68,7 +68,7 @@ Writes are dispatched through a singleton hosted dispatcher; consumers should no
 
 ### Manager actions
 
-`IOrderManagerActionService` aggregates registered `IOrderManagerActionProvider` implementations. Both contracts expose `GetActionsAsync` and `ExecuteAsync`. Register provider implementations as `IOrderManagerActionProvider`; an unknown action returns `null`. Results may be success messages, bad requests, or downloadable files.
+`IOrderManagerActionService` aggregates registered `IOrderManagerActionProvider` implementations. Both contracts expose `GetActionsAsync` and `ExecuteAsync`. Register provider implementations as `IOrderManagerActionProvider`; an unknown action returns `null`. Results may be success messages, bad requests, or downloadable files. After a successful action, `OrderManagerEvents.ActionExecutedAsync` runs with the order, action key, backoffice user name, and execution result. Subscribers can filter by action key, such as a shipping-label action.
 
 ### `ICheckoutStockPolicy`
 
