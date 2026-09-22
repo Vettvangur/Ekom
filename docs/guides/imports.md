@@ -99,6 +99,7 @@ Each imported entity has:
 | `SaveEvent` | `SavePublish` (default), `Save`, or `Unpublish`. |
 | `PreservePublishStatus` | Keeps existing publish state instead of forcing `SaveEvent`; creation still needs a defined state. |
 | `PreserveExistingValues` | Preserves existing images, description and files when corresponding imported values are null/empty. |
+| `PreservePrimaryCategory` | Keeps the physical parent category of an existing product. The first `Categories` value is used only when creating a new product. |
 | `SortOrder` | Applies Umbraco sibling sort order when supplied. |
 | `CreateDate` / `UpdateDate` | Optional content dates; omitted values preserve current dates. |
 | `AdditionalProperties` | Values written to matching Umbraco property aliases. |

@@ -319,9 +319,11 @@ public class ImportService : IImportService
         var primaryCategory = importProduct.Categories
             .Select(identifier => allUmbracoCategories.FirstOrDefault(category => category.GetValue<string>(Configuration.ImportAliasIdentifier) == identifier))
             .FirstOrDefault(category => category != null);
-        var allUmbracoProducts = primaryCategory == null
-            ? new List<IContent>()
-            : GetContentByIdentifiers(productContentType, new[] { importProduct.Identifier }, primaryCategory.Id);
+        var allUmbracoProducts = importProduct.PreservePrimaryCategory
+            ? GetContentByIdentifiers(productContentType, new[] { importProduct.Identifier })
+            : primaryCategory == null
+                ? new List<IContent>()
+                : GetContentByIdentifiers(productContentType, new[] { importProduct.Identifier }, primaryCategory.Id);
         var existingProduct = allUmbracoProducts.FirstOrDefault();
         var allEkomNodes = GetProductSyncNodes(allUmbracoCategories, existingProduct);
 
@@ -648,6 +650,7 @@ public class ImportService : IImportService
         {
             var umbracoCategoriesById = allUmbracoCategories.ToDictionary(x => x.Id);
             var umbracoCategoriesByIdentifier = BuildContentByIdentifier(allUmbracoCategories);
+            var umbracoProductsByIdentifier = BuildContentByIdentifier(allUmbracoProducts);
             var umbracoProductsByParentId = BuildChildrenByParentId(allUmbracoProducts);
             var ekomNodesByParentId = BuildChildrenByParentId(allEkomNodes);
 
@@ -709,6 +712,9 @@ public class ImportService : IImportService
                             continue;
 
                         var isInRecycleBin = recycleBinNode != null && umbracoProduct.ParentId == recycleBinNode.Id;
+
+                        if (importProduct.PreservePrimaryCategory && !isInRecycleBin)
+                            continue;
 
                         // Only read current category identifier if parent is actually a category (not recycle bin)
                         var currentCategoryIdentifier = "";
@@ -795,7 +801,17 @@ public class ImportService : IImportService
                     {
                         var umbracoChildrenContent = GetIndexedChildren(umbracoProductsByParentId, primaryCategoryContent.Id);
 
-                        var productContent = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, syncUser, out bool create);
+                        var create = false;
+                        IContent? productContent;
+                        if (importProduct.PreservePrimaryCategory
+                            && umbracoProductsByIdentifier.TryGetValue(importProduct.Identifier, out var existingProduct))
+                        {
+                            productContent = existingProduct;
+                        }
+                        else
+                        {
+                            productContent = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, syncUser, out create);
+                        }
 
                         if (productContent == null)
                         {
@@ -806,6 +822,7 @@ public class ImportService : IImportService
                         {
                             allUmbracoProducts.Add(productContent);
                             umbracoChildrenContent.Add(productContent);
+                            umbracoProductsByIdentifier.TryAdd(importProduct.Identifier, productContent);
                             allEkomNodes.Add(productContent);
                             GetIndexedChildren(ekomNodesByParentId, primaryCategoryContent.Id).Add(productContent);
                         }

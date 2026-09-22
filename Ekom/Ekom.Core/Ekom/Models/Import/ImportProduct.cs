@@ -45,6 +45,13 @@ public class ImportProduct : ImportBase
         }
     }
 
+    /// <summary>
+    /// Indicates whether the primary category of an existing product should be preserved.
+    /// When set to <c>true</c>, the first <see cref="Categories"/> value is used only
+    /// when creating a new product; existing products retain their current parent category.
+    /// </summary>
+    public bool PreservePrimaryCategory { get; set; } = false;
+
     public Dictionary<string, bool> Disabled = new Dictionary<string, bool>();
     public List<ImportVariantGroup> VariantGroups { get; set; } = new List<ImportVariantGroup>();
 
