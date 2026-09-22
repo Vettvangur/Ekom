@@ -313,7 +313,7 @@ internal sealed class AlgoliaProductIndexExecutor
 
             var stopwatch = Stopwatch.StartNew();
             var configuredWriteMode = target.Collections.Enabled ? "CollectionsPreferred" : "SearchApi";
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Algolia product index update started. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Records={RecordCount} ConfiguredWriteMode={ConfiguredWriteMode}",
                 indexName,
                 target.Alias,
@@ -338,7 +338,7 @@ internal sealed class AlgoliaProductIndexExecutor
 
                 await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
 
-                _logger.LogInformation(
+                _logger.LogDebug(
                     "Algolia product index update completed. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Records={RecordCount} ConfiguredWriteMode={ConfiguredWriteMode} DurationMilliseconds={DurationMilliseconds}",
                     indexName,
                     target.Alias,
@@ -389,7 +389,7 @@ internal sealed class AlgoliaProductIndexExecutor
             ct.ThrowIfCancellationRequested();
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
 
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Algolia product index delete started. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Products={ProductCount}",
                 indexName,
                 target.Alias,
@@ -414,7 +414,7 @@ internal sealed class AlgoliaProductIndexExecutor
                     cancellationToken: ct).ConfigureAwait(false);
             }
 
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Algolia product index delete submitted. IndexName={IndexName} Store={Store} Locale={Locale} Currency={Currency} Products={ProductCount}",
                 indexName,
                 target.Alias,

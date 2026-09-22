@@ -6,14 +6,17 @@ namespace Ekom.Mailchimp;
 internal sealed class MailchimpConfigurationStartupService : IHostedService
 {
     private readonly IMailchimpConfigurationResolver _configurationResolver;
+    private readonly IMailchimpTransactionalConfigurationResolver _transactionalConfigurationResolver;
     private readonly MailchimpOptions _options;
 
     public MailchimpConfigurationStartupService(
         IOptions<MailchimpOptions> options,
-        IMailchimpConfigurationResolver configurationResolver)
+        IMailchimpConfigurationResolver configurationResolver,
+        IMailchimpTransactionalConfigurationResolver transactionalConfigurationResolver)
     {
         _options = options.Value;
         _configurationResolver = configurationResolver;
+        _transactionalConfigurationResolver = transactionalConfigurationResolver;
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -36,6 +39,11 @@ internal sealed class MailchimpConfigurationStartupService : IHostedService
             if (_options.Purchases.Enabled)
             {
                 _configurationResolver.TryResolve(storeAlias, requireEcommerceStore: true, out _);
+            }
+
+            if (_transactionalConfigurationResolver.IsEnabled(storeAlias))
+            {
+                _transactionalConfigurationResolver.TryResolve(storeAlias, out _);
             }
         }
 

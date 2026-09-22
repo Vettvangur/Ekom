@@ -211,7 +211,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
 
             if (records.Count > 0)
             {
-                _logger.LogInformation(
+                _logger.LogDebug(
                     "Algolia category index update started. IndexName={IndexName} Store={Store} Locale={Locale} Records={RecordCount}",
                     indexName,
                     target.Alias,
@@ -226,7 +226,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
                     options: null,
                     cancellationToken: ct).ConfigureAwait(false);
 
-                _logger.LogInformation(
+                _logger.LogDebug(
                     "Algolia category index update submitted. IndexName={IndexName} Store={Store} Locale={Locale} Records={RecordCount}",
                     indexName,
                     target.Alias,
@@ -258,7 +258,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
                 indexName,
                 target.Indexing.CategoryCustomRanking,
                 ct).ConfigureAwait(false);
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Algolia category index delete started. IndexName={IndexName} Store={Store} Locale={Locale} Categories={CategoryCount}",
                 indexName,
                 target.Alias,
@@ -272,7 +272,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
                 options: null,
                 cancellationToken: ct).ConfigureAwait(false);
 
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Algolia category index delete submitted. IndexName={IndexName} Store={Store} Locale={Locale} Categories={CategoryCount}",
                 indexName,
                 target.Alias,
