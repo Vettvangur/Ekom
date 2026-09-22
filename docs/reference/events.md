@@ -72,6 +72,7 @@ Legacy synchronous variants exist for order updated/updating, status changing/ch
 Important mutable arguments:
 
 - `OrderStatusEventArgs.Status` can change the requested status; `ClearCustomerOrderReference` defaults to true.
+- `OrderStatusEventArgs.OrderInfo` provides the current order. The changing event receives it before persistence and the changed event receives it after persistence.
 - `AddingOrderlineEventArgs` can change settings, product, variant, quantity, action, and order.
 - Customer updating/updated arguments carry a replaceable `OrderInfo` and form dictionary.
 - `OrderSettings.FireEvents` is the master switch for mutations made through `Order`; `FireOnOrderUpdatedEvent` and `ChangeOrderSettings.FireOnOrderStatusChangingEvent` narrow it further.
