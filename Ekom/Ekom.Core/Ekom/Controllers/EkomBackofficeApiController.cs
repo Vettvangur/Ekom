@@ -1,12 +1,14 @@
 using Ekom.ActionFilters;
 using Ekom.Authorization;
 using Ekom.Exceptions;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
@@ -37,8 +39,10 @@ public class EkomBackofficeApiController : ControllerBase
     private readonly IServiceProvider _serviceProvider;
     private readonly IWarehouseDefinitionService _warehouseDefinitionService;
     private readonly API.Warehouse _warehouse;
+    private readonly ICacheRefreshService _cacheRefreshService;
+    private readonly ILogger<EkomBackofficeApiController> _logger;
 
-    public EkomBackofficeApiController(Configuration config, IUmbracoService umbracoService, IMetafieldService metafieldService, INodeService nodeService, IMemoryCache memoryCache, IServiceProvider serviceProvider, IWarehouseDefinitionService warehouseDefinitionService, API.Warehouse warehouse)
+    public EkomBackofficeApiController(Configuration config, IUmbracoService umbracoService, IMetafieldService metafieldService, INodeService nodeService, IMemoryCache memoryCache, IServiceProvider serviceProvider, IWarehouseDefinitionService warehouseDefinitionService, API.Warehouse warehouse, ICacheRefreshService cacheRefreshService, ILogger<EkomBackofficeApiController> logger)
     {
         _config = config;
         _umbracoService = umbracoService;
@@ -48,6 +52,8 @@ public class EkomBackofficeApiController : ControllerBase
         _serviceProvider = serviceProvider;
         _warehouseDefinitionService = warehouseDefinitionService;
         _warehouse = warehouse;
+        _cacheRefreshService = cacheRefreshService;
+        _logger = logger;
     }
 
 
@@ -200,7 +206,8 @@ public class EkomBackofficeApiController : ControllerBase
     [UmbracoUserAuthorize]
     public bool PopulateCache()
     {
-        API.Store.Instance.RefreshCache();
+        _logger.LogInformation("Manual Ekom cache rebuild triggered by backoffice user {Username}.", User.Identity?.Name ?? "unknown");
+        _cacheRefreshService.RefreshCache();
 
         return true;
     }
