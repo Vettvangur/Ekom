@@ -285,7 +285,6 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
             <div class="umb-table-cell">Order Number</div>
             <div class="umb-table-cell">Status</div>
             <div class="umb-table-cell">Name</div>
-            <div class="umb-table-cell">Store</div>
             <div class="umb-table-cell">Created</div>
             <div class="umb-table-cell">Payment</div>
           </div>
@@ -311,7 +310,6 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
           </select>
         </div>
         <div class="umb-table-cell" data-label="Name">${escapeHtml(order.customerName)}</div>
-        <div class="umb-table-cell" data-label="Store">${escapeHtml(order.storeAlias)}</div>
         <div class="umb-table-cell" data-label="Created">${escapeHtml(formatDate(order.createDate))}</div>
         <div class="umb-table-cell" data-label="Payment">${escapeHtml(order.formattedTotal)}</div>
       </div>
