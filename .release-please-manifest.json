@@ -2,6 +2,6 @@
   "Ekom": "0.2.285",
   "Plugins/Ekom.Klaviyo": "0.2.102",
   "Plugins/Ekom.Algolia": "0.2.62",
-  "Plugins/Ekom.Mailchimp": "1.5.0",
-  "Plugins/Ekom.Mailchimp/U18": "1.5.0"
+  "Plugins/Ekom.Mailchimp": "1.5.1",
+  "Plugins/Ekom.Mailchimp/U18": "1.5.1"
 }
