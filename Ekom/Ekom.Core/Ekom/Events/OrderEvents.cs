@@ -137,6 +137,7 @@ public static class OrderEvents
 public sealed class OrderStatusEventArgs : EventArgs
 {
     public Guid OrderUniqueId { get; set; }
+    public IOrderInfo? OrderInfo { get; set; }
     public OrderStatus PreviousStatus { get; set; }
     public OrderStatus Status { get; set; } // keep settable if handlers can change the status
     public bool ClearCustomerOrderReference { get; set; } = true;

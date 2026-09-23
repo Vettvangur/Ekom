@@ -467,8 +467,18 @@ export const managerStyles = `
   .ekmOrderTracking, .ekmOrderActivityLog { border: 1px solid #d8d7d9; margin: 30px 0; padding: 14px 16px; }
   .ekmOrderTracking__header { align-items: center; display: flex; justify-content: space-between; }
   .ekmOrderTracking__wrap { overflow-wrap: anywhere; word-break: break-word; }
-  .ekmOrderActivityLog__item { border-top: 1px solid #eee; padding: 12px 0; }
+  .ekmOrderActivityLog__list { border-top: 1px solid #eee; }
+  .ekmOrderActivityLog__item { border-bottom: 1px solid #eee; padding: 12px 0; }
+  .ekmOrderActivityLog__content { align-items: flex-start; display: flex; gap: 12px; }
+  .ekmOrderActivityLog__body { flex: 1; min-width: 0; }
+  .ekmOrderActivityLog__icon { align-items: center; border-radius: 50%; display: inline-flex; flex: 0 0 20px; font-size: 12px; font-weight: 700; height: 20px; justify-content: center; line-height: 1; margin-top: 1px; width: 20px; }
+  .ekmOrderActivityLog__icon--info { background: #eef3f8; color: #46607a; }
+  .ekmOrderActivityLog__icon--success { background: #edf8f0; color: #247f45; }
+  .ekmOrderActivityLog__icon--alert { background: #fff4e5; color: #ad5f00; }
   .ekmOrderActivityLog__date { color: #666; font-size: 12px; margin-bottom: 6px; }
+  .ekmOrderActivityLog__message { -webkit-box-orient: vertical; -webkit-line-clamp: 3; display: -webkit-box; line-height: 1.5; overflow: hidden; white-space: normal; word-break: break-word; }
+  .ekmOrderActivityLog__message--expanded { -webkit-line-clamp: unset; display: block; overflow: visible; }
+  .ekmOrderActivityLog__toggle { color: #1b264f; cursor: pointer; font-size: 12px; font-weight: 600; margin-top: 8px; padding: 0; text-decoration: underline; }
   .ekmCustomerInformationModal { align-items: center; background: rgba(0,0,0,.35); display: flex; inset: 0; justify-content: center; padding: 20px; position: fixed; z-index: 10001; }
   .ekmCustomerInformationModal__panel { background: #fff; border-radius: 3px; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-height: 90vh; max-width: 760px; overflow: auto; width: 100%; }
   .control-group { display: grid; gap: 5px; margin-bottom: 14px; }

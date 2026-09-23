@@ -24,6 +24,41 @@
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
+## [0.2.286](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.285...Ekom-v0.2.286) (2026-09-23)
+
+
+### Bug Fixes
+
+* **manager:** match order activity log styling ([#919](https://github.com/Vettvangur/Ekom/issues/919)) ([0f19312](https://github.com/Vettvangur/Ekom/commit/0f19312c91ea23cf24e139028870e0f861603140))
+
+## [0.2.285](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.284...Ekom-v0.2.285) (2026-09-23)
+
+
+### Bug Fixes
+
+* **cache:** log manual rebuild user ([#915](https://github.com/Vettvangur/Ekom/issues/915)) ([32e4d6d](https://github.com/Vettvangur/Ekom/commit/32e4d6d5002dba99aba70d596a3317b6f74f4f14))
+
+## [0.2.284](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.283...Ekom-v0.2.284) (2026-09-23)
+
+
+### Bug Fixes
+
+* **imports:** log progress for large syncs ([#913](https://github.com/Vettvangur/Ekom/issues/913)) ([8cd39bf](https://github.com/Vettvangur/Ekom/commit/8cd39bf84396957cecf1d823e798372b5e1f62bf))
+
+## [0.2.283](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.282...Ekom-v0.2.283) (2026-09-22)
+
+
+### Features
+
+* **events:** enrich manager and status event hooks ([#911](https://github.com/Vettvangur/Ekom/issues/911)) ([fdc19a6](https://github.com/Vettvangur/Ekom/commit/fdc19a62666da78b24ba660ad2523872c37d01ca))
+
+## [0.2.282](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.281...Ekom-v0.2.282) (2026-09-22)
+
+
+### Bug Fixes
+
+* **tracking:** handle missing session middleware ([#909](https://github.com/Vettvangur/Ekom/issues/909)) ([70736f2](https://github.com/Vettvangur/Ekom/commit/70736f23e2774eaea40058bc273eb10e83831f7c))
+
 ## [0.2.281](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.280...Ekom-v0.2.281) (2026-09-22)
 
 

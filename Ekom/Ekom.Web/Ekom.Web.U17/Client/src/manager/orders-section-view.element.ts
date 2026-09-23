@@ -47,6 +47,10 @@ const shippingFields: EditorFieldDefinition[] = [
   { key: 'shippingPhone', label: 'Phone', property: 'phone' },
 ];
 
+const activityLogPreviewCharacterLimit = 180;
+const activityLogTypeSuccess = 1;
+const activityLogTypeAlert = 2;
+
 export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private readonly api = new EkomManagerApi();
   private notificationContext?: typeof UMB_NOTIFICATION_CONTEXT.TYPE;
@@ -59,6 +63,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private selectedOrder?: OrderInfo;
   private orderLogs: OrderActivityLog[] = [];
   private orderLogsLoading = false;
+  private orderLogsError = false;
+  private activityLogExpandedIndexes = new Set<number>();
   private orderActions: OrderAction[] = [];
   private orderActionsLoading = false;
   private executingActionKey = '';
@@ -524,11 +530,51 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Loading activity...</p></div>';
     }
 
+    if (this.orderLogsError) {
+      return '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Unable to load activity log.</p></div>';
+    }
+
     if (!this.orderLogs.length) {
       return '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>No activity yet.</p></div>';
     }
 
-    return `<div class="ekmOrderActivityLog"><h4>Activity log</h4>${this.orderLogs.map(log => `<div class="ekmOrderActivityLog__item"><div class="ekmOrderActivityLog__date">${escapeHtml(formatDate(log.date))}</div><div>${escapeHtml(log.message)}</div></div>`).join('')}</div>`;
+    const activityLogs = this.orderLogs.map((log, index) => {
+      const message = log.message ?? '';
+      const isExpanded = this.activityLogExpandedIndexes.has(index);
+      const toggle = this.canExpandActivityLog(message)
+        ? `<button type="button" class="btn-reset ekmOrderActivityLog__toggle" data-action="toggle-activity-log" data-log-index="${index}">${isExpanded ? 'Show less' : 'Show more'}</button>`
+        : '';
+
+      return `<div class="ekmOrderActivityLog__item"><div class="ekmOrderActivityLog__content"><span class="ekmOrderActivityLog__icon ${this.getActivityLogTypeClass(log)}">${this.getActivityLogIcon(log)}</span><div class="ekmOrderActivityLog__body"><div class="ekmOrderActivityLog__date">${escapeHtml(formatDate(log.date))}</div><div class="ekmOrderActivityLog__message${isExpanded ? ' ekmOrderActivityLog__message--expanded' : ''}">${escapeHtml(message)}</div>${toggle}</div></div></div>`;
+    }).join('');
+
+    return `<div class="ekmOrderActivityLog"><h4>Activity log</h4><div class="ekmOrderActivityLog__list">${activityLogs}</div></div>`;
+  }
+
+  private getActivityLogIcon(log: OrderActivityLog): string {
+    switch (log.logType) {
+      case activityLogTypeSuccess:
+        return '✓';
+      case activityLogTypeAlert:
+        return '!';
+      default:
+        return 'i';
+    }
+  }
+
+  private getActivityLogTypeClass(log: OrderActivityLog): string {
+    switch (log.logType) {
+      case activityLogTypeSuccess:
+        return 'ekmOrderActivityLog__icon--success';
+      case activityLogTypeAlert:
+        return 'ekmOrderActivityLog__icon--alert';
+      default:
+        return 'ekmOrderActivityLog__icon--info';
+    }
+  }
+
+  private canExpandActivityLog(message: string): boolean {
+    return message.length > activityLogPreviewCharacterLimit;
   }
 
   private renderOrderActions(): string {
@@ -642,6 +688,17 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     if (action === 'toggle-consent') {
       this.consentExpanded = !this.consentExpanded;
+      this.renderPreservingOverlayScroll();
+      return;
+    }
+
+    if (action === 'toggle-activity-log') {
+      const index = Number(target.dataset.logIndex);
+      if (this.activityLogExpandedIndexes.has(index)) {
+        this.activityLogExpandedIndexes.delete(index);
+      } else {
+        this.activityLogExpandedIndexes.add(index);
+      }
       this.renderPreservingOverlayScroll();
       return;
     }
@@ -770,6 +827,9 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       this.overlay = 'order';
       this.trackingExpanded = false;
       this.consentExpanded = false;
+      this.orderLogs = [];
+      this.orderLogsError = false;
+      this.activityLogExpandedIndexes.clear();
       this.render();
       await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId)]);
     } catch (error) {
@@ -779,12 +839,14 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
   private async loadOrderLogs(orderId: string): Promise<void> {
     this.orderLogsLoading = true;
+    this.orderLogsError = false;
     this.render();
 
     try {
       this.orderLogs = await this.api.orderLogs(orderId);
     } catch {
       this.orderLogs = [];
+      this.orderLogsError = true;
     } finally {
       this.orderLogsLoading = false;
       this.render();

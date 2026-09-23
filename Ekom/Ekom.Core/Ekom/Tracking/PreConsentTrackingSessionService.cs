@@ -1,5 +1,6 @@
 using Ekom.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using System.Text.Json;
 
 namespace Ekom.Tracking;
@@ -11,7 +12,13 @@ public sealed class PreConsentTrackingSessionService : IPreConsentTrackingSessio
 
     public OrderTracking? Read(HttpContext httpContext)
     {
-        var value = httpContext.Session.GetString(SessionKey);
+        var session = GetSession(httpContext);
+        if (session is null)
+        {
+            return null;
+        }
+
+        var value = session.GetString(SessionKey);
         if (string.IsNullOrWhiteSpace(value))
         {
             return null;
@@ -30,14 +37,18 @@ public sealed class PreConsentTrackingSessionService : IPreConsentTrackingSessio
 
     public void WriteFirstTouch(HttpContext httpContext, OrderTracking tracking)
     {
-        if (tracking.HasData() != true || Read(httpContext) is not null)
+        var session = GetSession(httpContext);
+        if (session is null || tracking.HasData() != true || Read(httpContext) is not null)
         {
             return;
         }
 
-        httpContext.Session.SetString(SessionKey, JsonSerializer.Serialize(tracking, JsonOptions));
+        session.SetString(SessionKey, JsonSerializer.Serialize(tracking, JsonOptions));
     }
 
     public void Clear(HttpContext httpContext)
-        => httpContext.Session.Remove(SessionKey);
+        => GetSession(httpContext)?.Remove(SessionKey);
+
+    private static ISession? GetSession(HttpContext httpContext)
+        => httpContext.Features.Get<ISessionFeature>()?.Session;
 }
