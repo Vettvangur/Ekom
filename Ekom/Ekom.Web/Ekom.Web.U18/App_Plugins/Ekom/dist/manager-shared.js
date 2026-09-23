@@ -1,7 +1,7 @@
-const f = /* @__PURE__ */ new Date(), y = new Date(f.getFullYear(), 0, 1), w = {
+const h = /* @__PURE__ */ new Date(), y = new Date(h.getFullYear(), 0, 1), w = {
   filters: {
-    dateFrom: x(y),
-    dateTo: x(f),
+    dateFrom: f(y),
+    dateTo: f(h),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
@@ -164,7 +164,7 @@ function u(a) {
   const r = e.toString();
   return r ? `?${r}` : "";
 }
-function x(a) {
+function f(a) {
   const e = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
   return `${a.getFullYear()}-${e}-${r}`;
 }
@@ -200,11 +200,11 @@ function C(a, e) {
   }
   return t.length && Number(t[t.length - 1]) < n && t.push(`...${n}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
 }
-function M(a, e) {
+function L(a, e) {
   const r = URL.createObjectURL(a), t = document.createElement("a");
   t.href = r, t.download = e, document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
 }
-const T = `
+const M = `
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -257,8 +257,18 @@ const T = `
   .ekmOrderTracking, .ekmOrderActivityLog { border: 1px solid #d8d7d9; margin: 30px 0; padding: 14px 16px; }
   .ekmOrderTracking__header { align-items: center; display: flex; justify-content: space-between; }
   .ekmOrderTracking__wrap { overflow-wrap: anywhere; word-break: break-word; }
-  .ekmOrderActivityLog__item { border-top: 1px solid #eee; padding: 12px 0; }
+  .ekmOrderActivityLog__list { border-top: 1px solid #eee; }
+  .ekmOrderActivityLog__item { border-bottom: 1px solid #eee; padding: 12px 0; }
+  .ekmOrderActivityLog__content { align-items: flex-start; display: flex; gap: 12px; }
+  .ekmOrderActivityLog__body { flex: 1; min-width: 0; }
+  .ekmOrderActivityLog__icon { align-items: center; border-radius: 50%; display: inline-flex; flex: 0 0 20px; font-size: 12px; font-weight: 700; height: 20px; justify-content: center; line-height: 1; margin-top: 1px; width: 20px; }
+  .ekmOrderActivityLog__icon--info { background: #eef3f8; color: #46607a; }
+  .ekmOrderActivityLog__icon--success { background: #edf8f0; color: #247f45; }
+  .ekmOrderActivityLog__icon--alert { background: #fff4e5; color: #ad5f00; }
   .ekmOrderActivityLog__date { color: #666; font-size: 12px; margin-bottom: 6px; }
+  .ekmOrderActivityLog__message { -webkit-box-orient: vertical; -webkit-line-clamp: 3; display: -webkit-box; line-height: 1.5; overflow: hidden; white-space: normal; word-break: break-word; }
+  .ekmOrderActivityLog__message--expanded { -webkit-line-clamp: unset; display: block; overflow: visible; }
+  .ekmOrderActivityLog__toggle { color: #1b264f; cursor: pointer; font-size: 12px; font-weight: 600; margin-top: 8px; padding: 0; text-decoration: underline; }
   .ekmCustomerInformationModal { align-items: center; background: rgba(0,0,0,.35); display: flex; inset: 0; justify-content: center; padding: 20px; position: fixed; z-index: 10001; }
   .ekmCustomerInformationModal__panel { background: #fff; border-radius: 3px; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-height: 90vh; max-width: 760px; overflow: auto; width: 100%; }
   .control-group { display: grid; gap: 5px; margin-bottom: 14px; }
@@ -318,7 +328,7 @@ const T = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-function L(a, e, r) {
+function A(a, e, r) {
   const t = a.getBoundingClientRect(), n = window.devicePixelRatio || 1, d = Math.max(t.width, 300), i = Math.max(t.height, 220);
   a.width = d * n, a.height = i * n;
   const o = a.getContext("2d");
@@ -329,24 +339,24 @@ function L(a, e, r) {
     const l = 20 + (i - 50) / 4 * s;
     o.beginPath(), o.moveTo(40, l), o.lineTo(d - 10, l), o.stroke();
   }
-  const p = e.points || [], k = p.map((s) => Number(s.y || 0)), b = Math.max(...k, 1), h = p.length > 1 ? (d - 60) / (p.length - 1) : 0;
-  o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), p.forEach((s, l) => {
-    const c = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
-    l === 0 ? o.moveTo(c, g) : o.lineTo(c, g);
-  }), o.stroke(), o.fillStyle = r, p.forEach((s, l) => {
-    const c = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
-    o.beginPath(), o.arc(c, g, 3, 0, Math.PI * 2), o.fill();
+  const c = e.points || [], k = c.map((s) => Number(s.y || 0)), b = Math.max(...k, 1), x = c.length > 1 ? (d - 60) / (c.length - 1) : 0;
+  o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((s, l) => {
+    const p = 40 + x * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
+    l === 0 ? o.moveTo(p, g) : o.lineTo(p, g);
+  }), o.stroke(), o.fillStyle = r, c.forEach((s, l) => {
+    const p = 40 + x * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
+    o.beginPath(), o.arc(p, g, 3, 0, Math.PI * 2), o.fill();
   });
 }
 export {
   m as E,
-  T as a,
-  M as b,
+  M as a,
+  L as b,
   O as d,
   v as e,
   _ as f,
   S as g,
   w as m,
   C as p,
-  L as r
+  A as r
 };

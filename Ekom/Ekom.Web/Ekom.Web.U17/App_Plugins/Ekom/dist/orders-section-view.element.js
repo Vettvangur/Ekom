@@ -1,10 +1,10 @@
-var U = Object.defineProperty;
-var B = (r, o, e) => o in r ? U(r, o, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[o] = e;
-var n = (r, o, e) => B(r, typeof o != "symbol" ? o + "" : o, e);
-import { UmbElementMixin as K } from "@umbraco-cms/backoffice/element-api";
-import { UMB_NOTIFICATION_CONTEXT as R } from "@umbraco-cms/backoffice/notification";
-import { E as z, m as d, a as H, e as s, g as f, f as y, p as Z, d as O, b as Q } from "./manager-shared.js";
-const W = [
+var K = Object.defineProperty;
+var R = (r, o, e) => o in r ? K(r, o, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[o] = e;
+var n = (r, o, e) => R(r, typeof o != "symbol" ? o + "" : o, e);
+import { UmbElementMixin as z } from "@umbraco-cms/backoffice/element-api";
+import { UMB_NOTIFICATION_CONTEXT as H } from "@umbraco-cms/backoffice/notification";
+import { E as Z, m as d, a as Q, e as s, g as f, f as y, p as W, d as O, b as G } from "./manager-shared.js";
+const Y = [
   { key: "customerName", label: "Name", property: "name" },
   { key: "customerEmail", label: "Email", property: "email" },
   { key: "customerAddress", label: "Address", property: "address" },
@@ -13,7 +13,7 @@ const W = [
   { key: "customerCountry", label: "Country", property: "country" },
   { key: "customerZipCode", label: "Zipcode", property: "zipCode" },
   { key: "customerPhone", label: "Phone", property: "phone" }
-], G = [
+], J = [
   { key: "shippingName", label: "Name", property: "name" },
   { key: "shippingEmail", label: "Email", property: "email" },
   { key: "shippingAddress", label: "Address", property: "address" },
@@ -22,11 +22,11 @@ const W = [
   { key: "shippingCountry", label: "Country", property: "country" },
   { key: "shippingZipCode", label: "Zipcode", property: "zipCode" },
   { key: "shippingPhone", label: "Phone", property: "phone" }
-];
-class Y extends K(HTMLElement) {
+], X = 180, P = 1, M = 2;
+class ee extends z(HTMLElement) {
   constructor() {
     super(...arguments);
-    n(this, "api", new z());
+    n(this, "api", new Z());
     n(this, "notificationContext");
     n(this, "result", { orders: [], count: 0, totalPages: 0 });
     n(this, "page", 1);
@@ -37,6 +37,8 @@ class Y extends K(HTMLElement) {
     n(this, "selectedOrder");
     n(this, "orderLogs", []);
     n(this, "orderLogsLoading", !1);
+    n(this, "orderLogsError", !1);
+    n(this, "activityLogExpandedIndexes", /* @__PURE__ */ new Set());
     n(this, "orderActions", []);
     n(this, "orderActionsLoading", !1);
     n(this, "executingActionKey", "");
@@ -70,7 +72,7 @@ class Y extends K(HTMLElement) {
     });
   }
   connectedCallback() {
-    super.connectedCallback(), this.consumeContext(R, (e) => {
+    super.connectedCallback(), this.consumeContext(H, (e) => {
       this.notificationContext = e;
     }), document.addEventListener("keydown", this.handleKeyDown), this.render(), this.initialize();
   }
@@ -85,7 +87,7 @@ class Y extends K(HTMLElement) {
       ]);
       d.statusList = e || [], d.stores = t || [], !d.filters.store && d.stores.length && (d.filters.store = d.stores[0].alias), await this.loadPaymentProviders(), await this.loadOrders();
     } catch (e) {
-      this.error = v(e, "Error loading Ekom Manager."), this.loading = !1, this.render();
+      this.error = m(e, "Error loading Ekom Manager."), this.loading = !1, this.render();
     }
   }
   async loadPaymentProviders(e = !1) {
@@ -108,14 +110,14 @@ class Y extends K(HTMLElement) {
         orders: e.orders || []
       };
     } catch (e) {
-      this.error = v(e, "Error searching orders.");
+      this.error = m(e, "Error searching orders.");
     } finally {
       this.loading = !1, this.render();
     }
   }
   render() {
     this.innerHTML = `
-      <style>${H}</style>
+      <style>${Q}</style>
       <section class="ekmManager">
         <div class="ekmManager__body">
           ${this.renderOrders()}
@@ -225,7 +227,7 @@ class Y extends K(HTMLElement) {
     return `
       <div class="pagination">
         <ul>
-          ${Z(this.page, this.result.totalPages).map((e) => {
+          ${W(this.page, this.result.totalPages).map((e) => {
       const t = Number(String(e).replace("...", ""));
       return `<li class="${t === this.page ? "active" : ""}"><button type="button" data-action="set-page" data-page="${t}" ${t === this.page ? "disabled" : ""}>${s(e)}</button></li>`;
     }).join("")}
@@ -300,8 +302,8 @@ class Y extends K(HTMLElement) {
     `;
   }
   renderOrderDetails(e) {
-    var l, u, p, h;
-    const t = ((l = e.customerInformation) == null ? void 0 : l.customer) || {}, i = ((u = e.customerInformation) == null ? void 0 : u.shipping) || {}, a = this.getOrderStatusValue(e.orderStatus);
+    var l, c, p, h;
+    const t = ((l = e.customerInformation) == null ? void 0 : l.customer) || {}, i = ((c = e.customerInformation) == null ? void 0 : c.shipping) || {}, a = this.getOrderStatusValue(e.orderStatus);
     return `
       <div class="ekmOrder__header">
         <h1>Order number: ${s(e.referenceId)}</h1>
@@ -309,8 +311,8 @@ class Y extends K(HTMLElement) {
           <label class="ekmOrderStatusBar__status">Order Status:
             <select data-field="orderStatusOverlay">
               ${d.statusList.map((b) => {
-      const c = f(b);
-      return `<option value="${s(c)}" ${a === c ? "selected" : ""}>${s(b.label)}</option>`;
+      const u = f(b);
+      return `<option value="${s(u)}" ${a === u ? "selected" : ""}>${s(b.label)}</option>`;
     }).join("")}
             </select>
           </label>
@@ -327,7 +329,7 @@ class Y extends K(HTMLElement) {
       </div>
       <div class="ekmSplit">
         <div class="ekmSplit__column"><h4>Billing</h4><button type="button" class="btn-outline" data-action="open-customer-editor" style="margin-bottom:10px;">Edit customer information</button>${this.renderAddress(t)}${this.renderExtraProperties(t.properties, "customer")}</div>
-        <div class="ekmSplit__column"><h4>Shipping</h4>${ee(i) ? `${this.renderAddress(i)}${this.renderExtraProperties(i.properties, "shipping")}` : '<p style="font-weight:bold">Same as billing address</p>'}</div>
+        <div class="ekmSplit__column"><h4>Shipping</h4>${ie(i) ? `${this.renderAddress(i)}${this.renderExtraProperties(i.properties, "shipping")}` : '<p style="font-weight:bold">Same as billing address</p>'}</div>
       </div>
       <div class="ekmSplit">
         <div class="ekmSplit__column">${this.renderProvider("Payment Method", e.paymentProvider, "custompayment")}</div>
@@ -340,32 +342,32 @@ class Y extends K(HTMLElement) {
     `;
   }
   renderAddress(e) {
-    return ["name", "email", "address", "apartment", "city", "country", "zipCode", "phone"].filter((t) => e[t]).map((t) => `<p>${J(t)}: ${s(O(e[t]))}</p>`).join("");
+    return ["name", "email", "address", "apartment", "city", "country", "zipCode", "phone"].filter((t) => e[t]).map((t) => `<p>${te(t)}: ${s(O(e[t]))}</p>`).join("");
   }
   renderExtraProperties(e, t) {
-    const i = j(e, t);
-    return i.length ? `<h5 style="margin-top:20px; font-weight:bold;">Extra ${t === "shipping" ? "Shipping" : "Customer"} Data</h5><ul>${i.map(([a, l]) => `<li><strong>${s(N(a))}</strong>: ${s(l)}</li>`).join("")}</ul>` : "";
+    const i = U(e, t);
+    return i.length ? `<h5 style="margin-top:20px; font-weight:bold;">Extra ${t === "shipping" ? "Shipping" : "Customer"} Data</h5><ul>${i.map(([a, l]) => `<li><strong>${s(V(a))}</strong>: ${s(l)}</li>`).join("")}</ul>` : "";
   }
   renderProvider(e, t, i) {
     var a;
     return t ? `<h4>${s(e)}</h4><h4><strong>${s(t.title)}</strong></h4>${t.price ? `<p>Price: ${s((a = t.price.withVat) == null ? void 0 : a.currencyString)}</p>` : ""}${this.renderExtraProperties(t.customData, i)}` : "";
   }
   renderOrderLines(e) {
-    var i, a, l, u, p, h, b;
+    var i, a, l, c, p, h, b;
     return `
       <div style="align-items:center; display:flex; gap:10px; justify-content:space-between;"><h4>Order Details</h4><button type="button" class="btn-outline" data-action="open-order-line-editor">Add order line</button></div>
       <div class="umb-table">
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
         <div class="umb-table-body">
-          ${(Array.isArray(e.orderLines) ? e.orderLines : []).map((c) => {
-      var g, $, k, S, w, E, L, x, _, A, C, I, T;
-      return `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${s(c.key)}" data-product-title="${s((g = c.product) == null ? void 0 : g.title)}" ${this.removingOrderLineId === c.key ? "disabled" : ""} aria-label="Remove ${s(($ = c.product) == null ? void 0 : $.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed">${s((k = c.product) == null ? void 0 : k.title)} (${s((S = c.product) == null ? void 0 : S.sku)})${c.variant ? `<small style="display:block; margin-top:3px;">${s(c.variant.title)} ${c.variant.sku ? `(${s(c.variant.sku)})` : ""}</small>` : ""}${te(c)}</div><div class="umb-table-cell">${s(c.quantity)}</div><div class="umb-table-cell">${s((L = (E = (w = c.product) == null ? void 0 : w.price) == null ? void 0 : E.withVat) == null ? void 0 : L.currencyString)}</div><div class="umb-table-cell">${s((_ = (x = c.amount) == null ? void 0 : x.vat) == null ? void 0 : _.currencyString)}</div><div class="umb-table-cell">-${s((C = (A = c.amount) == null ? void 0 : A.discountAmount) == null ? void 0 : C.currencyString)}</div><div class="umb-table-cell"><strong>${s((T = (I = c.amount) == null ? void 0 : I.withVat) == null ? void 0 : T.currencyString)}</strong></div></div>`;
+          ${(Array.isArray(e.orderLines) ? e.orderLines : []).map((u) => {
+      var g, $, k, L, S, E, x, w, _, A, I, C, T;
+      return `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${s(u.key)}" data-product-title="${s((g = u.product) == null ? void 0 : g.title)}" ${this.removingOrderLineId === u.key ? "disabled" : ""} aria-label="Remove ${s(($ = u.product) == null ? void 0 : $.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed">${s((k = u.product) == null ? void 0 : k.title)} (${s((L = u.product) == null ? void 0 : L.sku)})${u.variant ? `<small style="display:block; margin-top:3px;">${s(u.variant.title)} ${u.variant.sku ? `(${s(u.variant.sku)})` : ""}</small>` : ""}${se(u)}</div><div class="umb-table-cell">${s(u.quantity)}</div><div class="umb-table-cell">${s((x = (E = (S = u.product) == null ? void 0 : S.price) == null ? void 0 : E.withVat) == null ? void 0 : x.currencyString)}</div><div class="umb-table-cell">${s((_ = (w = u.amount) == null ? void 0 : w.vat) == null ? void 0 : _.currencyString)}</div><div class="umb-table-cell">-${s((I = (A = u.amount) == null ? void 0 : A.discountAmount) == null ? void 0 : I.currencyString)}</div><div class="umb-table-cell"><strong>${s((T = (C = u.amount) == null ? void 0 : C.withVat) == null ? void 0 : T.currencyString)}</strong></div></div>`;
     }).join("")}
         </div>
         <div class="umb-table-footer">
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${s((a = (i = e.subTotal) == null ? void 0 : i.withVat) == null ? void 0 : a.currencyString)}</div></div>
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">-${s((l = e.discountAmount) == null ? void 0 : l.currencyString)}</div></div>
-          ${e.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${s((p = (u = e.shippingProvider.price) == null ? void 0 : u.withVat) == null ? void 0 : p.currencyString)}</div></div>` : ""}
+          ${e.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${s((p = (c = e.shippingProvider.price) == null ? void 0 : c.withVat) == null ? void 0 : p.currencyString)}</div></div>` : ""}
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${s((h = e.chargedVat) == null ? void 0 : h.currencyString)}</div></div>
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Total</div><div class="umb-table-cell"><strong>${s((b = e.chargedAmount) == null ? void 0 : b.currencyString)}</strong></div></div>
         </div>
@@ -374,14 +376,40 @@ class Y extends K(HTMLElement) {
   }
   renderTracking(e) {
     const t = e.tracking;
-    return ie(t) ? `<div class="ekmOrderTracking"><div class="ekmOrderTracking__header"><h4>Tracking</h4><button class="btn-reset" type="button" data-action="toggle-tracking">${this.trackingExpanded ? "Hide" : "Show"}</button></div>${this.trackingExpanded ? se(t) : ""}</div>` : '<div class="ekmOrderTracking"><h4>Tracking</h4><p>No tracking data was captured for this order.</p></div>';
+    return oe(t) ? `<div class="ekmOrderTracking"><div class="ekmOrderTracking__header"><h4>Tracking</h4><button class="btn-reset" type="button" data-action="toggle-tracking">${this.trackingExpanded ? "Hide" : "Show"}</button></div>${this.trackingExpanded ? de(t) : ""}</div>` : '<div class="ekmOrderTracking"><h4>Tracking</h4><p>No tracking data was captured for this order.</p></div>';
   }
   renderConsent(e) {
     const t = e.consent;
-    return ae(t) ? `<div class="ekmOrderTracking"><div class="ekmOrderTracking__header"><h4>Consent</h4><button class="btn-reset" type="button" data-action="toggle-consent">${this.consentExpanded ? "Hide" : "Show"}</button></div>${this.consentExpanded ? `<p>Resolved: ${s(y(t.resolvedAtUtc))}</p><p>Source: ${s(t.source)}</p><p>Analytics: ${M(t.analytics)}</p><p>Marketing: ${M(t.marketing)}</p>` : ""}</div>` : '<div class="ekmOrderTracking"><h4>Consent</h4><p>No consent data was captured for this order.</p></div>';
+    return ne(t) ? `<div class="ekmOrderTracking"><div class="ekmOrderTracking__header"><h4>Consent</h4><button class="btn-reset" type="button" data-action="toggle-consent">${this.consentExpanded ? "Hide" : "Show"}</button></div>${this.consentExpanded ? `<p>Resolved: ${s(y(t.resolvedAtUtc))}</p><p>Source: ${s(t.source)}</p><p>Analytics: ${F(t.analytics)}</p><p>Marketing: ${F(t.marketing)}</p>` : ""}</div>` : '<div class="ekmOrderTracking"><h4>Consent</h4><p>No consent data was captured for this order.</p></div>';
   }
   renderActivityLogs() {
-    return this.orderLogsLoading ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Loading activity...</p></div>' : this.orderLogs.length ? `<div class="ekmOrderActivityLog"><h4>Activity log</h4>${this.orderLogs.map((e) => `<div class="ekmOrderActivityLog__item"><div class="ekmOrderActivityLog__date">${s(y(e.date))}</div><div>${s(e.message)}</div></div>`).join("")}</div>` : '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>No activity yet.</p></div>';
+    return this.orderLogsLoading ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Loading activity...</p></div>' : this.orderLogsError ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Unable to load activity log.</p></div>' : this.orderLogs.length ? `<div class="ekmOrderActivityLog"><h4>Activity log</h4><div class="ekmOrderActivityLog__list">${this.orderLogs.map((t, i) => {
+      const a = t.message ?? "", l = this.activityLogExpandedIndexes.has(i), c = this.canExpandActivityLog(a) ? `<button type="button" class="btn-reset ekmOrderActivityLog__toggle" data-action="toggle-activity-log" data-log-index="${i}">${l ? "Show less" : "Show more"}</button>` : "";
+      return `<div class="ekmOrderActivityLog__item"><div class="ekmOrderActivityLog__content"><span class="ekmOrderActivityLog__icon ${this.getActivityLogTypeClass(t)}">${this.getActivityLogIcon(t)}</span><div class="ekmOrderActivityLog__body"><div class="ekmOrderActivityLog__date">${s(y(t.date))}</div><div class="ekmOrderActivityLog__message${l ? " ekmOrderActivityLog__message--expanded" : ""}">${s(a)}</div>${c}</div></div></div>`;
+    }).join("")}</div></div>` : '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>No activity yet.</p></div>';
+  }
+  getActivityLogIcon(e) {
+    switch (e.logType) {
+      case P:
+        return "✓";
+      case M:
+        return "!";
+      default:
+        return "i";
+    }
+  }
+  getActivityLogTypeClass(e) {
+    switch (e.logType) {
+      case P:
+        return "ekmOrderActivityLog__icon--success";
+      case M:
+        return "ekmOrderActivityLog__icon--alert";
+      default:
+        return "ekmOrderActivityLog__icon--info";
+    }
+  }
+  canExpandActivityLog(e) {
+    return e.length > X;
   }
   renderOrderActions() {
     return !this.orderActions.length && !this.orderActionsLoading ? "" : `<div style="margin-top:15px;"><h4>Order Actions</h4><div style="display:flex; flex-wrap:wrap; gap:10px;">${this.orderActions.map((e) => `<button type="button" class="${e.look === "primary" ? "btn-success" : "btn-outline"}" data-action="execute-order-action" data-action-key="${s(e.key)}" ${e.enabled === !1 || this.executingActionKey === e.key ? "disabled" : ""}>${s(e.label)}</button>`).join("")}</div>${this.orderActionsLoading ? "<p>Loading actions...</p>" : ""}</div>`;
@@ -450,6 +478,11 @@ class Y extends K(HTMLElement) {
       this.consentExpanded = !this.consentExpanded, this.renderPreservingOverlayScroll();
       return;
     }
+    if (i === "toggle-activity-log") {
+      const a = Number(t.dataset.logIndex);
+      this.activityLogExpandedIndexes.has(a) ? this.activityLogExpandedIndexes.delete(a) : this.activityLogExpandedIndexes.add(a), this.renderPreservingOverlayScroll();
+      return;
+    }
     if (i === "execute-order-action") {
       await this.executeOrderAction(t.dataset.actionKey || "");
       return;
@@ -503,9 +536,9 @@ class Y extends K(HTMLElement) {
       this.exporting = !0, this.render();
       try {
         const e = await this.api.exportOrders(d.filters, this.result.count, this.exportIncludeOrderLines);
-        Q(e, this.exportIncludeOrderLines ? "orders-with-orderlines.csv" : "orders.csv"), this.overlay = "";
+        G(e, this.exportIncludeOrderLines ? "orders-with-orderlines.csv" : "orders.csv"), this.overlay = "";
       } catch (e) {
-        this.showError(v(e, "Error exporting orders."));
+        this.showError(m(e, "Error exporting orders."));
       } finally {
         this.exporting = !1, this.render();
       }
@@ -514,17 +547,17 @@ class Y extends K(HTMLElement) {
   async openOrder(e) {
     if (e)
       try {
-        this.selectedOrder = await this.api.orderInfo(e), this.overlay = "order", this.trackingExpanded = !1, this.consentExpanded = !1, this.render(), await Promise.all([this.loadOrderLogs(e), this.loadOrderActions(e)]);
+        this.selectedOrder = await this.api.orderInfo(e), this.overlay = "order", this.trackingExpanded = !1, this.consentExpanded = !1, this.orderLogs = [], this.orderLogsError = !1, this.activityLogExpandedIndexes.clear(), this.render(), await Promise.all([this.loadOrderLogs(e), this.loadOrderActions(e)]);
       } catch (t) {
-        this.showError(v(t, "Error on getting orderInfo."));
+        this.showError(m(t, "Error on getting orderInfo."));
       }
   }
   async loadOrderLogs(e) {
-    this.orderLogsLoading = !0, this.render();
+    this.orderLogsLoading = !0, this.orderLogsError = !1, this.render();
     try {
       this.orderLogs = await this.api.orderLogs(e);
     } catch {
-      this.orderLogs = [];
+      this.orderLogs = [], this.orderLogsError = !0;
     } finally {
       this.orderLogsLoading = !1, this.render();
     }
@@ -546,8 +579,8 @@ class Y extends K(HTMLElement) {
     const e = ((a = this.querySelector('[data-field="orderStatusOverlay"]')) == null ? void 0 : a.value) || "", t = ((l = this.querySelector('[data-field="notifyOrderStatus"]')) == null ? void 0 : l.checked) || !1;
     try {
       await this.api.changeOrderStatus(this.selectedOrder.uniqueId, e, t), this.selectedOrder.orderStatus = e, this.showSuccess("Order status updated."), await this.loadOrders(), await this.loadOrderLogs(this.selectedOrder.uniqueId);
-    } catch (u) {
-      this.showError(v(u, "Error updating order status."));
+    } catch (c) {
+      this.showError(m(c, "Error updating order status."));
     }
   }
   showSuccess(e) {
@@ -590,7 +623,7 @@ class Y extends K(HTMLElement) {
         const i = this.result.orders.find((a) => a.uniqueId === t);
         i && (i.orderStatusCol = e.value), this.showSuccess("Order status updated.");
       } catch (i) {
-        this.showError(v(i, "Error updating order status.")), await this.loadOrders();
+        this.showError(m(i, "Error updating order status.")), await this.loadOrders();
       }
   }
   async executeOrderAction(e) {
@@ -601,16 +634,16 @@ class Y extends K(HTMLElement) {
     if (!(t != null && t.confirmMessage && !window.confirm(t.confirmMessage))) {
       this.executingActionKey = e, this.render();
       try {
-        const a = await this.api.executeOrderAction(this.selectedOrder.uniqueId, e), l = await a.blob(), u = a.headers.get("content-disposition") || "", p = a.headers.get("content-type") || "";
-        if (u.toLowerCase().includes("filename=") || p.startsWith("application/pdf") || p.startsWith("application/octet-stream") || p.startsWith("image/"))
+        const a = await this.api.executeOrderAction(this.selectedOrder.uniqueId, e), l = await a.blob(), c = a.headers.get("content-disposition") || "", p = a.headers.get("content-type") || "";
+        if (c.toLowerCase().includes("filename=") || p.startsWith("application/pdf") || p.startsWith("application/octet-stream") || p.startsWith("image/"))
           window.open(URL.createObjectURL(l), "_blank");
         else {
           const h = await l.text();
-          this.showSuccess(oe(h));
+          this.showSuccess(le(h));
         }
         this.selectedOrder = await this.api.orderInfo(this.selectedOrder.uniqueId), await this.loadOrderLogs(this.selectedOrder.uniqueId), await this.loadOrderActions(this.selectedOrder.uniqueId);
       } catch (a) {
-        this.showError(v(a, "Order action failed."));
+        this.showError(m(a, "Order action failed."));
       } finally {
         this.executingActionKey = "", this.render();
       }
@@ -623,26 +656,26 @@ class Y extends K(HTMLElement) {
       return;
     const t = ((a = e.customerInformation) == null ? void 0 : a.customer) || {}, i = ((l = e.customerInformation) == null ? void 0 : l.shipping) || {};
     this.customerEditModel = {
-      customer: q(t, W).concat(F(t.properties, "customer")),
-      shipping: q(i, G).concat(F(i.properties, "shipping"))
+      customer: D(t, Y).concat(N(t.properties, "customer")),
+      shipping: D(i, J).concat(N(i.properties, "shipping"))
     }, this.customerEditorOpen = !0, this.render();
   }
   async saveCustomerInformation() {
     var e;
     if (!(!((e = this.selectedOrder) != null && e.uniqueId) || !this.customerEditModel || this.customerSaving)) {
       this.querySelectorAll("[data-customer-group]").forEach((t) => {
-        var u;
-        const i = t.dataset.customerGroup, a = t.dataset.customerKey, l = (u = this.customerEditModel) == null ? void 0 : u[i].find((p) => p.key === a);
+        var c;
+        const i = t.dataset.customerGroup, a = t.dataset.customerKey, l = (c = this.customerEditModel) == null ? void 0 : c[i].find((p) => p.key === a);
         l && (l.value = t.value);
       }), this.customerSaving = !0, this.render();
       try {
         this.selectedOrder = await this.api.updateCustomerInformation(
           this.selectedOrder.uniqueId,
-          D(this.customerEditModel.customer),
-          D(this.customerEditModel.shipping)
+          j(this.customerEditModel.customer),
+          j(this.customerEditModel.shipping)
         ), this.customerEditorOpen = !1, this.customerEditModel = void 0, this.showSuccess("Customer information updated."), await this.loadOrders();
       } catch (t) {
-        this.showError(v(t, "Error updating customer information."));
+        this.showError(m(t, "Error updating customer information."));
       } finally {
         this.customerSaving = !1, this.render();
       }
@@ -652,9 +685,9 @@ class Y extends K(HTMLElement) {
     var l;
     if (!((l = this.selectedOrder) != null && l.uniqueId) || !this.orderLineEditModel || this.orderLineSaving)
       return;
-    this.querySelectorAll("[data-order-line-field]").forEach((u) => {
-      const p = u.dataset.orderLineField;
-      p && (this.orderLineEditModel[p] = u.value);
+    this.querySelectorAll("[data-order-line-field]").forEach((c) => {
+      const p = c.dataset.orderLineField;
+      p && (this.orderLineEditModel[p] = c.value);
     });
     const { productId: e, variantId: t, quantity: i } = this.orderLineEditModel, a = Number(i);
     if (!e.trim() || !Number.isFinite(a) || a <= 0) {
@@ -664,8 +697,8 @@ class Y extends K(HTMLElement) {
     this.orderLineSaving = !0, this.render();
     try {
       this.selectedOrder = await this.api.addOrderLine(this.selectedOrder.uniqueId, e.trim(), t.trim() || void 0, a), this.orderLineEditorOpen = !1, this.orderLineEditModel = void 0, this.showSuccess("Order line added."), await this.refreshOrderAfterLineChange();
-    } catch (u) {
-      this.showError(v(u, "Error adding order line."));
+    } catch (c) {
+      this.showError(m(c, "Error adding order line."));
     } finally {
       this.orderLineSaving = !1, this.render();
     }
@@ -677,7 +710,7 @@ class Y extends K(HTMLElement) {
       try {
         this.selectedOrder = await this.api.removeOrderLine(this.selectedOrder.uniqueId, e), this.showSuccess("Order line removed."), await this.refreshOrderAfterLineChange();
       } catch (a) {
-        this.showError(v(a, "Error removing order line."));
+        this.showError(m(a, "Error removing order line."));
       } finally {
         this.removingOrderLineId = "", this.render();
       }
@@ -691,58 +724,58 @@ class Y extends K(HTMLElement) {
     await Promise.all([this.loadOrders(), this.loadOrderLogs(e), this.loadOrderActions(e)]);
   }
 }
-function v(r, o) {
+function m(r, o) {
   return r instanceof Error ? r.message : o;
 }
-function J(r) {
+function te(r) {
   return r === "zipCode" ? "Zipcode" : r.charAt(0).toUpperCase() + r.slice(1);
 }
-function X(r) {
+function re(r) {
   return (/* @__PURE__ */ new Set(["shippingname", "shippingaddress", "shippingcity", "shippingcountry", "shippingemail", "shippingapartment", "shippingzipcode", "shippingphone", "customeremail", "customername", "customeraddress", "customerapartment", "customercity", "customercountry", "customerzipcode", "customerphone"])).has(r.toLowerCase());
 }
-function N(r) {
+function V(r) {
   return r.replace(/^customshipping/i, "").replace(/^custompayment/i, "").replace(/^shipping/i, "").replace(/^customer/i, "");
 }
-function j(r, o) {
-  return Object.entries(r || {}).filter(([e, t]) => !!t && e.toLowerCase().startsWith(o) && !X(e)).map(([e, t]) => [e, O(t)]);
+function U(r, o) {
+  return Object.entries(r || {}).filter(([e, t]) => !!t && e.toLowerCase().startsWith(o) && !re(e)).map(([e, t]) => [e, O(t)]);
 }
-function ee(r) {
+function ie(r) {
   return !!(r != null && r.name || r != null && r.email || r != null && r.address || r != null && r.apartment || r != null && r.city || r != null && r.country || r != null && r.zipCode || r != null && r.phone);
 }
-function te(r) {
+function se(r) {
   var e;
   const o = ((e = r.orderLineInfo) == null ? void 0 : e.properties) || {};
-  return Object.entries(o).filter(([, t]) => !!t).map(([t, i]) => `<small style="display:block; margin-top:3px;"><strong>${s(re(t))}</strong>: ${s(O(i))}</small>`).join("");
+  return Object.entries(o).filter(([, t]) => !!t).map(([t, i]) => `<small style="display:block; margin-top:3px;"><strong>${s(ae(t))}</strong>: ${s(O(i))}</small>`).join("");
 }
-function re(r) {
+function ae(r) {
   const o = r.replace(/^orderline/i, "").replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim();
   return o ? o.charAt(0).toUpperCase() + o.slice(1) : r;
 }
-function ie(r) {
+function oe(r) {
   var o, e, t, i;
-  return !!(r && (r.source || r.medium || r.campaign || r.term || r.content || r.clickId || r.clickIdType || r.landingUrl || r.referrer || r.captureMethod || r.capturedAtUtc || r.hasCookieSupport !== null && r.hasCookieSupport !== void 0 || (o = r.ga4) != null && o.clientId || (e = r.ga4) != null && e.sessionId || (t = r.meta) != null && t.fbp || (i = r.meta) != null && i.fbc || V(r.algolia)));
+  return !!(r && (r.source || r.medium || r.campaign || r.term || r.content || r.clickId || r.clickIdType || r.landingUrl || r.referrer || r.captureMethod || r.capturedAtUtc || r.hasCookieSupport !== null && r.hasCookieSupport !== void 0 || (o = r.ga4) != null && o.clientId || (e = r.ga4) != null && e.sessionId || (t = r.meta) != null && t.fbp || (i = r.meta) != null && i.fbc || B(r.algolia)));
 }
-function se(r) {
-  var l, u, p, h, b, c;
-  const o = Object.entries(((l = r.ga4) == null ? void 0 : l.data) || {}), e = Object.entries(((u = r.meta) == null ? void 0 : u.data) || {}), t = r.algolia, i = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], a = V(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${m("User token", t.userToken)}${i.length ? `<ul>${i.map((g) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${s(g.orderLineKey)}<br><strong>Query ID</strong>: ${s(g.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
-  return `<div class="ekmSplit"><div class="ekmSplit__column">${m("Captured", y(r.capturedAtUtc))}${m("Capture method", r.captureMethod)}${r.hasCookieSupport !== null && r.hasCookieSupport !== void 0 ? `<p>Cookie support: ${r.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${m("Source", r.source)}${m("Medium", r.medium)}${m("Campaign", r.campaign)}${m("Term", r.term)}${m("Content", r.content)}${m("Click ID", r.clickId)}${m("Click ID Type", r.clickIdType)}${m("Landing URL", r.landingUrl)}${m("Referrer", r.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${m("Client ID", (p = r.ga4) == null ? void 0 : p.clientId)}${m("Session ID", (h = r.ga4) == null ? void 0 : h.sessionId)}${P(o)}<h5>Meta</h5>${m("FBP", (b = r.meta) == null ? void 0 : b.fbp)}${m("FBC", (c = r.meta) == null ? void 0 : c.fbc)}${P(e)}${a}</div></div>`;
+function de(r) {
+  var l, c, p, h, b, u;
+  const o = Object.entries(((l = r.ga4) == null ? void 0 : l.data) || {}), e = Object.entries(((c = r.meta) == null ? void 0 : c.data) || {}), t = r.algolia, i = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], a = B(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${v("User token", t.userToken)}${i.length ? `<ul>${i.map((g) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${s(g.orderLineKey)}<br><strong>Query ID</strong>: ${s(g.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
+  return `<div class="ekmSplit"><div class="ekmSplit__column">${v("Captured", y(r.capturedAtUtc))}${v("Capture method", r.captureMethod)}${r.hasCookieSupport !== null && r.hasCookieSupport !== void 0 ? `<p>Cookie support: ${r.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${v("Source", r.source)}${v("Medium", r.medium)}${v("Campaign", r.campaign)}${v("Term", r.term)}${v("Content", r.content)}${v("Click ID", r.clickId)}${v("Click ID Type", r.clickIdType)}${v("Landing URL", r.landingUrl)}${v("Referrer", r.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${v("Client ID", (p = r.ga4) == null ? void 0 : p.clientId)}${v("Session ID", (h = r.ga4) == null ? void 0 : h.sessionId)}${q(o)}<h5>Meta</h5>${v("FBP", (b = r.meta) == null ? void 0 : b.fbp)}${v("FBC", (u = r.meta) == null ? void 0 : u.fbc)}${q(e)}${a}</div></div>`;
 }
-function V(r) {
+function B(r) {
   return !!(r && (r.userToken || Array.isArray(r.lines) && r.lines.length));
 }
-function m(r, o) {
+function v(r, o) {
   return o ? `<p class="ekmOrderTracking__wrap">${s(r)}: ${s(o)}</p>` : "";
 }
-function P(r) {
+function q(r) {
   return r.length ? `<ul>${r.map(([o, e]) => `<li><strong>${s(o)}</strong>: ${s(e)}</li>`).join("")}</ul>` : "";
 }
-function ae(r) {
+function ne(r) {
   return !!(r && (r.resolvedAtUtc || r.source || r.analytics !== null && r.analytics !== void 0 || r.marketing !== null && r.marketing !== void 0));
 }
-function M(r) {
+function F(r) {
   return r === !0 ? "Yes" : r === !1 ? "No" : "Unknown";
 }
-function q(r, o) {
+function D(r, o) {
   return o.map((e) => {
     var t;
     return {
@@ -753,26 +786,26 @@ function q(r, o) {
     };
   });
 }
-function F(r, o) {
-  return j(r, o).map(([e, t]) => ({
+function N(r, o) {
+  return U(r, o).map(([e, t]) => ({
     key: e,
-    label: N(e).replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim() || e,
+    label: V(e).replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim() || e,
     value: t,
     isExtra: !0
   }));
 }
-function D(r) {
+function j(r) {
   return Object.fromEntries(r.map((o) => [o.key, o.value || ""]));
 }
-function oe(r) {
+function le(r) {
   try {
     return JSON.parse(r).message || r;
   } catch {
     return r;
   }
 }
-customElements.define("ekom-orders-section-view", Y);
+customElements.define("ekom-orders-section-view", ee);
 export {
-  Y as EkomOrdersSectionViewElement,
-  Y as default
+  ee as EkomOrdersSectionViewElement,
+  ee as default
 };
