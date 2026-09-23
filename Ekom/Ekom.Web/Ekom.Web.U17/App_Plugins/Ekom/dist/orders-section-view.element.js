@@ -1,6 +1,6 @@
 var K = Object.defineProperty;
 var R = (r, o, e) => o in r ? K(r, o, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[o] = e;
-var n = (r, o, e) => R(r, typeof o != "symbol" ? o + "" : o, e);
+var l = (r, o, e) => R(r, typeof o != "symbol" ? o + "" : o, e);
 import { UmbElementMixin as z } from "@umbraco-cms/backoffice/element-api";
 import { UMB_NOTIFICATION_CONTEXT as H } from "@umbraco-cms/backoffice/notification";
 import { E as Z, m as d, a as Q, e as s, g as f, f as y, p as W, d as O, b as G } from "./manager-shared.js";
@@ -26,34 +26,34 @@ const Y = [
 class ee extends z(HTMLElement) {
   constructor() {
     super(...arguments);
-    n(this, "api", new Z());
-    n(this, "notificationContext");
-    n(this, "result", { orders: [], count: 0, totalPages: 0 });
-    n(this, "page", 1);
-    n(this, "loading", !0);
-    n(this, "error", "");
-    n(this, "searchTimer", 0);
-    n(this, "overlay", "");
-    n(this, "selectedOrder");
-    n(this, "orderLogs", []);
-    n(this, "orderLogsLoading", !1);
-    n(this, "orderLogsError", !1);
-    n(this, "activityLogExpandedIndexes", /* @__PURE__ */ new Set());
-    n(this, "orderActions", []);
-    n(this, "orderActionsLoading", !1);
-    n(this, "executingActionKey", "");
-    n(this, "trackingExpanded", !1);
-    n(this, "consentExpanded", !1);
-    n(this, "customerEditorOpen", !1);
-    n(this, "customerSaving", !1);
-    n(this, "customerEditModel");
-    n(this, "orderLineEditorOpen", !1);
-    n(this, "orderLineSaving", !1);
-    n(this, "orderLineEditModel");
-    n(this, "removingOrderLineId", "");
-    n(this, "exportIncludeOrderLines", !1);
-    n(this, "exporting", !1);
-    n(this, "handleKeyDown", (e) => {
+    l(this, "api", new Z());
+    l(this, "notificationContext");
+    l(this, "result", { orders: [], count: 0, totalPages: 0 });
+    l(this, "page", 1);
+    l(this, "loading", !0);
+    l(this, "error", "");
+    l(this, "searchTimer", 0);
+    l(this, "overlay", "");
+    l(this, "selectedOrder");
+    l(this, "orderLogs", []);
+    l(this, "orderLogsLoading", !1);
+    l(this, "orderLogsError", !1);
+    l(this, "activityLogExpandedIndexes", /* @__PURE__ */ new Set());
+    l(this, "orderActions", []);
+    l(this, "orderActionsLoading", !1);
+    l(this, "executingActionKey", "");
+    l(this, "trackingExpanded", !1);
+    l(this, "consentExpanded", !1);
+    l(this, "customerEditorOpen", !1);
+    l(this, "customerSaving", !1);
+    l(this, "customerEditModel");
+    l(this, "orderLineEditorOpen", !1);
+    l(this, "orderLineSaving", !1);
+    l(this, "orderLineEditModel");
+    l(this, "removingOrderLineId", "");
+    l(this, "exportIncludeOrderLines", !1);
+    l(this, "exporting", !1);
+    l(this, "handleKeyDown", (e) => {
       if (!(e.key !== "Escape" || !this.overlay)) {
         if (this.customerEditorOpen) {
           if (this.customerSaving)
@@ -302,8 +302,8 @@ class ee extends z(HTMLElement) {
     `;
   }
   renderOrderDetails(e) {
-    var l, c, p, h;
-    const t = ((l = e.customerInformation) == null ? void 0 : l.customer) || {}, i = ((c = e.customerInformation) == null ? void 0 : c.shipping) || {}, a = this.getOrderStatusValue(e.orderStatus);
+    var n, c, p, h;
+    const t = ((n = e.customerInformation) == null ? void 0 : n.customer) || {}, i = ((c = e.customerInformation) == null ? void 0 : c.shipping) || {}, a = this.getOrderStatusValue(e.orderStatus);
     return `
       <div class="ekmOrder__header">
         <h1>Order number: ${s(e.referenceId)}</h1>
@@ -346,14 +346,17 @@ class ee extends z(HTMLElement) {
   }
   renderExtraProperties(e, t) {
     const i = U(e, t);
-    return i.length ? `<h5 style="margin-top:20px; font-weight:bold;">Extra ${t === "shipping" ? "Shipping" : "Customer"} Data</h5><ul>${i.map(([a, l]) => `<li><strong>${s(V(a))}</strong>: ${s(l)}</li>`).join("")}</ul>` : "";
+    return i.length ? `<h5 style="margin-top:20px; font-weight:bold;">Extra ${t === "shipping" ? "Shipping" : "Customer"} Data</h5><ul>${i.map(([a, n]) => `<li><strong>${s(V(a))}</strong>: ${s(n)}</li>`).join("")}</ul>` : "";
   }
   renderProvider(e, t, i) {
-    var a;
-    return t ? `<h4>${s(e)}</h4><h4><strong>${s(t.title)}</strong></h4>${t.price ? `<p>Price: ${s((a = t.price.withVat) == null ? void 0 : a.currencyString)}</p>` : ""}${this.renderExtraProperties(t.customData, i)}` : "";
+    var n, c;
+    if (!t)
+      return "";
+    const a = typeof t.title == "string" && t.title.trim() ? t.title : (n = t.properties) == null ? void 0 : n.nodeName;
+    return `<h4>${s(e)}</h4><h4><strong>${s(a)}</strong></h4>${t.price ? `<p>Price: ${s((c = t.price.withVat) == null ? void 0 : c.currencyString)}</p>` : ""}${this.renderExtraProperties(t.customData, i)}`;
   }
   renderOrderLines(e) {
-    var i, a, l, c, p, h, b;
+    var i, a, n, c, p, h, b;
     return `
       <div style="align-items:center; display:flex; gap:10px; justify-content:space-between;"><h4>Order Details</h4><button type="button" class="btn-outline" data-action="open-order-line-editor">Add order line</button></div>
       <div class="umb-table">
@@ -366,7 +369,7 @@ class ee extends z(HTMLElement) {
         </div>
         <div class="umb-table-footer">
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${s((a = (i = e.subTotal) == null ? void 0 : i.withVat) == null ? void 0 : a.currencyString)}</div></div>
-          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">-${s((l = e.discountAmount) == null ? void 0 : l.currencyString)}</div></div>
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">-${s((n = e.discountAmount) == null ? void 0 : n.currencyString)}</div></div>
           ${e.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${s((p = (c = e.shippingProvider.price) == null ? void 0 : c.withVat) == null ? void 0 : p.currencyString)}</div></div>` : ""}
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${s((h = e.chargedVat) == null ? void 0 : h.currencyString)}</div></div>
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Total</div><div class="umb-table-cell"><strong>${s((b = e.chargedAmount) == null ? void 0 : b.currencyString)}</strong></div></div>
@@ -384,8 +387,8 @@ class ee extends z(HTMLElement) {
   }
   renderActivityLogs() {
     return this.orderLogsLoading ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Loading activity...</p></div>' : this.orderLogsError ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Unable to load activity log.</p></div>' : this.orderLogs.length ? `<div class="ekmOrderActivityLog"><h4>Activity log</h4><div class="ekmOrderActivityLog__list">${this.orderLogs.map((t, i) => {
-      const a = t.message ?? "", l = this.activityLogExpandedIndexes.has(i), c = this.canExpandActivityLog(a) ? `<button type="button" class="btn-reset ekmOrderActivityLog__toggle" data-action="toggle-activity-log" data-log-index="${i}">${l ? "Show less" : "Show more"}</button>` : "";
-      return `<div class="ekmOrderActivityLog__item"><div class="ekmOrderActivityLog__content"><span class="ekmOrderActivityLog__icon ${this.getActivityLogTypeClass(t)}">${this.getActivityLogIcon(t)}</span><div class="ekmOrderActivityLog__body"><div class="ekmOrderActivityLog__date">${s(y(t.date))}</div><div class="ekmOrderActivityLog__message${l ? " ekmOrderActivityLog__message--expanded" : ""}">${s(a)}</div>${c}</div></div></div>`;
+      const a = t.message ?? "", n = this.activityLogExpandedIndexes.has(i), c = this.canExpandActivityLog(a) ? `<button type="button" class="btn-reset ekmOrderActivityLog__toggle" data-action="toggle-activity-log" data-log-index="${i}">${n ? "Show less" : "Show more"}</button>` : "";
+      return `<div class="ekmOrderActivityLog__item"><div class="ekmOrderActivityLog__content"><span class="ekmOrderActivityLog__icon ${this.getActivityLogTypeClass(t)}">${this.getActivityLogIcon(t)}</span><div class="ekmOrderActivityLog__body"><div class="ekmOrderActivityLog__date">${s(y(t.date))}</div><div class="ekmOrderActivityLog__message${n ? " ekmOrderActivityLog__message--expanded" : ""}">${s(a)}</div>${c}</div></div></div>`;
     }).join("")}</div></div>` : '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>No activity yet.</p></div>';
   }
   getActivityLogIcon(e) {
@@ -573,10 +576,10 @@ class ee extends z(HTMLElement) {
     }
   }
   async saveOverlayStatus() {
-    var i, a, l;
+    var i, a, n;
     if (!((i = this.selectedOrder) != null && i.uniqueId))
       return;
-    const e = ((a = this.querySelector('[data-field="orderStatusOverlay"]')) == null ? void 0 : a.value) || "", t = ((l = this.querySelector('[data-field="notifyOrderStatus"]')) == null ? void 0 : l.checked) || !1;
+    const e = ((a = this.querySelector('[data-field="orderStatusOverlay"]')) == null ? void 0 : a.value) || "", t = ((n = this.querySelector('[data-field="notifyOrderStatus"]')) == null ? void 0 : n.checked) || !1;
     try {
       await this.api.changeOrderStatus(this.selectedOrder.uniqueId, e, t), this.selectedOrder.orderStatus = e, this.showSuccess("Order status updated."), await this.loadOrders(), await this.loadOrderLogs(this.selectedOrder.uniqueId);
     } catch (c) {
@@ -634,11 +637,11 @@ class ee extends z(HTMLElement) {
     if (!(t != null && t.confirmMessage && !window.confirm(t.confirmMessage))) {
       this.executingActionKey = e, this.render();
       try {
-        const a = await this.api.executeOrderAction(this.selectedOrder.uniqueId, e), l = await a.blob(), c = a.headers.get("content-disposition") || "", p = a.headers.get("content-type") || "";
+        const a = await this.api.executeOrderAction(this.selectedOrder.uniqueId, e), n = await a.blob(), c = a.headers.get("content-disposition") || "", p = a.headers.get("content-type") || "";
         if (c.toLowerCase().includes("filename=") || p.startsWith("application/pdf") || p.startsWith("application/octet-stream") || p.startsWith("image/"))
-          window.open(URL.createObjectURL(l), "_blank");
+          window.open(URL.createObjectURL(n), "_blank");
         else {
-          const h = await l.text();
+          const h = await n.text();
           this.showSuccess(le(h));
         }
         this.selectedOrder = await this.api.orderInfo(this.selectedOrder.uniqueId), await this.loadOrderLogs(this.selectedOrder.uniqueId), await this.loadOrderActions(this.selectedOrder.uniqueId);
@@ -650,11 +653,11 @@ class ee extends z(HTMLElement) {
     }
   }
   openCustomerEditor() {
-    var a, l;
+    var a, n;
     const e = this.selectedOrder;
     if (!e)
       return;
-    const t = ((a = e.customerInformation) == null ? void 0 : a.customer) || {}, i = ((l = e.customerInformation) == null ? void 0 : l.shipping) || {};
+    const t = ((a = e.customerInformation) == null ? void 0 : a.customer) || {}, i = ((n = e.customerInformation) == null ? void 0 : n.shipping) || {};
     this.customerEditModel = {
       customer: D(t, Y).concat(N(t.properties, "customer")),
       shipping: D(i, J).concat(N(i.properties, "shipping"))
@@ -665,8 +668,8 @@ class ee extends z(HTMLElement) {
     if (!(!((e = this.selectedOrder) != null && e.uniqueId) || !this.customerEditModel || this.customerSaving)) {
       this.querySelectorAll("[data-customer-group]").forEach((t) => {
         var c;
-        const i = t.dataset.customerGroup, a = t.dataset.customerKey, l = (c = this.customerEditModel) == null ? void 0 : c[i].find((p) => p.key === a);
-        l && (l.value = t.value);
+        const i = t.dataset.customerGroup, a = t.dataset.customerKey, n = (c = this.customerEditModel) == null ? void 0 : c[i].find((p) => p.key === a);
+        n && (n.value = t.value);
       }), this.customerSaving = !0, this.render();
       try {
         this.selectedOrder = await this.api.updateCustomerInformation(
@@ -682,8 +685,8 @@ class ee extends z(HTMLElement) {
     }
   }
   async saveOrderLine() {
-    var l;
-    if (!((l = this.selectedOrder) != null && l.uniqueId) || !this.orderLineEditModel || this.orderLineSaving)
+    var n;
+    if (!((n = this.selectedOrder) != null && n.uniqueId) || !this.orderLineEditModel || this.orderLineSaving)
       return;
     this.querySelectorAll("[data-order-line-field]").forEach((c) => {
       const p = c.dataset.orderLineField;
@@ -756,8 +759,8 @@ function oe(r) {
   return !!(r && (r.source || r.medium || r.campaign || r.term || r.content || r.clickId || r.clickIdType || r.landingUrl || r.referrer || r.captureMethod || r.capturedAtUtc || r.hasCookieSupport !== null && r.hasCookieSupport !== void 0 || (o = r.ga4) != null && o.clientId || (e = r.ga4) != null && e.sessionId || (t = r.meta) != null && t.fbp || (i = r.meta) != null && i.fbc || B(r.algolia)));
 }
 function de(r) {
-  var l, c, p, h, b, u;
-  const o = Object.entries(((l = r.ga4) == null ? void 0 : l.data) || {}), e = Object.entries(((c = r.meta) == null ? void 0 : c.data) || {}), t = r.algolia, i = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], a = B(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${v("User token", t.userToken)}${i.length ? `<ul>${i.map((g) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${s(g.orderLineKey)}<br><strong>Query ID</strong>: ${s(g.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
+  var n, c, p, h, b, u;
+  const o = Object.entries(((n = r.ga4) == null ? void 0 : n.data) || {}), e = Object.entries(((c = r.meta) == null ? void 0 : c.data) || {}), t = r.algolia, i = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], a = B(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${v("User token", t.userToken)}${i.length ? `<ul>${i.map((g) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${s(g.orderLineKey)}<br><strong>Query ID</strong>: ${s(g.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
   return `<div class="ekmSplit"><div class="ekmSplit__column">${v("Captured", y(r.capturedAtUtc))}${v("Capture method", r.captureMethod)}${r.hasCookieSupport !== null && r.hasCookieSupport !== void 0 ? `<p>Cookie support: ${r.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${v("Source", r.source)}${v("Medium", r.medium)}${v("Campaign", r.campaign)}${v("Term", r.term)}${v("Content", r.content)}${v("Click ID", r.clickId)}${v("Click ID Type", r.clickIdType)}${v("Landing URL", r.landingUrl)}${v("Referrer", r.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${v("Client ID", (p = r.ga4) == null ? void 0 : p.clientId)}${v("Session ID", (h = r.ga4) == null ? void 0 : h.sessionId)}${q(o)}<h5>Meta</h5>${v("FBP", (b = r.meta) == null ? void 0 : b.fbp)}${v("FBC", (u = r.meta) == null ? void 0 : u.fbc)}${q(e)}${a}</div></div>`;
 }
 function B(r) {

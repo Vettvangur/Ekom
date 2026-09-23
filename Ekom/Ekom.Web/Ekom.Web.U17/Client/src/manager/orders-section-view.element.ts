@@ -478,7 +478,11 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return '';
     }
 
-    return `<h4>${escapeHtml(title)}</h4><h4><strong>${escapeHtml(provider.title)}</strong></h4>${provider.price ? `<p>Price: ${escapeHtml(provider.price.withVat?.currencyString)}</p>` : ''}${this.renderExtraProperties(provider.customData, prefix)}`;
+    const providerTitle = typeof provider.title === 'string' && provider.title.trim()
+      ? provider.title
+      : provider.properties?.nodeName;
+
+    return `<h4>${escapeHtml(title)}</h4><h4><strong>${escapeHtml(providerTitle)}</strong></h4>${provider.price ? `<p>Price: ${escapeHtml(provider.price.withVat?.currencyString)}</p>` : ''}${this.renderExtraProperties(provider.customData, prefix)}`;
   }
 
   private renderOrderLines(order: OrderInfo): string {
