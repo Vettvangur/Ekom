@@ -192,7 +192,6 @@ class ee extends z(HTMLElement) {
             <div class="umb-table-cell">Order Number</div>
             <div class="umb-table-cell">Status</div>
             <div class="umb-table-cell">Name</div>
-            <div class="umb-table-cell">Store</div>
             <div class="umb-table-cell">Created</div>
             <div class="umb-table-cell">Payment</div>
           </div>
@@ -217,7 +216,6 @@ class ee extends z(HTMLElement) {
           </select>
         </div>
         <div class="umb-table-cell" data-label="Name">${s(e.customerName)}</div>
-        <div class="umb-table-cell" data-label="Store">${s(e.storeAlias)}</div>
         <div class="umb-table-cell" data-label="Created">${s(y(e.createDate))}</div>
         <div class="umb-table-cell" data-label="Payment">${s(e.formattedTotal)}</div>
       </div>
@@ -302,7 +300,7 @@ class ee extends z(HTMLElement) {
     `;
   }
   renderOrderDetails(e) {
-    var n, c, p, h;
+    var n, c, p, v;
     const t = ((n = e.customerInformation) == null ? void 0 : n.customer) || {}, i = ((c = e.customerInformation) == null ? void 0 : c.shipping) || {}, a = this.getOrderStatusValue(e.orderStatus);
     return `
       <div class="ekmOrder__header">
@@ -324,7 +322,7 @@ class ee extends z(HTMLElement) {
         <p>Created date: ${s(y(e.createDate))}</p>
         <p>Paid date: ${s(y(e.paidDate))}</p>
         <p>Store: ${s(((p = e.storeInfo) == null ? void 0 : p.alias) || e.storeAlias)}</p>
-        <p>Payment: <strong>${s((h = e.chargedAmount) == null ? void 0 : h.currencyString)}</strong></p>
+        <p>Payment: <strong>${s((v = e.chargedAmount) == null ? void 0 : v.currencyString)}</strong></p>
         ${this.renderOrderActions()}
       </div>
       <div class="ekmSplit">
@@ -356,7 +354,7 @@ class ee extends z(HTMLElement) {
     return `<h4>${s(e)}</h4><h4><strong>${s(a)}</strong></h4>${t.price ? `<p>Price: ${s((c = t.price.withVat) == null ? void 0 : c.currencyString)}</p>` : ""}${this.renderExtraProperties(t.customData, i)}`;
   }
   renderOrderLines(e) {
-    var i, a, n, c, p, h, b;
+    var i, a, n, c, p, v, b;
     return `
       <div style="align-items:center; display:flex; gap:10px; justify-content:space-between;"><h4>Order Details</h4><button type="button" class="btn-outline" data-action="open-order-line-editor">Add order line</button></div>
       <div class="umb-table">
@@ -371,7 +369,7 @@ class ee extends z(HTMLElement) {
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${s((a = (i = e.subTotal) == null ? void 0 : i.withVat) == null ? void 0 : a.currencyString)}</div></div>
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">-${s((n = e.discountAmount) == null ? void 0 : n.currencyString)}</div></div>
           ${e.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${s((p = (c = e.shippingProvider.price) == null ? void 0 : c.withVat) == null ? void 0 : p.currencyString)}</div></div>` : ""}
-          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${s((h = e.chargedVat) == null ? void 0 : h.currencyString)}</div></div>
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${s((v = e.chargedVat) == null ? void 0 : v.currencyString)}</div></div>
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Total</div><div class="umb-table-cell"><strong>${s((b = e.chargedAmount) == null ? void 0 : b.currencyString)}</strong></div></div>
         </div>
       </div>
@@ -641,8 +639,8 @@ class ee extends z(HTMLElement) {
         if (c.toLowerCase().includes("filename=") || p.startsWith("application/pdf") || p.startsWith("application/octet-stream") || p.startsWith("image/"))
           window.open(URL.createObjectURL(n), "_blank");
         else {
-          const h = await n.text();
-          this.showSuccess(le(h));
+          const v = await n.text();
+          this.showSuccess(le(v));
         }
         this.selectedOrder = await this.api.orderInfo(this.selectedOrder.uniqueId), await this.loadOrderLogs(this.selectedOrder.uniqueId), await this.loadOrderActions(this.selectedOrder.uniqueId);
       } catch (a) {
@@ -759,14 +757,14 @@ function oe(r) {
   return !!(r && (r.source || r.medium || r.campaign || r.term || r.content || r.clickId || r.clickIdType || r.landingUrl || r.referrer || r.captureMethod || r.capturedAtUtc || r.hasCookieSupport !== null && r.hasCookieSupport !== void 0 || (o = r.ga4) != null && o.clientId || (e = r.ga4) != null && e.sessionId || (t = r.meta) != null && t.fbp || (i = r.meta) != null && i.fbc || B(r.algolia)));
 }
 function de(r) {
-  var n, c, p, h, b, u;
-  const o = Object.entries(((n = r.ga4) == null ? void 0 : n.data) || {}), e = Object.entries(((c = r.meta) == null ? void 0 : c.data) || {}), t = r.algolia, i = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], a = B(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${v("User token", t.userToken)}${i.length ? `<ul>${i.map((g) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${s(g.orderLineKey)}<br><strong>Query ID</strong>: ${s(g.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
-  return `<div class="ekmSplit"><div class="ekmSplit__column">${v("Captured", y(r.capturedAtUtc))}${v("Capture method", r.captureMethod)}${r.hasCookieSupport !== null && r.hasCookieSupport !== void 0 ? `<p>Cookie support: ${r.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${v("Source", r.source)}${v("Medium", r.medium)}${v("Campaign", r.campaign)}${v("Term", r.term)}${v("Content", r.content)}${v("Click ID", r.clickId)}${v("Click ID Type", r.clickIdType)}${v("Landing URL", r.landingUrl)}${v("Referrer", r.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${v("Client ID", (p = r.ga4) == null ? void 0 : p.clientId)}${v("Session ID", (h = r.ga4) == null ? void 0 : h.sessionId)}${q(o)}<h5>Meta</h5>${v("FBP", (b = r.meta) == null ? void 0 : b.fbp)}${v("FBC", (u = r.meta) == null ? void 0 : u.fbc)}${q(e)}${a}</div></div>`;
+  var n, c, p, v, b, u;
+  const o = Object.entries(((n = r.ga4) == null ? void 0 : n.data) || {}), e = Object.entries(((c = r.meta) == null ? void 0 : c.data) || {}), t = r.algolia, i = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], a = B(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${h("User token", t.userToken)}${i.length ? `<ul>${i.map((g) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${s(g.orderLineKey)}<br><strong>Query ID</strong>: ${s(g.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
+  return `<div class="ekmSplit"><div class="ekmSplit__column">${h("Captured", y(r.capturedAtUtc))}${h("Capture method", r.captureMethod)}${r.hasCookieSupport !== null && r.hasCookieSupport !== void 0 ? `<p>Cookie support: ${r.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${h("Source", r.source)}${h("Medium", r.medium)}${h("Campaign", r.campaign)}${h("Term", r.term)}${h("Content", r.content)}${h("Click ID", r.clickId)}${h("Click ID Type", r.clickIdType)}${h("Landing URL", r.landingUrl)}${h("Referrer", r.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${h("Client ID", (p = r.ga4) == null ? void 0 : p.clientId)}${h("Session ID", (v = r.ga4) == null ? void 0 : v.sessionId)}${q(o)}<h5>Meta</h5>${h("FBP", (b = r.meta) == null ? void 0 : b.fbp)}${h("FBC", (u = r.meta) == null ? void 0 : u.fbc)}${q(e)}${a}</div></div>`;
 }
 function B(r) {
   return !!(r && (r.userToken || Array.isArray(r.lines) && r.lines.length));
 }
-function v(r, o) {
+function h(r, o) {
   return o ? `<p class="ekmOrderTracking__wrap">${s(r)}: ${s(o)}</p>` : "";
 }
 function q(r) {
