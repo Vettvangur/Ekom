@@ -111,10 +111,12 @@ public class ImportService : IImportService
 
             var recycleBinNode = data.RecycleBinKey.HasValue ? _contentService.GetById(data.RecycleBinKey.Value) : null;
             var productProcessNode = data.ProductProcessKey.HasValue ? _contentService.GetById(data.ProductProcessKey.Value) : null;
+            var allImportCategories = GetAllCategories(data);
+            var syncProgress = new ImportSyncProgressTracker((allImportCategories?.Count ?? 0) + data.Products.Count);
 
             var stopwatch = Stopwatch.StartNew();
 
-            IterateCategoryTree(data.Categories, GetAllCategories(data), allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser);
+            IterateCategoryTree(data.Categories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser, progress: syncProgress);
 
             _logger.LogInformation("IterateCategoryTree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
 
@@ -122,7 +124,7 @@ public class ImportService : IImportService
 
             stopwatch.Restart();
 
-            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, true, recycleBinNode, productProcessNode);
+            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, true, recycleBinNode, productProcessNode, progress: syncProgress);
 
             _logger.LogInformation("IterateProductTree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
 
@@ -236,6 +238,7 @@ public class ImportService : IImportService
     {
         var categoryCount = GetAllCategories(data)?.Count ?? 0;
         var productCount = data.Products?.Count ?? 0;
+        var syncProgress = new ImportSyncProgressTracker(categoryCount + productCount);
         _logger.LogInformation(
             "Category Sync running. ParentKey: {ParentKey}, SyncUser: {SyncUser}, Categories: {CategoryCount} Products: {ProductCount}",
             parentKey,
@@ -265,11 +268,11 @@ public class ImportService : IImportService
         var recycleBinNode = data.RecycleBinKey.HasValue ? _contentService.GetById(data.RecycleBinKey.Value) : null;
         var productProcessNode = data.ProductProcessKey.HasValue ? _contentService.GetById(data.ProductProcessKey.Value) : null;
 
-        IterateCategoryTree(data.Categories, new List<ImportCategory>(), allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser, false);
+        IterateCategoryTree(data.Categories, new List<ImportCategory>(), allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser, false, progress: syncProgress);
 
         if (data.Products != null && data.Products.Any())
         {
-            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, true, recycleBinNode, productProcessNode);
+            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, true, recycleBinNode, productProcessNode, progress: syncProgress);
         }
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.CategorySync)).GetAwaiter().GetResult();
@@ -552,7 +555,7 @@ public class ImportService : IImportService
             MoveCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, content, syncUser);
         }
     }
-    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, IContent? parentContent, int syncUser, bool delete = true)
+    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, IContent? parentContent, int syncUser, bool delete = true, ImportSyncProgressTracker? progress = null)
     {
 
         if (parentContent == null || importCategories == null || allImportCategories == null)
@@ -610,6 +613,7 @@ public class ImportService : IImportService
 
             if (content == null)
             {
+                LogSyncProgress(progress);
                 continue;
             }
 
@@ -632,12 +636,13 @@ public class ImportService : IImportService
 
             SaveCategory(content, importCategory, allUmbracoMedia, mediaIndex, create, syncUser);
 
+            LogSyncProgress(progress);
 
-            IterateCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, content, syncUser, delete: delete);
+            IterateCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, content, syncUser, delete: delete, progress: progress);
         }
     }
 
-    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, bool delete = true, IContent? recycleBinNode = null, IContent? productProcessNode = null, bool forceUpdate = false)
+    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, bool delete = true, IContent? recycleBinNode = null, IContent? productProcessNode = null, bool forceUpdate = false, ImportSyncProgressTracker? progress = null)
     {
         ArgumentNullException.ThrowIfNull(categoryContentType);
         ArgumentNullException.ThrowIfNull(productContentType);
@@ -815,6 +820,7 @@ public class ImportService : IImportService
 
                         if (productContent == null)
                         {
+                            LogSyncProgress(progress);
                             continue;
                         }
 
@@ -843,9 +849,30 @@ public class ImportService : IImportService
                     _logger.LogWarning($"Failed to save product {importProduct.SKU}, no categories found.");
                 }
 
+                LogSyncProgress(progress);
             }
         }
 
+    }
+
+    private void LogSyncProgress(ImportSyncProgressTracker? progress)
+    {
+        if (progress == null)
+        {
+            return;
+        }
+
+        var percentage = progress.ProcessItem();
+        if (!percentage.HasValue)
+        {
+            return;
+        }
+
+        _logger.LogInformation(
+            "Import sync progress: {Progress}% ({ProcessedItems}/{TotalItems} categories and products processed).",
+            percentage.Value,
+            progress.ProcessedItems,
+            progress.TotalItems);
     }
 
     private void IterateVariantGroups(List<ImportVariantGroup> importVariantGroups, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, Dictionary<int, List<IContent>>? ekomNodesByParentId = null, bool forceUpdate = false)
