@@ -105,6 +105,20 @@ internal sealed class MailchimpDispatcher : BackgroundService, IMailchimpDispatc
                     delay);
                 await Task.Delay(delay, ct).ConfigureAwait(false);
             }
+            catch (MailchimpApiException ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Mailchimp work {WorkType} in store {StoreAlias} failed with status {StatusCode}. Error type: {ErrorType}. Title: {ErrorTitle}. Detail: {ErrorDetail}. Fields: {ErrorFields}",
+                    item.GetType().Name,
+                    item.StoreAlias,
+                    (int)ex.StatusCode,
+                    ex.Error?.Type,
+                    ex.Error?.Title,
+                    ex.Error?.Detail,
+                    string.Join(", ", ex.Error?.Fields ?? []));
+                return;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(

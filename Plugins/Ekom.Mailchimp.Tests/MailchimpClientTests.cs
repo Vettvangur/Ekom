@@ -78,6 +78,36 @@ public sealed class MailchimpClientTests
     }
 
     [Fact]
+    public async Task GetTagsAsync_ApiFailuresExposeSanitizedErrorDetails()
+    {
+        const string subscriberHash = "9e5472907687e54299815f8f1bc8cadd";
+        using var handler = new RecordingHandler
+        {
+            ResponseStatusCode = HttpStatusCode.BadRequest,
+            ResponseBody = $$"""
+                {
+                  "type": "https://mailchimp.com/developer/marketing/docs/errors/",
+                  "title": "Invalid Resource",
+                  "detail": "Email person@example.com with subscriber {{subscriberHash}} is invalid.",
+                  "errors": [
+                    { "field": "email_address", "message": "Invalid email." }
+                  ]
+                }
+                """,
+        };
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        MailchimpAudienceClient client = CreateAudienceClient(handler, cache);
+
+        MailchimpApiException exception = await Assert.ThrowsAsync<MailchimpApiException>(
+            () => client.GetTagsAsync(CancellationToken.None));
+
+        MailchimpApiError error = Assert.IsType<MailchimpApiError>(exception.Error);
+        Assert.Equal("Invalid Resource", error.Title);
+        Assert.Equal("Email [redacted-email] with subscriber [redacted-subscriber-hash] is invalid.", error.Detail);
+        Assert.Equal(["email_address"], error.Fields);
+    }
+
+    [Fact]
     public async Task SubscribeAsync_UpsertsMemberAndAppliesTags()
     {
         using var handler = new RecordingHandler();
