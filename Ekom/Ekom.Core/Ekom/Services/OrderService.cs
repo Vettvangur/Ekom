@@ -2012,6 +2012,11 @@ partial class OrderService
 
             var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, allData, settings);
 
+            if (string.IsNullOrWhiteSpace(settings.OrderDynamicRequest?.Title))
+            {
+                orderedShippingProvider.Title = OrderProviderTitleResolver.Resolve(provider.Properties, storeAlias, ResolveOrderCulture(orderInfo));
+            }
+
             orderInfo.ShippingProvider = orderedShippingProvider;
 
             await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
@@ -2023,7 +2028,7 @@ partial class OrderService
             {
                 await _orderActivityLogService.AddOrderLogAsync(
                         updatedOrderInfo.UniqueId,
-                        $"Shipping provider added. Provider: {provider.Title}",
+                        $"Shipping provider added. Provider: {orderedShippingProvider.Title}",
                         logType: OrderActivityLogType.Info,
                         ct: ct)
                     .ConfigureAwait(false);
@@ -2095,6 +2100,8 @@ partial class OrderService
 
             OrderedPaymentProvider orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo, allData);
 
+            orderedPaymentProvider.Title = OrderProviderTitleResolver.Resolve(provider.Properties, storeAlias, ResolveOrderCulture(orderInfo));
+
             orderInfo.PaymentProvider = orderedPaymentProvider;
 
             await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
@@ -2106,7 +2113,7 @@ partial class OrderService
             {
                 await _orderActivityLogService.AddOrderLogAsync(
                         updatedOrderInfo.UniqueId,
-                        $"Payment provider added. Provider: {provider.Title}",
+                        $"Payment provider added. Provider: {orderedPaymentProvider.Title}",
                         logType: OrderActivityLogType.Info,
                         ct: ct)
                     .ConfigureAwait(false);
