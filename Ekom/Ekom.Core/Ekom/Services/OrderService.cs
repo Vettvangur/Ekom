@@ -1456,7 +1456,8 @@ partial class OrderService
         OrderInfo orderInfo,
         bool fireOnOrderUpdatedEvents = true,
         CancellationToken ct = default,
-        bool reservationPersistence = false)
+        bool reservationPersistence = false,
+        bool verifyProviders = true)
     {
         try
         {
@@ -1464,7 +1465,10 @@ partial class OrderService
 
             VerifyDiscounts(orderInfo);
             AddGlobalDiscounts(orderInfo);
-            VerifyProviders(orderInfo);
+            if (verifyProviders)
+            {
+                VerifyProviders(orderInfo);
+            }
 
             orderInfo.Culture = ResolveOrderCulture(orderInfo);
 
@@ -1802,6 +1806,12 @@ partial class OrderService
             throw new ArgumentException("Orderinfo is missing", nameof(orderInfo));
         }
 
+        // Metadata-only edits should not invalidate an already selected provider.
+        var verifyProviders = HasProviderRelevantCustomerChanges(form, orderInfo);
+        var previousCustomerCountry = orderInfo.CustomerInformation.Customer.Country;
+        var previousShippingCountry = orderInfo.CustomerInformation.Shipping.Country;
+        var previousShippingProviderKey = orderInfo.ShippingProvider?.Key;
+        var previousPaymentProviderKey = orderInfo.PaymentProvider?.Key;
         var previousCustomerEmail = orderInfo.CustomerInformation.Customer.Email;
 
         if (settings.Tracking?.HasData() == true || settings.Consent != null)
@@ -1899,7 +1909,12 @@ partial class OrderService
             }
         }
 
-        orderInfo = await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+        verifyProviders |= !string.Equals(previousCustomerCountry, orderInfo.CustomerInformation.Customer.Country, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(previousShippingCountry, orderInfo.CustomerInformation.Shipping.Country, StringComparison.OrdinalIgnoreCase)
+            || previousShippingProviderKey != orderInfo.ShippingProvider?.Key
+            || previousPaymentProviderKey != orderInfo.PaymentProvider?.Key;
+
+        orderInfo = await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct, verifyProviders: verifyProviders)
             .ConfigureAwait(false);
 
         var newCustomerEmail = orderInfo.CustomerInformation.Customer.Email;
@@ -1929,6 +1944,40 @@ partial class OrderService
 
         return orderInfo;
 
+    }
+
+    internal static bool HasProviderRelevantCustomerChanges(IReadOnlyDictionary<string, string> form, IOrderInfo orderInfo)
+    {
+        foreach (var (key, value) in form)
+        {
+            if (key.Equals("customerCountry", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(value, orderInfo.CustomerInformation.Customer.Country, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (key.Equals("shippingCountry", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(value, orderInfo.CustomerInformation.Shipping.Country, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (key.Equals("ShippingProvider", StringComparison.OrdinalIgnoreCase)
+                && Guid.TryParse(value, out var shippingProviderKey)
+                && shippingProviderKey != (orderInfo.ShippingProvider?.Key ?? Guid.Empty))
+            {
+                return true;
+            }
+
+            if (key.Equals("PaymentProvider", StringComparison.OrdinalIgnoreCase)
+                && Guid.TryParse(value, out var paymentProviderKey)
+                && paymentProviderKey != (orderInfo.PaymentProvider?.Key ?? Guid.Empty))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public async Task<OrderInfo> UpdateTrackingAsync(
