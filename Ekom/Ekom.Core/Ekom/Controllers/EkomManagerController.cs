@@ -10,6 +10,9 @@ using Ekom.Utilities;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using System.Globalization;
 using System.Text;
 
@@ -75,7 +78,7 @@ public class EkomManagerController : ControllerBase
             }
 
             var order = await _repo.GetOrderInfoAsync(orderId, ct);
-            return Ok(order);
+            return Ok(GetOrderInfoResponse(order));
         }
         catch(Exception ex)
         {
@@ -84,6 +87,47 @@ public class EkomManagerController : ControllerBase
             return StatusCode(500, "An unexpected error occurred.");
         }
 
+    }
+
+    internal static object? GetOrderInfoResponse(IOrderInfo? order)
+    {
+        if (order == null)
+        {
+            return null;
+        }
+
+        var payment = order.PaymentProvider;
+        var shipping = order.ShippingProvider;
+        var missingPaymentTitle = payment != null && string.IsNullOrWhiteSpace(payment.Title);
+        var missingShippingTitle = shipping != null && string.IsNullOrWhiteSpace(shipping.Title);
+
+        if (!missingPaymentTitle && !missingShippingTitle)
+        {
+            return order;
+        }
+
+        var response = JObject.FromObject(order, JsonSerializer.Create(new JsonSerializerSettings
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        }));
+
+        ApplyProviderTitleFallbacks(response, order);
+        return response;
+    }
+
+    internal static void ApplyProviderTitleFallbacks(JObject response, IOrderInfo order)
+    {
+        var payment = order.PaymentProvider;
+        if (payment != null && string.IsNullOrWhiteSpace(payment.Title) && response["paymentProvider"] is JObject paymentResponse)
+        {
+            paymentResponse["title"] = OrderProviderTitleResolver.Resolve(payment.Properties, order.StoreInfo.Alias, order.Culture);
+        }
+
+        var shipping = order.ShippingProvider;
+        if (shipping != null && string.IsNullOrWhiteSpace(shipping.Title) && response["shippingProvider"] is JObject shippingResponse)
+        {
+            shippingResponse["title"] = OrderProviderTitleResolver.Resolve(shipping.Properties, order.StoreInfo.Alias, order.Culture);
+        }
     }
 
     [HttpGet]
