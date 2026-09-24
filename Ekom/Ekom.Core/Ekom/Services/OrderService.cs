@@ -2006,7 +2006,7 @@ partial class OrderService
 
             Guid previousShippingProviderId = orderInfo.ShippingProvider?.Key ?? Guid.Empty;
 
-            IShippingProvider? provider = Providers.Instance.GetShippingProvider(shippingProviderId, store);
+            IShippingProvider? provider = await Providers.Instance.GetShippingProviderAsync(shippingProviderId, store, ct).ConfigureAwait(false);
 
             if (provider == null) return orderInfo;
 

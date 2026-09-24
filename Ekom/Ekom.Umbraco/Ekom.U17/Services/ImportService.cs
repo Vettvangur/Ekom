@@ -1347,10 +1347,27 @@ public class ImportService : IImportService
 
         variantContent.Name = importVariant.NodeName;
 
-        SaveEvent(variantContent, importVariant, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, args.IsCreateOperation);
+        if (!TrySaveVariant(variantContent, importVariant, syncUser, args.IsCreateOperation))
+        {
+            return;
+        }
 
         variantsSaved.Add(importVariant);
         
+    }
+
+    private bool TrySaveVariant(IContent variantContent, ImportVariant importVariant, int syncUser, bool create)
+    {
+        try
+        {
+            SaveEvent(variantContent, importVariant, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, create);
+            return true;
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "Cannot save a non-current version.")
+        {
+            _logger.LogWarning(ex, "Skipping variant with non-current version. Id: {VariantId} Identifier: {Identifier} SKU: {SKU}", variantContent.Id, importVariant.Identifier, importVariant.SKU);
+            return false;
+        }
     }
 
     private void SaveWarehouseStock(string? sku, List<ImportWarehouseStock> warehouseStock)
