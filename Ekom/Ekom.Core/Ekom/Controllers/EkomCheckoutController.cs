@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Net;
 
 namespace Ekom.Controllers;
 
@@ -179,15 +180,14 @@ public class EkomCheckoutApiController : ControllerBase
 
         var redirectQuery = callbackData
             .Where(x => !string.IsNullOrWhiteSpace(x.Key) && x.Value != null)
-            .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(x => x.Key, x => x.Value, StringComparer.Ordinal);
 
         return Redirect(QueryHelpers.AddQueryString(redirectUrl, redirectQuery));
     }
 
     private async Task<Dictionary<string, string?>> GetPaymentReturnDataAsync(CancellationToken ct)
     {
-        var data = Request.Query
-            .ToDictionary(x => x.Key, x => (string?)x.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+        var data = ParsePaymentReturnData(Request.QueryString.Value);
 
         if (!Request.HasFormContentType)
         {
@@ -199,6 +199,38 @@ public class EkomCheckoutApiController : ControllerBase
         foreach (var item in form)
         {
             data[item.Key] = item.Value.ToString();
+        }
+
+        return data;
+    }
+
+    internal static Dictionary<string, string?> ParsePaymentReturnData(string? queryString)
+    {
+        var data = new Dictionary<string, string?>(StringComparer.Ordinal);
+
+        if (string.IsNullOrWhiteSpace(queryString))
+        {
+            return data;
+        }
+
+        foreach (var pair in queryString.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separatorIndex = pair.IndexOf('=');
+            var key = WebUtility.UrlDecode(separatorIndex >= 0 ? pair[..separatorIndex] : pair);
+            var value = WebUtility.UrlDecode(separatorIndex >= 0 ? pair[(separatorIndex + 1)..] : string.Empty);
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                continue;
+            }
+
+            if (data.TryGetValue(key, out var existingValue))
+            {
+                data[key] = $"{existingValue},{value}";
+                continue;
+            }
+
+            data[key] = value;
         }
 
         return data;
