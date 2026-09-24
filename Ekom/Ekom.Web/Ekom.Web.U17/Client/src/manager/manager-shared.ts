@@ -157,7 +157,7 @@ export class EkomManagerApi {
   }
 
   async paymentProviders(storeAlias: string): Promise<PaymentProviderItem[]> {
-    return this.getJson(`/ekom/provider/paymentsproviders/${encodeURIComponent(storeAlias)}`);
+    return this.getJson(`/ekom/manager/paymentproviders/${encodeURIComponent(storeAlias)}`);
   }
 
   async orderInfo(orderId: string): Promise<OrderInfo> {

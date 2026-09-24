@@ -7,6 +7,7 @@ using Ekom.Models.Manager;
 using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
@@ -23,14 +24,16 @@ public class EkomManagerController : ControllerBase
     readonly INodeService _nodeService;
     readonly IOrderActivityLogService _orderActivityLogService;
     readonly IOrderManagerActionService _orderManagerActionService;
+    readonly Providers _providers;
     readonly ILogger<EkomManagerController> _logger;
-    public EkomManagerController(ManagerRepository repo, IManagerAccessService managerAccessService, INodeService nodeService, IOrderActivityLogService orderActivityLogService, IOrderManagerActionService orderManagerActionService, ILogger<EkomManagerController> logger)
+    public EkomManagerController(ManagerRepository repo, IManagerAccessService managerAccessService, INodeService nodeService, IOrderActivityLogService orderActivityLogService, IOrderManagerActionService orderManagerActionService, Providers providers, ILogger<EkomManagerController> logger)
     {
         _repo = repo;
         _managerAccessService = managerAccessService;
         _nodeService = nodeService;
         _orderActivityLogService = orderActivityLogService;
         _orderManagerActionService = orderManagerActionService;
+        _providers = providers;
         _logger = logger;
     }
 
@@ -254,6 +257,34 @@ public class EkomManagerController : ControllerBase
     public IActionResult GetStores()
     {
         return Ok(_managerAccessService.GetAllowedStores());
+    }
+
+    [HttpGet]
+    [Route("paymentproviders/{storeAlias}")]
+    [UmbracoUserAuthorize]
+    public IActionResult GetPaymentProviders(string storeAlias)
+    {
+        if (!CanAccessStore(storeAlias))
+        {
+            return ForbidStore(storeAlias);
+        }
+
+        var store = _managerAccessService.GetAllowedStores()
+            .FirstOrDefault(x => x.Alias.Equals(storeAlias, StringComparison.OrdinalIgnoreCase));
+
+        if (store == null)
+        {
+            return NotFound();
+        }
+
+        var culture = store.Cultures.FirstOrDefault();
+        if (culture != null)
+        {
+            HttpContext.Features.Set<IRequestCultureFeature>(
+                new RequestCultureFeature(new RequestCulture(culture.Name), null));
+        }
+
+        return Ok(_providers.GetManagerPaymentProviders(store.Alias));
     }
 
     [HttpPost]
