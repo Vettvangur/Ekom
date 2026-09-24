@@ -233,6 +233,13 @@ public class Providers
         return processed.ToList();
     }
 
+    internal IReadOnlyList<IPaymentProvider> GetManagerPaymentProviders(string storeAlias)
+    {
+        return _paymentProviderCache[storeAlias].Values
+            .OrderBy(x => x.SortOrder)
+            .ToList();
+    }
+
     /// <summary>
     /// Common logic for get provider methods.
     /// </summary>

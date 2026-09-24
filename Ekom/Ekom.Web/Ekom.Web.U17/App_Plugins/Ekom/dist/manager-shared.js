@@ -45,7 +45,7 @@ class m {
     return this.getJson("/ekom/manager/stores");
   }
   async paymentProviders(e) {
-    return this.getJson(`/ekom/provider/paymentsproviders/${encodeURIComponent(e)}`);
+    return this.getJson(`/ekom/manager/paymentproviders/${encodeURIComponent(e)}`);
   }
   async orderInfo(e) {
     return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(e)}`);
