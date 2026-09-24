@@ -1,17 +1,21 @@
 using Ekom.API;
 using Ekom.Cache;
+using Ekom.Events;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Tests.Objects;
 using Ekom.Tracking;
+using Ekom.Utilities;
 using LinqToDB;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using System.Collections.Concurrent;
 using Xunit;
 
@@ -176,6 +180,189 @@ public sealed class LinkedOrderLinesTests
             new AddOrderSettings { OrderInfo = fixture.Order, FireEvents = false }));
 
         Assert.Empty((await fixture.ReloadAsync()).OrderLines);
+    }
+
+    [Fact]
+    public async Task UpdateOrderLineMetadataAsync_MergesMultipleLinesWithoutChangingOrderTotals()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var lines = order.OrderLines.ToArray();
+        var before = await fixture.Repository.GetOrderAsync(order.UniqueId);
+
+        var updated = await fixture.Service.UpdateOrderLineMetadataAsync(order.UniqueId,
+        [
+            new OrderLineMetadataUpdate
+            {
+                LineId = lines[0].Key,
+                Properties = new Dictionary<string, string>
+                {
+                    ["orderlineWarehouse"] = "North",
+                    ["orderlineBatch"] = "A123",
+                    ["OrderLineNote"] = "Updated",
+                },
+            },
+            new OrderLineMetadataUpdate
+            {
+                LineId = lines[1].Key,
+                Properties = new Dictionary<string, string> { ["orderlineWarehouse"] = "South" },
+            },
+        ], new OrderSettings { FireEvents = false });
+
+        var reloaded = await fixture.ReloadAsync();
+        Assert.Equal(2, reloaded.OrderLines.Count);
+        Assert.Equal("North", Assert.Single(reloaded.OrderLines, x => x.Key == lines[0].Key).OrderLineInfo.Properties["orderlineWarehouse"]);
+        Assert.Equal("A123", Assert.Single(reloaded.OrderLines, x => x.Key == lines[0].Key).OrderLineInfo.Properties["orderlineBatch"]);
+        Assert.Equal("South", Assert.Single(reloaded.OrderLines, x => x.Key == lines[1].Key).OrderLineInfo.Properties["orderlineWarehouse"]);
+        Assert.Equal("Updated", Assert.Single(reloaded.OrderLines, x => x.Key == lines[0].Key).OrderLineInfo.Properties["orderlineNote"]);
+        Assert.Equal("Existing", Assert.Single(reloaded.OrderLines, x => x.Key == lines[0].Key).OrderLineInfo.Properties["orderlineSource"]);
+        Assert.Equal(lines.Select(x => x.Quantity), updated.OrderLines.Select(x => x.Quantity));
+        Assert.Equal(before!.TotalAmount, (await fixture.Repository.GetOrderAsync(order.UniqueId))!.TotalAmount);
+        Assert.Equal("North", Assert.Single((await fixture.Service.GetOrderAsync(order.UniqueId))!.OrderLines, x => x.Key == lines[0].Key).OrderLineInfo.Properties["orderlineWarehouse"]);
+
+        var managerJson = JObject.FromObject(Ekom.Controllers.EkomManagerController.GetOrderInfoResponse(reloaded)!,
+            JsonSerializer.Create(new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() }));
+        Assert.Equal("North", managerJson["orderLines"]?
+            .FirstOrDefault(x => x["key"]?.Value<Guid>() == lines[0].Key)?["orderLineInfo"]?["properties"]?["orderlineWarehouse"]?.Value<string>());
+    }
+
+    [Fact]
+    public async Task UpdateOrderLineMetadataAsync_InvalidBatchLeavesSavedOrderUnchanged()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var before = (await fixture.Repository.GetOrderAsync(order.UniqueId))!.OrderInfo;
+
+        await Assert.ThrowsAsync<Ekom.Exceptions.OrderLineNotFoundException>(() => fixture.Service.UpdateOrderLineMetadataAsync(
+            order.UniqueId,
+            [
+                new OrderLineMetadataUpdate { LineId = order.OrderLines.First().Key, Properties = new Dictionary<string, string> { ["orderlineWarehouse"] = "North" } },
+                new OrderLineMetadataUpdate { LineId = Guid.NewGuid(), Properties = new Dictionary<string, string> { ["orderlineWarehouse"] = "South" } },
+            ], new OrderSettings { FireEvents = false }));
+
+        Assert.Equal(before, (await fixture.Repository.GetOrderAsync(order.UniqueId))!.OrderInfo);
+        Assert.DoesNotContain((await fixture.ReloadAsync()).OrderLines, line => line.OrderLineInfo.Properties.ContainsKey("orderlineWarehouse"));
+    }
+
+    [Fact]
+    public async Task UpdateOrderLineMetadataAsync_WorksOnCompletedOrder()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var data = (await fixture.Repository.GetOrderAsync(order.UniqueId))!;
+        data.OrderStatus = OrderStatus.Closed;
+        await fixture.Repository.UpdateOrderAsync(data);
+
+        var updated = await fixture.Service.UpdateOrderLineMetadataAsync(order.UniqueId,
+            [new OrderLineMetadataUpdate { LineId = order.OrderLines.First().Key, Properties = new Dictionary<string, string> { ["orderlineWarehouse"] = "North" } }],
+            new OrderSettings { FireEvents = false });
+
+        Assert.Equal(OrderStatus.Closed, updated.OrderStatus);
+        Assert.Equal("North", Assert.Single((await fixture.ReloadAsync()).OrderLines, x => x.Key == order.OrderLines.First().Key).OrderLineInfo.Properties["orderlineWarehouse"]);
+    }
+
+    [Fact]
+    public async Task UpdateOrderLineMetadataAsync_DoesNotRevalidateSelectedProviders()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var data = (await fixture.Repository.GetOrderAsync(order.UniqueId))!;
+        var orderJson = JObject.Parse(data.OrderInfo);
+        var shippingKey = Guid.NewGuid();
+        var paymentKey = Guid.NewGuid();
+        orderJson["ShippingProvider"] = new JObject { ["Id"] = 1, ["Key"] = shippingKey, ["Title"] = "Pickup" };
+        orderJson["PaymentProvider"] = new JObject { ["Id"] = 2, ["Key"] = paymentKey, ["Title"] = "Invoice" };
+        data.OrderInfo = orderJson.ToString();
+        await fixture.Repository.UpdateOrderAsync(data);
+
+        var updated = await fixture.Service.UpdateOrderLineMetadataAsync(order.UniqueId,
+            [new OrderLineMetadataUpdate { LineId = order.OrderLines.First().Key, Properties = new Dictionary<string, string> { ["orderlineWarehouse"] = "North" } }],
+            new OrderSettings { FireEvents = false });
+
+        Assert.Equal(shippingKey, updated.ShippingProvider?.Key);
+        Assert.Equal(paymentKey, updated.PaymentProvider?.Key);
+        var reloaded = await fixture.ReloadAsync();
+        Assert.Equal(shippingKey, reloaded.ShippingProvider?.Key);
+        Assert.Equal(paymentKey, reloaded.PaymentProvider?.Key);
+    }
+
+    [Fact]
+    public async Task UpdateOrderLineMetadataAsync_FiresOnlyOrderUpdatedOnce()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var orderUpdated = 0;
+        var lineUpdated = 0;
+        EventHandler<OrderUpdatedEventArgs> orderHandler = (_, _) => orderUpdated++;
+        EventHandler<UpdatedOrderlineEventArgs> lineHandler = (_, _) => lineUpdated++;
+        OrderEvents.OrderUpdated += orderHandler;
+        OrderEvents.UpdatedOrderline += lineHandler;
+        try
+        {
+            await fixture.Service.UpdateOrderLineMetadataAsync(order.UniqueId,
+                [new OrderLineMetadataUpdate { LineId = order.OrderLines.First().Key, Properties = new Dictionary<string, string> { ["orderlineWarehouse"] = "North" } }]);
+        }
+        finally
+        {
+            OrderEvents.OrderUpdated -= orderHandler;
+            OrderEvents.UpdatedOrderline -= lineHandler;
+        }
+
+        Assert.Equal(1, orderUpdated);
+        Assert.Equal(0, lineUpdated);
+    }
+
+    [Fact]
+    public async Task UpdateOrderLineMetadataAsync_RejectsDuplicateLinesAndInvalidPropertyKeys()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var lineId = order.OrderLines.First().Key;
+        var before = (await fixture.Repository.GetOrderAsync(order.UniqueId))!.OrderInfo;
+
+        await Assert.ThrowsAsync<ArgumentException>(() => fixture.Service.UpdateOrderLineMetadataAsync(order.UniqueId,
+        [
+            new OrderLineMetadataUpdate { LineId = lineId, Properties = new Dictionary<string, string> { ["orderlineWarehouse"] = "North" } },
+            new OrderLineMetadataUpdate { LineId = lineId, Properties = new Dictionary<string, string> { ["orderlineBatch"] = "A123" } },
+        ]));
+        await Assert.ThrowsAsync<ArgumentException>(() => fixture.Service.UpdateOrderLineMetadataAsync(order.UniqueId,
+            [new OrderLineMetadataUpdate { LineId = lineId, Properties = new Dictionary<string, string> { ["warehouse"] = "North" } }]));
+
+        Assert.Equal(before, (await fixture.Repository.GetOrderAsync(order.UniqueId))!.OrderInfo);
+    }
+
+    [Fact]
+    public async Task TryUpdateOrderInfoAsync_RejectsAConcurrentChange()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var data = (await fixture.Repository.GetOrderAsync(order.UniqueId))!;
+        var original = data.OrderInfo;
+        var changed = Newtonsoft.Json.Linq.JObject.Parse(original);
+        changed["WarehouseSync"] = "other writer";
+        data.OrderInfo = changed.ToString();
+        await fixture.Repository.UpdateOrderAsync(data);
+
+        Assert.False(await fixture.Repository.TryUpdateOrderInfoAsync(order.UniqueId, original, "stale write", DateTime.Now));
+        Assert.Equal(data.OrderInfo, (await fixture.Repository.GetOrderAsync(order.UniqueId))!.OrderInfo);
+    }
+
+    private static async Task<OrderInfo> AddTwoLinesAsync(Fixture fixture)
+    {
+        var parent = fixture.AddProduct();
+        var child = fixture.AddProduct();
+        return await fixture.Service.AddLinkedOrderLinesAsync(parent, 1, "main",
+            [new LinkedOrderLineRequest { ProductId = child, Quantity = 2 }],
+            new AddOrderSettings
+            {
+                OrderInfo = fixture.Order,
+                FireEvents = false,
+                CustomData = new Dictionary<string, string>
+                {
+                    ["orderlineNote"] = "Existing",
+                    ["orderlineSource"] = "Existing",
+                },
+            });
     }
 
     private sealed class Fixture : IDisposable

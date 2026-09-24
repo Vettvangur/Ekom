@@ -70,6 +70,32 @@ class OrderRepository
             _memoryCache.Remove(orderData.UniqueId);
     }
 
+    internal async Task<bool> TryUpdateOrderInfoAsync(
+        Guid orderId,
+        string expectedOrderInfo,
+        string updatedOrderInfo,
+        DateTime updateDate,
+        CancellationToken ct = default)
+    {
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        var updated = await db.OrderData
+            .Where(x => x.UniqueId == orderId && x.OrderInfo == expectedOrderInfo)
+            .Set(x => x.OrderInfo, updatedOrderInfo)
+            .Set(x => x.UpdateDate, updateDate)
+            .UpdateAsync(ct)
+            .ConfigureAwait(false);
+
+        if (updated != 1)
+        {
+            return false;
+        }
+
+        _memoryCache.Remove(orderId);
+        _memoryCache.Remove(orderId.ToString());
+        return true;
+    }
+
 
     public async Task MigrateOrderTableAsync()
     {

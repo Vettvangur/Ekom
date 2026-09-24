@@ -620,6 +620,17 @@ public partial class Order
     }
 
     /// <summary>
+    /// Merges metadata into existing lines of an order in a single save, including completed orders.
+    /// All property keys must start with "orderline". Invalid or missing line keys reject the entire batch.
+    /// </summary>
+    public async Task<IOrderInfo> UpdateOrderLineMetadataAsync(
+        Guid orderId,
+        IReadOnlyCollection<OrderLineMetadataUpdate> updates,
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
+        => await _orderService.UpdateOrderLineMetadataAsync(orderId, updates, settings, ct).ConfigureAwait(false);
+
+    /// <summary>
     /// 
     /// </summary>
     public async Task CompleteOrderAsync(Guid orderId, CancellationToken ct = default)

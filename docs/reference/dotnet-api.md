@@ -93,6 +93,7 @@ The older store-first variant overloads are marked obsolete; use the identifier-
 | Add linked group | `AddLinkedOrderLinesAsync(..., IReadOnlyCollection<LinkedOrderLineRequest>, ...)` |
 | Remove | `RemoveOrderLineAsync(Guid lineId, ...)`, `RemoveOrderLineProductAsync(Guid productKey, ...)` |
 | Set quantity | `UpdateOrderlineQuantityAsync(Guid lineId, decimal quantity, ...)` |
+| Merge existing line metadata | `UpdateOrderLineMetadataAsync(Guid orderId, IReadOnlyCollection<OrderLineMetadataUpdate> updates, OrderSettings? settings = null, ...)` |
 | Gift cards | `AddGiftcardAsync(...)`, `RemoveGiftcardAsync(...)` |
 | Customer/tracking | `UpdateCustomerInformationAsync(...)`, `UpdateTrackingAsync(...)` |
 | Providers | `UpdateShippingInformationAsync(...)`, `UpdatePaymentInformationAsync(...)` |
@@ -100,6 +101,30 @@ The older store-first variant overloads are marked obsolete; use the identifier-
 | Cookie | `DeleteOrderCookie(...)`, `EnsureOrderCookie(...)` |
 
 `AddOrderSettings.OrderAction` defaults to `AddOrUpdate`; `VariantKey`, `CustomData`, consent, tracking, and an Algolia query ID can accompany the line. Linked lines are created atomically with their parent. See [Linked order lines](../guides/linked-order-lines.md).
+
+`UpdateOrderLineMetadataAsync` merges `orderline*` string properties into existing lines identified by **line GUID**, including lines on completed orders. It validates every entry before a single metadata-only database update; duplicate or missing line IDs and invalid property keys reject the whole batch. Existing properties not supplied are retained. It does not recalculate prices, stock, discounts, or providers. When events are enabled, it sends one order-updated notification (not per-line events). If the stored order changes between the read and write, the update fails with a conflict; reload the order before retrying. Pass the order ID rather than `OrderSettings.OrderInfo`.
+
+```csharp
+using Ekom.Models;
+
+var updates = new[]
+{
+    new OrderLineMetadataUpdate
+    {
+        LineId = firstLine.Key,
+        Properties = new Dictionary<string, string> { ["orderlineWarehouse"] = "North" },
+    },
+    new OrderLineMetadataUpdate
+    {
+        LineId = secondLine.Key,
+        Properties = new Dictionary<string, string> { ["orderlineWarehouse"] = "South" },
+    },
+};
+
+await order.UpdateOrderLineMetadataAsync(orderId, updates, new OrderSettings { FireEvents = false }, ct);
+```
+
+The U17/U18 manager displays nonempty `OrderLineInfo.Properties` values on each order line; the `orderline` prefix is removed from display labels.
 
 ### Coupons
 
