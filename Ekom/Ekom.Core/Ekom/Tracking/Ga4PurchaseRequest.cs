@@ -5,6 +5,7 @@ public sealed class Ga4PurchaseRequest
     public Guid OrderUniqueId { get; set; }
     public string StoreAlias { get; set; } = string.Empty;
     public bool HasAnalyticsConsent { get; set; }
+    public bool HasCapturedClientId { get; set; }
     public bool HasCapturedSessionId { get; set; }
     public string? ClientId { get; set; }
     public long? SessionId { get; set; }

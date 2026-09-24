@@ -111,6 +111,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
     {
         var tracking = orderInfo.Tracking ?? new OrderTracking();
         var clientId = tracking.Ga4.ClientId;
+        var hasCapturedClientId = !string.IsNullOrWhiteSpace(clientId);
 
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -130,6 +131,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
             StoreAlias = orderInfo.StoreInfo.Alias,
             ClientId = clientId,
             SessionId = sessionId,
+            HasCapturedClientId = hasCapturedClientId,
             HasCapturedSessionId = hasCapturedSessionId,
             EventName = eventName,
             Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
@@ -246,14 +248,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         var payload = new
         {
             client_id = request.ClientId,
-            events = new[]
-            {
-                new
-                {
-                    name = request.EventName,
-                    @params = BuildParameters(request)
-                }
-            }
+            events = BuildEvents(request)
         };
 
         var endpoint = UseDebugEndpoint ? "debug/mp/collect" : "mp/collect";
@@ -285,17 +280,26 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         await WriteActivityLogAsync(request.OrderUniqueId, $"GA4 {request.EventName} event successfully sent", OrderActivityLogType.Success).ConfigureAwait(false);
     }
 
-    private object BuildParameters(Ga4PurchaseRequest request)
+    private IReadOnlyList<Ga4EventPayload> BuildEvents(Ga4PurchaseRequest request)
+    {
+        var includeCampaignDetails = ShouldIncludeCampaignDetails(request);
+        var events = new List<Ga4EventPayload>();
+
+        if (includeCampaignDetails)
+        {
+            events.Add(new Ga4EventPayload("campaign_details", BuildCampaignDetailsParameters(request)));
+        }
+
+        events.Add(new Ga4EventPayload(request.EventName, BuildParameters(request, includeCampaignDetails)));
+        return events;
+    }
+
+    private object BuildParameters(Ga4PurchaseRequest request, bool campaignDetailsIncluded)
     {
         var parameters = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["value"] = request.Value,
             ["currency"] = request.Currency,
-            ["campaign_source"] = request.Source,
-            ["campaign_medium"] = request.Medium,
-            ["campaign_name"] = request.Campaign,
-            ["campaign_term"] = request.Term,
-            ["campaign_content"] = request.Content,
             ["gclid"] = request.Gclid,
             ["items"] = request.Items.Select(item => new Dictionary<string, object?>
             {
@@ -310,6 +314,15 @@ public sealed class Ga4TrackingService : IGa4TrackingService
                 ["coupon"] = item.Coupon
             }).Select(FilterNullValues).ToList()
         };
+
+        if (!campaignDetailsIncluded)
+        {
+            parameters["campaign_source"] = request.Source;
+            parameters["campaign_medium"] = request.Medium;
+            parameters["campaign_name"] = request.Campaign;
+            parameters["campaign_term"] = request.Term;
+            parameters["campaign_content"] = request.Content;
+        }
 
         if (string.Equals(request.EventName, "purchase", StringComparison.OrdinalIgnoreCase))
         {
@@ -346,6 +359,36 @@ public sealed class Ga4TrackingService : IGa4TrackingService
         return FilterNullValues(parameters);
     }
 
+    private static bool ShouldIncludeCampaignDetails(Ga4PurchaseRequest request)
+    {
+        return string.Equals(request.EventName, "purchase", StringComparison.OrdinalIgnoreCase)
+            && request.HasAnalyticsConsent
+            && request.HasCapturedClientId
+            && request.HasCapturedSessionId
+            && !string.IsNullOrWhiteSpace(request.ClientId)
+            && request.SessionId.HasValue
+            && (!string.IsNullOrWhiteSpace(request.Source)
+                || !string.IsNullOrWhiteSpace(request.Medium)
+                || !string.IsNullOrWhiteSpace(request.Campaign)
+                || !string.IsNullOrWhiteSpace(request.Term)
+                || !string.IsNullOrWhiteSpace(request.Content));
+    }
+
+    private static object BuildCampaignDetailsParameters(Ga4PurchaseRequest request)
+    {
+        var parameters = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["session_id"] = request.SessionId,
+            ["source"] = request.Source,
+            ["medium"] = request.Medium,
+            ["campaign"] = request.Campaign,
+            ["term"] = request.Term,
+            ["content"] = request.Content,
+        };
+
+        return FilterNullValues(parameters);
+    }
+
     private TrackingStoreOptions? ResolveStore(string storeAlias)
         => _options.Value.Ga4.Stores.FirstOrDefault(x => x.Alias.Equals(storeAlias, StringComparison.OrdinalIgnoreCase));
 
@@ -364,6 +407,7 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
         request.ClientId = GenerateClientId();
         request.SessionId = null;
+        request.HasCapturedClientId = false;
         request.HasCapturedSessionId = false;
         request.Parameters.Clear();
     }
@@ -434,4 +478,6 @@ public sealed class Ga4TrackingService : IGa4TrackingService
 
     private static string GenerateClientId()
         => $"{Random.Shared.Next(100000000, 999999999)}.{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+
+    private sealed record Ga4EventPayload(string name, object @params);
 }

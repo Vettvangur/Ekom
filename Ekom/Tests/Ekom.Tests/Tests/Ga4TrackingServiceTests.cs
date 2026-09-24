@@ -14,6 +14,76 @@ namespace Ekom.Tests.Tests;
 public sealed class Ga4TrackingServiceTests
 {
     [Fact]
+    public async Task SendPurchaseAsync_PurchaseWithCapturedCampaignDetails_SendsCampaignDetailsFirst()
+    {
+        using var handler = new RecordingHttpMessageHandler();
+        using var httpClient = new HttpClient(handler);
+        var sut = CreateService(httpClient);
+
+        await sut.SendPurchaseAsync(new Ga4PurchaseRequest
+        {
+            StoreAlias = "Store",
+            ClientId = "123.456",
+            SessionId = 123,
+            HasAnalyticsConsent = true,
+            HasCapturedClientId = true,
+            HasCapturedSessionId = true,
+            TransactionId = "4293",
+            Value = 1210,
+            Currency = "ISK",
+            Source = "utmtest",
+            Medium = "rmtest",
+            Campaign = "rm_utm",
+            Term = "merkibolur",
+            Content = "20stk",
+        });
+
+        using var document = JsonDocument.Parse(handler.Payload);
+        var events = document.RootElement.GetProperty("events");
+        var campaignDetails = events[0];
+        var purchase = events[1];
+
+        Assert.Equal("campaign_details", campaignDetails.GetProperty("name").GetString());
+        Assert.Equal(123, campaignDetails.GetProperty("params").GetProperty("session_id").GetInt64());
+        Assert.Equal("utmtest", campaignDetails.GetProperty("params").GetProperty("source").GetString());
+        Assert.Equal("rmtest", campaignDetails.GetProperty("params").GetProperty("medium").GetString());
+        Assert.Equal("rm_utm", campaignDetails.GetProperty("params").GetProperty("campaign").GetString());
+        Assert.Equal("purchase", purchase.GetProperty("name").GetString());
+        Assert.Equal("4293", purchase.GetProperty("params").GetProperty("transaction_id").GetString());
+        Assert.False(purchase.GetProperty("params").TryGetProperty("campaign_source", out _));
+    }
+
+    [Fact]
+    public async Task SendPurchaseAsync_PurchaseWithoutCapturedClientId_DoesNotSendCampaignDetails()
+    {
+        using var handler = new RecordingHttpMessageHandler();
+        using var httpClient = new HttpClient(handler);
+        var sut = CreateService(httpClient);
+
+        await sut.SendPurchaseAsync(new Ga4PurchaseRequest
+        {
+            StoreAlias = "Store",
+            ClientId = "123.456",
+            SessionId = 123,
+            HasAnalyticsConsent = true,
+            HasCapturedSessionId = true,
+            TransactionId = "4293",
+            Value = 1210,
+            Currency = "ISK",
+            Source = "utmtest",
+            Medium = "rmtest",
+        });
+
+        using var document = JsonDocument.Parse(handler.Payload);
+        var events = document.RootElement.GetProperty("events");
+        var purchase = Assert.Single(events.EnumerateArray());
+
+        Assert.Equal("purchase", purchase.GetProperty("name").GetString());
+        Assert.Equal("utmtest", purchase.GetProperty("params").GetProperty("campaign_source").GetString());
+        Assert.Equal("rmtest", purchase.GetProperty("params").GetProperty("campaign_medium").GetString());
+    }
+
+    [Fact]
     public async Task SendPurchaseAsync_AddToCartEvent_DoesNotIncludePurchaseParameters()
     {
         using var handler = new RecordingHttpMessageHandler();
@@ -290,6 +360,29 @@ public sealed class Ga4TrackingServiceTests
 
         Assert.NotNull(method);
         return (IDisposable)method.Invoke(null, [culture])!;
+    }
+
+    private static Ga4TrackingService CreateService(HttpClient httpClient)
+    {
+        return new Ga4TrackingService(
+            new StaticHttpClientFactory(httpClient),
+            Options.Create(new TrackingOptions
+            {
+                Ga4 = new Ga4TrackingProviderOptions
+                {
+                    Stores =
+                    [
+                        new TrackingStoreOptions
+                        {
+                            Alias = "Store",
+                            MeasurementId = "G-XXXXXXXXXX",
+                            ApiSecret = "api-secret",
+                        },
+                    ],
+                },
+            }),
+            new ThrowingServiceScopeFactory(),
+            NullLogger<Ga4TrackingService>.Instance);
     }
 
     private sealed class StaticHttpClientFactory(HttpClient client) : IHttpClientFactory
