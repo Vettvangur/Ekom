@@ -1634,51 +1634,86 @@ class EnsureNodesExist : IComponent
         var contentType = _contentTypeService.Get("ekmOrderDiscount");
         var catalogDataType = _dataTypeService.GetDataType("Ekom Catalog Picker");
         var numericDataType = _dataTypeService.GetDataType(new Guid("2e6d3631-066e-44b8-aec4-96f09099b2b5"));
+        var hasDropdownEditor = _propertyEditorCollection.TryGet("Umbraco.DropDown.Flexible", out IDataEditor? dropdownEditor);
+        var missingDependencies = new List<string>();
 
-        if (contentType == null
-            || catalogDataType == null
-            || numericDataType == null
-            || !_propertyEditorCollection.TryGet("Umbraco.DropDown.Flexible", out IDataEditor? dropdownEditor))
+        if (contentType == null)
         {
-            return;
+            missingDependencies.Add("ekmOrderDiscount content type");
+        }
+        if (catalogDataType == null)
+        {
+            missingDependencies.Add("Ekom Catalog Picker data type");
+        }
+        if (numericDataType == null)
+        {
+            missingDependencies.Add("Numeric data type");
+        }
+        if (!hasDropdownEditor)
+        {
+            missingDependencies.Add("Umbraco.DropDown.Flexible property editor");
         }
 
-        var quantityModeDataType = EnsureDataTypeExists(new DataType(
-            dropdownEditor,
-            _configurationEditorJsonSerializer,
-            EnsureDataTypeContainerExists().Id)
-        {
-            Name = "Ekom Quantity Discount Mode",
-            Configuration = CreateQuantityDiscountModeConfiguration(),
-        });
-        var group = contentType.PropertyGroups.FirstOrDefault(x => x.Alias == "settings");
+        var group = contentType?.PropertyGroups.FirstOrDefault(x => x.Alias == "settings");
         if (group == null)
         {
+            missingDependencies.Add("settings property group");
+        }
+
+        if (missingDependencies.Count > 0)
+        {
+            _logger.LogWarning(
+                "Cannot add order discount quantity properties because dependencies are missing: {MissingDependencies}",
+                string.Join(", ", missingDependencies));
             return;
         }
 
-        AddProperty("quantityDiscountMode", "Quantity Discount Mode", quantityModeDataType, 11);
-        AddProperty("qualifyingItems", "Qualifying Items", catalogDataType, 12,
+        var orderDiscountContentType = contentType!;
+        var requiredCatalogDataType = catalogDataType!;
+        var requiredNumericDataType = numericDataType!;
+        var settingsGroup = group!;
+        var hasChanges = false;
+
+        if (!HasProperty("quantityDiscountMode"))
+        {
+            var quantityModeDataType = EnsureDataTypeExists(new DataType(
+                dropdownEditor!,
+                _configurationEditorJsonSerializer,
+                EnsureDataTypeContainerExists().Id)
+            {
+                Name = "Ekom Quantity Discount Mode",
+                Configuration = CreateQuantityDiscountModeConfiguration(),
+            });
+            AddProperty("quantityDiscountMode", "Quantity Discount Mode", quantityModeDataType, 11);
+        }
+        AddProperty("qualifyingItems", "Qualifying Items", requiredCatalogDataType, 12,
             "Products and categories whose whole-unit quantities count towards this discount.");
-        AddProperty("requiredQuantity", "Required Quantity", numericDataType, 13);
-        AddProperty("rewardQuantity", "Reward Quantity", numericDataType, 14,
+        AddProperty("requiredQuantity", "Required Quantity", requiredNumericDataType, 13);
+        AddProperty("rewardQuantity", "Reward Quantity", requiredNumericDataType, 14,
             "Whole units discounted for each completed group in Repeating mode.");
 
-        _contentTypeService.Save(contentType);
+        if (hasChanges)
+        {
+            _contentTypeService.Save(orderDiscountContentType);
+        }
+
+        bool HasProperty(string alias)
+            => orderDiscountContentType.CompositionPropertyTypes.Any(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
 
         void AddProperty(string alias, string name, IDataType dataType, int sortOrder, string? description = null)
         {
-            if (contentType.CompositionPropertyTypes.Any(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase)))
+            if (HasProperty(alias))
             {
                 return;
             }
 
-            group.PropertyTypes.Add(new PropertyType(_shortStringHelper, dataType, alias)
+            settingsGroup.PropertyTypes!.Add(new PropertyType(_shortStringHelper, dataType, alias)
             {
                 Name = name,
                 Description = description,
                 SortOrder = sortOrder,
             });
+            hasChanges = true;
         }
     }
 
