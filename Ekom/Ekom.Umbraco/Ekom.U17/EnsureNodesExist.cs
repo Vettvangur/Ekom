@@ -1561,6 +1561,7 @@ class EnsureNodesExist : IAsyncComponent
 
             EnsureDiscountPriceProperties();
             EnsureDisableDiscountsProperty();
+            EnsureMigrationDataTypes();
             EnsureOrderDiscountQuantityProperties();
             EnsureDiscountAndProviderFolderContentTypes();
             EnsureSkuProductPickerDataType();
@@ -1837,7 +1838,7 @@ class EnsureNodesExist : IAsyncComponent
     private void EnsureOrderDiscountQuantityProperties()
     {
         var contentType = _contentTypeService.Get("ekmOrderDiscount");
-        var catalogDataType = GetDataType("Ekom Catalog Picker");
+        var catalogDataType = GetCatalogPickerDataType();
         var numericDataType = GetDataType(new Guid("2e6d3631-066e-44b8-aec4-96f09099b2b5"));
         var hasRadioList = _propertyEditorCollection.TryGet("Umbraco.RadioButtonList", out IDataEditor? radioList);
         var missingDependencies = new List<string>();
@@ -2022,6 +2023,75 @@ class EnsureNodesExist : IAsyncComponent
         return _dataTypeService.GetDataType(name);
 #endif
     }
+
+    private void EnsureMigrationDataTypes()
+    {
+        EnsureBooleanStoreDataType();
+        EnsureCatalogPickerDataType();
+    }
+
+    private void EnsureBooleanStoreDataType()
+    {
+        if (GetDataType("Ekom Property Editor - Boolean - Stores") != null)
+        {
+            return;
+        }
+
+        if (!_propertyEditorCollection.TryGet("Ekom.Property", out IDataEditor? propertyEditor))
+        {
+            _logger.LogWarning("Cannot create Ekom Property Editor - Boolean - Stores because the Ekom.Property property editor is missing.");
+            return;
+        }
+
+        var booleanDataType = GetDataType(new Guid("92897bc6-a5f3-4ffe-ae27-f2e7e33dda49"));
+        EnsureDataTypeExists(new DataType(propertyEditor, _configurationEditorJsonSerializer, EnsureDataTypeContainerExists().Id)
+        {
+            Name = "Ekom Property Editor - Boolean - Stores",
+            EditorUiAlias = EkomPropertyEditorUiAlias,
+            ConfigurationData = ToConfigurationData(new
+            {
+                dataType = new
+                {
+                    guid = booleanDataType.Key,
+                    name = booleanDataType.Name,
+                    propertyEditorAlias = booleanDataType.EditorAlias,
+                },
+                useLanguages = false,
+                hideLabel = false,
+            }),
+        });
+    }
+
+    private void EnsureCatalogPickerDataType()
+    {
+        if (GetCatalogPickerDataType() != null)
+        {
+            return;
+        }
+
+        if (!_propertyEditorCollection.TryGet("Umbraco.MultiNodeTreePicker", out IDataEditor? multiNodeEditor))
+        {
+            _logger.LogWarning("Cannot create Ekom Catalog Picker because the Umbraco.MultiNodeTreePicker property editor is missing.");
+            return;
+        }
+
+        EnsureDataTypeExists(new DataType(multiNodeEditor, _configurationEditorJsonSerializer, EnsureDataTypeContainerExists().Id)
+        {
+            Name = "Ekom Catalog Picker",
+            ConfigurationData = ToConfigurationData(new MultiNodePickerConfiguration
+            {
+                Filter = "ekmProduct, ekmProductVariant, ekmCategory",
+                TreeSource = new MultiNodePickerConfigurationTreeSource
+                {
+                    StartNodeQuery = "$root/ekom/ekmCatalog",
+                },
+            }),
+        });
+    }
+
+    private IDataType? GetCatalogPickerDataType()
+        => GetDataType("Ekom Catalog Picker")
+            ?? GetDataType("Ekom - Catalog Picker");
 
     private void SaveDataType(IDataType dataType)
     {
