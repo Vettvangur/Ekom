@@ -126,12 +126,12 @@ public interface IOrderInfo
     /// <summary>
     /// 
     /// </summary>
-    OrderedPaymentProvider PaymentProvider { get; set; }
+    OrderedPaymentProvider? PaymentProvider { get; set; }
 
     /// <summary>
     /// 
     /// </summary>
-    OrderedShippingProvider ShippingProvider { get; set; }
+    OrderedShippingProvider? ShippingProvider { get; set; }
 
     /// <summary>
     /// 

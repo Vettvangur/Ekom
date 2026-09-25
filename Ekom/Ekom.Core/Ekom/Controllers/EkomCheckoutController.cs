@@ -132,7 +132,7 @@ public class EkomCheckoutApiController : ControllerBase
 
     [Route("payment-return")]
     [AcceptVerbs("GET", "POST")]
-    public async Task<IActionResult> PaymentReturn(CancellationToken ct = default)
+    public async Task<IActionResult> PaymentReturnAsync(CancellationToken ct = default)
     {
         Dictionary<string, string?> callbackData = await GetPaymentReturnDataAsync(ct);
 
@@ -150,19 +150,37 @@ public class EkomCheckoutApiController : ControllerBase
 
         if (order == null)
         {
+            _logger.LogError($"Order not found in payment return. {orderId}");
             return NotFound("Order not found.");
         }
 
         if (order.PaymentProvider == null)
         {
+            _logger.LogError($"Order Payment provider not found in payment return. {orderId}");
             return BadRequest("Order payment provider not found.");
         }
 
-        var paymentProvider = API.Providers.Instance.GetPaymentProvider(order.PaymentProvider.Key, order.StoreInfo.Alias);
+        var paymentProvider = await API.Providers.Instance.GetPaymentProviderAsync(order.PaymentProvider.Key, order.StoreInfo.Alias, ct: ct);
 
         if (paymentProvider == null)
         {
+            _logger.LogError($"Payment provider not found in payment return. {orderId}");
             return NotFound("Payment provider not found.");
+        }
+
+        if (outcome != "success")
+        {
+            _logger.LogWarning(
+                "Payment provider {PaymentProvider} returned {Outcome} for order {OrderId}. Status: {Status}; Message: {Message}; Reference number: {ReferenceNumber}; Transaction ID: {TransactionId}; Invoice number: {InvoiceNumber}; Total amount: {TotalAmount}.",
+                paymentProvider.Title,
+                outcome,
+                orderId,
+                callbackData.GetValueOrDefault("status"),
+                callbackData.GetValueOrDefault("message"),
+                callbackData.GetValueOrDefault("referenceNumber"),
+                callbackData.GetValueOrDefault("transactionid"),
+                callbackData.GetValueOrDefault("invoiceNumber"),
+                callbackData.GetValueOrDefault("totalAmount"));
         }
 
         API.Order.Instance.EnsureOrderCookie(orderId, order.StoreInfo.Alias);
