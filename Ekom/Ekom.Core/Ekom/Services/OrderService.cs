@@ -1479,21 +1479,23 @@ partial class OrderService
                 ApplyConsentAndTracking(orderInfo, null, null, replaceExisting: false);
             }
 
-            string serializedOrderInfo;
-            using (OrderPricingCalculationScope.Enter(orderInfo))
-            {
-                serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.Settings);
-            }
-
             OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct)
                 .ConfigureAwait(false);
 
-            if (_ekmRequest != null && _ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
+            if (orderData.OrderStatus == OrderStatus.Incomplete
+                && _ekmRequest?.User != null
+                && !string.IsNullOrEmpty(_ekmRequest.User.Username))
             {
                 orderInfo.CustomerInformation.Customer.UserId = _ekmRequest.User.UserId;
                 orderInfo.CustomerInformation.Customer.UserName = _ekmRequest.User.Username;
                 orderData.CustomerUsername = _ekmRequest.User.Username;
                 orderData.CustomerId = _ekmRequest.User.UserId;
+            }
+
+            string serializedOrderInfo;
+            using (OrderPricingCalculationScope.Enter(orderInfo))
+            {
+                serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.Settings);
             }
 
             orderData.CustomerEmail = orderInfo.CustomerInformation.Customer.Email;
