@@ -1839,48 +1839,86 @@ class EnsureNodesExist : IAsyncComponent
         var contentType = _contentTypeService.Get("ekmOrderDiscount");
         var catalogDataType = GetDataType("Ekom Catalog Picker");
         var numericDataType = GetDataType(new Guid("2e6d3631-066e-44b8-aec4-96f09099b2b5"));
+        var hasRadioList = _propertyEditorCollection.TryGet("Umbraco.RadioButtonList", out IDataEditor? radioList);
+        var missingDependencies = new List<string>();
 
-        if (contentType == null
-            || catalogDataType == null
-            || numericDataType == null
-            || !_propertyEditorCollection.TryGet("Umbraco.RadioButtonList", out IDataEditor? radioList))
+        if (contentType == null)
         {
+            missingDependencies.Add("ekmOrderDiscount content type");
+        }
+        if (catalogDataType == null)
+        {
+            missingDependencies.Add("Ekom Catalog Picker data type");
+        }
+        if (numericDataType == null)
+        {
+            missingDependencies.Add("Numeric data type");
+        }
+        if (!hasRadioList)
+        {
+            missingDependencies.Add("Umbraco.RadioButtonList property editor");
+        }
+        var group = contentType?.PropertyGroups.FirstOrDefault(x => x.Alias == "settings");
+        if (group == null)
+        {
+            missingDependencies.Add("settings property group");
+        }
+
+        if (missingDependencies.Count > 0)
+        {
+            _logger.LogWarning(
+                "Cannot add order discount quantity properties because dependencies are missing: {MissingDependencies}",
+                string.Join(", ", missingDependencies));
             return;
         }
 
-        var quantityModeDataType = EnsureDataTypeExists(new DataType(
-            radioList,
-            _configurationEditorJsonSerializer,
-            EnsureDataTypeContainerExists().Id)
-        {
-            Name = "Ekom Quantity Discount Mode",
-            EditorUiAlias = "Umb.PropertyEditorUi.RadioButtonList",
-            ConfigurationData = CreateQuantityDiscountModeConfigurationData(),
-        });
-        ConfigureQuantityDiscountModeDataType(quantityModeDataType);
+        var orderDiscountContentType = contentType!;
+        var requiredCatalogDataType = catalogDataType!;
+        var requiredNumericDataType = numericDataType!;
+        var hasChanges = false;
 
-        AddProperty("quantityDiscountMode", "Quantity Discount Mode", quantityModeDataType, 11);
-        AddProperty("qualifyingItems", "Qualifying Items", catalogDataType, 12,
+        if (!HasProperty("quantityDiscountMode"))
+        {
+            var quantityModeDataType = EnsureDataTypeExists(new DataType(
+                radioList!,
+                _configurationEditorJsonSerializer,
+                EnsureDataTypeContainerExists().Id)
+            {
+                Name = "Ekom Quantity Discount Mode",
+                EditorUiAlias = "Umb.PropertyEditorUi.RadioButtonList",
+                ConfigurationData = CreateQuantityDiscountModeConfigurationData(),
+            });
+            ConfigureQuantityDiscountModeDataType(quantityModeDataType);
+            AddProperty("quantityDiscountMode", "Quantity Discount Mode", quantityModeDataType, 11);
+        }
+        AddProperty("qualifyingItems", "Qualifying Items", requiredCatalogDataType, 12,
             "Products and categories whose whole-unit quantities count towards this discount.");
-        AddProperty("requiredQuantity", "Required Quantity", numericDataType, 13);
-        AddProperty("rewardQuantity", "Reward Quantity", numericDataType, 14,
+        AddProperty("requiredQuantity", "Required Quantity", requiredNumericDataType, 13);
+        AddProperty("rewardQuantity", "Reward Quantity", requiredNumericDataType, 14,
             "Whole units discounted for each completed group in Repeating mode.");
 
-        SaveContentType(contentType);
+        if (hasChanges)
+        {
+            SaveContentType(orderDiscountContentType);
+        }
+
+        bool HasProperty(string alias)
+            => orderDiscountContentType.CompositionPropertyTypes.Any(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
 
         void AddProperty(string alias, string name, IDataType dataType, int sortOrder, string? description = null)
         {
-            if (contentType.CompositionPropertyTypes.Any(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase)))
+            if (HasProperty(alias))
             {
                 return;
             }
 
-            contentType.AddPropertyType(new PropertyType(_shortStringHelper, dataType, alias)
+            orderDiscountContentType.AddPropertyType(new PropertyType(_shortStringHelper, dataType, alias)
             {
                 Name = name,
                 Description = description,
                 SortOrder = sortOrder,
             }, "settings");
+            hasChanges = true;
         }
     }
 
