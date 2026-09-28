@@ -24,6 +24,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.63](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.62...Ekom.Algolia-v0.2.63) (2026-09-28)
+
+
+### Features
+
+* **algolia:** facet filterable metafields automatically ([#947](https://github.com/Vettvangur/Ekom/issues/947)) ([4221373](https://github.com/Vettvangur/Ekom/commit/4221373958ae0833eecc9d49ccb10efd90fcd323))
+
 ## [0.2.62](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.61...Ekom.Algolia-v0.2.62) (2026-09-22)
 
 
