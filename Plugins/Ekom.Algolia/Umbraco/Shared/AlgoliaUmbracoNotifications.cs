@@ -1,5 +1,6 @@
 using Ekom.Algolia.Indexing;
 using Ekom.Algolia.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Composing;
@@ -33,11 +34,13 @@ internal sealed class AlgoliaUmbracoNotifications :
     private const string ProductVariantAlias = "ekmProductVariant";
     private const string ProductVariantGroupAlias = "ekmProductVariantGroup";
     private const string CategoryAlias = "ekmCategory";
+    private const string MetafieldAlias = "ekmMetafield";
 
     private readonly IAlgoliaProductIndexService _productIndexer;
     private readonly IAlgoliaCategoryIndexService _categoryIndexer;
     private readonly IAlgoliaContentIndexService _contentIndexer;
     private readonly IContentService _contentService;
+    private readonly IMemoryCache _cache;
     private readonly IServerRoleAccessor _serverRoleAccessor;
     private readonly AlgoliaOptions _options;
     private readonly AlgoliaStoreResolver _storeResolver;
@@ -48,6 +51,7 @@ internal sealed class AlgoliaUmbracoNotifications :
         IAlgoliaCategoryIndexService categoryIndexer,
         IAlgoliaContentIndexService contentIndexer,
         IContentService contentService,
+        IMemoryCache cache,
         IServerRoleAccessor serverRoleAccessor,
         IOptions<AlgoliaOptions> options,
         AlgoliaStoreResolver storeResolver,
@@ -57,6 +61,7 @@ internal sealed class AlgoliaUmbracoNotifications :
         _categoryIndexer = categoryIndexer;
         _contentIndexer = contentIndexer;
         _contentService = contentService;
+        _cache = cache;
         _serverRoleAccessor = serverRoleAccessor;
         _options = options.Value;
         _storeResolver = storeResolver;
@@ -109,6 +114,9 @@ internal sealed class AlgoliaUmbracoNotifications :
 
     private Task EnqueueIfSupportedAsync(IContent entity, bool isPublished, CancellationToken ct)
     {
+        if (IsMetafieldDefinition(entity.ContentType.Alias))
+            return EnqueueMetafieldRebuildAsync(ct);
+
         if (string.Equals(entity.ContentType.Alias, ProductAlias, StringComparison.OrdinalIgnoreCase))
             return EnqueueProductAsync(entity, isPublished, ct);
 
@@ -127,6 +135,34 @@ internal sealed class AlgoliaUmbracoNotifications :
             entity.ContentType.Alias);
 
         return Task.CompletedTask;
+    }
+
+    internal static bool IsMetafieldDefinition(string alias)
+        => string.Equals(alias, MetafieldAlias, StringComparison.OrdinalIgnoreCase);
+
+    private async Task EnqueueMetafieldRebuildAsync(CancellationToken ct)
+    {
+        if (!_options.Enabled)
+            return;
+
+        // The Ekom metafield service caches definitions; the queued rebuild must read the published state.
+        _cache.Remove("GetMetafields");
+
+        foreach (var store in _options.Stores)
+        {
+            try
+            {
+                await _productIndexer.RebuildStoreAsync(store.Alias, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Algolia metafield rebuild enqueue failed for store {Store}.", store.Alias);
+            }
+        }
     }
 
     private async Task EnqueueProductAsync(IContent entity, bool isPublished, CancellationToken ct)

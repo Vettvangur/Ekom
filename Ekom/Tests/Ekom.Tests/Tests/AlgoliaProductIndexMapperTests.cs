@@ -1,4 +1,5 @@
 using Ekom.Algolia;
+using Ekom.Algolia.Indexing;
 using Ekom.Algolia.Mappers;
 using Ekom.Models.Umbraco;
 using Microsoft.Extensions.Options;
@@ -435,6 +436,62 @@ public class AlgoliaProductIndexMapperTests
     }
 
     [Fact]
+    public void Maps_Filterable_Metafields_Without_Configured_Facets()
+    {
+        var mapper = CreateMapper(filterableAliases: ["material"]);
+        var product = CreateProduct(metafields:
+        [
+            CreateMetafield("material", [CreateMetafieldValue((string.Empty, "Leather"))]),
+            CreateMetafield("hidden", [CreateMetafieldValue((string.Empty, "Secret"))])
+        ]);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        var attributes = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(record!.Data["attributes"]);
+        Assert.Equal("Leather", attributes["material"]);
+        Assert.DoesNotContain("hidden", attributes.Keys);
+    }
+
+    [Fact]
+    public void Maps_Localized_Multiple_Choice_Filterable_Metafields_To_Variant_Records()
+    {
+        var mapper = CreateMapper(indexVariants: true, filterableAliases: ["color"]);
+        var product = CreateProduct(
+            metafields:
+            [
+                CreateMetafield("color",
+                [
+                    CreateMetafieldValue(("en-US", "Red"), ("is-IS", "Rauður")),
+                    CreateMetafieldValue(("en-US", "Blue"), ("is-IS", "Blár"))
+                ], enableMultipleChoice: true)
+            ],
+            variants: [CreateVariant().Object]);
+
+        var records = mapper.MapRecords(product.Object, CreateStore("is-IS"), "products");
+
+        Assert.Equal(2, records.Count);
+        foreach (var record in records)
+        {
+            var attributes = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(record.Data["attributes"]);
+            Assert.Equal(["Rauður", "Blár"], Assert.IsAssignableFrom<IReadOnlyList<string>>(attributes["color"]));
+        }
+    }
+
+    [Fact]
+    public void Explicit_Facet_Property_Overrides_Filterable_Metafield_With_Same_Alias()
+    {
+        var mapper = CreateMapper(facetAttributes: ["material"], filterableAliases: ["material"]);
+        var product = CreateProduct(
+            metafields: [CreateMetafield("material", [CreateMetafieldValue((string.Empty, "Leather"))])],
+            properties: new Dictionary<string, string> { ["material"] = "Cotton" });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        var attributes = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(record!.Data["attributes"]);
+        Assert.Equal("Cotton", attributes["material"]);
+    }
+
+    [Fact]
     public void Maps_Variant_Group_And_Variant_Properties_As_Facet_Attributes()
     {
         var variantGroup = CreateVariantGroup(title: "Black");
@@ -802,7 +859,8 @@ public class AlgoliaProductIndexMapperTests
         IReadOnlyCollection<string>? productProperties = null,
         bool indexVariants = false,
         IReadOnlyCollection<string>? facetAttributes = null,
-        Dictionary<string, string>? variantFacetAttributes = null)
+        Dictionary<string, string>? variantFacetAttributes = null,
+        IReadOnlyCollection<string>? filterableAliases = null)
     {
         var options = Options.Create(new AlgoliaOptions
         {
@@ -818,7 +876,13 @@ public class AlgoliaProductIndexMapperTests
             }
         });
 
-        return new ProductIndexMapper(options);
+        return new ProductIndexMapper(options, new TestFacetAttributeSelector(filterableAliases ?? []));
+    }
+
+    private sealed class TestFacetAttributeSelector(IReadOnlyCollection<string> filterableAliases) : IAlgoliaFacetAttributeSelector
+    {
+        public IReadOnlyCollection<string> GetFacetAttributes(AlgoliaIndexingOptions indexing)
+            => AlgoliaFacetAttributeSelector.Merge(indexing.FacetAttributes, filterableAliases);
     }
 
     private static AlgoliaResolvedStore CreateStore(string? locale = null) => new()
