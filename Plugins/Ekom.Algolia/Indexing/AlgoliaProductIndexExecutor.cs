@@ -22,6 +22,7 @@ internal sealed class AlgoliaProductIndexExecutor
     private readonly IAlgoliaQuerySuggestionsConfigurator _querySuggestionsConfigurator;
     private readonly AlgoliaSearchCacheVersionProvider _searchCacheVersions;
     private readonly IAlgoliaProductIndexMapper _mapper;
+    private readonly IAlgoliaFacetAttributeSelector _facetAttributeSelector;
     private readonly IReadOnlyList<IAlgoliaProductIndexFilter> _filters;
     private readonly ILogger<AlgoliaProductIndexExecutor> _logger;
 
@@ -35,6 +36,7 @@ internal sealed class AlgoliaProductIndexExecutor
         IAlgoliaQuerySuggestionsConfigurator querySuggestionsConfigurator,
         AlgoliaSearchCacheVersionProvider searchCacheVersions,
         IAlgoliaProductIndexMapper mapper,
+        IAlgoliaFacetAttributeSelector facetAttributeSelector,
         IEnumerable<IAlgoliaProductIndexFilter>? filters,
         ILogger<AlgoliaProductIndexExecutor> logger)
     {
@@ -47,6 +49,7 @@ internal sealed class AlgoliaProductIndexExecutor
         _querySuggestionsConfigurator = querySuggestionsConfigurator;
         _searchCacheVersions = searchCacheVersions;
         _mapper = mapper;
+        _facetAttributeSelector = facetAttributeSelector;
         _filters = (filters ?? Array.Empty<IAlgoliaProductIndexFilter>()).ToList();
         _logger = logger;
     }
@@ -136,7 +139,15 @@ internal sealed class AlgoliaProductIndexExecutor
         _logger.LogDebug("Algolia rebuild fetched {Count} products for store {Store}.", products.Count, store.Alias);
 
         if (products.Count == 0)
+        {
+            foreach (var target in store.ExpandIndexTargets())
+            {
+                ct.ThrowIfCancellationRequested();
+                await EnsureIndexSettingsAsync(target, _indexNameBuilder.BuildPrimary("products", target), ct).ConfigureAwait(false);
+            }
+
             return;
+        }
 
         foreach (var target in store.ExpandIndexTargets())
         {
@@ -438,7 +449,7 @@ internal sealed class AlgoliaProductIndexExecutor
     private async Task EnsureIndexSettingsAsync(AlgoliaResolvedStore store, string primaryIndexName, CancellationToken ct)
     {
         var indexing = store.Indexing;
-        var attributesForFaceting = BuildAttributesForFaceting(indexing);
+        var attributesForFaceting = BuildAttributesForFaceting(indexing, _facetAttributeSelector.GetFacetAttributes(indexing));
         if (store.Collections.Enabled)
             EnsureCollectionsFacet(attributesForFaceting);
 
@@ -672,9 +683,9 @@ internal sealed class AlgoliaProductIndexExecutor
         return parsedLanguages;
     }
 
-    internal static List<string> BuildAttributesForFaceting(AlgoliaIndexingOptions options)
+    internal static List<string> BuildAttributesForFaceting(AlgoliaIndexingOptions options, IEnumerable<string>? facetAttributes = null)
     {
-        var generatedAttributes = options.FacetAttributes
+        var generatedAttributes = (facetAttributes ?? options.FacetAttributes)
             .Select(ProductIndexMapper.ConfiguredField.Parse)
             .Select(field => field.Alias)
             .Concat(options.VariantFacetAttributes

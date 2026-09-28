@@ -1,3 +1,4 @@
+using Ekom.Algolia.Indexing;
 using Ekom.Algolia.Models.Indexing;
 using Ekom.Models;
 using Microsoft.Extensions.Options;
@@ -12,13 +13,16 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
     private readonly AlgoliaIndexingOptions _defaultIndexing;
     private readonly IReadOnlyList<IAlgoliaProductEnricher> _enrichers;
     private readonly IReadOnlyList<IAlgoliaProductFieldConverter> _converters;
+    private readonly IAlgoliaFacetAttributeSelector _facetAttributeSelector;
 
     public ProductIndexMapper(
         IOptions<AlgoliaOptions> options,
+        IAlgoliaFacetAttributeSelector facetAttributeSelector,
         IEnumerable<IAlgoliaProductEnricher>? enrichers = null,
         IEnumerable<IAlgoliaProductFieldConverter>? converters = null)
     {
         _defaultIndexing = options.Value.Indexing;
+        _facetAttributeSelector = facetAttributeSelector;
         _enrichers = (enrichers ?? Array.Empty<IAlgoliaProductEnricher>())
             .OrderBy(e => e.Order)
             .ToList();
@@ -324,7 +328,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
     {
         var attributes = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var field in BuildConfiguredFields(GetIndexing(store).FacetAttributes).Values)
+        foreach (var field in BuildConfiguredFields(_facetAttributeSelector.GetFacetAttributes(GetIndexing(store))).Values)
         {
             var converted = ResolveConfiguredValue(product, store, field);
             var context = new AlgoliaProductFieldContext(product, store, field.Alias, baseIndexName);
