@@ -447,6 +447,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         <div class="ekmSplit__column">${this.renderProvider('Payment Method', order.paymentProvider, 'custompayment')}</div>
         <div class="ekmSplit__column">${this.renderProvider('Shipping Method', order.shippingProvider, 'customshipping')}</div>
       </div>
+      ${this.renderGiftcards(order)}
       ${this.renderOrderLines(order)}
       ${this.renderTracking(order)}
       ${this.renderConsent(order)}
@@ -483,6 +484,29 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     return `<h4>${escapeHtml(title)}</h4><h4><strong>${escapeHtml(providerTitle)}</strong></h4>${provider.price ? `<p>Price: ${escapeHtml(provider.price.withVat?.currencyString)}</p>` : ''}${this.renderExtraProperties(provider.customData, prefix)}`;
   }
 
+  private renderGiftcards(order: OrderInfo): string {
+    const giftcards = Array.isArray(order.giftcards) ? order.giftcards : [];
+    if (!giftcards.length) {
+      return '';
+    }
+
+    return `<div class="ekmOrderGiftcards"><h4>Gift cards</h4><ul class="ekmOrderTracking__list">${giftcards.map((card: Record<string, any>) => {
+      const expired = card.validUntil && Date.parse(card.validUntil) <= Date.now();
+      const status = card.claimed ? 'Claimed' : expired ? 'Expired' : 'Available';
+      return `<li><strong>${escapeHtml(card.code)}</strong>: ${escapeHtml(this.formatGiftcardAmount(card.amount, order))} (${status})${card.validUntil ? ` · Expires ${escapeHtml(formatDate(card.validUntil))}` : ''}</li>`;
+    }).join('')}</ul></div>`;
+  }
+
+  private formatGiftcardAmount(amount: number, order: OrderInfo): string {
+    const locale = order.storeInfo?.currency?.currencyValue || 'en-US';
+    const currency = order.storeInfo?.currency?.isoCurrencySymbol || order.currency;
+    try {
+      return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
+    } catch {
+      return String(amount);
+    }
+  }
+
   private renderOrderLines(order: OrderInfo): string {
     const lines = Array.isArray(order.orderLines) ? order.orderLines : [];
     return `
@@ -496,11 +520,23 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${escapeHtml(order.subTotal?.withVat?.currencyString)}</div></div>
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">-${escapeHtml(order.discountAmount?.currencyString)}</div></div>
           ${order.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${escapeHtml(order.shippingProvider.price?.withVat?.currencyString)}</div></div>` : ''}
+          ${this.renderGiftcardTotal(order)}
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${escapeHtml(order.chargedVat?.currencyString)}</div></div>
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Total</div><div class="umb-table-cell"><strong>${escapeHtml(order.chargedAmount?.currencyString)}</strong></div></div>
         </div>
       </div>
     `;
+  }
+
+  private renderGiftcardTotal(order: OrderInfo): string {
+    const giftcards = Array.isArray(order.giftcards) ? order.giftcards : [];
+    const eligibleValue = giftcards.reduce((total: number, card: Record<string, any>) =>
+      total + (card.amount > 0 && (card.claimed || !card.validUntil || Date.parse(card.validUntil) > Date.now()) ? card.amount : 0), 0);
+    if (!eligibleValue) {
+      return '';
+    }
+
+    return `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell" title="Payable total already includes applicable gift cards; eligible value may exceed the order total.">Gift cards (eligible value)</div><div class="umb-table-cell">${escapeHtml(this.formatGiftcardAmount(eligibleValue, order))}</div></div>`;
   }
 
   private renderTracking(order: OrderInfo): string {
@@ -608,6 +644,14 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private bindEvents(): void {
+    if (this.overlay === 'order') {
+      this.querySelector('.ekmOverlay')?.addEventListener('click', event => {
+        if (event.target === event.currentTarget && !this.customerEditorOpen && !this.orderLineEditorOpen) {
+          this.closeOverlay();
+        }
+      });
+    }
+
     this.querySelectorAll('[data-action]').forEach(element => {
       if (element instanceof HTMLSelectElement) {
         element.addEventListener('change', event => void this.handleAction(event));

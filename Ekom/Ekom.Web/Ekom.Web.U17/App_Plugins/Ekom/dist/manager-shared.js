@@ -254,7 +254,7 @@ const M = `
   .ekmOrderStatusBar { align-items: center; border-bottom: 1px solid #d8d7d9; display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; }
   .ekmOrderStatusBar__status { align-items: center; display: flex; gap: 8px; }
   .ekmOrderStatusBar__print { margin-left: auto; }
-  .ekmOrderTracking, .ekmOrderActivityLog { border: 1px solid #d8d7d9; margin: 30px 0; padding: 14px 16px; }
+  .ekmOrderTracking, .ekmOrderGiftcards, .ekmOrderActivityLog { border: 1px solid #d8d7d9; margin: 30px 0; padding: 14px 16px; }
   .ekmOrderTracking__header { align-items: center; display: flex; justify-content: space-between; }
   .ekmOrderTracking__wrap { overflow-wrap: anywhere; word-break: break-word; }
   .ekmOrderActivityLog__list { border-top: 1px solid #eee; }
@@ -321,6 +321,7 @@ const M = `
     .ekmOrder h1 { font-size: 22px; margin-top: 0; }
     .ekmSplit { break-inside: avoid; display: flex; gap: 24px; margin-bottom: 18px; }
     .ekmOrderTracking,
+    .ekmOrderGiftcards,
     .ekmOrderActivityLog,
     .card,
     .umb-table-row { break-inside: avoid; box-shadow: none; }

@@ -101,6 +101,19 @@
 
     $scope.orderChangeStatus = $scope.getStatus(managerState.currentOrderStatus);
 
+    $scope.giftcardStatus = function (card) {
+      if (card.claimed) return "Claimed";
+      if (card.validUntil && new Date(card.validUntil).getTime() <= Date.now()) return "Expired";
+      return "Available";
+    };
+
+    $scope.eligibleGiftcardValue = function () {
+      var order = $scope.model && $scope.model.editModel && $scope.model.editModel.order;
+      return (order && order.giftcards || []).reduce(function (total, card) {
+        return total + (card.amount > 0 && (card.claimed || !card.validUntil || new Date(card.validUntil).getTime() > Date.now()) ? card.amount : 0);
+      }, 0);
+    };
+
     var changeOrderStatusButton = document.getElementById("changeOrderStatusButton");
 
     if (changeOrderStatusButton) {
