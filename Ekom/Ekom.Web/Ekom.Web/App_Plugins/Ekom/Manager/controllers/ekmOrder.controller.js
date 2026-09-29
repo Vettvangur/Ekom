@@ -36,7 +36,7 @@
     $scope.shippingProviderEditorOpen = false;
     $scope.shippingProviderSaving = false;
     $scope.shippingProviders = [];
-    $scope.shippingProviderEditModel = { providerId: "" };
+    $scope.shippingProviderEditModel = { providerId: "", fields: [] };
 
     var customerFields = [
       { key: "customerName", label: "Name", property: "name" },
@@ -175,13 +175,13 @@
       return textArea.value;
     }
 
-    function parseProperties(properties, predicate) {
+    function parseProperties(properties, predicate, includeEmpty) {
       return Object.entries(properties || {})
         .filter(function (entry) {
           var key = entry[0];
           var value = entry[1];
 
-          if (!value) {
+          if (!value && !(includeEmpty && value === "")) {
             return false;
           }
 
@@ -309,7 +309,7 @@
       $scope.extraCustomShippingProperties = parseProperties(customShippingProps, function (key) {
         var normalisedKey = (key || "").toLowerCase();
         return normalisedKey.startsWith("customshipping") && !$scope.isDefaultKey(normalisedKey);
-      });
+      }, true);
 
       $scope.extraCustomPaymentProperties = parseProperties(customPaymentProps, function (key) {
         var normalisedKey = (key || "").toLowerCase();
@@ -622,7 +622,13 @@
 
       resources.ShippingProviders(storeAlias).then(function (result) {
         $scope.shippingProviders = result.data || [];
-        $scope.shippingProviderEditModel = { providerId: (order.shippingProvider && order.shippingProvider.key) || "" };
+        var customData = (order.shippingProvider && order.shippingProvider.customData) || {};
+        $scope.shippingProviderEditModel = {
+          providerId: (order.shippingProvider && order.shippingProvider.key) || "",
+          fields: Object.entries(customData)
+            .filter(function (entry) { return entry[0].toLowerCase().startsWith("customshipping"); })
+            .map(function (entry) { return { key: entry[0], value: htmlDecode(entry[1]), existing: true }; })
+        };
         $scope.shippingProviderEditorOpen = true;
       }, function (error) {
         notificationsService.error("Error", getErrorMessage(error, "Error loading shipping providers."));
@@ -634,12 +640,29 @@
       $scope.shippingProviderEditorOpen = false;
     };
 
+    $scope.addShippingCustomField = function () {
+      $scope.shippingProviderEditModel.fields.push({ key: "", value: "", existing: false });
+    };
+
     $scope.saveShippingProvider = function () {
       var orderId = getCurrentOrderId();
       if (!orderId || !$scope.shippingProviderEditModel.providerId || $scope.shippingProviderSaving) return;
 
+      var customData = {};
+      for (var i = 0; i < $scope.shippingProviderEditModel.fields.length; i++) {
+        var field = $scope.shippingProviderEditModel.fields[i];
+        var key = field.existing ? field.key : "customshipping" + field.key.trim();
+        if (!field.existing && !field.key.trim() || !key.slice("customshipping".length).trim()
+          || key.length > 100 || String(field.value || "").length > 4096
+          || Object.keys(customData).some(function (existingKey) { return existingKey.toLowerCase() === key.toLowerCase(); })) {
+          notificationsService.error("Error", "Enter unique shipping custom data keys and valid values.");
+          return;
+        }
+        customData[key] = field.value || "";
+      }
+
       $scope.shippingProviderSaving = true;
-      resources.UpdateShippingProvider(orderId, $scope.shippingProviderEditModel.providerId)
+      resources.UpdateShippingProvider(orderId, $scope.shippingProviderEditModel.providerId, customData)
         .then(function (result) {
           applyOrderData(result.data);
           $scope.shippingProviderEditorOpen = false;

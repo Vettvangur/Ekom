@@ -1,5 +1,6 @@
 using Ekom.API;
 using Ekom.Cache;
+using Ekom.Controllers;
 using Ekom.Events;
 using Ekom.Interfaces;
 using Ekom.Models;
@@ -408,6 +409,37 @@ public sealed class LinkedOrderLinesTests
         Assert.Equal(originalAmount + 7, replaced.ChargedAmount.Value);
         Assert.Equal(secondKey, (await fixture.ReloadAsync()).ShippingProvider?.Key);
         Assert.Equal(replaced.ChargedAmount.Value, (await fixture.Repository.GetOrderAsync(order.UniqueId))!.TotalAmount);
+    }
+
+    [Fact]
+    public async Task UpdateShippingInformationAsync_PreservesEditedCustomDataWhenReplacingProvider()
+    {
+        using var fixture = new Fixture();
+        await AddTwoLinesAsync(fixture);
+        var firstKey = fixture.AddShippingProvider(5);
+        var secondKey = fixture.AddShippingProvider(7);
+        var added = await fixture.Service.UpdateShippingInformationAsync(firstKey, "main",
+            new Dictionary<string, string>
+            {
+                ["customshippingInstructions"] = "A & B",
+                ["customshippingTracking"] = "old",
+            },
+            new OrderSettings { OrderInfo = await fixture.ReloadAsync(), FireEvents = false });
+
+        var merged = EkomManagerController.MergeShippingCustomData(added.ShippingProvider?.CustomData,
+            new Dictionary<string, string>
+            {
+                ["customshippingTracking"] = "123",
+                ["customshippingReference"] = "new",
+            });
+        var replaced = await fixture.Service.UpdateShippingInformationAsync(secondKey, "main", merged,
+            new OrderSettings { OrderInfo = await fixture.ReloadAsync(), FireEvents = false });
+
+        Assert.Equal(secondKey, replaced.ShippingProvider?.Key);
+        Assert.Equal("A &amp; B", replaced.ShippingProvider?.CustomData["customshippingInstructions"]);
+        Assert.Equal("123", replaced.ShippingProvider?.CustomData["customshippingTracking"]);
+        Assert.Equal("new", replaced.ShippingProvider?.CustomData["customshippingReference"]);
+        Assert.Equal("A &amp; B", (await fixture.ReloadAsync()).ShippingProvider?.CustomData["customshippingInstructions"]);
     }
 
     [Fact]

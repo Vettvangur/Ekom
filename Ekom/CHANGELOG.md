@@ -13,6 +13,7 @@
 
 ### Features
 
+* **manager:** edit and add shipping provider custom data on orders, retain it when changing providers, and show provider node names in the picker.
 * **manager:** allow adding or replacing an order's shipping provider from providers configured for its store, with the normal order total recalculation.
 * **imports:** add per-product primary-category preservation for editor-managed product placement.
 * **checkout:** validate uncovered line discount availability with existing/recovered holds even when automatic reservation creation is disabled, including final prepayment checks; enforce configured product/variant stock buffers in legacy reservation wrappers.

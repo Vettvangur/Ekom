@@ -207,8 +207,8 @@ export class EkomManagerApi {
     return this.postBody(`/ekom/manager/Order/${encodeURIComponent(orderId)}/OrderLines`, { productId, variantId, quantity });
   }
 
-  async updateShippingProvider(orderId: string, providerId: string): Promise<OrderInfo> {
-    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(orderId)}/ShippingProvider`, { providerId });
+  async updateShippingProvider(orderId: string, providerId: string, customData: Record<string, string>): Promise<OrderInfo> {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(orderId)}/ShippingProvider`, { providerId, customData });
   }
 
   async removeOrderLine(orderId: string, lineId: string): Promise<OrderInfo> {

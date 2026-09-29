@@ -78,8 +78,8 @@ class m {
   async addOrderLine(e, r, t, n) {
     return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines`, { productId: r, variantId: t, quantity: n });
   }
-  async updateShippingProvider(e, r) {
-    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/ShippingProvider`, { providerId: r });
+  async updateShippingProvider(e, r, t) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/ShippingProvider`, { providerId: r, customData: t });
   }
   async removeOrderLine(e, r) {
     const t = await fetch(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines/${encodeURIComponent(r)}`, {

@@ -25,11 +25,11 @@ public class ManagerShippingProviderTests
         var first = new Mock<IShippingProvider>();
         first.SetupGet(x => x.Key).Returns(Guid.NewGuid());
         first.SetupGet(x => x.SortOrder).Returns(1);
-        first.SetupGet(x => x.Properties).Returns(new Dictionary<string, string> { ["title"] = "Pickup" });
+        first.SetupGet(x => x.Properties).Returns(new Dictionary<string, string> { ["title"] = "Customer pickup", ["nodeName"] = "Pickup" });
         var second = new Mock<IShippingProvider>();
         second.SetupGet(x => x.Key).Returns(Guid.NewGuid());
         second.SetupGet(x => x.SortOrder).Returns(2);
-        second.SetupGet(x => x.Properties).Returns(new Dictionary<string, string> { ["title"] = "Delivery" });
+        second.SetupGet(x => x.Properties).Returns(new Dictionary<string, string> { ["title"] = "Customer delivery", ["nodeName"] = "Delivery" });
 
         var enabled = new ConcurrentDictionary<Guid, IShippingProvider>();
         enabled[second.Object.Key] = second.Object;
@@ -59,6 +59,43 @@ public class ManagerShippingProviderTests
 
         Assert.IsType<BadRequestObjectResult>(await controller.UpdateOrderShippingProviderAsync(Guid.NewGuid(),
             new Ekom.Models.Manager.OrderShippingProviderUpdateRequest()));
+    }
+
+    [Fact]
+    public void MergeShippingCustomData_PreservesAndUpdatesExistingValuesWithoutDoubleEncoding()
+    {
+        var existing = new Dictionary<string, string>
+        {
+            ["customshippingInstructions"] = "Leave at A &amp; B",
+            ["customshippingCode"] = "old",
+        };
+        var edits = new Dictionary<string, string> { ["customshippingCode"] = "new" };
+
+        var merged = EkomManagerController.MergeShippingCustomData(existing, edits);
+
+        Assert.Equal("Leave at A & B", merged["customshippingInstructions"]);
+        Assert.Equal("new", merged["customshippingCode"]);
+    }
+
+    [Theory]
+    [InlineData("trackingNumber")]
+    [InlineData("customshipping")]
+    [InlineData("custompaymentReference")]
+    public void MergeShippingCustomData_RejectsInvalidKeys(string key)
+    {
+        Assert.Throws<ArgumentException>(() => EkomManagerController.MergeShippingCustomData(null,
+            new Dictionary<string, string> { [key] = "value" }));
+    }
+
+    [Fact]
+    public void MergeShippingCustomData_RejectsCaseInsensitiveDuplicateKeys()
+    {
+        Assert.Throws<ArgumentException>(() => EkomManagerController.MergeShippingCustomData(null,
+            new Dictionary<string, string>
+            {
+                ["customshippingCode"] = "one",
+                ["CustomShippingCode"] = "two",
+            }));
     }
 
     private static EkomManagerController CreateController(IStore? store, ConcurrentDictionary<Guid, IShippingProvider> enabled)

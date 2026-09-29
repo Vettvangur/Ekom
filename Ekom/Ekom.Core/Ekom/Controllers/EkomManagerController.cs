@@ -348,12 +348,12 @@ public class EkomManagerController : ControllerBase
             return NotFound();
         }
 
-        var culture = store.Cultures.FirstOrDefault()?.Name;
         return Ok(_providers.GetManagerShippingProviders(store.Alias)
-            .Select(provider =>
+            .Select(provider => new
             {
-                var title = OrderProviderTitleResolver.Resolve(provider.Properties, store.Alias, culture);
-                return new { provider.Key, Title = string.IsNullOrWhiteSpace(title) ? provider.Title : title };
+                provider.Key,
+                Title = provider.Properties.TryGetValue("nodeName", out var name) && !string.IsNullOrWhiteSpace(name)
+                    ? name : provider.Title
             })
             .ToList());
     }
@@ -575,13 +575,20 @@ public class EkomManagerController : ControllerBase
                 return NotFound();
             }
 
+            var customData = MergeShippingCustomData(order.ShippingProvider?.CustomData, request.CustomData);
             var updatedOrder = await Order.Instance.UpdateShippingInformationAsync(
-                request.ProviderId, orderData.StoreAlias, new Dictionary<string, string>(),
+                request.ProviderId, orderData.StoreAlias, customData,
                 new OrderSettings { OrderInfo = order }, ct).ConfigureAwait(false);
 
             if (updatedOrder.ShippingProvider?.Key != request.ProviderId)
             {
                 return BadRequest("Shipping provider could not be applied to this order.");
+            }
+
+            if (customData.Any(pair => !updatedOrder.ShippingProvider.CustomData.TryGetValue(pair.Key, out var value)
+                || System.Net.WebUtility.HtmlDecode(value) != pair.Value))
+            {
+                return BadRequest("Shipping provider custom data could not be saved.");
             }
 
             return Ok(GetOrderInfoResponse(updatedOrder));
@@ -599,6 +606,43 @@ public class EkomManagerController : ControllerBase
             _logger.LogError(ex, "Failed to update shipping provider for order {OrderId}", orderId);
             return StatusCode(500, "An unexpected error occurred.");
         }
+    }
+
+    internal static Dictionary<string, string> MergeShippingCustomData(
+        IReadOnlyDictionary<string, string>? existing,
+        IReadOnlyDictionary<string, string>? edits)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (existing != null)
+        {
+            foreach (var pair in existing.Where(x => x.Key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase)))
+            {
+                result[pair.Key] = System.Net.WebUtility.HtmlDecode(pair.Value);
+            }
+        }
+
+        if (edits != null)
+        {
+            var submittedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pair in edits)
+            {
+                if (!pair.Key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase)
+                    || string.IsNullOrWhiteSpace(pair.Key["customshipping".Length..])
+                    || pair.Key.Length > 100 || pair.Value == null || pair.Value.Length > 4096)
+                {
+                    throw new ArgumentException("Invalid shipping custom data field.", nameof(edits));
+                }
+
+                if (!submittedKeys.Add(pair.Key))
+                {
+                    throw new ArgumentException("Duplicate shipping custom data field.", nameof(edits));
+                }
+
+                result[pair.Key] = pair.Value;
+            }
+        }
+
+        return result;
     }
 
     [HttpGet]
