@@ -286,6 +286,46 @@ public sealed class LinkedOrderLinesTests
         Assert.Equal(paymentKey, reloaded.PaymentProvider?.Key);
     }
 
+    [Theory]
+    [InlineData(OrderStatus.Incomplete, false)]
+    [InlineData(OrderStatus.WaitingForPayment, true)]
+    [InlineData(OrderStatus.ReadyForDispatch, true)]
+    [InlineData(OrderStatus.Closed, true)]
+    public async Task CustomerCountryUpdate_ValidatesProvidersOnlyWhileOrderIsIncomplete(OrderStatus status, bool preserveProviders)
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var data = (await fixture.Repository.GetOrderAsync(order.UniqueId))!;
+        var orderJson = JObject.Parse(data.OrderInfo);
+        var shipping = new JObject { ["Id"] = 1, ["Key"] = Guid.NewGuid(), ["Title"] = "Pickup", ["Price"] = new JObject { ["OriginalValue"] = 5 } };
+        var payment = new JObject { ["Id"] = 2, ["Key"] = Guid.NewGuid(), ["Title"] = "Invoice", ["Price"] = new JObject { ["OriginalValue"] = 2 } };
+        orderJson["ShippingProvider"] = shipping;
+        orderJson["PaymentProvider"] = payment;
+        data.OrderInfo = orderJson.ToString();
+        data.OrderStatus = status;
+        await fixture.Repository.UpdateOrderAsync(data);
+
+        await fixture.Service.UpdateCustomerInformationAsync(
+            new Dictionary<string, string> { ["storeAlias"] = "main", ["customerCountry"] = "DK" },
+            new OrderSettings { OrderInfo = await fixture.ReloadAsync(), FireEvents = false });
+
+        var saved = JObject.Parse((await fixture.Repository.GetOrderAsync(order.UniqueId))!.OrderInfo);
+        if (preserveProviders)
+        {
+            Assert.Equal(shipping["Key"], saved["ShippingProvider"]?["Key"]);
+            Assert.Equal(shipping["Title"], saved["ShippingProvider"]?["Title"]);
+            Assert.Equal(5, saved["ShippingProvider"]?["Price"]?["OriginalValue"]?.Value<int>());
+            Assert.Equal(payment["Key"], saved["PaymentProvider"]?["Key"]);
+            Assert.Equal(payment["Title"], saved["PaymentProvider"]?["Title"]);
+            Assert.Equal(2, saved["PaymentProvider"]?["Price"]?["OriginalValue"]?.Value<int>());
+        }
+        else
+        {
+            Assert.True(saved["ShippingProvider"] == null || saved["ShippingProvider"]!.Type == JTokenType.Null);
+            Assert.True(saved["PaymentProvider"] == null || saved["PaymentProvider"]!.Type == JTokenType.Null);
+        }
+    }
+
     [Fact]
     public async Task UpdateOrderLineMetadataAsync_FiresOnlyOrderUpdatedOnce()
     {
@@ -400,6 +440,14 @@ public sealed class LinkedOrderLinesTests
             {
                 services.AddSingleton(_database.NewStockApi());
                 services.AddSingleton(new Ekom.API.Store(stores.Object, Mock.Of<ICacheRefreshService>()));
+                services.AddSingleton(sp => new Providers(
+                    sp.GetRequiredService<Configuration>(),
+                    NullLogger<Providers>.Instance,
+                    Mock.Of<IPerStoreCache<IShippingProvider>>(x => x["main"] == new ConcurrentDictionary<Guid, IShippingProvider>()),
+                    Mock.Of<IPerStoreCache<IPaymentProvider>>(x => x["main"] == new ConcurrentDictionary<Guid, IPaymentProvider>()),
+                    Mock.Of<IBaseCache<IZone>>(),
+                    stores.Object,
+                    null!));
                 services.AddSingleton(sp => new Discounts(
                     sp.GetRequiredService<Configuration>(),
                     NullLogger<Discounts>.Instance,

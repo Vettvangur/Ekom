@@ -1465,7 +1465,11 @@ partial class OrderService
 
             VerifyDiscounts(orderInfo);
             AddGlobalDiscounts(orderInfo);
-            if (verifyProviders)
+
+            OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct)
+                .ConfigureAwait(false);
+
+            if (verifyProviders && orderData.OrderStatus == OrderStatus.Incomplete)
             {
                 VerifyProviders(orderInfo);
             }
@@ -1478,9 +1482,6 @@ partial class OrderService
             {
                 ApplyConsentAndTracking(orderInfo, null, null, replaceExisting: false);
             }
-
-            OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct)
-                .ConfigureAwait(false);
 
             if (orderData.OrderStatus == OrderStatus.Incomplete
                 && _ekmRequest?.User != null
