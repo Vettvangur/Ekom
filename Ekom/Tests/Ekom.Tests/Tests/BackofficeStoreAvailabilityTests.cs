@@ -92,6 +92,52 @@ public class BackofficeStoreAvailabilityTests
         Assert.Equal(new[] { stores[0], stores[2], stores[4] }, result);
     }
 
+    [Theory]
+    [InlineData("ekmOrderDiscount", "ekmOrderDiscountsFolder")]
+    [InlineData("ekmProductDiscount", "ekmProductDiscountsFolder")]
+    [InlineData("ekmPaymentProvider", "ekmPaymentProvidersFolder")]
+    [InlineData("ekmShippingProvider", "ekmShippingProvidersFolder")]
+    public void DiscountAndProviderStoresRespectTheirOwnAndMatchingFolderDisableFlags(string itemAlias, string folderAlias)
+    {
+        var stores = new[] { CreateStore("is"), CreateStore("dk"), CreateStore("uk") };
+        var node = CreateNode(itemAlias, "{\"is\":true}");
+        var ancestors = new[]
+        {
+            CreateNode(folderAlias, "{\"dk\":true}"),
+            CreateNode(folderAlias, "{\"uk\":true}"),
+            CreateNode("ekmCategory", "{\"is\":true}"),
+        };
+
+        Assert.Empty(BackofficeStoreAvailability.FilterEnabledStores(node, ancestors, stores));
+
+        var enabledNode = CreateNode(itemAlias, "{\"is\":false}");
+        Assert.Equal(stores.Take(1), BackofficeStoreAvailability.FilterEnabledStores(enabledNode, ancestors, stores));
+    }
+
+    [Theory]
+    [InlineData("ekmOrderDiscount", "ekmProductDiscountsFolder")]
+    [InlineData("ekmProductDiscount", "ekmOrderDiscountsFolder")]
+    [InlineData("ekmPaymentProvider", "ekmShippingProvidersFolder")]
+    [InlineData("ekmShippingProvider", "ekmPaymentProvidersFolder")]
+    public void DiscountAndProviderStoresIgnoreUnrelatedFolders(string itemAlias, string otherFolderAlias)
+    {
+        var store = CreateStore("is");
+        var node = CreateNode(itemAlias, "false");
+        var ancestors = new[] { CreateNode(otherFolderAlias, "true"), CreateNode("ekmCategory", "true") };
+
+        Assert.Same(store, Assert.Single(BackofficeStoreAvailability.FilterEnabledStores(node, ancestors, new[] { store })));
+    }
+
+    [Fact]
+    public void FolderDisableRemainsEditableForEveryStore()
+    {
+        var store = CreateStore("is");
+        var folder = CreateNode("ekmPaymentProvidersFolder", "true");
+
+        Assert.Same(store, Assert.Single(BackofficeStoreAvailability.FilterEnabledStores(folder,
+            Array.Empty<UmbracoContent>(), new[] { store })));
+    }
+
     private static UmbracoContent CreateNode(string contentTypeAlias, string? disable)
     {
         var properties = new Dictionary<string, string>();

@@ -71,11 +71,11 @@ class NodeService : INodeService
         }
     }
 
-    public IEnumerable<UmbracoContent> NodeAncestors(string id)
+    public IEnumerable<UmbracoContent> NodeAncestors(string id, bool preview = false)
     {
         using (var cref = _context.EnsureUmbracoContext())
         {
-            var node = GetNodeById(id);
+            var node = GetNodeById(id, preview);
 
             if (node == null)
             {

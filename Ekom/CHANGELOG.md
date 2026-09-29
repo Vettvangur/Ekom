@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+* **backoffice:** load the U10 range editor and filter discount/provider store selectors by the item and its matching parent folders, without hiding disabled product stores.
 * **order:** record an informational activity entry after provider validation removes a shipping provider from a saved order.
 * **manager:** show gift card codes, values, and statuses in order details across supported Umbraco versions; close the modern order view by clicking its backdrop.
 * **order:** preserve selected shipping and payment providers when updating orders that are no longer incomplete.
