@@ -185,6 +185,17 @@
     </div>
   </div>
 
+  <div class="ekmOrderGiftcards" ng-if="model.editModel.order.giftcards.length">
+    <h4>Gift cards</h4>
+    <ul class="ekmOrderTracking__list">
+      <li ng-repeat="card in model.editModel.order.giftcards track by $index">
+        <strong>{{ card.code }}</strong>: {{ card.amount | currency:(model.editModel.order.storeInfo.currency.isoCurrencySymbol || model.editModel.order.currency):model.editModel.order.storeInfo.currency.currencyDecimalDigits }}
+        ({{ giftcardStatus(card) }})
+        <span ng-if="card.validUntil">· Expires {{ card.validUntil | date:'dd. MMMM yyyy HH:mm' }}</span>
+      </li>
+    </ul>
+  </div>
+
   <div style="align-items:center; display:flex; gap:10px; justify-content:space-between;">
     <h4>Order Details</h4>
     <button type="button" class="btn btn-outline umb-outline" ng-click="openOrderLineEditor()">Add order line</button>
@@ -254,6 +265,15 @@
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell">Shipping Total</div>
         <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.shippingProvider.price.withVat.currencyString }}</div>
+      </div>
+      <div class="umb-table-row" ng-if="eligibleGiftcardValue() > 0">
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell" title="Payable total already includes applicable gift cards; eligible value may exceed the order total.">Gift cards (eligible value)</div>
+        <div class="umb-table-cell" style="text-align: right;">{{ eligibleGiftcardValue() | currency:(model.editModel.order.storeInfo.currency.isoCurrencySymbol || model.editModel.order.currency):model.editModel.order.storeInfo.currency.currencyDecimalDigits }}</div>
       </div>
       <div class="umb-table-row">
         <div class="umb-table-cell"></div>

@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+* **manager:** show gift card codes, values, and statuses in order details across supported Umbraco versions; close the modern order view by clicking its backdrop.
 * **order:** preserve selected shipping and payment providers when updating orders that are no longer incomplete.
 * **backoffice:** keep stores available when products are disabled so their values can still be edited; store selectors, node languages, warehouse editors, and the variant manager now respect only category disable settings on the current node and its ancestors.
 * **discounts:** treat missing constraints on legacy and custom discounts as unrestricted when creating ordered discounts.
