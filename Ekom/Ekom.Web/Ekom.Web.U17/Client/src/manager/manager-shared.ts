@@ -30,6 +30,11 @@ export type PaymentProviderItem = {
   title: string;
 };
 
+export type ShippingProviderItem = {
+  key: string;
+  title: string;
+};
+
 export type OrderListItem = {
   uniqueId: string;
   referenceId: string | number;
@@ -160,6 +165,10 @@ export class EkomManagerApi {
     return this.getJson(`/ekom/manager/paymentproviders/${encodeURIComponent(storeAlias)}`);
   }
 
+  async shippingProviders(storeAlias: string): Promise<ShippingProviderItem[]> {
+    return this.getJson(`/ekom/manager/shippingproviders/${encodeURIComponent(storeAlias)}`);
+  }
+
   async orderInfo(orderId: string): Promise<OrderInfo> {
     return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(orderId)}`);
   }
@@ -196,6 +205,10 @@ export class EkomManagerApi {
 
   async addOrderLine(orderId: string, productId: string, variantId: string | undefined, quantity: number): Promise<OrderInfo> {
     return this.postBody(`/ekom/manager/Order/${encodeURIComponent(orderId)}/OrderLines`, { productId, variantId, quantity });
+  }
+
+  async updateShippingProvider(orderId: string, providerId: string): Promise<OrderInfo> {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(orderId)}/ShippingProvider`, { providerId });
   }
 
   async removeOrderLine(orderId: string, lineId: string): Promise<OrderInfo> {

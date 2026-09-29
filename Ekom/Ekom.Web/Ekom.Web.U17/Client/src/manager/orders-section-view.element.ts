@@ -9,6 +9,7 @@ import {
   OrderInfo,
   OrderListItem,
   OrderSearchResult,
+  ShippingProviderItem,
   decodeHtml,
   downloadBlob,
   escapeHtml,
@@ -76,6 +77,10 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private orderLineEditorOpen = false;
   private orderLineSaving = false;
   private orderLineEditModel?: { productId: string; variantId: string; quantity: string };
+  private shippingProviderEditorOpen = false;
+  private shippingProviderSaving = false;
+  private shippingProviders: ShippingProviderItem[] = [];
+  private shippingProviderId = '';
   private removingOrderLineId = '';
   private exportIncludeOrderLines = false;
   private exporting = false;
@@ -102,6 +107,16 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
       this.orderLineEditorOpen = false;
       this.orderLineEditModel = undefined;
+      this.render();
+      return;
+    }
+
+    if (this.shippingProviderEditorOpen) {
+      if (this.shippingProviderSaving) {
+        return;
+      }
+
+      this.shippingProviderEditorOpen = false;
       this.render();
       return;
     }
@@ -409,6 +424,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       </div>
       ${this.customerEditorOpen ? this.renderCustomerEditor() : ''}
       ${this.orderLineEditorOpen ? this.renderOrderLineEditor() : ''}
+      ${this.shippingProviderEditorOpen ? this.renderShippingProviderEditor() : ''}
     `;
   }
 
@@ -445,7 +461,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       </div>
       <div class="ekmSplit">
         <div class="ekmSplit__column">${this.renderProvider('Payment Method', order.paymentProvider, 'custompayment')}</div>
-        <div class="ekmSplit__column">${this.renderProvider('Shipping Method', order.shippingProvider, 'customshipping')}</div>
+        <div class="ekmSplit__column">${order.shippingProvider ? this.renderProvider('Shipping Method', order.shippingProvider, 'customshipping') : '<h4>Shipping Method</h4>'}<button type="button" class="btn-outline" data-action="open-shipping-provider-editor">${order.shippingProvider ? 'Change shipping provider' : 'Add shipping provider'}</button></div>
       </div>
       ${this.renderGiftcards(order)}
       ${this.renderOrderLines(order)}
@@ -643,10 +659,14 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel"><div class="ekmOverlay__header"><h3>Add order line</h3><button class="btn-reset" type="button" data-action="close-order-line-editor" ${this.orderLineSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Product ID<input type="text" data-order-line-field="productId" value="${escapeHtml(model.productId)}" required ${this.orderLineSaving ? 'disabled' : ''}></label><label class="control-group">Variant ID<input type="text" data-order-line-field="variantId" value="${escapeHtml(model.variantId)}" ${this.orderLineSaving ? 'disabled' : ''}></label><label class="control-group" style="padding-bottom:20px;">Quantity<input type="number" min="0.000001" step="any" data-order-line-field="quantity" value="${escapeHtml(model.quantity)}" required ${this.orderLineSaving ? 'disabled' : ''}></label><div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;"><button class="btn-outline" type="button" data-action="close-order-line-editor" ${this.orderLineSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-order-line" ${this.orderLineSaving ? 'disabled' : ''}>${this.orderLineSaving ? 'Adding...' : 'Add order line'}</button></div></div></div></div>`;
   }
 
+  private renderShippingProviderEditor(): string {
+    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel"><div class="ekmOverlay__header"><h3>${this.selectedOrder?.shippingProvider ? 'Change shipping provider' : 'Add shipping provider'}</h3><button class="btn-reset" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Shipping provider<select data-field="shippingProviderId" ${this.shippingProviderSaving ? 'disabled' : ''}><option value="">Select a provider</option>${this.shippingProviders.map(provider => `<option value="${escapeHtml(provider.key)}" ${this.shippingProviderId === provider.key ? 'selected' : ''}>${escapeHtml(provider.title)}</option>`).join('')}</select></label>${this.shippingProviders.length ? '' : '<p>No shipping providers available for this store.</p>'}<div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;"><button class="btn-outline" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-shipping-provider" ${this.shippingProviderSaving || !this.shippingProviders.length ? 'disabled' : ''}>${this.shippingProviderSaving ? 'Saving...' : 'Save shipping provider'}</button></div></div></div></div>`;
+  }
+
   private bindEvents(): void {
     if (this.overlay === 'order') {
       this.querySelector('.ekmOverlay')?.addEventListener('click', event => {
-        if (event.target === event.currentTarget && !this.customerEditorOpen && !this.orderLineEditorOpen) {
+        if (event.target === event.currentTarget && !this.customerEditorOpen && !this.orderLineEditorOpen && !this.shippingProviderEditorOpen) {
           this.closeOverlay();
         }
       });
@@ -785,6 +805,24 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     if (action === 'save-order-line') {
       await this.saveOrderLine();
+      return;
+    }
+
+    if (action === 'open-shipping-provider-editor') {
+      await this.openShippingProviderEditor();
+      return;
+    }
+
+    if (action === 'close-shipping-provider-editor') {
+      if (!this.shippingProviderSaving) {
+        this.shippingProviderEditorOpen = false;
+        this.render();
+      }
+      return;
+    }
+
+    if (action === 'save-shipping-provider') {
+      await this.saveShippingProvider();
       return;
     }
 
@@ -974,6 +1012,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     this.customerEditModel = undefined;
     this.orderLineEditorOpen = false;
     this.orderLineEditModel = undefined;
+    this.shippingProviderEditorOpen = false;
     this.render();
   }
 
@@ -1133,6 +1172,48 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       this.showError(getErrorMessage(error, 'Error adding order line.'));
     } finally {
       this.orderLineSaving = false;
+      this.render();
+    }
+  }
+
+  private async openShippingProviderEditor(): Promise<void> {
+    if (!this.selectedOrder) {
+      return;
+    }
+
+    try {
+      const storeAlias = this.selectedOrder.storeInfo?.alias || this.selectedOrder.storeAlias;
+      this.shippingProviders = await this.api.shippingProviders(storeAlias);
+      this.shippingProviderId = this.selectedOrder.shippingProvider?.key || '';
+      this.shippingProviderEditorOpen = true;
+      this.render();
+    } catch (error) {
+      this.showError(getErrorMessage(error, 'Error loading shipping providers.'));
+    }
+  }
+
+  private async saveShippingProvider(): Promise<void> {
+    if (!this.selectedOrder?.uniqueId || this.shippingProviderSaving) {
+      return;
+    }
+
+    const providerId = this.querySelector<HTMLSelectElement>('[data-field="shippingProviderId"]')?.value || '';
+    if (!this.shippingProviders.some(provider => provider.key === providerId)) {
+      this.showError('Select a shipping provider.');
+      return;
+    }
+
+    this.shippingProviderSaving = true;
+    this.render();
+    try {
+      this.selectedOrder = await this.api.updateShippingProvider(this.selectedOrder.uniqueId, providerId);
+      this.shippingProviderEditorOpen = false;
+      this.showSuccess('Shipping provider updated.');
+      await this.refreshOrderAfterLineChange();
+    } catch (error) {
+      this.showError(getErrorMessage(error, 'Error updating shipping provider.'));
+    } finally {
+      this.shippingProviderSaving = false;
       this.render();
     }
   }

@@ -1,7 +1,7 @@
-const h = /* @__PURE__ */ new Date(), y = new Date(h.getFullYear(), 0, 1), w = {
+const f = /* @__PURE__ */ new Date(), y = new Date(f.getFullYear(), 0, 1), w = {
   filters: {
-    dateFrom: f(y),
-    dateTo: f(h),
+    dateFrom: x(y),
+    dateTo: x(f),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
@@ -47,6 +47,9 @@ class m {
   async paymentProviders(e) {
     return this.getJson(`/ekom/manager/paymentproviders/${encodeURIComponent(e)}`);
   }
+  async shippingProviders(e) {
+    return this.getJson(`/ekom/manager/shippingproviders/${encodeURIComponent(e)}`);
+  }
   async orderInfo(e) {
     return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(e)}`);
   }
@@ -74,6 +77,9 @@ class m {
   }
   async addOrderLine(e, r, t, n) {
     return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines`, { productId: r, variantId: t, quantity: n });
+  }
+  async updateShippingProvider(e, r) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/ShippingProvider`, { providerId: r });
   }
   async removeOrderLine(e, r) {
     const t = await fetch(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines/${encodeURIComponent(r)}`, {
@@ -164,7 +170,7 @@ function u(a) {
   const r = e.toString();
   return r ? `?${r}` : "";
 }
-function f(a) {
+function x(a) {
   const e = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
   return `${a.getFullYear()}-${e}-${r}`;
 }
@@ -340,12 +346,12 @@ function A(a, e, r) {
     const l = 20 + (i - 50) / 4 * s;
     o.beginPath(), o.moveTo(40, l), o.lineTo(d - 10, l), o.stroke();
   }
-  const c = e.points || [], k = c.map((s) => Number(s.y || 0)), b = Math.max(...k, 1), x = c.length > 1 ? (d - 60) / (c.length - 1) : 0;
+  const c = e.points || [], k = c.map((s) => Number(s.y || 0)), b = Math.max(...k, 1), h = c.length > 1 ? (d - 60) / (c.length - 1) : 0;
   o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((s, l) => {
-    const p = 40 + x * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
+    const p = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
     l === 0 ? o.moveTo(p, g) : o.lineTo(p, g);
   }), o.stroke(), o.fillStyle = r, c.forEach((s, l) => {
-    const p = 40 + x * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
+    const p = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
     o.beginPath(), o.arc(p, g, 3, 0, Math.PI * 2), o.fill();
   });
 }
