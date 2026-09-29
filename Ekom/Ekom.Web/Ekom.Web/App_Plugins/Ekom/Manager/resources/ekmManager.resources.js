@@ -107,8 +107,8 @@ angular.module("umbraco.resources").factory("Ekom.Manager.Resources", [
       ShippingProviders: function (storeAlias) {
         return get(backofficeBaseUrl + "shippingproviders/" + encodeURIComponent(storeAlias));
       },
-      UpdateShippingProvider: function (orderId, providerId) {
-        return postJson(backofficeBaseUrl + "Order/" + encodeURIComponent(orderId) + "/ShippingProvider", { providerId: providerId });
+      UpdateShippingProvider: function (orderId, providerId, customData) {
+        return postJson(backofficeBaseUrl + "Order/" + encodeURIComponent(orderId) + "/ShippingProvider", { providerId: providerId, customData: customData });
       },
       PaymentProviders: function (storeAlias) {
         return get(baseUrl + "provider/paymentsproviders/" + storeAlias);

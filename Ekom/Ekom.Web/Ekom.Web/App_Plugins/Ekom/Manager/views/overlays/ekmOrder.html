@@ -174,7 +174,7 @@
           </p>
 
           <div ng-if="extraCustomShippingProperties.length > 0">
-            <h5 style="margin-top:20px; font-weight:bold;">Extra Customer Data</h5>
+            <h5 style="margin-top:20px; font-weight:bold;">Shipping Provider Custom Data</h5>
             <ul>
               <li ng-repeat="pair in extraCustomShippingProperties track by $index">
                 <strong>{{ cleanKey(pair[0]) }}</strong>: {{ pair[1] }}
@@ -487,6 +487,15 @@
           </div>
         </div>
         <p ng-if="!shippingProviders.length">No shipping providers available for this store.</p>
+        <h4>Shipping provider custom data</h4>
+        <p>New keys are prefixed with customshipping.</p>
+        <div class="control-group umb-control-group" ng-repeat="field in shippingProviderEditModel.fields track by $index">
+          <label class="control-label">Key</label>
+          <input class="umb-editor" type="text" ng-model="field.key" ng-readonly="field.existing" ng-disabled="shippingProviderSaving" placeholder="TrackingNumber" maxlength="100" required>
+          <label class="control-label">Value</label>
+          <input class="umb-editor" type="text" ng-model="field.value" ng-disabled="shippingProviderSaving" maxlength="4096">
+        </div>
+        <button type="button" class="btn btn-outline umb-outline" ng-click="addShippingCustomField()" ng-disabled="shippingProviderSaving">Add custom field</button>
         <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;">
           <button type="button" class="btn btn-outline umb-outline" ng-click="closeShippingProviderEditor()" ng-disabled="shippingProviderSaving">Cancel</button>
           <button type="submit" class="btn btn-success" ng-disabled="shippingProviderSaving || shippingProviderForm.$invalid || !shippingProviders.length">{{ shippingProviderSaving ? 'Saving...' : 'Save shipping provider' }}</button>

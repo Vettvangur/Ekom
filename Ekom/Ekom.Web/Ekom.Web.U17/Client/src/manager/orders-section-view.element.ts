@@ -81,6 +81,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private shippingProviderSaving = false;
   private shippingProviders: ShippingProviderItem[] = [];
   private shippingProviderId = '';
+  private shippingCustomFields: Array<{ key: string; value: string; existing: boolean }> = [];
   private removingOrderLineId = '';
   private exportIncludeOrderLines = false;
   private exporting = false;
@@ -485,7 +486,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return '';
     }
 
-    return `<h5 style="margin-top:20px; font-weight:bold;">Extra ${prefix === 'shipping' ? 'Shipping' : 'Customer'} Data</h5><ul>${entries.map(([key, value]) => `<li><strong>${escapeHtml(cleanKey(key))}</strong>: ${escapeHtml(value)}</li>`).join('')}</ul>`;
+    return `<h5 style="margin-top:20px; font-weight:bold;">${prefix === 'customshipping' ? 'Shipping Provider Custom' : `Extra ${prefix === 'shipping' ? 'Shipping' : 'Customer'}`} Data</h5><ul>${entries.map(([key, value]) => `<li><strong>${escapeHtml(cleanKey(key))}</strong>: ${escapeHtml(value)}</li>`).join('')}</ul>`;
   }
 
   private renderProvider(title: string, provider: Record<string, any> | undefined, prefix: string): string {
@@ -660,7 +661,15 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private renderShippingProviderEditor(): string {
-    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel"><div class="ekmOverlay__header"><h3>${this.selectedOrder?.shippingProvider ? 'Change shipping provider' : 'Add shipping provider'}</h3><button class="btn-reset" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Shipping provider<select data-field="shippingProviderId" ${this.shippingProviderSaving ? 'disabled' : ''}><option value="">Select a provider</option>${this.shippingProviders.map(provider => `<option value="${escapeHtml(provider.key)}" ${this.shippingProviderId === provider.key ? 'selected' : ''}>${escapeHtml(provider.title)}</option>`).join('')}</select></label>${this.shippingProviders.length ? '' : '<p>No shipping providers available for this store.</p>'}<div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;"><button class="btn-outline" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-shipping-provider" ${this.shippingProviderSaving || !this.shippingProviders.length ? 'disabled' : ''}>${this.shippingProviderSaving ? 'Saving...' : 'Save shipping provider'}</button></div></div></div></div>`;
+    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel"><div class="ekmOverlay__header"><h3>${this.selectedOrder?.shippingProvider ? 'Change shipping provider' : 'Add shipping provider'}</h3><button class="btn-reset" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Shipping provider<select data-field="shippingProviderId" ${this.shippingProviderSaving ? 'disabled' : ''}><option value="">Select a provider</option>${this.shippingProviders.map(provider => `<option value="${escapeHtml(provider.key)}" ${this.shippingProviderId === provider.key ? 'selected' : ''}>${escapeHtml(provider.title)}</option>`).join('')}</select></label>${this.shippingProviders.length ? '' : '<p>No shipping providers available for this store.</p>'}<h4>Shipping provider custom data</h4><p>New keys are prefixed with customshipping.</p>${this.shippingCustomFields.map((field, index) => `<div class="control-group"><label>Key<input type="text" data-shipping-key="${index}" value="${escapeHtml(field.key)}" ${field.existing ? 'readonly' : ''} ${this.shippingProviderSaving ? 'disabled' : ''} placeholder="TrackingNumber" maxlength="100"></label><label>Value<input type="text" data-shipping-value="${index}" value="${escapeHtml(field.value)}" ${this.shippingProviderSaving ? 'disabled' : ''} maxlength="4096"></label></div>`).join('')}<button class="btn-outline" type="button" data-action="add-shipping-custom-field" ${this.shippingProviderSaving ? 'disabled' : ''}>Add custom field</button><div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;"><button class="btn-outline" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-shipping-provider" ${this.shippingProviderSaving || !this.shippingProviders.length ? 'disabled' : ''}>${this.shippingProviderSaving ? 'Saving...' : 'Save shipping provider'}</button></div></div></div></div>`;
+  }
+
+  private readShippingCustomFields(): void {
+    this.shippingCustomFields = this.shippingCustomFields.map((field, index) => ({
+      key: field.existing ? field.key : this.querySelector<HTMLInputElement>(`[data-shipping-key="${index}"]`)?.value || '',
+      value: this.querySelector<HTMLInputElement>(`[data-shipping-value="${index}"]`)?.value || '',
+      existing: field.existing,
+    }));
   }
 
   private bindEvents(): void {
@@ -823,6 +832,14 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     if (action === 'save-shipping-provider') {
       await this.saveShippingProvider();
+      return;
+    }
+
+    if (action === 'add-shipping-custom-field') {
+      this.readShippingCustomFields();
+      this.shippingProviderId = this.querySelector<HTMLSelectElement>('[data-field="shippingProviderId"]')?.value || '';
+      this.shippingCustomFields.push({ key: '', value: '', existing: false });
+      this.render();
       return;
     }
 
@@ -1185,6 +1202,9 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       const storeAlias = this.selectedOrder.storeInfo?.alias || this.selectedOrder.storeAlias;
       this.shippingProviders = await this.api.shippingProviders(storeAlias);
       this.shippingProviderId = this.selectedOrder.shippingProvider?.key || '';
+      this.shippingCustomFields = Object.entries(this.selectedOrder.shippingProvider?.customData || {})
+        .filter(([key]) => key.toLowerCase().startsWith('customshipping'))
+        .map(([key, value]) => ({ key, value: decodeHtml(value), existing: true }));
       this.shippingProviderEditorOpen = true;
       this.render();
     } catch (error) {
@@ -1203,10 +1223,23 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return;
     }
 
+    this.readShippingCustomFields();
+    const customData: Record<string, string> = {};
+    const seen = new Set<string>();
+    for (const field of this.shippingCustomFields) {
+      const key = field.existing ? field.key : `customshipping${field.key.trim()}`;
+      if (!key.slice('customshipping'.length).trim() || key.length > 100 || field.value.length > 4096 || seen.has(key.toLowerCase())) {
+        this.showError('Enter unique shipping custom data keys and valid values.');
+        return;
+      }
+      seen.add(key.toLowerCase());
+      customData[key] = field.value;
+    }
+
     this.shippingProviderSaving = true;
     this.render();
     try {
-      this.selectedOrder = await this.api.updateShippingProvider(this.selectedOrder.uniqueId, providerId);
+      this.selectedOrder = await this.api.updateShippingProvider(this.selectedOrder.uniqueId, providerId, customData);
       this.shippingProviderEditorOpen = false;
       this.showSuccess('Shipping provider updated.');
       await this.refreshOrderAfterLineChange();
@@ -1266,7 +1299,7 @@ function cleanKey(key: string): string {
 
 function parseProperties(properties: Record<string, unknown> | undefined, prefix: string): Array<[string, string]> {
   return Object.entries(properties || {})
-    .filter(([key, value]) => Boolean(value) && key.toLowerCase().startsWith(prefix) && !isDefaultKey(key))
+    .filter(([key, value]) => (Boolean(value) || (prefix === 'customshipping' && value === '')) && key.toLowerCase().startsWith(prefix) && !isDefaultKey(key))
     .map(([key, value]) => [key, decodeHtml(value)]);
 }
 
