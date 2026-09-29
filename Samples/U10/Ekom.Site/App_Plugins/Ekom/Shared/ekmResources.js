@@ -5,8 +5,6 @@ angular.module('umbraco.resources').factory('Ekom.Resources',
     var languagesPromise = null;
     var languagesByNodeCache = {};
     var languagesByNodePromise = {};
-    var storesByNodeCache = {};
-    var storesByNodePromise = {};
     var dataTypeByIdCache = {};
     var dataTypeByIdPromise = {};
     var dataTypeByAliasCache = {};
@@ -134,32 +132,10 @@ angular.module('umbraco.resources').factory('Ekom.Resources',
         return languagesByNodePromise[id];
       },
       getStoresByNode: function (id) {
-        if (!id) {
-          return umbRequestHelper.resourcePromise(
-            $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + "Stores/" + id),
-            'Failed to retrieve stores'
-          );
-        }
-
-        if (storesByNodeCache[id]) {
-          return $q.resolve(storesByNodeCache[id]);
-        }
-
-        if (storesByNodePromise[id]) {
-          return storesByNodePromise[id];
-        }
-
-        storesByNodePromise[id] = umbRequestHelper.resourcePromise(
+        return umbRequestHelper.resourcePromise(
           $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + "Stores/" + id),
           'Failed to retrieve stores'
-        ).then(function (data) {
-          storesByNodeCache[id] = data;
-          return data;
-        }).finally(function () {
-          storesByNodePromise[id] = null;
-        });
-
-        return storesByNodePromise[id];
+        );
       },
       getStores: function () {
         return umbRequestHelper.resourcePromise(

@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 
@@ -146,40 +145,11 @@ public class EkomBackofficeApiController : ControllerBase
         });
     }
 
-    private static readonly ConcurrentDictionary<string, Lazy<Task<IEnumerable<IStore>>>> _storeLocks = new();
-
     [HttpGet]
     [Route("Stores/{id}")]
     [UmbracoUserAuthorize]
-    public async Task<IEnumerable<IStore>> GetStores([FromRoute] string id)
-    {
-        var cacheKey = $"Stores_{id}";
-
-        if (_memoryCache.TryGetValue<IEnumerable<IStore>>(cacheKey, out var cached))
-        {
-            return cached;
-        }
-
-        var lazy = _storeLocks.GetOrAdd(cacheKey, key =>
-            new Lazy<Task<IEnumerable<IStore>>>(async () =>
-            {
-                var data = LoadStores(id);
-                _memoryCache.Set(cacheKey, data, TimeSpan.FromSeconds(60));
-                _storeLocks.TryRemove(cacheKey, out _);
-                return data;
-            }));
-
-        try
-        {
-            return await lazy.Value;
-        }
-        catch
-        {
-            // If the factory failed, remove it so future attempts can retry
-            _storeLocks.TryRemove(cacheKey, out _);
-            throw;
-        }
-    }
+    [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+    public IEnumerable<IStore> GetStores([FromRoute] string id) => LoadStores(id);
 
     private IEnumerable<IStore> LoadStores(string id)
     {
@@ -193,7 +163,10 @@ public class EkomBackofficeApiController : ControllerBase
 
     private IEnumerable<IStore> FilterEnabledStores(UmbracoContent node, IEnumerable<IStore> allStores)
     {
-        var ancestors = _nodeService.GetAllCatalogAncestors(node);
+        var ancestors = node.ContentTypeAlias is "ekmOrderDiscount" or "ekmProductDiscount"
+            or "ekmPaymentProvider" or "ekmShippingProvider"
+            ? _nodeService.NodeAncestors(node.Id.ToString(), true) ?? Array.Empty<UmbracoContent>()
+            : _nodeService.GetAllCatalogAncestors(node);
         return BackofficeStoreAvailability.FilterEnabledStores(node, ancestors, allStores);
     }
 

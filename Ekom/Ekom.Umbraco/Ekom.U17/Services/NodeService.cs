@@ -144,10 +144,10 @@ internal sealed class NodeService : INodeService
         return NodesByTypes(contentTypeAlias);
     }
 
-    public IEnumerable<UmbracoContent> NodeAncestors(string t)
+    public IEnumerable<UmbracoContent> NodeAncestors(string t, bool preview = false)
     {
         using var cref = _context.EnsureUmbracoContext();
-        var node = GetNodeById(t);
+        var node = GetNodeById(t, preview);
 
         if (node == null)
         {

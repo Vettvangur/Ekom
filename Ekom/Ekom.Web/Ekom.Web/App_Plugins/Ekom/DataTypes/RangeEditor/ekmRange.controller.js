@@ -1,4 +1,4 @@
-angular.module("umbraco").controller("Ekom.Range", function ($scope, ekmResources, $routeParams) {
+angular.module("umbraco").controller("Ekom.Range", ['$scope', 'Ekom.Resources', '$routeParams', function ($scope, ekmResources, $routeParams) {
 
   if ($routeParams.section !== 'content') { return; }
 
@@ -99,4 +99,4 @@ angular.module("umbraco").controller("Ekom.Range", function ($scope, ekmResource
     $scope.model.value = $scope.ranges;
   });
 
-});
+}]);
