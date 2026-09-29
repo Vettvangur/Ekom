@@ -1469,9 +1469,15 @@ partial class OrderService
             OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct)
                 .ConfigureAwait(false);
 
+            string? removedShippingProviderMessage = null;
             if (verifyProviders && orderData.OrderStatus == OrderStatus.Incomplete)
             {
+                var previousShippingProvider = orderInfo.ShippingProvider;
                 VerifyProviders(orderInfo);
+                if (previousShippingProvider != null && orderInfo.ShippingProvider == null)
+                {
+                    removedShippingProviderMessage = $"Shipping provider removed (invalid or unavailable). Provider: {previousShippingProvider.Title} ({previousShippingProvider.Key})";
+                }
             }
 
             orderInfo.Culture = ResolveOrderCulture(orderInfo);
@@ -1547,6 +1553,13 @@ partial class OrderService
 
             await _orderRepository.UpdateOrderAsync(orderData, reservationPersistence, ct)
                 .ConfigureAwait(false);
+
+            if (removedShippingProviderMessage != null)
+            {
+                await OrderPersistenceNotifications.RunAsync(orderInfo.UniqueId, _logger,
+                    () => _orderActivityLogService.AddOrderLogAsync(orderInfo.UniqueId, removedShippingProviderMessage,
+                        logType: OrderActivityLogType.Info, ct: ct)).ConfigureAwait(false);
+            }
 
             if (reservationPersistence)
             {

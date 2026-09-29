@@ -160,6 +160,7 @@
 
     <div class="ekmSplit__column">
 
+      <h4 ng-if="!model.editModel.order.shippingProvider">Shipping Method</h4>
       <div ng-if="model.editModel.order.shippingProvider">
 
         <div class="ekmOrder__shippingMethod ekmSplit__column">
@@ -182,6 +183,9 @@
 
         </div>
       </div>
+      <button type="button" class="btn btn-outline umb-outline" ng-click="openShippingProviderEditor()">
+        {{ model.editModel.order.shippingProvider ? 'Change shipping provider' : 'Add shipping provider' }}
+      </button>
     </div>
   </div>
 
@@ -453,6 +457,30 @@
         <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;">
           <button type="button" class="btn btn-outline umb-outline" ng-click="closeOrderLineEditor()" ng-disabled="orderLineSaving">Cancel</button>
           <button type="submit" class="btn btn-success" ng-disabled="orderLineSaving || orderLineForm.$invalid">{{ orderLineSaving ? 'Adding...' : 'Add order line' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="ekmCustomerInformationModal" ng-if="shippingProviderEditorOpen" style="position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#fff; width:100%; max-width:760px; max-height:90vh; overflow:auto; border-radius:3px; box-shadow:0 10px 30px rgba(0,0,0,.25);">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:20px; border-bottom:1px solid #d8d7d9;">
+        <h3 style="margin:0;">{{ model.editModel.order.shippingProvider ? 'Change shipping provider' : 'Add shipping provider' }}</h3>
+        <button type="button" class="btn-reset" ng-click="closeShippingProviderEditor()" ng-disabled="shippingProviderSaving" aria-label="Close">&times;</button>
+      </div>
+      <form name="shippingProviderForm" ng-submit="saveShippingProvider()" style="padding:20px;">
+        <div class="control-group umb-control-group">
+          <label class="control-label">Shipping provider</label>
+          <div class="umb-property-editor">
+            <select class="umb-editor" ng-model="shippingProviderEditModel.providerId" ng-options="provider.key as provider.title for provider in shippingProviders" ng-disabled="shippingProviderSaving" required>
+              <option value="">Select a provider</option>
+            </select>
+          </div>
+        </div>
+        <p ng-if="!shippingProviders.length">No shipping providers available for this store.</p>
+        <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;">
+          <button type="button" class="btn btn-outline umb-outline" ng-click="closeShippingProviderEditor()" ng-disabled="shippingProviderSaving">Cancel</button>
+          <button type="submit" class="btn btn-success" ng-disabled="shippingProviderSaving || shippingProviderForm.$invalid || !shippingProviders.length">{{ shippingProviderSaving ? 'Saving...' : 'Save shipping provider' }}</button>
         </div>
       </form>
     </div>

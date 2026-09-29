@@ -318,12 +318,111 @@ public sealed class LinkedOrderLinesTests
             Assert.Equal(payment["Key"], saved["PaymentProvider"]?["Key"]);
             Assert.Equal(payment["Title"], saved["PaymentProvider"]?["Title"]);
             Assert.Equal(2, saved["PaymentProvider"]?["Price"]?["OriginalValue"]?.Value<int>());
+            fixture.ActivityLogs.Verify(x => x.AddOrderLogAsync(order.UniqueId,
+                It.Is<string>(message => message.StartsWith("Shipping provider removed", StringComparison.Ordinal)),
+                It.IsAny<string?>(), OrderActivityLogType.Info, It.IsAny<CancellationToken>()), Times.Never);
         }
         else
         {
             Assert.True(saved["ShippingProvider"] == null || saved["ShippingProvider"]!.Type == JTokenType.Null);
             Assert.True(saved["PaymentProvider"] == null || saved["PaymentProvider"]!.Type == JTokenType.Null);
+            fixture.ActivityLogs.Verify(x => x.AddOrderLogAsync(order.UniqueId,
+                It.Is<string>(message => message.Contains(shipping["Key"]!.ToString(), StringComparison.Ordinal)
+                    && message.Contains("Shipping provider removed", StringComparison.Ordinal)),
+                It.IsAny<string?>(), OrderActivityLogType.Info, It.IsAny<CancellationToken>()), Times.Once);
         }
+    }
+
+    [Fact]
+    public async Task FailedOrderUpdate_DoesNotLogShippingProviderRemoval()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var data = (await fixture.Repository.GetOrderAsync(order.UniqueId))!;
+        var orderJson = JObject.Parse(data.OrderInfo);
+        orderJson["ShippingProvider"] = new JObject
+        {
+            ["Id"] = 1,
+            ["Key"] = Guid.NewGuid(),
+            ["Title"] = "Pickup",
+            ["Price"] = new JObject { ["OriginalValue"] = 5 },
+        };
+        data.OrderInfo = orderJson.ToString();
+        await fixture.Repository.UpdateOrderAsync(data);
+        var before = data.OrderInfo;
+        fixture.ActivityLogs.Invocations.Clear();
+
+        EventHandler<OrderUpdatingEventArgs> handler = (_, _) => throw new InvalidOperationException("Save aborted");
+        OrderEvents.OrderUpdating += handler;
+        try
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Service.UpdateCustomerInformationAsync(
+                new Dictionary<string, string> { ["storeAlias"] = "main", ["customerCountry"] = "DK" },
+                new OrderSettings { OrderInfo = new OrderInfo(data) }));
+        }
+        finally
+        {
+            OrderEvents.OrderUpdating -= handler;
+        }
+
+        Assert.Equal(before, (await fixture.Repository.GetOrderAsync(order.UniqueId))!.OrderInfo);
+        fixture.ActivityLogs.Verify(x => x.AddOrderLogAsync(order.UniqueId,
+            It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<OrderActivityLogType>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CustomerCountryUpdate_WithoutShippingProviderDoesNotLogRemoval()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        fixture.ActivityLogs.Invocations.Clear();
+
+        await fixture.Service.UpdateCustomerInformationAsync(
+            new Dictionary<string, string> { ["storeAlias"] = "main", ["customerCountry"] = "DK" },
+            new OrderSettings { OrderInfo = await fixture.ReloadAsync(), FireEvents = false });
+
+        fixture.ActivityLogs.Verify(x => x.AddOrderLogAsync(order.UniqueId,
+            It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<OrderActivityLogType>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateShippingInformationAsync_AddsAndReplacesProviderOnCompletedOrder()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var data = (await fixture.Repository.GetOrderAsync(order.UniqueId))!;
+        data.OrderStatus = OrderStatus.Closed;
+        await fixture.Repository.UpdateOrderAsync(data);
+        var firstKey = fixture.AddShippingProvider(5);
+        var secondKey = fixture.AddShippingProvider(7);
+        var originalAmount = (await fixture.ReloadAsync()).ChargedAmount.Value;
+
+        var added = await fixture.Service.UpdateShippingInformationAsync(firstKey, "main", null,
+            new OrderSettings { OrderInfo = await fixture.ReloadAsync(), FireEvents = false });
+        Assert.Equal(firstKey, added.ShippingProvider?.Key);
+        Assert.Equal(originalAmount + 5, added.ChargedAmount.Value);
+
+        var replaced = await fixture.Service.UpdateShippingInformationAsync(secondKey, "main", null,
+            new OrderSettings { OrderInfo = await fixture.ReloadAsync(), FireEvents = false });
+        Assert.Equal(secondKey, replaced.ShippingProvider?.Key);
+        Assert.Equal(originalAmount + 7, replaced.ChargedAmount.Value);
+        Assert.Equal(secondKey, (await fixture.ReloadAsync()).ShippingProvider?.Key);
+        Assert.Equal(replaced.ChargedAmount.Value, (await fixture.Repository.GetOrderAsync(order.UniqueId))!.TotalAmount);
+    }
+
+    [Fact]
+    public async Task UpdateShippingInformationAsync_AddsValidProviderOnIncompleteOrder()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var shippingKey = fixture.AddShippingProvider(5);
+        var originalAmount = (await fixture.ReloadAsync()).ChargedAmount.Value;
+
+        var updated = await fixture.Service.UpdateShippingInformationAsync(shippingKey, "main", null,
+            new OrderSettings { OrderInfo = await fixture.ReloadAsync(), FireEvents = false });
+
+        Assert.Equal(shippingKey, updated.ShippingProvider?.Key);
+        Assert.Equal(originalAmount + 5, (await fixture.ReloadAsync()).ChargedAmount.Value);
     }
 
     [Fact]
@@ -411,6 +510,8 @@ public sealed class LinkedOrderLinesTests
         private readonly MemoryCache _cache = new(new MemoryCacheOptions());
         private readonly Mock<IPerStoreIndexedCache<IProduct>> _products = new();
         private readonly StockReservationTests.ReservationDatabase _database = new();
+        private readonly ConcurrentDictionary<Guid, IShippingProvider> _shippingProviders = new();
+        public Mock<IOrderActivityLogService> ActivityLogs { get; } = new();
 
         public Fixture()
         {
@@ -443,7 +544,7 @@ public sealed class LinkedOrderLinesTests
                 services.AddSingleton(sp => new Providers(
                     sp.GetRequiredService<Configuration>(),
                     NullLogger<Providers>.Instance,
-                    Mock.Of<IPerStoreCache<IShippingProvider>>(x => x["main"] == new ConcurrentDictionary<Guid, IShippingProvider>()),
+                    Mock.Of<IPerStoreCache<IShippingProvider>>(x => x["main"] == _shippingProviders),
                     Mock.Of<IPerStoreCache<IPaymentProvider>>(x => x["main"] == new ConcurrentDictionary<Guid, IPaymentProvider>()),
                     Mock.Of<IBaseCache<IZone>>(),
                     stores.Object,
@@ -495,7 +596,7 @@ public sealed class LinkedOrderLinesTests
                 _scope.Instance,
                 Repository,
                 null!,
-                Mock.Of<IOrderActivityLogService>(),
+                ActivityLogs.Object,
                 NullLogger<OrderService>.Instance,
                 stores.Object,
                 _cache,
@@ -507,6 +608,22 @@ public sealed class LinkedOrderLinesTests
         public OrderInfo Order { get; }
         public OrderRepository Repository { get; }
         public OrderService Service { get; }
+
+        public Guid AddShippingProvider(decimal amount)
+        {
+            var key = Guid.NewGuid();
+            var provider = new Mock<IShippingProvider>();
+            provider.SetupGet(x => x.Id).Returns(1);
+            provider.SetupGet(x => x.Key).Returns(key);
+            provider.SetupGet(x => x.Title).Returns("Delivery");
+            provider.SetupGet(x => x.Properties).Returns(new Dictionary<string, string> { ["title"] = "Delivery" });
+            provider.SetupGet(x => x.Prices).Returns([new Price(amount, Order.StoreInfo.Currency, 0, false)]);
+            var constraints = new Mock<IConstraints>();
+            constraints.Setup(x => x.IsValid(It.IsAny<string>(), It.IsAny<decimal>())).Returns(true);
+            provider.SetupGet(x => x.Constraints).Returns(constraints.Object);
+            _shippingProviders[key] = provider.Object;
+            return key;
+        }
 
         public Guid AddProduct(decimal stock = 100)
         {

@@ -331,6 +331,33 @@ public class EkomManagerController : ControllerBase
         return Ok(_providers.GetManagerPaymentProviders(store.Alias));
     }
 
+    [HttpGet]
+    [Route("shippingproviders/{storeAlias}")]
+    [UmbracoUserAuthorize]
+    public IActionResult GetShippingProviders(string storeAlias)
+    {
+        if (!CanAccessStore(storeAlias))
+        {
+            return ForbidStore(storeAlias);
+        }
+
+        var store = _managerAccessService.GetAllowedStores()
+            .FirstOrDefault(x => x.Alias.Equals(storeAlias, StringComparison.OrdinalIgnoreCase));
+        if (store == null)
+        {
+            return NotFound();
+        }
+
+        var culture = store.Cultures.FirstOrDefault()?.Name;
+        return Ok(_providers.GetManagerShippingProviders(store.Alias)
+            .Select(provider =>
+            {
+                var title = OrderProviderTitleResolver.Resolve(provider.Properties, store.Alias, culture);
+                return new { provider.Key, Title = string.IsNullOrWhiteSpace(title) ? provider.Title : title };
+            })
+            .ToList());
+    }
+
     [HttpPost]
     [Route("changeOrderStatus")]
     [UmbracoUserAuthorize]
@@ -510,6 +537,66 @@ public class EkomManagerController : ControllerBase
         {
             _logger.LogError(ex, "Failed to remove order line. {OrderId} {OrderLineId}", orderId, lineId);
 
+            return StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
+    [HttpPost]
+    [Route("Order/{orderId}/ShippingProvider")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> UpdateOrderShippingProviderAsync(Guid orderId, [FromBody] OrderShippingProviderUpdateRequest? request, CancellationToken ct = default)
+    {
+        if (orderId == Guid.Empty || request == null || request.ProviderId == Guid.Empty)
+        {
+            return BadRequest("A shipping provider is required.");
+        }
+
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(orderId, ct);
+            if (orderData == null)
+            {
+                return NotFound();
+            }
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            if (!_providers.GetManagerShippingProviders(orderData.StoreAlias).Any(x => x.Key == request.ProviderId))
+            {
+                return BadRequest("Shipping provider is not available for this store.");
+            }
+
+            var order = await _repo.GetOrderInfoAsync(orderId, ct);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            var updatedOrder = await Order.Instance.UpdateShippingInformationAsync(
+                request.ProviderId, orderData.StoreAlias, new Dictionary<string, string>(),
+                new OrderSettings { OrderInfo = order }, ct).ConfigureAwait(false);
+
+            if (updatedOrder.ShippingProvider?.Key != request.ProviderId)
+            {
+                return BadRequest("Shipping provider could not be applied to this order.");
+            }
+
+            return Ok(GetOrderInfoResponse(updatedOrder));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (EkomException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update shipping provider for order {OrderId}", orderId);
             return StatusCode(500, "An unexpected error occurred.");
         }
     }

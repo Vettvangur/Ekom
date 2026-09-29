@@ -240,6 +240,13 @@ public class Providers
             .ToList();
     }
 
+    internal IReadOnlyList<IShippingProvider> GetManagerShippingProviders(string storeAlias)
+    {
+        return _shippingProviderCache[storeAlias].Values
+            .OrderBy(x => x.SortOrder)
+            .ToList();
+    }
+
     /// <summary>
     /// Common logic for get provider methods.
     /// </summary>

@@ -32,6 +32,10 @@
     $scope.orderLineSaving = false;
     $scope.orderLineEditModel = null;
     $scope.removingOrderLineId = null;
+    $scope.shippingProviderEditorOpen = false;
+    $scope.shippingProviderSaving = false;
+    $scope.shippingProviders = [];
+    $scope.shippingProviderEditModel = { providerId: "" };
 
     var customerFields = [
       { key: "customerName", label: "Name", property: "name" },
@@ -607,6 +611,45 @@
         })
         .finally(function () {
           $scope.removingOrderLineId = null;
+        });
+    };
+
+    $scope.openShippingProviderEditor = function () {
+      var order = $scope.model.editModel.order;
+      var storeAlias = (order.storeInfo && order.storeInfo.alias) || order.storeAlias;
+
+      resources.ShippingProviders(storeAlias).then(function (result) {
+        $scope.shippingProviders = result.data || [];
+        $scope.shippingProviderEditModel = { providerId: (order.shippingProvider && order.shippingProvider.key) || "" };
+        $scope.shippingProviderEditorOpen = true;
+      }, function (error) {
+        notificationsService.error("Error", getErrorMessage(error, "Error loading shipping providers."));
+      });
+    };
+
+    $scope.closeShippingProviderEditor = function () {
+      if ($scope.shippingProviderSaving) return;
+      $scope.shippingProviderEditorOpen = false;
+    };
+
+    $scope.saveShippingProvider = function () {
+      var orderId = getCurrentOrderId();
+      if (!orderId || !$scope.shippingProviderEditModel.providerId || $scope.shippingProviderSaving) return;
+
+      $scope.shippingProviderSaving = true;
+      resources.UpdateShippingProvider(orderId, $scope.shippingProviderEditModel.providerId)
+        .then(function (result) {
+          applyOrderData(result.data);
+          $scope.shippingProviderEditorOpen = false;
+          notificationsService.success("Success", "Shipping provider updated.");
+          loadActivityLogs();
+          loadOrderActions();
+          eventsService.emit("order.changed", {});
+        }, function (error) {
+          notificationsService.error("Error", getErrorMessage(error, "Error updating shipping provider."));
+        })
+        .finally(function () {
+          $scope.shippingProviderSaving = false;
         });
     };
 
