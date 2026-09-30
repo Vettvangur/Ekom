@@ -3,6 +3,7 @@ using Ekom.Models;
 using Ekom.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
@@ -38,6 +39,7 @@ public class EkomCheckoutApiController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Pay([FromQuery] string culture, CancellationToken ct = default)
     {
+        var logContext = new CheckoutPaymentLogContext();
         try
         {
             Request.EnableBuffering();
@@ -99,11 +101,11 @@ public class EkomCheckoutApiController : ControllerBase
 
             paymentRequest!.AdditionalData = additionalData;
 
-            return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture, ct);
+            return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture, logContext, ct);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Checkout payment failed!");
+            logContext.LogError(_logger, ex);
             throw;
         }
       
@@ -153,6 +155,9 @@ public class EkomCheckoutApiController : ControllerBase
             _logger.LogError($"Order not found in payment return. {orderId}");
             return NotFound("Order not found.");
         }
+
+        HttpContext.Features.Set<IRequestCultureFeature>(
+            new RequestCultureFeature(new RequestCulture(order.StoreInfo.Culture), null));
 
         if (order.PaymentProvider == null)
         {
@@ -291,6 +296,7 @@ public class CheckoutController : ControllerBase
     [ValidateAntiForgeryToken]
     public async Task<ActionResult> Pay(PaymentRequest paymentRequest, CancellationToken ct = default)
     {
+        var logContext = new CheckoutPaymentLogContext();
         try
         {
             if (!string.IsNullOrWhiteSpace(paymentRequest.ReturnUrl) && Url.IsLocalUrl(paymentRequest.ReturnUrl))
@@ -312,6 +318,7 @@ public class CheckoutController : ControllerBase
                 ResponseHandler,
                 paymentRequest,
                 culture,
+                logContext,
                 ct);
 
             return payResponse;
@@ -319,7 +326,7 @@ public class CheckoutController : ControllerBase
         catch (Exception ex)
         {
 
-            _logger.LogError(ex, "Checkout payment failed!");
+            logContext.LogError(_logger, ex);
 
             var returnUrl = paymentRequest.ReturnUrl ?? "/";
             var finalUrl = QueryHelpers.AddQueryString(returnUrl, "errorStatus", "serverError");

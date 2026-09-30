@@ -64,7 +64,7 @@ public class CheckoutControllerService
         //HttpContext = httpContext;
     }
 
-    internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture, CancellationToken ct)
+    internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture, CheckoutPaymentLogContext logContext, CancellationToken ct)
     {
         Logger.LogInformation("Checkout Pay - Payment request start ");
 
@@ -94,7 +94,9 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order, paymentRequest.PaymentProvider, paymentRequest.ShippingProvider).ConfigureAwait(false);
+        logContext.Capture(order);
+        order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order, paymentRequest.PaymentProvider, paymentRequest.ShippingProvider, ct: ct).ConfigureAwait(false);
+        logContext.Capture(order);
 
         var res = await PrepareCheckoutAsync(paymentRequest, order, ct: ct).ConfigureAwait(false);
 
@@ -103,8 +105,8 @@ public class CheckoutControllerService
             return responseHandler(res);
         }
 
-        Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " Customer: " + +order.CustomerInformation.Customer.UserId
-            + " ," + order.CustomerInformation.Customer.UserName + " Payment Provider: " + paymentRequest.PaymentProvider);
+        Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " " + order.OrderNumber + " Customer: " + +order.CustomerInformation.Customer.UserId
+            + " ," + order.CustomerInformation.Customer.UserName + " Payment Provider: " + paymentRequest.PaymentProvider + " ShippingProvider: " + paymentRequest.ShippingProvider);
 
         string storeAlias = order.StoreInfo.Alias;
         var store = API.Store.Instance.GetStore(storeAlias);
@@ -326,7 +328,7 @@ public class CheckoutControllerService
             {
                 order = await Order.Instance.UpdatePaymentInformationAsync(
                 paymentProviderKey.Value,
-                order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
+                order.StoreInfo.Alias, formCollection, ct: ct).ConfigureAwait(false);
             }
         }
 
