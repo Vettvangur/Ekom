@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+* **discounts:** skip coupon-backed global discounts without preventing other eligible global discounts from applying to the order's store.
 * **checkout:** include the exception message, order number, and unique ID in API and MVC payment failure logs while preserving the exception details.
 * **backoffice:** load the U10 range editor and filter discount/provider store selectors by the item and its matching parent folders, without hiding disabled product stores.
 * **order:** record an informational activity entry after provider validation removes a shipping provider from a saved order.

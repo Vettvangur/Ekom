@@ -536,6 +536,77 @@ public sealed class LinkedOrderLinesTests
             });
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task GlobalDiscountWithCouponsDoesNotBlockCouponlessDiscountInOrderStore(bool couponFirst)
+    {
+        var mainDiscounts = new ConcurrentDictionary<Guid, IDiscount>();
+        for (var i = 0; i < 2; i++)
+        {
+            var discount = CreateGlobalPercentageDiscount(Guid.NewGuid(), 0.1m);
+            mainDiscounts[discount.Key] = discount;
+        }
+
+        // Use the cache's actual iteration order rather than assuming GUID insertion order.
+        var orderedDiscounts = mainDiscounts.Values.ToList();
+        var couponDiscount = orderedDiscounts[couponFirst ? 0 : 1];
+        var automaticDiscount = orderedDiscounts[couponFirst ? 1 : 0];
+        var coupons = new ConcurrentDictionary<string, CouponData>();
+        coupons["manual"] = new CouponData { DiscountId = couponDiscount.Key, CouponCode = "manual" };
+        var otherStoreDiscount = CreateGlobalPercentageDiscount(automaticDiscount.Key, 0.9m);
+        using var fixture = new Fixture(
+            new ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>>
+            {
+                ["main"] = mainDiscounts,
+                ["other"] = new() { [otherStoreDiscount.Key] = otherStoreDiscount },
+            }, coupons);
+
+        var order = await AddTwoLinesAsync(fixture);
+
+        Assert.Equal(automaticDiscount.Key, order.Discount?.Key);
+        Assert.Equal(0.1m, order.Discount?.Amount);
+        Assert.Equal(27m, order.ChargedAmount.Value);
+        Assert.Null(order.Coupon);
+        var saved = (await fixture.Repository.GetOrderAsync(order.UniqueId))!;
+        Assert.Equal(automaticDiscount.Key.ToString(), JObject.Parse(saved.OrderInfo)["Discount"]?["Key"]?.Value<string>());
+        Assert.Equal(27m, saved.TotalAmount);
+    }
+
+    [Fact]
+    public async Task GlobalDiscountWithCouponsIsNotAppliedAutomatically()
+    {
+        var discount = CreateGlobalPercentageDiscount(Guid.NewGuid(), 0.1m);
+        using var fixture = new Fixture(
+            new ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>>
+            {
+                ["main"] = new() { [discount.Key] = discount },
+            },
+            new ConcurrentDictionary<string, CouponData>
+            {
+                ["manual"] = new CouponData { DiscountId = discount.Key, CouponCode = "manual" },
+            });
+
+        var order = await AddTwoLinesAsync(fixture);
+
+        Assert.Null(order.Discount);
+        Assert.Equal(30m, order.ChargedAmount.Value);
+    }
+
+    private static IDiscount CreateGlobalPercentageDiscount(Guid key, decimal amount)
+    {
+        var discount = new Mock<IDiscount>();
+        discount.SetupGet(x => x.Key).Returns(key);
+        discount.SetupGet(x => x.Title).Returns("Global percentage discount");
+        discount.SetupGet(x => x.GlobalDiscount).Returns(true);
+        discount.SetupGet(x => x.Type).Returns(DiscountType.Percentage);
+        discount.SetupGet(x => x.Amount).Returns(amount);
+        discount.SetupGet(x => x.DiscountItems).Returns(["123"]);
+        discount.SetupGet(x => x.ExcludeDiscountItems).Returns(Array.Empty<string>());
+        discount.SetupGet(x => x.QualifyingItems).Returns(Array.Empty<string>());
+        return discount.Object;
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly ConfigurationScope _scope;
@@ -545,12 +616,15 @@ public sealed class LinkedOrderLinesTests
         private readonly ConcurrentDictionary<Guid, IShippingProvider> _shippingProviders = new();
         public Mock<IOrderActivityLogService> ActivityLogs { get; } = new();
 
-        public Fixture()
+        public Fixture(
+            ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>>? discountsByStore = null,
+            ConcurrentDictionary<string, CouponData>? coupons = null)
         {
             var store = new Mock<IStore>();
             store.SetupGet(x => x.Alias).Returns("main");
             store.SetupGet(x => x.Culture).Returns(new CultureInfoDto { Name = "en-US" });
             store.SetupGet(x => x.Cultures).Returns([new CultureInfoDto { Name = "en-US" }]);
+            store.SetupGet(x => x.Currencies).Returns([new CurrencyModel { CurrencyValue = "en-US" }]);
 
             var stores = new Mock<IStoreService>();
             stores.Setup(x => x.GetStoreByAlias("main")).Returns(store.Object);
@@ -564,13 +638,17 @@ public sealed class LinkedOrderLinesTests
                 });
             var discounts = new Mock<IPerStoreCache<IDiscount>>();
             discounts.SetupGet(x => x.Cache).Returns(
-                new ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>>
+                discountsByStore ?? new ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>>
                 {
                     ["main"] = new(),
                 });
 
             _scope = new ConfigurationScope(addServices: services =>
             {
+                if (coupons != null)
+                {
+                    services.AddSingleton(Mock.Of<ICouponCache>(x => x.Cache == coupons));
+                }
                 services.AddSingleton(_database.NewStockApi());
                 services.AddSingleton(new Ekom.API.Store(stores.Object, Mock.Of<ICacheRefreshService>()));
                 services.AddSingleton(sp => new Providers(

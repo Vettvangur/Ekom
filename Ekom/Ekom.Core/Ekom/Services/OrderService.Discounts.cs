@@ -688,7 +688,7 @@ partial class OrderService
         {
             if (couponCache?.Cache.Any(x => x.Value.DiscountId == discount.Key) == true)
             {
-                return;
+                continue;
             }
 
             ApplyDiscountToOrder(
