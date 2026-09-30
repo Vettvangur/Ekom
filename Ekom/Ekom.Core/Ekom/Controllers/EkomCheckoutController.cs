@@ -117,6 +117,10 @@ public class EkomCheckoutApiController : ControllerBase
         {
             if (checkoutResponse.HttpStatusCode == 400)
             {
+                if (checkoutResponse.ResponseBody is ShippingValidationError shippingError)
+                {
+                    return BadRequest(shippingError);
+                }
                 return BadRequest();
             }
 
@@ -363,6 +367,16 @@ public class CheckoutController : ControllerBase
         }
 
         var returnUrl = checkoutResponse.ReturnUrl ?? "/";
+
+        if (checkoutResponse.HttpStatusCode == 400 && checkoutResponse.ResponseBody is ShippingValidationError shippingError)
+        {
+            return Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+            {
+                ["errorStatus"] = shippingError.Code,
+                ["errorReason"] = shippingError.Reason,
+                ["errorMessage"] = shippingError.Message,
+            }));
+        }
 
         if (checkoutResponse.HttpStatusCode != 530 ||
             checkoutResponse.ResponseBody is not StockError stockError)

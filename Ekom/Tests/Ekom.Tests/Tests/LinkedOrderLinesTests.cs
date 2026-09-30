@@ -607,6 +607,148 @@ public sealed class LinkedOrderLinesTests
         return discount.Object;
     }
 
+    [Fact]
+    public async Task CartReductionRetainsInvalidShippingSelectionAndCheckoutExplainsMinimumAmount()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var key = fixture.AddShippingProvider(0, minimumAmount: 25);
+        order = await fixture.Service.UpdateShippingInformationAsync(key, "main", null,
+            new OrderSettings { OrderInfo = order, FireEvents = false });
+
+        await fixture.Service.RemoveOrderLineAsync(order.OrderLines.First().Key, "main",
+            new RemoveOrderSettings { OrderInfo = order, FireEvents = false });
+        var reloaded = await fixture.ReloadAsync();
+
+        Assert.Equal(key, reloaded.ShippingProvider?.Key);
+        Assert.Null(reloaded.ShippingProviderInvalidation);
+        var checkout = new CheckoutControllerService(NullLogger.Instance, null!, null!, null!,
+            new Microsoft.AspNetCore.Http.HttpContextAccessor(), null!, null!, null!);
+        var response = checkout.ValidateShippingProvider(new PaymentRequest(), reloaded, null);
+        var error = Assert.IsType<ShippingValidationError>(response?.ResponseBody);
+        Assert.Equal("belowMinimumAmount", error.Reason);
+        Assert.Equal(25, error.MinimumAmount);
+        fixture.ActivityLogs.Verify(x => x.AddOrderLogAsync(order.UniqueId,
+            It.Is<string>(message => message.StartsWith("Shipping provider removed", StringComparison.Ordinal)),
+            It.IsAny<string?>(), OrderActivityLogType.Info, It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task UnavailableProviderRemovalPersistsInvalidationUntilShippingIsExplicitlyResolved(bool clearSelection)
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var key = fixture.AddShippingProvider(0);
+        order = await fixture.Service.UpdateShippingInformationAsync(key, "main", null,
+            new OrderSettings { OrderInfo = order, FireEvents = false });
+        fixture.RemoveShippingProvider(key);
+        await fixture.Service.RemoveOrderLineAsync(order.OrderLines.First().Key, "main",
+            new RemoveOrderSettings { OrderInfo = order, FireEvents = false });
+        var reloaded = await fixture.ReloadAsync();
+
+        Assert.Null(reloaded.ShippingProvider);
+        Assert.Equal(key, reloaded.ShippingProviderInvalidation?.ProviderKey);
+        var checkout = new CheckoutControllerService(NullLogger.Instance, null!, null!, null!,
+            new Microsoft.AspNetCore.Http.HttpContextAccessor(), null!, null!, null!);
+        Assert.Equal("providerUnavailable", Assert.IsType<ShippingValidationError>(
+            checkout.ValidateShippingProvider(new PaymentRequest(), reloaded, null)?.ResponseBody).Reason);
+
+        var unchanged = await fixture.Service.UpdateShippingInformationAsync(Guid.Empty, "main", null,
+            new OrderSettings { OrderInfo = reloaded, FireEvents = false });
+        Assert.Equal(key, unchanged.ShippingProviderInvalidation?.ProviderKey);
+
+        var replacementKey = clearSelection ? Guid.Empty : fixture.AddShippingProvider(0);
+        await fixture.Service.UpdateShippingInformationAsync(replacementKey, "main", null,
+            new OrderSettings { OrderInfo = reloaded, ClearShippingProvider = clearSelection, FireEvents = false });
+        var cleared = await fixture.ReloadAsync();
+        Assert.Null(cleared.ShippingProviderInvalidation);
+        Assert.Null(checkout.ValidateShippingProvider(new PaymentRequest(), cleared, null));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PaymentFromStaleTabRejectsShippingAfterQuantityReduction(bool providerRemoved)
+    {
+        using var fixture = new Fixture();
+        var productKey = fixture.AddProduct(price: 50);
+        await fixture.SeedStockAsync(productKey);
+        var order = await fixture.Service.AddOrderLineAsync(productKey, 4, "main",
+            new AddOrderSettings { OrderInfo = fixture.Order, FireEvents = false });
+        var shippingKey = fixture.AddShippingProvider(0, minimumAmount: 100);
+        await fixture.Service.UpdateShippingInformationAsync(shippingKey, "main", null,
+            new OrderSettings { OrderInfo = order, FireEvents = false });
+
+        // The payment tab was rendered before the other tab changed the basket.
+        var paymentTabOrder = await fixture.ReloadAsync();
+        var request = new PaymentRequest
+        {
+            StoreAlias = "main",
+            PaymentProvider = Guid.NewGuid(),
+            ReturnUrl = "/checkout/payment",
+        };
+        Assert.Equal(200, paymentTabOrder.ChargedAmount.Value);
+        Assert.Null(request.ShippingProvider);
+        if (providerRemoved) fixture.RemoveShippingProvider(shippingKey);
+
+        await fixture.Service.UpdateOrderLineQuantityAsync(order.OrderLines.Single().Key, 1, "main",
+            new OrderSettings { OrderInfo = await fixture.ReloadAsync(), FireEvents = false });
+        var currentOrder = await fixture.ReloadAsync();
+        Assert.Equal(50, currentOrder.ChargedAmount.Value);
+        if (providerRemoved)
+        {
+            Assert.Null(currentOrder.ShippingProvider);
+            Assert.Equal(shippingKey, currentOrder.ShippingProviderInvalidation?.ProviderKey);
+        }
+        else
+        {
+            Assert.Equal(shippingKey, currentOrder.ShippingProvider?.Key);
+        }
+
+        // Submit only the payment selection; checkout must load the current order.
+        var checkout = fixture.CreateCheckout();
+        var response = await checkout.PayAsync(request, "en-US", paymentTabOrder.UniqueId);
+
+        Assert.Equal(400, response.HttpStatusCode);
+        Assert.Equal(request.ReturnUrl, response.ReturnUrl);
+        var error = Assert.IsType<ShippingValidationError>(response.ResponseBody);
+        Assert.Equal(shippingKey, error.ProviderKey);
+        Assert.Equal(50, error.CurrentAmount);
+        Assert.Equal(providerRemoved ? "providerUnavailable" : "belowMinimumAmount", error.Reason);
+        Assert.False(checkout.PaymentCalled);
+    }
+
+    private sealed class ShippingCheckout : CheckoutControllerService
+    {
+        public bool PaymentCalled { get; private set; }
+
+        public ShippingCheckout(Configuration config, DatabaseFactory database, IServiceProvider services)
+            : base(NullLogger.Instance, config, database, Mock.Of<IMemberService>(),
+                new Microsoft.AspNetCore.Http.HttpContextAccessor(), null!,
+                services.GetRequiredService<IServiceScopeFactory>(), services)
+        {
+        }
+
+        protected override Task<IOrderInfo> UpdateOrderDateAsync(Dictionary<string, string> collection,
+            IOrderInfo order, Guid? paymentProviderKey = null, Guid? shippingProviderKey = null,
+            CancellationToken ct = default) => Task.FromResult(order);
+
+        protected override Task<CheckoutResponse?> PrepareCheckoutAsync(PaymentRequest request,
+            IOrderInfo? order, CancellationToken ct) => Task.FromResult<CheckoutResponse?>(null);
+
+        protected override Task<CheckoutResponse?> ValidationAndOrderUpdatesAsync(PaymentRequest request,
+            IOrderInfo order, CancellationToken ct) => Task.FromResult<CheckoutResponse?>(null);
+
+        protected override Task<CheckoutResponse> ProcessPaymentAsync(PaymentRequest request,
+            IOrderInfo order, string title, CancellationToken ct)
+        {
+            PaymentCalled = true;
+            throw new InvalidOperationException("Invalid shipping must be rejected before payment.");
+        }
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly ConfigurationScope _scope;
@@ -651,6 +793,7 @@ public sealed class LinkedOrderLinesTests
                 }
                 services.AddSingleton(_database.NewStockApi());
                 services.AddSingleton(new Ekom.API.Store(stores.Object, Mock.Of<ICacheRefreshService>()));
+                services.AddSingleton(sp => CreateOrderApi(stores.Object));
                 services.AddSingleton(sp => new Providers(
                     sp.GetRequiredService<Configuration>(),
                     NullLogger<Providers>.Instance,
@@ -719,7 +862,7 @@ public sealed class LinkedOrderLinesTests
         public OrderRepository Repository { get; }
         public OrderService Service { get; }
 
-        public Guid AddShippingProvider(decimal amount)
+        public Guid AddShippingProvider(decimal amount, decimal minimumAmount = 0)
         {
             var key = Guid.NewGuid();
             var provider = new Mock<IShippingProvider>();
@@ -729,13 +872,17 @@ public sealed class LinkedOrderLinesTests
             provider.SetupGet(x => x.Properties).Returns(new Dictionary<string, string> { ["title"] = "Delivery" });
             provider.SetupGet(x => x.Prices).Returns([new Price(amount, Order.StoreInfo.Currency, 0, false)]);
             var constraints = new Mock<IConstraints>();
-            constraints.Setup(x => x.IsValid(It.IsAny<string>(), It.IsAny<decimal>())).Returns(true);
+            constraints.SetupGet(x => x.StartRange).Returns(minimumAmount);
+            constraints.Setup(x => x.IsValid(It.IsAny<string>(), It.IsAny<decimal>()))
+                .Returns((string country, decimal total) => total >= minimumAmount);
             provider.SetupGet(x => x.Constraints).Returns(constraints.Object);
             _shippingProviders[key] = provider.Object;
             return key;
         }
 
-        public Guid AddProduct(decimal stock = 100)
+        public void RemoveShippingProvider(Guid key) => _shippingProviders.TryRemove(key, out _);
+
+        public Guid AddProduct(decimal stock = 100, decimal price = 10)
         {
             Guid key = Guid.NewGuid();
             var product = new Mock<IProduct>();
@@ -750,7 +897,7 @@ public sealed class LinkedOrderLinesTests
                 ["sku"] = key.ToString(),
             });
             product.SetupGet(x => x.Prices).Returns(
-                [new Price(10, Order.StoreInfo.Currency, 0, false)]);
+                [new Price(price, Order.StoreInfo.Currency, 0, false)]);
             product.Setup(x => x.ProductDiscountAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((IDiscount?)null);
 
@@ -761,6 +908,18 @@ public sealed class LinkedOrderLinesTests
 
         public async Task<OrderInfo> ReloadAsync()
             => new((await Repository.GetOrderAsync(Order.UniqueId))!);
+
+        private Ekom.API.Order CreateOrderApi(IStoreService stores) => new(_scope.Instance,
+            NullLogger<Ekom.API.Order>.Instance, null!, null!, Service, null!, stores,
+            Repository, null!, ActivityLogs.Object);
+
+        public async Task SeedStockAsync(Guid key)
+        {
+            await _database.SeedAsync(100, key: key);
+            _database.StockCache[key] = new StockData { UniqueId = key.ToString(), Stock = 100 };
+        }
+
+        public ShippingCheckout CreateCheckout() => new(_scope.Instance, _database.Factory, Configuration.Resolver);
 
         public void Dispose()
         {

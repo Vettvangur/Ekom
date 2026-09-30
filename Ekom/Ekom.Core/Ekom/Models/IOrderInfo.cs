@@ -132,6 +132,7 @@ public interface IOrderInfo
     /// 
     /// </summary>
     OrderedShippingProvider? ShippingProvider { get; set; }
+    ShippingProviderInvalidation? ShippingProviderInvalidation => null;
 
     /// <summary>
     /// 

@@ -15,6 +15,10 @@
 
     var providers = _providers.GetPaymentProviders();
     var showPaymentError = string.Equals(Context.Request.Query["errorStatus"], "serverError", StringComparison.OrdinalIgnoreCase);
+    var showShippingError = string.Equals(Context.Request.Query["errorStatus"], "invalidShippingProvider", StringComparison.OrdinalIgnoreCase);
+    var shippingErrorMessage = Context.Request.Query["errorMessage"].ToString();
+    var deliveryUrl = Model.Siblings()?.Where(x => x.IsDocumentType("checkout") && x.SortOrder < Model.SortOrder)
+        .OrderByDescending(x => x.SortOrder).FirstOrDefault()?.Url();
 }
 
 @section Main {
@@ -32,6 +36,18 @@
 
                 <div>
                     <h1 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-5">Payment options</h1>
+
+                    @if (showShippingError)
+                    {
+                        <div class="mt-4 rounded-md bg-red-50 p-4" role="alert">
+                            <h3 class="text-sm font-medium text-red-800">Please review your delivery option</h3>
+                            <p class="mt-2 text-sm text-red-700">@(string.IsNullOrWhiteSpace(shippingErrorMessage) ? "The selected delivery option is no longer valid. Please select shipping again." : shippingErrorMessage)</p>
+                            @if (!string.IsNullOrWhiteSpace(deliveryUrl))
+                            {
+                                <a href="@deliveryUrl" class="mt-2 inline-block text-sm font-medium text-red-800 underline">Change delivery option</a>
+                            }
+                        </div>
+                    }
 
                     @if (showPaymentError)
                     {

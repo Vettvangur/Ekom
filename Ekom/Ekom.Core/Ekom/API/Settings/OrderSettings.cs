@@ -44,6 +44,11 @@ public class OrderSettings
     /// </summary>
     public IOrderInfo? OrderInfo { get; set; }
 
+    /// <summary>
+    /// Explicitly clear shipping selection when updating shipping with an empty provider ID.
+    /// </summary>
+    public bool ClearShippingProvider { get; set; }
+
     public OrderDynamicRequest OrderDynamicRequest { get; set; }
     public Dictionary<string, string> CustomData { get; set; } = [];
     public string? AlgoliaQueryId { get; set; }

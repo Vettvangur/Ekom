@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+* **checkout:** retain shipping selections when cart changes invalidate their constraints, reject them before payment with provider-specific errors, and track removed unavailable providers until shipping is explicitly reselected or cleared. Orders intentionally without shipping remain supported.
 * **discounts:** skip coupon-backed global discounts without preventing other eligible global discounts from applying to the order's store.
 * **checkout:** include the exception message, order number, and unique ID in API and MVC payment failure logs while preserving the exception details.
 * **backoffice:** load the U10 range editor and filter discount/provider store selectors by the item and its matching parent folders, without hiding disabled product stores.

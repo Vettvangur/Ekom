@@ -24,6 +24,121 @@ namespace Ekom.Tests.Tests;
 public sealed class ReservationCheckoutControllerTests
 {
     [Theory]
+    [InlineData(11000, 230)]
+    [InlineData(5500, 400)]
+    public async Task CheckoutRevalidatesUnchangedShippingProviderAgainstCurrentAmount(decimal amount, int expectedStatus)
+    {
+        using var f = new Fixture(false);
+        await f.SeedAsync();
+        var key = f.AddFreeShippingProvider();
+        f.Order.SetupGet(x => x.ChargedAmount).Returns(Mock.Of<ICalculatedPrice>(x => x.Value == amount));
+        var controller = f.Controller();
+
+        var response = await controller.PayAsync(new PaymentRequest { ShippingProvider = key }, "en-US", f.Order.Object);
+
+        Assert.Equal(expectedStatus, response.HttpStatusCode);
+        Assert.Equal(expectedStatus == 230, controller.PaymentCalled);
+        if (expectedStatus == 400)
+        {
+            Assert.False(controller.Saved);
+            var error = Assert.IsType<ShippingValidationError>(response.ResponseBody);
+            Assert.Equal("belowMinimumAmount", error.Reason);
+            Assert.Equal(10000, error.MinimumAmount);
+            Assert.Equal(5500, error.CurrentAmount);
+            Assert.Contains("Free shipping", error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task CheckoutRejectsInvalidShippingSelectionEvenWhenSnapshotWasRemoved(bool submitted)
+    {
+        using var f = new Fixture(false);
+        var key = f.AddFreeShippingProvider();
+        f.Order.SetupGet(x => x.ChargedAmount).Returns(Mock.Of<ICalculatedPrice>(x => x.Value == 5500));
+        var controller = f.Controller();
+        controller.ClearShippingOnUpdate = true;
+
+        var response = await controller.PayAsync(new PaymentRequest { ShippingProvider = submitted ? key : null }, "en-US", f.Order.Object);
+
+        Assert.Equal(400, response.HttpStatusCode);
+        Assert.False(controller.PaymentCalled);
+        Assert.False(controller.Saved);
+    }
+
+    [Fact]
+    public async Task CheckoutRejectsProviderThatOnlyExistsInAnotherStore()
+    {
+        using var f = new Fixture(false);
+        var key = f.AddFreeShippingProvider("other");
+        f.Order.SetupGet(x => x.ChargedAmount).Returns(Mock.Of<ICalculatedPrice>(x => x.Value == 11000));
+        var controller = f.Controller();
+
+        Assert.Equal(400, (await controller.PayAsync(new PaymentRequest { ShippingProvider = key }, "en-US", f.Order.Object)).HttpStatusCode);
+        Assert.False(controller.PaymentCalled);
+    }
+
+    [Fact]
+    public async Task CheckoutWithoutShippingSelectionRemainsAllowed()
+    {
+        using var f = new Fixture(false);
+        await f.SeedAsync();
+        var controller = f.Controller();
+
+        Assert.Equal(230, (await controller.PayAsync(new PaymentRequest(), "en-US", f.Order.Object)).HttpStatusCode);
+        Assert.True(controller.PaymentCalled);
+    }
+
+    [Theory]
+    [InlineData("IS", "", 230)]
+    [InlineData("IS", "DK", 400)]
+    public async Task CheckoutChecksShippingCountryWithCustomerCountryFallback(string customerCountry, string shippingCountry, int expectedStatus)
+    {
+        using var f = new Fixture(false);
+        await f.SeedAsync();
+        var key = f.AddFreeShippingProvider(allowedCountry: "IS");
+        f.Order.Object.CustomerInformation.Customer.Properties["customerCountry"] = customerCountry;
+        f.Order.Object.CustomerInformation.Shipping.Properties["shippingCountry"] = shippingCountry;
+        f.Order.SetupGet(x => x.ChargedAmount).Returns(Mock.Of<ICalculatedPrice>(x => x.Value == 11000));
+        var controller = f.Controller();
+
+        Assert.Equal(expectedStatus, (await controller.PayAsync(new PaymentRequest { ShippingProvider = key }, "en-US", f.Order.Object)).HttpStatusCode);
+        Assert.Equal(expectedStatus == 230, controller.PaymentCalled);
+    }
+
+    [Fact]
+    public void ShippingConstraintAmountExcludesProviderFees()
+    {
+        using var f = new Fixture(false);
+        var key = f.AddFreeShippingProvider();
+        f.Order.Object.ShippingProvider!.Prices = [new Price(6000, f.StoreInfo.Currency, 0, false)];
+        f.Order.SetupGet(x => x.ChargedAmount).Returns(Mock.Of<ICalculatedPrice>(x => x.Value == 11000));
+
+        Assert.Equal(5000, OrderService.GetProviderConstraintAmount(f.Order.Object));
+        Assert.Equal(400, f.Controller().ValidateShippingProvider(new PaymentRequest(), f.Order.Object, key)?.HttpStatusCode);
+    }
+
+    [Fact]
+    public async Task CheckoutRevalidatesShippingAfterCouponProcessingChangesAmount()
+    {
+        using var f = new Fixture(false);
+        await f.SeedAsync();
+        var key = f.AddFreeShippingProvider();
+        f.Order.SetupGet(x => x.ChargedAmount).Returns(Mock.Of<ICalculatedPrice>(x => x.Value == 11000));
+        var controller = f.Controller();
+        controller.BeforeCoupons = () =>
+        {
+            f.Order.SetupGet(x => x.ChargedAmount).Returns(Mock.Of<ICalculatedPrice>(x => x.Value == 5500));
+            return Task.CompletedTask;
+        };
+
+        Assert.Equal(400, (await controller.PayAsync(new PaymentRequest { ShippingProvider = key }, "en-US", f.Order.Object)).HttpStatusCode);
+        Assert.False(controller.PaymentCalled);
+        Assert.False(controller.Saved);
+    }
+
+    [Theory]
     [InlineData("lines", false, false)]
     [InlineData("lines", true, false)]
     [InlineData("lines", false, true)]
@@ -407,6 +522,7 @@ public sealed class ReservationCheckoutControllerTests
         public ConcurrentDictionary<Guid, IVariant> Variants { get; } = new();
         public List<string> Ids { get; } = new();
         public CheckoutReservationService Checkout { get; private set; } = null!;
+        private readonly ConcurrentDictionary<string, ConcurrentDictionary<Guid, IShippingProvider>> _shippingProviders = new();
         private readonly ConfigurationScope _scope;
 
         public Fixture(bool enabled)
@@ -436,6 +552,10 @@ public sealed class ReservationCheckoutControllerTests
                     services.AddSingleton(sp => Database.NewCheckout(sp.GetRequiredService<Configuration>()));
                     services.AddSingleton(Database.NewStockApi());
                     services.AddSingleton(new API.Store(stores.Object, Mock.Of<ICacheRefreshService>()));
+                    var shippingCache = new Mock<IPerStoreCache<IShippingProvider>>();
+                    shippingCache.Setup(x => x[It.IsAny<string>()]).Returns((string alias) => _shippingProviders.GetOrAdd(alias, _ => new()));
+                    services.AddSingleton(sp => new Providers(sp.GetRequiredService<Configuration>(), NullLogger<Providers>.Instance,
+                        shippingCache.Object, Mock.Of<IPerStoreCache<IPaymentProvider>>(), Mock.Of<IBaseCache<IZone>>(), stores.Object, null!));
                     services.AddSingleton(sp => new Catalog(NullLogger<Catalog>.Instance, sp.GetRequiredService<Configuration>(),
                         sp.GetRequiredService<IServiceScopeFactory>(), products.Object, Mock.Of<IPerStoreIndexedCache<ICategory>>(),
                         Mock.Of<IPerStoreCache<IProductDiscount>>(), variants.Object, Mock.Of<IPerStoreIndexedCache<IVariantGroup>>(),
@@ -443,6 +563,7 @@ public sealed class ReservationCheckoutControllerTests
                 });
             Checkout = Configuration.Resolver.GetRequiredService<CheckoutReservationService>();
             Order.SetupGet(x => x.UniqueId).Returns(Guid.NewGuid());
+            Order.SetupProperty(x => x.ShippingProvider);
             Order.SetupGet(x => x.StoreInfo).Returns(StoreInfo);
             Order.SetupGet(x => x.ReservationIds).Returns(() => Ids);
             Order.SetupGet(x => x.CustomerInformation).Returns(new CustomerInfo());
@@ -450,6 +571,24 @@ public sealed class ReservationCheckoutControllerTests
         }
 
         public Task<Guid> SeedAsync() => Database.SeedAsync(10, key: Product.Key);
+        public Guid AddFreeShippingProvider(string storeAlias = "main", string? allowedCountry = null)
+        {
+            var key = Guid.NewGuid();
+            var provider = new Mock<IShippingProvider>();
+            provider.SetupGet(x => x.Key).Returns(key);
+            provider.SetupGet(x => x.Title).Returns("Free shipping");
+            provider.SetupGet(x => x.Properties).Returns(new Dictionary<string, string>());
+            provider.SetupGet(x => x.Prices).Returns([new Price(0, StoreInfo.Currency, 0, false)]);
+            var constraints = new Mock<IConstraints>();
+            constraints.SetupGet(x => x.StartRange).Returns(10000);
+            constraints.SetupGet(x => x.CountriesInZone).Returns(allowedCountry == null ? Array.Empty<string>() : [allowedCountry]);
+            constraints.Setup(x => x.IsValid(It.IsAny<string>(), It.IsAny<decimal>()))
+                .Returns((string country, decimal amount) => amount >= 10000 && (allowedCountry == null || country == allowedCountry));
+            provider.SetupGet(x => x.Constraints).Returns(constraints.Object);
+            _shippingProviders.GetOrAdd(storeAlias, _ => new())[key] = provider.Object;
+            Order.Object.ShippingProvider = new OrderedShippingProvider(provider.Object, StoreInfo, null, null);
+            return key;
+        }
         public TestController Controller(string? failure = null) => new(_scope.Instance, Database.Factory, Configuration.Resolver, Ids, failure);
         public void Dispose() { _scope.Dispose(); Database.Dispose(); }
     }
@@ -460,6 +599,7 @@ public sealed class ReservationCheckoutControllerTests
         private readonly string? _failure;
         public bool Saved { get; private set; }
         public bool PaymentCalled { get; private set; }
+        public bool ClearShippingOnUpdate { get; set; }
         public List<string> IdsAtPayment { get; private set; } = new();
         public Func<Task>? BeforeCoupons { get; set; }
         public Func<IEnumerable<string>, Task>? PersistAction { get; set; }
@@ -470,7 +610,11 @@ public sealed class ReservationCheckoutControllerTests
         { _ids = ids; _failure = failure; }
 
         protected override Task<IOrderInfo> UpdateOrderDateAsync(Dictionary<string, string> collection, IOrderInfo order,
-            Guid? paymentProviderKey = null, Guid? shippingProviderKey = null, CancellationToken ct = default) => Task.FromResult(order);
+            Guid? paymentProviderKey = null, Guid? shippingProviderKey = null, CancellationToken ct = default)
+        {
+            if (ClearShippingOnUpdate) order.ShippingProvider = null;
+            return Task.FromResult(order);
+        }
         protected override Task<CheckoutResponse?> PrepareCheckoutAsync(PaymentRequest request, IOrderInfo? order, CancellationToken ct)
             => Task.FromResult(_failure == "prepare" ? new CheckoutResponse { HttpStatusCode = 400 } : null);
         protected override Task<CheckoutResponse?> ValidationAndOrderUpdatesAsync(PaymentRequest request, IOrderInfo order, CancellationToken ct)
