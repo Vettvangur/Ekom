@@ -52,6 +52,24 @@ The default payment validation requires a non-empty customer name and email. Pro
 
 Adding the first customer email raises the checkout-started order event used by optional tracking. Shipping and payment selection raise their corresponding order events.
 
+### Shipping validation
+
+Cart updates keep a selected shipping provider when its amount or destination constraints become invalid, so the customer can still see their selection. Checkout revalidates it against the order's store, current qualifying amount (excluding shipping/payment fees), and shipping country, falling back to the customer country. Validation also runs after coupon processing and blocks payment rather than silently switching shipping methods.
+
+Deleted or disabled shipping providers are still removed from incomplete orders. A persisted `ShippingProviderInvalidation` marker prevents that removal from being mistaken for an intentional no-shipping order. Selecting another available provider clears the marker.
+
+Orders without a shipping selection remain allowed. To explicitly clear a selection or invalidation marker, use:
+
+```csharp
+order = await orderApi.UpdateShippingInformationAsync(
+    Guid.Empty, "Store", new Dictionary<string, string>(),
+    new OrderSettings { OrderInfo = order, ClearShippingProvider = true }, ct);
+```
+
+An empty provider ID without `ClearShippingProvider` retains the existing API no-op behavior. At checkout, explicitly submitting `ShippingProvider = Guid.Empty` selects no shipping and clears any previous selection; omitting the field does not clear a saved selection or invalidation marker.
+
+For invalid shipping, the API returns HTTP 400 with a `ShippingValidationError` body (`code`, `providerKey`, `providerName`, `reason`, `message`, `currentAmount`, and applicable minimum/maximum amounts). MVC redirects to `PaymentRequest.ReturnUrl` with `errorStatus=invalidShippingProvider`, `errorReason`, and `errorMessage`. Set the return URL to your checkout/payment step and render the message as escaped text. Headless clients must display the error and let the customer change their selection. Other checkout validation responses are unchanged.
+
 ## Submit payment
 
 For server-side code, call `Ekom.API.Order.PayAsync`:

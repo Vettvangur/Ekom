@@ -2067,7 +2067,15 @@ partial class OrderService
         }
         try
         {
-            if (shippingProviderId == Guid.Empty) return orderInfo;
+            if (shippingProviderId == Guid.Empty)
+            {
+                if (!settings.ClearShippingProvider) return orderInfo;
+
+                orderInfo.ShippingProvider = null;
+                orderInfo.ShippingProviderInvalidation = null;
+                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+                    .ConfigureAwait(false);
+            }
 
             Guid previousShippingProviderId = orderInfo.ShippingProvider?.Key ?? Guid.Empty;
 
@@ -2083,6 +2091,7 @@ partial class OrderService
             }
 
             orderInfo.ShippingProvider = orderedShippingProvider;
+            orderInfo.ShippingProviderInvalidation = null;
 
             await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
 
@@ -2379,7 +2388,6 @@ partial class OrderService
 
         decimal total = GetProviderConstraintAmount(orderInfo);
         string countryCode = orderInfo.CustomerInformation.Customer.Country;
-        string shippingCountry = orderInfo.CustomerInformation.Shipping.Country ?? countryCode;
 
         IStore? store = _storeSvc.GetStoreByAlias(orderInfo.StoreInfo.Alias);
 
@@ -2422,17 +2430,23 @@ partial class OrderService
                 orderInfo.UniqueId);
         }
 
-        if (shippingProvider != null
-            && shippingProvider.Constraints.IsValid(shippingCountry, total)) return;
+        // Keep the selection visible when cart changes invalidate its constraints.
+        // Checkout revalidates it before payment; only unavailable providers are removed here.
+        if (shippingProvider != null) return;
 
         _logger.LogDebug(
             "Removing invalid shipping provider {ShippingProviderKey} from Order {UniqueId}",
             orderInfo.ShippingProvider.Key,
             orderInfo.UniqueId);
+        orderInfo.ShippingProviderInvalidation = new ShippingProviderInvalidation
+        {
+            ProviderKey = orderInfo.ShippingProvider.Key,
+            ProviderName = orderInfo.ShippingProvider.Title ?? string.Empty,
+        };
         orderInfo.ShippingProvider = null;
     }
 
-    private static decimal GetProviderConstraintAmount(OrderInfo orderInfo)
+    internal static decimal GetProviderConstraintAmount(IOrderInfo orderInfo)
     {
         decimal amount = orderInfo.ChargedAmount.Value;
 

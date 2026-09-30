@@ -95,6 +95,7 @@ public class CheckoutControllerService
         }
 
         logContext.Capture(order);
+        var shippingProviderKey = GetSelectedShippingProviderKey(paymentRequest, order);
         order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order, paymentRequest.PaymentProvider, paymentRequest.ShippingProvider, ct: ct).ConfigureAwait(false);
         logContext.Capture(order);
 
@@ -122,7 +123,13 @@ public class CheckoutControllerService
             return responseHandler(res);
         }
 
-        var preparation = await PrepareStockAsync(paymentRequest, order, store, ct).ConfigureAwait(false);
+        res = ValidateShippingProvider(paymentRequest, order, shippingProviderKey);
+        if (res != null)
+        {
+            return responseHandler(res);
+        }
+
+        var preparation = await PrepareStockAsync(paymentRequest, order, store, shippingProviderKey, ct).ConfigureAwait(false);
         if (preparation.Response != null)
         {
             return responseHandler(preparation.Response);
@@ -173,7 +180,9 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order, ct: ct).ConfigureAwait(false);
+        var shippingProviderKey = GetSelectedShippingProviderKey(paymentRequest, order);
+        order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order,
+            shippingProviderKey: paymentRequest.ShippingProvider, ct: ct).ConfigureAwait(false);
 
         CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order, ct).ConfigureAwait(false);
         if (res != null) return res;
@@ -191,7 +200,9 @@ public class CheckoutControllerService
             .ConfigureAwait(false);
 
         if (res != null) return res;
-        var preparation = await PrepareStockAsync(paymentRequest, order, store, ct).ConfigureAwait(false);
+        res = ValidateShippingProvider(paymentRequest, order, shippingProviderKey);
+        if (res != null) return res;
+        var preparation = await PrepareStockAsync(paymentRequest, order, store, shippingProviderKey, ct).ConfigureAwait(false);
         if (preparation.Response != null) return preparation.Response;
 
         CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, preparation.Title!, ct: ct)
@@ -200,8 +211,87 @@ public class CheckoutControllerService
         return result;
     }
 
+    private static Guid? GetSelectedShippingProviderKey(PaymentRequest request, IOrderInfo order)
+        => request.ShippingProvider is { } key
+            ? key : order.ShippingProvider?.Key ?? order.ShippingProviderInvalidation?.ProviderKey;
+
+    internal CheckoutResponse? ValidateShippingProvider(PaymentRequest request, IOrderInfo order, Guid? selectedKey)
+    {
+        var key = selectedKey ?? order.ShippingProvider?.Key ?? order.ShippingProviderInvalidation?.ProviderKey;
+        if (key == Guid.Empty)
+        {
+            key = order.ShippingProvider?.Key ?? order.ShippingProviderInvalidation?.ProviderKey;
+        }
+        if (!key.HasValue || key == Guid.Empty) return null;
+
+        var provider = Providers.Instance.GetShippingProvider(key.Value, order.StoreInfo.Alias);
+        var amount = OrderService.GetProviderConstraintAmount(order);
+        var shippingCountry = order.CustomerInformation.Shipping?.Country;
+        if (string.IsNullOrWhiteSpace(shippingCountry))
+        {
+            shippingCountry = order.CustomerInformation.Customer.Country;
+        }
+
+        var invalidatedSelection = order.ShippingProvider == null && order.ShippingProviderInvalidation != null;
+        if (!invalidatedSelection && provider != null && provider.Constraints.IsValid(shippingCountry, amount))
+        {
+            return null;
+        }
+
+        var name = provider?.Title
+            ?? (order.ShippingProvider?.Key == key ? order.ShippingProvider?.Title : null)
+            ?? (order.ShippingProviderInvalidation?.ProviderKey == key ? order.ShippingProviderInvalidation?.ProviderName : null);
+        if (string.IsNullOrWhiteSpace(name)) name = "Shipping provider";
+        var reason = "constraintsNotMet";
+        var message = $"{name} is not valid for this order. Please select shipping again.";
+        decimal? minimum = null;
+        decimal? maximum = null;
+        if (provider == null || invalidatedSelection)
+        {
+            reason = "providerUnavailable";
+            message = $"{name} is no longer available. Please select shipping again.";
+        }
+        else if (amount < provider.Constraints.StartRange)
+        {
+            reason = "belowMinimumAmount";
+            minimum = provider.Constraints.StartRange;
+            message = $"{name} requires an order amount of at least {minimum:N2}; your qualifying amount is {amount:N2}. Please select shipping again.";
+        }
+        else if (provider.Constraints.EndRange != 0 && amount > provider.Constraints.EndRange)
+        {
+            reason = "aboveMaximumAmount";
+            maximum = provider.Constraints.EndRange;
+            message = $"{name} is available for order amounts up to {maximum:N2}; your qualifying amount is {amount:N2}. Please select shipping again.";
+        }
+        else if (!string.IsNullOrWhiteSpace(shippingCountry)
+            && provider.Constraints.CountriesInZone.Any()
+            && !provider.Constraints.CountriesInZone.Contains(shippingCountry.ToUpperInvariant()))
+        {
+            reason = "destinationNotSupported";
+            message = $"{name} is not available for the selected destination ({shippingCountry}). Please select shipping again.";
+        }
+
+        Logger.LogWarning("Checkout shipping provider {ShippingProviderKey} is invalid for order {OrderUniqueId} in store {StoreAlias}",
+            key, order.UniqueId, order.StoreInfo.Alias);
+        return new CheckoutResponse
+        {
+            HttpStatusCode = 400,
+            ReturnUrl = request.ReturnUrl,
+            ResponseBody = new ShippingValidationError
+            {
+                ProviderKey = key.Value,
+                ProviderName = name,
+                Reason = reason,
+                Message = message,
+                CurrentAmount = amount,
+                MinimumAmount = minimum,
+                MaximumAmount = maximum,
+            },
+        };
+    }
+
     private async Task<(CheckoutResponse? Response, string? Title)> PrepareStockAsync(
-        PaymentRequest request, IOrderInfo order, IStore store, CancellationToken ct)
+        PaymentRequest request, IOrderInfo order, IStore store, Guid? shippingProviderKey, CancellationToken ct)
     {
         var reservations = _factory.GetRequiredService<CheckoutReservationService>();
         if (await reservations.IsCompletedAsync(order.UniqueId, ct).ConfigureAwait(false))
@@ -221,6 +311,8 @@ public class CheckoutControllerService
             var response = await ProcessOrderLinesAsync(request, order, ids, ct).ConfigureAwait(false);
             if (response != null) return (response, null);
             response = await ProcessCouponsAsync(request, order, ids, ct).ConfigureAwait(false);
+            if (response != null) return (response, null);
+            response = ValidateShippingProvider(request, order, shippingProviderKey);
             if (response != null) return (response, null);
             var title = await CreateOrderTitleAsync(request, order, store, ct).ConfigureAwait(false);
             foreach (var id in order.ReservationIds.Concat(scope.Created).Concat(scope.Reused))
@@ -334,11 +426,15 @@ public class CheckoutControllerService
 
         if (shippingProviderKey.HasValue)
         {
-            if (order.ShippingProvider == null || (order.ShippingProvider != null && order.ShippingProvider.Key != shippingProviderKey.Value))
+            if (shippingProviderKey.Value == Guid.Empty || order.ShippingProvider == null || order.ShippingProvider.Key != shippingProviderKey.Value)
             {
                 order = await Order.Instance.UpdateShippingInformationAsync(
                 shippingProviderKey.Value,
-                order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
+                order.StoreInfo.Alias, formCollection, new OrderSettings
+                {
+                    OrderInfo = order,
+                    ClearShippingProvider = shippingProviderKey.Value == Guid.Empty,
+                }, ct: ct).ConfigureAwait(false);
             }
         }
 

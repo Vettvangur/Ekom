@@ -44,6 +44,7 @@ public class OrderInfo : IOrderInfo
             StoreInfo = CreateStoreInfoFromJson(orderInfoJObject);
             orderLines = CreateOrderLinesFromJson(orderInfoJObject);
             ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
+            ShippingProviderInvalidation = orderInfoJObject[nameof(ShippingProviderInvalidation)]?.ToObject<ShippingProviderInvalidation>();
             PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
             CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
             Consent = CreateConsentFromJson(orderInfoJObject);
@@ -131,6 +132,7 @@ public class OrderInfo : IOrderInfo
         => orderLines.Cast<IOrderLine>().ToList();
 
     public OrderedShippingProvider? ShippingProvider { get; set; }
+    public ShippingProviderInvalidation? ShippingProviderInvalidation { get; internal set; }
     public OrderedPaymentProvider? PaymentProvider { get; set; }
 
     /// <inheritdoc />
