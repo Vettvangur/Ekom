@@ -130,6 +130,16 @@ Do not call `CompleteOrderAsync` merely because a browser returned to the site. 
 
 ## Completion
 
+### Payment-success logging
+
+The shared Ekom Payments success handler writes a `Success` order activity entry and an Information-level structured application log before calling checkout completion. Both include the payment amount, currency, provider node name, order number, and Ekom order `UniqueId`. New online payment requests save the provider name in their payment settings; older pending requests without a provider name use its key instead. No additional order lookup is needed for this logging. Online integrations must raise `Ekom.Payments.Events.SuccessAsync` after verifying payment; integrations that bypass this event do not reach the shared handler.
+
+Offline checkout writes the same fields with the message `Offline Payment Successfull` after payment events have accepted the checkout and before completion starts. This records offline checkout acceptance, not confirmation that funds have been received.
+
+These payment entries are committed directly to the database rather than sent through the normal activity-log queue. A later checkout failure therefore does not roll back a successfully written payment entry. If the activity insert fails, Ekom emits an Error log and still attempts order completion; the Information log is emitted before the database write. Callback retries can produce repeated success entries, reflecting each received success notification. Direct calls to `Order.CompleteOrderAsync` do not by themselves prove payment success and do not create these entries.
+
+### Order finalisation
+
 `CheckoutService.CompleteAsync` loads the persisted order and raises `CompleteCheckout`/`CompleteCheckoutAsync`. It then completes stock processing, marks the coupon used when applicable, updates status unless disabled by an event handler, writes an activity log, and clears the customer order reference.
 
 Completion stock work is idempotent through a native SQL completion receipt. Other effects, including event subscribers and external integrations, can be invoked again by callback retries and should therefore be idempotent.

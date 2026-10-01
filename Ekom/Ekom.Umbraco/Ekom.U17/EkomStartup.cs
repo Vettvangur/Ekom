@@ -81,10 +81,17 @@ internal sealed class EkomStartup : IAsyncComponent
     private async Task CompleteCheckoutAsync(object sender, SuccessEventArgs args)
     {
         var orderStatus = args.OrderStatus;
+        var settings = orderStatus.EkomPaymentSettings;
 
-        if (orderStatus.EkomPaymentSettings.OrderCustomData.TryGetValue("ekomOrderUniqueId", out var value) &&
+        if (settings.OrderCustomData.TryGetValue("ekomOrderUniqueId", out var value) &&
             Guid.TryParse(value, out var orderId))
         {
+            var paymentLog = _factory.GetRequiredService<PaymentSuccessLogService>();
+            await paymentLog.LogAsync(orderId, settings.OrderNumber, orderStatus.Amount, settings.Currency,
+                string.IsNullOrWhiteSpace(settings.PaymentProviderName)
+                    ? settings.PaymentProviderKey.ToString()
+                    : settings.PaymentProviderName).ConfigureAwait(false);
+
             var checkoutService = _factory.GetRequiredService<CheckoutService>();
 
             await checkoutService.CompleteAsync(orderId);

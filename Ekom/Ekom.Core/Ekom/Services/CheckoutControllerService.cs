@@ -768,6 +768,11 @@ public class CheckoutControllerService
 
                 errorUrl = eventsArgs.PaymentSettings.ErrorUrl.ToString();
 
+                var paymentLog = _factory.GetRequiredService<PaymentSuccessLogService>();
+                await paymentLog.LogAsync(order.UniqueId, order.OrderNumber, amount,
+                    order.StoreInfo.Currency.ISOCurrencySymbol, ekomPP.Name, offlinePayment: true)
+                    .ConfigureAwait(false);
+
                 CheckoutService checkoutSvc = _factory.GetRequiredService<CheckoutService>();
 
                 await checkoutSvc.CompleteAsync(order.UniqueId, ct);
@@ -851,6 +856,7 @@ public class CheckoutControllerService
                 Store = storeAlias,
                 Member = currentMember?.Key,
                 PaymentProviderKey = ekomPP.Key,
+                PaymentProviderName = ekomPP.Name,
                 OrderUniqueId = order.UniqueId,
                 OrderNumber = order.OrderNumber
             };
