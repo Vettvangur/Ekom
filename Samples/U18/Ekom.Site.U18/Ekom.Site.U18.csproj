@@ -21,6 +21,9 @@
 
     <ItemGroup>
         <Compile Include="..\..\U17\Ekom.Site.U17\CustomProductFilterService.cs" Link="CustomProductFilterService.cs" />
+        <Compile Include="..\..\U17\Ekom.Site.U17\Controllers\AuthController.cs" Link="Controllers\AuthController.cs" />
+        <Compile Include="..\..\U17\Ekom.Site.U17\Models\Login.cs" Link="Models\Login.cs" />
+        <Compile Include="..\..\U17\Ekom.Site.U17\EkomIntegration\MemberProduct.cs" Link="EkomIntegration\MemberProduct.cs" />
         <Compile Include="..\..\U17\Ekom.Site.U17\Utility\**\*.cs" Link="Utility\%(RecursiveDir)%(Filename)%(Extension)" />
         <Content Include="..\..\U17\Ekom.Site.U17\Views\**\*.cshtml" Exclude="..\..\U17\Ekom.Site.U17\Views\_ViewImports.cshtml" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
         <RazorGenerate Include="..\..\U17\Ekom.Site.U17\Views\**\*.cshtml" Exclude="..\..\U17\Ekom.Site.U17\Views\_ViewImports.cshtml" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />

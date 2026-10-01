@@ -1153,33 +1153,69 @@ partial class OrderService
         }
         try
         {
-            var copyOfShippingProvider = orderInfo.ShippingProvider;
-            var copyOfPaymentProvider = orderInfo.PaymentProvider;
-
-            List<IOrderLine> orderLines = orderInfo.OrderLines.ToList();
-
-            if (orderLines.Count > 0)
+            var previousOrderInfo = orderInfo;
+            if (!settings.IsEventHandler
+                && _memoryCache.TryGetValue(orderInfo.UniqueId.ToString(), out OrderInfo? latestOrder)
+                && latestOrder != null)
             {
-                orderInfo.orderLines.Clear();
-
-                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
-                    .ConfigureAwait(false);
-
-                foreach (IOrderLine? orderline in orderLines)
-                {
-                    orderInfo.ShippingProvider = copyOfShippingProvider;
-                    orderInfo.PaymentProvider = copyOfPaymentProvider;
-
-                    orderInfo = await AddOrderLineAsync(orderline.ProductKey, orderline.Quantity, storeAlias, new AddOrderSettings()
-                    {
-                        OrderInfo = orderInfo,
-                        VariantKey = orderline.Product?.VariantGroups?.FirstOrDefault()?.Variants?.FirstOrDefault()?.Key
-                    }).ConfigureAwait(false);
-                }
-
+                // A staged mutation may have replaced the cache while this refresh waited for the lock.
+                orderInfo = latestOrder;
             }
 
-            return orderInfo;
+            if (orderInfo.OrderLines.Count == 0)
+            {
+                return orderInfo;
+            }
+
+            // Stage pricing changes without clearing the basket or mutating its cached instance.
+            // Refreshing an existing quantity is not an add-to-cart stock validation.
+            var refreshedOrder = CloneOrderInfo(orderInfo);
+            for (var i = 0; i < refreshedOrder.orderLines.Count; i++)
+            {
+                refreshedOrder.orderLines[i].Coupon = orderInfo.orderLines[i].Coupon;
+            }
+            var originalLines = refreshedOrder.orderLines.Select(line => new ReinitializeLineState(line)).ToArray();
+            var linesByKey = refreshedOrder.orderLines.ToDictionary(line => line.Key);
+            foreach (var originalLine in originalLines)
+            {
+                ct.ThrowIfCancellationRequested();
+                var updatedOrder = await RefreshOrderLinePricingAsync(refreshedOrder, linesByKey[originalLine.Key], storeAlias, settings, ct)
+                    .ConfigureAwait(false);
+                if (!ReferenceEquals(refreshedOrder, updatedOrder))
+                {
+                    ValidateReinitializedOrder(orderInfo, updatedOrder, originalLines);
+                    linesByKey = updatedOrder.orderLines.ToDictionary(line => line.Key);
+                }
+                refreshedOrder = updatedOrder;
+            }
+
+            if (settings.FireOnOrderUpdatedEvent)
+            {
+                var updatingArgs = new OrderUpdatingEventArgs { OrderInfo = refreshedOrder };
+                OrderEvents.OnOrderUpdating(this, updatingArgs);
+                await OrderEvents.OnOrderUpdatingAsync(this, updatingArgs, ct).ConfigureAwait(false);
+                refreshedOrder = updatingArgs.OrderInfo as OrderInfo
+                    ?? throw new InvalidOperationException("Pricing refresh requires an Ekom order snapshot.");
+            }
+
+            ct.ThrowIfCancellationRequested();
+            ValidateReinitializedOrder(orderInfo, refreshedOrder, originalLines);
+            var persistedOrder = await UpdateOrderAndOrderInfoAsync(refreshedOrder, fireOnOrderUpdatedEvents: false, ct: ct,
+                    cacheTarget: orderInfo, previousOrderInfo: previousOrderInfo)
+                .ConfigureAwait(false);
+
+            if (settings.FireOnOrderUpdatedEvent)
+            {
+                await OrderPersistenceNotifications.RunAsync(persistedOrder.UniqueId, _logger,
+                    () =>
+                    {
+                        OrderEvents.OnOrderUpdated(this, new OrderUpdatedEventArgs { OrderInfo = persistedOrder });
+                        return Task.CompletedTask;
+                    },
+                    () => OrderEvents.OnOrderUpdatedAsync(this, new OrderUpdatedEventArgs { OrderInfo = persistedOrder }, ct))
+                    .ConfigureAwait(false);
+            }
+            return persistedOrder;
 
         }
         finally
@@ -1457,7 +1493,9 @@ partial class OrderService
         bool fireOnOrderUpdatedEvents = true,
         CancellationToken ct = default,
         bool reservationPersistence = false,
-        bool verifyProviders = true)
+        bool verifyProviders = true,
+        OrderInfo? cacheTarget = null,
+        OrderInfo? previousOrderInfo = null)
     {
         try
         {
@@ -1553,6 +1591,18 @@ partial class OrderService
 
             await _orderRepository.UpdateOrderAsync(orderData, reservationPersistence, ct)
                 .ConfigureAwait(false);
+
+            if (cacheTarget != null)
+            {
+                // Publish to the existing instance before notifications or releasing the order lock.
+                // Queued ordinary mutations may still hold this reference from before the refresh.
+                cacheTarget.ApplyPersistedSnapshot(orderInfo, orderData);
+                if (previousOrderInfo != null && !ReferenceEquals(previousOrderInfo, cacheTarget))
+                {
+                    previousOrderInfo.ApplyPersistedSnapshot(orderInfo, orderData);
+                }
+                orderInfo = cacheTarget;
+            }
 
             if (removedShippingProviderMessage != null)
             {

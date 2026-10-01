@@ -57,6 +57,25 @@ public class OrderLine : IOrderLine
 
     public void InvalidateAmount() => _amount = null;
 
+    internal OrderLine(OrderLine source, OrderInfo orderInfo)
+    {
+        OrderInfo = orderInfo;
+        Key = source.Key;
+        Product = source.Product;
+        Quantity = source.Quantity;
+        Discount = source.Discount;
+        Coupon = source.Coupon;
+        OrderLineInfo = new OrderLineInfo
+        {
+            Properties = new Dictionary<string, string>(source.OrderLineInfo.Properties),
+        };
+        Settings = new OrderLineSettings
+        {
+            Link = source.Settings?.Link ?? Guid.Empty,
+            CountToTotal = source.Settings?.CountToTotal ?? true,
+        };
+    }
+
     /// <summary>
     /// Line price with discount and quantity and variant modifications
     /// </summary>

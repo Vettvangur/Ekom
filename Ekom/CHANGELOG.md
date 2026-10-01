@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+* **order:** refresh basket prices through current catalog data and pricing events without stock validation, preserving line IDs, quantities, metadata, and linked-line settings; stage changes before saving to avoid partial basket rebuilds.
 * **checkout:** persist payment-success activity entries directly before order completion and emit Information logs with amount, currency, provider, order number, and Ekom order ID; include offline payment acceptance and continue completion if activity logging fails.
 * **imports:** save products, variant groups, and variants without publishing when the owning product is directly under the configured processing or recycle category.
 * **checkout:** retain shipping selections when cart changes invalidate their constraints, reject them before payment with provider-specific errors, and track removed unavailable providers until shipping is explicitly reselected or cleared. Orders intentionally without shipping remain supported.

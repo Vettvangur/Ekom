@@ -349,7 +349,8 @@ public partial class Order
     }
 
     /// <summary>
-    /// 
+    /// Refreshes existing basket-line prices in the current customer context, including adding-orderline
+    /// pricing events. Preserves line identity, quantity, metadata and links without validating stock.
     /// </summary>
     public async Task<IOrderInfo> ReInitializeOrder(string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)
     {

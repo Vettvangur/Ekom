@@ -84,6 +84,30 @@ Setting quantity to zero or less through the C# API removes the line. The HTTP q
 
 All mutations return the recalculated `IOrderInfo`. Render totals and line state from that result instead of adjusting client totals optimistically.
 
+## Refresh prices after login
+
+Use `ReInitializeOrder` when the customer context changes, such as a guest signing in:
+
+```csharp
+basket = await orderApi.ReInitializeOrder("Store", ct: ct);
+```
+
+This refreshes existing line snapshots from current catalog product/variant data and runs `AddingOrderline` / `AddingOrderlineAsync`, followed by the added/updated-line events, unless `OrderSettings.FireEvents` is disabled. Customer-specific `Prices` supplied during product retrieval and new `OrderDynamicRequest.Prices` / `VariantPrices` supplied by the adding event are used; the previous basket's price overrides are not replayed.
+
+Line IDs, selected variants, quantities, `OrderLineInfo.Properties`, and `OrderLineSettings.Link` / `CountToTotal` are preserved. Existing title/SKU/dynamic-type metadata is retained unless an event explicitly supplies a new value. The adding event receives existing metadata through `Settings.CustomData` and identity/link/count settings through `Settings.OrderDynamicRequest`, without the old price overrides. Separate lines for the same product/variant remain separate. This is not an add-to-cart operation and does not emit new-line-added activity entries.
+
+Price refresh does not validate stock, remove unavailable lines, or reduce quantities. Normal add-to-cart, quantity updates, and checkout retain their stock checks. If the catalog product or selected variant can no longer be resolved, the line keeps its existing snapshot and a warning is logged.
+
+Refresh work is staged on a separate order snapshot and saved once after line pricing events have succeeded. Replacement order snapshots returned by added/updated-line handlers are carried forward, but must preserve the basket ID, original lines, quantities, metadata keys, and link/count settings. A pricing-event failure or cancellation before persistence leaves the original basket intact. Under the order lock, refresh uses the latest cached basket and publishes successful changes back to existing order instances, so ordinary mutations queued behind it do not overwrite refreshed prices with an obsolete snapshot. Post-save order-updated notification failures are logged without reporting the committed refresh as failed. Event handlers should limit their work to the supplied staged order/settings; independent writes or external side effects performed by subscribers cannot be rolled back by Ekom. Always use the returned basket.
+
+### U17 sample-site manual test
+
+Run `dotnet run --project Samples/U17/Ekom.Site.U17/Ekom.Site.U17.csproj --launch-profile Ekom.Site.U17` and open the front page. Create a test member with a username and password in the Umbraco backoffice, then use the front-page member login/logout form (the same member sign-in flow as the U10 sample).
+
+In Development, custom product/variant factories create subclasses overriding `Prices`, similar to the Hverslun integration. Guests receive `base.Prices`; signed-in members receive a 20% discount unless the existing sale price is better. Discount-disabled products remain unchanged. Member status is resolved from the current request when prices are read, not when shared catalog objects are constructed, and cached base prices are never modified.
+
+To test: add products as a guest, log in, click **Reinitialise basket prices**, then inspect the cart. Log out and click the same button to restore guest prices. Login/logout redirects first so the refresh request sees the new member authentication context. Include variant products and linked/custom-data lines, and repeat refreshes to check that discounts do not compound. You can also change stock in the backoffice after adding a line and verify that refresh retains it despite zero stock. The fake member-pricing factories and refresh action are enabled only in Development; login/logout use normal Umbraco member authentication and antiforgery-protected POSTs.
+
 ## Linked lines
 
 Linked lines model a parent product plus independently quantified child services or products. Create the complete group atomically with `AddLinkedOrderLinesAsync` or the `linkedProducts` add payload. A child stores its direct parent line key in `OrderLineSettings.Link`.
