@@ -189,7 +189,8 @@ static class Registrations
                 f.GetService<IStoreService>(),
                 f.GetService<OrderRepository>(),
                 f.GetService<CheckoutControllerService>(),
-                f.GetService<IOrderActivityLogService>()
+                f.GetService<IOrderActivityLogService>(),
+                f.GetRequiredService<DiscountEvents>()
             )
         );
         services.AddTransient<Providers>(f =>

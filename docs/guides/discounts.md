@@ -98,6 +98,32 @@ Content-Type: application/json
 
 Coupon and master-discount stock are separate identities. Passing a coupon to stock APIs addresses `{discountKey}_{coupon}`; omitting it addresses master stock. Completion marks the order coupon used according to the checkout policy.
 
+### Reject a coupon before validation
+
+Subscribe to the singleton `DiscountEvents.BeforeApplyCouponDiscountAsync` during application startup and unsubscribe during shutdown. The hook runs once at the beginning of either whole-order `ApplyCouponToOrderAsync` overload, before any coupon validation, normalization, lookup, or order loading. The overload without a supplied store alias raises the event before resolving the current store, so its `StoreAlias` argument is null.
+
+```csharp
+discountEvents.BeforeApplyCouponDiscountAsync += BeforeCouponAsync;
+
+Task BeforeCouponAsync(object? sender, DiscountEvents.BeforeApplyCouponDiscountEventArgs args)
+{
+    args.CancellationToken.ThrowIfCancellationRequested();
+    if (string.Equals(args.CouponCode, "WHOLESALE10", StringComparison.OrdinalIgnoreCase)
+        && httpContextAccessor.HttpContext?.User.IsInRole("Wholesale") != true)
+    {
+        args.Reject("This coupon is only available to wholesale customers.");
+    }
+
+    return Task.CompletedTask;
+}
+```
+
+Inject `DiscountEvents` and `IHttpContextAccessor` for this example. The code and alias are raw, unvalidated input and may be null or empty. A handler can perform its own customer/order lookups if needed; avoid recursively calling the coupon application API from the handler.
+
+`Reject(reason)` requires a nonblank customer-facing message. The first rejection stops further handlers and throws `CouponApplicationRejectedException` with that message, leaving the existing order, discounts, and totals unchanged. The HTTP endpoint returns 400 with `code=couponApplicationRejected` and `message` containing the reason. Storefronts should display the message as escaped text. Without rejection, existing coupon checks and application continue normally.
+
+This hook does not run for line-level coupons, global discounts, calculation previews, `SetCouponCodeAsync`, or direct discount-service calls. It is an application-time hook, not a replacement for checkout validation or a revalidation of previously applied coupons.
+
 ## Quote a coupon without creating an order
 
 Configure a secret and call the calculation endpoint:

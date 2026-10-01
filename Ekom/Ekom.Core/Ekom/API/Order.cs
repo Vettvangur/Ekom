@@ -1,4 +1,5 @@
 using Ekom.Cache;
+using Ekom.Events;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
@@ -39,6 +40,7 @@ public partial class Order
     readonly OrderRepository _orderRepo;
     readonly CheckoutControllerService _checkoutControllerService;
     readonly IOrderActivityLogService _orderActivityLogService;
+    readonly DiscountEvents _discountEvents;
 
     /// <summary>
     /// ctor
@@ -53,7 +55,8 @@ public partial class Order
         IStoreService storeService,
         OrderRepository orderRepo,
         CheckoutControllerService checkoutControllerService,
-        IOrderActivityLogService orderActivityLogService)
+        IOrderActivityLogService orderActivityLogService,
+        DiscountEvents discountEvents)
     {
         _discountCache = discountCache;
         _orderService = orderService;
@@ -65,6 +68,7 @@ public partial class Order
         _orderRepo = orderRepo;
         _checkoutControllerService = checkoutControllerService;
         _orderActivityLogService = orderActivityLogService;
+        _discountEvents = discountEvents;
     }
 
     public IOrderInfo? GetOrder() => GetOrderAsync().GetAwaiter().GetResult();

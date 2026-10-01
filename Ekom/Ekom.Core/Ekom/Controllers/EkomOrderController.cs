@@ -626,14 +626,16 @@ public partial class EkomOrderController : ControllerBase
     [EnableRateLimiting("order-coupon")]
     public async Task<IActionResult> ApplyCouponToOrder([FromBody] CouponRequest model, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(model.coupon))
+        try
+        {
+            if (await _order.ApplyCouponToOrderAsync(model.coupon, model.storeAlias, ct))
+            {
+                return Ok();
+            }
+        }
+        catch (ArgumentException ex) when (ex.ParamName == "coupon" && string.IsNullOrEmpty(model.coupon))
         {
             return BadRequest("Coupon code can not be empty");
-        }
-
-        if (await _order.ApplyCouponToOrderAsync(model.coupon, model.storeAlias, ct))
-        {
-            return Ok();
         }
 
         return StatusCode(450, "Discount not modified, better discount found");
