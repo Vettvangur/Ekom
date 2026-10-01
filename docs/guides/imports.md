@@ -107,6 +107,8 @@ Each imported entity has:
 
 Property dictionaries such as `Title`, `Slug`, `Description`, and `Summary` support culture-keyed values. `AdditionalProperties` is the extension point for site-specific document-type properties; values must match the target editor's expected storage format.
 
+For `FullSync` and `CategorySync`, the supplied `ImportData.ProductProcessKey` and `RecycleBinKey` define staging categories. When a product's immediate parent is either category, the product, its variant groups, and its variants are saved only, regardless of their `SaveEvent` or `PreservePublishStatus`. The already loaded product is passed down to group and variant saves; this check adds no per-child content lookups or ancestor traversal. Existing product moves from recycle to processing are unchanged. Outside these categories, existing save/publish policy remains in effect, so `SavePublish` with `PreservePublishStatus = false` still attempts to publish newly imported children. Single-entity sync methods do not receive these staging keys and retain their existing behavior.
+
 ## Media
 
 `ImportBase.Images` and product/variant `Files` accept:

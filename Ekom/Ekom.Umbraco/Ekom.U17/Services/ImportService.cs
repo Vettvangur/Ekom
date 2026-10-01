@@ -837,7 +837,7 @@ public class ImportService : IImportService
 
                         SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, mediaIndex, create, syncUser, recycleBinNode, productProcessNode, forceUpdate);
 
-                        IterateVariantGroups(importProduct.VariantGroups, productContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, ekomNodesByParentId, forceUpdate: forceUpdate);
+                        IterateVariantGroups(importProduct.VariantGroups, productContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, ekomNodesByParentId, forceUpdate: forceUpdate, recycleBinNode: recycleBinNode, productProcessNode: productProcessNode);
                     }
                     else
                     {
@@ -875,7 +875,7 @@ public class ImportService : IImportService
             progress.TotalItems);
     }
 
-    private void IterateVariantGroups(List<ImportVariantGroup> importVariantGroups, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, Dictionary<int, List<IContent>>? ekomNodesByParentId = null, bool forceUpdate = false)
+    private void IterateVariantGroups(List<ImportVariantGroup> importVariantGroups, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, Dictionary<int, List<IContent>>? ekomNodesByParentId = null, bool forceUpdate = false, IContent? recycleBinNode = null, IContent? productProcessNode = null)
     {
         ekomNodesByParentId ??= BuildChildrenByParentId(allEkomNodes);
         var umbracoVariantGroupChildrenContent = GetIndexedChildren(ekomNodesByParentId, productContent.Id);
@@ -921,13 +921,13 @@ public class ImportService : IImportService
                 umbracoVariantGroupChildrenContent.Add(variantGroupContent);
             }
 
-            SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, mediaIndex, create, syncUser, forceUpdate: forceUpdate);
+            SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, mediaIndex, create, syncUser, productContent, forceUpdate: forceUpdate, recycleBinNode: recycleBinNode, productProcessNode: productProcessNode);
 
-            IterateVariants(importVariantGroup.Variants, variantGroupContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, ekomNodesByParentId: ekomNodesByParentId, forceUpdate: forceUpdate);
+            IterateVariants(importVariantGroup.Variants, variantGroupContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, ekomNodesByParentId: ekomNodesByParentId, forceUpdate: forceUpdate, recycleBinNode: recycleBinNode, productProcessNode: productProcessNode, productContent: productContent);
         }
     }
 
-    private void IterateVariants(List<ImportVariant> importVariants, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, bool delete = true, Dictionary<int, List<IContent>>? ekomNodesByParentId = null, bool forceUpdate = false)
+    private void IterateVariants(List<ImportVariant> importVariants, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, bool delete = true, Dictionary<int, List<IContent>>? ekomNodesByParentId = null, bool forceUpdate = false, IContent? recycleBinNode = null, IContent? productProcessNode = null, IContent? productContent = null)
     {
         if (variantGroupContent == null || variantGroupContent.Id == 0)
         {
@@ -983,7 +983,7 @@ public class ImportService : IImportService
                 umbracoVariantsChildrenContent.Add(variantContent);
             }
 
-            SaveVariant(variantContent, importVariant, allUmbracoMedia, mediaIndex, create, syncUser, forceUpdate: forceUpdate);
+            SaveVariant(variantContent, importVariant, allUmbracoMedia, mediaIndex, create, syncUser, forceUpdate: forceUpdate, recycleBinNode: recycleBinNode, productProcessNode: productProcessNode, productContent: productContent);
         }
     }
 
@@ -1216,7 +1216,7 @@ public class ImportService : IImportService
             productsSaved.Add(importProduct);
         }
     }
-    private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, bool create, int syncUser, bool forceUpdate = false)
+    private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, bool create, int syncUser, IContent productContent, bool forceUpdate = false, IContent? recycleBinNode = null, IContent? productProcessNode = null)
     {
         var saveImages = ImportMedia(variantGroupContent, importVariantGroup.Images, allUmbracoMedia, mediaIndex, preserveExistingValues: importVariantGroup.PreserveExistingValues);
 
@@ -1249,11 +1249,11 @@ public class ImportService : IImportService
 
         variantGroupContent.Name = importVariantGroup.NodeName;
 
-        SaveEvent(variantGroupContent, importVariantGroup, importVariantGroup.SaveEvent, importVariantGroup.PreservePublishStatus, syncUser, create);
+        SaveEvent(variantGroupContent, importVariantGroup, importVariantGroup.SaveEvent, importVariantGroup.PreservePublishStatus, syncUser, create, recycleBinNode, productProcessNode, productContent);
 
         variantGroupsSaved.Add(importVariantGroup);
     }
-    private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, bool create, int syncUser, bool forceUpdate = false)
+    private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, bool create, int syncUser, bool forceUpdate = false, IContent? recycleBinNode = null, IContent? productProcessNode = null, IContent? productContent = null)
     {
         var args = new ImportVariantEventArgs(variantContent, importVariant, create, false, false);
 
@@ -1347,7 +1347,7 @@ public class ImportService : IImportService
 
         variantContent.Name = importVariant.NodeName;
 
-        if (!TrySaveVariant(variantContent, importVariant, syncUser, args.IsCreateOperation))
+        if (!TrySaveVariant(variantContent, importVariant, syncUser, args.IsCreateOperation, recycleBinNode, productProcessNode, productContent))
         {
             return;
         }
@@ -1356,11 +1356,11 @@ public class ImportService : IImportService
         
     }
 
-    private bool TrySaveVariant(IContent variantContent, ImportVariant importVariant, int syncUser, bool create)
+    private bool TrySaveVariant(IContent variantContent, ImportVariant importVariant, int syncUser, bool create, IContent? recycleBinNode = null, IContent? productProcessNode = null, IContent? productContent = null)
     {
         try
         {
-            SaveEvent(variantContent, importVariant, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, create);
+            SaveEvent(variantContent, importVariant, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, create, recycleBinNode, productProcessNode, productContent);
             return true;
         }
         catch (InvalidOperationException ex) when (ex.Message == "Cannot save a non-current version.")
@@ -1814,7 +1814,8 @@ public class ImportService : IImportService
         int syncUser,
         bool create,
         IContent? recycleBinNode = null,
-        IContent? productProcessNode = null)
+        IContent? productProcessNode = null,
+        IContent? productContent = null)
     {
         // If we should be in the processing area (e.g., coming from recycle bin), move FIRST.
         if (recycleBinNode != null
@@ -1827,12 +1828,13 @@ public class ImportService : IImportService
 
         ApplyImportDates(content, importEntity);
 
-        // If content currently lives under productProcessNode, we treat it as staging: never publish here.
-        bool inProcessing = productProcessNode != null && content.ParentId == productProcessNode.Id;
-
-        if (inProcessing)
+        // The product's immediate parent determines staging for the product and its children.
+        // Reuse the product already loaded by the import iteration; no per-child content lookups.
+        var owningProduct = content.ContentType.Alias == "ekmProduct" ? content : productContent;
+        if (owningProduct != null
+            && (owningProduct.ParentId == productProcessNode?.Id || owningProduct.ParentId == recycleBinNode?.Id))
         {
-            // Always just save while in processing area.
+            // Never attempt to publish or unpublish imports in either staging category.
             _contentService.Save(content, userId: syncUser);
             return;
         }
