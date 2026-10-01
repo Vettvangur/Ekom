@@ -34,6 +34,11 @@ static class ExceptionHandler
             NotEnoughStockException => new StatusCodeResult((int)HttpStatusCode.Conflict),
             DiscountNotFoundException => new NotFoundResult(),
             DiscountHasNoUsageException => new StatusCodeResult((int)HttpStatusCode.NotAcceptable),
+            CouponApplicationRejectedException rejectedEx => new BadRequestObjectResult(new
+            {
+                code = "couponApplicationRejected",
+                message = rejectedEx.Message,
+            }),
             DiscountUnableToFindCouponException => new NotFoundResult(),
             StoreNotFoundException => new NotFoundResult(),
 

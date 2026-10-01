@@ -53,8 +53,13 @@ public sealed class DiscountHooks(DiscountEvents events) : IComponent
 | --- | --- |
 | `BeforeEvaluateDiscountsAsync` | Mutable path, store alias, price, categories; read-only ambient `PricingContext`. |
 | `AfterApplicableDiscountsAsync` | Matching `ApplicableDiscounts` list plus path/store/price/categories and pricing context. The list can be edited. |
+| `BeforeApplyCouponDiscountAsync` | Raw `CouponCode`, raw nullable `StoreAlias`, and `CancellationToken`. Call `Reject(reason)` to prevent whole-order coupon application. |
 
-Cancellation is checked between handlers, although the delegate itself receives no cancellation-token parameter.
+Cancellation is checked between handlers, although the delegate itself receives no cancellation-token parameter. The coupon event also exposes the token in its arguments and checks cancellation after each handler.
+
+`BeforeApplyCouponDiscountAsync` runs once per whole-order coupon API call, before input checks, normalization, coupon/discount lookup, availability checks, or order loading. For the overload without a store alias, `StoreAlias` is null and the current store has not yet been resolved. Inputs can be null, empty, or invalid; handlers must treat them as unvalidated data. No order or resolved discount is supplied at this stage.
+
+Handlers run sequentially; the first rejection stops dispatch and preserves its reason. The API throws `CouponApplicationRejectedException` with that message without mutating the order. HTTP application returns 400 with `{ "code": "couponApplicationRejected", "message": "..." }`. Other handler exceptions propagate normally. This event does not run for line-level coupons, automatic/global discounts, calculation previews, merely setting a coupon code, or direct discount-service calls.
 
 ## Order events
 

@@ -1,3 +1,4 @@
+using Ekom.Events;
 using Ekom.Exceptions;
 using Ekom.Models;
 
@@ -13,12 +14,14 @@ public partial class Order
     /// </summary>
     /// <exception cref="DiscountNotFoundException"></exception>
     /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="CouponApplicationRejectedException">A handler rejected the coupon before validation.</exception>
     /// <returns></returns>
     public async Task<bool> ApplyCouponToOrderAsync(string coupon, CancellationToken ct = default)
     {
+        await BeforeApplyCouponDiscountAsync(coupon, null, ct).ConfigureAwait(false);
         string storeAlias = _storeSvc.GetStoreFromCache()?.Alias ?? "";
 
-        return await ApplyCouponToOrderAsync(coupon, storeAlias, ct)
+        return await ApplyCouponToOrderCoreAsync(coupon, storeAlias, ct)
             .ConfigureAwait(false);
     }
 
@@ -27,8 +30,25 @@ public partial class Order
     /// </summary>
     /// <exception cref="DiscountNotFoundException"></exception>
     /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="CouponApplicationRejectedException">A handler rejected the coupon before validation.</exception>
     /// <returns></returns>
     public async Task<bool> ApplyCouponToOrderAsync(string coupon, string storeAlias, CancellationToken ct = default)
+    {
+        await BeforeApplyCouponDiscountAsync(coupon, storeAlias, ct).ConfigureAwait(false);
+        return await ApplyCouponToOrderCoreAsync(coupon, storeAlias, ct).ConfigureAwait(false);
+    }
+
+    private async Task BeforeApplyCouponDiscountAsync(string coupon, string? storeAlias, CancellationToken ct)
+    {
+        var args = new DiscountEvents.BeforeApplyCouponDiscountEventArgs(coupon, storeAlias, ct);
+        await _discountEvents.RaiseBeforeApplyCouponDiscountAsync(this, args, ct).ConfigureAwait(false);
+        if (args.IsRejected)
+        {
+            throw new CouponApplicationRejectedException(args.RejectionReason!);
+        }
+    }
+
+    private async Task<bool> ApplyCouponToOrderCoreAsync(string coupon, string storeAlias, CancellationToken ct)
     {
         if (string.IsNullOrEmpty(coupon))
         {

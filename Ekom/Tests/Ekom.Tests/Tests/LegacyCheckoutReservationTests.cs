@@ -355,7 +355,7 @@ public sealed class LegacyCheckoutReservationTests
                     null!, Mock.Of<IOrderActivityLogService>(), NullLogger<OrderService>.Instance, stores.Object, _cache,
                     Mock.Of<IMemberService>(), null!, Mock.Of<IOrderTrackingService>()));
                 services.AddSingleton(sp => new Order(sp.GetRequiredService<Configuration>(), NullLogger<Order>.Instance, null!, null!,
-                    sp.GetRequiredService<OrderService>(), null!, stores.Object, sp.GetRequiredService<OrderRepository>(), null!, Mock.Of<IOrderActivityLogService>()));
+                    sp.GetRequiredService<OrderService>(), null!, stores.Object, sp.GetRequiredService<OrderRepository>(), null!, Mock.Of<IOrderActivityLogService>(), new Ekom.Events.DiscountEvents()));
             });
             Checkout = Configuration.Resolver.GetRequiredService<CheckoutReservationService>();
             Repository = Configuration.Resolver.GetRequiredService<OrderRepository>();

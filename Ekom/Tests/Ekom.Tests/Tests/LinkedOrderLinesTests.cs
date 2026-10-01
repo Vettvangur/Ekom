@@ -749,6 +749,64 @@ public sealed class LinkedOrderLinesTests
         }
     }
 
+    [Fact]
+    public async Task RejectedWholeOrderCouponLeavesPersistedOrderUnchanged()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        order.Discount = new OrderedDiscount(CreateGlobalPercentageDiscount(Guid.NewGuid(), 0.1m));
+        order.Coupon = "existing-coupon";
+        var data = (await fixture.Repository.GetOrderAsync(order.UniqueId))!;
+        data.OrderInfo = JsonConvert.SerializeObject(order);
+        await fixture.Repository.UpdateOrderAsync(data);
+        var before = data.OrderInfo;
+        fixture.ActivityLogs.Invocations.Clear();
+        fixture.DiscountEvents.BeforeApplyCouponDiscountAsync += (sender, args) =>
+        {
+            args.Reject("This coupon is not available to this customer.");
+            return Task.CompletedTask;
+        };
+
+        await Assert.ThrowsAsync<Ekom.Exceptions.CouponApplicationRejectedException>(() =>
+            Ekom.API.Order.Instance.ApplyCouponToOrderAsync("NEWCODE", "main"));
+
+        Assert.Equal(before, (await fixture.Repository.GetOrderAsync(order.UniqueId))!.OrderInfo);
+        fixture.ActivityLogs.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AllowedWholeOrderCouponAppliesOnceAndPersistsDiscount(bool currentStore)
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        var discount = CreateGlobalPercentageDiscount(Guid.NewGuid(), 0.1m);
+        var api = fixture.CreateCouponOrderApi(discount, "coupon");
+        var calls = 0;
+        fixture.DiscountEvents.BeforeApplyCouponDiscountAsync += (sender, args) =>
+        {
+            calls++;
+            Assert.Equal("COUPON", args.CouponCode);
+            Assert.Equal(currentStore ? null : "main", args.StoreAlias);
+            return Task.CompletedTask;
+        };
+
+        var applied = currentStore
+            ? await api.ApplyCouponToOrderAsync("COUPON")
+            : await api.ApplyCouponToOrderAsync("COUPON", "main");
+
+        Assert.True(applied);
+        Assert.Equal(1, calls);
+        var saved = JObject.Parse((await fixture.Repository.GetOrderAsync(order.UniqueId))!.OrderInfo);
+        Assert.Equal("coupon", saved[nameof(OrderInfo.Coupon)]?.Value<string>());
+        Assert.Equal(discount.Key, saved[nameof(OrderInfo.Discount)]?[nameof(OrderedDiscount.Key)]?.ToObject<Guid>());
+        var updated = await api.GetOrderAsync(order.UniqueId);
+        Assert.NotNull(updated);
+        Assert.Equal(27, updated.ChargedAmount.Value);
+        Assert.Equal(order.UniqueId, updated.UniqueId);
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly ConfigurationScope _scope;
@@ -756,7 +814,9 @@ public sealed class LinkedOrderLinesTests
         private readonly Mock<IPerStoreIndexedCache<IProduct>> _products = new();
         private readonly StockReservationTests.ReservationDatabase _database = new();
         private readonly ConcurrentDictionary<Guid, IShippingProvider> _shippingProviders = new();
+        private readonly IStoreService _stores;
         public Mock<IOrderActivityLogService> ActivityLogs { get; } = new();
+        public DiscountEvents DiscountEvents { get; } = new();
 
         public Fixture(
             ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>>? discountsByStore = null,
@@ -771,6 +831,7 @@ public sealed class LinkedOrderLinesTests
             var stores = new Mock<IStoreService>();
             stores.Setup(x => x.GetStoreByAlias("main")).Returns(store.Object);
             stores.Setup(x => x.GetStoreFromCache()).Returns(store.Object);
+            _stores = stores.Object;
 
             var variants = new Mock<IPerStoreIndexedCache<IVariant>>();
             variants.SetupGet(x => x.Cache).Returns(
@@ -911,7 +972,26 @@ public sealed class LinkedOrderLinesTests
 
         private Ekom.API.Order CreateOrderApi(IStoreService stores) => new(_scope.Instance,
             NullLogger<Ekom.API.Order>.Instance, null!, null!, Service, null!, stores,
-            Repository, null!, ActivityLogs.Object);
+            Repository, null!, ActivityLogs.Object, DiscountEvents);
+
+        public Ekom.API.Order CreateCouponOrderApi(IDiscount discount, string coupon)
+        {
+            var cache = new DiscountCache(_scope.Instance, NullLogger<IPerStoreCache<IDiscount>>.Instance,
+                Mock.Of<IBaseCache<IStore>>(), Mock.Of<IPerStoreFactory<IDiscount>>(), Configuration.Resolver);
+            cache.Cache["main"] = new ConcurrentDictionary<Guid, IDiscount> { [discount.Key] = discount };
+            var couponData = new ConcurrentDictionary<string, CouponData>
+            {
+                [coupon] = new CouponData { DiscountId = discount.Key, NumberAvailable = 1 },
+            };
+            var coupons = Mock.Of<ICouponCache>(x => x.Cache == couponData);
+            var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+            context.Request.Headers.Cookie = $"ekmOrder-main={Order.UniqueId}";
+            var service = new OrderService(_scope.Instance, Repository, null!, ActivityLogs.Object,
+                NullLogger<OrderService>.Instance, _stores, _cache, Mock.Of<IMemberService>(), cache,
+                Mock.Of<IOrderTrackingService>(), Mock.Of<Microsoft.AspNetCore.Http.IHttpContextAccessor>(x => x.HttpContext == context));
+            return new Ekom.API.Order(_scope.Instance, NullLogger<Ekom.API.Order>.Instance, cache, coupons,
+                service, null!, _stores, Repository, null!, ActivityLogs.Object, DiscountEvents);
+        }
 
         public async Task SeedStockAsync(Guid key)
         {

@@ -7,6 +7,62 @@ public class DiscountEvents
     public event Func<object?, ProductDiscountEvaluationEventArgs, Task>? BeforeEvaluateDiscountsAsync;
     public event Func<object?, ProductDiscountApplicableEventArgs, Task>? AfterApplicableDiscountsAsync;
 
+    /// <summary>
+    /// Runs before whole-order coupon validation, normalization, store resolution, or lookup.
+    /// Call <see cref="BeforeApplyCouponDiscountEventArgs.Reject"/> to prevent application.
+    /// </summary>
+    public event Func<object?, BeforeApplyCouponDiscountEventArgs, Task>? BeforeApplyCouponDiscountAsync;
+
+    public async Task RaiseBeforeApplyCouponDiscountAsync(object sender, BeforeApplyCouponDiscountEventArgs e, CancellationToken ct)
+    {
+        var handlers = BeforeApplyCouponDiscountAsync;
+        ct.ThrowIfCancellationRequested();
+        if (handlers == null || e.IsRejected) return;
+
+        foreach (var handler in handlers.GetInvocationList()
+            .Cast<Func<object?, BeforeApplyCouponDiscountEventArgs, Task>>())
+        {
+            ct.ThrowIfCancellationRequested();
+            await handler(sender, e).ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
+            if (e.IsRejected) return;
+        }
+    }
+
+    public sealed class BeforeApplyCouponDiscountEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Raw submitted code, before normalization or validation. It may be null or empty.
+        /// </summary>
+        public string? CouponCode { get; }
+
+        /// <summary>
+        /// Raw supplied alias; null when the caller uses the current-store overload.
+        /// The current store has not been resolved yet.
+        /// </summary>
+        public string? StoreAlias { get; }
+
+        public CancellationToken CancellationToken { get; }
+        public bool IsRejected => RejectionReason != null;
+        public string? RejectionReason { get; private set; }
+
+        public BeforeApplyCouponDiscountEventArgs(string? couponCode, string? storeAlias, CancellationToken cancellationToken)
+        {
+            CouponCode = couponCode;
+            StoreAlias = storeAlias;
+            CancellationToken = cancellationToken;
+        }
+
+        /// <summary>
+        /// Reject this application with a customer-facing reason. The first rejection is preserved.
+        /// </summary>
+        public void Reject(string reason)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+            RejectionReason ??= reason;
+        }
+    }
+
     public async Task RaiseBeforeEvaluateDiscountsAsync(object sender, ProductDiscountEvaluationEventArgs e, CancellationToken ct)
     {
         if (BeforeEvaluateDiscountsAsync == null)
