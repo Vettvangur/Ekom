@@ -12,10 +12,34 @@ namespace Ekom.Models;
 /// <inheritdoc />
 public class OrderInfo : IOrderInfo
 {
-    public StoreInfo StoreInfo { get; }
+    public StoreInfo StoreInfo { get; private set; }
 
-    private readonly OrderData _orderData;
+    private OrderData _orderData;
     internal OrderData OrderDataClone() => _orderData.Clone() as OrderData;
+
+    internal void ApplyPersistedSnapshot(OrderInfo source, OrderData data)
+    {
+        if (UniqueId != source.UniqueId || UniqueId != data.UniqueId)
+        {
+            throw new InvalidOperationException("Cannot apply a different order's snapshot.");
+        }
+
+        var lines = source.orderLines.Select(line => new OrderLine(line, this)).ToList();
+        _orderData = (OrderData)data.Clone();
+        StoreInfo = source.StoreInfo;
+        Culture = source.Culture;
+        orderLines = lines;
+        Discount = source.Discount;
+        Coupon = source.Coupon;
+        Giftcards = source.Giftcards.ToList();
+        ShippingProvider = source.ShippingProvider;
+        ShippingProviderInvalidation = source.ShippingProviderInvalidation;
+        PaymentProvider = source.PaymentProvider;
+        CustomerInformation = source.CustomerInformation;
+        Consent = source.Consent;
+        Tracking = source.Tracking;
+        ReservationIds = source.ReservationIds.ToList();
+    }
 
     /// <summary>
     /// 
