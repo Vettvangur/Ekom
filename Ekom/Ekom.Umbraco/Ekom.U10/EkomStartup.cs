@@ -194,13 +194,19 @@ class EkomStartup : IComponent
     private async Task CompleteCheckoutAsync(object sender, SuccessEventArgs args)
     {
         var o = args.OrderStatus;
+        var settings = o.EkomPaymentSettings;
 
-        if (o.EkomPaymentSettings.OrderCustomData.TryGetValue("ekomOrderUniqueId", out var value))
+        if (settings.OrderCustomData.TryGetValue("ekomOrderUniqueId", out var value))
         {
-            var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
-
             if (Guid.TryParse(value, out var orderId))
             {
+                var paymentLog = _factory.GetRequiredService<PaymentSuccessLogService>();
+                await paymentLog.LogAsync(orderId, settings.OrderNumber, o.Amount, settings.Currency,
+                    string.IsNullOrWhiteSpace(settings.PaymentProviderName)
+                        ? settings.PaymentProviderKey.ToString()
+                        : settings.PaymentProviderName).ConfigureAwait(false);
+
+                var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
                 await checkoutSvc.CompleteAsync(orderId);
             }
         }

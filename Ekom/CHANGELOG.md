@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+* **checkout:** persist payment-success activity entries directly before order completion and emit Information logs with amount, currency, provider, order number, and Ekom order ID; include offline payment acceptance and continue completion if activity logging fails.
 * **imports:** save products, variant groups, and variants without publishing when the owning product is directly under the configured processing or recycle category.
 * **checkout:** retain shipping selections when cart changes invalidate their constraints, reject them before payment with provider-specific errors, and track removed unavailable providers until shipping is explicitly reselected or cleared. Orders intentionally without shipping remain supported.
 * **discounts:** skip coupon-backed global discounts without preventing other eligible global discounts from applying to the order's store.
