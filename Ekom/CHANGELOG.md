@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+* **manager:** add order-level coupon-code and shipping-provider filters to Umbraco 17 and 18 order searches, summary totals, and CSV exports.
 * **manager:** show the saved order-level coupon code beside the Discount total in Umbraco 17 and 18 order details, retaining the existing amount and plain label for orders without a code.
 * **backoffice:** show percentage labels on the Discount amount field in Umbraco 17 and 18 when Type is Percentage, without changing values or labels on other range fields.
 * **backoffice:** clarify order discount field descriptions on new and existing installations, preserving custom help text and saving document types only when descriptions or missing quantity fields change.
@@ -41,6 +42,13 @@
 * **discounts:** add a global product setting that disables product, coupon, and order discounts for the product and its variants, excluding protected lines from quantity and minimum-spend qualification.
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
+
+## [0.2.314](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.313...Ekom-v0.2.314) (2026-10-02)
+
+
+### Bug Fixes
+
+* **manager:** add coupon and shipping provider filters ([#978](https://github.com/Vettvangur/Ekom/issues/978)) ([6d16cd6](https://github.com/Vettvangur/Ekom/commit/6d16cd6c62f1b4830ae88fe4bec917dc9f667872))
 
 ## [0.2.313](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.312...Ekom-v0.2.313) (2026-10-02)
 

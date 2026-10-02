@@ -4,7 +4,10 @@ using Ekom.Services;
 using Ekom.Utilities;
 using LinqToDB;
 using LinqToDB.Data;
+using LinqToDB.Interceptors;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
+using System.Data.Common;
 using System.Text;
 
 namespace Ekom.Repositories;
@@ -68,9 +71,9 @@ public class ManagerRepository
         return order;
     }
 
-    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize)
+    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null)
     {
-        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId);
+        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider);
 
         var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
         var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
@@ -110,6 +113,8 @@ public class ManagerRepository
             orderStatus,
             store,
             paymentProvider = paymentProviderValue,
+            couponCode = string.IsNullOrWhiteSpace(couponCode) ? null : couponCode.Trim(),
+            shippingProvider = Guid.TryParse(shippingProvider, out Guid parsedShippingProvider) ? parsedShippingProvider.ToString() : null,
             productSku = string.IsNullOrWhiteSpace(productSku) ? null : productSku.Trim(),
             trackingSource = string.IsNullOrWhiteSpace(trackingSource) ? null : trackingSource.Trim(),
             trackingMedium = string.IsNullOrWhiteSpace(trackingMedium) ? null : trackingMedium.Trim(),
@@ -122,6 +127,8 @@ public class ManagerRepository
         };
 
         await using DbContext db = _databaseFactory.GetDatabase();
+
+        ConfigureCouponComparison(db, couponCode);
 
         var orders = await db.QueryToListAsync<OrderData>(sqlQuery, param);
 
@@ -141,9 +148,9 @@ public class ManagerRepository
         return _storeService.GetStoreByAlias(storeAlias)?.Currency.CurrencyValue;
     }
   
-    public async Task<List<OrderData>> GetOrdersForExportAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderInfo)
+    public async Task<List<OrderData>> GetOrdersForExportAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderInfo, string? couponCode = null, string? shippingProvider = null)
     {
-        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId);
+        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider);
         string orderInfoColumn = includeOrderInfo ? ",OrderInfo" : string.Empty;
         string sqlQuery = $"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate{orderInfoColumn} FROM EkomOrders {whereClause} ORDER BY ReferenceId desc";
 
@@ -166,6 +173,8 @@ public class ManagerRepository
             orderStatus,
             store,
             paymentProvider = paymentProviderValue,
+            couponCode = string.IsNullOrWhiteSpace(couponCode) ? null : couponCode.Trim(),
+            shippingProvider = Guid.TryParse(shippingProvider, out Guid parsedShippingProvider) ? parsedShippingProvider.ToString() : null,
             productSku = string.IsNullOrWhiteSpace(productSku) ? null : productSku.Trim(),
             trackingSource = string.IsNullOrWhiteSpace(trackingSource) ? null : trackingSource.Trim(),
             trackingMedium = string.IsNullOrWhiteSpace(trackingMedium) ? null : trackingMedium.Trim(),
@@ -176,6 +185,8 @@ public class ManagerRepository
         };
 
         await using DbContext db = _databaseFactory.GetDatabase();
+
+        ConfigureCouponComparison(db, couponCode);
 
         return await db.QueryToListAsync<OrderData>(sqlQuery, param).ConfigureAwait(false);
 
@@ -212,7 +223,7 @@ ORDER BY {bucketDateExpression}";
         return await db.QueryToListAsync<ChartAggregateRow>(sql, param).ConfigureAwait(false);
     }
 
-    private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider, string productSku = "", string trackingSource = "", string trackingMedium = "", string trackingCampaign = "", string trackingTerm = "", string trackingContent = "", string trackingClickId = "")
+    private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider, string productSku = "", string trackingSource = "", string trackingMedium = "", string trackingCampaign = "", string trackingTerm = "", string trackingContent = "", string trackingClickId = "", string? couponCode = null, string? shippingProvider = null)
     {
         var whereClause = new StringBuilder();
 
@@ -249,6 +260,20 @@ ORDER BY {bucketDateExpression}";
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(couponCode))
+        {
+            whereClause.Append(_databaseFactory.IsSqlite
+                ? " AND json_extract(OrderInfo, '$.Coupon') COLLATE Ekom_ManagerCoupon_OrdinalIgnoreCase = @couponCode"
+                : " AND LOWER(JSON_VALUE(OrderInfo, '$.Coupon')) = LOWER(@couponCode)");
+        }
+
+        if (Guid.TryParse(shippingProvider, out _))
+        {
+            whereClause.Append(_databaseFactory.IsSqlite
+                ? " AND json_extract(OrderInfo, '$.ShippingProvider.Key') = @shippingProvider"
+                : " AND JSON_VALUE(OrderInfo, '$.ShippingProvider.Key') = @shippingProvider");
+        }
+
         if (!string.IsNullOrWhiteSpace(productSku))
         {
             if (_databaseFactory.IsSqlite)
@@ -283,6 +308,30 @@ ORDER BY {bucketDateExpression}";
         }
 
         return whereClause.ToString();
+    }
+
+    private void ConfigureCouponComparison(DbContext db, string? couponCode)
+    {
+        if (_databaseFactory.IsSqlite && !string.IsNullOrWhiteSpace(couponCode))
+        {
+            // Register on each open, including reconnects, without changing built-in SQLite comparisons.
+            db.AddInterceptor(new CouponCollationInterceptor());
+        }
+    }
+
+    private sealed class CouponCollationInterceptor : ConnectionInterceptor
+    {
+        public override void ConnectionOpened(ConnectionEventData eventData, DbConnection connection)
+        {
+            ((SqliteConnection)connection).CreateCollation("Ekom_ManagerCoupon_OrdinalIgnoreCase",
+                static (left, right) => string.Compare(left, right, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public override Task ConnectionOpenedAsync(ConnectionEventData eventData, DbConnection connection, CancellationToken cancellationToken)
+        {
+            ConnectionOpened(eventData, connection);
+            return Task.CompletedTask;
+        }
     }
 
     private void AppendTrackingJsonFilter(StringBuilder whereClause, string value, string propertyName, string parameterName)

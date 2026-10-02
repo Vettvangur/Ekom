@@ -80,6 +80,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private shippingProviderEditorOpen = false;
   private shippingProviderSaving = false;
   private shippingProviders: ShippingProviderItem[] = [];
+  private filterProvidersRequestId = 0;
+  private filterProvidersLoading = false;
   private shippingProviderId = '';
   private shippingCustomFields: Array<{ key: string; value: string; existing: boolean }> = [];
   private removingOrderLineId = '';
@@ -159,7 +161,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         managerState.filters.store = managerState.stores[0].alias;
       }
 
-      await this.loadPaymentProviders();
+      await this.loadFilterProviders();
       await this.loadOrders();
     } catch (error) {
       this.error = getErrorMessage(error, 'Error loading Ekom Manager.');
@@ -168,16 +170,40 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     }
   }
 
-  private async loadPaymentProviders(resetSelection = false): Promise<void> {
-    if (!managerState.filters.store) {
-      managerState.paymentProviders = [];
+  private async loadFilterProviders(resetSelection = false): Promise<void> {
+    const requestId = ++this.filterProvidersRequestId;
+    const store = managerState.filters.store;
+    if (resetSelection || !store) {
+      managerState.filters.paymentProvider = '';
+      managerState.filters.shippingProvider = '';
+    }
+
+    managerState.paymentProviders = [];
+    managerState.shippingFilterProviders = [];
+    if (!store) {
+      this.filterProvidersLoading = false;
       return;
     }
 
-    managerState.paymentProviders = await this.api.paymentProviders(managerState.filters.store);
+    this.filterProvidersLoading = true;
+    this.render();
+    const [paymentResult, shippingResult] = await Promise.allSettled([
+      this.api.paymentProviders(store),
+      this.api.shippingProviders(store),
+    ]);
+    if (requestId !== this.filterProvidersRequestId || store !== managerState.filters.store) {
+      return;
+    }
 
-    if (resetSelection) {
-      managerState.filters.paymentProvider = '';
+    const paymentProviders = paymentResult.status === 'fulfilled' ? paymentResult.value : [];
+    const shippingProviders = shippingResult.status === 'fulfilled' ? shippingResult.value : [];
+    managerState.paymentProviders = paymentProviders;
+    managerState.shippingFilterProviders = shippingProviders;
+    this.filterProvidersLoading = false;
+
+    if (paymentResult.status === 'rejected' || shippingResult.status === 'rejected') {
+      this.showNotification('warning', 'Filter options unavailable',
+        'Some provider options could not be loaded. Orders can still be searched; reload to try again.');
     }
 
     if (managerState.filters.paymentProvider) {
@@ -187,6 +213,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         managerState.filters.paymentProvider = '';
       }
     }
+
+    if (managerState.filters.shippingProvider
+      && !shippingProviders.some(provider => provider.key === managerState.filters.shippingProvider)) {
+      managerState.filters.shippingProvider = '';
+    }
+    this.render();
   }
 
   private async loadOrders(): Promise<void> {
@@ -369,19 +401,26 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
           <div class="ekmOverlay__header"><h2>Filter</h2><button class="btn-reset" type="button" data-action="close-overlay">&times;</button></div>
           <div class="ekmOverlay__content">
             <label class="control-group">Payment provider:
-              <select data-filter-field="paymentProvider">
+              <select data-filter-field="paymentProvider" ${this.filterProvidersLoading ? 'disabled' : ''}>
                 <option value="">Select payment provider</option>
                 ${managerState.paymentProviders.map(provider => `<option value="${escapeHtml(provider.key)}" ${filters.paymentProvider === provider.key ? 'selected' : ''}>${escapeHtml(provider.title)}</option>`).join('')}
               </select>
             </label>
             ${this.renderFilterInput('productSku', 'Product SKU:', 'Exact SKU')}
+            <label class="control-group">Shipping provider:
+              <select data-filter-field="shippingProvider" ${this.filterProvidersLoading ? 'disabled' : ''}>
+                <option value="">All shipping providers</option>
+                ${managerState.shippingFilterProviders.map(provider => `<option value="${escapeHtml(provider.key)}" ${filters.shippingProvider === provider.key ? 'selected' : ''}>${escapeHtml(provider.title)}</option>`).join('')}
+              </select>
+            </label>
+            ${this.renderFilterInput('couponCode', 'Coupon code:', 'Exact order-level coupon code')}
             ${this.renderFilterInput('trackingSource', 'Tracking source:', 'facebook')}
             ${this.renderFilterInput('trackingMedium', 'Tracking medium:', 'paid-social')}
             ${this.renderFilterInput('trackingCampaign', 'Tracking campaign:', 'summer_2026')}
             ${this.renderFilterInput('trackingTerm', 'Tracking term:', 'running shoes')}
             ${this.renderFilterInput('trackingContent', 'Tracking content:', 'hero_banner')}
             ${this.renderFilterInput('trackingClickId', 'Tracking click id:', 'gclid or fbclid')}
-            <div style="margin-top:25px; display:flex; gap:10px;"><button type="button" class="btn-success" data-action="apply-filter">Apply</button><button type="button" class="btn-outline" data-action="close-overlay">Cancel</button></div>
+            <div style="margin-top:25px; display:flex; gap:10px;"><button type="button" class="btn-success" data-action="apply-filter" ${this.filterProvidersLoading ? 'disabled' : ''}>Apply</button><button type="button" class="btn-outline" data-action="close-overlay">Cancel</button></div>
           </div>
         </div>
       </div>
@@ -872,7 +911,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     this.page = 1;
 
     if (field === 'store') {
-      await this.loadPaymentProviders(true);
+      await this.loadFilterProviders(true);
     }
 
     await this.loadOrders();
