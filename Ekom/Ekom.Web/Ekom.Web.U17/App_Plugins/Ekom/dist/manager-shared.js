@@ -5,6 +5,8 @@ const f = /* @__PURE__ */ new Date(), y = new Date(f.getFullYear(), 0, 1), w = {
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
+    shippingProvider: "",
+    couponCode: "",
     productSku: "",
     trackingSource: "",
     trackingMedium: "",
@@ -16,7 +18,8 @@ const f = /* @__PURE__ */ new Date(), y = new Date(f.getFullYear(), 0, 1), w = {
   },
   statusList: [],
   stores: [],
-  paymentProviders: []
+  paymentProviders: [],
+  shippingFilterProviders: []
 };
 class m {
   async searchOrders(e, r, t = 20) {
@@ -346,13 +349,13 @@ function A(a, e, r) {
     const l = 20 + (i - 50) / 4 * s;
     o.beginPath(), o.moveTo(40, l), o.lineTo(d - 10, l), o.stroke();
   }
-  const c = e.points || [], k = c.map((s) => Number(s.y || 0)), b = Math.max(...k, 1), h = c.length > 1 ? (d - 60) / (c.length - 1) : 0;
-  o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((s, l) => {
-    const p = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
-    l === 0 ? o.moveTo(p, g) : o.lineTo(p, g);
-  }), o.stroke(), o.fillStyle = r, c.forEach((s, l) => {
-    const p = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
-    o.beginPath(), o.arc(p, g, 3, 0, Math.PI * 2), o.fill();
+  const p = e.points || [], k = p.map((s) => Number(s.y || 0)), b = Math.max(...k, 1), h = p.length > 1 ? (d - 60) / (p.length - 1) : 0;
+  o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), p.forEach((s, l) => {
+    const c = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
+    l === 0 ? o.moveTo(c, g) : o.lineTo(c, g);
+  }), o.stroke(), o.fillStyle = r, p.forEach((s, l) => {
+    const c = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
+    o.beginPath(), o.arc(c, g, 3, 0, Math.PI * 2), o.fill();
   });
 }
 export {
