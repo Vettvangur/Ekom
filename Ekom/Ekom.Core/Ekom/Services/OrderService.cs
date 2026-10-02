@@ -60,7 +60,7 @@ partial class OrderService
 {
     readonly Configuration _config;
     readonly ILogger<OrderService> _logger;
-    readonly HttpContext _httpCtx;
+    readonly HttpContext? _httpCtx;
     readonly IMemoryCache _memoryCache;
     readonly IMemberService _memberService;
     readonly DiscountCache _discountCache;
@@ -69,7 +69,7 @@ partial class OrderService
     readonly OrderRepository _orderRepository;
     readonly CouponRepository _couponRepository;
     readonly IStoreService _storeSvc;
-    readonly ContentRequest _ekmRequest;
+    readonly ContentRequest? _ekmRequest;
     /// <summary>
     /// Ensure all future usages of date for this request point to the same time
     /// </summary>
@@ -276,8 +276,13 @@ partial class OrderService
 
         IStore? store = API.Store.Instance.GetStore(storeAlias);
 
+        if (store == null)
+        {
+            throw new InvalidOperationException($"Could not find store with the alias {storeAlias}");
+        }
+
         // Add timelimit to get the order ? Maybe 1-2 hours ?
-        if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest.User.Username))
+        if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
         {
             OrderInfo? orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId, ct).ConfigureAwait(false);
 
@@ -457,8 +462,8 @@ partial class OrderService
         }
 
         string? userName = !string.IsNullOrEmpty(order.CustomerUsername)
-            ? order?.CustomerUsername
-            : _httpCtx.User.Identity?.Name;
+            ? order.CustomerUsername
+            : _httpCtx?.User?.Identity?.Name;
 
         IStore? store = API.Store.Instance.GetStore(order.StoreAlias);
 
@@ -470,7 +475,7 @@ partial class OrderService
         }
         else
         {
-            _memoryCache.Remove(order?.UniqueId.ToString());
+            _memoryCache.Remove(order.UniqueId.ToString());
         }
     }
 
@@ -1520,7 +1525,10 @@ partial class OrderService
 
             orderInfo.Culture = ResolveOrderCulture(orderInfo);
 
-            orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest?.IPAddress ?? "";
+            if (!string.IsNullOrWhiteSpace(_ekmRequest?.IPAddress))
+            {
+                orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
+            }
 
             if (orderInfo.Consent == null || orderInfo.Tracking?.HasData() != true)
             {
@@ -2322,9 +2330,9 @@ partial class OrderService
     }
     public Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(CancellationToken ct = default, params OrderStatus[] orderStatuses)
     {
-        if (_ekmRequest.User?.UserId == null)
+        if (_ekmRequest?.User?.UserId == null)
         {
-            return Task.FromResult<List<OrderInfo>>(null);
+            return Task.FromResult(new List<OrderInfo>());
         }
 
         return GetStatusOrdersByCustomerIdAsync(_ekmRequest.User.UserId, ct, orderStatuses);
@@ -2600,6 +2608,11 @@ partial class OrderService
 
     private Guid GetOrderIdFromCookie(string key)
     {
+        if (_httpCtx == null)
+        {
+            return Guid.Empty;
+        }
+
         // Try to get the cookie value from the response headers first
         string? cookieValue = _httpCtx.Response.GetTypedHeaders()
             .SetCookie.FirstOrDefault(x => x.Name == key)?.Value.ToString()
