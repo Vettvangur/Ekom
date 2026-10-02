@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+* **manager:** add order-level coupon-code and shipping-provider filters to Umbraco 17 and 18 order searches, summary totals, and CSV exports.
 * **manager:** show the saved order-level coupon code beside the Discount total in Umbraco 17 and 18 order details, retaining the existing amount and plain label for orders without a code.
 * **backoffice:** show percentage labels on the Discount amount field in Umbraco 17 and 18 when Type is Percentage, without changing values or labels on other range fields.
 * **backoffice:** clarify order discount field descriptions on new and existing installations, preserving custom help text and saving document types only when descriptions or missing quantity fields change.

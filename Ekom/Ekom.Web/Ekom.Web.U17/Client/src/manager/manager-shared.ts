@@ -4,6 +4,8 @@ export type ManagerFilters = {
   orderStatus: string;
   store: string;
   paymentProvider: string;
+  shippingProvider: string;
+  couponCode: string;
   productSku: string;
   trackingSource: string;
   trackingMedium: string;
@@ -105,6 +107,7 @@ export type ManagerState = {
   statusList: StatusItem[];
   stores: StoreItem[];
   paymentProviders: PaymentProviderItem[];
+  shippingFilterProviders: ShippingProviderItem[];
 };
 
 const currentDate = new Date();
@@ -117,6 +120,8 @@ export const managerState: ManagerState = {
     orderStatus: 'CompletedOrders',
     store: '',
     paymentProvider: '',
+    shippingProvider: '',
+    couponCode: '',
     productSku: '',
     trackingSource: '',
     trackingMedium: '',
@@ -129,6 +134,7 @@ export const managerState: ManagerState = {
   statusList: [],
   stores: [],
   paymentProviders: [],
+  shippingFilterProviders: [],
 };
 
 export class EkomManagerApi {

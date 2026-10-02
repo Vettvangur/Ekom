@@ -39,10 +39,14 @@ If the search text is a GUID, Ekom also compares it with the order's unique ID.
 The additional filter panel supports:
 
 - payment provider for the selected store;
+- shipping provider for the selected store (Umbraco 17 and 18);
+- exact order-level coupon code (Umbraco 17 and 18);
 - exact product SKU;
 - tracking source, medium, campaign, term, content, and click ID.
 
-Product SKU and tracking-value comparisons are case-insensitive. They are exact comparisons rather than partial-text searches. Changing the store reloads its payment providers and clears a provider selection that is no longer valid.
+Product SKU, coupon code, and tracking-value comparisons are case-insensitive. They are exact comparisons rather than partial-text searches; leading/trailing whitespace in filter input is ignored. Coupon filtering checks only the saved order-level code, not coupons on individual order lines. Shipping-provider filtering matches the saved provider key, not a title that may have changed.
+
+In Umbraco 17 and 18, changing the store reloads payment and shipping filter options and clears both provider selections. An empty coupon field or the **All shipping providers** option adds no restriction. These filters combine with the other selected filters and affect the order list, count/payment-summary cards, and both CSV export formats. Analytics charts and most-sold-product reports retain their existing date/status/store filtering.
 
 ## Export
 

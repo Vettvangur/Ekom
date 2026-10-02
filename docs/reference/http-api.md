@@ -205,11 +205,15 @@ All routes below are relative to `/ekom/manager`. Routes taking `store`, or load
 | `GET` | `/MostSoldProducts` | Aggregates for date/store/status, optionally paged. |
 | `GET` | `/StatusList` | Available status values. |
 | `GET` | `/stores` | Stores available to the current manager. |
+| `GET` | `/paymentproviders/{storeAlias}` | Payment-provider options for an authorized store. |
+| `GET` | `/shippingproviders/{storeAlias}` | Shipping-provider options for an authorized store. |
 | `POST` | `/changeOrderStatus?orderId=...&orderStatus=...&notify=...` | Changes status; `notify` controls order events. |
 | `POST` | `/UpdateCustomerInformation` | Updates customer/shipping fields for an order. |
 | `POST` | `/Order/{orderId}/OrderLines` | Adds/sets a line from `OrderLineAddRequest`. |
 | `DELETE` | `/Order/{orderId}/OrderLines/{lineId}` | Removes an order line. |
 | `GET` | `/charts` | Revenue/order/average aggregates for date/store/status. |
+
+`SearchOrders` and `ExportOrders` accept optional `couponCode` and `shippingProvider` query parameters alongside the existing filters. `couponCode` is a trimmed, case-insensitive exact match against the stored order-level coupon; line-level coupons are not searched. `shippingProvider` is the saved provider GUID key, not its title. Empty values add no restriction. Search results, counts/payment-summary totals, and exports use the same filters; charts and most-sold-product reports retain their existing date/store/status scope.
 
 ## Related reference
 
