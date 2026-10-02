@@ -1,6 +1,7 @@
 using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.DataEditors;
+using Ekom.Utilities;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using Umbraco.Cms.Core;
@@ -999,12 +1000,14 @@ class EnsureNodesExist : IAsyncComponent
                                         new PropertyType(_shortStringHelper, discountTypeDt, "type")
                                         {
                                             Name = "Type",
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("type"),
                                             Mandatory = true,
                                             SortOrder = 5,
                                         },
                                         new PropertyType(_shortStringHelper, rangeDt, "discount")
                                         {
                                             Name = "Discount",
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("discount"),
                                             Mandatory = true,
                                             SortOrder = 6,
                                         },
@@ -1012,48 +1015,49 @@ class EnsureNodesExist : IAsyncComponent
                                         {
                                             Name = "Discount Items",
                                             SortOrder = 7,
-                                            Description = "Controls what items in the order receive the discount. (In contrast to product discount, discount items, where it is used as a constraint)"
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("discountItems"),
                                         },
                                         new PropertyType(_shortStringHelper, multinodeCatalogDt, "excludeDiscountItems")
                                         {
                                             Name = "Exclude Discount Items",
                                             SortOrder = 8,
-                                            Description = "Exclude items from discount items. For example if you select a category in discount items you can exclude a single product here."
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("excludeDiscountItems"),
                                         },
                                         new PropertyType(_shortStringHelper, booleanDt, "stackable")
                                         {
                                             Name = "Stackable",
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("stackable"),
                                             SortOrder = 9,
                                         },
                                         new PropertyType(_shortStringHelper, booleanDt, "globalDiscount")
                                         {
                                             Name = "Global Discount",
                                             SortOrder = 10,
-                                            Description = "This couponless discount will be automatically applied to orders that match it's constraints"
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("globalDiscount"),
                                         },
                                         new PropertyType(_shortStringHelper, quantityDiscountModeDt, "quantityDiscountMode")
                                         {
                                             Name = "Quantity Discount Mode",
                                             SortOrder = 11,
-                                            Description = "None uses normal discounts. Threshold discounts all eligible items after the requirement; Repeating unlocks rewards per group."
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("quantityDiscountMode"),
                                         },
                                         new PropertyType(_shortStringHelper, multinodeCatalogDt, "qualifyingItems")
                                         {
                                             Name = "Qualifying Items",
                                             SortOrder = 12,
-                                            Description = "Products and categories whose whole-unit quantities count towards this discount."
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("qualifyingItems"),
                                         },
                                         new PropertyType(_shortStringHelper, numericDt, "requiredQuantity")
                                         {
                                             Name = "Required Quantity",
                                             SortOrder = 13,
-                                            Description = "Number of whole qualifying items required before rewards are discounted."
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("requiredQuantity"),
                                         },
                                         new PropertyType(_shortStringHelper, numericDt, "rewardQuantity")
                                         {
                                             Name = "Reward Quantity",
                                             SortOrder = 14,
-                                            Description = "Whole units discounted for each completed group in Repeating mode."
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("rewardQuantity"),
                                         },
                                     }))
                                 {
@@ -1068,6 +1072,7 @@ class EnsureNodesExist : IAsyncComponent
                                         new PropertyType(_shortStringHelper, couponDt, "coupons")
                                         {
                                             Name = "Coupons",
+                                            Description = OrderDiscountPropertyDescriptions.GetDescription("coupons"),
                                         },
                                     }))
                                 {
@@ -1835,9 +1840,27 @@ class EnsureNodesExist : IAsyncComponent
         _logger.LogInformation("Added Disable Discounts to content type ekmProduct");
     }
 
+    private static bool UpdateOrderDiscountPropertyDescriptions(IContentType contentType)
+    {
+        var hasChanges = false;
+        foreach (var property in contentType.PropertyTypes)
+        {
+            if (!OrderDiscountPropertyDescriptions.ShouldUpdate(property.Alias, property.Description))
+            {
+                continue;
+            }
+
+            property.Description = OrderDiscountPropertyDescriptions.GetDescription(property.Alias);
+            hasChanges = true;
+        }
+
+        return hasChanges;
+    }
+
     private void EnsureOrderDiscountQuantityProperties()
     {
         var contentType = _contentTypeService.Get("ekmOrderDiscount");
+        var hasChanges = contentType != null && UpdateOrderDiscountPropertyDescriptions(contentType);
         var catalogDataType = GetCatalogPickerDataType();
         var numericDataType = GetDataType(new Guid("2e6d3631-066e-44b8-aec4-96f09099b2b5"));
         var hasRadioList = _propertyEditorCollection.TryGet("Umbraco.RadioButtonList", out IDataEditor? radioList);
@@ -1870,13 +1893,16 @@ class EnsureNodesExist : IAsyncComponent
             _logger.LogWarning(
                 "Cannot add order discount quantity properties because dependencies are missing: {MissingDependencies}",
                 string.Join(", ", missingDependencies));
+            if (hasChanges)
+            {
+                SaveContentType(contentType!);
+            }
             return;
         }
 
         var orderDiscountContentType = contentType!;
         var requiredCatalogDataType = catalogDataType!;
         var requiredNumericDataType = numericDataType!;
-        var hasChanges = false;
 
         if (!HasProperty("quantityDiscountMode"))
         {
@@ -1892,11 +1918,9 @@ class EnsureNodesExist : IAsyncComponent
             ConfigureQuantityDiscountModeDataType(quantityModeDataType);
             AddProperty("quantityDiscountMode", "Quantity Discount Mode", quantityModeDataType, 11);
         }
-        AddProperty("qualifyingItems", "Qualifying Items", requiredCatalogDataType, 12,
-            "Products and categories whose whole-unit quantities count towards this discount.");
+        AddProperty("qualifyingItems", "Qualifying Items", requiredCatalogDataType, 12);
         AddProperty("requiredQuantity", "Required Quantity", requiredNumericDataType, 13);
-        AddProperty("rewardQuantity", "Reward Quantity", requiredNumericDataType, 14,
-            "Whole units discounted for each completed group in Repeating mode.");
+        AddProperty("rewardQuantity", "Reward Quantity", requiredNumericDataType, 14);
 
         if (hasChanges)
         {
@@ -1906,7 +1930,7 @@ class EnsureNodesExist : IAsyncComponent
         bool HasProperty(string alias)
             => orderDiscountContentType.CompositionPropertyTypes.Any(x => x.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
 
-        void AddProperty(string alias, string name, IDataType dataType, int sortOrder, string? description = null)
+        void AddProperty(string alias, string name, IDataType dataType, int sortOrder)
         {
             if (HasProperty(alias))
             {
@@ -1916,7 +1940,7 @@ class EnsureNodesExist : IAsyncComponent
             orderDiscountContentType.AddPropertyType(new PropertyType(_shortStringHelper, dataType, alias)
             {
                 Name = name,
-                Description = description,
+                Description = OrderDiscountPropertyDescriptions.GetDescription(alias),
                 SortOrder = sortOrder,
             }, "settings");
             hasChanges = true;

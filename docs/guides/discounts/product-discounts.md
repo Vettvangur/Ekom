@@ -16,6 +16,8 @@ For "buy at least three" offers or discounts activated by a code, use an [order 
 
 Use the equivalent location and publishing action if your site's Umbraco setup differs.
 
+In Umbraco 17 and 18, the Discount input keeps the currency label before the input and shows `%` after it when Type is Percentage, for example `ISK [15] %`. Fixed discounts have no percentage suffix. Enter `15` for 15%. Switching Type preserves the number, so check the value before publishing. Other range fields keep their currency labels without a percentage suffix. The Umbraco 13 editor continues to show currency labels for this field.
+
 ## Understand the fields
 
 | Field | What it means | When to use it / example |

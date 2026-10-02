@@ -1,10 +1,12 @@
-var h = Object.defineProperty;
-var p = (l, u, e) => u in l ? h(l, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : l[u] = e;
-var o = (l, u, e) => p(l, typeof u != "symbol" ? u + "" : u, e);
+var p = Object.defineProperty;
+var h = (l, u, e) => u in l ? p(l, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : l[u] = e;
+var o = (l, u, e) => h(l, typeof u != "symbol" ? u + "" : u, e);
 import { UmbChangeEvent as m } from "@umbraco-cms/backoffice/event";
-class g extends HTMLElement {
+import { UmbElementMixin as g } from "@umbraco-cms/backoffice/element-api";
+import { UMB_PROPERTY_CONTEXT as f, UMB_PROPERTY_DATASET_CONTEXT as y } from "@umbraco-cms/backoffice/property";
+class b extends g(HTMLElement) {
   constructor() {
-    super(...arguments);
+    super();
     o(this, "manifest");
     o(this, "name");
     o(this, "dataSourceAlias");
@@ -16,6 +18,17 @@ class g extends HTMLElement {
     o(this, "stores", []);
     o(this, "rawValue");
     o(this, "internalValue", {});
+    o(this, "propertyAlias", "");
+    o(this, "propertyDatasetContext");
+    o(this, "percentageDiscount", !1);
+    o(this, "discountTypeRequestId", 0);
+    this.consumeContext(f, (e) => {
+      e != null && this.observe(e.alias, (t) => {
+        this.propertyAlias = t ?? "", this.observeDiscountType();
+      }, "ekomRangePropertyAlias");
+    }), this.consumeContext(y, (e) => {
+      this.propertyDatasetContext = e, this.observeDiscountType();
+    });
   }
   get value() {
     return this.internalValue;
@@ -30,7 +43,21 @@ class g extends HTMLElement {
     this.toggleAttribute("readonly", e), this.syncDisabledState();
   }
   connectedCallback() {
-    this.renderShell(), this.loadStores();
+    super.connectedCallback(), this.renderShell(), this.loadStores();
+  }
+  async observeDiscountType() {
+    const e = ++this.discountTypeRequestId;
+    if (this.removeUmbControllerByAlias("ekomRangeDiscountType"), this.percentageDiscount = !1, this.syncRangeLabels(), this.propertyAlias !== "discount" || this.propertyDatasetContext == null)
+      return;
+    const t = await this.propertyDatasetContext.propertyValueByAlias("type");
+    e !== this.discountTypeRequestId || !this.isConnected || this.observe(t, (r) => {
+      this.percentageDiscount = typeof r == "string" && r.trim().toLowerCase() === "percentage", this.syncRangeLabels();
+    }, "ekomRangeDiscountType");
+  }
+  syncRangeLabels() {
+    var e;
+    for (const t of ((e = this.editor) == null ? void 0 : e.querySelectorAll("[data-percentage-suffix]")) ?? [])
+      t.hidden = !this.percentageDiscount;
   }
   async loadStores() {
     this.setStatus("Loading ranges...");
@@ -116,26 +143,28 @@ class g extends HTMLElement {
         continue;
       const n = document.createElement("fieldset"), s = document.createElement("legend");
       s.textContent = r, n.append(s);
-      for (const a of t.currencies ?? [])
-        a.currencyValue != null && n.append(this.createRangeInput(r, a));
+      for (const i of t.currencies ?? [])
+        i.currencyValue != null && n.append(this.createRangeInput(r, i));
       e.append(n);
     }
-    this.editor.replaceChildren(e), this.syncDisabledState();
+    this.editor.replaceChildren(e), this.syncRangeLabels(), this.syncDisabledState();
   }
   createRangeInput(e, t) {
     const r = t.currencyValue ?? "", n = document.createElement("div");
     n.className = "ekom-range-row";
-    const s = `range_${t.isoCurrencySymbol ?? r}_${this.name ?? "range"}_${e}`, a = document.createElement("label");
-    a.htmlFor = s, a.textContent = t.isoCurrencySymbol ?? r;
-    const i = document.createElement("input");
-    return i.type = "number", i.min = "0", i.step = "any", i.id = s, i.dataset.store = e, i.dataset.currency = r, i.value = String(this.getRange(e, r)), i.addEventListener("input", () => this.setRange(e, r, i.value)), n.append(a, i), n;
+    const s = `range_${t.isoCurrencySymbol ?? r}_${this.name ?? "range"}_${e}`, i = document.createElement("label");
+    i.htmlFor = s, i.dataset.currencyLabel = t.isoCurrencySymbol ?? r, i.textContent = t.isoCurrencySymbol ?? r;
+    const a = document.createElement("input");
+    a.type = "number", a.min = "0", a.step = "any", a.id = s, a.dataset.store = e, a.dataset.currency = r, a.value = String(this.getRange(e, r)), a.addEventListener("input", () => this.setRange(e, r, a.value));
+    const c = document.createElement("span");
+    return c.dataset.percentageSuffix = "", c.textContent = "%", c.hidden = !this.percentageDiscount, n.append(i, a, c), n;
   }
   setRange(e, t, r) {
-    const n = this.parseRange(r), s = [...this.internalValue[e] ?? []], a = s.find((i) => i.currency === t);
-    a == null ? s.push({
+    const n = this.parseRange(r), s = [...this.internalValue[e] ?? []], i = s.find((a) => a.currency === t);
+    i == null ? s.push({
       currency: t,
       value: n
-    }) : a.value = n, this.internalValue = {
+    }) : i.value = n, this.internalValue = {
       ...this.internalValue,
       [e]: s
     }, this.emitChange();
@@ -148,14 +177,14 @@ class g extends HTMLElement {
     var r, n;
     const t = {};
     for (const s of this.stores) {
-      const a = s.alias;
-      if (a != null) {
-        t[a] = [];
-        for (const i of s.currencies ?? []) {
-          const c = i.currencyValue;
-          c != null && t[a].push({
+      const i = s.alias;
+      if (i != null) {
+        t[i] = [];
+        for (const a of s.currencies ?? []) {
+          const c = a.currencyValue;
+          c != null && t[i].push({
             currency: c,
-            value: ((n = (r = e[a]) == null ? void 0 : r.find((d) => d.currency === c)) == null ? void 0 : n.value) ?? 0
+            value: ((n = (r = e[i]) == null ? void 0 : r.find((d) => d.currency === c)) == null ? void 0 : n.value) ?? 0
           });
         }
       }
@@ -193,8 +222,8 @@ class g extends HTMLElement {
     }).filter((t) => t != null);
   }
   normalizePrimitiveValue(e) {
-    var n, s, a, i;
-    const t = ((n = this.stores[0]) == null ? void 0 : n.alias) ?? "", r = ((i = (a = (s = this.stores[0]) == null ? void 0 : s.currencies) == null ? void 0 : a[0]) == null ? void 0 : i.currencyValue) ?? "";
+    var n, s, i, a;
+    const t = ((n = this.stores[0]) == null ? void 0 : n.alias) ?? "", r = ((a = (i = (s = this.stores[0]) == null ? void 0 : s.currencies) == null ? void 0 : i[0]) == null ? void 0 : a.currencyValue) ?? "";
     return t.length === 0 || r.length === 0 ? {} : {
       [t]: [
         {
@@ -259,8 +288,8 @@ class g extends HTMLElement {
     return await t.json();
   }
 }
-customElements.define("ekom-range-editor", g);
+customElements.define("ekom-range-editor", b);
 export {
-  g as EkomRangeEditorElement,
-  g as default
+  b as EkomRangeEditorElement,
+  b as default
 };

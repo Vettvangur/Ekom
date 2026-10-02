@@ -1,4 +1,10 @@
 import { UmbChangeEvent } from '@umbraco-cms/backoffice/event';
+import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
+import {
+  UMB_PROPERTY_CONTEXT,
+  UMB_PROPERTY_DATASET_CONTEXT,
+  type UmbPropertyDatasetContext,
+} from '@umbraco-cms/backoffice/property';
 import type {
   ManifestPropertyEditorUi,
   UmbPropertyEditorConfigCollection,
@@ -23,7 +29,7 @@ type EkomCurrency = {
   isoCurrencySymbol?: string;
 };
 
-export class EkomRangeEditorElement extends HTMLElement implements UmbPropertyEditorUiElement {
+export class EkomRangeEditorElement extends UmbElementMixin(HTMLElement) implements UmbPropertyEditorUiElement {
   manifest?: ManifestPropertyEditorUi;
   name?: string;
   dataSourceAlias?: string;
@@ -36,6 +42,10 @@ export class EkomRangeEditorElement extends HTMLElement implements UmbPropertyEd
   private stores: EkomStore[] = [];
   private rawValue: unknown;
   private internalValue: RangeValue = {};
+  private propertyAlias = '';
+  private propertyDatasetContext?: UmbPropertyDatasetContext;
+  private percentageDiscount = false;
+  private discountTypeRequestId = 0;
 
   get value(): RangeValue {
     return this.internalValue;
@@ -56,9 +66,55 @@ export class EkomRangeEditorElement extends HTMLElement implements UmbPropertyEd
     this.syncDisabledState();
   }
 
+  constructor() {
+    super();
+    this.consumeContext(UMB_PROPERTY_CONTEXT, context => {
+      if (context == null) {
+        return;
+      }
+
+      this.observe(context.alias, alias => {
+        this.propertyAlias = alias ?? '';
+        void this.observeDiscountType();
+      }, 'ekomRangePropertyAlias');
+    });
+    this.consumeContext(UMB_PROPERTY_DATASET_CONTEXT, context => {
+      this.propertyDatasetContext = context;
+      void this.observeDiscountType();
+    });
+  }
+
   override connectedCallback(): void {
+    super.connectedCallback();
     this.renderShell();
     void this.loadStores();
+  }
+
+  private async observeDiscountType(): Promise<void> {
+    const requestId = ++this.discountTypeRequestId;
+    this.removeUmbControllerByAlias('ekomRangeDiscountType');
+    this.percentageDiscount = false;
+    this.syncRangeLabels();
+
+    if (this.propertyAlias !== 'discount' || this.propertyDatasetContext == null) {
+      return;
+    }
+
+    const source = await this.propertyDatasetContext.propertyValueByAlias<unknown>('type');
+    if (requestId !== this.discountTypeRequestId || !this.isConnected) {
+      return;
+    }
+
+    this.observe(source, value => {
+      this.percentageDiscount = typeof value === 'string' && value.trim().toLowerCase() === 'percentage';
+      this.syncRangeLabels();
+    }, 'ekomRangeDiscountType');
+  }
+
+  private syncRangeLabels(): void {
+    for (const suffix of this.editor?.querySelectorAll<HTMLSpanElement>('[data-percentage-suffix]') ?? []) {
+      suffix.hidden = !this.percentageDiscount;
+    }
   }
 
   private async loadStores(): Promise<void> {
@@ -175,6 +231,7 @@ export class EkomRangeEditorElement extends HTMLElement implements UmbPropertyEd
     }
 
     this.editor.replaceChildren(fragment);
+    this.syncRangeLabels();
     this.syncDisabledState();
   }
 
@@ -186,6 +243,7 @@ export class EkomRangeEditorElement extends HTMLElement implements UmbPropertyEd
     const id = `range_${currency.isoCurrencySymbol ?? currencyValue}_${this.name ?? 'range'}_${storeAlias}`;
     const label = document.createElement('label');
     label.htmlFor = id;
+    label.dataset.currencyLabel = currency.isoCurrencySymbol ?? currencyValue;
     label.textContent = currency.isoCurrencySymbol ?? currencyValue;
 
     const input = document.createElement('input');
@@ -198,7 +256,12 @@ export class EkomRangeEditorElement extends HTMLElement implements UmbPropertyEd
     input.value = String(this.getRange(storeAlias, currencyValue));
     input.addEventListener('input', () => this.setRange(storeAlias, currencyValue, input.value));
 
-    row.append(label, input);
+    const suffix = document.createElement('span');
+    suffix.dataset.percentageSuffix = '';
+    suffix.textContent = '%';
+    suffix.hidden = !this.percentageDiscount;
+
+    row.append(label, input, suffix);
 
     return row;
   }

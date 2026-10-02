@@ -4,6 +4,9 @@
 
 ### Bug Fixes
 
+* **manager:** show the saved order-level coupon code beside the Discount total in Umbraco 17 and 18 order details, retaining the existing amount and plain label for orders without a code.
+* **backoffice:** show percentage labels on the Discount amount field in Umbraco 17 and 18 when Type is Percentage, without changing values or labels on other range fields.
+* **backoffice:** clarify order discount field descriptions on new and existing installations, preserving custom help text and saving document types only when descriptions or missing quantity fields change.
 * **order:** handle missing HTTP and Ekom request contexts when clearing customer order references and reading baskets or current-customer orders; preserve stored customer IP addresses during requestless updates.
 * **order:** refresh basket prices through current catalog data and pricing events without stock validation, preserving line IDs, quantities, metadata, and linked-line settings; stage changes before saving to avoid partial basket rebuilds.
 * **checkout:** persist payment-success activity entries directly before order completion and emit Information logs with amount, currency, provider, order number, and Ekom order ID; include offline payment acceptance and continue completion if activity logging fails.
