@@ -172,7 +172,7 @@ bool changed = await orderApi.ApplyCouponToOrderAsync("SPRING10", "Store", ct);
 await orderApi.RemoveCouponFromOrderAsync("Store", settings: null, ct);
 ```
 
-Coupon input is normalized to lower case. Missing, exhausted, or store-inapplicable coupons raise discount exceptions. A valid coupon may still lose to a better discount; the HTTP apply route reports that no-change case with status `450`. Coupon usage is marked during trusted checkout completion, not merely when the code is attached to a basket. Full rule and stock behavior is documented in [Discounts and coupons](discounts.md).
+Coupon input is normalized to lower case. Missing, exhausted, or store-inapplicable coupons raise discount exceptions. A valid coupon may still lose to a better discount; the HTTP apply route reports that no-change case with status `450`. Coupon usage is marked during trusted checkout completion, not merely when the code is attached to a basket. The usage count belongs to the code, not the customer or logged-in user. Full rule and stock behavior is documented in [Discounts for developers](discounts/developers.md).
 
 Gift cards are attached separately:
 

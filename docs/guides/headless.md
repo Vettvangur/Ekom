@@ -153,7 +153,7 @@ The endpoint may return a JSON-serialized provider HTML string (`230`), a redire
 
 ## Discount calculation integration
 
-`POST /ekom/order-discounts/calculate` quotes one coupon against supplied SKU lines without creating a basket. It requires `Ekom:OrderDiscountCalculation:ApiKey` and matching `X-Ekom-Api-Key`, and is rate limited. This secret belongs on a trusted backend, never in public browser JavaScript. See [Discounts](discounts.md).
+`POST /ekom/order-discounts/calculate` quotes one coupon against supplied SKU lines without creating a basket. It requires `Ekom:OrderDiscountCalculation:ApiKey` and matching `X-Ekom-Api-Key`, and is rate limited. This secret belongs on a trusted backend, never in public browser JavaScript. See [Discounts for developers](discounts/developers.md#quote-a-coupon-without-creating-an-order).
 
 ## Errors, serialization and security
 
