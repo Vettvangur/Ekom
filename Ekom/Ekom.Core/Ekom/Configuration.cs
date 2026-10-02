@@ -293,6 +293,13 @@ public class Configuration
         => bool.TryParse(_configuration["Ekom:Reservations:Enabled"], out var enabled) && enabled;
 
     /// <summary>
+    /// Let a new payment attempt on an unpaid order replace holds from an earlier attempt
+    /// that can no longer be reused, instead of rejecting the attempt.
+    /// </summary>
+    public virtual bool ReservationsReplaceStaleHolds
+        => bool.TryParse(_configuration["Ekom:Reservations:ReplaceStaleHolds"], out var replace) && replace;
+
+    /// <summary>
     /// Should Ekom create a ekmCustomerData table and use it to store customer + order data 
     /// submitted to the checkout controller?
     /// </summary>

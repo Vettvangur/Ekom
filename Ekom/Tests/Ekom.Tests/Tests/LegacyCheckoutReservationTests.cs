@@ -175,6 +175,67 @@ public sealed class LegacyCheckoutReservationTests
         Assert.Equal(7, await f.StockAsync(key));
     }
 
+    [Fact]
+    public async Task ExpiredHoldRejectsRetryUnlessReplaceStaleHoldsIsEnabled()
+    {
+        using var f = new Fixture(false, false);
+        await f.AddLineAsync(3, backorder: true);
+        await f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order);
+        await f.Database.MakeDueAsync(Assert.Single(f.Order.ReservationIds));
+        await f.Database.Service.ExpireDueAsync(100);
+        await Assert.ThrowsAsync<StockException>(() => f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order));
+    }
+
+    [Fact]
+    public async Task ReplaceStaleHoldsAllowsRetryAfterHoldExpired()
+    {
+        using var f = new Fixture(false, false, replaceStale: true);
+        var key = await f.AddLineAsync(3, backorder: true);
+        await f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order);
+        var expired = Assert.Single(f.Order.ReservationIds);
+        await f.Database.MakeDueAsync(expired);
+        await f.Database.Service.ExpireDueAsync(100);
+        Assert.Equal(10, await f.StockAsync(key));
+        Assert.Equal(230, (await f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order)).HttpStatusCode);
+        Assert.NotEqual(expired, Assert.Single((await f.ReloadAsync()).ReservationIds));
+        Assert.Equal(7, await f.StockAsync(key));
+    }
+
+    [Fact]
+    public async Task ReplaceStaleHoldsAllowsRetryAfterCartChanged()
+    {
+        using var f = new Fixture(false, false, replaceStale: true);
+        var key = await f.AddLineAsync(3, backorder: true);
+        await f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order);
+        f.Order.orderLines[0].Quantity = 2;
+        Assert.Equal(230, (await f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order)).HttpStatusCode);
+        Assert.Single((await f.ReloadAsync()).ReservationIds);
+        Assert.Equal(8, await f.StockAsync(key));
+    }
+
+    [Fact]
+    public async Task ReplaceStaleHoldsAllowsRetryWithUnknownReservationId()
+    {
+        using var f = new Fixture(false, false, replaceStale: true);
+        var key = await f.AddLineAsync(3, backorder: true);
+        f.Order._hangfireJobs.Add("127896");
+        Assert.Equal(230, (await f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order)).HttpStatusCode);
+        Assert.DoesNotContain("127896", (await f.ReloadAsync()).ReservationIds);
+        Assert.Equal(7, await f.StockAsync(key));
+    }
+
+    [Fact]
+    public async Task ReplaceStaleHoldsStillReusesValidHold()
+    {
+        using var f = new Fixture(false, false, replaceStale: true);
+        var key = await f.AddLineAsync(3, backorder: true);
+        await f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order);
+        var id = Assert.Single(f.Order.ReservationIds);
+        Assert.Equal(230, (await f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order)).HttpStatusCode);
+        Assert.Equal(id, Assert.Single((await f.ReloadAsync()).ReservationIds));
+        Assert.Equal(7, await f.StockAsync(key));
+    }
+
     private sealed class WholesalePolicy : ICheckoutStockPolicy
     {
         public bool RequiresStock(IOrderInfo order, IOrderLine line) => !(line.Product.Backorder &&
@@ -322,7 +383,7 @@ public sealed class LegacyCheckoutReservationTests
         public CheckoutReservationService Checkout { get; }
         public OrderRepository Repository { get; }
 
-        public Fixture(bool enabled, bool perStore, bool customPolicy = true)
+        public Fixture(bool enabled, bool perStore, bool customPolicy = true, bool replaceStale = false)
         {
             _perStore = perStore;
             Database = new ReservationDatabase(perStore);
@@ -339,6 +400,7 @@ public sealed class LegacyCheckoutReservationTests
             _scope = new ConfigurationScope(overrides: new Dictionary<string, string?>
             {
                 ["Ekom:Reservations:Enabled"] = enabled.ToString(), ["Ekom:PerStoreStock"] = perStore.ToString(),
+                ["Ekom:Reservations:ReplaceStaleHolds"] = replaceStale.ToString(),
             }, addServices: services =>
             {
                 services.AddSingleton<ICheckoutStockPolicy>(customPolicy ? new WholesalePolicy() : new DefaultCheckoutStockPolicy());

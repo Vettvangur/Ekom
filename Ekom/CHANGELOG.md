@@ -24,6 +24,7 @@
 
 ### Features
 
+* **checkout:** add opt-in `Reservations.ReplaceStaleHolds` so a new payment attempt on an unpaid order replaces holds it can no longer reuse (expired, released, unknown, or for a changed cart) instead of being rejected.
 * **coupons:** add a cancellable async event before whole-order coupon checks, with custom rejection reasons exposed through the coupon API.
 * **manager:** edit and add shipping provider custom data on orders, retain it when changing providers, and show provider node names in the picker.
 * **manager:** allow adding or replacing an order's shipping provider from providers configured for its store, with the normal order total recalculation.
