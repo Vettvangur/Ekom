@@ -308,6 +308,12 @@ public class CheckoutControllerService
         var canUnlock = false;
         try
         {
+            if (Config.ReservationsReplaceStaleHolds
+                && await reservations.ReplaceStaleHoldsAsync(order, ownership, ct).ConfigureAwait(false))
+            {
+                original.Clear();
+                ids.Clear();
+            }
             var response = await ProcessOrderLinesAsync(request, order, ids, ct).ConfigureAwait(false);
             if (response != null) return (response, null);
             response = await ProcessCouponsAsync(request, order, ids, ct).ConfigureAwait(false);

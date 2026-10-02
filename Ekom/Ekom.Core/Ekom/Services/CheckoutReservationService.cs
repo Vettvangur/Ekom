@@ -213,6 +213,41 @@ internal sealed class CheckoutReservationService
         if (errors.Count != 0) throw new AggregateException("Checkout reservation compensation failed; expiry will retry active holds.", errors);
     }
 
+    // Opt-in: when the order's holds from an earlier attempt can no longer be reused (expired,
+    // released, unknown or made for a different cart), release them and start the attempt fresh.
+    internal async Task<bool> ReplaceStaleHoldsAsync(IOrderInfo order, CheckoutPreparationData ownership, CancellationToken ct)
+    {
+        var orderId = order.UniqueId.ToString();
+        await using var db = _database.GetDatabase();
+        var owned = await db.StockReservations.Where(x => x.OrderId == orderId && x.State != StockReservationState.Released)
+            .ToListAsync(ct).ConfigureAwait(false);
+        var ids = order.ReservationIds
+            .Concat(JsonSerializer.Deserialize<string[]>(ownership.ProtectedIds)!)
+            .Concat(owned.Select(x => x.Id))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        if (ids.Count == 0) return false;
+
+        var requirements = await GetRequirementsAsync(order, ct).ConfigureAwait(false);
+        try
+        {
+            await ReadAndVerifyAsync(db, order.UniqueId, requirements, ids, ct).ConfigureAwait(false);
+            return false;
+        }
+        catch (StockException)
+        {
+        }
+
+        await ReleaseAsync(owned.Where(x => x.State == StockReservationState.Active).Select(x => x.Id), CancellationToken.None).ConfigureAwait(false);
+        await db.StockReservations.Where(x => x.OrderId == orderId && x.State != StockReservationState.Consumed)
+            .Set(x => x.OrderId, (string?)null).UpdateAsync(ct).ConfigureAwait(false);
+        await db.GetTable<CheckoutPreparationData>().Where(x => x.OrderId == order.UniqueId && x.Owner == ownership.Owner)
+            .Set(x => x.ProtectedIds, "[]").UpdateAsync(ct).ConfigureAwait(false);
+        ownership.ProtectedIds = "[]";
+        if (order is OrderInfo info) info._hangfireJobs.Clear();
+        return true;
+    }
+
     internal async Task<string> ReserveLegacyAsync(CheckoutPreparationScope scope, StockReservationRequest request, CancellationToken ct)
     {
         var requirements = await GetRequirementsAsync(scope.Order, ct).ConfigureAwait(false);

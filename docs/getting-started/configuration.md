@@ -13,6 +13,7 @@ Core settings are read from the `Ekom` section of the site's ASP.NET Core config
     "VatIncludedPerUnitPolicy": "PreserveStickerGross",
     "Reservations": {
       "Enabled": false,
+      "ReplaceStaleHolds": false,
       "Timeout": 30,
       "WorkerEnabled": true,
       "PollInterval": "00:00:30",
@@ -55,7 +56,7 @@ VAT settings accept `None`, `RoundDown`, `RoundUp`, `RoundToEven`, or `AwayFromZ
 
 ## Reservations
 
-Automatic reservations are opt-in with `Reservations:Enabled`; the default is `false`. `Reservations:Timeout` is in minutes and defaults to 30. The older `Ekom:ReservationTimeout` setting remains a fallback for the timeout, but new configuration should use `Ekom:Reservations:Timeout`.
+Automatic reservations are opt-in with `Reservations:Enabled`; the default is `false`. `Reservations:Timeout` is in minutes and defaults to 30. The older `Ekom:ReservationTimeout` setting remains a fallback for the timeout, but new configuration should use `Ekom:Reservations:Timeout`. `Reservations:ReplaceStaleHolds` (default `false`) lets a new payment attempt replace holds from an earlier attempt that can no longer be reused, instead of rejecting it.
 
 The expiry worker is enabled by default. `WorkerEnabled`, `PollInterval`, `BatchSize`, and `CompletedRetention` control its behavior. See the [stock reservations guide](../guides/reservations.md) before changing reservation behavior in a multi-node checkout deployment.
 

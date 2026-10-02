@@ -11,6 +11,7 @@ Reservations are optional for the standard checkout, but the explicit service is
   "Ekom": {
     "Reservations": {
       "Enabled": false,
+      "ReplaceStaleHolds": false,
       "Timeout": 30,
       "PollInterval": "00:00:30",
       "BatchSize": 100,
@@ -24,6 +25,7 @@ Reservations are optional for the standard checkout, but the explicit service is
 | Setting | Default | Behavior |
 | --- | --- | --- |
 | `Enabled` | `false` | When true, standard checkout reserves eligible inventory and line discount/coupon stock before provider submission. Explicit APIs work in either mode. |
+| `ReplaceStaleHolds` | `false` | When true, a new payment attempt on an unpaid order releases holds from an earlier attempt that can no longer be reused (expired, released, unknown, or made for a different cart) and starts fresh, instead of being rejected. A payment that still completes for the replaced attempt is completed against the order's current cart and holds. |
 | `Timeout` | 30 minutes | Default positive reservation duration. `Configuration.ReservationTimeout` falls back to legacy `Ekom:ReservationTimeout`, then 30 minutes. |
 | `PollInterval` | 30 seconds | Delay between expiry sweeps; must be greater than zero and no more than one day. |
 | `BatchSize` | `100` | Due rows processed per batch, from 1 through 10,000. Cleanup caps a delete sweep at 1,000 IDs. |
@@ -105,7 +107,7 @@ With `Enabled = false`, checkout validates inventory during payment preparation 
 
 Preparation ownership is coordinated in `EkomCheckoutPreparation`, one order at a time across nodes. A competing request cannot adopt or compensate another preparation's holds. Partial failure releases only holds created by that preparation. Once a save or payment submission may have happened, Ekom retains ownership/holds rather than guessing whether the operation committed.
 
-Retries reuse matching active holds without extending expiry. Changed requirements, terminal holds, expired holds, or a completed order reject another payment attempt. Payment-provider idempotency remains the provider integration's responsibility.
+Retries reuse matching active holds without extending expiry. Changed requirements, terminal holds, expired holds, or a completed order reject another payment attempt. With `ReplaceStaleHolds`, only a completed order rejects it; other stale holds are released and the attempt starts fresh. Payment-provider idempotency remains the provider integration's responsibility.
 
 Completion verifies attached IDs against the order's eligible requirements, consumes covered active holds, deducts only uncovered quantities, and inserts an `EkomCheckoutStockCompletion` receipt in one SQL transaction. Existing holds are honored even if `Enabled` is later switched off. Completion receipts are retained without scheduled cleanup.
 
