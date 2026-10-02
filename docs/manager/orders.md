@@ -67,6 +67,8 @@ Select **View** to open an order. The detail view includes:
 
 The detail view can be printed with its **Print** action.
 
+In Umbraco 17 and 18, the Discount total includes the saved order-level coupon code when present, for example **Discount (SPRING10)**. Without a code, it remains **Discount**. The amount is the existing total discount, which can include other reductions; the label does not mean that every saving came from that coupon. Separate line-level coupon codes are not included in this total label.
+
 ## Status changes
 
 Status can be changed from the list or the detail view.

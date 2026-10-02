@@ -526,6 +526,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
   private renderOrderLines(order: OrderInfo): string {
     const lines = Array.isArray(order.orderLines) ? order.orderLines : [];
+    const coupon = typeof order.coupon === 'string' ? order.coupon.trim() : '';
+    const discountLabel = coupon ? `Discount (${coupon})` : 'Discount';
     return `
       <div style="align-items:center; display:flex; gap:10px; justify-content:space-between;"><h4>Order Details</h4><button type="button" class="btn-outline" data-action="open-order-line-editor">Add order line</button></div>
       <div class="umb-table">
@@ -535,7 +537,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         </div>
         <div class="umb-table-footer">
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${escapeHtml(order.subTotal?.withVat?.currencyString)}</div></div>
-          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">-${escapeHtml(order.discountAmount?.currencyString)}</div></div>
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">${escapeHtml(discountLabel)}</div><div class="umb-table-cell">-${escapeHtml(order.discountAmount?.currencyString)}</div></div>
           ${order.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${escapeHtml(order.shippingProvider.price?.withVat?.currencyString)}</div></div>` : ''}
           ${this.renderGiftcardTotal(order)}
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${escapeHtml(order.chargedVat?.currencyString)}</div></div>

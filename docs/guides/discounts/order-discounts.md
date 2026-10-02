@@ -17,6 +17,8 @@ An order discount applies to eligible order lines. It is not automatically a red
 
 Labels and node locations may vary with your site's Umbraco setup.
 
+In Umbraco 17 and 18, the Discount input keeps the currency label before the input and shows `%` after it when Type is Percentage, for example `ISK [20] %`. Fixed discounts have no percentage suffix. The percentage value is still entered as `20` for 20%. Changing Type changes the unit display, not the entered number. Start of Range, End of Range, and other range fields keep their currency labels without a percentage suffix.
+
 ## Understand the fields
 
 | Field | What it means | When to use it / example |
