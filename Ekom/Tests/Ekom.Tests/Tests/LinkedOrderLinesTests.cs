@@ -372,6 +372,21 @@ public sealed class LinkedOrderLinesTests
     }
 
     [Fact]
+    public async Task CustomerCountryUpdate_WithoutRequestPreservesCustomerIpAddress()
+    {
+        using var fixture = new Fixture();
+        var order = await AddTwoLinesAsync(fixture);
+        order.CustomerInformation.CustomerIpAddress = "192.0.2.1";
+
+        await fixture.Service.UpdateCustomerInformationAsync(
+            new Dictionary<string, string> { ["storeAlias"] = "main", ["customerCountry"] = "DK" },
+            new OrderSettings { OrderInfo = order, FireEvents = false });
+
+        var reloaded = await fixture.ReloadAsync();
+        Assert.Equal("192.0.2.1", reloaded.CustomerInformation.CustomerIpAddress);
+    }
+
+    [Fact]
     public async Task CustomerCountryUpdate_WithoutShippingProviderDoesNotLogRemoval()
     {
         using var fixture = new Fixture();
