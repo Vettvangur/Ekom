@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 
 namespace Ekom.Models;
 
@@ -557,68 +558,41 @@ public class OrderInfo : IOrderInfo
 
     private OrderedShippingProvider? CreateShippingProviderFromJson(JObject orderInfoJObject)
     {
-        if (orderInfoJObject[nameof(ShippingProvider)] != null)
-        {
-            string shippingProviderJson = orderInfoJObject[nameof(ShippingProvider)].ToString();
-
-            if (!string.IsNullOrEmpty(shippingProviderJson))
-            {
-                JObject shippingProviderObject = JObject.Parse(shippingProviderJson);
-
-                if (shippingProviderObject != null)
-                {
-                    OrderedShippingProvider p = new OrderedShippingProvider(shippingProviderObject, StoreInfo);
-
-                    return p;
-                }
-            }
-        }
-
-        return null;
+        var shippingProviderObject = ReadOrderJsonObject(orderInfoJObject[nameof(ShippingProvider)], isProvider: true);
+        return shippingProviderObject == null ? null : new OrderedShippingProvider(shippingProviderObject, StoreInfo);
     }
 
     private OrderedPaymentProvider? CreatePaymentProviderFromJson(JObject orderInfoJObject)
     {
-        if (orderInfoJObject[nameof(PaymentProvider)] != null)
-        {
-            string paymentProviderJson = orderInfoJObject[nameof(PaymentProvider)].ToString();
-
-            if (!string.IsNullOrEmpty(paymentProviderJson))
-            {
-                JObject paymentProviderObject = JObject.Parse(paymentProviderJson);
-
-                if (paymentProviderObject != null)
-                {
-                    OrderedPaymentProvider p = new OrderedPaymentProvider(paymentProviderObject, StoreInfo);
-
-                    return p;
-                }
-            }
-        }
-
-        return null;
+        var paymentProviderObject = ReadOrderJsonObject(orderInfoJObject[nameof(PaymentProvider)], isProvider: true);
+        return paymentProviderObject == null ? null : new OrderedPaymentProvider(paymentProviderObject, StoreInfo);
     }
 
     private StoreInfo? CreateStoreInfoFromJson(JObject orderInfoJObject)
     {
-        if (orderInfoJObject[nameof(StoreInfo)] != null)
+        var storeInfoObject = ReadOrderJsonObject(orderInfoJObject[nameof(StoreInfo)]);
+        return storeInfoObject == null ? null : new StoreInfo(storeInfoObject);
+    }
+
+    private static JObject? ReadOrderJsonObject(JToken? token, bool isProvider = false)
+    {
+        if (token is JObject jsonObject
+            && (!isProvider || jsonObject[nameof(OrderedPaymentProvider.Prices)] is JArray)
+            && JsonConvert.DefaultSettings == null
+            && EkomJsonDotNet.Serializer.Converters.Count == 0
+            && EkomJsonDotNet.Serializer.ContractResolver.GetType() == typeof(DefaultContractResolver)
+            && EkomJsonDotNet.Serializer.TraceWriter == null)
         {
-            string storeInfoJson = orderInfoJObject[nameof(StoreInfo)].ToString();
-
-            if (!string.IsNullOrEmpty(storeInfoJson))
-            {
-                JObject storeInfoObject = JObject.Parse(storeInfoJson);
-
-                if (storeInfoObject != null)
-                {
-                    StoreInfo s = new StoreInfo(storeInfoObject);
-
-                    return s;
-                }
-            }
+            // Keep an isolated, detached fragment (including root-relative reader paths),
+            // without allocating its JSON text and parsing the same object again.
+            return (JObject)jsonObject.DeepClone();
         }
 
-        return null;
+        // Legacy singular prices use the public Ekom serializer, whose cached
+        // contracts can also have custom converters. Keep their text boundary,
+        // along with JSON-in-string values and configured serializer fallbacks.
+        string? json = token?.ToString();
+        return string.IsNullOrEmpty(json) ? null : JObject.Parse(json);
     }
 
     private CustomerInfo? CreateCustomerInformationFromJson(JObject orderInfoJObject)

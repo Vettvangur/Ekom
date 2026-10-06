@@ -1,6 +1,7 @@
 using Ekom.Models;
 using LinqToDB;
 using LinqToDB.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 
 namespace Ekom.Services;
@@ -57,12 +58,6 @@ internal class DatabaseService
                 if (_databaseFactory.IsSqlServer)
                 {
                     db.Execute($"ALTER TABLE EkomOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
-                    db.Execute($"ALTER TABLE [dbo].[EkomOrders] ADD CONSTRAINT [PK_EkomOrders] PRIMARY KEY NONCLUSTERED ([ReferenceId] ASC) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]");
-                    db.Execute($"CREATE UNIQUE NONCLUSTERED INDEX [IX_EkomOrders_UniqueId] ON EkomOrders ( [UniqueId] ASC )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]");
-                }
-                else if (_databaseFactory.IsSqlite)
-                {
-                    db.Execute($"CREATE UNIQUE INDEX IF NOT EXISTS IX_EkomOrders_UniqueId ON EkomOrders (UniqueId)");
                 }
             }
         }
@@ -71,6 +66,119 @@ internal class DatabaseService
             _logger.LogError(ex, "Failed to create tables");
         }
 
+        // Required order index failures must propagate, including during fresh installation.
+        EnsureOrderIndexes();
+        EnsureOrderPerformanceIndexes();
+    }
+
+    internal virtual void EnsureOrderIndexes()
+    {
+        using var db = _databaseFactory.GetDatabase();
+
+        string primaryKeyQuery;
+        string validUniqueIndexQuery;
+        string namedIndexQuery;
+        string createIndexSql;
+
+        if (_databaseFactory.IsSqlServer)
+        {
+            primaryKeyQuery = @"
+SELECT COUNT(*) FROM sys.indexes i
+WHERE i.object_id = OBJECT_ID('EkomOrders') AND i.is_primary_key = 1 AND i.is_disabled = 0
+AND (SELECT COUNT(*) FROM sys.index_columns k WHERE k.object_id = i.object_id AND k.index_id = i.index_id AND k.key_ordinal > 0) = 1
+AND EXISTS (SELECT 1 FROM sys.index_columns k JOIN sys.columns c ON c.object_id = k.object_id AND c.column_id = k.column_id
+    WHERE k.object_id = i.object_id AND k.index_id = i.index_id AND k.key_ordinal = 1 AND c.name = 'ReferenceId');";
+            validUniqueIndexQuery = @"
+SELECT i.name FROM sys.indexes i
+WHERE i.object_id = OBJECT_ID('EkomOrders') AND i.is_unique = 1 AND i.has_filter = 0
+AND i.is_disabled = 0 AND i.is_hypothetical = 0 AND i.ignore_dup_key = 0
+AND (SELECT COUNT(*) FROM sys.index_columns k WHERE k.object_id = i.object_id AND k.index_id = i.index_id AND k.key_ordinal > 0) = 1
+AND EXISTS (SELECT 1 FROM sys.index_columns k JOIN sys.columns c ON c.object_id = k.object_id AND c.column_id = k.column_id
+    WHERE k.object_id = i.object_id AND k.index_id = i.index_id AND k.key_ordinal = 1 AND c.name = 'UniqueId');";
+            namedIndexQuery = "SELECT COUNT(*) FROM sys.indexes WHERE object_id = OBJECT_ID('EkomOrders') AND name = 'IX_EkomOrders_UniqueId';";
+            createIndexSql = "CREATE UNIQUE NONCLUSTERED INDEX IX_EkomOrders_UniqueId ON EkomOrders (UniqueId);";
+        }
+        else if (_databaseFactory.IsSqlite)
+        {
+            primaryKeyQuery = @"
+SELECT COUNT(*) FROM pragma_table_info('EkomOrders')
+WHERE name = 'ReferenceId' COLLATE NOCASE AND pk = 1
+AND (SELECT COUNT(*) FROM pragma_table_info('EkomOrders') WHERE pk > 0) = 1;";
+            validUniqueIndexQuery = @"
+SELECT i.name FROM pragma_index_list('EkomOrders') i
+WHERE i.[unique] = 1 AND i.partial = 0
+AND (SELECT COUNT(*) FROM pragma_index_info(i.name)) = 1
+AND EXISTS (SELECT 1 FROM pragma_index_info(i.name) k WHERE k.name = 'UniqueId' COLLATE NOCASE);";
+            // SQLite index names are database-wide, so also detect a name used on another table.
+            namedIndexQuery = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = 'IX_EkomOrders_UniqueId' COLLATE NOCASE;";
+            createIndexSql = "CREATE UNIQUE INDEX IF NOT EXISTS IX_EkomOrders_UniqueId ON EkomOrders (UniqueId);";
+        }
+        else
+        {
+            throw new InvalidOperationException("Unsupported database provider for EkomOrders indexes.");
+        }
+
+        if (db.Execute<int>(primaryKeyQuery) != 1)
+        {
+            throw new InvalidOperationException("EkomOrders must have a primary key on ReferenceId. Its existing key layout has not been changed; repair the schema before retrying the migration.");
+        }
+
+        // Read the name first so another node creating a valid index cannot look like
+        // a conflicting definition merely because our earlier metadata was stale.
+        string validCanonicalIndexQuery = $"SELECT COUNT(*) FROM ({validUniqueIndexQuery.TrimEnd(';')}) eligible WHERE name = 'IX_EkomOrders_UniqueId'"
+            + (_databaseFactory.IsSqlite ? " COLLATE NOCASE;" : ";");
+        bool namedIndexExists = db.Execute<int>(namedIndexQuery) != 0;
+        var validIndexes = db.Query<string>(validUniqueIndexQuery).ToList();
+        if (namedIndexExists && db.Execute<int>(validCanonicalIndexQuery) == 0)
+        {
+            throw new InvalidOperationException("IX_EkomOrders_UniqueId exists with an incompatible definition. A full unique index on UniqueId is required; resolve the conflict before retrying the migration.");
+        }
+
+        if (validIndexes.Count != 0)
+        {
+            return;
+        }
+
+        if (db.Execute<int>("SELECT COUNT(*) FROM (SELECT UniqueId FROM EkomOrders GROUP BY UniqueId HAVING COUNT(*) > 1) duplicates;") != 0)
+        {
+            throw new InvalidOperationException("EkomOrders contains duplicate UniqueId values. No orders have been changed; resolve the duplicates before retrying the index migration.");
+        }
+
+        try
+        {
+            db.Execute(createIndexSql);
+        }
+        catch (SqlException ex) when (ex.Number == 1913)
+        {
+            // Another startup node may have created the index after our metadata check.
+            // Accept only the exact required definition, never an unrelated creation failure.
+            if (db.Execute<int>(validCanonicalIndexQuery) == 0)
+            {
+                throw;
+            }
+        }
+
+        // SQLite's IF NOT EXISTS can also encounter an index installed by another node.
+        if (db.Execute<int>(validCanonicalIndexQuery) == 0)
+        {
+            throw new InvalidOperationException("The required EkomOrders.UniqueId index could not be verified after creation. Check for an incompatible index definition before retrying the migration.");
+        }
+
+        _logger.LogInformation("Ensured required unique index on EkomOrders.UniqueId");
+    }
+
+    internal virtual void EnsureOrderPerformanceIndexes()
+    {
+        using var db = _databaseFactory.GetDatabase();
+
+        // Keep customer indexes narrow. Manager date indexes are deferred because
+        // range scans can regress broad-period lists ordered by ReferenceId.
+        DatabaseIndexInstaller.EnsureIndex(db, _databaseFactory.IsSqlServer, "EkomOrders",
+            "IX_EkomOrders_CustomerId", nameof(OrderData.CustomerId));
+        DatabaseIndexInstaller.EnsureIndex(db, _databaseFactory.IsSqlServer, "EkomOrders",
+            "IX_EkomOrders_CustomerUsername", nameof(OrderData.CustomerUsername));
+        DatabaseIndexInstaller.EnsureIndex(db, _databaseFactory.IsSqlServer, "EkomOrdersActivityLog",
+            "IX_EkomOrdersActivityLog_Key_Date", nameof(OrderActivityLog.Key), nameof(OrderActivityLog.Date));
     }
 
     internal virtual void EnsureWarehouseStockTable()
