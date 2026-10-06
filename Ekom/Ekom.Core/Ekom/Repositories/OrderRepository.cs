@@ -5,7 +5,10 @@ using LinqToDB;
 using LinqToDB.Data;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using System.Data;
+using System.Data.Common;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 
 namespace Ekom.Repositories;
 class OrderRepository
@@ -14,6 +17,10 @@ class OrderRepository
     readonly Configuration _config;
     readonly IMemoryCache _memoryCache;
     readonly DatabaseFactory _databaseFactory;
+    readonly CheckoutPaymentAttemptService? _paymentAttempts;
+    readonly ConditionalWeakTable<OrderData, PersistedVersion> _versions = new();
+
+    private sealed record PersistedVersion(string? OrderInfo, string Status, DateTime UpdateDate);
     /// <summary>
     /// ctor
     /// </summary>
@@ -21,12 +28,14 @@ class OrderRepository
         ILogger<OrderRepository> logger,
         Configuration config,
         DatabaseFactory databaseFactory,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache,
+        CheckoutPaymentAttemptService? paymentAttempts = null)
     {
         _logger = logger;
         _config = config;
         _databaseFactory = databaseFactory;
         _memoryCache = memoryCache;
+        _paymentAttempts = paymentAttempts;
     }
 
     public async Task<OrderData?> GetOrderAsync(Guid uniqueId, CancellationToken ct = default)
@@ -38,6 +47,10 @@ class OrderRepository
             .SingleOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
+        if (data != null)
+        {
+            _versions.Add(data, new PersistedVersion(data.OrderInfo, data.OrderStatusCol, data.UpdateDate));
+        }
         return data;
 
     }
@@ -49,6 +62,8 @@ class OrderRepository
         var referenceId = await db.InsertWithIdentityAsync(orderData, token: ct).ConfigureAwait(false);
 
         orderData.ReferenceId = Convert.ToInt32(referenceId, System.Globalization.CultureInfo.InvariantCulture);
+        // This instance is a known persisted snapshot, including before the first order-number update.
+        _versions.Add(orderData, new PersistedVersion(orderData.OrderInfo, orderData.OrderStatusCol, orderData.UpdateDate));
     }
 
     public async Task UpdateOrderAsync(OrderData orderData, CancellationToken ct = default)
@@ -58,16 +73,72 @@ class OrderRepository
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        await db.UpdateAsync(orderData, token: ct).ConfigureAwait(false);
+        if (_paymentAttempts == null)
+        {
+            await db.UpdateAsync(orderData, token: ct).ConfigureAwait(false);
+        }
+        else
+        {
+            await using var transaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+            try
+            {
+                await _paymentAttempts.EnsureWriteAllowedAsync(db, orderData.UniqueId, ct).ConfigureAwait(false);
+                if (!_versions.TryGetValue(orderData, out var expected))
+                {
+                    // Ownership authorizes the operation, not an arbitrary snapshot created before it.
+                    // Never assign the current persisted version to a potentially stale payload.
+                    throw new InvalidOperationException("Reload the order through this repository before saving an untracked snapshot.");
+                }
+
+                var capability = CheckoutPaymentOperationScope.Current;
+                var owner = capability?.OrderId == orderData.UniqueId ? capability.Owner : null;
+                var updated = await db.OrderData
+                    .Where(x => x.UniqueId == orderData.UniqueId && x.OrderInfo == expected.OrderInfo
+                        && x.OrderStatusCol == expected.Status && x.UpdateDate == expected.UpdateDate)
+                    .Where(x => owner == null
+                        ? !db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner != null)
+                        : db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == owner))
+                    .Set(x => x.OrderInfo, orderData.OrderInfo)
+                    .Set(x => x.OrderStatusCol, orderData.OrderStatusCol)
+                    .Set(x => x.OrderNumber, orderData.OrderNumber)
+                    .Set(x => x.CustomerEmail, orderData.CustomerEmail)
+                    .Set(x => x.CustomerName, orderData.CustomerName)
+                    .Set(x => x.CustomerId, orderData.CustomerId)
+                    .Set(x => x.CustomerUsername, orderData.CustomerUsername)
+                    .Set(x => x.ShippingCountry, orderData.ShippingCountry)
+                    .Set(x => x.TotalAmount, orderData.TotalAmount)
+                    .Set(x => x.Currency, orderData.Currency)
+                    .Set(x => x.StoreAlias, orderData.StoreAlias)
+                    .Set(x => x.CreateDate, orderData.CreateDate)
+                    .Set(x => x.UpdateDate, orderData.UpdateDate)
+                    .Set(x => x.PaidDate, orderData.PaidDate)
+                    .UpdateAsync(ct).ConfigureAwait(false);
+                if (updated != 1)
+                    throw new InvalidOperationException("The persisted order changed. Reload it before retrying the edit.");
+                await transaction.CommitAsync(ct).ConfigureAwait(false);
+                _versions.Remove(orderData);
+                _versions.Add(orderData, new PersistedVersion(orderData.OrderInfo, orderData.OrderStatusCol, orderData.UpdateDate));
+            }
+            catch (Exception ex) when (ex is DbException or OperationCanceledException)
+            {
+                var operation = CheckoutPaymentOperationScope.Current;
+                if (operation?.OrderId == orderData.UniqueId) operation.PreserveOwnership = true;
+                throw;
+            }
+        }
         //Clear cache after update.
         if (reservationPersistence)
             await OrderPersistenceNotifications.RunAsync(orderData.UniqueId, _logger, () =>
             {
                 _memoryCache.Remove(orderData.UniqueId);
+                _memoryCache.Remove(orderData.UniqueId.ToString());
                 return Task.CompletedTask;
             }).ConfigureAwait(false);
         else
+        {
             _memoryCache.Remove(orderData.UniqueId);
+            _memoryCache.Remove(orderData.UniqueId.ToString());
+        }
     }
 
     internal async Task<bool> TryUpdateOrderInfoAsync(
@@ -75,16 +146,46 @@ class OrderRepository
         string expectedOrderInfo,
         string updatedOrderInfo,
         DateTime updateDate,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        string? expectedStatus = null)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        var updated = await db.OrderData
-            .Where(x => x.UniqueId == orderId && x.OrderInfo == expectedOrderInfo)
-            .Set(x => x.OrderInfo, updatedOrderInfo)
-            .Set(x => x.UpdateDate, updateDate)
-            .UpdateAsync(ct)
-            .ConfigureAwait(false);
+        await using var transaction = _paymentAttempts == null ? null
+            : await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+        if (_paymentAttempts != null)
+            await _paymentAttempts.EnsureWriteAllowedAsync(db, orderId, ct).ConfigureAwait(false);
+        var current = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderId, ct).ConfigureAwait(false);
+        if (current == null || current.OrderInfo != expectedOrderInfo
+            || (expectedStatus != null && current.OrderStatusCol != expectedStatus)) return false;
+
+        int updated;
+        try
+        {
+            var rows = db.OrderData
+                .Where(x => x.UniqueId == orderId && x.OrderInfo == expectedOrderInfo && x.OrderStatusCol == current.OrderStatusCol
+                    && x.UpdateDate == current.UpdateDate);
+            if (_paymentAttempts != null)
+            {
+                var capability = CheckoutPaymentOperationScope.Current;
+                var owner = capability?.OrderId == orderId ? capability.Owner : null;
+                rows = rows.Where(x => owner == null
+                    ? !db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner != null)
+                    : db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == owner));
+            }
+            updated = await rows
+                .Set(x => x.OrderInfo, updatedOrderInfo)
+                .Set(x => x.UpdateDate, updateDate)
+                .UpdateAsync(ct)
+                .ConfigureAwait(false);
+            if (transaction != null) await transaction.CommitAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is DbException or OperationCanceledException)
+        {
+            var operation = CheckoutPaymentOperationScope.Current;
+            if (operation?.OrderId == orderId) operation.PreserveOwnership = true;
+            throw;
+        }
 
         if (updated != 1)
         {

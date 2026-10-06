@@ -125,7 +125,7 @@ The response follows `CheckoutResponse.HttpStatusCode`: `400` becomes a bad requ
 
 ### Payment callback
 
-`GET|POST /ekom/checkout/payment-return` merges query and form values. `orderId` is required; `outcome` defaults to `error`. Ekom loads the order/payment provider, restores the order cookie, and redirects to that provider's configured cancel URL for `cancel`, otherwise its error URL. This is a callback/redirect endpoint, not a general successful-payment completion endpoint.
+`GET|POST /ekom/checkout/payment-return` merges query and form values. `orderId` is required; `outcome` defaults to `error`. New checkout return URLs also include `attemptId`. A matching cancel/error releases that attempt's reservations and reopens the same unpaid basket; missing/stale attempt tokens cannot release a newer attempt. POST requests first redirect through GET. Ekom restores the order cookie and redirects to the original provider's configured cancel URL for `cancel`, otherwise its error URL. Release attempts and outcomes are audited in order activity. This is a browser-return endpoint, not proof of provider cancellation or a successful-payment completion endpoint; verified late successes require reconciliation rather than completing an edited basket.
 
 ### MVC form payment
 

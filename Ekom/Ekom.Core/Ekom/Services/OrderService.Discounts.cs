@@ -55,12 +55,14 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "discount", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             if (ApplyDiscountToOrder(discount, orderInfo, settings))
             {
                 if (settings.UpdateOrder)
@@ -76,7 +78,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -137,12 +139,14 @@ partial class OrderService
         var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "discount-remove", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             RemoveDiscountFromOrder(orderInfo);
             
             if (settings.UpdateOrder)
@@ -153,7 +157,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -178,12 +182,14 @@ partial class OrderService
         var orderInfo = settings.OrderInfo as OrderInfo ?? await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)   
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "coupon-remove", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             if (!TryRemoveCouponFromOrder(orderInfo))
             {
                 return;
@@ -197,7 +203,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -274,14 +280,24 @@ partial class OrderService
             return orderInfo;
         }
 
-        if (orderInfo.Coupon != couponCode)
+        var semaphore = GetOrderLock(orderInfo);
+        var ownsSemaphore = !(settings?.IsEventHandler ?? false) && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId;
+        if (ownsSemaphore) await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        try
         {
-            orderInfo.Coupon = couponCode;
-
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true, ct: ct).ConfigureAwait(false);
+            await using var operation = await BeginCartEditAsync(orderInfo, "coupon", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
+            if (orderInfo.Coupon != couponCode)
+            {
+                orderInfo.Coupon = couponCode;
+                return await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true, ct: ct).ConfigureAwait(false);
+            }
+            return orderInfo;
         }
-
-        return orderInfo;
+        finally
+        {
+            if (ownsSemaphore) semaphore.Release();
+        }
     }
 
 
@@ -312,12 +328,14 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "line-discount", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             OrderLine? orderLine
                 = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
                 as OrderLine;
@@ -337,7 +355,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -370,12 +388,14 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "line-discount", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             OrderLine? orderLine
                 = orderInfo.OrderLines.FirstOrDefault(line => line.Key == lineKey)
                 as OrderLine;
@@ -395,7 +415,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -516,12 +536,14 @@ partial class OrderService
         
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "line-discount-remove", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             OrderLine? orderLine
                 = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
                 as OrderLine;
@@ -541,7 +563,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }

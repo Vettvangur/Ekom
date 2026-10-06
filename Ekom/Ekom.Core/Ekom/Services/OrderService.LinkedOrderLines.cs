@@ -75,13 +75,15 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(currentOrder);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != currentOrder.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
 
         try
         {
+            await using var operation = await BeginCartEditAsync(currentOrder, "linked-lines", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             OrderInfo lockedOrder = currentOrder;
             if (!settings.IsEventHandler)
             {
@@ -152,7 +154,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != currentOrder.UniqueId)
             {
                 semaphore.Release();
             }

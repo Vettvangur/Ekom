@@ -223,7 +223,8 @@ public sealed class ReservationCheckoutControllerTests
         }
         else
         {
-            await Assert.ThrowsAsync<StockException>(() => controller.PayAsync(new PaymentRequest(), "en-US", f.Order.Object));
+            var response = await controller.PayAsync(new PaymentRequest(), "en-US", f.Order.Object);
+            AssertCheckoutStateConflict(response);
             Assert.False(controller.PaymentCalled);
         }
         Assert.Equal(state == "quantity" ? 6 : 7, await f.Database.StockAsync(f.Product.Key));
@@ -236,7 +237,8 @@ public sealed class ReservationCheckoutControllerTests
         await f.SeedAsync();
         var controller = f.Controller();
         controller.PersistAction = ids => f.Database.MakeDueAsync(ids.Single());
-        await Assert.ThrowsAsync<StockException>(() => controller.PayAsync(new PaymentRequest(), "en-US", f.Order.Object));
+        var response = await controller.PayAsync(new PaymentRequest(), "en-US", f.Order.Object);
+        AssertCheckoutStateConflict(response);
         Assert.False(controller.PaymentCalled);
         using var db = f.Database.Factory.GetDatabase();
         Assert.NotNull((await db.GetTable<CheckoutPreparationData>().SingleAsync()).Owner);
@@ -257,7 +259,8 @@ public sealed class ReservationCheckoutControllerTests
         {
             Assert.Equal(7, await f.Database.StockAsync(f.Product.Key));
             var second = f.Controller();
-            await Assert.ThrowsAsync<StockException>(() => second.PayAsync(new PaymentRequest(), "en-US", f.Order.Object));
+            var response = await second.PayAsync(new PaymentRequest(), "en-US", f.Order.Object);
+            AssertCheckoutStateConflict(response);
             Assert.False(second.PaymentCalled);
             Assert.False(second.Saved);
         }
@@ -318,7 +321,8 @@ public sealed class ReservationCheckoutControllerTests
         try
         {
             Assert.NotEqual("{}", (await repository.GetOrderAsync(data.UniqueId))!.OrderInfo);
-            await Assert.ThrowsAsync<StockException>(() => f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order.Object));
+            var response = await f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order.Object);
+            AssertCheckoutStateConflict(response);
         }
         finally { resume.SetResult(); }
         Assert.Equal(230, (await payment).HttpStatusCode);
@@ -416,7 +420,8 @@ public sealed class ReservationCheckoutControllerTests
         Assert.Equal(StockReservationState.Active, (await db.StockReservations.SingleAsync()).State);
         Assert.Equal(sqlCommitted ? 1 : 0, await db.OrderData.CountAsync());
         Assert.NotNull((await db.GetTable<CheckoutPreparationData>().SingleAsync()).Owner);
-        await Assert.ThrowsAsync<StockException>(() => f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order.Object));
+        var response = await f.Controller().PayAsync(new PaymentRequest(), "en-US", f.Order.Object);
+        AssertCheckoutStateConflict(response);
     }
 
     [Fact]
@@ -501,6 +506,15 @@ public sealed class ReservationCheckoutControllerTests
         await f.Checkout.PrepareAsync(f.Order.Object.UniqueId, requests, ids, default);
         await f.Checkout.CompleteStockAsync(f.Order.Object.UniqueId, requests, ids, true, default);
         Assert.Equal(4, await f.Database.StockAsync(variantKey));
+    }
+
+    private static void AssertCheckoutStateConflict(CheckoutResponse response)
+    {
+        Assert.Equal(409, response.HttpStatusCode);
+        var error = Assert.IsType<CheckoutStateError>(response.ResponseBody);
+        Assert.Equal("checkout_state_conflict", error.Code);
+        Assert.Equal("Unable to prepare checkout. Please refresh your basket and try again. If the problem continues, contact the store.", error.Message);
+        Assert.False(error.CanRetry);
     }
 
     private static Mock<IOrderLine> Line(Guid key, OrderedProduct product, decimal quantity)

@@ -135,11 +135,13 @@ internal sealed class CheckoutReservationService
         if (await db.GetTable<CheckoutStockCompletionData>().AnyAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false))
             throw new StockException("Order stock has already been completed; do not start another payment.");
 
-        // Recover holds committed just before an interrupted order save. Released preparation holds
-        // may be retried, but an expired payment hold must never silently become a fresh payment attempt.
+        // Recover live holds committed just before an interrupted order save, and retain
+        // consumed rows as a completion guard. Historical released/expired rows are not
+        // requirements of a new attempt. Explicitly attached terminal IDs are still
+        // rejected by ReadAndVerifyAsync until the attempt coordinator resets them.
         var fingerprint = Fingerprint(requirements);
         var owned = await db.StockReservations.Where(x => x.OrderId == orderId.ToString() &&
-            x.State != StockReservationState.Released).ToListAsync(ct).ConfigureAwait(false);
+            (x.State == StockReservationState.Active || x.State == StockReservationState.Consumed)).ToListAsync(ct).ConfigureAwait(false);
         if (owned.Any(x => x.PaymentAttemptId != null && x.PaymentAttemptId.StartsWith("checkout-stock:", StringComparison.Ordinal) && x.PaymentAttemptId != fingerprint))
             throw new StockException("Order stock requirements changed during payment; reconcile the existing attempt first.");
         foreach (var row in owned)
@@ -175,11 +177,14 @@ internal sealed class CheckoutReservationService
                 }
                 var generation = await db.StockReservations.CountAsync(x => x.OrderId == orderId.ToString() &&
                     x.PaymentAttemptId != null && x.PaymentAttemptId.StartsWith("checkout-stock:") && x.StockUniqueId == stockId &&
-                    x.IsDiscount == request.IsDiscount && x.State == StockReservationState.Released, ct).ConfigureAwait(false);
+                    x.IsDiscount == request.IsDiscount &&
+                    (x.State == StockReservationState.Released || x.State == StockReservationState.Expired), ct).ConfigureAwait(false);
                 var result = await _reservations.ReserveAsync(request with
                 {
                     Quantity = remaining, OrderId = orderId.ToString(), PaymentAttemptId = fingerprint,
-                    IdempotencyKey = $"checkout:{orderId}:{Identity(request)}:{generation}",
+                    IdempotencyKey = CheckoutPaymentOperationScope.Current is { } payment && payment.OrderId == orderId
+                        ? $"checkout:{orderId}:attempt:{payment.AttemptId}:{Identity(request)}:{generation}"
+                        : $"checkout:{orderId}:{Identity(request)}:{generation}",
                 }, ct).ConfigureAwait(false);
                 if (result.Status == StockReservationStatus.InsufficientStock)
                     throw new NotEnoughStockException($"Not enough stock for {stockId}.");

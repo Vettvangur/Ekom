@@ -1,4 +1,5 @@
 using Ekom.Exceptions;
+using Ekom.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -42,6 +43,10 @@ static class ExceptionHandler
             DiscountUnableToFindCouponException => new NotFoundResult(),
             StoreNotFoundException => new NotFoundResult(),
 
+            CheckoutConflictException checkoutEx => new ObjectResult(new CheckoutStateError(checkoutEx.Reason))
+            {
+                StatusCode = (int)HttpStatusCode.Conflict
+            },
             EkomHttpException httpEx => new ObjectResult(new { message = httpEx.Message })
             {
                 StatusCode = (int)httpEx.StatusCode

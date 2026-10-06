@@ -106,6 +106,7 @@ static class Registrations
         services.AddSingleton<StockChangePublisher>();
         services.AddSingleton<IStockReservationService, StockReservationService>();
         services.AddSingleton<CheckoutReservationService>();
+        services.AddSingleton<CheckoutPaymentAttemptService>();
         services.TryAddSingleton<ICheckoutStockPolicy, DefaultCheckoutStockPolicy>();
         services.AddHostedService<StockReservationWorker>();
 

@@ -88,6 +88,8 @@ internal class DatabaseService
         db.CreateTable<StockReservationData>(tableOptions: TableOptions.CreateIfNotExists);
         db.CreateTable<CheckoutStockCompletionData>(tableOptions: TableOptions.CreateIfNotExists);
         db.CreateTable<CheckoutPreparationData>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<CheckoutPaymentAttemptData>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<CheckoutPaymentOperationData>(tableOptions: TableOptions.CreateIfNotExists);
         // Separate idempotent index creation also repairs a partially completed schema setup.
         if (_databaseFactory.IsSqlServer)
         {
