@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -152,6 +153,22 @@ public class EkomCheckoutApiController : ControllerBase
             ? outcomeValue.Trim().ToLowerInvariant()
             : "error";
 
+        Guid? attemptId = null;
+        if (callbackData.TryGetValue("attemptId", out var attemptValue) && !string.IsNullOrWhiteSpace(attemptValue))
+        {
+            if (!Guid.TryParse(attemptValue, out var parsedAttempt))
+                return BadRequest("Invalid payment attemptId.");
+            attemptId = parsedAttempt;
+        }
+
+        if (HttpMethods.IsPost(Request.Method))
+        {
+            // A top-level GET sends SameSite=Lax basket cookies that provider POSTs may omit.
+            callbackData["orderId"] = orderId.ToString();
+            callbackData["outcome"] = outcome;
+            return Redirect(QueryHelpers.AddQueryString(Request.PathBase.Add(Request.Path).ToString(), callbackData));
+        }
+
         var order = await API.Order.Instance.GetOrderAsync(orderId, ct).ConfigureAwait(false);
 
         if (order == null)
@@ -160,16 +177,28 @@ public class EkomCheckoutApiController : ControllerBase
             return NotFound("Order not found.");
         }
 
-        HttpContext.Features.Set<IRequestCultureFeature>(
-            new RequestCultureFeature(new RequestCulture(order.StoreInfo.Culture), null));
+        var attempts = HttpContext.RequestServices.GetService<CheckoutPaymentAttemptService>();
+        var submittedOrder = attemptId != null && attempts != null
+            ? await attempts.GetSubmittedOrderAsync(orderId, attemptId.Value, ct).ConfigureAwait(false)
+            : null;
+        if (attemptId != null && attempts != null && submittedOrder == null)
+            return BadRequest("Unknown or unsubmitted payment attempt.");
+        var redirectOrder = submittedOrder == null ? order : new OrderInfo(submittedOrder);
 
-        if (order.PaymentProvider == null)
+        if (attempts != null && outcome is ("cancel" or "error"))
+            await attempts.ReleaseAsync(orderId, attemptId,
+                outcome == "cancel" ? "payment-cancel" : "payment-error", ct).ConfigureAwait(false);
+
+        HttpContext.Features.Set<IRequestCultureFeature>(
+            new RequestCultureFeature(new RequestCulture(redirectOrder.StoreInfo.Culture), null));
+
+        if (redirectOrder.PaymentProvider == null)
         {
             _logger.LogError($"Order Payment provider not found in payment return. {orderId}");
             return BadRequest("Order payment provider not found.");
         }
 
-        var paymentProvider = await API.Providers.Instance.GetPaymentProviderAsync(order.PaymentProvider.Key, order.StoreInfo.Alias, ct: ct);
+        var paymentProvider = await API.Providers.Instance.GetPaymentProviderAsync(redirectOrder.PaymentProvider.Key, redirectOrder.StoreInfo.Alias, ct: ct);
 
         if (paymentProvider == null)
         {
@@ -195,8 +224,8 @@ public class EkomCheckoutApiController : ControllerBase
         API.Order.Instance.EnsureOrderCookie(orderId, order.StoreInfo.Alias);
 
         string redirectUrlSetting = outcome == "cancel"
-            ? _checkoutControllerService.ResolvePaymentProviderUrl(paymentProvider, "cancelUrl", order)
-            : _checkoutControllerService.ResolvePaymentProviderUrl(paymentProvider, "errorUrl", order);
+            ? _checkoutControllerService.ResolvePaymentProviderUrl(paymentProvider, "cancelUrl", redirectOrder)
+            : _checkoutControllerService.ResolvePaymentProviderUrl(paymentProvider, "errorUrl", redirectOrder);
 
         string redirectUrl = Ekom.Utilities.UriHelper.EnsureFullUri(
             redirectUrlSetting,
@@ -335,26 +364,6 @@ public class CheckoutController : ControllerBase
             var returnUrl = paymentRequest.ReturnUrl ?? "/";
             var finalUrl = QueryHelpers.AddQueryString(returnUrl, "errorStatus", "serverError");
             
-            if (ex is EkomProblemDetailsException)
-            {
-                var problemException = ex as EkomProblemDetailsException;
-
-                var title = problemException.ProblemDetails.Title;
-                var detail = problemException.ProblemDetails.Detail;
-
-                string problemMessage = !string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(detail)
-                    ? $"{title} - {detail}"
-                    : title ?? detail ?? string.Empty;
-
-                var url = QueryHelpers.AddQueryString(returnUrl, "errorMessage", problemMessage);
-
-                return ResponseHandler(new CheckoutResponse()
-                {
-                    HttpStatusCode = problemException.ProblemDetails.Status.HasValue ? problemException.ProblemDetails.Status.Value : 500,
-                    ReturnUrl = url
-                });
-            }
-
             return Redirect(finalUrl);
         }
     }
@@ -367,6 +376,16 @@ public class CheckoutController : ControllerBase
         }
 
         var returnUrl = checkoutResponse.ReturnUrl ?? "/";
+
+        if (checkoutResponse.HttpStatusCode == 409 && checkoutResponse.ResponseBody is CheckoutStateError stateError)
+        {
+            return Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+            {
+                ["errorStatus"] = stateError.Code,
+                ["errorMessage"] = stateError.Message,
+                ["canRetry"] = stateError.CanRetry ? "true" : "false",
+            }));
+        }
 
         if (checkoutResponse.HttpStatusCode == 400 && checkoutResponse.ResponseBody is ShippingValidationError shippingError)
         {
@@ -407,7 +426,7 @@ public class CheckoutController : ControllerBase
             var url = QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
             {
                 { "errorStatus", "stockError" },
-                { "errorType", stockError.Exception?.Message ?? "unknown" }
+                { "errorType", "unknown" }
             });
             return Redirect(url);
         }

@@ -207,7 +207,18 @@ class EkomStartup : IComponent
                         : settings.PaymentProviderName).ConfigureAwait(false);
 
                 var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
-                await checkoutSvc.CompleteAsync(orderId);
+                var attempts = _factory.GetService<CheckoutPaymentAttemptService>();
+                if (attempts == null)
+                {
+                    await checkoutSvc.CompleteAsync(orderId);
+                }
+                else
+                {
+                    Guid? attemptId = settings.OrderCustomData.TryGetValue("ekomPaymentAttemptId", out var attemptValue)
+                        && Guid.TryParse(attemptValue, out var parsedAttempt) ? parsedAttempt : null;
+                    await attempts.CompleteAsync(orderId, attemptId, () => checkoutSvc.CompleteAsync(orderId), CancellationToken.None)
+                        .ConfigureAwait(false);
+                }
             }
         }
     }

@@ -22,14 +22,16 @@ internal sealed class StockReservationService : IStockReservationService
     private readonly Configuration _config;
     private readonly StockChangePublisher _publisher;
     private readonly ILogger<StockReservationService> _logger;
+    private readonly ActivityLogRepository? _activityLogs;
 
     public StockReservationService(DatabaseFactory database, Configuration config,
-        StockChangePublisher publisher, ILogger<StockReservationService> logger)
+        StockChangePublisher publisher, ILogger<StockReservationService> logger, ActivityLogRepository? activityLogs = null)
     {
         _database = database;
         _config = config;
         _publisher = publisher;
         _logger = logger;
+        _activityLogs = activityLogs;
     }
 
     private static void ValidateRequest(StockReservationRequest request)
@@ -135,6 +137,68 @@ internal sealed class StockReservationService : IStockReservationService
     private async Task<StockReservationResult> TransitionAsync(string id, StockReservationState target, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        StockReservationData? activityRow = null;
+        if (_activityLogs != null && target != StockReservationState.Released)
+        {
+            // Dispose the read connection before writing the attempt on a separate connection.
+            await using var db = _database.GetDatabase();
+            var row = await db.StockReservations.FirstOrDefaultAsync(x => x.Id == id, ct).ConfigureAwait(false);
+            if (row != null && (target == StockReservationState.Expired || row.ExpiresUtc <= DateTime.UtcNow))
+                activityRow = row;
+        }
+
+        if (activityRow != null)
+            await LogExpiryAsync(activityRow, "Attempted", 0, OrderActivityLogType.Info).ConfigureAwait(false);
+
+        decimal restoredQuantity = 0;
+        StockReservationResult result;
+        try
+        {
+            result = await TransitionCoreAsync(id, target, ct, row => restoredQuantity = row.Quantity).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // The transaction has been disposed/rolled back before the independent failure log.
+            if (activityRow != null)
+                await LogExpiryAsync(activityRow, restoredQuantity > 0 ? "Restored; notification failed" : "Failed",
+                    restoredQuantity, OrderActivityLogType.Alert, ex.GetType().Name).ConfigureAwait(false);
+            throw;
+        }
+
+        if (activityRow != null)
+            await LogExpiryAsync(activityRow, result.Status.ToString(), restoredQuantity,
+                restoredQuantity > 0 ? OrderActivityLogType.Success : OrderActivityLogType.Info).ConfigureAwait(false);
+        return result;
+    }
+
+    private async Task LogExpiryAsync(StockReservationData row, string outcome, decimal restoredQuantity,
+        OrderActivityLogType logType, string? failureType = null)
+    {
+        if (_activityLogs == null || !Guid.TryParse(row.OrderId, out var orderId) || orderId == Guid.Empty) return;
+
+        // Never include Coupon, StockUniqueId, payment identifiers or exception messages.
+        var message = string.Create(CultureInfo.InvariantCulture,
+            $"Reservation release {outcome}; ReservationId: {row.Id}; StockKey: {row.Key}; Quantity: {row.Quantity}; Reason: timeout; RestoredQuantity: {restoredQuantity}.");
+        if (failureType != null) message += $" FailureType: {failureType}.";
+        try
+        {
+            await _activityLogs.InsertAsync(
+                [new OrderActivityLogWrite(orderId, message, "System", DateTime.Now, logType)],
+                CancellationToken.None).ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // Activity logging must not block or replay stock restoration.
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            _logger.LogError("Failed to persist reservation-expiry activity log. ReservationId: {ReservationId}; OrderUniqueId: {OrderUniqueId}; FailureType: {FailureType}.",
+                row.Id, orderId, ex.GetType().Name);
+        }
+    }
+
+    private async Task<StockReservationResult> TransitionCoreAsync(string id, StockReservationState target, CancellationToken ct,
+        Action<StockReservationData> onRestored)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
         StockReservationData? restored = null;
         decimal oldStock = 0;
         var result = await RetryAsync(async () =>
@@ -185,6 +249,7 @@ internal sealed class StockReservationService : IStockReservationService
                 _ => StockReservationStatus.Expired,
             }, state, row.ExpiresUtc);
         }, ct).ConfigureAwait(false);
+        if (restored != null) onRestored(restored);
         if (restored is { IsDiscount: false })
         {
             // Derive cache scope from the persisted stock identity, even after configuration changes.

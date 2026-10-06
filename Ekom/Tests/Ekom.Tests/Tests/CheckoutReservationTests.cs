@@ -115,6 +115,57 @@ public sealed class CheckoutReservationTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task FreshPreparationIgnoresHistoricalExpiredRequirementsAfterReset(bool replaceProduct)
+    {
+        using var fixture = new ReservationDatabase();
+        var originalKey = await fixture.SeedAsync(10);
+        var nextKey = replaceProduct ? await fixture.SeedAsync(10) : originalKey;
+        var orderId = Guid.NewGuid();
+        var originalIds = new List<string>();
+        var checkout = fixture.NewCheckout();
+        await checkout.PrepareAsync(orderId, Requests(orderId, (originalKey, 3)), originalIds, default);
+        await fixture.MakeDueAsync(originalIds.Single());
+        Assert.Equal(StockReservationStatus.Expired, (await fixture.Service.ExpireAsync(originalIds.Single())).Status);
+
+        // The attempt reset has cleared its attached IDs, but preserves history.
+        var nextIds = new List<string>();
+        await checkout.PrepareAsync(orderId, Requests(orderId, (nextKey, 2)), nextIds, default);
+        await checkout.PrepareAsync(orderId, Requests(orderId, (nextKey, 2)), nextIds, default);
+
+        Assert.Single(nextIds);
+        Assert.NotEqual(originalIds.Single(), nextIds.Single());
+        Assert.Equal(8, await fixture.StockAsync(nextKey));
+        if (replaceProduct) Assert.Equal(10, await fixture.StockAsync(originalKey));
+        using var db = fixture.Factory.GetDatabase();
+        Assert.Equal(StockReservationState.Expired,
+            (await db.StockReservations.SingleAsync(x => x.Id == originalIds.Single())).State);
+        Assert.Equal(2, await db.StockReservations.CountAsync());
+    }
+
+    [Fact]
+    public async Task FreshPreparationWithSameRequirementsDoesNotReuseHistoricalExpiredIdempotencyKey()
+    {
+        using var fixture = new ReservationDatabase();
+        var key = await fixture.SeedAsync(10);
+        var orderId = Guid.NewGuid();
+        var requests = Requests(orderId, (key, 3));
+        var checkout = fixture.NewCheckout();
+        var oldIds = new List<string>();
+        await checkout.PrepareAsync(orderId, requests, oldIds, default);
+        await fixture.MakeDueAsync(oldIds.Single());
+        await fixture.Service.ExpireAsync(oldIds.Single());
+
+        var freshIds = new List<string>();
+        await checkout.PrepareAsync(orderId, requests, freshIds, default);
+
+        Assert.Single(freshIds);
+        Assert.NotEqual(oldIds.Single(), freshIds.Single());
+        Assert.Equal(7, await fixture.StockAsync(key));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task LatePaymentAndRetryFailWithoutAdditionalDeduction(bool sweep)
     {
         using var fixture = new ReservationDatabase();

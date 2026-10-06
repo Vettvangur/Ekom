@@ -66,6 +66,13 @@ public class CheckoutControllerService
 
     internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture, CheckoutPaymentLogContext logContext, CancellationToken ct)
     {
+        var response = await HandleCheckoutStateAsync(paymentRequest,
+            paymentStarting => PayCoreAsync(paymentRequest, culture, logContext, paymentStarting, ct)).ConfigureAwait(false);
+        return responseHandler(response);
+    }
+
+    private async Task<CheckoutResponse> PayCoreAsync(PaymentRequest paymentRequest, string culture, CheckoutPaymentLogContext logContext, Action paymentStarting, CancellationToken ct)
+    {
         Logger.LogInformation("Checkout Pay - Payment request start ");
 
         Culture = culture;
@@ -95,6 +102,9 @@ public class CheckoutControllerService
         }
 
         logContext.Capture(order);
+        var attempts = _factory.GetService<CheckoutPaymentAttemptService>();
+        await using var operation = attempts == null ? null : await attempts.BeginCheckoutAsync(order, ct).ConfigureAwait(false);
+        using var capability = operation?.Enter();
         var shippingProviderKey = GetSelectedShippingProviderKey(paymentRequest, order);
         order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order, paymentRequest.PaymentProvider, paymentRequest.ShippingProvider, ct: ct).ConfigureAwait(false);
         logContext.Capture(order);
@@ -103,7 +113,7 @@ public class CheckoutControllerService
 
         if (res != null)
         {
-            return responseHandler(res);
+            return res;
         }
 
         Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " " + order.OrderNumber + " Customer: " + +order.CustomerInformation.Customer.UserId
@@ -120,24 +130,24 @@ public class CheckoutControllerService
 
         if (res != null)
         {
-            return responseHandler(res);
+            return res;
         }
 
         res = ValidateShippingProvider(paymentRequest, order, shippingProviderKey);
         if (res != null)
         {
-            return responseHandler(res);
+            return res;
         }
 
         var preparation = await PrepareStockAsync(paymentRequest, order, store, shippingProviderKey, ct).ConfigureAwait(false);
         if (preparation.Response != null)
         {
-            return responseHandler(preparation.Response);
+            return preparation.Response;
         }
 
-        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, preparation.Title!, ct)
+        CheckoutResponse result = await ProcessPreparedPaymentAsync(attempts, paymentRequest, order, preparation.Title!, paymentStarting, ct)
             .ConfigureAwait(false);
-        return responseHandler(result);
+        return result;
     }
 
 
@@ -155,6 +165,12 @@ public class CheckoutControllerService
     }
 
     public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, IOrderInfo order, CancellationToken ct = default)
+    {
+        return await HandleCheckoutStateAsync(paymentRequest,
+            paymentStarting => PayCoreAsync(paymentRequest, culture, order, paymentStarting, ct)).ConfigureAwait(false);
+    }
+
+    private async Task<CheckoutResponse> PayCoreAsync(PaymentRequest paymentRequest, string culture, IOrderInfo order, Action paymentStarting, CancellationToken ct)
     {
         Logger.LogInformation("Checkout Pay - Payment request start ");
 
@@ -180,6 +196,9 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
+        var attempts = _factory.GetService<CheckoutPaymentAttemptService>();
+        await using var operation = attempts == null ? null : await attempts.BeginCheckoutAsync(order, ct).ConfigureAwait(false);
+        using var capability = operation?.Enter();
         var shippingProviderKey = GetSelectedShippingProviderKey(paymentRequest, order);
         order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order,
             shippingProviderKey: paymentRequest.ShippingProvider, ct: ct).ConfigureAwait(false);
@@ -205,9 +224,72 @@ public class CheckoutControllerService
         var preparation = await PrepareStockAsync(paymentRequest, order, store, shippingProviderKey, ct).ConfigureAwait(false);
         if (preparation.Response != null) return preparation.Response;
 
-        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, preparation.Title!, ct: ct)
+        CheckoutResponse result = await ProcessPreparedPaymentAsync(attempts, paymentRequest, order, preparation.Title!, paymentStarting, ct)
             .ConfigureAwait(false);
 
+        return result;
+    }
+
+    internal async Task<CheckoutResponse> HandleCheckoutStateAsync(PaymentRequest request, Func<Action, Task<CheckoutResponse>> prepare)
+    {
+        var paymentStarted = false;
+        try
+        {
+            return await prepare(() => paymentStarted = true).ConfigureAwait(false);
+        }
+        catch (EkomHttpException ex) when (!paymentStarted && ex.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            return CheckoutStateConflict(request, ex);
+        }
+        catch (StockException ex) when (!paymentStarted)
+        {
+            return CheckoutStateConflict(request, ex);
+        }
+    }
+
+    private CheckoutResponse CheckoutStateConflict(PaymentRequest request, Exception exception)
+    {
+        Logger.LogWarning(exception, "Checkout preparation was blocked by {ErrorType}", exception.GetType().Name);
+        return new CheckoutResponse
+        {
+            HttpStatusCode = 409,
+            ReturnUrl = request.ReturnUrl,
+            ResponseBody = new CheckoutStateError(exception is CheckoutConflictException conflict
+                ? conflict.Reason : CheckoutConflictReason.PreparationUnavailable),
+        };
+    }
+
+    private async Task<CheckoutResponse> ProcessPreparedPaymentAsync(CheckoutPaymentAttemptService? attempts,
+        PaymentRequest request, IOrderInfo order, string title, Action paymentStarting, CancellationToken ct)
+    {
+        Guid? attemptId = null;
+        if (attempts != null)
+            attemptId = await attempts.SubmitAsync(order, ct).ConfigureAwait(false);
+        CheckoutResponse result;
+        try
+        {
+            paymentStarting();
+            result = await ProcessPaymentAsync(request, order, title, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            if (attempts != null)
+            {
+                try
+                {
+                    await attempts.ReleaseAsync(order.UniqueId, attemptId, "payment-error", CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception releaseException)
+                {
+                    Logger.LogError(
+                        "Payment-error reservation release failed for order {OrderId}, attempt {AttemptId}. Release error type: {ReleaseErrorType}; original error type: {ErrorType}",
+                        order.UniqueId, attemptId, releaseException.GetType().Name, ex.GetType().Name);
+                }
+            }
+            throw;
+        }
+        if (attempts != null && result.HttpStatusCode >= 400)
+            await attempts.ReleaseAsync(order.UniqueId, attemptId, "payment-error", CancellationToken.None).ConfigureAwait(false);
         return result;
     }
 
@@ -295,7 +377,8 @@ public class CheckoutControllerService
     {
         var reservations = _factory.GetRequiredService<CheckoutReservationService>();
         if (await reservations.IsCompletedAsync(order.UniqueId, ct).ConfigureAwait(false))
-            throw new StockException("Order has already completed stock processing; do not start another payment.");
+            throw new CheckoutConflictException(CheckoutConflictReason.Completed,
+                "Order has already completed stock processing; do not start another payment.");
         var original = order.ReservationIds.ToHashSet(StringComparer.Ordinal);
         var ids = original.ToList();
         var ownership = await reservations.AcquirePreparationAsync(order.UniqueId, ct).ConfigureAwait(false);
@@ -763,6 +846,11 @@ public class CheckoutControllerService
                     },
                 };
 
+                eventsArgs.PaymentSettings.OrderCustomData["ekomOrderUniqueId"] = order.UniqueId.ToString();
+                eventsArgs.PaymentSettings.OrderCustomData["ekomOrderReferenceId"] = order.ReferenceId.ToString();
+                if (CurrentPaymentAttemptId is { } offlineAttemptId)
+                    eventsArgs.PaymentSettings.OrderCustomData["ekomPaymentAttemptId"] = offlineAttemptId.ToString();
+
                 CheckoutEvents.OnPay(this, eventsArgs);
                 await CheckoutEvents.OnPayAsync(this, eventsArgs, ct);
 
@@ -775,7 +863,16 @@ public class CheckoutControllerService
 
                 CheckoutService checkoutSvc = _factory.GetRequiredService<CheckoutService>();
 
-                await checkoutSvc.CompleteAsync(order.UniqueId, ct);
+                var attempts = _factory.GetService<CheckoutPaymentAttemptService>();
+                if (attempts == null)
+                {
+                    await checkoutSvc.CompleteAsync(order.UniqueId, ct);
+                }
+                else if (!await attempts.CompleteAsync(order.UniqueId, CurrentPaymentAttemptId,
+                    () => checkoutSvc.CompleteAsync(order.UniqueId, ct), ct).ConfigureAwait(false))
+                {
+                    throw new InvalidOperationException("Offline payment attempt requires reconciliation.");
+                }
 
                 return new CheckoutResponse
                 {
@@ -863,6 +960,10 @@ public class CheckoutControllerService
 
             paymentSettings.OrderCustomData.Add("ekomOrderUniqueId", order.UniqueId.ToString());
             paymentSettings.OrderCustomData.Add("ekomOrderReferenceId", order.ReferenceId.ToString());
+            if (CheckoutPaymentOperationScope.Current is { } paymentOperation)
+            {
+                paymentSettings.OrderCustomData["ekomPaymentAttemptId"] = paymentOperation.AttemptId.ToString();
+            }
 
             CheckoutEvents.OnPay(this, new PayEventArgs
             {
@@ -875,6 +976,12 @@ public class CheckoutControllerService
                 OrderInfo = order,
                 PaymentSettings = paymentSettings,
             }, ct: ct);
+
+            // Customization must not erase the identity needed to isolate late callbacks.
+            paymentSettings.OrderCustomData["ekomOrderUniqueId"] = order.UniqueId.ToString();
+            paymentSettings.OrderCustomData["ekomOrderReferenceId"] = order.ReferenceId.ToString();
+            if (CurrentPaymentAttemptId is { } attemptId)
+                paymentSettings.OrderCustomData["ekomPaymentAttemptId"] = attemptId.ToString();
 
             string content = await pp.RequestAsync(paymentSettings).ConfigureAwait(false);
 
@@ -1042,13 +1149,18 @@ public class CheckoutControllerService
     private static string? NullIfWhiteSpace(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private string BuildPaymentReturnUrl(Guid orderId, string outcome)
+    /// <summary>Current checkout attempt identity for custom payment-provider implementations.</summary>
+    protected Guid? CurrentPaymentAttemptId => CheckoutPaymentOperationScope.Current?.AttemptId;
+
+    /// <summary>Build a cancel/error return URL that identifies the submitted payment attempt.</summary>
+    protected string BuildPaymentReturnUrl(Guid orderId, string outcome)
     {
         string baseUrl = $"{_httpCtx.Request.Scheme}://{_httpCtx.Request.Host}{_httpCtx.Request.PathBase}/ekom/checkout/payment-return";
 
         return QueryHelpers.AddQueryString(baseUrl, new Dictionary<string, string?>
         {
             ["orderId"] = orderId.ToString(),
+            ["attemptId"] = CurrentPaymentAttemptId?.ToString(),
             ["outcome"] = outcome
         });
     }

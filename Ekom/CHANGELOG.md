@@ -4,6 +4,9 @@
 
 ### Bug Fixes
 
+* **checkout:** allow cancel/edit retries to reserve fresh requirements without recovering historical expired holds, and track newly inserted carts so order-number assignment does not fail the stale-write guard.
+* **checkout:** return customer-safe conflict codes/messages for preparation, busy, completed, and payment-review states instead of exposing diagnostic exception text; prevent automatic payment resubmission on those responses.
+* **checkout:** release stock holds on matching payment cancel/error returns and before basket edits, retain giftcard selections for lifecycle-aware retries, track payment attempts to isolate stale returns and late successes, and audit reservation release/timeout attempts and outcomes in order activity.
 * **manager:** add order-level coupon-code and shipping-provider filters to Umbraco 17 and 18 order searches, summary totals, and CSV exports.
 * **manager:** show the saved order-level coupon code beside the Discount total in Umbraco 17 and 18 order details, retaining the existing amount and plain label for orders without a code.
 * **backoffice:** show percentage labels on the Discount amount field in Umbraco 17 and 18 when Type is Percentage, without changing values or labels on other range fields.

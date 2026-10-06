@@ -56,7 +56,8 @@ partial class OrderService
         }
 
         var semaphore = _orderLocks.GetOrAdd(orderId, static _ => new SemaphoreSlim(1, 1));
-        await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        var ownsSemaphore = CheckoutPaymentOperationScope.Current?.OrderId != orderId;
+        if (ownsSemaphore) await semaphore.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             var orderData = await _orderRepository.GetOrderAsync(orderId, ct).ConfigureAwait(false);
@@ -65,6 +66,12 @@ partial class OrderService
                 throw new OrderInfoNotFoundException();
             }
 
+            var editOrder = new OrderInfo(orderData);
+            await using var operation = await BeginCartEditAsync(editOrder, "line-metadata", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
+            // Beginning an edit can clear payment metadata and change status. Patch the released snapshot.
+            orderData = await _orderRepository.GetOrderAsync(orderId, ct).ConfigureAwait(false)
+                ?? throw new OrderInfoNotFoundException();
             var originalOrderInfo = orderData.OrderInfo;
             var orderJson = JObject.Parse(originalOrderInfo);
             if (orderJson[nameof(OrderInfo.OrderLines)] is not JArray orderLines)
@@ -142,7 +149,7 @@ partial class OrderService
             orderData.UpdateDate = updateDate;
             var result = new OrderInfo(orderData);
 
-            if (!await _orderRepository.TryUpdateOrderInfoAsync(orderId, originalOrderInfo, updatedOrderInfo, updateDate, ct)
+            if (!await _orderRepository.TryUpdateOrderInfoAsync(orderId, originalOrderInfo, updatedOrderInfo, updateDate, ct, orderData.OrderStatusCol)
                 .ConfigureAwait(false))
             {
                 throw new InvalidOperationException($"Order {orderId} changed during the metadata update. Retry the batch.");
@@ -165,7 +172,7 @@ partial class OrderService
         }
         finally
         {
-            semaphore.Release();
+            if (ownsSemaphore) semaphore.Release();
         }
     }
 }

@@ -126,6 +126,36 @@ Offline providers have `offlinePayment` enabled on the payment-provider node. Ek
 
 Online providers are resolved from `basePaymentProvider`, the order moves to `WaitingForPayment`, and Ekom calls the provider's `RequestAsync`. Success URLs include `orderId`. Error and cancel callbacks return through `GET|POST /ekom/checkout/payment-return`, which restores the order cookie and redirects to the provider node's configured error or cancel URL.
 
+### Cancel, edit, and retry reservations
+
+The built-in checkout keeps the same basket/order identity across payment retries. Each submission has a distinct payment-attempt ID and retains an immutable submitted purchase snapshot. The attempt ID is carried in payment settings as `ekomPaymentAttemptId` and on error/cancel return URLs as `attemptId`.
+
+- Stock is reserved before payment when reservations are enabled. Requirements come from order lines; quantities sharing the same stock identity are combined. At submission all holds share the earliest hold deadline, without extending an existing hold.
+- A matching cancel/error return releases that attempt's holds immediately and restores the unpaid basket to **Incomplete**. Repeated release is idempotent; an old return cannot release a newer attempt's holds.
+- A cart edit releases existing holds before stock validation and persistence. Merely viewing the cart or a receipt does not release stock.
+- The next payment submission validates stock again and acquires fresh holds. Closing a payment page without a return or edit leaves its reservations held until timeout.
+- Giftcard selections remain in the basket. External claims must be released and reacquired through the application's giftcard lifecycle integration; clearing a local claim field is not proof that external balance is available.
+
+Provider POST returns first redirect through a GET, allowing `SameSite=Lax` basket cookies to accompany the request before the basket cookie is restored. Keep both `orderId` and `attemptId` in custom return URLs and preserve `ekomPaymentAttemptId` in custom payment settings.
+
+Custom `ProcessPaymentAsync` overrides can read the protected `CurrentPaymentAttemptId` and use `BuildPaymentReturnUrl(orderId, outcome)`. Include that attempt ID in `PaymentSettings.OrderCustomData["ekomPaymentAttemptId"]`; the shared success handler needs it to distinguish payment attempts on the same order.
+
+Use the provider's exact payment reference when looking up a gateway attempt. Ekom's order ID remains the same across retries, so a payment lookup that returns the first record associated with that order ID is ambiguous. The verified callback must retain the settings of the payment that actually succeeded, not load the latest basket or latest attempt's settings.
+
+Applications that create external giftcard claims must register an `ICheckoutGiftcardReservations` implementation, for example `services.AddSingleton<ICheckoutGiftcardReservations, MyGiftcardReservations>()` (use the appropriate lifetime for your integration). `ReserveAsync` returns the selected cards with freshly acquired claim metadata; `ReleaseAsync` must confirm release of the supplied unredeemed claims and handle repeated or partially successful calls safely. Check provider response success, not just whether the call threw. If external release cannot be confirmed, throw: the attempt remains pending release and edits/retries stay blocked rather than pretending the balance is available. Existing claimed cards without an adapter are rejected with an actionable conflict.
+
+Keep this adapter in the consuming application: Ekom's `Giftcard` model does not call an external balance service. For GiftToWallet integrations, release by claim ID rather than using a helper that removes the selected card from Ekom. Do not release redeemed/settled claims. Reacquisition must return new metadata and must not silently reuse a released claim; honor any provider-specific single-card restriction.
+
+**Immediate release is an availability-first business policy, not confirmation that the gateway payment was cancelled.** A verified success for a released, expired, superseded, or changed attempt is recorded for reconciliation and does not complete the edited basket. A real late payment may require manual handling or refund. Old callbacks without attempt metadata cannot be used to complete an order that has newer tracked attempts.
+
+Release attempts and outcomes are written directly to the order activity log, independently of the normal activity-log queue. Entries include the reason, attempt/reservation identity, safe stock key and quantity, and whether stock was restored, already released/expired, skipped, or failed. Expiry restoration is also audited. Codes and payment secrets are not logged. Logging failures are reported to the application log and must not restore stock twice or manufacture a successful release outcome.
+
+Per-order operation ownership coordinates checkout, edits, returns, and completion across nodes. Uncertain persistence must retain ownership rather than allowing an old writer to resume against a newer attempt. Interrupted ownership requires explicit reconciliation; there is no unsafe timed takeover.
+
+Historical expired reservations are retained for audit, but are not recovered as holds for a fresh attempt after cancel/reset and a cart edit. Explicitly attached expired IDs and consumed stock still block unsafe reuse.
+
+Expected preparation conflicts return HTTP **409** with a customer-safe `CheckoutStateError` (`code`, `message`, `canRetry`). Codes distinguish `checkout_state_conflict`, `checkoutBusy`, `paymentReviewRequired`, and `checkoutCompleted`. The built-in form checkout redirects with the safe `errorStatus`/`errorMessage` values instead of diagnostic exception text. `canRetry` is false: clients must not automatically resubmit payment on a conflict. Follow the message, refresh the basket when appropriate, and contact the store for payment review. Stock-shortage and shipping-validation responses retain their existing behavior. Unexpected form-checkout failures redirect with `errorStatus=serverError`; diagnostic details remain in application logs.
+
 Do not call `CompleteOrderAsync` merely because a browser returned to the site. A payment integration should complete only after it has verified the provider outcome. `Order.CompleteOrderAsync(orderId, ct)` is intended for trusted server-side payment/offline integrations.
 
 ## Completion

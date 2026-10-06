@@ -105,7 +105,9 @@ With `Enabled = false`, checkout validates inventory during payment preparation 
 
 Preparation ownership is coordinated in `EkomCheckoutPreparation`, one order at a time across nodes. A competing request cannot adopt or compensate another preparation's holds. Partial failure releases only holds created by that preparation. Once a save or payment submission may have happened, Ekom retains ownership/holds rather than guessing whether the operation committed.
 
-Retries reuse matching active holds without extending expiry. Changed requirements, terminal holds, expired holds, or a completed order reject another payment attempt. Payment-provider idempotency remains the provider integration's responsibility.
+Within a preparation, matching active holds can be reused without extending expiry. A second payment submission is rejected while its current attempt is still active. Cancel/error returns and edits close that attempt before a new submission; expired attempts can be reset before retry. Completed orders cannot start another attempt. Payment-provider idempotency remains the provider integration's responsibility.
+
+The built-in cancel/error return and cart-edit lifecycle explicitly releases the current payment attempt before reusing the basket. After a successful release/reset, the next checkout creates a new attempt and fresh reservations with a new deadline. Abandoned attempts still expire normally. Release attempts, per-hold outcomes, failures, and timeout restoration appear in the order activity log; repeated or stale returns do not restore stock twice. See [Cancel, edit, and retry reservations](checkout.md#cancel-edit-and-retry-reservations).
 
 Completion verifies attached IDs against the order's eligible requirements, consumes covered active holds, deducts only uncovered quantities, and inserts an `EkomCheckoutStockCompletion` receipt in one SQL transaction. Existing holds are honored even if `Enabled` is later switched off. Completion receipts are retained without scheduled cleanup.
 

@@ -94,7 +94,18 @@ internal sealed class EkomStartup : IAsyncComponent
 
             var checkoutService = _factory.GetRequiredService<CheckoutService>();
 
-            await checkoutService.CompleteAsync(orderId);
+            var attempts = _factory.GetService<CheckoutPaymentAttemptService>();
+            if (attempts == null)
+            {
+                await checkoutService.CompleteAsync(orderId);
+            }
+            else
+            {
+                Guid? attemptId = settings.OrderCustomData.TryGetValue("ekomPaymentAttemptId", out var attemptValue)
+                    && Guid.TryParse(attemptValue, out var parsedAttempt) ? parsedAttempt : null;
+                await attempts.CompleteAsync(orderId, attemptId, () => checkoutService.CompleteAsync(orderId), CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
         }
     }
 }

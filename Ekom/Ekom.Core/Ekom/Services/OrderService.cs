@@ -67,6 +67,7 @@ partial class OrderService
     readonly IOrderTrackingService _orderTrackingService;
     readonly IOrderActivityLogService _orderActivityLogService;
     readonly OrderRepository _orderRepository;
+    readonly CheckoutPaymentAttemptService? _paymentAttempts;
     readonly CouponRepository _couponRepository;
     readonly IStoreService _storeSvc;
     readonly ContentRequest? _ekmRequest;
@@ -88,12 +89,14 @@ partial class OrderService
         IMemoryCache memoryCache,
         IMemberService memberService,
         DiscountCache discountCache,
-        IOrderTrackingService orderTrackingService)
+        IOrderTrackingService orderTrackingService,
+        CheckoutPaymentAttemptService? paymentAttempts = null)
     {
         _logger = logger;
 
         _config = config;
         _orderRepository = orderRepo;
+        _paymentAttempts = paymentAttempts;
         _couponRepository = couponRepository;
         _orderActivityLogService = orderActivityLogService;
         _storeSvc = storeService;
@@ -119,8 +122,9 @@ partial class OrderService
         IMemberService memberService,
         DiscountCache discountCache,
         IOrderTrackingService orderTrackingService,
-        IHttpContextAccessor httpContextAccessor)
-        : this(config, orderRepo, couponRepository, orderActivityLogService, logger, storeService, memoryCache, memberService, discountCache, orderTrackingService)
+        IHttpContextAccessor httpContextAccessor,
+        CheckoutPaymentAttemptService? paymentAttempts = null)
+        : this(config, orderRepo, couponRepository, orderActivityLogService, logger, storeService, memoryCache, memberService, discountCache, orderTrackingService, paymentAttempts)
     {
 
         try
@@ -520,12 +524,14 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "quantity", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             OrderLine? orderline = orderInfo.orderLines.FirstOrDefault(x => x.Key == orderLineId);
 
             if (orderline == null)
@@ -582,7 +588,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -597,17 +603,18 @@ partial class OrderService
 
         if (storeCurrency != null)
         {
-            // ToDo: Lock
-            OrderData order = await _orderRepository.GetOrderAsync(uniqueId, ct).ConfigureAwait(false);
-
-            string oldCurrency = order.Currency;
-
-            order.Currency = storeCurrency.ISOCurrencySymbol;
-
             OrderInfo? orderInfo = await GetOrderAsync(uniqueId, ct).ConfigureAwait(false);
-
-            if (orderInfo != null)
+            if (orderInfo == null) return null;
+            var semaphore = GetOrderLock(orderInfo);
+            var ownsSemaphore = CheckoutPaymentOperationScope.Current?.OrderId != uniqueId;
+            if (ownsSemaphore) await semaphore.WaitAsync(ct).ConfigureAwait(false);
+            try
             {
+                await using var operation = await BeginCartEditAsync(orderInfo, "currency", ct).ConfigureAwait(false);
+                using var capability = operation?.Enter();
+                OrderData order = await _orderRepository.GetOrderAsync(uniqueId, ct).ConfigureAwait(false);
+                string oldCurrency = order.Currency;
+                order.Currency = storeCurrency.ISOCurrencySymbol;
                 orderInfo.StoreInfo.Currency = storeCurrency;
 
                 string serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.Settings);
@@ -627,9 +634,12 @@ partial class OrderService
                     "Change Currency {OldCurrency}  to {Currency}",
                     oldCurrency,
                     currency);
+                return orderInfo;
             }
-
-            return orderInfo;
+            finally
+            {
+                if (ownsSemaphore) semaphore.Release();
+            }
         }
 
         return null;
@@ -662,13 +672,15 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
 
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "giftcard-add", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             if (orderInfo.Giftcards.Any(existingGiftcard => string.Equals(
                 existingGiftcard.Code,
                 giftcard.Code,
@@ -684,7 +696,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -711,13 +723,15 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
 
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "giftcard-remove", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             Giftcard? giftcard = orderInfo.Giftcards.FirstOrDefault(existingGiftcard => string.Equals(
                 existingGiftcard.Code,
                 code,
@@ -734,7 +748,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -858,8 +872,6 @@ partial class OrderService
             orderInfo = await CreateEmptyOrderAsync(store.Alias, ct).ConfigureAwait(false);
         }
 
-        ApplyConsentAndTracking(orderInfo, settings.Consent, settings.Tracking, replaceExisting: settings.Tracking?.HasData() == true || settings.Consent != null);
-
         _logger.LogDebug("ProductId: {ProductId}" +
             " variantId: {VariantId}" +
             " qty: {Quantity}" +
@@ -912,7 +924,7 @@ partial class OrderService
         OrderLine? existingOrderLine = null;
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!(settings?.IsEventHandler ?? false))
+        if (!(settings?.IsEventHandler ?? false) && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
@@ -940,7 +952,7 @@ partial class OrderService
         }
         finally
         {
-            if (!(settings?.IsEventHandler ?? false))
+            if (!(settings?.IsEventHandler ?? false) && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -983,12 +995,14 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "line-remove", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             OrderLine? orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Key == lineId) as OrderLine;
 
             if (orderLine != null)
@@ -1027,7 +1041,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -1152,7 +1166,7 @@ partial class OrderService
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
 
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
@@ -1171,6 +1185,9 @@ partial class OrderService
             {
                 return orderInfo;
             }
+
+            await using var operation = await BeginCartEditAsync(orderInfo, "price-refresh", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
 
             // Stage pricing changes without clearing the basket or mutating its cached instance.
             // Refreshing an existing quantity is not an add-to-cart stock validation.
@@ -1225,7 +1242,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -1247,62 +1264,65 @@ partial class OrderService
         CancellationToken ct = default
     )
     {
-        var addingOrderlineEventArgs = new AddingOrderlineEventArgs()
-        {
-            Product = product,
-            Variant = variant,
-            Quantity = quantity,
-            Settings = settings,
-            Action = action,
-            OrderInfo = orderInfo
-        };
-
-        if (settings.FireEvents)
-        {
-            OrderEvents.OnAddingOrderline(this, addingOrderlineEventArgs);
-            await OrderEvents.OnAddingOrderlineAsync(this, addingOrderlineEventArgs, ct);
-        }
-
-        if (settings.CustomData.Any())
-        {
-            orderInfo = (OrderInfo)(await UpdateCustomerInformationInProvidersAsync(settings.CustomData, orderInfo, ct));
-        }
-
-        var filteredOrderlineData = settings.CustomData.Where(kvp =>
-            kvp.Key.StartsWith("orderline", StringComparison.OrdinalIgnoreCase)).ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value,
-                StringComparer.OrdinalIgnoreCase
-            );
-
-        quantity = addingOrderlineEventArgs.Quantity;
-        product = addingOrderlineEventArgs.Product;
-        variant = addingOrderlineEventArgs.Variant;
-        settings = addingOrderlineEventArgs.Settings;
-        action = addingOrderlineEventArgs.Action;
-
-        OrderLineVariantValidator.Validate(product, variant);
-        if (variant != null && variant.ProductKey != product.Key)
-            throw new EkomException("Mismatch between product and variant. Ensure chosen variant is a child of given Product");
-
-        if (quantity == 0)
-        {
-            // Use remove orderline instead
-            throw new ArgumentException("Quantity can not be 0", nameof(quantity));
-        }
-        if (action == OrderAction.Set && quantity <= 0)
-        {
-            throw new ArgumentException("Quantity can not be set to 0 or less", nameof(quantity));
-        }
-
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
-
+        var ownsSemaphore = !settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId;
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "line-add", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
+            ApplyConsentAndTracking(orderInfo, settings.Consent, settings.Tracking, replaceExisting: settings.Tracking?.HasData() == true || settings.Consent != null);
+            var addingOrderlineEventArgs = new AddingOrderlineEventArgs()
+            {
+                Product = product,
+                Variant = variant,
+                Quantity = quantity,
+                Settings = settings,
+                Action = action,
+                OrderInfo = orderInfo
+            };
+
+            if (settings.FireEvents)
+            {
+                OrderEvents.OnAddingOrderline(this, addingOrderlineEventArgs);
+                await OrderEvents.OnAddingOrderlineAsync(this, addingOrderlineEventArgs, ct);
+            }
+
+            if (settings.CustomData.Any())
+            {
+                orderInfo = (OrderInfo)(await UpdateCustomerInformationInProvidersAsync(settings.CustomData, orderInfo, ct));
+            }
+
+            var filteredOrderlineData = settings.CustomData.Where(kvp =>
+                kvp.Key.StartsWith("orderline", StringComparison.OrdinalIgnoreCase)).ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value,
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+            quantity = addingOrderlineEventArgs.Quantity;
+            product = addingOrderlineEventArgs.Product;
+            variant = addingOrderlineEventArgs.Variant;
+            settings = addingOrderlineEventArgs.Settings;
+            action = addingOrderlineEventArgs.Action;
+
+            OrderLineVariantValidator.Validate(product, variant);
+            if (variant != null && variant.ProductKey != product.Key)
+                throw new EkomException("Mismatch between product and variant. Ensure chosen variant is a child of given Product");
+
+            if (quantity == 0)
+            {
+                // Use remove orderline instead
+                throw new ArgumentException("Quantity can not be 0", nameof(quantity));
+            }
+            if (action == OrderAction.Set && quantity <= 0)
+            {
+                throw new ArgumentException("Quantity can not be set to 0 or less", nameof(quantity));
+            }
+
             Guid lineId = Guid.NewGuid();
 
             _logger.LogDebug(
@@ -1486,11 +1506,62 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (ownsSemaphore)
             {
                 semaphore.Release();
             }
         }
+    }
+
+    private Task<CheckoutPaymentOperationScope?> BeginCartEditAsync(OrderInfo orderInfo, string reason, CancellationToken ct)
+    {
+        var paymentAttempts = _paymentAttempts;
+        if (paymentAttempts == null || orderInfo.PaidDate != null || IsFinalCartStatus(orderInfo.OrderStatus)
+            || CheckoutPaymentOperationScope.Current?.OrderId == orderInfo.UniqueId)
+        {
+            return Task.FromResult<CheckoutPaymentOperationScope?>(null);
+        }
+
+        return BeginAsync();
+
+        async Task<CheckoutPaymentOperationScope?> BeginAsync()
+        {
+            var operation = await paymentAttempts.BeginEditAsync(orderInfo, "cart-edit: " + reason, ct).ConfigureAwait(false);
+            try
+            {
+                // Other nodes may have edited an already released cart since this instance was cached.
+                // Refresh while holding ownership, never after the caller has begun its mutation.
+                var persisted = await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct).ConfigureAwait(false)
+                    ?? throw new OrderInfoNotFoundException();
+                if (persisted.PaidDate != null || IsFinalCartStatus(persisted.OrderStatus))
+                    throw new InvalidOperationException("The order became final before the cart edit began.");
+                if (!string.IsNullOrWhiteSpace(persisted.OrderInfo))
+                {
+                    orderInfo.ApplyPersistedSnapshot(new OrderInfo(persisted), persisted);
+                }
+                return operation;
+            }
+            catch
+            {
+                await operation.DisposeAsync().ConfigureAwait(false);
+                throw;
+            }
+        }
+    }
+
+    // Pending is a legacy receipt status, but it can still represent an unpaid submitted attempt.
+    private static bool IsFinalCartStatus(OrderStatus status)
+        => status != OrderStatus.Pending && Order.IsOrderFinal(status);
+
+    private async Task<CheckoutPaymentOperationScope?> BeginReservationUpdateAsync(OrderInfo orderInfo, CancellationToken ct)
+    {
+        if (_paymentAttempts == null || CheckoutPaymentOperationScope.Current?.OrderId == orderInfo.UniqueId)
+        {
+            return null;
+        }
+
+        // Attaching or clearing reservation metadata is not a cart edit: never release incoming holds.
+        return await _paymentAttempts.BeginReservationUpdateAsync(orderInfo, ct).ConfigureAwait(false);
     }
 
     private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(
@@ -1504,6 +1575,11 @@ partial class OrderService
     {
         try
         {
+            if (_paymentAttempts != null && orderInfo.PaidDate == null && !IsFinalCartStatus(orderInfo.OrderStatus)
+                && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
+            {
+                throw new InvalidOperationException("Cart persistence requires a checkout payment operation lease.");
+            }
             _logger.LogDebug("Update Order with new OrderInfo");
 
             VerifyDiscounts(orderInfo);
@@ -1714,49 +1790,56 @@ partial class OrderService
         var scope = CheckoutPreparationScope.Current;
         if (scope != null && scope.Order.UniqueId != orderInfo.UniqueId)
             throw new StockException("Cannot attach another order during checkout preparation.");
-        var ownership = scope?.Ownership ?? await reservations.AcquirePreparationAsync(orderInfo.UniqueId, ct).ConfigureAwait(false);
-        var unlock = true;
-        var requested = reservationIds.Concat(System.Text.Json.JsonSerializer.Deserialize<string[]>(ownership.ProtectedIds)!)
-            .Distinct(StringComparer.Ordinal).ToArray();
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        var entered = false;
+        var ownsSemaphore = CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId;
+        if (ownsSemaphore) await semaphore.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            await semaphore.WaitAsync(ct).ConfigureAwait(false);
-            entered = true;
-            await reservations.AssociateAsync(orderInfo, requested, ownership, ct).ConfigureAwait(false);
-            var added = requested.Except(orderInfo.ReservationIds, StringComparer.Ordinal).ToArray();
-            orderInfo._hangfireJobs.AddRange(added);
+            await using var operation = await BeginReservationUpdateAsync(orderInfo, ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
+            var ownership = scope?.Ownership ?? await reservations.AcquirePreparationAsync(orderInfo.UniqueId, ct).ConfigureAwait(false);
+            var unlock = true;
             try
             {
-                unlock = false;
-                await UpdateOrderAndOrderInfoAsync(orderInfo, ct: ct, reservationPersistence: true).ConfigureAwait(false);
-                if (scope != null && scope.CompensationSaves.Count == 0)
+                var requested = reservationIds.Concat(System.Text.Json.JsonSerializer.Deserialize<string[]>(ownership.ProtectedIds)!)
+                    .Distinct(StringComparer.Ordinal).ToArray();
+                await reservations.AssociateAsync(orderInfo, requested, ownership, ct).ConfigureAwait(false);
+                var added = requested.Except(orderInfo.ReservationIds, StringComparer.Ordinal).ToArray();
+                orderInfo._hangfireJobs.AddRange(added);
+                try
                 {
-                    scope.CompensationSaves.Add(async () =>
+                    unlock = false;
+                    await UpdateOrderAndOrderInfoAsync(orderInfo, ct: ct, reservationPersistence: true).ConfigureAwait(false);
+                    if (scope != null && scope.CompensationSaves.Count == 0)
                     {
-                        orderInfo._hangfireJobs.RemoveAll(scope.Created.Contains);
-                        await UpdateOrderAndOrderInfoAsync(orderInfo, ct: CancellationToken.None, reservationPersistence: true).ConfigureAwait(false);
-                    });
+                        scope.CompensationSaves.Add(async () =>
+                        {
+                            orderInfo._hangfireJobs.RemoveAll(scope.Created.Contains);
+                            await UpdateOrderAndOrderInfoAsync(orderInfo, ct: CancellationToken.None, reservationPersistence: true).ConfigureAwait(false);
+                        });
+                    }
+                    else if (scope == null)
+                    {
+                        await reservations.ProtectPreparationAsync(ownership, orderInfo.ReservationIds, CancellationToken.None).ConfigureAwait(false);
+                        unlock = true;
+                    }
                 }
-                else if (scope == null)
+                catch
                 {
-                    await reservations.ProtectPreparationAsync(ownership, orderInfo.ReservationIds, CancellationToken.None).ConfigureAwait(false);
-                    unlock = true;
+                    if (scope != null) scope.UncertainSave = true;
+                    orderInfo._hangfireJobs.RemoveAll(added.Contains);
+                    throw;
                 }
             }
-            catch
+            finally
             {
-                if (scope != null) scope.UncertainSave = true;
-                orderInfo._hangfireJobs.RemoveAll(added.Contains);
-                throw;
+                if (scope == null && unlock)
+                    await reservations.ReleasePreparationAsync(ownership, CancellationToken.None).ConfigureAwait(false);
             }
         }
         finally
         {
-            if (entered) semaphore.Release();
-            if (scope == null && unlock)
-                await reservations.ReleasePreparationAsync(ownership, CancellationToken.None).ConfigureAwait(false);
+            if (ownsSemaphore) semaphore.Release();
         }
     }
 
@@ -1773,9 +1856,12 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        var ownsSemaphore = CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId;
+        if (ownsSemaphore) await semaphore.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            await using var operation = await BeginReservationUpdateAsync(orderInfo, ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             orderInfo._hangfireJobs.Clear();
 
             await UpdateOrderAndOrderInfoAsync(orderInfo, ct: ct)
@@ -1783,7 +1869,7 @@ partial class OrderService
         }
         finally
         {
-            semaphore.Release();
+            if (ownsSemaphore) semaphore.Release();
         }
     }
 
@@ -1880,6 +1966,31 @@ partial class OrderService
             throw new ArgumentException("Orderinfo is missing", nameof(orderInfo));
         }
 
+        var semaphore = GetOrderLock(orderInfo);
+        var ownsSemaphore = !settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId;
+        if (ownsSemaphore)
+        {
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        }
+        try
+        {
+            await using var operation = await BeginCartEditAsync(orderInfo, "customer", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
+            return await UpdateCustomerInformationCoreAsync(form, settings, storeAlias, orderInfo, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (ownsSemaphore) semaphore.Release();
+        }
+    }
+
+    private async Task<OrderInfo> UpdateCustomerInformationCoreAsync(
+        Dictionary<string, string> form,
+        OrderSettings settings,
+        string storeAlias,
+        OrderInfo orderInfo,
+        CancellationToken ct)
+    {
         // Metadata-only edits should not invalidate an already selected provider.
         var verifyProviders = HasProviderRelevantCustomerChanges(form, orderInfo);
         var previousCustomerCountry = orderInfo.CustomerInformation.Customer.Country;
@@ -1971,7 +2082,7 @@ partial class OrderService
         {
             if (Guid.TryParse(shippingProviderValue, out Guid _providerKey) && (orderInfo.ShippingProvider?.Key ?? Guid.Empty) != _providerKey)
             {
-                orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customShippingData, settings).ConfigureAwait(false);
+                orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customShippingData, settings, ct).ConfigureAwait(false);
             }
         }
 
@@ -2083,10 +2194,21 @@ partial class OrderService
         }
 
         _orderTrackingService.ValidateManualReplacement(orderInfo);
-        ApplyConsentAndTracking(orderInfo, settings.Consent, tracking, replaceExisting: true);
-
-        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
-            .ConfigureAwait(false);
+        var semaphore = GetOrderLock(orderInfo);
+        var ownsSemaphore = !settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId;
+        if (ownsSemaphore) await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await using var operation = await BeginCartEditAsync(orderInfo, "tracking", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
+            ApplyConsentAndTracking(orderInfo, settings.Consent, tracking, replaceExisting: true);
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            if (ownsSemaphore) semaphore.Release();
+        }
     }
 
     public async Task<OrderInfo> UpdateShippingInformationAsync(
@@ -2119,12 +2241,14 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "shipping", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             if (shippingProviderId == Guid.Empty)
             {
                 if (!settings.ClearShippingProvider) return orderInfo;
@@ -2179,7 +2303,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }
@@ -2216,12 +2340,14 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
         {
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
+            await using var operation = await BeginCartEditAsync(orderInfo, "payment-provider", ct).ConfigureAwait(false);
+            using var capability = operation?.Enter();
             if (paymentProviderId == Guid.Empty) return orderInfo;
 
             Guid previousPaymentProviderId = orderInfo.PaymentProvider?.Key ?? Guid.Empty;
@@ -2264,7 +2390,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!settings.IsEventHandler && CheckoutPaymentOperationScope.Current?.OrderId != orderInfo.UniqueId)
             {
                 semaphore.Release();
             }

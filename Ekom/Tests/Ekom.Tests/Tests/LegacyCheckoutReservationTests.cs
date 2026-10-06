@@ -150,7 +150,8 @@ public sealed class LegacyCheckoutReservationTests
         {
             var saved = await f.ReloadAsync();
             Assert.Single(saved.ReservationIds);
-            await Assert.ThrowsAsync<StockException>(() => f.Controller().PayAsync(new PaymentRequest(), "en-US", saved));
+            var response = await f.Controller().PayAsync(new PaymentRequest(), "en-US", saved);
+            AssertCheckoutStateConflict(response);
             var requirements = await f.Checkout.GetRequirementsAsync(saved, default);
             await Assert.ThrowsAsync<StockException>(() => f.Checkout.CompleteStockAsync(saved.UniqueId, requirements, saved.ReservationIds, true, default));
             await Assert.ThrowsAsync<StockException>(() => Order.Instance.AddReservationsToOrderAsync(saved.ReservationIds, saved));
@@ -202,7 +203,8 @@ public sealed class LegacyCheckoutReservationTests
             await f.Repository.UpdateOrderAsync(data, reservationPersistence: true, default);
             return null;
         };
-        await Assert.ThrowsAsync<StockException>(() => controller.PayAsync(new PaymentRequest(), "en-US", f.Order));
+        var response = await controller.PayAsync(new PaymentRequest(), "en-US", f.Order);
+        AssertCheckoutStateConflict(response);
         Assert.False(controller.PaymentCalled);
         using var db = f.Database.Factory.GetDatabase();
         Assert.Equal(StockReservationState.Active, (await db.StockReservations.SingleAsync()).State);
@@ -292,7 +294,8 @@ public sealed class LegacyCheckoutReservationTests
         using var f = new Fixture(false, false, customPolicy: false);
         var key = await f.AddLineAsync(3, backorder: true);
         var controller = f.Controller();
-        await Assert.ThrowsAsync<StockException>(() => controller.PayAsync(new PaymentRequest(), "en-US", f.Order));
+        var response = await controller.PayAsync(new PaymentRequest(), "en-US", f.Order);
+        AssertCheckoutStateConflict(response);
         Assert.False(controller.PaymentCalled);
         Assert.Equal(10, await f.StockAsync(key));
     }
@@ -308,6 +311,15 @@ public sealed class LegacyCheckoutReservationTests
         Assert.Single((await f.ReloadAsync()).ReservationIds);
         await f.CompleteAsync();
         Assert.Equal(7, await f.StockAsync(key));
+    }
+
+    private static void AssertCheckoutStateConflict(CheckoutResponse response)
+    {
+        Assert.Equal(409, response.HttpStatusCode);
+        var error = Assert.IsType<CheckoutStateError>(response.ResponseBody);
+        Assert.Equal("checkout_state_conflict", error.Code);
+        Assert.Equal("Unable to prepare checkout. Please refresh your basket and try again. If the problem continues, contact the store.", error.Message);
+        Assert.False(error.CanRetry);
     }
 
     private sealed class Fixture : IDisposable
