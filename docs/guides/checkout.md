@@ -132,7 +132,7 @@ The built-in checkout keeps the same basket/order identity across payment retrie
 
 - Stock is reserved before payment when reservations are enabled. Requirements come from order lines; quantities sharing the same stock identity are combined. At submission all holds share the earliest hold deadline, without extending an existing hold.
 - A matching cancel/error return releases that attempt's holds immediately and restores the unpaid basket to **Incomplete**. Repeated release is idempotent; an old return cannot release a newer attempt's holds.
-- A cart edit releases existing holds before stock validation and persistence. Merely viewing the cart or a receipt does not release stock.
+- A cart edit releases existing holds before stock validation and persistence. `UpdateOrderLineMetadataAsync` and `UpdateCustomerInformationAsync` are information updates instead: they are allowed in every order/payment state and retain holds and payment attempts. Customer/provider changes can still invalidate the frozen purchase used for completion retry; fulfillment-only line metadata does not. Merely viewing the cart or a receipt does not release stock.
 - The next payment submission validates stock again and acquires fresh holds. Closing a payment page without a return or edit leaves its reservations held until timeout. An attempt without holds, for example with reservations disabled, also ends after `Reservations:Timeout`.
 - Giftcard selections remain in the basket. External claims must be released and reacquired through the application's giftcard lifecycle integration; clearing a local claim field is not proof that external balance is available.
 

@@ -511,6 +511,38 @@ public sealed class CheckoutPaymentAttemptTests
     }
 
     [Theory]
+    [InlineData("orderlineWarehouse")]
+    [InlineData("ORDERLINEErpId")]
+    public void PurchaseComparisonAllowsFulfillmentMetadataWithoutIgnoringPurchaseChanges(string key)
+    {
+        const string submitted = "{\"OrderLines\":[{\"Key\":\"line\",\"Quantity\":2,\"OrderLineInfo\":{\"Properties\":{\"purchaseField\":\"unchanged\"}}}]}";
+        var updated = JObject.Parse(submitted);
+        updated["OrderLines"]![0]!["OrderLineInfo"]!["Properties"]![key] = "ERP-1407";
+
+        Assert.True(CheckoutPaymentAttemptService.SamePurchase(submitted, updated.ToString(Formatting.None)));
+        updated["OrderLines"]![0]!["Quantity"] = 3;
+        Assert.False(CheckoutPaymentAttemptService.SamePurchase(submitted, updated.ToString(Formatting.None)));
+        updated["OrderLines"]![0]!["Quantity"] = 2;
+        updated["OrderLines"]![0]!["OrderLineInfo"]!["Properties"]!["purchaseField"] = "changed";
+        Assert.False(CheckoutPaymentAttemptService.SamePurchase(submitted, updated.ToString(Formatting.None)));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(",\"OrderLineInfo\":null")]
+    [InlineData(",\"OrderLineInfo\":{}")]
+    [InlineData(",\"OrderLineInfo\":{\"Properties\":null}")]
+    [InlineData(",\"OrderLineInfo\":{\"Properties\":{}}")]
+    public void PurchaseComparisonAllowsAddingMetadataToLinesWithoutMetadata(string metadata)
+    {
+        var submitted = "{\"OrderLines\":[{\"Key\":\"line\",\"Quantity\":2" + metadata + "}]}";
+        const string updated = "{\"OrderLines\":[{\"Key\":\"line\",\"Quantity\":2,\"OrderLineInfo\":{\"Properties\":{\"orderlineErpId\":\"ERP-1407\"}}}]}";
+
+        Assert.True(CheckoutPaymentAttemptService.SamePurchase(submitted, updated));
+        Assert.True(CheckoutPaymentAttemptService.SamePurchase(updated, submitted));
+    }
+
+    [Theory]
     [InlineData("GrandTotal")]
     [InlineData("GrandTotalWithOutVat")]
     [InlineData("ChargedAmount")]

@@ -1,5 +1,7 @@
 using Ekom.API;
 using Ekom.Cache;
+using Ekom.Events;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Repositories;
@@ -122,11 +124,11 @@ public sealed class OrderReservationReleaseTests
     }
 
     [Fact]
-    public async Task MetadataEditUsesReleasedSnapshotWithoutChangingAttemptHistory()
+    public async Task MetadataEditPreservesPendingOrderAndSubmittedAttempt()
     {
         using var fixture = new Fixture();
         await fixture.PrepareAsync();
-        var frozen = (await fixture.AttemptAsync()).SubmittedOrderInfo;
+        var frozen = await fixture.AttemptAsync();
 
         var updated = await fixture.Service.UpdateOrderLineMetadataAsync(fixture.Order.UniqueId,
             [new OrderLineMetadataUpdate
@@ -135,11 +137,320 @@ public sealed class OrderReservationReleaseTests
                 Properties = new Dictionary<string, string> { ["orderlineNote"] = "edited" },
             }]);
 
-        Assert.Equal(OrderStatus.Incomplete, updated.OrderStatus);
-        Assert.Empty(updated.ReservationIds);
+        Assert.Equal(OrderStatus.Pending, updated.OrderStatus);
+        Assert.Equal(fixture.Order.ReservationIds, updated.ReservationIds);
         Assert.Equal("edited", Assert.Single(updated.OrderLines).OrderLineInfo.Properties["orderlineNote"]);
-        Assert.Equal(3, await fixture.Database.StockAsync(fixture.ProductKey));
-        Assert.Equal(frozen, (await fixture.AttemptAsync()).SubmittedOrderInfo);
+        await fixture.AssertInformationEditPreservedAsync(frozen);
+    }
+
+    public static IEnumerable<object[]> InformationEditStates()
+    {
+        foreach (var state in Enum.GetNames<CheckoutPaymentAttemptState>())
+        {
+            yield return [state, false];
+            yield return [state, true];
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(InformationEditStates))]
+    public async Task MetadataAndCustomerUpdatesPreservePaymentAndReservationsInEveryState(string state, bool reconciliationRequired)
+    {
+        using var fixture = new Fixture(claimedGiftcard: true);
+        await fixture.PrepareAsync();
+        using (var db = fixture.Database.Factory.GetDatabase())
+        {
+            await db.GetTable<CheckoutPaymentAttemptData>().Where(x => x.AttemptId == fixture.AttemptId)
+                .Set(x => x.State, Enum.Parse<CheckoutPaymentAttemptState>(state)).UpdateAsync();
+            await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == fixture.Order.UniqueId)
+                .Set(x => x.ReconciliationRequired, reconciliationRequired).UpdateAsync();
+            if (state == "Completed")
+            {
+                await db.OrderData.Where(x => x.UniqueId == fixture.Order.UniqueId)
+                    .Set(x => x.OrderStatusCol, "ReadyForDispatch").UpdateAsync();
+            }
+        }
+        var frozen = await fixture.AttemptAsync();
+        var expectedStatus = state == "Completed" ? OrderStatus.ReadyForDispatch : OrderStatus.Pending;
+
+        var metadata = await fixture.UpdateMetadataAsync();
+
+        Assert.Equal(expectedStatus, metadata.OrderStatus);
+        Assert.Equal("edited", Assert.Single(metadata.OrderLines).OrderLineInfo.Properties["orderlineNote"]);
+        await fixture.AssertInformationEditPreservedAsync(frozen, reconciliationRequired);
+
+        var provider = fixture.AddPaymentProvider();
+        var customer = await fixture.Service.UpdateCustomerInformationAsync(new Dictionary<string, string>
+        {
+            ["storeAlias"] = "main",
+            ["customerName"] = "Updated customer",
+            ["customerEmail"] = "updated@example.com",
+            ["customerCountry"] = "IS",
+            ["customerNote"] = "Updated customer property",
+            ["shippingCountry"] = "DK",
+            ["PaymentProvider"] = provider.ToString(),
+        }, fixture.Settings());
+
+        Assert.Equal(expectedStatus, customer.OrderStatus);
+        Assert.Equal("Updated customer", customer.CustomerInformation.Customer.Name);
+        Assert.Equal("updated@example.com", customer.CustomerInformation.Customer.Email);
+        Assert.Equal("IS", customer.CustomerInformation.Customer.Country);
+        Assert.Equal("DK", customer.CustomerInformation.Shipping.Country);
+        Assert.Equal("Updated customer property", customer.CustomerInformation.Customer.Properties["customerNote"]);
+        Assert.Equal(provider, customer.PaymentProvider!.Key);
+        Assert.Equal("edited", Assert.Single(customer.OrderLines).OrderLineInfo.Properties["orderlineNote"]);
+        var stored = (await fixture.Repository.GetOrderAsync(customer.UniqueId))!;
+        Assert.Equal(expectedStatus, stored.OrderStatus);
+        Assert.Equal("Updated customer", stored.CustomerName);
+        Assert.Equal("updated@example.com", stored.CustomerEmail);
+        Assert.Equal("DK", stored.ShippingCountry);
+        await fixture.AssertInformationEditPreservedAsync(frozen, reconciliationRequired);
+    }
+
+    [Fact]
+    public async Task FailedCompletionWithoutReservationsStillAllowsMetadataAndCustomerUpdates()
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync(reserveStock: false);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Attempts.CompleteAsync(
+            fixture.Order.UniqueId, fixture.AttemptId,
+            () => throw new InvalidOperationException("Completion failed.")));
+        var frozen = await fixture.AttemptAsync();
+        Assert.Equal(CheckoutPaymentAttemptState.CompletionPending, frozen.State);
+
+        var metadata = await fixture.UpdateMetadataAsync();
+        var customer = await fixture.Service.UpdateCustomerInformationAsync(new Dictionary<string, string>
+        {
+            ["storeAlias"] = "main", ["customerName"] = "After failed completion",
+        }, fixture.Settings());
+
+        Assert.Equal("edited", Assert.Single(metadata.OrderLines).OrderLineInfo.Properties["orderlineNote"]);
+        Assert.Equal("After failed completion", customer.CustomerInformation.Customer.Name);
+        Assert.Equal(OrderStatus.Pending, customer.OrderStatus);
+        Assert.Empty(customer.ReservationIds);
+        await fixture.AssertInformationEditPreservedAsync(frozen, expectedStock: 3);
+    }
+
+    [Fact]
+    public async Task MetadataUpdateAllowsVerifiedCompletionRetryWithoutRewritingFrozenSnapshot()
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync(reserveStock: false);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Attempts.CompleteAsync(
+            fixture.Order.UniqueId, fixture.AttemptId,
+            () => throw new InvalidOperationException("Completion failed.")));
+        var frozen = await fixture.AttemptAsync();
+        await fixture.UpdateMetadataAsync();
+        var completed = false;
+
+        Assert.True(await fixture.Attempts.CompleteAsync(fixture.Order.UniqueId, fixture.AttemptId, () =>
+        {
+            completed = true;
+            return Task.CompletedTask;
+        }));
+
+        Assert.True(completed);
+        var retried = await fixture.AttemptAsync();
+        Assert.Equal(CheckoutPaymentAttemptState.Completed, retried.State);
+        Assert.Equal(frozen.SubmittedOrderInfo, retried.SubmittedOrderInfo);
+        Assert.Equal(frozen.SubmittedOrderData, retried.SubmittedOrderData);
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Incomplete)]
+    [InlineData(OrderStatus.WaitingForPayment)]
+    [InlineData(OrderStatus.Pending)]
+    [InlineData(OrderStatus.OfflinePayment)]
+    [InlineData(OrderStatus.ReadyForDispatch)]
+    [InlineData(OrderStatus.Cancelled)]
+    [InlineData(OrderStatus.Closed)]
+    public async Task InformationUpdatesAllowOrderStatusesWithoutPaymentAttempt(OrderStatus status)
+    {
+        using var fixture = new Fixture();
+        await fixture.SaveAsync();
+        using var db = fixture.Database.Factory.GetDatabase();
+        await db.OrderData.Where(x => x.UniqueId == fixture.Order.UniqueId)
+            .Set(x => x.OrderStatusCol, status.ToString()).UpdateAsync();
+
+        var metadata = await fixture.UpdateMetadataAsync();
+        var customer = await fixture.Service.UpdateCustomerInformationAsync(new Dictionary<string, string>
+        {
+            ["storeAlias"] = "main", ["customerName"] = "Repaired customer",
+        }, fixture.Settings());
+
+        Assert.Equal(status, metadata.OrderStatus);
+        Assert.Equal(status, customer.OrderStatus);
+        Assert.Equal("Repaired customer", customer.CustomerInformation.Customer.Name);
+        Assert.Equal("edited", Assert.Single(customer.OrderLines).OrderLineInfo.Properties["orderlineNote"]);
+        Assert.Empty(await db.GetTable<CheckoutPaymentAttemptData>().ToListAsync());
+        Assert.Null((await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+    }
+
+    [Fact]
+    public async Task InformationUpdatesInsideCompletionPreserveAmbientOwnershipAndInFlightCustomerChanges()
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync(reserveStock: false);
+        var frozen = await fixture.AttemptAsync();
+
+        Assert.True(await fixture.Attempts.CompleteAsync(fixture.Order.UniqueId, fixture.AttemptId, async () =>
+        {
+            var owner = CheckoutPaymentOperationScope.Current!.Owner;
+            fixture.Order.CustomerInformation.Customer.Properties["customerNote"] = "In-flight change";
+            await fixture.UpdateMetadataAsync();
+            var updated = await fixture.Service.UpdateCustomerInformationAsync(new Dictionary<string, string>
+            {
+                ["storeAlias"] = "main", ["customerName"] = "Completed customer",
+                ["PaymentProvider"] = fixture.AddPaymentProvider().ToString(),
+            }, fixture.Settings());
+
+            Assert.Equal("In-flight change", updated.CustomerInformation.Customer.Properties["customerNote"]);
+            Assert.Equal(owner, CheckoutPaymentOperationScope.Current!.Owner);
+            Assert.False(CheckoutPaymentOperationScope.Current.IsOrderInformationUpdate);
+        }));
+
+        Assert.Null(CheckoutPaymentOperationScope.Current);
+        var attempt = await fixture.AttemptAsync();
+        Assert.Equal(CheckoutPaymentAttemptState.Completed, attempt.State);
+        Assert.Equal(frozen.SubmittedOrderInfo, attempt.SubmittedOrderInfo);
+        Assert.Equal(frozen.SubmittedOrderData, attempt.SubmittedOrderData);
+    }
+
+    [Fact]
+    public async Task CustomerUpdateEventsCannotUseInformationOwnershipForCartOrReservationEdits()
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync();
+        using var db = fixture.Database.Factory.GetDatabase();
+        await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == fixture.Order.UniqueId)
+            .Set(x => x.ReconciliationRequired, true).UpdateAsync();
+        var frozen = await fixture.AttemptAsync();
+        var invoked = false;
+        async Task UpdatingAsync(object sender, CustomerInformationUpdatingEventArgs args, CancellationToken ct)
+        {
+            invoked = true;
+            var settings = new OrderSettings { OrderInfo = args.OrderInfo, IsEventHandler = true, FireEvents = false };
+            await Assert.ThrowsAsync<CheckoutConflictException>(() => fixture.Service.UpdateOrderLineQuantityAsync(
+                fixture.LineId, 2, "main", settings, ct));
+            await Assert.ThrowsAsync<CheckoutConflictException>(() => fixture.Service.AddReservationsToOrderAsync(
+                "main", [], (OrderInfo)args.OrderInfo, ct));
+        }
+
+        OrderEvents.CustomerInformationUpdatingAsync += UpdatingAsync;
+        try
+        {
+            var customer = await fixture.Service.UpdateCustomerInformationAsync(new Dictionary<string, string>
+            {
+                ["storeAlias"] = "main", ["customerName"] = "Repaired customer",
+                ["PaymentProvider"] = fixture.AddPaymentProvider().ToString(),
+            }, new OrderSettings { OrderInfo = fixture.Order });
+            Assert.True(invoked);
+            Assert.Equal("Repaired customer", customer.CustomerInformation.Customer.Name);
+            Assert.Equal(3, Assert.Single(customer.OrderLines).Quantity);
+            Assert.NotNull(customer.PaymentProvider);
+        }
+        finally
+        {
+            OrderEvents.CustomerInformationUpdatingAsync -= UpdatingAsync;
+        }
+
+        await fixture.AssertInformationEditPreservedAsync(frozen, reconciliationRequired: true);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NestedCustomerUpdatesRetainExistingCartEditOrCompletionAuthority(bool completing)
+    {
+        using var fixture = new Fixture();
+        if (completing) await fixture.PrepareAsync(reserveStock: false);
+        else await fixture.SaveAsync();
+        var invoked = false;
+        async Task UpdatingAsync(object sender, CustomerInformationUpdatingEventArgs args, CancellationToken ct)
+        {
+            invoked = true;
+            Assert.True(CheckoutPaymentOperationScope.Current!.IsOrderInformationUpdate);
+            Assert.False(CheckoutPaymentOperationScope.Current.IsInformationOnly);
+            await fixture.Service.UpdateTrackingAsync("main", new OrderTracking(),
+                new OrderSettings { OrderInfo = args.OrderInfo, IsEventHandler = true, FireEvents = false }, ct);
+        }
+        async Task UpdateCustomerAsync()
+        {
+            await fixture.Service.UpdateCustomerInformationAsync(new Dictionary<string, string>
+            {
+                ["storeAlias"] = "main", ["customerName"] = "Nested customer",
+            }, new OrderSettings { OrderInfo = fixture.Order });
+        }
+
+        OrderEvents.CustomerInformationUpdatingAsync += UpdatingAsync;
+        try
+        {
+            if (completing)
+            {
+                Assert.True(await fixture.Attempts.CompleteAsync(fixture.Order.UniqueId, fixture.AttemptId, UpdateCustomerAsync));
+            }
+            else
+            {
+                await using var operation = await fixture.Attempts.BeginEditAsync(fixture.Order, "existing cart edit");
+                using var capability = operation.Enter();
+                await UpdateCustomerAsync();
+            }
+            Assert.True(invoked);
+        }
+        finally
+        {
+            OrderEvents.CustomerInformationUpdatingAsync -= UpdatingAsync;
+        }
+
+        Assert.Null(CheckoutPaymentOperationScope.Current);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InformationUpdatesRejectActiveOwnerOnAnotherNode(bool customerUpdate)
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync();
+        var frozen = await fixture.AttemptAsync();
+        using var db = fixture.Database.Factory.GetDatabase();
+        await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == fixture.Order.UniqueId)
+            .Set(x => x.Owner, "another-node").UpdateAsync();
+
+        await Assert.ThrowsAnyAsync<Exception>(() => customerUpdate
+            ? fixture.Service.UpdateCustomerInformationAsync(new Dictionary<string, string>
+            {
+                ["storeAlias"] = "main", ["customerName"] = "Must not save",
+            }, fixture.Settings())
+            : fixture.UpdateMetadataAsync());
+
+        Assert.Equal("another-node", (await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+        Assert.Equal(frozen.SubmittedOrderInfo, (await fixture.AttemptAsync()).SubmittedOrderInfo);
+        Assert.Equal(frozen.SubmittedOrderInfo, (await fixture.Repository.GetOrderAsync(fixture.Order.UniqueId))!.OrderInfo);
+        Assert.Equal(0, await fixture.Database.StockAsync(fixture.ProductKey));
+        Assert.Equal(StockReservationState.Active, (await db.StockReservations.SingleAsync()).State);
+    }
+
+    [Theory]
+    [InlineData("CompletionPending", false)]
+    [InlineData("ReconciliationRequired", false)]
+    [InlineData("Submitted", true)]
+    public async Task OrdinaryQuantityEditsRemainBlockedDuringPaymentReview(string state, bool reconciliationRequired)
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync();
+        using var db = fixture.Database.Factory.GetDatabase();
+        await db.GetTable<CheckoutPaymentAttemptData>().Where(x => x.AttemptId == fixture.AttemptId)
+            .Set(x => x.State, Enum.Parse<CheckoutPaymentAttemptState>(state)).UpdateAsync();
+        await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == fixture.Order.UniqueId)
+            .Set(x => x.ReconciliationRequired, reconciliationRequired).UpdateAsync();
+        var frozen = await fixture.AttemptAsync();
+
+        await Assert.ThrowsAnyAsync<Exception>(() => fixture.Service.UpdateOrderLineQuantityAsync(
+            fixture.LineId, 2, "main", fixture.Settings()));
+
+        Assert.Equal(3, Assert.Single(new OrderInfo((await fixture.Repository.GetOrderAsync(fixture.Order.UniqueId))!).OrderLines).Quantity);
+        await fixture.AssertInformationEditPreservedAsync(frozen, reconciliationRequired);
     }
 
     [Fact]
@@ -445,14 +756,17 @@ public sealed class OrderReservationReleaseTests
             await Repository.UpdateOrderAsync(data);
         }
 
-        public async Task PrepareAsync(bool seedStock = true)
+        public async Task PrepareAsync(bool seedStock = true, bool reserveStock = true)
         {
             if (seedStock) await SeedStockAsync();
-            var hold = await Database.Service.ReserveAsync(new StockReservationRequest
+            if (reserveStock)
             {
-                Key = ProductKey, Quantity = 3, StoreAlias = "main", OrderId = Order.UniqueId.ToString(), PaymentAttemptId = AttemptId.ToString(),
-            });
-            Order._hangfireJobs.Add(hold.ReservationId!);
+                var hold = await Database.Service.ReserveAsync(new StockReservationRequest
+                {
+                    Key = ProductKey, Quantity = 3, StoreAlias = "main", OrderId = Order.UniqueId.ToString(), PaymentAttemptId = AttemptId.ToString(),
+                });
+                Order._hangfireJobs.Add(hold.ReservationId!);
+            }
             await SaveAsync();
             using var db = Database.Factory.GetDatabase();
             await db.OrderData.Where(x => x.UniqueId == Order.UniqueId).Set(x => x.OrderStatusCol, "Pending").UpdateAsync();
@@ -482,6 +796,35 @@ public sealed class OrderReservationReleaseTests
         {
             using var db = Database.Factory.GetDatabase();
             return await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync(x => x.AttemptId == AttemptId);
+        }
+
+        public Task<OrderInfo> UpdateMetadataAsync() => Service.UpdateOrderLineMetadataAsync(Order.UniqueId,
+            [new OrderLineMetadataUpdate
+            {
+                LineId = LineId,
+                Properties = new Dictionary<string, string> { ["orderlineNote"] = "edited" },
+            }]);
+
+        public async Task AssertInformationEditPreservedAsync(CheckoutPaymentAttemptData frozen,
+            bool reconciliationRequired = false, int expectedStock = 0)
+        {
+            var current = await AttemptAsync();
+            Assert.Equal(frozen.State, current.State);
+            Assert.Equal(frozen.SubmittedOrderInfo, current.SubmittedOrderInfo);
+            Assert.Equal(frozen.SubmittedOrderData, current.SubmittedOrderData);
+            Assert.Equal(frozen.ReservationIds, current.ReservationIds);
+            var persisted = new OrderInfo((await Repository.GetOrderAsync(Order.UniqueId))!);
+            Assert.Equal(JsonConvert.DeserializeObject<List<string>>(frozen.ReservationIds), persisted.ReservationIds);
+            Assert.Equal(expectedStock, await Database.StockAsync(ProductKey));
+            GiftcardClaims.Verify(x => x.ReleaseAsync(Order.UniqueId, AttemptId,
+                It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Never);
+            using var db = Database.Factory.GetDatabase();
+            foreach (var reservation in await db.StockReservations.ToListAsync())
+                Assert.Equal(StockReservationState.Active, reservation.State);
+            var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleAsync();
+            Assert.Equal(AttemptId, operation.ActiveAttemptId);
+            Assert.Equal(reconciliationRequired, operation.ReconciliationRequired);
+            Assert.Null(operation.Owner);
         }
 
         public Guid AddPaymentProvider()

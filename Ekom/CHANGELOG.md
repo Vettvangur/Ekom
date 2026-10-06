@@ -12,6 +12,7 @@
 
 ### Bug Fixes
 
+* **order:** allow line metadata and customer information updates in every order/payment state without releasing holds or resetting payment attempts; retain ownership/concurrency protection and frozen payment snapshots, and permit completion retries after fulfillment-only line metadata changes.
 * **checkout:** let a basket be paid again after its holds expire; saving and completing the new attempt no longer fail on the earlier expired holds, in standard checkout and in legacy line overrides.
 * **checkout:** end payment attempts without holds after `Reservations:Timeout`, so an abandoned payment no longer keeps the basket busy until it is edited.
 * **database:** add upgrade/fresh-install indexes for customer order history and per-order activity logs on SQL Server/SQLite; prefilter customer history by store in SQL while preserving exact store-alias matching. Defer manager date indexes after synthetic SQLite testing showed broad-range list regressions.
