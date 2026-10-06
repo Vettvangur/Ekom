@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Performance Improvements
+
+* **order:** hydrate ordinary store, shipping, and payment snapshots from isolated parsed JSON fragments instead of stringifying and reparsing them; retain legacy string payloads and configured serializer fallbacks, without changing customer/tracking/consent deserialization, product lines, or the saved order format.
+
 ### Bug Fixes
 
 * **database:** add upgrade/fresh-install indexes for customer order history and per-order activity logs on SQL Server/SQLite; prefilter customer history by store in SQL while preserving exact store-alias matching. Defer manager date indexes after synthetic SQLite testing showed broad-range list regressions.
