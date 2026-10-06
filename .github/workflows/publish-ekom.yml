@@ -17,6 +17,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate Ekom release version
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_REF_TYPE: ${{ github.ref_type }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          if ($env:RELEASE_REF_TYPE -ne "tag" -or $env:RELEASE_TAG -notmatch '^Ekom-v(?<version>0\.2\.\d+)$') {
+            throw "Ekom releases must use an Ekom-v0.2.x tag. Version-line changes require explicit maintainer approval."
+          }
+          $version = $Matches['version']
+          [xml] $props = Get-Content "Ekom/Directory.Build.props" -Raw
+          $buildVersion = [string] ($props.Project.PropertyGroup.Version | Where-Object { $_ })
+          $manifest = Get-Content ".release-please-manifest.json" -Raw | ConvertFrom-Json
+          if ($buildVersion -ne $version -or $manifest.Ekom -ne $version) {
+            throw "Tag version $version must match the Ekom build version ($buildVersion) and release manifest ($($manifest.Ekom))."
+          }
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
