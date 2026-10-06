@@ -12,6 +12,8 @@
 
 ### Bug Fixes
 
+* **checkout:** let a basket be paid again after its holds expire; saving and completing the new attempt no longer fail on the earlier expired holds, in standard checkout and in legacy line overrides.
+* **checkout:** end payment attempts without holds after `Reservations:Timeout`, so an abandoned payment no longer keeps the basket busy until it is edited.
 * **database:** add upgrade/fresh-install indexes for customer order history and per-order activity logs on SQL Server/SQLite; prefilter customer history by store in SQL while preserving exact store-alias matching. Defer manager date indexes after synthetic SQLite testing showed broad-range list regressions.
 * **database:** ensure a unique index on `EkomOrders.UniqueId` for existing and new SQL Server/SQLite databases, avoid duplicate primary-key creation on SQL Server, and advance the order-index migration only after successful validation without rewriting orders or existing key layouts.
 * **manager:** link order-line product titles to available safe product URLs in a new tab, retaining plain titles when no URL is available.

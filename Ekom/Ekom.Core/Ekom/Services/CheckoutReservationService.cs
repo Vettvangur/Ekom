@@ -226,7 +226,7 @@ internal sealed class CheckoutReservationService
             throw new StockException("Legacy reservation does not match the shared checkout stock policy.");
         await using var db = _database.GetDatabase();
         var owned = await db.StockReservations.Where(x => x.OrderId == scope.Order.UniqueId.ToString() &&
-            x.State != StockReservationState.Released).ToListAsync(ct).ConfigureAwait(false);
+            (x.State == StockReservationState.Active || x.State == StockReservationState.Consumed)).ToListAsync(ct).ConfigureAwait(false);
         await ReadAndVerifyAsync(db, scope.Order.UniqueId, requirements, owned.Select(x => x.Id), ct).ConfigureAwait(false);
         var reusable = owned.FirstOrDefault(x => Identity(x) == Identity(request) && x.Quantity == request.Quantity &&
             x.State == StockReservationState.Active && !scope.Reused.Contains(x.Id));
@@ -272,7 +272,8 @@ internal sealed class CheckoutReservationService
                         .UpdateAsync(ct).ConfigureAwait(false);
                 }
             }
-            var owned = await db.StockReservations.Where(x => x.OrderId == order.UniqueId.ToString() && x.State != StockReservationState.Released)
+            var owned = await db.StockReservations.Where(x => x.OrderId == order.UniqueId.ToString() &&
+                (x.State == StockReservationState.Active || x.State == StockReservationState.Consumed))
                 .Select(x => x.Id).ToListAsync(ct).ConfigureAwait(false);
             var rows = await ReadAndVerifyAsync(db, order.UniqueId, requirements, owned.Concat(ids), ct).ConfigureAwait(false);
             if (rows.Any(x => x.State != StockReservationState.Active)) throw new StockException("Only active holds can be attached before payment.");
@@ -295,7 +296,8 @@ internal sealed class CheckoutReservationService
                 return false;
             if (await db.GetTable<CheckoutPreparationData>().AnyAsync(x => x.OrderId == orderId && x.Owner != null, ct).ConfigureAwait(false))
                 throw new StockException("Cannot complete stock while checkout preparation is in progress.");
-            var recovered = await db.StockReservations.Where(x => x.OrderId == orderId.ToString() && x.State != StockReservationState.Released)
+            var recovered = await db.StockReservations.Where(x => x.OrderId == orderId.ToString() &&
+                (x.State == StockReservationState.Active || x.State == StockReservationState.Consumed))
                 .Select(x => x.Id).ToListAsync(ct).ConfigureAwait(false);
             var rows = await ReadAndVerifyAsync(db, orderId, requirements, ids.Concat(recovered), ct).ConfigureAwait(false);
             var now = DateTime.UtcNow;

@@ -155,6 +155,11 @@ internal sealed class CheckoutPaymentAttemptService
                 .Set(x => x.ExpiresUtc, deadline.Value).UpdateAsync(ct).ConfigureAwait(false);
             if (aligned != ids.Count) throw Conflict("Payment reservations changed before submission.");
         }
+        else
+        {
+            // No hold ends this attempt, so without a deadline an abandoned payment keeps the basket busy until it is edited.
+            deadline = DateTime.UtcNow + Configuration.Instance.ReservationTimeout;
+        }
         var updated = await db.GetTable<CheckoutPaymentAttemptData>()
             .Where(x => x.AttemptId == active.AttemptId && x.State == CheckoutPaymentAttemptState.Preparing)
             .Set(x => x.SubmittedOrderData, JsonConvert.SerializeObject(data))
