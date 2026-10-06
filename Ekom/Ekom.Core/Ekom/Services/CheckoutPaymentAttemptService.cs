@@ -265,6 +265,28 @@ internal sealed class CheckoutPaymentAttemptService
         }
     }
 
+    public async Task<CheckoutPaymentOperationScope> BeginOrderInformationUpdateAsync(OrderInfo order, CancellationToken ct = default)
+    {
+        var nested = CheckoutPaymentOperationScope.Current?.OrderId == order.UniqueId;
+        var scope = await AcquireAsync(order.UniqueId, orderInformationUpdate: true, ct).ConfigureAwait(false);
+        try
+        {
+            // Information updates retain payment state and holds, even during reconciliation.
+            // Refresh outer updates under ownership; nested updates must retain in-flight changes.
+            if (!nested)
+            {
+                await using var db = _factory.GetDatabase();
+                Apply(order, await ReadOrderAsync(db, order.UniqueId, ct).ConfigureAwait(false));
+            }
+            return scope;
+        }
+        catch
+        {
+            await scope.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
+    }
+
     public async Task<CheckoutPaymentOperationScope> BeginReservationUpdateAsync(OrderInfo order, CancellationToken ct = default)
     {
         var scope = await AcquireAsync(order.UniqueId, ct).ConfigureAwait(false);
@@ -381,9 +403,10 @@ internal sealed class CheckoutPaymentAttemptService
     public async Task EnsureWriteAllowedAsync(DbContext db, Guid orderId, CancellationToken ct = default)
     {
         var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleOrDefaultAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false);
-        if (operation?.ReconciliationRequired == true)
-            throw Conflict("This order requires manual payment reconciliation before it can be changed.", CheckoutConflictReason.PaymentReview);
         var ambient = CheckoutPaymentOperationScope.Current;
+        if (operation?.ReconciliationRequired == true &&
+            !(ambient?.OrderId == orderId && ambient.IsOrderInformationUpdate))
+            throw Conflict("This order requires manual payment reconciliation before it can be changed.", CheckoutConflictReason.PaymentReview);
         if (operation?.Owner != null && (ambient?.OrderId != orderId || ambient.Owner != operation.Owner))
             throw Conflict("The order is owned by another checkout operation.", CheckoutConflictReason.Busy);
         if (ambient?.OrderId == orderId && operation?.Owner != ambient.Owner)
@@ -396,17 +419,27 @@ internal sealed class CheckoutPaymentAttemptService
                     ? CheckoutConflictReason.PaymentReview : CheckoutConflictReason.Busy);
     }
 
-    private async Task<CheckoutPaymentOperationScope> AcquireAsync(Guid orderId, CancellationToken ct)
+    private Task<CheckoutPaymentOperationScope> AcquireAsync(Guid orderId, CancellationToken ct)
+        => AcquireAsync(orderId, orderInformationUpdate: false, ct);
+
+    private async Task<CheckoutPaymentOperationScope> AcquireAsync(Guid orderId, bool orderInformationUpdate, CancellationToken ct)
     {
         var ambient = CheckoutPaymentOperationScope.Current;
         if (ambient?.OrderId == orderId)
         {
+            if (ambient.IsInformationOnly && !orderInformationUpdate)
+                throw Conflict("An information update cannot authorize another checkout operation.", CheckoutConflictReason.Busy);
             await using var nestedDb = _factory.GetDatabase();
-            await EnsureWriteAllowedAsync(nestedDb, orderId, ct).ConfigureAwait(false);
-            return new CheckoutPaymentOperationScope(orderId, ambient.Owner, null, ambient)
+            var nested = new CheckoutPaymentOperationScope(orderId, ambient.Owner, null, ambient)
             {
-                AttemptId = ambient.AttemptId, IsCheckout = ambient.IsCheckout,
+                AttemptId = ambient.AttemptId,
+                IsCheckout = ambient.IsCheckout,
+                IsOrderInformationUpdate = orderInformationUpdate || ambient.IsOrderInformationUpdate,
+                IsInformationOnly = ambient.IsInformationOnly,
             };
+            using var activation = nested.Enter();
+            await EnsureWriteAllowedAsync(nestedDb, orderId, ct).ConfigureAwait(false);
+            return nested;
         }
         await using var db = _factory.GetDatabase();
         var owner = Guid.NewGuid().ToString();
@@ -461,7 +494,11 @@ internal sealed class CheckoutPaymentAttemptService
                     await releaseDb.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == orderId && x.Owner == owner)
                         .Set(x => x.Owner, (string?)null).UpdateAsync(CancellationToken.None).ConfigureAwait(false);
             }
-        });
+        })
+        {
+            IsOrderInformationUpdate = orderInformationUpdate,
+            IsInformationOnly = orderInformationUpdate,
+        };
         try
         {
             await EnsurePreparationAllowedAsync(db, orderId, ct).ConfigureAwait(false);
@@ -692,6 +729,31 @@ internal sealed class CheckoutPaymentAttemptService
                     property.Name.Equals("OrderStatusCol", StringComparison.OrdinalIgnoreCase) ||
                     property.Name.Equals("UpdateDate", StringComparison.OrdinalIgnoreCase) ||
                     property.Name.Equals("PaidDate", StringComparison.OrdinalIgnoreCase)) property.Remove();
+            // Fulfillment metadata can change after submission without changing the purchase.
+            // Ignore only the properties writable through UpdateOrderLineMetadataAsync.
+            if (value[nameof(OrderInfo.OrderLines)] is JArray lines)
+            {
+                foreach (var line in lines.OfType<JObject>())
+                {
+                    if (line[nameof(OrderLine.OrderLineInfo)]?.Type == JTokenType.Null)
+                    {
+                        line.Remove(nameof(OrderLine.OrderLineInfo));
+                        continue;
+                    }
+                    if (line[nameof(OrderLine.OrderLineInfo)] is not JObject info) continue;
+                    if (info[nameof(OrderLineInfo.Properties)] is JObject properties)
+                    {
+                        foreach (var property in properties.Properties().ToArray())
+                            if (property.Name.StartsWith("orderline", StringComparison.OrdinalIgnoreCase)) property.Remove();
+                        if (!properties.HasValues) info.Remove(nameof(OrderLineInfo.Properties));
+                    }
+                    else if (info[nameof(OrderLineInfo.Properties)]?.Type == JTokenType.Null)
+                    {
+                        info.Remove(nameof(OrderLineInfo.Properties));
+                    }
+                    if (!info.HasValues) line.Remove(nameof(OrderLine.OrderLineInfo));
+                }
+            }
             return value;
         }
         return JToken.DeepEquals(Normalize(left), Normalize(right));

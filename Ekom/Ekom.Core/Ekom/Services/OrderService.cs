@@ -1516,6 +1516,13 @@ partial class OrderService
     private Task<CheckoutPaymentOperationScope?> BeginCartEditAsync(OrderInfo orderInfo, string reason, CancellationToken ct)
     {
         var paymentAttempts = _paymentAttempts;
+        var ambient = CheckoutPaymentOperationScope.Current;
+        if (ambient?.OrderId == orderInfo.UniqueId && ambient.IsInformationOnly
+            && !(ambient.AllowsCustomerProviderUpdates && reason is "shipping" or "payment-provider"))
+        {
+            throw new CheckoutConflictException(CheckoutConflictReason.Busy,
+                "An information update cannot authorize a cart edit.");
+        }
         if (paymentAttempts == null || orderInfo.PaidDate != null || IsFinalCartStatus(orderInfo.OrderStatus)
             || CheckoutPaymentOperationScope.Current?.OrderId == orderInfo.UniqueId)
         {
@@ -1555,6 +1562,12 @@ partial class OrderService
 
     private async Task<CheckoutPaymentOperationScope?> BeginReservationUpdateAsync(OrderInfo orderInfo, CancellationToken ct)
     {
+        var ambient = CheckoutPaymentOperationScope.Current;
+        if (ambient?.OrderId == orderInfo.UniqueId && ambient.IsInformationOnly)
+        {
+            throw new CheckoutConflictException(CheckoutConflictReason.Busy,
+                "An information update cannot authorize reservation changes.");
+        }
         if (_paymentAttempts == null || CheckoutPaymentOperationScope.Current?.OrderId == orderInfo.UniqueId)
         {
             return null;
@@ -1562,6 +1575,12 @@ partial class OrderService
 
         // Attaching or clearing reservation metadata is not a cart edit: never release incoming holds.
         return await _paymentAttempts.BeginReservationUpdateAsync(orderInfo, ct).ConfigureAwait(false);
+    }
+
+    private async Task<CheckoutPaymentOperationScope?> BeginOrderInformationUpdateAsync(OrderInfo orderInfo, CancellationToken ct)
+    {
+        return _paymentAttempts == null ? null
+            : await _paymentAttempts.BeginOrderInformationUpdateAsync(orderInfo, ct).ConfigureAwait(false);
     }
 
     private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(
@@ -1974,7 +1993,7 @@ partial class OrderService
         }
         try
         {
-            await using var operation = await BeginCartEditAsync(orderInfo, "customer", ct).ConfigureAwait(false);
+            await using var operation = await BeginOrderInformationUpdateAsync(orderInfo, ct).ConfigureAwait(false);
             using var capability = operation?.Enter();
             return await UpdateCustomerInformationCoreAsync(form, settings, storeAlias, orderInfo, ct).ConfigureAwait(false);
         }
@@ -2078,20 +2097,30 @@ partial class OrderService
                 .ConfigureAwait(false);
         }
 
-        if (shippingProviderKey != null && shippingProviderValue != null)
+        var operation = CheckoutPaymentOperationScope.Current;
+        var previouslyAllowedProviderUpdates = operation?.AllowsCustomerProviderUpdates ?? false;
+        if (operation != null) operation.AllowsCustomerProviderUpdates = true;
+        try
         {
-            if (Guid.TryParse(shippingProviderValue, out Guid _providerKey) && (orderInfo.ShippingProvider?.Key ?? Guid.Empty) != _providerKey)
+            if (shippingProviderKey != null && shippingProviderValue != null)
             {
-                orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customShippingData, settings, ct).ConfigureAwait(false);
+                if (Guid.TryParse(shippingProviderValue, out Guid _providerKey) && (orderInfo.ShippingProvider?.Key ?? Guid.Empty) != _providerKey)
+                {
+                    orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customShippingData, settings, ct).ConfigureAwait(false);
+                }
+            }
+
+            if (paymentProviderKey != null && paymentProviderValue != null)
+            {
+                if (Guid.TryParse(paymentProviderValue, out Guid _providerKey) && (orderInfo.PaymentProvider?.Key ?? Guid.Empty) != _providerKey)
+                {
+                    orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customPaymentData ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), settings, ct).ConfigureAwait(false);
+                }
             }
         }
-
-        if (paymentProviderKey != null && paymentProviderValue != null)
+        finally
         {
-            if (Guid.TryParse(paymentProviderValue, out Guid _providerKey) && (orderInfo.PaymentProvider?.Key ?? Guid.Empty) != _providerKey)
-            {
-                orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customPaymentData ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), settings, ct).ConfigureAwait(false);
-            }
+            if (operation != null) operation.AllowsCustomerProviderUpdates = previouslyAllowedProviderUpdates;
         }
 
         verifyProviders |= !string.Equals(previousCustomerCountry, orderInfo.CustomerInformation.Customer.Country, StringComparison.OrdinalIgnoreCase)

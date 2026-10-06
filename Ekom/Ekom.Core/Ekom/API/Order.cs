@@ -487,7 +487,8 @@ public partial class Order
     }
 
     /// <summary>
-    /// 
+    /// Updates customer/shipping information and supplied provider selections, regardless of order or payment state.
+    /// Payment attempts and holds are retained; ownership and concurrency checks still apply.
     /// </summary>
     public async Task<IOrderInfo> UpdateCustomerInformationAsync(
         Dictionary<string, string> form,
@@ -625,7 +626,7 @@ public partial class Order
     }
 
     /// <summary>
-    /// Merges metadata into existing lines of an order in a single save, including completed orders.
+    /// Merges metadata into existing lines in a single save, regardless of order or payment state.
     /// All property keys must start with "orderline". Invalid or missing line keys reject the entire batch.
     /// </summary>
     public async Task<IOrderInfo> UpdateOrderLineMetadataAsync(

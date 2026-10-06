@@ -67,9 +67,9 @@ partial class OrderService
             }
 
             var editOrder = new OrderInfo(orderData);
-            await using var operation = await BeginCartEditAsync(editOrder, "line-metadata", ct).ConfigureAwait(false);
+            await using var operation = await BeginOrderInformationUpdateAsync(editOrder, ct).ConfigureAwait(false);
             using var capability = operation?.Enter();
-            // Beginning an edit can clear payment metadata and change status. Patch the released snapshot.
+            // Reload under ownership so another node's committed information is retained.
             orderData = await _orderRepository.GetOrderAsync(orderId, ct).ConfigureAwait(false)
                 ?? throw new OrderInfoNotFoundException();
             var originalOrderInfo = orderData.OrderInfo;
