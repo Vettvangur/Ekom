@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+* **checkout:** let a basket be paid again after its holds expire; saving and completing the new attempt no longer fail on the earlier expired holds, in standard checkout and in legacy line overrides.
 * **manager:** link order-line product titles to available safe product URLs in a new tab, retaining plain titles when no URL is available.
 * **checkout:** allow cancel/edit retries to reserve fresh requirements without recovering historical expired holds, and track newly inserted carts so order-number assignment does not fail the stale-write guard.
 * **checkout:** return customer-safe conflict codes/messages for preparation, busy, completed, and payment-review states instead of exposing diagnostic exception text; prevent automatic payment resubmission on those responses.
