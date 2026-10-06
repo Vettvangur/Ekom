@@ -206,6 +206,8 @@ public class EkomManagerController : ControllerBase
                 return NotFound();
             }
 
+            await using var operation = CheckoutPaymentOperationScope.BeginManagerOverride(orderId);
+            using var activation = operation.Enter();
             OrderManagerActionExecutionResult? result = await _orderManagerActionService.ExecuteAsync(order, actionKey, HttpContext?.User?.Identity?.Name, ct).ConfigureAwait(false);
 
             if (result == null)
@@ -376,6 +378,8 @@ public class EkomManagerController : ControllerBase
 
         if (Enum.TryParse(orderStatus, out OrderStatus status))
         {
+            await using var operation = CheckoutPaymentOperationScope.BeginManagerOverride(orderId);
+            using var activation = operation.Enter();
             await Order.Instance.UpdateStatusAsync(status, orderId, HttpContext?.User?.Identity?.Name, new ChangeOrderSettings
             {
                 FireEvents = notify
@@ -424,6 +428,8 @@ public class EkomManagerController : ControllerBase
             AddFormValues(form, request.Customer);
             AddFormValues(form, request.Shipping);
 
+            await using var operation = CheckoutPaymentOperationScope.BeginManagerOverride(request.OrderId);
+            using var activation = operation.Enter();
             var updatedOrder = await Order.Instance.UpdateCustomerInformationAsync(form, new OrderSettings
             {
                 FireEvents = false,
@@ -470,6 +476,8 @@ public class EkomManagerController : ControllerBase
                 return NotFound();
             }
 
+            await using var operation = CheckoutPaymentOperationScope.BeginManagerOverride(orderId);
+            using var activation = operation.Enter();
             var updatedOrder = await Order.Instance.AddOrderLineAsync(request.ProductId, request.Quantity, orderData.StoreAlias, new AddOrderSettings
             {
                 FireEvents = true,
@@ -521,6 +529,8 @@ public class EkomManagerController : ControllerBase
                 return NotFound();
             }
 
+            await using var operation = CheckoutPaymentOperationScope.BeginManagerOverride(orderId);
+            using var activation = operation.Enter();
             var updatedOrder = await Order.Instance.RemoveOrderLineAsync(lineId, orderData.StoreAlias, new OrderSettings
             {
                 FireEvents = true,
@@ -580,6 +590,8 @@ public class EkomManagerController : ControllerBase
             }
 
             var customData = MergeShippingCustomData(order.ShippingProvider?.CustomData, request.CustomData);
+            await using var operation = CheckoutPaymentOperationScope.BeginManagerOverride(orderId);
+            using var activation = operation.Enter();
             var updatedOrder = await Order.Instance.UpdateShippingInformationAsync(
                 request.ProviderId, orderData.StoreAlias, customData,
                 new OrderSettings { OrderInfo = order }, ct).ConfigureAwait(false);

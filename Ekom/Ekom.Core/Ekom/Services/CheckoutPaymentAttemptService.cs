@@ -402,8 +402,9 @@ internal sealed class CheckoutPaymentAttemptService
 
     public async Task EnsureWriteAllowedAsync(DbContext db, Guid orderId, CancellationToken ct = default)
     {
-        var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleOrDefaultAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false);
         var ambient = CheckoutPaymentOperationScope.Current;
+        if (ambient?.OrderId == orderId && ambient.IsManagerOverride) return;
+        var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleOrDefaultAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false);
         if (operation?.ReconciliationRequired == true &&
             !(ambient?.OrderId == orderId && ambient.IsOrderInformationUpdate))
             throw Conflict("This order requires manual payment reconciliation before it can be changed.", CheckoutConflictReason.PaymentReview);

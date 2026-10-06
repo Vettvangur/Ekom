@@ -22,6 +22,7 @@ internal sealed class CheckoutPaymentOperationScope : IAsyncDisposable
     }
     internal bool IsCheckout { get; set; }
     internal bool IsOrderInformationUpdate { get; set; }
+    internal bool IsManagerOverride { get; private init; }
     // Nested information updates retain an enclosing cart/checkout operation's authority.
     internal bool IsInformationOnly { get; set; }
     internal bool AllowsCustomerProviderUpdates { get; set; }
@@ -34,6 +35,9 @@ internal sealed class CheckoutPaymentOperationScope : IAsyncDisposable
         _release = release;
         _parent = parent;
     }
+
+    internal static CheckoutPaymentOperationScope BeginManagerOverride(Guid orderId)
+        => new(orderId, string.Empty, null) { IsManagerOverride = true };
 
     // Activation must happen in the caller's execution context, after awaiting Begin.
     public IDisposable Enter()
