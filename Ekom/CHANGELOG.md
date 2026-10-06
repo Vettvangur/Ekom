@@ -58,6 +58,7 @@
 ### Performance Improvements
 
 * **database:** repair order indexes and optimize customer history ([#985](https://github.com/Vettvangur/Ekom/issues/985)) ([7b86ae2](https://github.com/Vettvangur/Ekom/commit/7b86ae2ee868cb5203f9553c1f8b2a3b0ab54186))
+* **order:** avoid redundant snapshot JSON parsing ([#987](https://github.com/Vettvangur/Ekom/issues/987)) ([cba2cad](https://github.com/Vettvangur/Ekom/commit/cba2cad610c5fec9af59aaf377d102cf20f360a9))
 
 ## [0.2.316](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.315...Ekom-v0.2.316) (2026-10-06)
 
