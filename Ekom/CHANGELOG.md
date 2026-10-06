@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Performance Improvements
+
+* **order:** hydrate ordinary store, shipping, and payment snapshots from isolated parsed JSON fragments instead of stringifying and reparsing them; retain legacy string payloads and configured serializer fallbacks, without changing customer/tracking/consent deserialization, product lines, or the saved order format.
+
 ### Bug Fixes
 
+* **database:** add upgrade/fresh-install indexes for customer order history and per-order activity logs on SQL Server/SQLite; prefilter customer history by store in SQL while preserving exact store-alias matching. Defer manager date indexes after synthetic SQLite testing showed broad-range list regressions.
+* **database:** ensure a unique index on `EkomOrders.UniqueId` for existing and new SQL Server/SQLite databases, avoid duplicate primary-key creation on SQL Server, and advance the order-index migration only after successful validation without rewriting orders or existing key layouts.
 * **manager:** link order-line product titles to available safe product URLs in a new tab, retaining plain titles when no URL is available.
 * **checkout:** allow cancel/edit retries to reserve fresh requirements without recovering historical expired holds, and track newly inserted carts so order-number assignment does not fail the stale-write guard.
 * **checkout:** return customer-safe conflict codes/messages for preparation, busy, completed, and payment-review states instead of exposing diagnostic exception text; prevent automatic payment resubmission on those responses.
@@ -45,6 +51,14 @@
 * **discounts:** add a global product setting that disables product, coupon, and order discounts for the product and its variants, excluding protected lines from quantity and minimum-spend qualification.
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
+
+## [0.2.317](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.316...Ekom-v0.2.317) (2026-10-06)
+
+
+### Performance Improvements
+
+* **database:** repair order indexes and optimize customer history ([#985](https://github.com/Vettvangur/Ekom/issues/985)) ([7b86ae2](https://github.com/Vettvangur/Ekom/commit/7b86ae2ee868cb5203f9553c1f8b2a3b0ab54186))
+* **order:** avoid redundant snapshot JSON parsing ([#987](https://github.com/Vettvangur/Ekom/issues/987)) ([cba2cad](https://github.com/Vettvangur/Ekom/commit/cba2cad610c5fec9af59aaf377d102cf20f360a9))
 
 ## [0.2.316](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.315...Ekom-v0.2.316) (2026-10-06)
 
