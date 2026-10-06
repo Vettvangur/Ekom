@@ -1,4 +1,5 @@
 using Ekom.API;
+using Ekom.Analytics;
 using Ekom.AspNetCore.Services;
 using Ekom.Cache;
 using Ekom.Events;
@@ -117,6 +118,7 @@ static class Registrations
         services.AddTransient<IWarehouseStockRepository>(sp => sp.GetRequiredService<WarehouseStockRepository>());
 
         services.AddTransient<ManagerRepository>();
+        services.AddEkomAnalytics(config);
         services.AddTransient<OrderRepository>();
         services.AddTransient<CouponRepository>();
         services.AddTransient<ActivityLogRepository>();

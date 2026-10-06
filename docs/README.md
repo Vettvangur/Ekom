@@ -22,6 +22,7 @@ For the product overview and ecosystem landing page, visit [ekomcommerce.com](ht
 - [Catalog and products](guides/catalog-and-products.md)
 - [Stores](guides/stores.md)
 - [Orders and baskets](guides/orders-and-baskets.md)
+- [Analytics reporting](guides/analytics.md)
 - [Checkout](guides/checkout.md)
 - [Providers](guides/providers.md)
 - [Discounts](guides/discounts.md)

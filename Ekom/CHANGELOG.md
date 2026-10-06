@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+* **analytics:** add opt-in relational order, product/variant and promotion facts with store-scoped customer identity, configurable scheduled refresh, authorized single-order refresh and checkpointed batched rebuild APIs. Processing is independent of checkout and excludes incomplete baskets; no order-view controls are added.
+
 ### Breaking Changes
 
 * **order:** `GrandTotal` and `GrandTotalWithOutVat` now retain the discounted order value including shipping and payment fees before gift-card payment. Use `ChargedAmount` for the remaining amount payable. Default payment requests and SQL `TotalAmount` retain their existing payable semantics. Historical JSON can contain the previous grand-total values; preserve frozen payment snapshots and deploy consistently across instances.
