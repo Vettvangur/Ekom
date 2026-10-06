@@ -14,6 +14,24 @@ The `orders-indexes-v1` migration ensures a full unique index on `EkomOrders.Uni
 
 Order-index validation fails if the `ReferenceId` primary key is missing or incompatible, the expected index name has an incompatible definition, or duplicate order IDs prevent creation of the unique index. Orders are never automatically deleted or merged. Resolve the reported schema or data issue and restart to retry; the failed migration is not recorded as complete. Index creation can block writes and require additional disk space, so schedule upgrades of large databases in an appropriate maintenance window.
 
+The next migration, `order-performance-indexes-v1`, adds these narrow indexes to existing and new SQL Server/SQLite installations:
+
+| Table | Index | Keys |
+| --- | --- | --- |
+| `EkomOrders` | `IX_EkomOrders_CustomerId` | `CustomerId` |
+| `EkomOrders` | `IX_EkomOrders_CustomerUsername` | `CustomerUsername` |
+| `EkomOrdersActivityLog` | `IX_EkomOrdersActivityLog_Key_Date` | `Key`, `Date` |
+
+Eligible equivalent indexes under other names are preserved. Filtered/partial, disabled, expression, or differently keyed indexes do not replace the expected definitions. SQLite verification expects the standard BINARY key collations. Conflicting named definitions stop the migration without replacing existing indexes. If a later index fails to install, indexes already created remain in place and are recognized on retry. Existing primary keys, column types, and orders are not rewritten.
+
+Before creating a SQL Server performance index, declared key widths are checked against the 1,700-byte nonclustered-key limit. Unbounded or oversized custom/legacy column definitions stop installation for schema review instead of introducing a new key-size restriction on future writes. Standard mapped customer usernames are bounded to 200 characters and fit this limit.
+
+Customer history applies the optional store filter in SQL before loading orders. An exact in-memory guard is retained because SQL Server equality may ignore case or trailing spaces; the returned store matching remains unchanged. Null/empty store filters still return history across stores.
+
+Manager store/date indexes are deliberately deferred. Synthetic SQLite testing with 120,000 orders found large improvements for narrow-period totals but regressions for some broad-period lists: range retrieval plus sorting can lose to a reverse primary-key scan for `ORDER BY ReferenceId DESC`. The manager defaults to year-to-date. Evaluate actual list and totals plans together before installing date indexes; neither SQLite skip-scan behavior nor synthetic timings should be assumed for SQL Server. Customer/store composite indexes also added little benefit over the chosen single-column customer indexes in that dataset. `OrderStatusCol` is not an index key because existing SQL Server definitions can be unbounded or too wide.
+
+In the same warm-cache synthetic dataset (120,000 orders, 360,000 activity entries), the chosen three indexes reduced customer-history query medians from about 15-17 ms to 0.03-0.17 ms and a single-order activity query from about 7.6 ms to 0.01 ms. The indexes added about 26 MiB and roughly doubled execution time for a batch inserting 1,000 orders plus 3,000 logs. These are illustrative SQLite results, not production or SQL Server guarantees; write measurements excluded transaction commit/rollback. Indexes trade storage and insert work for faster reads, so validate with representative staging data before release.
+
 The content initializer uses Ekom's registered property editors to create data types, document types, and root content only when the Ekom root is absent. Existing Ekom installations are not recreated on every start. Initialization is skipped while Umbraco is installing or upgrading and proceeds after the application can run normally.
 
 Do not assume that a freshly installed site is ready for checkout before the first successful start and cache initialization. Create and publish stores through the backoffice before relying on catalog or provider behavior.

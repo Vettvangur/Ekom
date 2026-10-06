@@ -68,6 +68,7 @@ internal class DatabaseService
 
         // Required order index failures must propagate, including during fresh installation.
         EnsureOrderIndexes();
+        EnsureOrderPerformanceIndexes();
     }
 
     internal virtual void EnsureOrderIndexes()
@@ -164,6 +165,20 @@ AND EXISTS (SELECT 1 FROM pragma_index_info(i.name) k WHERE k.name = 'UniqueId' 
         }
 
         _logger.LogInformation("Ensured required unique index on EkomOrders.UniqueId");
+    }
+
+    internal virtual void EnsureOrderPerformanceIndexes()
+    {
+        using var db = _databaseFactory.GetDatabase();
+
+        // Keep customer indexes narrow. Manager date indexes are deferred because
+        // range scans can regress broad-period lists ordered by ReferenceId.
+        DatabaseIndexInstaller.EnsureIndex(db, _databaseFactory.IsSqlServer, "EkomOrders",
+            "IX_EkomOrders_CustomerId", nameof(OrderData.CustomerId));
+        DatabaseIndexInstaller.EnsureIndex(db, _databaseFactory.IsSqlServer, "EkomOrders",
+            "IX_EkomOrders_CustomerUsername", nameof(OrderData.CustomerUsername));
+        DatabaseIndexInstaller.EnsureIndex(db, _databaseFactory.IsSqlServer, "EkomOrdersActivityLog",
+            "IX_EkomOrdersActivityLog_Key_Date", nameof(OrderActivityLog.Key), nameof(OrderActivityLog.Date));
     }
 
     internal virtual void EnsureWarehouseStockTable()

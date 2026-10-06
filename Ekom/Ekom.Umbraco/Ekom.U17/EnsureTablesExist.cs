@@ -139,6 +139,31 @@ internal sealed class MigrationEnsureOrderIndexes : MigrationBase
 #endif
 }
 
+#if UMBRACO_18
+internal sealed class MigrationEnsureOrderPerformanceIndexes : AsyncMigrationBase
+#else
+internal sealed class MigrationEnsureOrderPerformanceIndexes : MigrationBase
+#endif
+{
+    private readonly DatabaseService _databaseService;
+
+    public MigrationEnsureOrderPerformanceIndexes(DatabaseService databaseService, IMigrationContext context)
+        : base(context)
+    {
+        _databaseService = databaseService;
+    }
+
+#if UMBRACO_18
+    protected override Task MigrateAsync()
+    {
+        _databaseService.EnsureOrderPerformanceIndexes();
+        return Task.CompletedTask;
+    }
+#else
+    protected override void Migrate() => _databaseService.EnsureOrderPerformanceIndexes();
+#endif
+}
+
 internal sealed class EkomMigrationPlan : MigrationPlan
 {
     public EkomMigrationPlan()
@@ -154,6 +179,7 @@ internal sealed class EkomMigrationPlan : MigrationPlan
             .To<MigrationCreateWarehouseStockTable>("3");
         From("3").To<MigrationCreateStockReservationTable>("native-reservations-v1");
         From("native-reservations-v1").To<MigrationEnsureOrderIndexes>("orders-indexes-v1");
+        From("orders-indexes-v1").To<MigrationEnsureOrderPerformanceIndexes>("order-performance-indexes-v1");
     }
 }
 
@@ -208,7 +234,7 @@ internal sealed class EnsureTablesExist : IAsyncComponent
             _logger.LogInformation("Running Ekom warehouse stock migration.");
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
         }
-        else if (currentState == "3" || currentState == "native-reservations-v1")
+        else if (currentState == "3" || currentState == "native-reservations-v1" || currentState == "orders-indexes-v1")
         {
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
         }
