@@ -37,6 +37,8 @@ There is no standalone lint task. Compiler diagnostics, analyzers, TypeScript ty
 
 Releases are managed with release-please on pushes to the `Ekom` branch. The release configuration tracks the Ekom runtime and the Klaviyo, Algolia, and Mailchimp components; the Mailchimp and Mailchimp U18 release versions are linked.
 
+Ekom stays on the `0.2.x` release line and uses patch-only version increments, including features and breaking changes. Breaking-change notes remain in the changelog. Publishing rejects tags outside `Ekom-v0.2.x` and requires the tag, Ekom build version, and manifest version to agree. Changing the version line requires explicit maintainer approval and a deliberate update to this policy and guard. Plugin versioning is independent.
+
 Use Conventional Commit-style pull request titles so release-please can determine the release change. Examples:
 
 ```text
