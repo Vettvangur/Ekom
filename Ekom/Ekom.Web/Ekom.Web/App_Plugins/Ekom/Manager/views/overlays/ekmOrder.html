@@ -224,7 +224,9 @@
           <button type="button" class="btn-reset" ng-click="removeOrderLine(orderLine)" ng-disabled="removingOrderLineId === orderLine.key" aria-label="Remove {{ orderLine.product.title }}" title="Remove order line">&#128465;</button>
         </div>
         <div class="umb-table-cell not-fixed" style="flex-direction:column;">
-          {{ orderLine.product.title }} ({{ orderLine.product.sku }})
+          <div>
+            <a ng-if="getProductUrl(orderLine.product)" ng-href="{{ getProductUrl(orderLine.product) }}" target="_blank" rel="noopener noreferrer">{{ orderLine.product.title }}</a><span ng-if="!getProductUrl(orderLine.product)">{{ orderLine.product.title }}</span> ({{ orderLine.product.sku }})
+          </div>
           <small ng-if="orderLine.variant" style="font-style:italic; display:block; margin-top:3px; text-overflow: unset !important; white-space:normal !important;">
             {{ orderLine.variant.title }} <span ng-if="orderLine.variant.sku">({{ orderLine.variant.sku }})</span>
           </small>

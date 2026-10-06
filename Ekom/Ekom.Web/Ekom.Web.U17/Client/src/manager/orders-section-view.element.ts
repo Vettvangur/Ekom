@@ -572,7 +572,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       <div class="umb-table">
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
         <div class="umb-table-body">
-          ${lines.map((line: Record<string, any>) => `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${escapeHtml(line.key)}" data-product-title="${escapeHtml(line.product?.title)}" ${this.removingOrderLineId === line.key ? 'disabled' : ''} aria-label="Remove ${escapeHtml(line.product?.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed">${escapeHtml(line.product?.title)} (${escapeHtml(line.product?.sku)})${line.variant ? `<small style="display:block; margin-top:3px;">${escapeHtml(line.variant.title)} ${line.variant.sku ? `(${escapeHtml(line.variant.sku)})` : ''}</small>` : ''}${renderOrderLineProperties(line)}</div><div class="umb-table-cell">${escapeHtml(line.quantity)}</div><div class="umb-table-cell">${escapeHtml(line.product?.price?.withVat?.currencyString)}</div><div class="umb-table-cell">${escapeHtml(line.amount?.vat?.currencyString)}</div><div class="umb-table-cell">-${escapeHtml(line.amount?.discountAmount?.currencyString)}</div><div class="umb-table-cell"><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></div></div>`).join('')}
+          ${lines.map((line: Record<string, any>) => `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${escapeHtml(line.key)}" data-product-title="${escapeHtml(line.product?.title)}" ${this.removingOrderLineId === line.key ? 'disabled' : ''} aria-label="Remove ${escapeHtml(line.product?.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><span>${renderOrderLineProductTitle(line.product)} (${escapeHtml(line.product?.sku)})</span>${line.variant ? `<small style="display:block; margin-top:3px;">${escapeHtml(line.variant.title)} ${line.variant.sku ? `(${escapeHtml(line.variant.sku)})` : ''}</small>` : ''}${renderOrderLineProperties(line)}</div><div class="umb-table-cell">${escapeHtml(line.quantity)}</div><div class="umb-table-cell">${escapeHtml(line.product?.price?.withVat?.currencyString)}</div><div class="umb-table-cell">${escapeHtml(line.amount?.vat?.currencyString)}</div><div class="umb-table-cell">-${escapeHtml(line.amount?.discountAmount?.currencyString)}</div><div class="umb-table-cell"><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></div></div>`).join('')}
         </div>
         <div class="umb-table-footer">
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${escapeHtml(order.subTotal?.withVat?.currencyString)}</div></div>
@@ -1346,6 +1346,21 @@ function parseProperties(properties: Record<string, unknown> | undefined, prefix
 
 function hasShippingInfo(shipping: Record<string, any>): boolean {
   return Boolean(shipping?.name || shipping?.email || shipping?.address || shipping?.apartment || shipping?.city || shipping?.country || shipping?.zipCode || shipping?.phone);
+}
+
+function renderOrderLineProductTitle(product: Record<string, unknown> | undefined): string {
+  const title = escapeHtml(product?.title);
+  const url = typeof product?.url === 'string' ? product.url.trim() : '';
+  if (!url) return title;
+
+  try {
+    const protocol = new URL(url, 'https://ekom.invalid/').protocol;
+    if (protocol !== 'http:' && protocol !== 'https:') return title;
+  } catch {
+    return title;
+  }
+
+  return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${title}</a>`;
 }
 
 function renderOrderLineProperties(orderLine: Record<string, any>): string {
