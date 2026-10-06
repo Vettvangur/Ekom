@@ -57,13 +57,13 @@ public interface IOrderInfo
     IReadOnlyCollection<IOrderLine> OrderLines { get; }
 
     /// <summary>
-    /// The total order amount including VAT, shipping, and after all discounts.
+    /// The total order value after discounts, including VAT, shipping and payment
+    /// fees, before gift-card payment. Use ChargedAmount for the remaining amount payable.
     /// </summary>
     ICalculatedPrice GrandTotal { get; }
     /// <summary>
-    /// The end amount charged for all orderlines, 
-    /// including shipping providers, 
-    /// payment providers and discounts.
+    /// The remaining amount payable after discounts and applicable gift-card amounts,
+    /// including VAT, shipping and payment fees, never below zero.
     /// </summary>
     ICalculatedPrice ChargedAmount { get; }
     /// <summary>

@@ -268,8 +268,34 @@ public class OrderInfo : IOrderInfo
 
 
     /// <inheritdoc />
-    public ICalculatedPrice GrandTotal => ChargedAmount;
+    public ICalculatedPrice GrandTotal
+    {
+        get
+        {
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
+            decimal amount = OrderLines.Sum(line =>
+            {
+                // Preserve exclusive order-discount comparisons even when the
+                // lines temporarily still contain a product discount.
+                if (line.Discount == null || Discount?.Stackable == false)
+                {
+                    return LinePriceWithOrderDiscount(line, calculationScope.Allocations).Value;
+                }
 
+                return line.Amount.Value;
+            });
+
+            if (ShippingProvider != null) amount += ShippingProvider.Price.Value;
+            if (PaymentProvider != null) amount += PaymentProvider.Price.Value;
+
+            return new CalculatedPrice(amount, StoreInfo.Currency);
+        }
+    }
+
+    /// <summary>
+    /// Discounted order value excluding VAT, including shipping and payment fees,
+    /// before gift-card payment.
+    /// </summary>
     public ICalculatedPrice GrandTotalWithOutVat
     {
         get
@@ -277,7 +303,7 @@ public class OrderInfo : IOrderInfo
             using var calculationScope = OrderPricingCalculationScope.Enter(this);
             decimal amount = OrderLines.Sum(line =>
             {
-                if (line.Discount == null)
+                if (line.Discount == null || Discount?.Stackable == false)
                 {
                     var lineWithOrderDiscount = LinePriceWithOrderDiscount(line, calculationScope.Allocations);
                     return lineWithOrderDiscount.WithoutVat.Value;  // line net (already rounded per-line)
@@ -288,7 +314,7 @@ public class OrderInfo : IOrderInfo
             if (ShippingProvider != null) amount += ShippingProvider.Price.WithoutVat.Value;
             if (PaymentProvider != null) amount += PaymentProvider.Price.WithoutVat.Value;
 
-            return new CalculatedPrice(Math.Max(0, amount - GetApplicableGiftcardAmount()), StoreInfo.Currency);
+            return new CalculatedPrice(amount, StoreInfo.Currency);
         }
     }
 
@@ -365,35 +391,7 @@ public class OrderInfo : IOrderInfo
         get
         {
             using var calculationScope = OrderPricingCalculationScope.Enter(this);
-            decimal amount = OrderLines.Sum(line =>
-            {
-                if (line.Discount == null
-                // This is for OrderService.Discounts.IsBetterDiscount, 
-                // allowing us to temporarily apply an exclusive discount to the order
-                // without removing discounts from all orderlines.
-                // In normal use an exclusive order discount will never be applied to an order 
-                // at the same time as OrderLines have a discount applied.
-                || Discount?.Stackable == false)
-                {
-                    Price lineWithOrderDiscount = LinePriceWithOrderDiscount(line, calculationScope.Allocations);
-
-                    return lineWithOrderDiscount.Value;
-                }
-
-                return line.Amount.Value;
-            });
-
-            if (ShippingProvider != null)
-            {
-                amount += ShippingProvider.Price.Value;
-            }
-
-            if (PaymentProvider != null)
-            {
-                amount += PaymentProvider.Price.Value;
-            }
-
-            return new CalculatedPrice(Math.Max(0, amount - GetApplicableGiftcardAmount()), StoreInfo.Currency);
+            return new CalculatedPrice(Math.Max(0, GrandTotal.Value - GetApplicableGiftcardAmount()), StoreInfo.Currency);
         }
     }
 
