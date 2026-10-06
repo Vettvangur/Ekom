@@ -2398,8 +2398,9 @@ partial class OrderService
     }
     public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(string userName, CancellationToken ct = default, string? storeAlias = null)
     {
+        bool filterStore = !string.IsNullOrEmpty(storeAlias);
         List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(
-            x => x.CustomerUsername == userName,
+            x => x.CustomerUsername == userName && (!filterStore || x.StoreAlias == storeAlias),
             ct,
             OrderStatus.ReadyForDispatch,
             OrderStatus.OfflinePayment,
@@ -2418,6 +2419,8 @@ partial class OrderService
             return result;
         }
 
+        // SQL equality is only a prefilter: SQL Server can ignore case and trailing spaces.
+        // Keep the ordinal in-memory comparison to preserve exact store alias matching.
         foreach (OrderData order in orders)
         {
             if (order.StoreAlias == storeAlias)
@@ -2430,8 +2433,9 @@ partial class OrderService
     }
     public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, CancellationToken ct = default, string? storeAlias = null)
     {
+        bool filterStore = !string.IsNullOrEmpty(storeAlias);
         List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(
-            x => x.CustomerId == customerId,
+            x => x.CustomerId == customerId && (!filterStore || x.StoreAlias == storeAlias),
             ct,
             OrderStatus.ReadyForDispatch,
             OrderStatus.OfflinePayment,
@@ -2441,6 +2445,7 @@ partial class OrderService
 
         if (!string.IsNullOrEmpty(storeAlias))
         {
+            // SQL Server equality can ignore case and trailing spaces; retain the exact guard.
             orders = orders.Where(x => x.StoreAlias == storeAlias).ToList();
         }
 
