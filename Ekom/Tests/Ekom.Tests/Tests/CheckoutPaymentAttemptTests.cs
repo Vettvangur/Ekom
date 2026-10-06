@@ -510,6 +510,103 @@ public sealed class CheckoutPaymentAttemptTests
         Assert.False(CheckoutPaymentAttemptService.SamePurchase("{\"Line\":{\"UpdateDate\":1}}", "{\"Line\":{\"UpdateDate\":2}}"));
     }
 
+    [Theory]
+    [InlineData("GrandTotal")]
+    [InlineData("GrandTotalWithOutVat")]
+    [InlineData("ChargedAmount")]
+    public void PurchaseComparisonDoesNotIgnoreChangedTotalsDuringRollout(string changedTotal)
+    {
+        // Before the rollout grand totals could already include the gift-card payment.
+        const string oldSnapshot = "{\"GrandTotal\":{\"Value\":65},\"GrandTotalWithOutVat\":{\"Value\":65},\"ChargedAmount\":{\"Value\":65},\"Giftcards\":[{\"Amount\":35}]}";
+        var current = JObject.Parse(oldSnapshot);
+        current[changedTotal]!["Value"] = 100;
+        var newSnapshot = current.ToString(Formatting.None);
+
+        Assert.True(CheckoutPaymentAttemptService.SamePurchase(oldSnapshot, oldSnapshot));
+        Assert.False(CheckoutPaymentAttemptService.SamePurchase(oldSnapshot, newSnapshot));
+        Assert.False(CheckoutPaymentAttemptService.SamePurchase(newSnapshot, oldSnapshot));
+    }
+
+    [Theory]
+    [InlineData("GrandTotal")]
+    [InlineData("GrandTotalWithOutVat")]
+    public async Task CheckoutRequiresCurrentTotalsToBePersistedBeforePaymentSubmission(string changedTotal)
+    {
+        using var f = new Fixture();
+        var order = new OrderInfo(await f.ReadAsync());
+        var currentSnapshot = JsonConvert.SerializeObject(order, EkomJsonDotNet.Settings);
+        var legacy = JObject.Parse(currentSnapshot);
+        legacy[changedTotal]!["Value"] = 35;
+        var legacySnapshot = legacy.ToString(Formatting.None);
+        using var db = f.Database.Factory.GetDatabase();
+        await db.GetTable<OrderData>().Where(x => x.UniqueId == f.OrderId)
+            .Set(x => x.OrderInfo, legacySnapshot).UpdateAsync();
+
+        await using var checkout = await f.Service.BeginCheckoutAsync(order);
+        using var activation = checkout.Enter();
+        var exception = await Assert.ThrowsAsync<EkomHttpException>(() => f.Service.SubmitAsync(order));
+        Assert.Contains("Save it before payment", exception.Message, StringComparison.Ordinal);
+        var preparing = await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync();
+        Assert.Equal(CheckoutPaymentAttemptState.Preparing, preparing.State);
+        Assert.Null(preparing.SubmittedOrderInfo);
+        Assert.Equal(legacySnapshot, (await f.ReadAsync()).OrderInfo);
+
+        // Only the live order is refreshed and saved; submission freezes that persisted JSON.
+        currentSnapshot = JsonConvert.SerializeObject(order, EkomJsonDotNet.Settings);
+        await db.GetTable<OrderData>().Where(x => x.UniqueId == f.OrderId)
+            .Set(x => x.OrderInfo, currentSnapshot).UpdateAsync();
+        var attemptId = await f.Service.SubmitAsync(order);
+        var submitted = await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync();
+        Assert.Equal(attemptId, submitted.AttemptId);
+        Assert.Equal(currentSnapshot, submitted.SubmittedOrderInfo);
+        Assert.Equal(currentSnapshot, (await f.Service.GetSubmittedOrderAsync(f.OrderId, attemptId))!.OrderInfo);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("GrandTotal")]
+    [InlineData("GrandTotalWithOutVat")]
+    [InlineData("ChargedAmount")]
+    public async Task LegacyCallbackUsesStrictPersistedComparisonAndNeverRewritesFrozenTotals(string? changedTotal)
+    {
+        using var f = new Fixture();
+        var attempt = await f.SubmittedAsync();
+        var legacy = JObject.Parse(attempt.SubmittedOrderInfo!);
+        legacy["GrandTotal"] = JObject.FromObject(new { Value = 65 });
+        legacy["GrandTotalWithOutVat"] = JObject.FromObject(new { Value = 65 });
+        legacy["ChargedAmount"] = JObject.FromObject(new { Value = 65 });
+        var legacySnapshot = legacy.ToString(Formatting.None);
+        using var db = f.Database.Factory.GetDatabase();
+        await db.GetTable<OrderData>().Where(x => x.UniqueId == f.OrderId)
+            .Set(x => x.OrderInfo, legacySnapshot).UpdateAsync();
+        var legacyOrderData = JsonConvert.SerializeObject(await f.ReadAsync());
+        // Seed an attempt frozen by the old version, before simulating a live-order refresh.
+        await db.GetTable<CheckoutPaymentAttemptData>().Where(x => x.AttemptId == attempt.AttemptId)
+            .Set(x => x.SubmittedOrderInfo, legacySnapshot)
+            .Set(x => x.SubmittedOrderData, legacyOrderData).UpdateAsync();
+        if (changedTotal != null)
+        {
+            legacy[changedTotal]!["Value"] = 100;
+            await db.GetTable<OrderData>().Where(x => x.UniqueId == f.OrderId)
+                .Set(x => x.OrderInfo, legacy.ToString(Formatting.None)).UpdateAsync();
+        }
+
+        var completed = false;
+        var result = await f.Service.CompleteAsync(f.OrderId, attempt.AttemptId, () =>
+        {
+            completed = true;
+            return Task.CompletedTask;
+        });
+
+        Assert.Equal(changedTotal == null, result);
+        Assert.Equal(changedTotal == null, completed);
+        var stored = await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync();
+        Assert.Equal(changedTotal == null ? CheckoutPaymentAttemptState.Completed : CheckoutPaymentAttemptState.ReconciliationRequired, stored.State);
+        Assert.Equal(legacySnapshot, stored.SubmittedOrderInfo);
+        Assert.Equal(legacyOrderData, stored.SubmittedOrderData);
+        Assert.Equal(legacySnapshot, (await f.Service.GetSubmittedOrderAsync(f.OrderId, attempt.AttemptId))!.OrderInfo);
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly ConfigurationScope _configuration = new(overrides: new Dictionary<string, string?>());

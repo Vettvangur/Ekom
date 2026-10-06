@@ -1,5 +1,6 @@
 using Ekom.Models;
 using Ekom.Tests.Objects;
+using Ekom.Utilities;
 using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
@@ -204,7 +205,7 @@ public class OrderInfoTests
     }
 
     [Fact]
-    public void Giftcards_ReducePayableTotalsWhenValid()
+    public void Giftcards_ReduceChargedAmountWithoutChangingOrderTotalsWhenValid()
     {
         using var configurationScope = new ConfigurationScope();
         var orderInfo = CreateOrderInfoWithPaymentAmount(100m);
@@ -215,8 +216,8 @@ public class OrderInfoTests
         ];
 
         Assert.Equal(65m, orderInfo.ChargedAmount.Value);
-        Assert.Equal(65m, orderInfo.GrandTotal.Value);
-        Assert.Equal(65m, orderInfo.GrandTotalWithOutVat.Value);
+        Assert.Equal(100m, orderInfo.GrandTotal.Value);
+        Assert.Equal(100m, orderInfo.GrandTotalWithOutVat.Value);
     }
 
     [Fact]
@@ -236,7 +237,7 @@ public class OrderInfoTests
     }
 
     [Fact]
-    public void ClaimedGiftcards_ReducePayableTotalsAfterValidUntil()
+    public void ClaimedGiftcards_ReduceChargedAmountWithoutChangingOrderTotalsAfterValidUntil()
     {
         using var configurationScope = new ConfigurationScope();
         var orderInfo = CreateOrderInfoWithPaymentAmount(100m);
@@ -247,8 +248,8 @@ public class OrderInfoTests
         ];
 
         Assert.Equal(65m, orderInfo.ChargedAmount.Value);
-        Assert.Equal(65m, orderInfo.GrandTotal.Value);
-        Assert.Equal(65m, orderInfo.GrandTotalWithOutVat.Value);
+        Assert.Equal(100m, orderInfo.GrandTotal.Value);
+        Assert.Equal(100m, orderInfo.GrandTotalWithOutVat.Value);
     }
 
     [Fact]
@@ -263,11 +264,91 @@ public class OrderInfoTests
         ];
 
         Assert.Equal(0m, orderInfo.ChargedAmount.Value);
-        Assert.Equal(0m, orderInfo.GrandTotal.Value);
-        Assert.Equal(0m, orderInfo.GrandTotalWithOutVat.Value);
+        Assert.Equal(100m, orderInfo.GrandTotal.Value);
+        Assert.Equal(100m, orderInfo.GrandTotalWithOutVat.Value);
     }
 
-    private static OrderInfo CreateOrderInfoWithPaymentAmount(decimal amount)
+    [Theory]
+    [InlineData(0, 100)]
+    [InlineData(25, 75)]
+    [InlineData(100, 0)]
+    [InlineData(150, 0)]
+    public void Giftcards_OnlyReduceChargedAmount(decimal giftcardAmount, decimal expectedChargedAmount)
+    {
+        using var configurationScope = new ConfigurationScope();
+        var orderInfo = CreateOrderInfoWithPaymentAmount(100m);
+        orderInfo.Giftcards = [new Giftcard { Amount = giftcardAmount, Code = "giftcard-code" }];
+
+        Assert.Equal(100m, orderInfo.GrandTotal.Value);
+        Assert.Equal(100m, orderInfo.GrandTotalWithOutVat.Value);
+        Assert.Equal(expectedChargedAmount, orderInfo.ChargedAmount.Value);
+    }
+
+    [Theory]
+    [InlineData(true, 124)]
+    [InlineData(false, 100)]
+    public void Giftcards_DoNotReduceGrossOrNetProviderFees(bool vatIncludedInPrice, decimal paymentAmount)
+    {
+        using var configurationScope = new ConfigurationScope();
+        var orderInfo = CreateOrderInfoWithPaymentAmount(paymentAmount, 0.24m, vatIncludedInPrice);
+        orderInfo.ShippingProvider = new OrderedShippingProvider(new JObject
+        {
+            ["Id"] = 2,
+            ["Key"] = Guid.NewGuid(),
+            ["Title"] = "Test shipping",
+            ["Price"] = JToken.FromObject(new Price(
+                paymentAmount / 2m, orderInfo.StoreInfo.Currency, 0.24m, vatIncludedInPrice)),
+        }, orderInfo.StoreInfo);
+        orderInfo.Giftcards = [new Giftcard { Amount = 25m, Code = "giftcard-code" }];
+
+        Assert.Equal(186m, orderInfo.GrandTotal.Value);
+        Assert.Equal(150m, orderInfo.GrandTotalWithOutVat.Value);
+        Assert.Equal(161m, orderInfo.ChargedAmount.Value);
+    }
+
+    [Fact]
+    public void Serialization_PreservesPreGiftcardGrossAndNetTotalsSeparatelyFromChargedAmount()
+    {
+        using var configurationScope = new ConfigurationScope();
+        var orderInfo = CreateOrderInfoWithPaymentAmount(124m, 0.24m);
+        orderInfo.Giftcards = [new Giftcard { Amount = 25m, Code = "giftcard-code" }];
+
+        var json = JObject.Parse(JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.Settings));
+
+        Assert.Equal(124m, json[nameof(OrderInfo.GrandTotal)]?["Value"]?.Value<decimal>());
+        Assert.Equal(100m, json[nameof(OrderInfo.GrandTotalWithOutVat)]?["Value"]?.Value<decimal>());
+        Assert.Equal(99m, json[nameof(OrderInfo.ChargedAmount)]?["Value"]?.Value<decimal>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Constructor_RecalculatesHistoricalPostGiftcardTotalsFromSnapshots(bool encodedObjects)
+    {
+        using var configurationScope = new ConfigurationScope();
+        var original = CreateOrderInfoWithPaymentAmount(124m, 0.24m);
+        original.Giftcards = [new Giftcard { Amount = 25m, Code = "giftcard-code", Claimed = true }];
+        var json = JObject.Parse(JsonConvert.SerializeObject(original, EkomJsonDotNet.Settings));
+        json[nameof(OrderInfo.GrandTotal)]!["Value"] = 99m;
+        json[nameof(OrderInfo.GrandTotalWithOutVat)]!["Value"] = 75m;
+        if (encodedObjects)
+        {
+            json[nameof(OrderInfo.StoreInfo)] = json[nameof(OrderInfo.StoreInfo)]!.ToString();
+            json[nameof(OrderInfo.PaymentProvider)] = json[nameof(OrderInfo.PaymentProvider)]!.ToString();
+        }
+        var data = new OrderData { OrderInfo = json.ToString() };
+        var historicalJson = data.OrderInfo;
+
+        var hydrated = new OrderInfo(data);
+
+        Assert.Equal(124m, hydrated.GrandTotal.Value);
+        Assert.Equal(100m, hydrated.GrandTotalWithOutVat.Value);
+        Assert.Equal(99m, hydrated.ChargedAmount.Value);
+        Assert.True(Assert.Single(hydrated.Giftcards).Claimed);
+        Assert.Equal(historicalJson, data.OrderInfo);
+    }
+
+    private static OrderInfo CreateOrderInfoWithPaymentAmount(decimal amount, decimal vat = 0m, bool vatIncludedInPrice = true)
     {
         var currency = new CurrencyModel
         {
@@ -280,18 +361,19 @@ public class OrderInfoTests
             [currency],
             "en-US",
             "Store",
-            vatIncludedInPrice: true,
-            vat: 0,
-            applyVatOnShipping: false);
+            vatIncludedInPrice: vatIncludedInPrice,
+            vat: vat,
+            applyVatOnShipping: true);
         var paymentProvider = new JObject
         {
             ["Id"] = 1,
             ["Key"] = Guid.NewGuid(),
             ["Title"] = "Test payment",
-            ["Price"] = JToken.FromObject(new Price(amount, currency, 0, vatIncludedInPrice: true)),
+            ["Price"] = JToken.FromObject(new Price(amount, currency, vat, vatIncludedInPrice)),
         };
         var orderData = new OrderData
         {
+            OrderStatus = OrderStatus.Incomplete,
             OrderInfo = new JObject
             {
                 [nameof(OrderInfo.StoreInfo)] = JToken.FromObject(storeInfo),

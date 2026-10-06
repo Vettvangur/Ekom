@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+* **order:** `GrandTotal` and `GrandTotalWithOutVat` now retain the discounted order value including shipping and payment fees before gift-card payment. Use `ChargedAmount` for the remaining amount payable. Default payment requests and SQL `TotalAmount` retain their existing payable semantics. Historical JSON can contain the previous grand-total values; preserve frozen payment snapshots and deploy consistently across instances.
+
 ### Performance Improvements
 
 * **order:** hydrate ordinary store, shipping, and payment snapshots from isolated parsed JSON fragments instead of stringifying and reparsing them; retain legacy string payloads and configured serializer fallbacks, without changing customer/tracking/consent deserialization, product lines, or the saved order format.

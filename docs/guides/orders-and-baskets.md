@@ -190,7 +190,15 @@ basket = await orderApi.AddGiftcardAsync(
 basket = await orderApi.RemoveGiftcardAsync("GIFT-100", "Store", ct: ct);
 ```
 
-Codes must be non-empty, amounts must be positive, and duplicate codes are rejected case-insensitively. Applicable gift-card amounts reduce `ChargedAmount` and `GrandTotal`, never below zero. The core add operation accepts a `Giftcard` value; it does not itself prove that the code, balance, claim, or client-supplied amount came from a trusted gift-card system. Validate and claim gift cards at the application's trust boundary before calling it, and protect the public gift-card route if exposing it would allow untrusted values.
+Codes must be non-empty, amounts must be positive, and duplicate codes are rejected case-insensitively. Applicable gift-card amounts reduce `ChargedAmount`, never below zero. `GrandTotal` retains the discounted order value including VAT, shipping and payment fees before gift cards; `GrandTotalWithOutVat` retains that value excluding VAT. An order worth 5,000 paid entirely with gift cards therefore has `GrandTotal.Value == 5000` and `ChargedAmount.Value == 0`. The core add operation accepts a `Giftcard` value; it does not itself prove that the code, balance, claim, or client-supplied amount came from a trusted gift-card system. Validate and claim gift cards at the application's trust boundary before calling it, and protect the public gift-card route if exposing it would allow untrusted values.
+
+### Grand-total compatibility
+
+Previously, `GrandTotal` aliased `ChargedAmount`, and `GrandTotalWithOutVat` also deducted gift cards. Integrations that need the remaining payment amount must use `ChargedAmount`. The default checkout continues to populate the payment request's independently named `OrderItem.GrandTotal` from `ChargedAmount`; do not replace that assignment with the order's `GrandTotal`.
+
+Saved order JSON from older versions can still contain the old grand-total values. Loading an order through `OrderInfo` recalculates these properties with the new meaning, but does not rewrite its stored JSON. Historical analytics must not assume that all saved `GrandTotal` fields use the new meaning. SQL `EkomOrders.TotalAmount` and existing manager aggregates continue to represent `ChargedAmount`; this change does not migrate those totals.
+
+Checkout compares saved purchase JSON, including computed totals. Deploy consistently across application instances, persist unsubmitted baskets through the normal update flow before payment submission, and do not bulk-reserialize frozen submitted purchases. A rewritten purchase with different grand totals can correctly trigger a checkout conflict or payment review even when only the calculation contract changed; preserve the submitted snapshot and reconcile it through the existing payment-attempt flow.
 
 ## Statuses and lifecycle
 

@@ -38,7 +38,7 @@ Products expose direct/related category relationships, images, metadata, variant
 - `WithVat` and `WithoutVat`
 - `Vat`, `DiscountAmount`, `Discount`, `HasDiscount`, and `DiscountedQuantity`
 
-`IOrderInfo.SubTotal` is an `IPrice`: use `SubTotal.WithoutVat` for the net pre-discount subtotal, while `SubTotal.Value` follows the price model's VAT mode. `GrandTotal` includes VAT and shipping after discounts. `ChargedAmount` is the final amount including order lines, shipping, payment provider, and discounts. `ChargedVat` currently aliases `Vat`; it includes shipping VAT only when configured and does not add payment-provider VAT.
+`IOrderInfo.SubTotal` is an `IPrice`: use `SubTotal.WithoutVat` for the net pre-discount subtotal, while `SubTotal.Value` follows the price model's VAT mode. `GrandTotal` is the order value after discounts, including VAT, shipping and payment fees, before gift-card payment. The concrete `OrderInfo.GrandTotalWithOutVat` is the corresponding pre-gift-card value excluding VAT. `ChargedAmount` is the remaining amount payable after applicable gift cards, floored at zero. Use it for payment requests, not `GrandTotal`. `ChargedVat` currently aliases `Vat`; it includes shipping VAT only when configured and does not add payment-provider VAT, so it is not necessarily the difference between the two grand totals. See [Grand-total compatibility](../guides/orders-and-baskets.md#grand-total-compatibility) for historical JSON and checkout deployment considerations.
 
 ## Product queries and responses
 

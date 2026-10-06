@@ -300,6 +300,53 @@ public class NativeDiscountPriceTests
         Assert.Equal(80m, Assert.Single(productPrices).AfterDiscount.Value);
     }
 
+    [Theory]
+    [InlineData(DiscountType.Percentage, 0.2, 96, 360)]
+    [InlineData(DiscountType.Fixed, 24, 456, 0)]
+    [InlineData(DiscountType.Percentage, 0.2, 500, 0)]
+    public void GrandTotal_QuantityDiscountRemainsBeforeGiftcardPayment(
+        DiscountType discountType, decimal discountAmount, decimal giftcardAmount, decimal expectedCharged)
+    {
+        using var fixture = new Fixture(vatIncluded: true, vat: 0.2m);
+        Mock.Get(fixture.Store).SetupGet(x => x.Culture).Returns(new CultureInfoDto { Name = "en-US" });
+        var order = new OrderInfo(new OrderData(), fixture.Store)
+        {
+            Discount = new OrderedDiscount(
+                Guid.NewGuid(),
+                "Quantity discount",
+                false,
+                discountAmount,
+                discountType,
+                ["200"],
+                [],
+                new Constraints(),
+                false,
+                false,
+                OrderDiscountQuantityMode.Repeating,
+                ["200"],
+                3,
+                1),
+        };
+        var cheapLine = new OrderLine(fixture.Product("120", ""), 2m, Guid.NewGuid(), order, []);
+        var expensiveLine = new OrderLine(fixture.Product("240", ""), 1m, Guid.NewGuid(), order, []);
+        order.UpdateOrderlines([cheapLine, expensiveLine]);
+
+        var allocations = OrderDiscountQuantityAllocator.Allocate(order, order.Discount);
+
+        Assert.Equal(1m, allocations[cheapLine.Key]);
+        Assert.False(allocations.ContainsKey(expensiveLine.Key));
+        Assert.Equal(216m, cheapLine.Amount.Value);
+        Assert.Equal(240m, expensiveLine.Amount.Value);
+        Assert.Equal(456m, order.GrandTotal.Value);
+        Assert.Equal(380m, order.GrandTotalWithOutVat.Value);
+
+        order.Giftcards = [new Giftcard { Amount = giftcardAmount, Code = "quantity-discount-giftcard" }];
+
+        Assert.Equal(expectedCharged, order.ChargedAmount.Value);
+        Assert.Equal(456m, order.GrandTotal.Value);
+        Assert.Equal(380m, order.GrandTotalWithOutVat.Value);
+    }
+
     private static UmbracoContent Content(
         string price,
         string target,
