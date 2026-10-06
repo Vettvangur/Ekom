@@ -80,6 +80,44 @@ public sealed class AnalyticsProjectionTests
         Assert.Equal(incomplete ? 1 : 0, db.GetTable<OrderData>().Count());
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("unknown")]
+    [InlineData("Property:")]
+    public async Task InvalidIdentitySelectorDoesNotAccessStorage(string selector)
+    {
+        var options = Options.Create(new AnalyticsOptions { Enabled = true, CustomerIdentifier = selector });
+        // Deliberately absent storage dependencies prove validation happens before accessing them.
+        var schema = new AnalyticsSchema(null!, options, NullLogger<AnalyticsSchema>.Instance);
+        var service = new AnalyticsProjectionService(null!, schema,
+            new AnalyticsSnapshotMapper(new ConfiguredAnalyticsCustomerIdentityResolver(options), options),
+            options, null!, NullLogger<AnalyticsProjectionService>.Instance);
+        Assert.False(await schema.EnsureReadyAsync());
+        var result = await service.RefreshAsync(Guid.NewGuid());
+        Assert.False(result.Success);
+        Assert.Equal("Analytics configuration is invalid.", result.Error);
+    }
+
+    [Fact]
+    public async Task ExistingNotNullLegacyColumnWithoutSqlDefaultReceivesOneOnRefresh()
+    {
+        using var database = new AnalyticsDatabase();
+        using (var db = database.Factory.GetDatabase())
+        {
+            // Represents the deployed table before a fresh schema service sees it.
+            db.CreateTable<AnalyticsOrderData>();
+            Assert.Equal(1, db.Execute<int>("SELECT [notnull] FROM pragma_table_info('EkomAnalyticsOrders') WHERE name = 'CustomerIdentityPolicyVersion'"));
+            Assert.Null(db.Execute<string?>("SELECT dflt_value FROM pragma_table_info('EkomAnalyticsOrders') WHERE name = 'CustomerIdentityPolicyVersion'"));
+        }
+        Guid orderId = database.AddOrder("ReadyForDispatch", Snapshot(100m));
+        Assert.True((await database.CreateService().RefreshAsync(orderId)).Success);
+        Assert.True((await database.CreateService().RefreshAsync(orderId)).Success);
+        using var verification = database.Factory.GetDatabase();
+        Assert.Equal(1, verification.Execute<int>("SELECT CustomerIdentityPolicyVersion FROM EkomAnalyticsOrders"));
+        Assert.Equal(1, verification.GetTable<AnalyticsOrderData>().Single().ProjectionVersion);
+    }
+
     [Fact]
     public async Task RefreshReplacesAllRowsIdempotentlyFromSavedSnapshot()
     {
@@ -227,7 +265,7 @@ public sealed class AnalyticsProjectionTests
         public IOptions<AnalyticsOptions> Options { get; }
         public AnalyticsSchema CreateSchema() => new(Factory, Options, NullLogger<AnalyticsSchema>.Instance);
         public AnalyticsProjectionService CreateService() => new(Factory, CreateSchema(),
-            new AnalyticsSnapshotMapper(new EmailAnalyticsCustomerIdentityResolver(), Options), Options,
+            new AnalyticsSnapshotMapper(new ConfiguredAnalyticsCustomerIdentityResolver(Options), Options), Options,
             new ActivityLogRepository(NullLogger<ActivityLogRepository>.Instance, Factory),
             NullLogger<AnalyticsProjectionService>.Instance);
 

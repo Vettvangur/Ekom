@@ -28,7 +28,7 @@ public static class AnalyticsServiceCollectionExtensions
                 logger.LogError(ex, "Analytics configuration could not be read; processing is disabled.");
             }
         });
-        services.TryAddSingleton<IAnalyticsCustomerIdentityResolver, EmailAnalyticsCustomerIdentityResolver>();
+        services.TryAddSingleton<IAnalyticsCustomerIdentityResolver, ConfiguredAnalyticsCustomerIdentityResolver>();
         services.TryAddSingleton<AnalyticsSnapshotMapper>();
         services.TryAddSingleton<AnalyticsSchema>();
         services.TryAddSingleton<AnalyticsProjectionService>();

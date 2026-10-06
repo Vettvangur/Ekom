@@ -303,18 +303,17 @@ public class AnalyticsSnapshotMapperTests
     }
 
     [Fact]
-    public void CustomResolverAndPolicyVersionAreUsedWithoutChangingItsNormalizedValue()
+    public void CustomResolverIsUsedWithoutChangingItsNormalizedValue()
     {
         var resolver = new Mock<IAnalyticsCustomerIdentityResolver>();
         resolver.Setup(value => value.Resolve(It.IsAny<OrderData>(), It.IsAny<JsonElement>()))
             .Callback<OrderData, JsonElement>((_, snapshot) => Assert.Equal(JsonValueKind.Object, snapshot.ValueKind))
             .Returns(new AnalyticsCustomerIdentity("account", "CaseSensitiveId"));
-        var mapper = Mapper(resolver.Object, new AnalyticsOptions { CustomerIdentityPolicyVersion = 7 });
+        var mapper = Mapper(resolver.Object);
         var data = Data();
         var projection = mapper.Map(data, ProjectedAtUtc);
         Assert.Equal("account", projection.Order.CustomerIdentityType);
         Assert.Equal(Hash("account", "CaseSensitiveId"), projection.Order.CustomerIdentityKey);
-        Assert.Equal(7, projection.Order.CustomerIdentityPolicyVersion);
         resolver.Verify(value => value.Resolve(data, It.IsAny<JsonElement>()), Times.Once);
     }
 
@@ -369,7 +368,7 @@ public class AnalyticsSnapshotMapperTests
         Assert.Equal(TimeSpan.FromMilliseconds(250), options.DelayBetweenBatches);
         Assert.Equal(30, options.DatabaseCommandTimeoutSeconds);
         Assert.Equal(TimeSpan.FromMinutes(5), options.LeaseDuration);
-        Assert.Equal(1, options.CustomerIdentityPolicyVersion);
+        Assert.Equal("CustomerEmail", options.CustomerIdentifier);
         Assert.True(options.IsValid(out var error));
         Assert.Null(error);
         options.BatchSize = 0;
@@ -383,7 +382,6 @@ public class AnalyticsSnapshotMapperTests
     [InlineData("DelayBetweenBatches")]
     [InlineData("DatabaseCommandTimeoutSeconds")]
     [InlineData("LeaseDuration")]
-    [InlineData("CustomerIdentityPolicyVersion")]
     public void InvalidOptionsReturnAnError(string name)
     {
         var options = new AnalyticsOptions();
@@ -393,8 +391,158 @@ public class AnalyticsSnapshotMapperTests
         Assert.Contains(name, error, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("customerusername", " scalarUser ", "SCALARUSER")]
+    [InlineData("CustomerUsername", " ", "SAVEDUSER")]
+    public void UsernameSelectionUsesOnlySavedUsername(string selector, string scalar, string expected)
+    {
+        var snapshot = Snapshot();
+        snapshot["CustomerInformation"]!["Customer"]!["Username"] = " savedUser ";
+        var data = Data(snapshot);
+        data.CustomerUsername = scalar;
+        var order = Mapper(options: new AnalyticsOptions { CustomerIdentifier = selector }).Map(data, ProjectedAtUtc).Order;
+        Assert.Equal("username", order.CustomerIdentityType);
+        Assert.Equal(Hash("username", expected), order.CustomerIdentityKey);
+    }
+
+    [Fact]
+    public void UsernamePropertyFallbackNeverFallsBackToEmailOrId()
+    {
+        var snapshot = Snapshot();
+        snapshot["CustomerInformation"]!["Customer"]!["Properties"]!["customerUsername"] = " savedUser ";
+        var data = Data(snapshot);
+        data.CustomerUsername = "";
+        var mapper = Mapper(options: new AnalyticsOptions { CustomerIdentifier = "CustomerUsername" });
+        Assert.Equal(Hash("username", "SAVEDUSER"), mapper.Map(data, ProjectedAtUtc).Order.CustomerIdentityKey);
+        snapshot["CustomerInformation"]!["Customer"]!["Properties"]!["customerUsername"] = 123;
+        data.OrderInfo = snapshot.ToJsonString();
+        Assert.Null(mapper.Map(data, ProjectedAtUtc).Order.CustomerIdentityKey);
+    }
+
+    [Theory]
+    [InlineData(17, "18", "17")]
+    [InlineData(0, "18", "18")]
+    [InlineData(-1, "18", "18")]
+    [InlineData(0, "0", null)]
+    [InlineData(0, "-1", null)]
+    [InlineData(0, "1.5", null)]
+    [InlineData(0, "2147483648", null)]
+    [InlineData(0, "null", null)]
+    public void CustomerIdRequiresPositiveIntegerAndAllowsSavedGuestFallback(int scalar, string saved, string? expected)
+    {
+        var snapshot = Snapshot();
+        snapshot["CustomerInformation"]!["Customer"]!["UserId"] = JsonNode.Parse(saved);
+        var data = Data(snapshot);
+        data.CustomerId = scalar;
+        var order = Mapper(options: new AnalyticsOptions { CustomerIdentifier = "customerid" }).Map(data, ProjectedAtUtc).Order;
+        Assert.Equal(expected == null ? null : "customer-id", order.CustomerIdentityType);
+        Assert.Equal(expected == null ? null : Hash("customer-id", expected), order.CustomerIdentityKey);
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("42")]
+    [InlineData("true")]
+    [InlineData("{}")]
+    [InlineData("[]")]
+    [InlineData("\" \"")]
+    public void CustomPropertyRequiresNonemptyStringWithoutOtherIdentifierFallback(string saved)
+    {
+        var snapshot = Snapshot();
+        snapshot["CustomerInformation"]!["Customer"]!["Properties"]!["ssn"] = JsonNode.Parse(saved);
+        var order = Mapper(options: new AnalyticsOptions { CustomerIdentifier = "Property:ssn" }).Map(Data(snapshot), ProjectedAtUtc).Order;
+        Assert.Null(order.CustomerIdentityType);
+        Assert.Null(order.CustomerIdentityKey);
+    }
+
+    [Theory]
+    [InlineData("ssn", " 001-AbC-23 ", "001-AbC-23")]
+    [InlineData("a:b", " 001:AbC ", "001:AbC")]
+    [InlineData("json", " {\"id\":\"001\"} ", "{\"id\":\"001\"}")]
+    public void PropertyPrefixIsInsensitiveButAliasAndStringValueRemainExact(string alias, string saved, string expected)
+    {
+        var snapshot = Snapshot();
+        snapshot["CustomerInformation"]!["Customer"]!["Properties"]![alias] = saved;
+        var mapper = Mapper(options: new AnalyticsOptions { CustomerIdentifier = "pRoPeRtY:" + alias });
+        var order = mapper.Map(Data(snapshot), ProjectedAtUtc).Order;
+        Assert.Equal("property:" + alias, order.CustomerIdentityType);
+        Assert.Equal(Hash("property:" + alias, expected), order.CustomerIdentityKey);
+        snapshot["CustomerInformation"]!["Customer"]!["Properties"]!.AsObject().Remove(alias);
+        snapshot["CustomerInformation"]!["Customer"]!["Properties"]![alias.ToUpperInvariant()] = saved;
+        Assert.Null(mapper.Map(Data(snapshot), ProjectedAtUtc).Order.CustomerIdentityKey);
+    }
+
+    [Theory]
+    [InlineData("shortAlias", "otherAlias")]
+    [InlineData("aVeryLongCustomPropertyAliasOne", "aVeryLongCustomPropertyAliasTwo")]
+    [InlineData("a:b", "a")]
+    [InlineData("alias\npart", "alias")]
+    [InlineData(" alias ", "alias")]
+    public void DifferentAliasesAndCaseSensitiveValuesHaveDifferentIdentityKeys(string first, string second)
+    {
+        var snapshot = Snapshot();
+        var properties = snapshot["CustomerInformation"]!["Customer"]!["Properties"]!;
+        properties[first] = "001-AbC";
+        properties[second] = "001-AbC";
+        var firstMapper = Mapper(options: new AnalyticsOptions { CustomerIdentifier = "Property:" + first });
+        var secondMapper = Mapper(options: new AnalyticsOptions { CustomerIdentifier = "Property:" + second });
+        var order = firstMapper.Map(Data(snapshot), ProjectedAtUtc).Order;
+        Assert.NotEqual(order.CustomerIdentityKey, secondMapper.Map(Data(snapshot), ProjectedAtUtc).Order.CustomerIdentityKey);
+        if (first.Length > 24 || first != first.Trim() || first.Any(char.IsControl))
+        {
+            Assert.Equal("property", order.CustomerIdentityType);
+            Assert.Equal(Hash("property", first.Length + ":" + first + "001-AbC"), order.CustomerIdentityKey);
+        }
+        properties[first] = "001-abc";
+        Assert.NotEqual(order.CustomerIdentityKey, firstMapper.Map(Data(snapshot), ProjectedAtUtc).Order.CustomerIdentityKey);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("Email")]
+    [InlineData("CustomerEmail ")]
+    [InlineData("Property:")]
+    [InlineData("Property: ")]
+    public void InvalidIdentitySelectorIsRejected(string selector)
+    {
+        var options = new AnalyticsOptions { CustomerIdentifier = selector };
+        Assert.False(options.IsValid(out var error));
+        Assert.Contains("CustomerIdentifier", error, StringComparison.Ordinal);
+        Assert.Null(Mapper(options: options).Map(Data(), ProjectedAtUtc).Order.CustomerIdentityKey);
+    }
+
+    [Fact]
+    public void LegacyPolicyColumnIsHiddenFromBothApiSerializers()
+    {
+        var order = Mapper().Map(Data(), ProjectedAtUtc).Order;
+        Assert.DoesNotContain("CustomerIdentityPolicyVersion", JsonSerializer.Serialize(order), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CustomerIdentityPolicyVersion", Newtonsoft.Json.JsonConvert.SerializeObject(order), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void PropertyAliasesAreNotJsonPathsAndGenericEncodingAvoidsPrefixCollisions()
+    {
+        var snapshot = Snapshot();
+        var properties = snapshot["CustomerInformation"]!["Customer"]!["Properties"]!;
+        properties["a.b"] = "001";
+        properties["a"] = new JsonObject { ["b"] = "002" };
+        var dotted = Mapper(options: new AnalyticsOptions { CustomerIdentifier = "Property:a.b" });
+        Assert.Equal(Hash("property:a.b", "001"), dotted.Map(Data(snapshot), ProjectedAtUtc).Order.CustomerIdentityKey);
+        properties.AsObject().Remove("a.b");
+        Assert.Null(dotted.Map(Data(snapshot), ProjectedAtUtc).Order.CustomerIdentityKey);
+
+        var alias = new string('a', 25);
+        properties[alias] = "bc";
+        properties[alias + "b"] = "c";
+        var first = Mapper(options: new AnalyticsOptions { CustomerIdentifier = "Property:" + alias });
+        var second = Mapper(options: new AnalyticsOptions { CustomerIdentifier = "Property:" + alias + "b" });
+        Assert.NotEqual(first.Map(Data(snapshot), ProjectedAtUtc).Order.CustomerIdentityKey,
+            second.Map(Data(snapshot), ProjectedAtUtc).Order.CustomerIdentityKey);
+    }
+
     private static AnalyticsSnapshotMapper Mapper(IAnalyticsCustomerIdentityResolver? resolver = null, AnalyticsOptions? options = null) =>
-        new(resolver ?? new EmailAnalyticsCustomerIdentityResolver(), Options.Create(options ?? new AnalyticsOptions()));
+        new(resolver ?? new ConfiguredAnalyticsCustomerIdentityResolver(Options.Create(options ?? new AnalyticsOptions())), Options.Create(options ?? new AnalyticsOptions()));
 
     private static string Hash(string type, string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(type + "\n" + value)));
 

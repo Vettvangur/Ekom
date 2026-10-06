@@ -4,6 +4,8 @@
 
 ### Features
 
+* **analytics:** configure strict customer grouping with `CustomerIdentifier` (`CustomerEmail`, `CustomerUsername`, `CustomerId` or `Property:<alias>`) instead of a manually maintained customer identity policy version.
+
 * **analytics:** add opt-in relational order, product/variant and promotion facts with store-scoped customer identity, configurable scheduled refresh, authorized single-order refresh and checkpointed batched rebuild APIs. Processing is independent of checkout and excludes incomplete baskets; no order-view controls are added.
 
 ### Breaking Changes

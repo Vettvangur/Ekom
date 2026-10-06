@@ -10,7 +10,7 @@ public sealed class AnalyticsOptions
     public TimeSpan DelayBetweenBatches { get; set; } = TimeSpan.FromMilliseconds(250);
     public int DatabaseCommandTimeoutSeconds { get; set; } = 30;
     public TimeSpan LeaseDuration { get; set; } = TimeSpan.FromMinutes(5);
-    public int CustomerIdentityPolicyVersion { get; set; } = 1;
+    public string CustomerIdentifier { get; set; } = "CustomerEmail";
 
     public bool IsValid(out string? error)
     {
@@ -30,7 +30,7 @@ public sealed class AnalyticsOptions
             : LeaseDuration > maximumTimerDuration ? "LeaseDuration cannot exceed the maximum timer duration."
             : LeaseDuration < TimeSpan.FromSeconds((long)DatabaseCommandTimeoutSeconds + 5) ? "LeaseDuration must exceed the command timeout by at least five seconds."
             : DelayBetweenBatches >= LeaseDuration ? "DelayBetweenBatches must be shorter than LeaseDuration."
-            : CustomerIdentityPolicyVersion <= 0 ? "CustomerIdentityPolicyVersion must be positive."
+            : !ConfiguredAnalyticsCustomerIdentityResolver.IsValidSelector(CustomerIdentifier) ? "CustomerIdentifier must be CustomerEmail, CustomerUsername, CustomerId, or Property:<alias>."
             : null;
         return error == null;
     }

@@ -67,6 +67,11 @@ public sealed class AnalyticsRegistrationTests
     [InlineData("BatchSize", "not-a-number")]
     [InlineData("BatchSize", "0")]
     [InlineData("RefreshInterval", "00:00:00")]
+    [InlineData("CustomerIdentifier", "")]
+    [InlineData("CustomerIdentifier", " ")]
+    [InlineData("CustomerIdentifier", "Email")]
+    [InlineData("CustomerIdentifier", "Property:")]
+    [InlineData("CustomerIdentifier", "Property: ")]
     public void InvalidAnalyticsConfigurationDisablesProcessingWithoutFailingOptionsResolution(string key, string value)
     {
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -94,6 +99,34 @@ public sealed class AnalyticsRegistrationTests
         using var provider = services.BuildServiceProvider();
 
         Assert.False(provider.GetRequiredService<IOptions<AnalyticsOptions>>().Value.Enabled);
+        Assert.Same(customResolver, provider.GetRequiredService<IAnalyticsCustomerIdentityResolver>());
+    }
+
+    [Theory]
+    [InlineData(null, "CustomerEmail")]
+    [InlineData("customerusername", "customerusername")]
+    [InlineData("Property:aVeryLongCustomPropertyAlias", "Property:aVeryLongCustomPropertyAlias")]
+    public void DefaultResolverUsesBoundSelectorWithoutChangingAliases(string? configured, string expected)
+    {
+        var values = new Dictionary<string, string?>();
+        if (configured != null) values["Ekom:Analytics:CustomerIdentifier"] = configured;
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddEkomAnalytics(new ConfigurationBuilder().AddInMemoryCollection(values).Build());
+        using var provider = services.BuildServiceProvider();
+        Assert.Equal(expected, provider.GetRequiredService<IOptions<AnalyticsOptions>>().Value.CustomerIdentifier);
+        Assert.IsType<ConfiguredAnalyticsCustomerIdentityResolver>(provider.GetRequiredService<IAnalyticsCustomerIdentityResolver>());
+    }
+
+    [Fact]
+    public void ResolverRegisteredAfterAnalyticsAlsoTakesPrecedence()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddEkomAnalytics(new ConfigurationBuilder().Build());
+        var customResolver = new TestIdentityResolver();
+        services.AddSingleton<IAnalyticsCustomerIdentityResolver>(customResolver);
+        using var provider = services.BuildServiceProvider();
         Assert.Same(customResolver, provider.GetRequiredService<IAnalyticsCustomerIdentityResolver>());
     }
 

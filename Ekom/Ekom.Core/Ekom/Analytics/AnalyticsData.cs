@@ -28,7 +28,9 @@ public sealed class AnalyticsOrderData
     [Column(DataType = DataType.Decimal, Precision = 19, Scale = 4), NotNull] public decimal TotalQuantity { get; set; }
     [Column(Length = 32)] public string? CustomerIdentityType { get; set; }
     [Column(Length = 64)] public string? CustomerIdentityKey { get; set; }
-    [Column, NotNull] public int CustomerIdentityPolicyVersion { get; set; }
+    // Unused compatibility column: deployed tables require an explicit non-null value on insert.
+    [Column, NotNull, Newtonsoft.Json.JsonIgnore, System.Text.Json.Serialization.JsonIgnore]
+    public int CustomerIdentityPolicyVersion { get; set; } = 1;
     [Column(Length = 255)] public string? CustomerName { get; set; }
     [Column(Length = 320)] public string? CustomerEmail { get; set; }
     [Column(Length = 255)] public string? SourceCustomerId { get; set; }

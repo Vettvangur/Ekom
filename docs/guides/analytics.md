@@ -18,7 +18,7 @@ Configure `Ekom:Analytics`:
       "DelayBetweenBatches": "00:00:00.250",
       "DatabaseCommandTimeoutSeconds": 30,
       "LeaseDuration": "00:05:00",
-      "CustomerIdentityPolicyVersion": 1
+      "CustomerIdentifier": "CustomerEmail"
     }
   }
 }
@@ -47,11 +47,24 @@ Refund accounting, verified gift-card-only payment buckets, customer lifetime su
 
 ## Customer identity
 
-The default `IAnalyticsCustomerIdentityResolver` uses saved customer email, trimmed and normalized case-insensitively. It does not strip dots or plus suffixes, and does not silently fall back to member ID or SSN. Missing email leaves customer identity unknown.
+Configure customer grouping with the single `CustomerIdentifier` setting. Its default is `CustomerEmail`:
+
+| Setting | Persisted source |
+| --- | --- |
+| `CustomerEmail` | Order email, then saved customer email |
+| `CustomerUsername` | Order username, then saved customer `UserName` |
+| `CustomerId` | Positive order customer ID, then positive saved customer `UserId` |
+| `Property:customerSSN` | String value in saved customer `Properties` under the exact alias `customerSSN` |
+
+Use `Property:<alias>` for any other saved customer property, for example `"CustomerIdentifier": "Property:externalCustomerId"`. Built-in names and the `Property:` prefix are case-insensitive; property aliases are matched exactly. Resolution never queries a live member or customer service.
+
+Resolution is strict: a missing or invalid selected identifier leaves customer association unknown, with no fallback to a different identifier. Email and username are trimmed and normalized case-insensitively; email dots and plus suffixes are preserved. Custom property values must be strings; they are trimmed but retain case and leading zeros. Numeric or other non-string property values are not identifiers. Invalid configuration, including an empty property alias, disables analytics processing without blocking ordering.
 
 Customer association is the combination of store and an identity key derived from identity type and normalized value. Reports always require a store. The projection also retains the available name/email and source customer identifier, so restrict reporting access appropriately; hashed identity keys do not make the associated customer data anonymous.
 
-Applications can register a replacement `IAnalyticsCustomerIdentityResolver` through DI. Return `AnalyticsCustomerIdentity(Type, Value)` using a stable application identity. Increase `CustomerIdentityPolicyVersion` and explicitly rebuild affected stores when changing identity policy. Ordinary rebuilds keep reports available but can temporarily mix old and new policy rows; coordinate report use during such a change.
+Built-in identity types are `email`, `username` and `customer-id`. Custom identities incorporate the exact property alias as well as its value into the hashed key. Short aliases normally appear as `property:<alias>`; long aliases or aliases containing boundary whitespace/control characters use the generic type `property` with an unambiguous alias/value encoding before hashing. Raw custom property values are not stored as additional analytics fields or logged. SSN-derived keys are sensitive pseudonymous data, not anonymization.
+
+Applications can still register a replacement `IAnalyticsCustomerIdentityResolver` through DI. Return `AnalyticsCustomerIdentity(Type, Value)` using a stable application identity. After changing `CustomerIdentifier` or custom identity rules, restart instances and explicitly rebuild affected stores. No manually maintained policy version is required and configuration changes do not automatically launch a rebuild. Ordinary rebuilds keep reports available but can temporarily mix old and new identity rows; coordinate report use during such a change. The unused legacy policy-version database column is retained for compatibility with existing tables.
 
 ## Background jobs
 

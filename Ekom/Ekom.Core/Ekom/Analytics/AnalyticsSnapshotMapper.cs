@@ -11,12 +11,11 @@ namespace Ekom.Analytics;
 public sealed class AnalyticsSnapshotMapper
 {
     private readonly IAnalyticsCustomerIdentityResolver _resolver;
-    private readonly IOptions<AnalyticsOptions> _options;
 
     public AnalyticsSnapshotMapper(IAnalyticsCustomerIdentityResolver resolver, IOptions<AnalyticsOptions> options)
     {
         _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
+        ArgumentNullException.ThrowIfNull(options);
     }
 
     public AnalyticsProjection Map(OrderData data, DateTime projectedAtUtc)
@@ -164,7 +163,6 @@ public sealed class AnalyticsSnapshotMapper
             CustomerIdentityType = identityType == null ? null : Bounded(identityType, 32, "CustomerIdentityType"),
             // StoreAlias scopes queries; the hash itself is the full normalized type + value, never a truncated label.
             CustomerIdentityKey = identityType == null ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identityType + "\n" + identityValue))),
-            CustomerIdentityPolicyVersion = _options.Value.CustomerIdentityPolicyVersion,
             CustomerName = Label(!string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerName : AnalyticsSnapshotJson.CustomerValue(snapshot, "Name", "customerName"), 255),
             CustomerEmail = Label(!string.IsNullOrWhiteSpace(data.CustomerEmail) ? data.CustomerEmail : AnalyticsSnapshotJson.CustomerValue(snapshot, "Email", "customerEmail"), 320),
             SourceCustomerId = sourceId > 0 ? sourceId.Value.ToString(CultureInfo.InvariantCulture) : null,
