@@ -625,6 +625,26 @@ public sealed class OrderReservationReleaseTests
     }
 
     [Fact]
+    public async Task ManagerOverrideCanUpdateAnOrderWithAnActivePaymentAttempt()
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync();
+        var order = (await fixture.Repository.GetOrderAsync(fixture.Order.UniqueId))!;
+        order.OrderStatus = OrderStatus.ReadyForDispatch;
+        order.PaidDate = DateTime.Now;
+
+        await using var operation = CheckoutPaymentOperationScope.BeginManagerOverride(order.UniqueId);
+        using var activation = operation.Enter();
+        await fixture.Repository.UpdateOrderAsync(order);
+
+        var persisted = (await fixture.Repository.GetOrderAsync(order.UniqueId))!;
+        Assert.Equal(OrderStatus.ReadyForDispatch, persisted.OrderStatus);
+        Assert.NotNull(persisted.PaidDate);
+        Assert.Equal(CheckoutPaymentAttemptState.Submitted, (await fixture.AttemptAsync()).State);
+        Assert.Equal(0, await fixture.Database.StockAsync(fixture.ProductKey));
+    }
+
+    [Fact]
     public async Task NestedCheckoutProviderUpdateDoesNotReleaseItsPreparingAttempt()
     {
         using var fixture = new Fixture();
