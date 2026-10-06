@@ -10,6 +10,10 @@ The startup filters add Ekom request handling, including session, authentication
 
 When Umbraco reaches `RuntimeLevel.Run`, Ekom executes its migration plan and creates any missing tables. The current plans cover the base tables and later additions such as activity-log metadata, warehouse stock, and native stock reservations, with version-specific differences. Startup also runs order-table and decimal-stock compatibility migrations.
 
+The `orders-indexes-v1` migration ensures a full unique index on `EkomOrders.UniqueId` on SQL Server and SQLite, including existing tables. Equivalent indexes under other names are retained, and the existing `ReferenceId` primary-key and clustering layout are not changed. New tables use the same checks. This phase does not add store/date/status indexes.
+
+Order-index validation fails if the `ReferenceId` primary key is missing or incompatible, the expected index name has an incompatible definition, or duplicate order IDs prevent creation of the unique index. Orders are never automatically deleted or merged. Resolve the reported schema or data issue and restart to retry; the failed migration is not recorded as complete. Index creation can block writes and require additional disk space, so schedule upgrades of large databases in an appropriate maintenance window.
+
 The content initializer uses Ekom's registered property editors to create data types, document types, and root content only when the Ekom root is absent. Existing Ekom installations are not recreated on every start. Initialization is skipped while Umbraco is installing or upgrading and proceeds after the application can run normally.
 
 Do not assume that a freshly installed site is ready for checkout before the first successful start and cache initialization. Create and publish stores through the backoffice before relying on catalog or provider behavior.

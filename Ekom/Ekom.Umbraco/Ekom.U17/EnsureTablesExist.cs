@@ -114,6 +114,31 @@ internal sealed class MigrationCreateStockReservationTable : MigrationBase
 #endif
 }
 
+#if UMBRACO_18
+internal sealed class MigrationEnsureOrderIndexes : AsyncMigrationBase
+#else
+internal sealed class MigrationEnsureOrderIndexes : MigrationBase
+#endif
+{
+    private readonly DatabaseService _databaseService;
+
+    public MigrationEnsureOrderIndexes(DatabaseService databaseService, IMigrationContext context)
+        : base(context)
+    {
+        _databaseService = databaseService;
+    }
+
+#if UMBRACO_18
+    protected override Task MigrateAsync()
+    {
+        _databaseService.EnsureOrderIndexes();
+        return Task.CompletedTask;
+    }
+#else
+    protected override void Migrate() => _databaseService.EnsureOrderIndexes();
+#endif
+}
+
 internal sealed class EkomMigrationPlan : MigrationPlan
 {
     public EkomMigrationPlan()
@@ -128,6 +153,7 @@ internal sealed class EkomMigrationPlan : MigrationPlan
         From("2")
             .To<MigrationCreateWarehouseStockTable>("3");
         From("3").To<MigrationCreateStockReservationTable>("native-reservations-v1");
+        From("native-reservations-v1").To<MigrationEnsureOrderIndexes>("orders-indexes-v1");
     }
 }
 
@@ -171,21 +197,18 @@ internal sealed class EnsureTablesExist : IAsyncComponent
         {
             _logger.LogInformation("Running initial database setup for Ekom.");
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
-            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "native-reservations-v1");
         }
         else if (currentState == "1")
         {
             _logger.LogInformation("Running Ekom database activity log type migration.");
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
-            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "native-reservations-v1");
         }
         else if (currentState == "2")
         {
             _logger.LogInformation("Running Ekom warehouse stock migration.");
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
-            _keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "native-reservations-v1");
         }
-        else if (currentState == "3")
+        else if (currentState == "3" || currentState == "native-reservations-v1")
         {
             await ExecuteMigrationPlanAsync().ConfigureAwait(false);
         }
@@ -206,6 +229,12 @@ internal sealed class EnsureTablesExist : IAsyncComponent
     private async Task ExecuteMigrationPlanAsync()
     {
         var upgrader = new Upgrader(new EkomMigrationPlan());
-        await upgrader.ExecuteAsync(_migrationPlanExecutor, _scopeProvider, _keyValueService).ConfigureAwait(false);
+        var result = await upgrader.ExecuteAsync(_migrationPlanExecutor, _scopeProvider, _keyValueService).ConfigureAwait(false);
+        if (!result.Successful)
+        {
+            throw new InvalidOperationException(
+                $"Ekom database migration failed from state '{result.InitialState}' at state '{result.FinalState}'. See the inner exception for detailed diagnostics.",
+                result.Exception);
+        }
     }
 }

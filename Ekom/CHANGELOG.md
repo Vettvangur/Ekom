@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+* **database:** ensure a unique index on `EkomOrders.UniqueId` for existing and new SQL Server/SQLite databases, avoid duplicate primary-key creation on SQL Server, and advance the order-index migration only after successful validation without rewriting orders or existing key layouts.
 * **manager:** link order-line product titles to available safe product URLs in a new tab, retaining plain titles when no URL is available.
 * **checkout:** allow cancel/edit retries to reserve fresh requirements without recovering historical expired holds, and track newly inserted carts so order-number assignment does not fail the stale-write guard.
 * **checkout:** return customer-safe conflict codes/messages for preparation, busy, completed, and payment-review states instead of exposing diagnostic exception text; prevent automatic payment resubmission on those responses.
