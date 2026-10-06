@@ -4,7 +4,13 @@ on:
   push:
     tags:
       - "Ekom-v*"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      unlist_unwanted_1_0_0:
+        description: "Unlist only the nine unintended Ekom 1.0.0 packages after both corrected releases are available"
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
@@ -12,6 +18,7 @@ permissions:
 
 jobs:
   publish-ekom:
+    if: ${{ !inputs.unlist_unwanted_1_0_0 }}
     runs-on: windows-latest
 
     steps:
@@ -182,4 +189,53 @@ jobs:
               --skip-duplicate
 
             if ($LASTEXITCODE -ne 0) { throw "dotnet nuget push failed for $($p.Name)" }
+          }
+
+  unlist-unwanted-1-0-0:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.unlist_unwanted_1_0_0 }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Wait for both corrected releases before unlisting
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $packages = @("ekom.common", "ekom.core", "ekom.aspnetcore", "ekom.u10", "ekom.web", "ekom.u17", "ekom.web.u17", "ekom.u18", "ekom.web.u18")
+          $deadline = (Get-Date).AddMinutes(20)
+          do {
+            $missing = @()
+            foreach ($package in $packages) {
+              foreach ($version in @("0.2.318", "0.2.319")) {
+                try {
+                  Invoke-WebRequest -Method Head -Uri "https://api.nuget.org/v3-flatcontainer/$package/$version/$package.$version.nupkg" -TimeoutSec 15 | Out-Null
+                } catch {
+                  $missing += "$package $version"
+                }
+              }
+            }
+            if ($missing.Count -eq 0) { break }
+            if ((Get-Date) -ge $deadline) { throw "Corrected packages are not all available; refusing to unlist 1.0.0: $($missing -join ', ')" }
+            Write-Host "Waiting for corrected packages: $($missing -join ', ')"
+            Start-Sleep -Seconds 30
+          } while ($true)
+
+      - name: NuGet Login (OIDC)
+        id: cleanup-login
+        uses: NuGet/login@v1
+        with:
+          user: Vettvangur
+
+      - name: Unlist only unintended Ekom 1.0.0 packages
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ steps.cleanup-login.outputs.NUGET_API_KEY }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $packages = @("Ekom.Common", "Ekom.Core", "Ekom.AspNetCore", "Ekom.U10", "Ekom.Web", "Ekom.U17", "Ekom.Web.U17", "Ekom.U18", "Ekom.Web.U18")
+          foreach ($package in $packages) {
+            dotnet nuget delete $package 1.0.0 --non-interactive --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json"
+            if ($LASTEXITCODE -ne 0) { throw "Unlisting $package 1.0.0 failed; check the trusted publishing policy's unlist permission." }
           }
