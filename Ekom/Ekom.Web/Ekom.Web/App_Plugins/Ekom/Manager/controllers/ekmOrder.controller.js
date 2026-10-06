@@ -38,6 +38,18 @@
     $scope.shippingProviders = [];
     $scope.shippingProviderEditModel = { providerId: "", fields: [] };
 
+    $scope.getProductUrl = function (product) {
+      var url = product && typeof product.url === "string" ? product.url.trim() : "";
+      if (!url) return null;
+
+      try {
+        var protocol = new URL(url, "https://ekom.invalid/").protocol;
+        return protocol === "http:" || protocol === "https:" ? url : null;
+      } catch (error) {
+        return null;
+      }
+    };
+
     var customerFields = [
       { key: "customerName", label: "Name", property: "name" },
       { key: "customerEmail", label: "Email", property: "email" },
