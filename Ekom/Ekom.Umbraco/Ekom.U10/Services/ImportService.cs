@@ -406,7 +406,10 @@ public class ImportService : IImportService
             throw new ArgumentNullException(nameof(product), $"Product is null. Identifier: {importProduct.Identifier} SKU: {importProduct.SKU} ParentKey: {parentKey}");
         }
 
-        SaveProduct(product, importProduct, allUmbracoCategories, null, null, false, syncUser, forceUpdate: forceUpdate);
+        if (!IsProductExcludedFromImport(importProduct, product))
+        {
+            SaveProduct(product, importProduct, allUmbracoCategories, null, null, false, syncUser, forceUpdate: forceUpdate);
+        }
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductUpdateSync)).GetAwaiter().GetResult();
 
@@ -655,16 +658,31 @@ public class ImportService : IImportService
             var umbracoProductsByParentId = BuildChildrenByParentId(allUmbracoProducts);
             var ekomNodesByParentId = BuildChildrenByParentId(allEkomNodes);
 
+            // Validate the original feed before handlers can exclude products.
+            if (delete && importProducts.Sum(x => x.Categories.Count) <= 0)
+                throw new ArgumentException("No products connected to categories in importProducts, sync stopped");
+
+            var eligibleProducts = new List<ImportProduct>(importProducts.Count);
+            foreach (var importProduct in importProducts)
+            {
+                umbracoProductsByIdentifier.TryGetValue(importProduct.Identifier, out var existingProduct);
+                if (!IsProductExcludedFromImport(importProduct, existingProduct))
+                {
+                    eligibleProducts.Add(importProduct);
+                }
+                else
+                {
+                    LogSyncProgress(progress);
+                }
+            }
+
             if (delete)
             {
-                if (importProducts.Sum(x => x.Categories.Count) <= 0)
-                    throw new ArgumentException("No products connected to categories in importProducts, sync stopped");
-
-                var importProductIdentifiers = importProducts.Select(x => x.Identifier).ToHashSet();
+                var importProductIdentifiers = eligibleProducts.Select(x => x.Identifier).ToHashSet();
 
                 var importProductsById = new Dictionary<string, ImportProduct>();
 
-                foreach (var product in importProducts)
+                foreach (var product in eligibleProducts)
                 {
                     if (!importProductsById.TryAdd(product.Identifier, product))
                     {
@@ -788,9 +806,9 @@ public class ImportService : IImportService
                 }
             }
 
-            _logger.LogInformation($"Iterating {importProducts.Count} products");
+            _logger.LogInformation($"Iterating {eligibleProducts.Count} products");
 
-            foreach (var importProduct in importProducts)
+            foreach (var importProduct in eligibleProducts)
             {
                 if (importProduct.Categories.Count > 0)
                 {
@@ -857,6 +875,15 @@ public class ImportService : IImportService
             }
         }
 
+    }
+
+    private bool IsProductExcludedFromImport(ImportProduct importProduct, IContent? productContent)
+    {
+        ArgumentNullException.ThrowIfNull(umbracoRootContent);
+
+        var args = new ImportProductEvaluatingEventArgs(importProduct, productContent, umbracoRootContent.Key);
+        OnProductImportEvaluating(this, args).GetAwaiter().GetResult();
+        return args.ExcludeFromImport;
     }
 
     private void LogSyncProgress(ImportSyncProgressTracker? progress)

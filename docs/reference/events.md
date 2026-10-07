@@ -111,6 +111,23 @@ Warehouse balances and discount stock do not publish this event.
 
 `OrderManagerEvents.ActionExecutedAsync` runs after an `IOrderManagerActionProvider` returns a successful result, including a downloadable file. Its arguments include the order, action key, backoffice user name, and execution result. It does not run for unknown actions or bad-request results. Filter by action key when handling a specific action, such as a carrier label. Handler failures fail the manager action response.
 
+## Import events
+
+The Umbraco integrations expose `ImportEvents.CategorySaveStarting`, `ProductImportEvaluating`, `ProductSaveStarting`, `VariantSaveStarting`, and `SyncFinished`.
+
+`ProductImportEvaluating` is a `Func<ImportProductEvaluatingEventArgs, Task>` event raised before product reconciliation and saving in full/category imports, `ProductSync`, and `ProductUpdateSync`. Its arguments expose:
+
+| Property | Behavior |
+| --- | --- |
+| `ImportProduct` | Incoming product being evaluated. Treat it as read-only during evaluation. |
+| `ProductContent` | Nullable matching existing content from the current import lookup; no additional content-service reads. |
+| `ImportRootKey` | Resolved import root key, for catalog-scoped handlers. |
+| `ExcludeFromImport` | Initially false; once set to true, later handlers cannot reverse exclusion. |
+
+Exclusion removes a product and its variants from the effective incoming feed. With missing-product removal enabled, existing excluded products follow normal recycle/deletion behavior; single-product imports skip saving without removing existing content. Original-feed safeguards and `ekmDisableSync` protection remain unchanged. Subscriber exceptions propagate before product reconciliation begins, but do not roll back earlier category processing. Direct variant-only imports do not raise this event.
+
+See the [import guide](../guides/imports.md#product-eligibility) for lookup scope, all-excluded feeds, and registration guidance.
+
 ## Handler guidance
 
 - Honor cancellation tokens in static async events.
