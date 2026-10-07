@@ -41,6 +41,7 @@
 
 ### Features
 
+* **imports:** add `ProductImportEvaluating` for content-based product exclusion before reconciliation and saving, reusing loaded nodes across supported Umbraco versions; full/category imports treat excluded products as missing, while single-product imports and updates skip saving without removal.
 * **coupons:** add a cancellable async event before whole-order coupon checks, with custom rejection reasons exposed through the coupon API.
 * **manager:** edit and add shipping provider custom data on orders, retain it when changing providers, and show provider node names in the picker.
 * **manager:** allow adding or replacing an order's shipping provider from providers configured for its store, with the normal order total recalculation.

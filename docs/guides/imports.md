@@ -151,10 +151,40 @@ The product/variant must have a non-empty SKU. `Clear = true` removes the balanc
 All supported Umbraco integrations expose these static async events:
 
 - `ImportEvents.CategorySaveStarting`
+- `ImportEvents.ProductImportEvaluating`
 - `ImportEvents.ProductSaveStarting`
 - `ImportEvents.VariantSaveStarting`
 - `ImportEvents.SyncFinished`
 
 Starting-event arguments expose the Umbraco `IContent`, import model, creation state, and media no-change flags. `SyncFinished` reports saved model lists and `ImportSyncType`.
+
+### Product eligibility
+
+Subscribe to `ProductImportEvaluating` to exclude incoming products based on existing content properties without loading the product tree again. `ImportProductEvaluatingEventArgs` exposes the incoming `ImportProduct`, nullable existing `ProductContent`, resolved `ImportRootKey`, and `ExcludeFromImport` (initially false). Scope handlers using `ImportRootKey` and inspect the supplied content directly.
+
+```csharp
+private static Task EvaluateProductAsync(ImportProductEvaluatingEventArgs args)
+{
+    if (args.ImportRootKey == catalogRootKey
+        && args.ProductContent?.GetValue<bool>("excludeFromExternalImport") == true)
+    {
+        args.ExcludeFromImport = true;
+    }
+
+    return Task.CompletedTask;
+}
+```
+
+Register `ImportEvents.ProductImportEvaluating += EvaluateProductAsync` once at startup and unsubscribe at shutdown. Handlers run sequentially; exclusion is cumulative, so assigning false after an earlier exclusion does not reinclude the product. Treat the supplied model and content as read-only during evaluation; use this event to set eligibility, not to mutate identifiers, categories, or persisted content.
+
+Excluding a product removes it from the effective incoming import, including its variant groups and variants:
+
+- With missing-product removal enabled (`FullSync` and the product reconciliation in `CategorySync`), an existing excluded product is treated as missing: unpublished and moved to the configured recycle node, or deleted when no recycle node is configured. Already-recycled products remain there. Existing `ekmDisableSync` protection remains unchanged.
+- `ProductSync` and `ProductUpdateSync` skip excluded products without removing existing content. `ProductUpdateSync` still throws when the requested existing product cannot be found, before evaluation. Normal `SyncFinished` notifications still run for successfully completed imports, but excluded products are not recorded as saved.
+- A valid nonempty feed where every product is excluded still performs missing-product reconciliation. Originally empty feeds retain the no-removal safeguard, and full-import category validation runs on the original feed before exclusion.
+
+The event uses the existing in-memory identifier index and adds no content-service reads. `ProductContent` is the matching sync-enabled node available to the current import lookup, or null; it is not a catalog-wide existence guarantee. In particular, `ProductSync` normally looks under the selected primary category unless `PreservePrimaryCategory` is true. Direct variant-only sync methods do not raise this event.
+
+All products are evaluated before product reconciliation begins. A subscriber exception aborts the import before product moves, restoration, removal, creation, or saving; earlier category processing is not rolled back. The event does not make the import transactional.
 
 Product save failures are attached to `ImportProduct.Exception`, grouped in logs, and included in completion data. Top-level full-sync failures are logged as critical and rethrown. Single update methods throw when their identifier cannot be found. Run imports in a background integration process, capture logs, and refresh/verify catalog caches after large operations as required by the hosting topology.
