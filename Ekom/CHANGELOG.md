@@ -12,6 +12,7 @@
 
 ### Bug Fixes
 
+* **order:** remove full-order snapshot tracking and JSON/date SQL write predicates to support legacy `datetime` columns without migrations or extra reads; retain payment ownership fencing, but full-order saves no longer reject stale or untracked snapshots. Targeted JSON updates retain expected-value checks using their existing transaction, with atomic SQL comparisons when that transaction is unavailable.
 * **order:** allow line metadata and customer information updates in every order/payment state without releasing holds or resetting payment attempts; retain ownership/concurrency protection and frozen payment snapshots, and permit completion retries after fulfillment-only line metadata changes.
 * **checkout:** let a basket be paid again after its holds expire; saving and completing the new attempt no longer fail on the earlier expired holds, in standard checkout and in legacy line overrides.
 * **checkout:** end payment attempts without holds after `Reservations:Timeout`, so an abandoned payment no longer keeps the basket busy until it is edited.

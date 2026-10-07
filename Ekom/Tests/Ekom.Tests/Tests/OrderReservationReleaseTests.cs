@@ -10,12 +10,14 @@ using Ekom.Tests.Objects;
 using Ekom.Tracking;
 using Ekom.Utilities;
 using LinqToDB;
+using LinqToDB.Data;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Xunit;
 
 namespace Ekom.Tests.Tests;
@@ -592,19 +594,39 @@ public sealed class OrderReservationReleaseTests
     }
 
     [Fact]
-    public async Task UntrackedStalePayloadIsRejectedEvenInsideAnAuthorizedEditScope()
+    public async Task AuthorizedFullWriteAcceptsUntrackedCloneDespitePersistedJsonStatusAndTimestampChanges()
     {
         using var fixture = new Fixture();
         await fixture.SaveAsync();
         var stale = fixture.Order.OrderDataClone();
         await using var operation = await fixture.Attempts.BeginEditAsync(fixture.Order, "untracked stale test");
         using var capability = operation.Enter();
+        using var db = fixture.Database.Factory.GetDatabase();
+        await db.OrderData.Where(x => x.UniqueId == stale.UniqueId)
+            .Set(x => x.OrderInfo, "changed persisted JSON")
+            .Set(x => x.OrderStatusCol, OrderStatus.ReadyForDispatch.ToString())
+            .Set(x => x.UpdateDate, stale.UpdateDate.AddSeconds(1)).UpdateAsync();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Repository.UpdateOrderAsync(stale));
+        using var capture = new UpdateSqlCapture();
+        await fixture.Repository.UpdateOrderAsync(stale);
+
+        var sql = Assert.Single(capture.Commands);
+        var predicate = sql[sql.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase)..];
+        Assert.Contains("UniqueId", predicate, StringComparison.Ordinal);
+        Assert.Contains("Owner", predicate, StringComparison.Ordinal);
+        Assert.DoesNotContain("OrderInfo", predicate, StringComparison.Ordinal);
+        Assert.DoesNotContain("OrderStatusCol", predicate, StringComparison.Ordinal);
+        Assert.DoesNotContain("UpdateDate", predicate, StringComparison.Ordinal);
+
+        var persisted = (await fixture.Repository.GetOrderAsync(stale.UniqueId))!;
+        Assert.Equal(stale.OrderInfo, persisted.OrderInfo);
+        Assert.Equal(stale.OrderStatus, persisted.OrderStatus);
+        Assert.Equal(stale.UpdateDate, persisted.UpdateDate);
+        Assert.Equal(operation.Owner, (await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
     }
 
     [Fact]
-    public async Task StaleIncompleteSaveCannotRevertPaidStatusWhenJsonDidNotChange()
+    public async Task TargetedUpdateRejectsStaleStatusBeforeFullSaveCanRevertPaidStatus()
     {
         using var fixture = new Fixture();
         await fixture.SaveAsync();
@@ -618,10 +640,94 @@ public sealed class OrderReservationReleaseTests
             await fixture.Repository.UpdateOrderAsync(paid);
         }
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Repository.UpdateOrderAsync(stale));
         Assert.False(await fixture.Repository.TryUpdateOrderInfoAsync(stale.UniqueId, stale.OrderInfo,
             stale.OrderInfo, DateTime.Now, expectedStatus: stale.OrderStatusCol));
         Assert.Equal(OrderStatus.ReadyForDispatch, (await fixture.Repository.GetOrderAsync(stale.UniqueId))!.OrderStatus);
+
+        await fixture.Repository.UpdateOrderAsync(stale);
+
+        Assert.Equal(OrderStatus.Incomplete, (await fixture.Repository.GetOrderAsync(stale.UniqueId))!.OrderStatus);
+    }
+
+    [Fact]
+    public async Task TargetedUpdateRejectsStaleJsonInsideAuthorizedScope()
+    {
+        using var fixture = new Fixture();
+        await fixture.SaveAsync();
+        var stale = (await fixture.Repository.GetOrderAsync(fixture.Order.UniqueId))!;
+        await using var operation = await fixture.Attempts.BeginEditAsync(fixture.Order, "targeted stale JSON test");
+        using var capability = operation.Enter();
+        using var db = fixture.Database.Factory.GetDatabase();
+        await db.OrderData.Where(x => x.UniqueId == stale.UniqueId)
+            .Set(x => x.OrderInfo, "current JSON").UpdateAsync();
+
+        Assert.False(await fixture.Repository.TryUpdateOrderInfoAsync(stale.UniqueId, stale.OrderInfo,
+            "must not save", DateTime.Now, expectedStatus: stale.OrderStatusCol));
+
+        Assert.Equal("current JSON", (await fixture.Repository.GetOrderAsync(stale.UniqueId))!.OrderInfo);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UntrackedFullWriteRemainsBlockedByAnotherOwnerOrPaymentReview(bool paymentReview)
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync();
+        var stale = fixture.Order.OrderDataClone();
+        using var db = fixture.Database.Factory.GetDatabase();
+        if (paymentReview)
+        {
+            await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == stale.UniqueId)
+                .Set(x => x.ReconciliationRequired, true).UpdateAsync();
+        }
+        else
+        {
+            await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == stale.UniqueId)
+                .Set(x => x.Owner, "another-node").UpdateAsync();
+        }
+        stale.OrderInfo = "must not save";
+
+        var error = await Assert.ThrowsAsync<CheckoutConflictException>(() => fixture.Repository.UpdateOrderAsync(stale));
+        Assert.Equal(paymentReview ? CheckoutConflictReason.PaymentReview : CheckoutConflictReason.Busy, error.Reason);
+
+        Assert.Equal(fixture.Order.OrderDataClone().OrderInfo,
+            (await fixture.Repository.GetOrderAsync(stale.UniqueId))!.OrderInfo);
+        Assert.Equal(OrderStatus.Pending, (await fixture.Repository.GetOrderAsync(stale.UniqueId))!.OrderStatus);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TargetedUpdateUsesOwnerFenceWhenGuardedAndSnapshotPredicatesOtherwise(bool guarded)
+    {
+        using var fixture = new Fixture();
+        await fixture.SaveAsync();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var repository = guarded ? fixture.Repository : new OrderRepository(NullLogger<OrderRepository>.Instance,
+            Configuration.Instance, fixture.Database.Factory, cache);
+        var data = (await repository.GetOrderAsync(fixture.Order.UniqueId))!;
+        using var capture = new UpdateSqlCapture();
+
+        Assert.True(await repository.TryUpdateOrderInfoAsync(data.UniqueId, data.OrderInfo,
+            "updated JSON", data.UpdateDate.AddSeconds(1), expectedStatus: data.OrderStatusCol));
+
+        var sql = Assert.Single(capture.Commands);
+        var predicate = sql[sql.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase)..];
+        Assert.Contains("UniqueId", predicate, StringComparison.Ordinal);
+        if (guarded)
+        {
+            Assert.Contains("Owner", predicate, StringComparison.Ordinal);
+            Assert.DoesNotContain("OrderInfo", predicate, StringComparison.Ordinal);
+            Assert.DoesNotContain("OrderStatusCol", predicate, StringComparison.Ordinal);
+            Assert.DoesNotContain("UpdateDate", predicate, StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.Contains("OrderInfo", predicate, StringComparison.Ordinal);
+            Assert.Contains("OrderStatusCol", predicate, StringComparison.Ordinal);
+            Assert.Contains("UpdateDate", predicate, StringComparison.Ordinal);
+        }
     }
 
     [Fact]
@@ -677,6 +783,35 @@ public sealed class OrderReservationReleaseTests
         Assert.Equal(CheckoutPaymentAttemptState.Preparing,
             (await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync()).State);
         Assert.Equal(operation.Owner, (await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+    }
+
+    private sealed class UpdateSqlCapture : IDisposable
+    {
+        private readonly Action<TraceInfo> _previousTrace = DataConnection.DefaultOnTraceConnection;
+        private readonly TraceLevel _previousLevel = DataConnection.TraceSwitch.Level;
+
+        public UpdateSqlCapture()
+        {
+            DataConnection.DefaultOnTraceConnection = info =>
+            {
+                if (info.TraceInfoStep == TraceInfoStep.BeforeExecute
+                    && info.Command?.CommandText is string sql
+                    && sql.TrimStart().StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase)
+                    && sql.Contains("EkomOrders", StringComparison.Ordinal))
+                {
+                    Commands.Add(sql);
+                }
+            };
+            DataConnection.TraceSwitch.Level = TraceLevel.Info;
+        }
+
+        public List<string> Commands { get; } = new();
+
+        public void Dispose()
+        {
+            DataConnection.DefaultOnTraceConnection = _previousTrace;
+            DataConnection.TraceSwitch.Level = _previousLevel;
+        }
     }
 
     private sealed class Fixture : IDisposable

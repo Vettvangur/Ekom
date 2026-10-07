@@ -62,7 +62,7 @@ public sealed class OrderCreationPersistenceTests
     }
 
     [Fact]
-    public async Task InsertedInstanceCanBeUpdatedBeforeReloadAndTracksEachSuccessfulVersion()
+    public async Task InsertedInstanceCanBeUpdatedRepeatedlyBeforeReload()
     {
         using var fixture = new Fixture();
         var data = NewOrder();
@@ -85,7 +85,7 @@ public sealed class OrderCreationPersistenceTests
     }
 
     [Fact]
-    public async Task InsertTrackingDoesNotAuthorizeAnUntrackedStaleCloneOrAStaleInsertedInstance()
+    public async Task UntrackedCloneAndStaleInsertedInstanceCanOverwritePersistedChanges()
     {
         using var fixture = new Fixture();
         var inserted = NewOrder();
@@ -98,15 +98,33 @@ public sealed class OrderCreationPersistenceTests
         await fixture.Repository.UpdateOrderAsync(fresh);
 
         untracked.OrderInfo = "stale clone overwrite";
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Repository.UpdateOrderAsync(untracked));
-        Assert.Contains("untracked snapshot", error.Message);
+        await fixture.Repository.UpdateOrderAsync(untracked);
+        var clonedWrite = (await fixture.Repository.GetOrderAsync(inserted.UniqueId))!;
+        Assert.Equal(untracked.OrderInfo, clonedWrite.OrderInfo);
+        Assert.Equal(untracked.OrderStatus, clonedWrite.OrderStatus);
+        Assert.Equal(untracked.UpdateDate, clonedWrite.UpdateDate);
         inserted.OrderInfo = "stale inserted instance overwrite";
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Repository.UpdateOrderAsync(inserted));
+        await fixture.Repository.UpdateOrderAsync(inserted);
 
         var persisted = (await fixture.Repository.GetOrderAsync(inserted.UniqueId))!;
-        Assert.Equal(fresh.OrderInfo, persisted.OrderInfo);
-        Assert.Equal(fresh.OrderStatus, persisted.OrderStatus);
-        Assert.Equal(fresh.UpdateDate, persisted.UpdateDate);
+        Assert.Equal(inserted.OrderInfo, persisted.OrderInfo);
+        Assert.Equal(inserted.OrderStatus, persisted.OrderStatus);
+        Assert.Equal(inserted.UpdateDate, persisted.UpdateDate);
+    }
+
+    [Fact]
+    public async Task FullWriteThrowsWhenThePersistedOrderNoLongerExists()
+    {
+        using var fixture = new Fixture();
+        var data = NewOrder();
+        await fixture.Repository.InsertOrderAsync(data);
+        using var db = fixture.Database.Factory.GetDatabase();
+        await db.OrderData.Where(x => x.UniqueId == data.UniqueId).DeleteAsync();
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Repository.UpdateOrderAsync(data));
+
+        Assert.Equal("The order was not updated. It may no longer exist or checkout operation ownership was lost.", error.Message);
+        Assert.Null(await fixture.Repository.GetOrderAsync(data.UniqueId));
     }
 
     private static OrderData NewOrder() => new()

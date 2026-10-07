@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using System.Data;
 using System.Data.Common;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 
 namespace Ekom.Repositories;
 class OrderRepository
@@ -18,9 +17,6 @@ class OrderRepository
     readonly IMemoryCache _memoryCache;
     readonly DatabaseFactory _databaseFactory;
     readonly CheckoutPaymentAttemptService? _paymentAttempts;
-    readonly ConditionalWeakTable<OrderData, PersistedVersion> _versions = new();
-
-    private sealed record PersistedVersion(string? OrderInfo, string Status, DateTime UpdateDate);
     /// <summary>
     /// ctor
     /// </summary>
@@ -47,10 +43,6 @@ class OrderRepository
             .SingleOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
-        if (data != null)
-        {
-            _versions.Add(data, new PersistedVersion(data.OrderInfo, data.OrderStatusCol, data.UpdateDate));
-        }
         return data;
 
     }
@@ -62,8 +54,6 @@ class OrderRepository
         var referenceId = await db.InsertWithIdentityAsync(orderData, token: ct).ConfigureAwait(false);
 
         orderData.ReferenceId = Convert.ToInt32(referenceId, System.Globalization.CultureInfo.InvariantCulture);
-        // This instance is a known persisted snapshot, including before the first order-number update.
-        _versions.Add(orderData, new PersistedVersion(orderData.OrderInfo, orderData.OrderStatusCol, orderData.UpdateDate));
     }
 
     public async Task UpdateOrderAsync(OrderData orderData, CancellationToken ct = default)
@@ -83,19 +73,11 @@ class OrderRepository
             try
             {
                 await _paymentAttempts.EnsureWriteAllowedAsync(db, orderData.UniqueId, ct).ConfigureAwait(false);
-                if (!_versions.TryGetValue(orderData, out var expected))
-                {
-                    // Ownership authorizes the operation, not an arbitrary snapshot created before it.
-                    // Never assign the current persisted version to a potentially stale payload.
-                    throw new InvalidOperationException("Reload the order through this repository before saving an untracked snapshot.");
-                }
-
                 var capability = CheckoutPaymentOperationScope.Current;
                 var isManagerOverride = capability?.OrderId == orderData.UniqueId && capability.IsManagerOverride;
                 var owner = capability?.OrderId == orderData.UniqueId ? capability.Owner : null;
                 var updated = await db.OrderData
-                    .Where(x => x.UniqueId == orderData.UniqueId && x.OrderInfo == expected.OrderInfo
-                        && x.OrderStatusCol == expected.Status && x.UpdateDate == expected.UpdateDate)
+                    .Where(x => x.UniqueId == orderData.UniqueId)
                     .Where(x => isManagerOverride || (owner == null
                         ? !db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner != null)
                         : db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == owner)))
@@ -115,10 +97,8 @@ class OrderRepository
                     .Set(x => x.PaidDate, orderData.PaidDate)
                     .UpdateAsync(ct).ConfigureAwait(false);
                 if (updated != 1)
-                    throw new InvalidOperationException("The persisted order changed. Reload it before retrying the edit.");
+                    throw new InvalidOperationException("The order was not updated. It may no longer exist or checkout operation ownership was lost.");
                 await transaction.CommitAsync(ct).ConfigureAwait(false);
-                _versions.Remove(orderData);
-                _versions.Add(orderData, new PersistedVersion(orderData.OrderInfo, orderData.OrderStatusCol, orderData.UpdateDate));
             }
             catch (Exception ex) when (ex is DbException or OperationCanceledException)
             {
@@ -163,17 +143,22 @@ class OrderRepository
         int updated;
         try
         {
-            var rows = db.OrderData
-                .Where(x => x.UniqueId == orderId && x.OrderInfo == expectedOrderInfo && x.OrderStatusCol == current.OrderStatusCol
-                    && x.UpdateDate == current.UpdateDate);
+            var rows = db.OrderData.Where(x => x.UniqueId == orderId);
             if (_paymentAttempts != null)
             {
+                // The existing serializable transaction protects the comparison above.
                 var capability = CheckoutPaymentOperationScope.Current;
                 var isManagerOverride = capability?.OrderId == orderId && capability.IsManagerOverride;
                 var owner = capability?.OrderId == orderId ? capability.Owner : null;
                 rows = rows.Where(x => isManagerOverride || (owner == null
                     ? !db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner != null)
                     : db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == owner)));
+            }
+            else
+            {
+                // Without the transaction, keep the comparison atomic with the write.
+                rows = rows.Where(x => x.OrderInfo == expectedOrderInfo && x.OrderStatusCol == current.OrderStatusCol
+                    && x.UpdateDate == current.UpdateDate);
             }
             updated = await rows
                 .Set(x => x.OrderInfo, updatedOrderInfo)
