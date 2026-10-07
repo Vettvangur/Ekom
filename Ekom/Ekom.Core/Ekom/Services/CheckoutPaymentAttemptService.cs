@@ -244,7 +244,11 @@ internal sealed class CheckoutPaymentAttemptService
             if (active?.State == CheckoutPaymentAttemptState.Completed)
                 throw Conflict("The current payment attempt is completed.", CheckoutConflictReason.Completed);
             if (active?.State is CheckoutPaymentAttemptState.CompletionPending or CheckoutPaymentAttemptState.ReconciliationRequired)
+            {
+                _logger.LogWarning("Payment requires reconciliation before editing order {OrderId} ({OrderNumber}); attempt {AttemptId} is {AttemptState}; reason: {EditReason}",
+                    data.UniqueId, data.OrderNumber, active.AttemptId, active.State, reason);
                 throw Conflict("Payment requires reconciliation before editing this order.", CheckoutConflictReason.PaymentReview);
+            }
             if (await IsPaidOrCompletedAsync(db, data, ct).ConfigureAwait(false))
                 throw Conflict("Paid or completed orders cannot be edited as an unpaid cart.", CheckoutConflictReason.Completed);
             if (active != null && active.State != CheckoutPaymentAttemptState.Released ||
