@@ -113,7 +113,10 @@ public class ImportService : IImportService
 
             var stopwatch = Stopwatch.StartNew();
 
-            IterateCategoryTree(data.Categories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser, progress: syncProgress);
+            var snapshot = new ImportContentSnapshot(allEkomNodes);
+            snapshot.Register(allUmbracoCategories);
+            snapshot.Register(allUmbracoProducts);
+            IterateCategoryTreeCore(data.Categories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser, true, syncProgress, snapshot);
 
             _logger.LogInformation("IterateCategoryTree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
 
@@ -189,7 +192,9 @@ public class ImportService : IImportService
 
             var stopwatch = Stopwatch.StartNew();
 
-            MoveCategoryTree(data.Categories, GetAllCategories(data), allUmbracoCategories, umbracoRootContent, syncUser);
+            var snapshot = new ImportContentSnapshot(allEkomNodes);
+            snapshot.Register(allUmbracoCategories);
+            MoveCategoryTreeCore(data.Categories, GetAllCategories(data), allUmbracoCategories, umbracoRootContent, syncUser, snapshot);
 
             _logger.LogInformation("Move Category Tree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
 
@@ -265,7 +270,10 @@ public class ImportService : IImportService
         var recycleBinNode = data.RecycleBinKey.HasValue ? _contentService.GetById(data.RecycleBinKey.Value) : null;
         var productProcessNode = data.ProductProcessKey.HasValue ? _contentService.GetById(data.ProductProcessKey.Value) : null;
 
-        IterateCategoryTree(data.Categories, new List<ImportCategory>(), allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser, false, progress: syncProgress);
+        var snapshot = new ImportContentSnapshot(allEkomNodes);
+        snapshot.Register(allUmbracoCategories);
+        snapshot.Register(allUmbracoProducts);
+        IterateCategoryTreeCore(data.Categories, new List<ImportCategory>(), allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser, false, syncProgress, snapshot);
 
         if (data.Products != null && data.Products.Any())
         {
@@ -510,6 +518,9 @@ public class ImportService : IImportService
         ImportSingleMedia(umbracoVariant, medias, allUmbracoMedia, new ImportMediaIndex(allUmbracoMedia), mediaType, mediaContentType, true, syncUser);
     }
     private void MoveCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, IContent? parentContent, int syncUser)
+        => MoveCategoryTreeCore(importCategories, allImportCategories, allUmbracoCategories, parentContent, syncUser, new ImportContentSnapshot(allUmbracoCategories));
+
+    private void MoveCategoryTreeCore(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, IContent? parentContent, int syncUser, ImportContentSnapshot snapshot)
     {
 
         if (parentContent == null || importCategories == null || allImportCategories == null)
@@ -529,6 +540,7 @@ public class ImportService : IImportService
             if (create)
             {
                 allUmbracoCategories.Add(content);
+                snapshot.Include(content);
             }
 
 
@@ -539,22 +551,19 @@ public class ImportService : IImportService
                 _logger.LogInformation($"Category moved. Id: {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id} ParentIdentifier: {importCategory.ParentIdentifier}");
 
 
-                try
-                {
-                    _contentService.Move(content, newParent.Id, syncUser);
-
-                } catch(Exception ex)
-                {
-                    _logger.LogWarning($"Could not move Category  {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id}");
-                }
-
-                
+                var oldParentId = content.ParentId;
+                MoveContent(content, newParent.Id, syncUser);
+                snapshot.Moved(content, oldParentId);
+                snapshot.RefreshDescendants(_contentService, content.Id);
             }
 
-            MoveCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, content, syncUser);
+            MoveCategoryTreeCore(importCategory.SubCategories, allImportCategories, allUmbracoCategories, content, syncUser, snapshot);
         }
     }
     private void IterateCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, IContent? parentContent, int syncUser, bool delete = true, ImportSyncProgressTracker? progress = null)
+        => IterateCategoryTreeCore(importCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, parentContent, syncUser, delete, progress, new ImportContentSnapshot(allUmbracoCategories));
+
+    private void IterateCategoryTreeCore(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, IContent? parentContent, int syncUser, bool delete, ImportSyncProgressTracker? progress, ImportContentSnapshot snapshot)
     {
 
         if (parentContent == null || importCategories == null || allImportCategories == null)
@@ -573,6 +582,8 @@ public class ImportService : IImportService
             for (int i = allUmbracoCategories.Count - 1; i >= 0; i--)
             {
                 var umbracoCategory = allUmbracoCategories[i];
+                if (snapshot.IsDeleted(umbracoCategory.Id))
+                    continue;
                 var isSyncDisabled = umbracoCategory.HasProperty("ekmDisableSync") && umbracoCategory.GetValue<bool>("ekmDisableSync");
 
                 if (umbracoCategory.ParentId != parentContent.Id)
@@ -596,15 +607,16 @@ public class ImportService : IImportService
                     // Category not found in import, so it should be deleted
                     _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
 
-                    _contentService.Delete(umbracoCategory, syncUser);
-                    
-                    allUmbracoCategories.Remove(umbracoCategory);
+                    DeleteContent(umbracoCategory, syncUser);
+                    snapshot.DeletedSubtree(umbracoCategory.Id);
                     categoriesDeleted++;
                 }
 
             }
 
         }
+
+        snapshot.CompactDeleted();
 
         foreach (var importCategory in importCategories)
         {
@@ -619,6 +631,7 @@ public class ImportService : IImportService
             if (create)
             {
                 allUmbracoCategories.Add(content);
+                snapshot.Include(content);
             }
 
             var newParent = string.IsNullOrEmpty(importCategory.ParentIdentifier) ? umbracoRootContent : allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importCategory.ParentIdentifier);
@@ -627,17 +640,20 @@ public class ImportService : IImportService
             {
                 _logger.LogInformation($"Category moved. Id: {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id} ParentIdentifier: {importCategory.ParentIdentifier}");
 
-                _contentService.Move(content, newParent.Id, syncUser);
-                
+                var oldParentId = content.ParentId;
+                MoveContent(content, newParent.Id, syncUser);
+                snapshot.Moved(content, oldParentId);
+                snapshot.RefreshDescendants(_contentService, content.Id);
             }
 
             var save = create;
 
             SaveCategory(content, importCategory, allUmbracoMedia, mediaIndex, create, syncUser);
+            snapshot.Added(content);
 
             LogSyncProgress(progress);
 
-            IterateCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, content, syncUser, delete: delete, progress: progress);
+            IterateCategoryTreeCore(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, content, syncUser, delete, progress, snapshot);
         }
     }
 
@@ -657,6 +673,10 @@ public class ImportService : IImportService
             var umbracoProductsByIdentifier = BuildContentByIdentifier(allUmbracoProducts);
             var umbracoProductsByParentId = BuildChildrenByParentId(allUmbracoProducts);
             var ekomNodesByParentId = BuildChildrenByParentId(allEkomNodes);
+            var snapshot = new ImportContentSnapshot(allEkomNodes, ekomNodesByParentId);
+            snapshot.Register(allUmbracoProducts);
+            snapshot.Register(allUmbracoCategories);
+            var movedProducts = new HashSet<int>();
 
             // Validate the original feed before handlers can exclude products.
             if (delete && importProducts.Sum(x => x.Categories.Count) <= 0)
@@ -678,6 +698,7 @@ public class ImportService : IImportService
 
             if (delete)
             {
+                var deletedProducts = false;
                 var importProductIdentifiers = eligibleProducts.Select(x => x.Identifier).ToHashSet();
 
                 var importProductsById = new Dictionary<string, ImportProduct>();
@@ -693,6 +714,8 @@ public class ImportService : IImportService
                 for (int i = allUmbracoProducts.Count - 1; i >= 0; i--)
                 {
                     var umbracoProduct = allUmbracoProducts[i];
+                    if (snapshot.IsDeleted(umbracoProduct.Id))
+                        continue;
 
                     var productIdentifier = umbracoProduct.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
 
@@ -711,12 +734,17 @@ public class ImportService : IImportService
 
                         if (recycleBinNode != null)
                         {
-                            _contentService.Unpublish(umbracoProduct, userId: syncUser);
-                            _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
+                            UnpublishForRecycle(umbracoProduct, syncUser);
+                            var oldParentId = umbracoProduct.ParentId;
+                            MoveContent(umbracoProduct, recycleBinNode.Id, syncUser);
+                            MoveIndexedContent(umbracoProductsByParentId, umbracoProduct, oldParentId, recycleBinNode.Id);
+                            snapshot.Moved(umbracoProduct, oldParentId);
                         }
                         else
                         {
-                            _contentService.Delete(umbracoProduct, syncUser);
+                            DeleteContent(umbracoProduct, syncUser);
+                            snapshot.DeletedSubtree(umbracoProduct.Id);
+                            deletedProducts = true;
                         }
      
                         productDeleted++;
@@ -765,9 +793,10 @@ public class ImportService : IImportService
                                 $"ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} " +
                                 $"New Parent Category Identifier: {newCategoryIdentifier}");
 
-                            _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
+                            MoveContent(umbracoProduct, newCategory.Id, syncUser);
                             MoveIndexedContent(umbracoProductsByParentId, umbracoProduct, oldParentId, newCategory.Id);
-                            MoveIndexedContent(ekomNodesByParentId, umbracoProduct, oldParentId, newCategory.Id);
+                            snapshot.Moved(umbracoProduct, oldParentId);
+                            movedProducts.Add(umbracoProduct.Id);
 
                             if (isInRecycleBin)
                                 _contentService.SaveAndPublish(umbracoProduct, userId: syncUser);
@@ -782,11 +811,12 @@ public class ImportService : IImportService
                                     $"ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} " +
                                     $"New Parent Category Identifier: {newCategoryIdentifier}");
 
-                                _contentService.Unpublish(umbracoProduct, userId: syncUser);
+                                UnpublishForRecycle(umbracoProduct, syncUser);
                                 var oldParentId = umbracoProduct.ParentId;
-                                _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
+                                MoveContent(umbracoProduct, recycleBinNode.Id, syncUser);
                                 MoveIndexedContent(umbracoProductsByParentId, umbracoProduct, oldParentId, recycleBinNode.Id);
-                                MoveIndexedContent(ekomNodesByParentId, umbracoProduct, oldParentId, recycleBinNode.Id);
+                                snapshot.Moved(umbracoProduct, oldParentId);
+                                movedProducts.Add(umbracoProduct.Id);
                             }
                             else
                             {
@@ -796,13 +826,24 @@ public class ImportService : IImportService
                                     $"ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} " +
                                     $"New Parent Category Identifier: {newCategoryIdentifier}");
 
-                                _contentService.Delete(umbracoProduct, syncUser);
+                                DeleteContent(umbracoProduct, syncUser);
+                                snapshot.DeletedSubtree(umbracoProduct.Id);
+                                deletedProducts = true;
                             }
 
                             productDeleted++;
                         }
                     }
 
+                }
+                if (deletedProducts)
+                {
+                    snapshot.CompactDeleted();
+                    // Rebuild only after actual deletion, never once per moved product.
+                    umbracoProductsByIdentifier = BuildContentByIdentifier(allUmbracoProducts);
+                    umbracoProductsByParentId = BuildChildrenByParentId(allUmbracoProducts);
+                    umbracoCategoriesById = allUmbracoCategories.ToDictionary(x => x.Id);
+                    umbracoCategoriesByIdentifier = BuildContentByIdentifier(allUmbracoCategories);
                 }
             }
 
@@ -853,13 +894,27 @@ public class ImportService : IImportService
                             umbracoProductsByIdentifier.TryAdd(importProduct.Identifier, productContent);
                             allEkomNodes.Add(productContent);
                             GetIndexedChildren(ekomNodesByParentId, primaryCategoryContent.Id).Add(productContent);
+                            snapshot.Added(productContent);
                         }
 
                         var save = create;
 
+                        var parentBeforeSave = productContent.ParentId;
                         SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, mediaIndex, create, syncUser, recycleBinNode, productProcessNode, forceUpdate);
+                        if (importProduct.Exception is ImportTreeOperationException)
+                            throw new InvalidOperationException($"Product {productContent.Id} could not complete its required tree operation.", importProduct.Exception);
 
-                        IterateVariantGroups(importProduct.VariantGroups, productContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, ekomNodesByParentId, forceUpdate: forceUpdate, recycleBinNode: recycleBinNode, productProcessNode: productProcessNode);
+                        if (parentBeforeSave != productContent.ParentId)
+                        {
+                            MoveIndexedContent(umbracoProductsByParentId, productContent, parentBeforeSave, productContent.ParentId);
+                            snapshot.Moved(productContent, parentBeforeSave);
+                            movedProducts.Add(productContent.Id);
+                        }
+                        snapshot.Added(productContent);
+                        if (movedProducts.Remove(productContent.Id))
+                            snapshot.RefreshDescendants(_contentService, productContent.Id);
+
+                        IterateVariantGroupsCore(importProduct.VariantGroups, productContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, snapshot, forceUpdate, recycleBinNode, productProcessNode);
                     }
                     else
                     {
@@ -873,6 +928,7 @@ public class ImportService : IImportService
 
                 LogSyncProgress(progress);
             }
+            snapshot.CompactDeleted();
         }
 
     }
@@ -908,7 +964,14 @@ public class ImportService : IImportService
 
     private void IterateVariantGroups(List<ImportVariantGroup> importVariantGroups, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, Dictionary<int, List<IContent>>? ekomNodesByParentId = null, bool forceUpdate = false, IContent? recycleBinNode = null, IContent? productProcessNode = null)
     {
-        ekomNodesByParentId ??= BuildChildrenByParentId(allEkomNodes);
+        var snapshot = new ImportContentSnapshot(allEkomNodes, ekomNodesByParentId);
+        IterateVariantGroupsCore(importVariantGroups, productContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, snapshot, forceUpdate, recycleBinNode, productProcessNode);
+        snapshot.CompactDeleted();
+    }
+
+    private void IterateVariantGroupsCore(List<ImportVariantGroup> importVariantGroups, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, ImportContentSnapshot snapshot, bool forceUpdate, IContent? recycleBinNode, IContent? productProcessNode)
+    {
+        var ekomNodesByParentId = snapshot.Children;
         var umbracoVariantGroupChildrenContent = GetIndexedChildren(ekomNodesByParentId, productContent.Id);
 
         // Delete Variant Groups
@@ -920,20 +983,22 @@ public class ImportService : IImportService
         for (int i = umbracoVariantGroupChildrenContent.Count - 1; i >= 0; i--)
         {
             var umbracoVariantGroup = umbracoVariantGroupChildrenContent[i];
+            if (snapshot.IsDeleted(umbracoVariantGroup.Id))
+                continue;
 
             var variantGroupIdentifier = umbracoVariantGroup.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
             if (!importVariantGroupsIdentifiers.Contains(variantGroupIdentifier))
             {
                 _logger.LogInformation($"Delete variant Group Id: {umbracoVariantGroup.Id} Name: {umbracoVariantGroup.Name} Identifier: {variantGroupIdentifier} Product Id: {productContent.Id} Product SKU: {productContent.GetValue<string>("sku")}");
 
-                _contentService.Delete(umbracoVariantGroup);
-                
-                allEkomNodes.Remove(umbracoVariantGroup);
-                umbracoVariantGroupChildrenContent.RemoveAt(i);
+                DeleteContent(umbracoVariantGroup, -1);
+                snapshot.DeletedSubtree(umbracoVariantGroup.Id);
                 variantGroupDeleted++;
             }
 
         }
+
+        snapshot.CompactChildren();
 
         foreach (var importVariantGroup in importVariantGroups)
         {
@@ -950,15 +1015,24 @@ public class ImportService : IImportService
             {
                 allEkomNodes.Add(variantGroupContent);
                 umbracoVariantGroupChildrenContent.Add(variantGroupContent);
+                snapshot.Added(variantGroupContent);
             }
 
             SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, mediaIndex, create, syncUser, productContent, forceUpdate: forceUpdate, recycleBinNode: recycleBinNode, productProcessNode: productProcessNode);
+            snapshot.Added(variantGroupContent);
 
-            IterateVariants(importVariantGroup.Variants, variantGroupContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, ekomNodesByParentId: ekomNodesByParentId, forceUpdate: forceUpdate, recycleBinNode: recycleBinNode, productProcessNode: productProcessNode, productContent: productContent);
+            IterateVariantsCore(importVariantGroup.Variants, variantGroupContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, true, snapshot, forceUpdate, recycleBinNode, productProcessNode, productContent);
         }
     }
 
     private void IterateVariants(List<ImportVariant> importVariants, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, bool delete = true, Dictionary<int, List<IContent>>? ekomNodesByParentId = null, bool forceUpdate = false, IContent? recycleBinNode = null, IContent? productProcessNode = null, IContent? productContent = null)
+    {
+        var snapshot = new ImportContentSnapshot(allEkomNodes, ekomNodesByParentId);
+        IterateVariantsCore(importVariants, variantGroupContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, delete, snapshot, forceUpdate, recycleBinNode, productProcessNode, productContent);
+        snapshot.CompactDeleted();
+    }
+
+    private void IterateVariantsCore(List<ImportVariant> importVariants, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, int syncUser, bool delete, ImportContentSnapshot snapshot, bool forceUpdate, IContent? recycleBinNode, IContent? productProcessNode, IContent? productContent)
     {
         if (variantGroupContent == null || variantGroupContent.Id == 0)
         {
@@ -966,7 +1040,7 @@ public class ImportService : IImportService
             return;
         }
 
-        ekomNodesByParentId ??= BuildChildrenByParentId(allEkomNodes);
+        var ekomNodesByParentId = snapshot.Children;
         var umbracoVariantsChildrenContent = GetIndexedChildren(ekomNodesByParentId, variantGroupContent.Id);
 
         if (delete)
@@ -980,22 +1054,24 @@ public class ImportService : IImportService
             for (int i = umbracoVariantsChildrenContent.Count - 1; i >= 0; i--)
             {
                 var umbracoVariant = umbracoVariantsChildrenContent[i];
+                if (snapshot.IsDeleted(umbracoVariant.Id))
+                    continue;
 
                 var variantIdentifier = umbracoVariant.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
                 if (!importVariantsIdentifiers.Contains(variantIdentifier))
                 {
                     _logger.LogInformation($"Delete variant Id: {umbracoVariant.Id} Name: {umbracoVariant.Name} Identifier: {variantIdentifier}");
 
-                    _contentService.Delete(umbracoVariant);
-  
-                    allEkomNodes.Remove(umbracoVariant);
-                    umbracoVariantsChildrenContent.RemoveAt(i);
+                    DeleteContent(umbracoVariant, -1);
+                    snapshot.DeletedSubtree(umbracoVariant.Id);
                     variantDeleted++;
                 }
 
             }
         }
 
+
+        snapshot.CompactChildren();
 
         foreach (var importVariant in importVariants)
         {
@@ -1012,9 +1088,11 @@ public class ImportService : IImportService
             {
                 allEkomNodes.Add(variantContent);
                 umbracoVariantsChildrenContent.Add(variantContent);
+                snapshot.Added(variantContent);
             }
 
             SaveVariant(variantContent, importVariant, allUmbracoMedia, mediaIndex, create, syncUser, forceUpdate: forceUpdate, recycleBinNode: recycleBinNode, productProcessNode: productProcessNode, productContent: productContent);
+            snapshot.Added(variantContent);
         }
     }
 
@@ -1786,6 +1864,43 @@ public class ImportService : IImportService
         }
     }
 
+    private sealed class ImportTreeOperationException : InvalidOperationException
+    {
+        internal ImportTreeOperationException(string message, Exception? innerException = null)
+            : base(message, innerException)
+        {
+        }
+    }
+
+    private void MoveContent(IContent content, int parentId, int syncUser)
+    {
+        try
+        {
+            var result = _contentService.AttemptMove(content, parentId, syncUser);
+            if (result?.Success != true)
+                throw new ImportTreeOperationException($"Move failed or was cancelled for content {content.Id} to parent {parentId}: {result?.Result}.");
+        }
+        catch (Exception ex) when (ex is not ImportTreeOperationException)
+        {
+            // SaveProduct records normal errors; required moves must also stop descendant saves.
+            throw new ImportTreeOperationException($"Could not move content {content.Id} to parent {parentId}.", ex);
+        }
+    }
+
+    private void DeleteContent(IContent content, int syncUser)
+    {
+        var result = _contentService.Delete(content, syncUser);
+        if (result?.Success != true)
+            throw new ImportTreeOperationException($"Delete failed or was cancelled for content {content.Id}: {result?.Result}.");
+    }
+
+    private void UnpublishForRecycle(IContent content, int syncUser)
+    {
+        var result = _contentService.Unpublish(content, userId: syncUser);
+        if (result?.Success != true)
+            throw new ImportTreeOperationException($"Unpublish failed or was cancelled before recycling content {content.Id}: {result?.Result}.");
+    }
+
     private void SaveEvent(
         IContent content,
         ImportBase importEntity,
@@ -1803,7 +1918,7 @@ public class ImportService : IImportService
             && content.ContentType.Alias == "ekmProduct"
             && content.ParentId == recycleBinNode.Id)
         {
-            _contentService.Move(content, productProcessNode.Id, syncUser);
+            MoveContent(content, productProcessNode.Id, syncUser);
         }
 
         ApplyImportDates(content, importEntity);
