@@ -437,6 +437,7 @@ internal sealed class CheckoutPaymentAttemptService
                 IsCheckout = ambient.IsCheckout,
                 IsOrderInformationUpdate = orderInformationUpdate || ambient.IsOrderInformationUpdate,
                 IsInformationOnly = ambient.IsInformationOnly,
+                IsManagerOverride = ambient.IsManagerOverride,
             };
             using var activation = nested.Enter();
             await EnsureWriteAllowedAsync(nestedDb, orderId, ct).ConfigureAwait(false);
