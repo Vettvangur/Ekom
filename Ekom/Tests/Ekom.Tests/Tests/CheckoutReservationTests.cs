@@ -42,6 +42,26 @@ public sealed class CheckoutReservationTests
         Assert.Equal(workerEnabled, options.WorkerEnabled);
     }
 
+    [Fact]
+    public void StoreReservationSettingsOverrideGlobalDefaults()
+    {
+        var config = Config(
+            ("Ekom:Reservations:Enabled", "true"),
+            ("Ekom:Reservations:Timeout", "10"),
+            ("Ekom:Reservations:Stores:main:Enabled", "false"),
+            ("Ekom:Reservations:Stores:main:Timeout", "5"),
+            ("Ekom:Reservations:Stores:express:Timeout", "2.5"));
+
+        Assert.True(config.ReservationsEnabled);
+        Assert.Equal(TimeSpan.FromMinutes(10), config.ReservationTimeout);
+        Assert.False(config.IsReservationsEnabled("main"));
+        Assert.Equal(TimeSpan.FromMinutes(5), config.GetReservationTimeout("main"));
+        Assert.True(config.IsReservationsEnabled("express"));
+        Assert.Equal(TimeSpan.FromMinutes(2.5), config.GetReservationTimeout("express"));
+        Assert.True(config.IsReservationsEnabled("other"));
+        Assert.Equal(TimeSpan.FromMinutes(10), config.GetReservationTimeout("other"));
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]

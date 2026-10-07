@@ -589,13 +589,14 @@ public class CheckoutControllerService
         try
         {
             var reservations = _factory.GetRequiredService<CheckoutReservationService>();
-            var includeInventory = Config.ReservationsEnabled || proccessingEventArgs.StockValidation;
+            var reservationsEnabled = Config.IsReservationsEnabled(order.StoreInfo.Alias);
+            var includeInventory = reservationsEnabled || proccessingEventArgs.StockValidation;
             if (CheckoutPreparationScope.Current is { } scope) scope.IncludeInventoryRequirements = includeInventory;
             var requirements = await reservations.GetRequirementsAsync(order, ct, includeInventory).ConfigureAwait(false);
             // Recovery and verification run even when automatic reservations are disabled.
             await reservations.PrepareAsync(order.UniqueId, requirements, hangfireJobs, ct,
-                Config.ReservationsEnabled, proccessingEventArgs.StockValidation,
-                validateDiscounts: Config.ReservationsEnabled).ConfigureAwait(false);
+                reservationsEnabled, proccessingEventArgs.StockValidation,
+                validateDiscounts: reservationsEnabled).ConfigureAwait(false);
         }
         catch (NotEnoughLineStockException ex)
         {

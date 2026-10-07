@@ -40,6 +40,26 @@ public sealed class StockReservationTests
     }
 
     [Fact]
+    public async Task StoreReservationTimeoutOverridesGlobalTimeout()
+    {
+        using var fixture = new ReservationDatabase();
+        var key = await fixture.SeedAsync(10);
+        var config = new Configuration(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Ekom:Reservations:Timeout"] = "30",
+            ["Ekom:Reservations:Stores:main:Timeout"] = "5",
+        }).Build());
+
+        var before = DateTime.UtcNow;
+        var reservation = await fixture.NewService(configuration: config).ReserveAsync(new()
+        {
+            Key = key, Quantity = 1, StoreAlias = "main",
+        });
+
+        Assert.InRange(Assert.IsType<DateTime>(reservation.ExpiresUtc), before.AddMinutes(5), before.AddMinutes(5).AddSeconds(1));
+    }
+
+    [Fact]
     public async Task InsufficientStockLeavesNoReservationOrDeduction()
     {
         using var fixture = new ReservationDatabase();
@@ -565,9 +585,9 @@ public sealed class StockReservationTests
 
         public void FailCacheReads() => _stock.SetupGet(x => x.Cache).Throws(new InvalidOperationException("cache unavailable"));
 
-        public StockReservationService NewService(bool? perStore = null)
+        public StockReservationService NewService(bool? perStore = null, Configuration? configuration = null)
         {
-            var config = Config(perStore ?? _perStore);
+            var config = configuration ?? Config(perStore ?? _perStore);
             return new StockReservationService(Factory, config, Publisher(config), NullLogger<StockReservationService>.Instance);
         }
 

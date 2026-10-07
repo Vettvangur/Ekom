@@ -40,6 +40,8 @@ Core settings live below `Ekom` in `appsettings.json`. Options binding is case-i
 | `WorkerEnabled` | `true` | Enables expiry/cleanup hosted processing. |
 | `CompletedRetention` | `7.00:00:00` | Retention for terminal records; cannot be negative. |
 
+`Enabled` and `Timeout` can be overridden for a store under `Reservations:Stores:{storeAlias}`. Missing values inherit the global reservation settings. Worker settings remain global.
+
 ```json
 {
   "Ekom": {
@@ -49,7 +51,13 @@ Core settings live below `Ekom` in `appsettings.json`. Options binding is case-i
       "PollInterval": "00:00:30",
       "BatchSize": 100,
       "WorkerEnabled": true,
-      "CompletedRetention": "7.00:00:00"
+      "CompletedRetention": "7.00:00:00",
+      "Stores": {
+        "express": {
+          "Enabled": false,
+          "Timeout": 10
+        }
+      }
     }
   }
 }
