@@ -58,7 +58,7 @@ internal sealed class StockReservationService : IStockReservationService
         ValidateRequest(request);
         if (!request.IsDiscount && _config.PerStoreStock && string.IsNullOrWhiteSpace(request.StoreAlias))
             throw new ArgumentException("Per-store reservations require an explicit store alias.", nameof(request));
-        var duration = request.Duration == default ? _config.ReservationTimeout : request.Duration;
+        var duration = request.Duration == default ? _config.GetReservationTimeout(request.StoreAlias) : request.Duration;
         if (duration <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(request), "Duration must be positive.");
         var stockStore = !request.IsDiscount && _config.PerStoreStock ? request.StoreAlias : null;
         var stockId = request.IsDiscount

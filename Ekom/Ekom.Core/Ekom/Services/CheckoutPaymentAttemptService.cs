@@ -158,7 +158,7 @@ internal sealed class CheckoutPaymentAttemptService
         else
         {
             // No hold ends this attempt, so without a deadline an abandoned payment keeps the basket busy until it is edited.
-            deadline = DateTime.UtcNow + Configuration.Instance.ReservationTimeout;
+            deadline = DateTime.UtcNow + Configuration.Instance.GetReservationTimeout(order.StoreInfo.Alias);
         }
         var updated = await db.GetTable<CheckoutPaymentAttemptData>()
             .Where(x => x.AttemptId == active.AttemptId && x.State == CheckoutPaymentAttemptState.Preparing)
