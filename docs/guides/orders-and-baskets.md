@@ -84,6 +84,14 @@ Setting quantity to zero or less through the C# API removes the line. The HTTP q
 
 All mutations return the recalculated `IOrderInfo`. Render totals and line state from that result instead of adjusting client totals optimistically.
 
+### Persistence and concurrency
+
+Full-order saves enforce payment-operation ownership and payment-state restrictions, but do not compare the payload against the previously persisted JSON, status, or timestamp. They no longer reject an object merely because it was not loaded through the repository. A permitted stale full-order save can overwrite newer changes, including status; integrations should reload before editing and coordinate writes through the normal order APIs rather than retaining old snapshots.
+
+Targeted order-information updates still compare the expected JSON and optional expected status with the current order. With payment protection enabled, the existing serializable transaction protects this single-order read and write, so the update does not repeat JSON/date comparisons in SQL. Without that transaction, the atomic SQL comparison remains.
+
+These write-path changes add no reads, schema migrations, historical-data updates, or startup work. Legacy `datetime` precision is not used to reject full-order writes. Existing startup migrations and index installation are unchanged; this is not a guarantee that existing startup operations are scan-free.
+
 ## Refresh prices after login
 
 Use `ReInitializeOrder` when the customer context changes, such as a guest signing in:
