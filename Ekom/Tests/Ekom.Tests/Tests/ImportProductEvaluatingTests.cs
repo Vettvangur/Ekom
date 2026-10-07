@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Xunit;
@@ -80,9 +81,17 @@ public class ImportProductEvaluatingTests
 
             if (recycle)
             {
+#if NET8_0
+                fixture.ContentService.Verify(x => x.AttemptMove(fixture.Existing.Object, Fixture.RecycleId, Fixture.SyncUser), Times.Once);
+#else
                 fixture.ContentService.Verify(x => x.Move(fixture.Existing.Object, Fixture.RecycleId, Fixture.SyncUser), Times.Once);
+#endif
                 Assert.Single(fixture.ContentService.Invocations, x => x.Method.Name == "Unpublish");
+#if NET8_0
+                Assert.Equal(new[] { "Unpublish", "AttemptMove" }, fixture.ContentService.Invocations.Select(x => x.Method.Name));
+#else
                 Assert.Equal(new[] { "Unpublish", "Move" }, fixture.ContentService.Invocations.Select(x => x.Method.Name));
+#endif
             }
             else
             {
@@ -372,6 +381,7 @@ public class ImportProductEvaluatingTests
         public const int SyncUser = 42;
         private readonly ConfigurationScope _scope = new();
         private readonly ImportService _service;
+        private readonly EventMessages _eventMessages = new();
         public Guid RootKey { get; } = Guid.NewGuid();
         public Mock<IContentService> ContentService { get; } = new();
         public Mock<IContent> Existing { get; }
@@ -386,6 +396,16 @@ public class ImportProductEvaluatingTests
             Existing.Setup(x => x.GetValue<string>("comparer", null, null, false)).Returns("unchanged");
             Existing.Setup(x => x.HasProperty("ekmDisableSync")).Returns(disabled);
             Existing.Setup(x => x.GetValue<bool>("ekmDisableSync", null, null, false)).Returns(disabled);
+#if NET8_0
+            ContentService.Setup(x => x.AttemptMove(It.IsAny<IContent>(), It.IsAny<int>(), It.IsAny<int>()))
+#else
+            ContentService.Setup(x => x.Move(It.IsAny<IContent>(), It.IsAny<int>(), It.IsAny<int>()))
+#endif
+                .Returns(OperationResult.Succeed(_eventMessages));
+            ContentService.Setup(x => x.Delete(It.IsAny<IContent>(), It.IsAny<int>()))
+                .Returns(OperationResult.Succeed(_eventMessages));
+            ContentService.Setup(x => x.Unpublish(It.IsAny<IContent>(), It.IsAny<string>(), It.IsAny<int>()))
+                .Returns((IContent content, string _, int _) => new PublishResult(PublishResultType.SuccessUnpublish, _eventMessages, content));
             ContentService.Setup(x => x.GetById(It.IsAny<int>()))
                 .Throws(new InvalidOperationException("Evaluation must reuse indexed content rather than read it again."));
 #if NET8_0
@@ -455,6 +475,10 @@ public class ImportProductEvaluatingTests
             return content;
         }
 
-        public void Dispose() => _scope.Dispose();
+        public void Dispose()
+        {
+            _eventMessages.Dispose();
+            _scope.Dispose();
+        }
     }
 }

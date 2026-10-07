@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System.Reflection;
+using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Xunit;
@@ -44,7 +45,7 @@ public class ImportServiceSaveEventTests
         Assert.Empty(fixture.PublishInvocations);
         Assert.Equal(import.CreateDate, content.Object.CreateDate);
         Assert.Equal(import.UpdateDate, content.Object.UpdateDate);
-        Assert.DoesNotContain(fixture.ContentService.Invocations, x => x.Method.Name == "Move");
+        Assert.DoesNotContain(fixture.ContentService.Invocations, x => x.Method.Name is "Move" or "AttemptMove");
         fixture.ContentService.Verify(x => x.GetById(It.IsAny<int>()), Times.Never);
     }
 
@@ -59,7 +60,7 @@ public class ImportServiceSaveEventTests
         fixture.SaveEvent(content.Object, Import(), true, fixture.Recycle.Object, fixture.Processing.Object);
 
         Assert.Empty(fixture.PublishInvocations);
-        Assert.DoesNotContain(fixture.ContentService.Invocations, x => x.Method.Name == "Move");
+        Assert.DoesNotContain(fixture.ContentService.Invocations, x => x.Method.Name is "Move" or "AttemptMove");
         Assert.Equal(Fixture.RecycleId, fixture.Product.Object.ParentId);
     }
 
@@ -68,12 +69,17 @@ public class ImportServiceSaveEventTests
     {
         using var fixture = new Fixture(Fixture.RecycleId);
         var order = new List<string>();
+#if NET8_0
+        fixture.ContentService.Setup(x => x.AttemptMove(fixture.Product.Object, Fixture.ProcessingId, Fixture.SyncUser))
+#else
         fixture.ContentService.Setup(x => x.Move(fixture.Product.Object, Fixture.ProcessingId, Fixture.SyncUser))
+#endif
             .Callback(() =>
             {
                 order.Add("move");
                 fixture.Product.Object.ParentId = Fixture.ProcessingId;
-            });
+            })
+            .Returns(OperationResult.Succeed(fixture.EventMessages));
         fixture.ContentService.Setup(x => x.Save(fixture.Product.Object, Fixture.SyncUser, null))
             .Callback(() => order.Add("save"));
 
@@ -176,7 +182,7 @@ public class ImportServiceSaveEventTests
             fixture.ContentService.Verify(x => x.Save(fixture.Group.Object, Fixture.SyncUser, null), Times.Once);
             fixture.ContentService.Verify(x => x.Save(fixture.Variant.Object, Fixture.SyncUser, null), Times.Once);
         }
-        Assert.DoesNotContain(fixture.ContentService.Invocations, x => x.Method.Name == "Move");
+        Assert.DoesNotContain(fixture.ContentService.Invocations, x => x.Method.Name is "Move" or "AttemptMove");
     }
 
     private static ImportBase Import(ImportSaveEntEnum saveEvent = ImportSaveEntEnum.SavePublish, bool preserve = false)
@@ -196,6 +202,8 @@ public class ImportServiceSaveEventTests
             services.AddSingleton(dataTypes.Object);
         });
         private readonly ImportService _service;
+        private readonly EventMessages _eventMessages = new();
+        public EventMessages EventMessages => _eventMessages;
         public Mock<IContentService> ContentService { get; } = new();
         public Mock<IContent> Product { get; }
         public Mock<IContent> Group { get; }
@@ -213,6 +221,14 @@ public class ImportServiceSaveEventTests
             Variant = Node(300, 200, "ekmProductVariant");
             Group.Setup(x => x.GetValue<string>(Configuration.ImportAliasIdentifier, null, null, false)).Returns("group");
             Variant.Setup(x => x.GetValue<string>(Configuration.ImportAliasIdentifier, null, null, false)).Returns("variant");
+#if NET8_0
+            ContentService.Setup(x => x.AttemptMove(It.IsAny<IContent>(), It.IsAny<int>(), It.IsAny<int>()))
+#else
+            ContentService.Setup(x => x.Move(It.IsAny<IContent>(), It.IsAny<int>(), It.IsAny<int>()))
+#endif
+                .Returns(OperationResult.Succeed(_eventMessages));
+            ContentService.Setup(x => x.Delete(It.IsAny<IContent>(), It.IsAny<int>()))
+                .Returns(OperationResult.Succeed(_eventMessages));
             ContentService.Setup(x => x.GetById(It.IsAny<int>()))
                 .Throws(new InvalidOperationException("Import save paths must reuse the already loaded product."));
             ContentService.Setup(x => x.Create("Group", 100, It.IsAny<IContentType>(), SyncUser)).Returns(Group.Object);
@@ -270,6 +286,10 @@ public class ImportServiceSaveEventTests
             return content;
         }
 
-        public void Dispose() => _scope.Dispose();
+        public void Dispose()
+        {
+            _eventMessages.Dispose();
+            _scope.Dispose();
+        }
     }
 }

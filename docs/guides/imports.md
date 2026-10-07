@@ -86,6 +86,24 @@ Treat `FullSync` as a desired-state operation:
 
 Test the exact payload and scope in a non-production database before enabling deletion. `parentKey` determines the catalog root in which content is resolved; an omitted key uses the import service's root resolution.
 
+### Moves and loaded content
+
+Umbraco updates descendant paths when a parent moves. Imports must not subsequently save the pre-move descendant objects. After successful product moves, Ekom refreshes the affected, already-loaded descendants in bounded ID batches before importing variant groups and variants. Reconciliation and recycle-to-processing moves are coalesced before that product's children are processed. Category moves likewise refresh affected loaded descendants before they are reused. This does not reload the full catalog or perform per-variant lookups; products that did not move add no refresh reads.
+
+Successful deletions evict the deleted root and its loaded subtree from the import's collections and indexes. Canceled or failed required move/delete operations stop processing rather than treating the operation as successful. These checks do not roll back earlier import changes, and refreshing loaded objects does not repair an already-corrupt database path.
+
+If a requested descendant is missing, trashed, newly sync-disabled, or has an unexpected parent when refreshed, the import stops before processing that product's children rather than reusing an unsafe snapshot. Parent buckets and canonical lists are compacted at deletion-stage boundaries, avoiding a full sibling-bucket scan for each deleted group or variant.
+
+Refresh cost scales with the affected loaded descendants. Imports moving many large product trees need additional reads; benchmark a move-heavy feed before deployment. These changes add no startup scans or migrations and do not provide distributed coordination. Full, single-product, and media jobs that share a catalog should be coordinated by the integration across application instances; unrelated backoffice or external writes can still overlap.
+
+Before deployment, verify this behavior against a non-production Umbraco database:
+
+1. Create a product with a variant group and variants beneath one category, with a destination category at a different tree depth.
+2. Import the product into that destination and change a variant property/comparer so a descendant save is exercised, not skipped by change detection.
+3. Reload the product, group, and variants. Check that each path includes its current parent chain, each level agrees with that path, and the imported descendant values were saved.
+4. Repeat with restoration from recycle and the recycle-to-processing save path. Test both changed and unchanged product comparers, and run the same import again to confirm stability.
+5. Compare a no-move feed with a move-heavy feed: record duration and refresh read counts. Include canceled moves/deletions and missing refreshed descendants; verify that stale descendants are not subsequently saved.
+
 ## Change detection and save policy
 
 `Comparer` can be supplied by the integration. When omitted, Ekom computes a SHA-256 hash of the relevant serialized model. Child collections, media, stock, warehouse stock, and transient `EventProperties` are selectively excluded from the parent content hash because they are processed separately.
