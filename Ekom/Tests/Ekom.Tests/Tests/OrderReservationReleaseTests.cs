@@ -645,6 +645,25 @@ public sealed class OrderReservationReleaseTests
     }
 
     [Fact]
+    public async Task ManagerOverrideAllowsNestedCustomerInformationUpdate()
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync();
+
+        await using var operation = CheckoutPaymentOperationScope.BeginManagerOverride(fixture.Order.UniqueId);
+        using var activation = operation.Enter();
+        var updated = await fixture.Service.UpdateCustomerInformationAsync(new Dictionary<string, string>
+        {
+            ["storeAlias"] = "main",
+            ["customerName"] = "Updated by manager action",
+        }, fixture.Settings());
+
+        Assert.Equal("Updated by manager action", updated.CustomerInformation.Customer.Name);
+        Assert.Equal(CheckoutPaymentAttemptState.Submitted, (await fixture.AttemptAsync()).State);
+        Assert.Equal(0, await fixture.Database.StockAsync(fixture.ProductKey));
+    }
+
+    [Fact]
     public async Task NestedCheckoutProviderUpdateDoesNotReleaseItsPreparingAttempt()
     {
         using var fixture = new Fixture();
