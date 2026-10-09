@@ -8,6 +8,7 @@
 
 ### Performance Improvements
 
+* **imports:** target product/variant media-only sync lookups by identifier and load only incoming identity/comparer matches and existing field references; preserve media reuse, replacement, ordering, and publication behavior without scanning the full catalog or media tree.
 * **order:** hydrate ordinary store, shipping, and payment snapshots from isolated parsed JSON fragments instead of stringifying and reparsing them; retain legacy string payloads and configured serializer fallbacks, without changing customer/tracking/consent deserialization, product lines, or the saved order format.
 
 ### Bug Fixes
