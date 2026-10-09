@@ -44,6 +44,7 @@
 
 ### Features
 
+* **imports:** add opt-in `replaceExisting` overloads for product/variant media-only sync while retaining merge defaults and original signatures; replace only after all incoming media succeeds, keep original references on input/import failures, and allow an empty replacement to clear the selected field without deleting media files.
 * **imports:** add `ProductImportEvaluating` for content-based product exclusion before reconciliation and saving, reusing loaded nodes across supported Umbraco versions; full/category imports treat excluded products as missing, while single-product imports and updates skip saving without removal.
 * **coupons:** add a cancellable async event before whole-order coupon checks, with custom rejection reasons exposed through the coupon API.
 * **manager:** edit and add shipping provider custom data on orders, retain it when changing providers, and show provider node names in the picker.

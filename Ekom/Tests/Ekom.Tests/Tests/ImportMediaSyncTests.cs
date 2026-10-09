@@ -2,7 +2,9 @@ using Ekom.Models.Import;
 using Ekom.Umb.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using System.Net;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Text.Json;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
@@ -287,6 +289,301 @@ public class ImportMediaSyncTests
         Assert.Equal(new[] { key }, references.Keys);
     }
 
+    [Fact]
+    public void ReplacementKeepsOnlyIncomingReferencesSortedDeduplicatedAndReused()
+    {
+        var fixture = new Fixture();
+        var removed = fixture.Media("removed", "old", 1);
+        var last = fixture.Media("last", "last", 30);
+        var first = fixture.Media("first", "first", 10);
+        fixture.Picker("images", removed, last);
+
+        Assert.True(fixture.Import([
+            External("last", "last", 20),
+            new ImportMediaFromUdi { Udi = Udi(first) },
+            new ImportMediaFromUdi { Udi = Udi(last) },
+            External("first", "first", 10),
+        ], replaceExisting: true));
+
+        Assert.Equal(string.Join(",", Udi(first), Udi(last)), fixture.Value("images"));
+        fixture.MediaService.Verify(x => x.Save(last.Object, -1), Times.Once);
+        Assert.Equal(20, last.Object.GetValue<int>("ekmSortOrder"));
+        Assert.DoesNotContain(fixture.MediaService.Invocations, x => x.Method.Name.StartsWith("Create", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReplacementReusesBinaryMediaWithExistingSingleMediaHashRules(bool base64)
+    {
+        var fixture = new Fixture();
+        var original = fixture.Media("original", "original");
+        fixture.Picker("images", original);
+        IImportMedia incoming = base64
+            ? new ImportMediaFromBase64 { Base64 = "AQID", FileName = "media.png", NodeName = "Media", Identifier = "", SortOrder = 7 }
+            : new ImportMediaFromBytes { Bytes = [1, 2, 3], FileName = "media.png", NodeName = "Media", Identifier = "", SortOrder = 7 };
+        var comparer = fixture.Hash(incoming, base64 ? "Base64" : "Bytes");
+        Assert.NotEqual(comparer, fixture.Hash(incoming, base64 ? "Base64" : "Bytes", "SortOrder"));
+        var reused = fixture.Media("", comparer);
+
+        Assert.True(fixture.Import([incoming, incoming], replaceExisting: true));
+
+        Assert.Equal(Udi(reused), fixture.Value("images"));
+        Assert.Empty(fixture.MediaService.Invocations);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EmptyReplacementClearsCsvAndJsonPickersAndRepeatedEmptyIsNoOp(bool json)
+    {
+        var fixture = new Fixture();
+        var existing = fixture.Media("existing", "existing");
+        fixture.SetPicker("images", PickerValue(json, existing));
+
+        Assert.True(fixture.Import([], replaceExisting: true));
+        Assert.Equal("", fixture.Value("images"));
+        fixture.ContentService.Verify(x => x.Save(fixture.Content.Object, Fixture.SyncUser, null), Times.Once);
+
+        fixture.Content.Invocations.Clear();
+        fixture.ContentService.Invocations.Clear();
+        Assert.False(fixture.Import([], replaceExisting: true));
+        fixture.AssertPickerUnchanged("");
+    }
+
+    [Theory]
+    [InlineData("[invalid-json")]
+    [InlineData("[]")]
+    [InlineData("[{\"mediaKey\":null}]")]
+    [InlineData(",,,")]
+    [InlineData("  ")]
+    public void EmptyReplacementClearsUnresolvableOrEmptyFieldValues(string raw)
+    {
+        var fixture = new Fixture();
+        fixture.SetPicker("images", raw);
+
+        Assert.True(fixture.Import([], replaceExisting: true));
+
+        Assert.Equal("", fixture.Value("images"));
+        fixture.ContentService.Verify(x => x.Save(fixture.Content.Object, Fixture.SyncUser, null), Times.Once);
+    }
+
+    [Fact]
+    public void UnchangedJsonReplacementDoesNotRewriteTheField()
+    {
+        var fixture = new Fixture();
+        var media = fixture.Media("identity", "same");
+        var raw = PickerValue(true, media);
+        fixture.SetPicker("images", raw);
+
+        Assert.False(fixture.Import([new ImportMediaFromUdi { Udi = Udi(media) }], replaceExisting: true));
+
+        fixture.AssertPickerUnchanged(raw);
+    }
+
+    [Theory]
+    [InlineData("invalid")]
+    [InlineData("missing")]
+    [InlineData("outside-root")]
+    [InlineData("wrong-type")]
+    public void ReplacementRejectsUdisNotResolvedAsExpectedTypeInCurrentIndex(string scenario)
+    {
+        var fixture = new Fixture(published: true);
+        var existing = fixture.Media("existing", "existing");
+        fixture.Picker("images", existing);
+        var incomingUdi = scenario switch
+        {
+            "invalid" => "not-a-udi",
+            "wrong-type" => Udi(fixture.Media("file", "file", mediaType: ImportMediaTypes.File)),
+            _ => "umb://media/" + Guid.NewGuid().ToString("N"),
+        };
+        if (scenario == "outside-root")
+        {
+            // Globally resolvable media must not bypass the root-limited index supplied to the import.
+            var outside = new Mock<IMedia>();
+            outside.SetupGet(x => x.Key).Returns(Guid.Parse(incomingUdi["umb://media/".Length..]));
+            outside.SetupGet(x => x.ContentType).Returns(Mock.Of<ISimpleContentType>(x => x.Alias == "Image"));
+            fixture.MediaService.Setup(x => x.GetById(outside.Object.Key)).Returns(outside.Object);
+        }
+
+        Assert.Throws<InvalidOperationException>(() => fixture.Import([
+            new ImportMediaFromUdi { Udi = incomingUdi },
+        ], replaceExisting: true));
+
+        fixture.AssertPickerUnchanged(Udi(existing));
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void FailedUrlReplacementLeavesOriginalRawPickerUntouchedAfterEarlierSuccess(bool json, bool matchesExistingIdentifier)
+    {
+        using var handler = new FailedMediaHandler();
+        using var client = new HttpClient(handler);
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(client);
+        var fixture = new Fixture(published: true, httpClientFactory: factory.Object);
+        var original = fixture.Media("original", "original", 1);
+        var reused = fixture.Media("reused", "reused", 30);
+        if (matchesExistingIdentifier) fixture.Media("failed", "old-comparer");
+        var raw = PickerValue(json, original);
+        fixture.SetPicker("images", raw);
+
+        Assert.Throws<InvalidOperationException>(() => fixture.Import([
+            External("reused", "reused", 10),
+            External("failed", "failed"),
+        ], replaceExisting: true));
+
+        Assert.Equal(1, handler.RequestCount);
+        Assert.Equal(10, reused.Object.GetValue<int>("ekmSortOrder"));
+        fixture.MediaService.Verify(x => x.Save(reused.Object, -1), Times.Once);
+        fixture.AssertPickerUnchanged(raw);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MalformedBase64ReplacementLeavesOriginalRawPickerUntouchedAfterEarlierSuccess(bool json)
+    {
+        var fixture = new Fixture(published: true);
+        var original = fixture.Media("original", "original");
+        var incoming = fixture.Media("incoming", "incoming");
+        var raw = PickerValue(json, original);
+        fixture.SetPicker("images", raw);
+
+        Assert.Throws<FormatException>(() => fixture.Import([
+            new ImportMediaFromUdi { Udi = Udi(incoming) },
+            new ImportMediaFromBase64 { Base64 = "not valid base64!", FileName = "media.png", NodeName = "Media", Identifier = "failed" },
+        ], replaceExisting: true));
+
+        fixture.AssertPickerUnchanged(raw);
+    }
+
+    [Fact]
+    public void InvalidBytesReplacementDoesNotMutatePicker()
+    {
+        var fixture = new Fixture();
+        var original = fixture.Media("original", "original");
+        fixture.Picker("images", original);
+
+        Assert.Throws<ArgumentNullException>(() => fixture.Import([
+            new ImportMediaFromBytes { Bytes = null!, FileName = "media.png", NodeName = "Media", Identifier = "failed" },
+        ], replaceExisting: true));
+
+        fixture.AssertPickerUnchanged(Udi(original));
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("unsupported")]
+    [InlineData("delete")]
+    [InlineData("invalid-action")]
+    public void ReplacementPrevalidatesAllElementsBeforeImportingCandidates(string scenario)
+    {
+        var fixture = new Fixture(published: true);
+        var original = fixture.Media("original", "original");
+        var candidate = fixture.Media("candidate", "candidate", 30);
+        fixture.Picker("images", original);
+        IImportMedia invalid = scenario switch
+        {
+            "null" => null!,
+            "unsupported" => new UnsupportedImportMedia(),
+            "delete" => new ImportMediaFromUdi { Udi = Udi(original), Action = ImportMediaAction.Delete },
+            _ => External("original", "original", action: (ImportMediaAction)999),
+        };
+
+        Assert.Throws<ArgumentException>(() => fixture.Import([
+            External("candidate", "candidate", 10), invalid,
+        ], replaceExisting: true));
+
+        Assert.Equal(30, candidate.Object.GetValue<int>("ekmSortOrder"));
+        Assert.Empty(fixture.MediaService.Invocations);
+        fixture.AssertPickerUnchanged(Udi(original));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SuccessfulReplacementPreservesPublicationStatus(bool published)
+    {
+        var fixture = new Fixture(published);
+        var original = fixture.Media("original", "original");
+        var incoming = fixture.Media("incoming", "incoming");
+        fixture.Picker("images", original);
+
+        Assert.True(fixture.Import([new ImportMediaFromUdi { Udi = Udi(incoming) }], replaceExisting: true));
+
+        Assert.Equal(Udi(incoming), fixture.Value("images"));
+        var publish = fixture.ContentService.Invocations.Where(x => x.Method.Name.Contains("Publish", StringComparison.Ordinal)).ToList();
+        if (published)
+        {
+            Assert.Equal(Fixture.SyncUser, Assert.Single(publish).Arguments.Last());
+#if NET8_0
+            fixture.ContentService.Verify(x => x.Save(fixture.Content.Object, Fixture.SyncUser, null), Times.Never);
+#else
+            fixture.ContentService.Verify(x => x.Save(fixture.Content.Object, Fixture.SyncUser, null), Times.Once);
+#endif
+        }
+        else
+        {
+            Assert.Empty(publish);
+            fixture.ContentService.Verify(x => x.Save(fixture.Content.Object, Fixture.SyncUser, null), Times.Once);
+        }
+    }
+
+    [Fact]
+    public void FileReplacementDoesNotChangeImagesOrDeleteMediaFiles()
+    {
+        var fixture = new Fixture();
+        var image = fixture.Media("image", "image");
+        var original = fixture.Media("original", "original", mediaType: ImportMediaTypes.File);
+        var incoming = fixture.Media("incoming", "incoming", mediaType: ImportMediaTypes.File);
+        fixture.Picker("images", image);
+        fixture.Picker("files", original);
+
+        Assert.True(fixture.Import([new ImportMediaFromUdi { Udi = Udi(incoming) }],
+            ImportMediaTypes.File, ImportMediaContentTypes.files, replaceExisting: true));
+
+        Assert.Equal(Udi(image), fixture.Value("images"));
+        Assert.Equal(Udi(incoming), fixture.Value("files"));
+        Assert.Empty(fixture.MediaService.Invocations);
+    }
+
+    [Fact]
+    public void UnchangedReplacementDoesNotSetValueSaveOrPublish()
+    {
+        var fixture = new Fixture(published: true);
+        var media = fixture.Media("identity", "same", 2);
+        fixture.Picker("images", media);
+
+        Assert.False(fixture.Import([External("identity", "same", 2)], replaceExisting: true));
+
+        fixture.AssertPickerUnchanged(Udi(media));
+        Assert.Empty(fixture.MediaService.Invocations);
+    }
+
+    private static string PickerValue(bool json, Mock<IMedia> media)
+        => json ? JsonSerializer.Serialize(new[] { new { key = Guid.NewGuid(), mediaKey = media.Object.Key } }) : Udi(media);
+
+    private sealed class UnsupportedImportMedia : IImportMedia
+    {
+        public int? SortOrder { get; set; }
+        public ImportMediaAction Action { get; set; } = ImportMediaAction.Add;
+    }
+
+    private sealed class FailedMediaHandler : HttpMessageHandler
+    {
+        public int RequestCount { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            RequestCount++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+        }
+    }
+
     private static ImportMediaFromExternalUrl External(string identifier, string comparer, int? sortOrder = null,
         ImportMediaAction action = ImportMediaAction.Add)
         => new()
@@ -312,14 +609,14 @@ public class ImportMediaSyncTests
         public Mock<IContentService> ContentService { get; } = new();
         public Mock<IMediaService> MediaService { get; } = new();
 
-        public Fixture(bool published = false)
+        public Fixture(bool published = false, IHttpClientFactory? httpClientFactory = null)
         {
             Content.SetupGet(x => x.Published).Returns(published);
             Content.Setup(x => x.GetValue<string>(It.IsAny<string>(), null, null, false))
                 .Returns((string alias, string? culture, string? segment, bool publishedValue) => Value(alias));
             Content.Setup(x => x.SetValue(It.IsAny<string>(), It.IsAny<object>(), null, null))
                 .Callback((string alias, object value, string? culture, string? segment) => _pickers[alias] = (string)value);
-            var mediaImporter = new ImportMediaService(MediaService.Object, null!, null!, null!, null!, null!, null!,
+            var mediaImporter = new ImportMediaService(MediaService.Object, null!, httpClientFactory!, null!, null!, null!, null!,
                 NullLogger<ImportMediaService>.Instance, null!);
 #if NET8_0
             _service = new ImportService(null!, ContentService.Object, null!, null!, null!,
@@ -356,8 +653,15 @@ public class ImportMediaSyncTests
         public void Picker(string alias, params Mock<IMedia>[] media) => SetPicker(alias, string.Join(",", media.Select(Udi)));
 
         public bool Import(List<IImportMedia> imports, ImportMediaTypes type = ImportMediaTypes.Image,
-            ImportMediaContentTypes picker = ImportMediaContentTypes.images, bool saveContent = true)
-            => (bool)Invoke("ImportSingleMedia", [Content.Object, imports, _media, null, type, picker, saveContent, SyncUser])!;
+            ImportMediaContentTypes picker = ImportMediaContentTypes.images, bool saveContent = true, bool replaceExisting = false)
+            => (bool)Invoke("ImportSingleMedia", [Content.Object, imports, _media, null, type, picker, saveContent, SyncUser, replaceExisting])!;
+
+        public void AssertPickerUnchanged(string original)
+        {
+            Assert.Equal(original, Value("images"));
+            Assert.DoesNotContain(Content.Invocations, x => x.Method.Name == "SetValue");
+            Assert.Empty(ContentService.Invocations);
+        }
 
         public List<string> CurrentUdis(ImportMediaContentTypes picker)
             => (List<string>)Invoke("GetCurrentMediaUdis", [Content.Object, picker])!;
@@ -376,6 +680,16 @@ public class ImportMediaSyncTests
         }
 
         private object? Invoke(string method, object?[] arguments)
-            => typeof(ImportService).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(_service, arguments);
+        {
+            try
+            {
+                return typeof(ImportService).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(_service, arguments);
+            }
+            catch (TargetInvocationException exception) when (exception.InnerException != null)
+            {
+                ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+                throw;
+            }
+        }
     }
 }
