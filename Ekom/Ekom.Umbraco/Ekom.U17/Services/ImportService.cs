@@ -491,13 +491,11 @@ public class ImportService : IImportService
 
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
-        var allUmbracoProducts = GetAllUmbracoProducts();
-
-        var umbracoProduct = allUmbracoProducts.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifier);
+        var umbracoProduct = GetMediaSyncContent(productContentType, identifier);
 
         ArgumentNullException.ThrowIfNull(umbracoProduct);
 
-        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var allUmbracoMedia = GetMediaSyncMedia(rootUmbracoMediafolder, umbracoProduct, medias, mediaContentType);
 
         ImportSingleMedia(umbracoProduct, medias, allUmbracoMedia, new ImportMediaIndex(allUmbracoMedia), mediaType, mediaContentType, true, syncUser);
     }
@@ -509,15 +507,13 @@ public class ImportService : IImportService
 
         productVariantContentType = _contentTypeService.Get("ekmProductVariant");
 
-        var allUmbracoVariants = GetAllUmbracoVariants();
-
-        var umbracoVariant = allUmbracoVariants.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifier);
+        var umbracoVariant = GetMediaSyncContent(productVariantContentType, identifier);
 
         ArgumentNullException.ThrowIfNull(umbracoVariant);
 
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
-        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var allUmbracoMedia = GetMediaSyncMedia(rootUmbracoMediafolder, umbracoVariant, medias, mediaContentType);
 
         ImportSingleMedia(umbracoVariant, medias, allUmbracoMedia, new ImportMediaIndex(allUmbracoMedia), mediaType, mediaContentType, true, syncUser);
     }
@@ -1678,18 +1674,9 @@ public class ImportService : IImportService
         }
         return false;
     }
-    private bool ImportSingleMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1)
+    private List<string> GetCurrentMediaUdis(IContent content, ImportMediaContentTypes contentTypeAlias)
     {
-
-        if (allUmbracoMedia == null)
-        {
-            return false;
-        }
-
-        mediaIndex ??= new ImportMediaIndex(allUmbracoMedia);
-
         var currentImages = (content.GetValue<string>(contentTypeAlias.ToString()) ?? "").TrimStart(',');
-
         var currentImagesUdi = new List<string>();
 
         if (currentImages.StartsWith("[", StringComparison.InvariantCultureIgnoreCase))
@@ -1701,19 +1688,36 @@ public class ImportService : IImportService
                 if (mediaObjects != null && mediaObjects.Any())
                 {
                     currentImagesUdi.AddRange(mediaObjects.Select(x => "umb://media/" + x.MediaKey.Replace("-", "")));
-                    currentImages = string.Join(",", currentImagesUdi);
                 }
             }
             catch
             {
                 _logger.LogWarning($"Could not parse media json value on product {content.Id}. Value: {currentImages}");
                 currentImagesUdi.Clear();
-                currentImages = "";
             }
         }
         else
         {
             currentImagesUdi.AddRange(currentImages.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+
+        return currentImagesUdi;
+    }
+
+    private bool ImportSingleMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1)
+    {
+        if (allUmbracoMedia == null)
+        {
+            return false;
+        }
+
+        mediaIndex ??= new ImportMediaIndex(allUmbracoMedia);
+
+        var currentImages = (content.GetValue<string>(contentTypeAlias.ToString()) ?? "").TrimStart(',');
+        var currentImagesUdi = GetCurrentMediaUdis(content, contentTypeAlias);
+        if (currentImages.StartsWith("[", StringComparison.InvariantCultureIgnoreCase))
+        {
+            currentImages = string.Join(",", currentImagesUdi);
         }
 
         var currentImagesCount = currentImagesUdi.Count;
@@ -2209,28 +2213,32 @@ public class ImportService : IImportService
             return builder.ToString();
         }
     }
-    private List<IContent> GetAllUmbracoVariants()
+    private IContent? GetMediaSyncContent(IContentType? contentType, string identifier)
     {
-        ArgumentNullException.ThrowIfNull(productVariantContentType);
+        ArgumentNullException.ThrowIfNull(contentType);
 
-        var categories = _contentService
-            .GetPagedOfType(productVariantContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed))
-            .ToList();
+        // Media-only sync is catalog-wide and includes unpublished and sync-disabled content.
+        using var scope = _scopeProvider.CreateScope(autoComplete: true);
+        var contentIds = scope.Database.Fetch<int>(@"SELECT DISTINCT n.id
+FROM umbracoNode n
+INNER JOIN umbracoContent c ON c.nodeId = n.id
+INNER JOIN umbracoContentVersion cv ON cv.nodeId = n.id AND cv.[current] = 1
+INNER JOIN umbracoPropertyData pd ON pd.versionId = cv.id
+INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId
+WHERE n.trashed = 0
+  AND c.contentTypeId = @0
+  AND pt.alias = @1
+  AND pd.varcharValue = @2", contentType.Id, Configuration.ImportAliasIdentifier, identifier);
 
-        return categories;
-    }
+        if (contentIds.Count == 0)
+        {
+            return null;
+        }
 
-    private List<IContent> GetAllUmbracoProducts()
-    {
-        ArgumentNullException.ThrowIfNull(productContentType);
-
-        var categories = _contentService
-            .GetPagedOfType(productContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed))
-            .ToList();
-
-        return categories;
+        // Keep Umbraco's existing ordering if multiple nodes share an identifier.
+        return _contentService.GetPagedOfType(contentType.Id, 0, int.MaxValue, out _,
+                new Query<IContent>(_scopeProvider.SqlContext).Where(x => !x.Trashed && contentIds.Contains(x.Id)))
+            .FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifier);
     }
     private List<IContent> GetAllEkomNodes(int pageSize = 2_000)
     {
@@ -2363,6 +2371,22 @@ WHERE n.trashed = 0
         return contentByIdentifier.Values.ToList();
     }
 
+    private List<IMedia> GetMediaSyncMedia(IMedia rootMedia, IContent content, List<IImportMedia> importMedias, ImportMediaContentTypes contentTypeAlias)
+    {
+        var identifiers = new HashSet<string>(StringComparer.Ordinal);
+        var comparers = new HashSet<string>(StringComparer.Ordinal);
+        var keys = new HashSet<Guid>();
+
+        AddMediaReferences(importMedias, identifiers, comparers, keys, singleMedia: true);
+        // Untouched references must be available to SortImages, not just incoming media.
+        foreach (var udi in GetCurrentMediaUdis(content, contentTypeAlias))
+        {
+            AddMediaUdiKey(udi, keys);
+        }
+
+        return _importMediaService.GetUmbracoMediaFiles(rootMedia, identifiers, comparers, keys, preserveDescendantOrder: true);
+    }
+
     private List<IMedia> GetProductSyncMedia(IMedia rootMedia, ImportProduct importProduct)
     {
         var identifiers = new HashSet<string>(StringComparer.Ordinal);
@@ -2390,19 +2414,15 @@ WHERE n.trashed = 0
         IEnumerable<IImportMedia> importMedias,
         ISet<string> identifiers,
         ISet<string> comparers,
-        ISet<Guid> keys)
+        ISet<Guid> keys,
+        bool singleMedia = false)
     {
         foreach (var importMedia in importMedias)
         {
             switch (importMedia)
             {
                 case ImportMediaFromUdi udiMedia:
-                    const string mediaUdiPrefix = "umb://media/";
-                    if (udiMedia.Udi.StartsWith(mediaUdiPrefix, StringComparison.OrdinalIgnoreCase)
-                        && Guid.TryParse(udiMedia.Udi[mediaUdiPrefix.Length..], out var key))
-                    {
-                        keys.Add(key);
-                    }
+                    AddMediaUdiKey(udiMedia.Udi, keys);
                     break;
                 case ImportMediaFromExternalUrl externalUrlMedia:
                     AddMediaReference(
@@ -2414,18 +2434,28 @@ WHERE n.trashed = 0
                 case ImportMediaFromBytes bytesMedia:
                     AddMediaReference(
                         bytesMedia.Identifier,
-                        bytesMedia.Comparer ?? ComputeSha256Hash(bytesMedia, new[] { "Bytes", "SortOrder" }),
+                        bytesMedia.Comparer ?? ComputeSha256Hash(bytesMedia, singleMedia ? new[] { "Bytes" } : new[] { "Bytes", "SortOrder" }),
                         identifiers,
                         comparers);
                     break;
                 case ImportMediaFromBase64 base64Media:
                     AddMediaReference(
                         base64Media.Identifier,
-                        base64Media.Comparer ?? ComputeSha256Hash(base64Media, new[] { "Base64", "SortOrder" }),
+                        base64Media.Comparer ?? ComputeSha256Hash(base64Media, singleMedia ? new[] { "Base64" } : new[] { "Base64", "SortOrder" }),
                         identifiers,
                         comparers);
                     break;
             }
+        }
+    }
+
+    private static void AddMediaUdiKey(string udi, ISet<Guid> keys)
+    {
+        const string mediaUdiPrefix = "umb://media/";
+        if (udi.StartsWith(mediaUdiPrefix, StringComparison.OrdinalIgnoreCase)
+            && Guid.TryParse(udi[mediaUdiPrefix.Length..], out var key))
+        {
+            keys.Add(key);
         }
     }
 

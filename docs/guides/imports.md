@@ -138,6 +138,8 @@ For `FullSync` and `CategorySync`, the supplied `ImportData.ProductProcessKey` a
 
 New media is stored under `ImportData.MediaRootKey` or the method's `mediaRootKey`. External/byte/base64 models support identifiers/comparers, sort order and `ImportMediaAction`. A zero `ImportData.MediaRootKey` makes full/category sync skip loading a media root; single product/variant media operations require the supplied root to resolve.
 
+`SyncProductMedia` and `SyncVariantMedia` resolve the requested non-trashed content by import identifier across the content tree, including unpublished and `ekmDisableSync` content. They load only relevant media under the supplied root: incoming identifiers, comparers and UDI keys, plus existing references in the selected field so untouched media remains available for ordering. These are media-only operations; they do not reconcile product values, categories, children or stock. Changed published content follows the existing save/publish path; unpublished content is saved without publishing.
+
 ## Stock and warehouse stock
 
 `ImportProduct.Stock` and `ImportVariant.Stock` call `SetStockAsync`; values are absolute snapshots, not deltas. With `PerStoreStock`, supply the relevant `StoreAlias`. Coordinate snapshots with active reservations because an absolute set does not account for external quantities held elsewhere.

@@ -121,6 +121,14 @@ public class ImportMediaService
         IReadOnlyCollection<string> identifiers,
         IReadOnlyCollection<string> comparers,
         IReadOnlyCollection<Guid> keys)
+        => GetUmbracoMediaFiles(rootMedia, identifiers, comparers, keys, preserveDescendantOrder: false);
+
+    internal List<IMedia> GetUmbracoMediaFiles(
+        IMedia rootMedia,
+        IReadOnlyCollection<string> identifiers,
+        IReadOnlyCollection<string> comparers,
+        IReadOnlyCollection<Guid> keys,
+        bool preserveDescendantOrder)
     {
         if (identifiers.Count == 0 && comparers.Count == 0 && keys.Count == 0)
         {
@@ -164,16 +172,27 @@ WHERE n.trashed = 0
 ORDER BY n.id",
             parameters.ToArray());
 
+        if (mediaIds.Count == 0)
+        {
+            return new List<IMedia>();
+        }
+
         var matchingMedia = GetPagedDescendants(
                 rootMedia.Id,
                 new Query<IMedia>(_scopeProvider.SqlContext).Where(media => mediaIds.Contains(media.Id)))
             .Where(media => !media.Trashed
                 && (media.ContentType.Alias == MediaTypes.Image || media.ContentType.Alias == MediaTypes.File))
-            .ToDictionary(media => media.Id);
+            .ToList();
 
+        if (preserveDescendantOrder)
+        {
+            return matchingMedia;
+        }
+
+        var matchingMediaById = matchingMedia.ToDictionary(media => media.Id);
         return mediaIds
-            .Where(matchingMedia.ContainsKey)
-            .Select(mediaId => matchingMedia[mediaId])
+            .Where(matchingMediaById.ContainsKey)
+            .Select(mediaId => matchingMediaById[mediaId])
             .ToList();
     }
 
