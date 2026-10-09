@@ -99,6 +99,27 @@ public interface IImportService
     public void SyncProductMedia(string Identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, int syncUser = -1);
 
     /// <summary>
+    /// Synchronizes product media, optionally replacing all references in the selected field.
+    /// </summary>
+    /// <param name="Identifier">The unique identifier of the product.</param>
+    /// <param name="medias">Incoming media. Replacement requires Add actions; an empty list clears the field.</param>
+    /// <param name="mediaRootKey">The media root used for lookup and creation.</param>
+    /// <param name="mediaType">The media type being synchronized.</param>
+    /// <param name="mediaContentType">The selected media field.</param>
+    /// <param name="replaceExisting">When true, replace references only after all incoming media succeeds; otherwise merge.</param>
+    /// <param name="syncUser">The user initiating the sync.</param>
+    /// <remarks>Replacement removes references, not media files. Media created or updated before a failure is not rolled back.</remarks>
+    public void SyncProductMedia(string Identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, bool replaceExisting, int syncUser = -1)
+    {
+        if (replaceExisting)
+        {
+            throw new NotSupportedException("This import service does not support media replacement.");
+        }
+
+        SyncProductMedia(Identifier, medias, mediaRootKey, mediaType, mediaContentType, syncUser);
+    }
+
+    /// <summary>
     /// Synchronizes media associated with a variant, linking it to the specified media root folder within the CMS.
     /// </summary>
     /// <param name="Identifier">The unique identifier of the variant for which media is being synchronized.</param>
@@ -108,4 +129,25 @@ public interface IImportService
     /// <param name="mediaContentType">The content type of the media (e.g., main, thumbnail) being synchronized.</param>
     /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
     public void SyncVariantMedia(string Identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, int syncUser = -1);
+
+    /// <summary>
+    /// Synchronizes variant media, optionally replacing all references in the selected field.
+    /// </summary>
+    /// <param name="Identifier">The unique identifier of the variant.</param>
+    /// <param name="medias">Incoming media. Replacement requires Add actions; an empty list clears the field.</param>
+    /// <param name="mediaRootKey">The media root used for lookup and creation.</param>
+    /// <param name="mediaType">The media type being synchronized.</param>
+    /// <param name="mediaContentType">The selected media field.</param>
+    /// <param name="replaceExisting">When true, replace references only after all incoming media succeeds; otherwise merge.</param>
+    /// <param name="syncUser">The user initiating the sync.</param>
+    /// <remarks>Replacement removes references, not media files. Media created or updated before a failure is not rolled back.</remarks>
+    public void SyncVariantMedia(string Identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, bool replaceExisting, int syncUser = -1)
+    {
+        if (replaceExisting)
+        {
+            throw new NotSupportedException("This import service does not support media replacement.");
+        }
+
+        SyncVariantMedia(Identifier, medias, mediaRootKey, mediaType, mediaContentType, syncUser);
+    }
 }

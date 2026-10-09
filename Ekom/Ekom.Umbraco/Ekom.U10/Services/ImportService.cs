@@ -478,8 +478,12 @@ public class ImportService : IImportService
         _logger.LogInformation("Category Update Sync finished {SKU} CategoryId: {Id}", importCategory.SKU, category.Id);
     }
     public void SyncProductMedia(string identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, int syncUser = -1)
+        => SyncProductMedia(identifier, medias, mediaRootKey, mediaType, mediaContentType, replaceExisting: false, syncUser: syncUser);
+
+    public void SyncProductMedia(string identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, bool replaceExisting, int syncUser = -1)
     {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
+        if (replaceExisting) ValidateReplacementMedia(medias);
 
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
@@ -493,11 +497,15 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = GetMediaSyncMedia(rootUmbracoMediafolder, umbracoProduct, medias, mediaContentType);
 
-        ImportSingleMedia(umbracoProduct, medias, allUmbracoMedia, new ImportMediaIndex(allUmbracoMedia), mediaType, mediaContentType, true, syncUser);
+        ImportSingleMedia(umbracoProduct, medias, allUmbracoMedia, new ImportMediaIndex(allUmbracoMedia), mediaType, mediaContentType, true, syncUser, replaceExisting);
     }
     public void SyncVariantMedia(string identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, int syncUser = -1)
+        => SyncVariantMedia(identifier, medias, mediaRootKey, mediaType, mediaContentType, replaceExisting: false, syncUser: syncUser);
+
+    public void SyncVariantMedia(string identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, bool replaceExisting, int syncUser = -1)
     {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
+        if (replaceExisting) ValidateReplacementMedia(medias);
 
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
@@ -511,7 +519,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = GetMediaSyncMedia(rootUmbracoMediafolder, umbracoVariant, medias, mediaContentType);
 
-        ImportSingleMedia(umbracoVariant, medias, allUmbracoMedia, new ImportMediaIndex(allUmbracoMedia), mediaType, mediaContentType, true, syncUser);
+        ImportSingleMedia(umbracoVariant, medias, allUmbracoMedia, new ImportMediaIndex(allUmbracoMedia), mediaType, mediaContentType, true, syncUser, replaceExisting);
     }
     private void MoveCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, IContent? parentContent, int syncUser)
         => MoveCategoryTreeCore(importCategories, allImportCategories, allUmbracoCategories, parentContent, syncUser, new ImportContentSnapshot(allUmbracoCategories));
@@ -1657,23 +1665,59 @@ public class ImportService : IImportService
         return currentImagesUdi;
     }
 
-    private bool ImportSingleMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1)
+    private static void ValidateReplacementMedia(List<IImportMedia> importMedias)
     {
+        ArgumentNullException.ThrowIfNull(importMedias);
+        foreach (var media in importMedias)
+        {
+            if (media is not (ImportMediaFromUdi or ImportMediaFromExternalUrl or ImportMediaFromBytes or ImportMediaFromBase64)
+                || media.Action != ImportMediaAction.Add)
+            {
+                throw new ArgumentException("Media replacement requires supported media with Add actions.", nameof(importMedias));
+            }
+        }
+    }
+
+    private bool ImportSingleMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaIndex? mediaIndex, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1, bool replaceExisting = false)
+    {
+        if (replaceExisting) ValidateReplacementMedia(importMedias);
+
         if (allUmbracoMedia == null)
         {
+            if (replaceExisting) throw new InvalidOperationException("Media replacement requires a media lookup.");
             return false;
         }
 
         mediaIndex ??= new ImportMediaIndex(allUmbracoMedia);
 
-        var currentImages = (content.GetValue<string>(contentTypeAlias.ToString()) ?? "").TrimStart(',');
+        var currentMediaValue = content.GetValue<string>(contentTypeAlias.ToString()) ?? "";
+        var currentImages = currentMediaValue.TrimStart(',');
         var currentImagesUdi = GetCurrentMediaUdis(content, contentTypeAlias);
-        if (currentImages.StartsWith("[", StringComparison.InvariantCultureIgnoreCase))
+        if (replaceExisting && currentImagesUdi.Count == 0)
+        {
+            // An explicit empty replacement also clears malformed or empty picker payloads.
+            currentImages = currentMediaValue;
+        }
+        else if (currentImages.StartsWith("[", StringComparison.InvariantCultureIgnoreCase))
         {
             currentImages = string.Join(",", currentImagesUdi);
         }
 
         var currentImagesCount = currentImagesUdi.Count;
+
+        if (replaceExisting)
+        {
+            // Build a separate candidate list; never clear the field before all inputs succeed.
+            currentImagesUdi.Clear();
+            foreach (var udiMedia in importMedias.OfType<ImportMediaFromUdi>())
+            {
+                var media = mediaIndex.FindByUdi(udiMedia.Udi);
+                if (media == null || media.ContentType.Alias != mediaType.ToString())
+                {
+                    throw new InvalidOperationException($"Media replacement on content {content.Id} could not resolve incoming media of type {mediaType} under the supplied root.");
+                }
+            }
+        }
 
         var sortedMedias = importMedias
             .Select((media, index) => new { media, index })
@@ -1707,6 +1751,11 @@ public class ImportService : IImportService
                         // Create
                         umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier, syncUser);
 
+                        if (replaceExisting && umbMedia == null)
+                        {
+                            throw new InvalidOperationException($"Media replacement on content {content.Id} could not import incoming media.");
+                        }
+
                         if (umbMedia != null)
                         {
                             allUmbracoMedia.Add(umbMedia);
@@ -1727,6 +1776,11 @@ public class ImportService : IImportService
                         if (umbMedia == null)
                         {
                             umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier, syncUser);
+
+                            if (replaceExisting && umbMedia == null)
+                            {
+                                throw new InvalidOperationException($"Media replacement on content {content.Id} could not import incoming media.");
+                            }
 
                             if (umbMedia != null)
                             {
@@ -1788,9 +1842,14 @@ public class ImportService : IImportService
             }
         }
 
-        if (currentImagesCount == 0 && currentImagesUdi.Count == 0)
+        if (!replaceExisting && currentImagesCount == 0 && currentImagesUdi.Count == 0)
         {
             return false;
+        }
+
+        if (replaceExisting && currentImagesUdi.Any(udi => mediaIndex.FindByUdi(udi) == null))
+        {
+            throw new InvalidOperationException($"Media replacement on content {content.Id} could not resolve all incoming references.");
         }
 
         var importedImages = SortImages(currentImagesUdi.DistinctBy(x => x).ToList(), allUmbracoMedia, mediaIndex);

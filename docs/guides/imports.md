@@ -140,6 +140,25 @@ New media is stored under `ImportData.MediaRootKey` or the method's `mediaRootKe
 
 `SyncProductMedia` and `SyncVariantMedia` resolve the requested non-trashed content by import identifier across the content tree, including unpublished and `ekmDisableSync` content. They load only relevant media under the supplied root: incoming identifiers, comparers and UDI keys, plus existing references in the selected field so untouched media remains available for ordering. These are media-only operations; they do not reconcile product values, categories, children or stock. Changed published content follows the existing save/publish path; unpublished content is saved without publishing.
 
+Existing calls merge incoming media into the selected field. Use the overload with `replaceExisting: true` to replace that field's references with only the incoming media:
+
+```csharp
+importService.SyncProductMedia(
+    identifier,
+    images,
+    mediaRootKey,
+    ImportMediaTypes.Image,
+    ImportMediaContentTypes.images,
+    replaceExisting: true,
+    syncUser: -1);
+```
+
+The same overload is available on `SyncVariantMedia`, including for the `files` field. Replacement requires supported media inputs with `ImportMediaAction.Add`; delete actions, unknown input types and null elements are rejected. An explicitly empty list clears the selected field. Replacement still reuses matching media, deduplicates references and applies existing ordering and publication rules; it does not delete underlying media items or change other fields.
+
+If any incoming item cannot be downloaded, imported or resolved, replacement throws before changing or saving the content field, leaving its original references unchanged. Incoming UDIs must resolve to the requested media type under the supplied media root. This is not a transaction across media and content: media files created or media metadata updated during preparation are not rolled back, and content save/publication failures retain their existing behavior. Original method signatures remain available. Custom `IImportService` implementations that only implement those signatures can still merge through the new overload with `replaceExisting: false`; replacement throws `NotSupportedException` until they implement it.
+
+If an existing call passes an untyped `default` as its sixth argument, name it `syncUser: default` or use `default(int)` to disambiguate it from the new Boolean overload. Ordinary calls using an integer user ID or omitting the user ID are unchanged.
+
 ## Stock and warehouse stock
 
 `ImportProduct.Stock` and `ImportVariant.Stock` call `SetStockAsync`; values are absolute snapshots, not deltas. With `PerStoreStock`, supply the relevant `StoreAlias`. Coordinate snapshots with active reservations because an absolute set does not account for external quantities held elsewhere.
