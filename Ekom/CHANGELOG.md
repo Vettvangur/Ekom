@@ -13,6 +13,7 @@
 
 ### Bug Fixes
 
+* **catalog:** pass explicit store context to product filters independently of the mutable query, preserving existing filter implementations and overrides.
 * **imports:** refresh affected loaded descendants after parent moves before reusing them, evict successfully deleted subtrees from import snapshots, and check canceled move/delete operations; use bounded ID batches without full-catalog reloads or added refresh reads for unchanged products.
 * **order:** remove full-order snapshot tracking and JSON/date SQL write predicates to support legacy `datetime` columns without migrations or extra reads; retain payment ownership fencing, but full-order saves no longer reject stale or untracked snapshots. Targeted JSON updates retain expected-value checks using their existing transaction, with atomic SQL comparisons when that transaction is unavailable.
 * **order:** allow line metadata and customer information updates in every order/payment state without releasing holds or resetting payment attempts; retain ownership/concurrency protection and frozen payment snapshots, and permit completion retries after fulfillment-only line metadata changes.

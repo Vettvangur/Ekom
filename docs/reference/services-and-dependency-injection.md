@@ -46,6 +46,26 @@ The implementation is scoped. Replace it after Ekom registration when integratin
 
 Applies `ProductQuery` filtering, sorting, paging inputs, and category context through sync and async methods. `ProductResponse` and the catalog facade use it internally.
 
+For store-specific filtering, override the store-aware overload on `ProductFilterService`:
+
+```csharp
+public override Task<IEnumerable<IProduct>> ApplyFiltersAsync(
+    IEnumerable<IProduct> products,
+    ProductQuery? query,
+    ICategory? category,
+    string storeAlias,
+    CancellationToken ct)
+{
+    ct.ThrowIfCancellationRequested();
+    // Use storeAlias for store-specific logic, not query.StoreAlias.
+    return base.ApplyFiltersAsync(products, query, category, storeAlias, ct);
+}
+```
+
+Catalog retrieval methods pass the store alias used to load products; category retrieval passes the category's store alias. This context is independent of `ProductQuery.StoreAlias` and is available even with a null query or an empty product collection. Calls that cannot resolve a store retain the legacy filter path rather than guessing a store from the query or products.
+
+The original method signatures remain available. The new overloads delegate to the original methods by default, preserving existing overrides and direct interface implementations. For manually constructed responses, use `new ProductResponse(products, query, filterService, category, storeAlias)` or `ProductResponse.CreateAsync(products, query, filterService, category, storeAlias, ct)` to provide explicit context. The new async overloads require a cancellation token argument (use `CancellationToken.None` when appropriate) to avoid ambiguity with legacy calls using a `default` token. Existing response overloads continue to use the original filter methods. `ProductQuery.RaiseEvents` still controls whether filtering runs when a query is provided.
+
 ### Content abstractions
 
 `INodeService`, `IMetafieldService`, `IUrlService`, `IUmbracoService`, `IMemberService`, `ISecurityService`, and `IImportService` isolate core behavior from Umbraco-version-specific implementations. Their concrete registrations are supplied by `Ekom.U10`, `Ekom.U17`, or `Ekom.U18`; U18 compiles the shared U17 implementation where appropriate. Application code should inject interfaces.
