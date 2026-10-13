@@ -363,7 +363,8 @@ public class Catalog
             products,
             query,
             _productFilterService,
-            category: null);
+            category: null,
+            storeAlias: storeAlias);
     }
 
     /// <summary>
@@ -411,6 +412,7 @@ public class Catalog
             query,
             _productFilterService,
             category: null,
+            storeAlias: storeAlias,
             ct: ct);
     }
 
@@ -529,7 +531,7 @@ public class Catalog
         if (string.IsNullOrWhiteSpace(storeAlias)) throw new ArgumentException(nameof(storeAlias));
 
         var products = GetProductsByIdsRaw(storeAlias, query, CancellationToken.None);
-        return new ProductResponse(products, query, _productFilterService);
+        return new ProductResponse(products, query, _productFilterService, category: null, storeAlias: storeAlias);
     }
 
     /// <summary>
@@ -549,6 +551,7 @@ public class Catalog
             query,
             _productFilterService,
             category: null,
+            storeAlias: storeAlias,
             ct: ct);
     }
 
@@ -624,7 +627,7 @@ public class Catalog
         if (string.IsNullOrWhiteSpace(storeAlias)) throw new ArgumentException(nameof(storeAlias));
 
         var products = GetProductsBySkusRaw(storeAlias, query, CancellationToken.None);
-        return new ProductResponse(products, query, _productFilterService);
+        return new ProductResponse(products, query, _productFilterService, category: null, storeAlias: storeAlias);
     }
 
     /// <summary>
@@ -644,6 +647,7 @@ public class Catalog
             query,
             _productFilterService,
             category: null,
+            storeAlias: storeAlias,
             ct: ct);
     }
 
@@ -722,7 +726,7 @@ public class Catalog
         if (string.IsNullOrWhiteSpace(storeAlias)) throw new ArgumentException(nameof(storeAlias));
 
         var products = GetProductsByKeysRaw(storeAlias, query, CancellationToken.None);
-        return new ProductResponse(products, query, _productFilterService);
+        return new ProductResponse(products, query, _productFilterService, category: null, storeAlias: storeAlias);
     }
 
     /// <summary>
@@ -742,6 +746,7 @@ public class Catalog
             query,
             _productFilterService,
             category: null,
+            storeAlias: storeAlias,
             ct: ct);
     }
 

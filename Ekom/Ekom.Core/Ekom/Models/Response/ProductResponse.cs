@@ -31,6 +31,30 @@ public class ProductResponse
             query,
             filterService,
             category,
+            storeAlias: null,
+            raiseBeforeReturnProducts: static (p, _) => new ValueTask<IEnumerable<IProduct>>(CatalogEvents.RaiseOnBeforeReturnProducts(p)),
+            ct: CancellationToken.None
+        ).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Build a response with explicit store context for the filter service.
+    /// </summary>
+    public ProductResponse(
+        IEnumerable<IProduct> products,
+        ProductQuery? query,
+        IProductFilterService? filterService,
+        ICategory? category,
+        string storeAlias)
+        : this()
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storeAlias);
+        BuildCoreAsync(
+            products,
+            query,
+            filterService,
+            category,
+            storeAlias: storeAlias,
             raiseBeforeReturnProducts: static (p, _) => new ValueTask<IEnumerable<IProduct>>(CatalogEvents.RaiseOnBeforeReturnProducts(p)),
             ct: CancellationToken.None
         ).GetAwaiter().GetResult();
@@ -53,6 +77,34 @@ public class ProductResponse
             query,
             filterService,
             category,
+            storeAlias: null,
+            raiseBeforeReturnProducts: static (p, token) => CatalogEvents.RaiseOnBeforeReturnProductsAsync(p, token),
+            ct: ct
+        );
+
+        return pr;
+    }
+
+    /// <summary>
+    /// Build an async response with explicit store context for the filter service.
+    /// </summary>
+    public static async Task<ProductResponse> CreateAsync(
+        IEnumerable<IProduct> products,
+        ProductQuery? query,
+        IProductFilterService? filterService,
+        ICategory? category,
+        string storeAlias,
+        CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storeAlias);
+        var pr = new ProductResponse();
+
+        await pr.BuildCoreAsync(
+            products,
+            query,
+            filterService,
+            category,
+            storeAlias: storeAlias,
             raiseBeforeReturnProducts: static (p, token) => CatalogEvents.RaiseOnBeforeReturnProductsAsync(p, token),
             ct: ct
         );
@@ -81,6 +133,7 @@ public class ProductResponse
         ProductQuery? query,
         IProductFilterService? filterService,
         ICategory? category,
+        string? storeAlias,
         Func<IEnumerable<IProduct>, CancellationToken, ValueTask<IEnumerable<IProduct>>> raiseBeforeReturnProducts,
         CancellationToken ct)
     {
@@ -93,7 +146,7 @@ public class ProductResponse
             working = baseList;
 
             if (filterService != null)
-                working = await ApplyFilterServiceAsync(filterService, baseList, query: null, category, ct);
+                working = await ApplyFilterServiceAsync(filterService, baseList, query: null, category, storeAlias, ct);
 
             working = await raiseBeforeReturnProducts(working, ct);
 
@@ -116,7 +169,7 @@ public class ProductResponse
 
         working = StepFiltersVisibleNotAll(working, query);
 
-        working = await StepApplyFilterServiceAndEventsAsync(working, query, filterService, category, raiseBeforeReturnProducts, ct);
+        working = await StepApplyFilterServiceAndEventsAsync(working, query, filterService, category, storeAlias, raiseBeforeReturnProducts, ct);
 
         working = StepApplyQueryPredicate(working, query);
         working = StepFilterOutZeroPrice(working, query);
@@ -249,11 +302,12 @@ public class ProductResponse
         ProductQuery query,
         IProductFilterService? filterService,
         ICategory? category,
+        string? storeAlias,
         Func<IEnumerable<IProduct>, CancellationToken, ValueTask<IEnumerable<IProduct>>> raiseBeforeReturnProducts,
         CancellationToken ct)
     {
         if (filterService != null && query.RaiseEvents)
-            working = await ApplyFilterServiceAsync(filterService, working, query, category, ct);
+            working = await ApplyFilterServiceAsync(filterService, working, query, category, storeAlias, ct);
 
         if (query.RaiseEvents)
             working = await raiseBeforeReturnProducts(working, ct);
@@ -308,11 +362,14 @@ public class ProductResponse
         IEnumerable<IProduct> products,
         ProductQuery? query,
         ICategory? category,
+        string? storeAlias,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        var filtered = await filterService.ApplyFiltersAsync(products, query, category, ct);
+        var filtered = storeAlias is null
+            ? await filterService.ApplyFiltersAsync(products, query, category, ct)
+            : await filterService.ApplyFiltersAsync(products, query, category, storeAlias, ct);
 
         ct.ThrowIfCancellationRequested();
         return filtered;

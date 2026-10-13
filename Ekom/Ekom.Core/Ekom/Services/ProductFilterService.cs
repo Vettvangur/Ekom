@@ -14,6 +14,27 @@ public class ProductFilterService : IProductFilterService
             .GetResult();
     }
 
+    public virtual IEnumerable<IProduct> ApplyFilters(
+        IEnumerable<IProduct> products,
+        ProductQuery? query,
+        ICategory? category,
+        string storeAlias)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storeAlias);
+        return ApplyFilters(products, query, category);
+    }
+
+    public virtual Task<IEnumerable<IProduct>> ApplyFiltersAsync(
+        IEnumerable<IProduct> products,
+        ProductQuery? query,
+        ICategory? category,
+        string storeAlias,
+        CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storeAlias);
+        return ApplyFiltersAsync(products, query, category, ct);
+    }
+
     public virtual Task<IEnumerable<IProduct>> ApplyFiltersAsync(
         IEnumerable<IProduct> products,
         ProductQuery? query = null,

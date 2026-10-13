@@ -122,7 +122,7 @@ public class Category : PerStoreNodeEntity, ICategory
 
         var products = GetProductsByCategoryIds(storeAlias, new[] { Id });
 
-        return new ProductResponse(products, query, _productFilterService, this);
+        return new ProductResponse(products, query, _productFilterService, this, storeAlias);
     }
 
     /// <summary>
@@ -136,7 +136,7 @@ public class Category : PerStoreNodeEntity, ICategory
 
         var products = GetProductsByCategoryIds(storeAlias, new[] { Id });
 
-        return ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct);
+        return ProductResponse.CreateAsync(products, query, _productFilterService, category: this, storeAlias: storeAlias, ct: ct);
     }
 
     /// <summary>
@@ -150,7 +150,7 @@ public class Category : PerStoreNodeEntity, ICategory
 
         var products = GetProductsByCategoryIds(storeAlias, categoryIds);
 
-        return new ProductResponse(products, query, _productFilterService, this);
+        return new ProductResponse(products, query, _productFilterService, this, storeAlias);
     }
 
     /// <summary>
@@ -166,7 +166,7 @@ public class Category : PerStoreNodeEntity, ICategory
 
         var products = GetProductsByCategoryIds(storeAlias, categoryIds);
 
-        return ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct);
+        return ProductResponse.CreateAsync(products, query, _productFilterService, category: this, storeAlias: storeAlias, ct: ct);
     }
 
     /// <summary>
