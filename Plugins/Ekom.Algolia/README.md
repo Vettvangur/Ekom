@@ -529,7 +529,7 @@ public sealed class HiddenProductAlgoliaFilter : IAlgoliaProductIndexFilter
 services.AddSingleton<IAlgoliaProductIndexFilter, HiddenProductAlgoliaFilter>();
 ```
 
-Filters apply to full rebuilds and incremental product indexing. When a filter excludes a product during an incremental update, Ekom leaves any existing Algolia record unchanged; it is removed on the next full rebuild.
+Filters apply to full rebuilds and incremental product indexing. When a filter excludes a product during an incremental update, Ekom deletes its existing records from that store, locale, and currency target, including all records belonging to the product when variant indexing is enabled. Other targets that accept the product are unaffected.
 
 ### Mapping extension points
 

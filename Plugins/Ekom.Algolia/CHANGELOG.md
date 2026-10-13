@@ -18,6 +18,7 @@
 
 ### Bug Fixes
 
+* **algolia:** delete previously indexed product records when an incremental index filter rejects the product, scoped to the affected locale and currency target.
 * **algolia:** classify add-to-cart and purchase Insights conversions with ecommerce event subtypes.
 * **algolia:** send ecommerce conversion object data using Algolia's per-item schema.
 * **algolia:** fall back to Search API indexing when an index has no Collections task.

@@ -272,6 +272,14 @@ internal sealed class AlgoliaProductIndexExecutor
             return;
         }
 
+        await UpsertProductsAsync(store, products, ct).ConfigureAwait(false);
+
+        if (missingKeys.Count > 0)
+            await DeleteAsync(store, missingKeys, ct).ConfigureAwait(false);
+    }
+
+    internal async Task UpsertProductsAsync(AlgoliaResolvedStore store, IReadOnlyCollection<IProduct> products, CancellationToken ct)
+    {
         var batchSize = store.Indexing.BatchSize <= 0 ? 1000 : store.Indexing.BatchSize;
 
         foreach (var target in store.ExpandIndexTargets())
@@ -281,6 +289,7 @@ internal sealed class AlgoliaProductIndexExecutor
             await EnsureIndexSettingsAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
             var indexedProductKeys = new List<Guid>(products.Count);
+            var rejectedProductKeys = new List<Guid>();
 
             var skippedProducts = 0;
 
@@ -289,6 +298,7 @@ internal sealed class AlgoliaProductIndexExecutor
                 ct.ThrowIfCancellationRequested();
                 if (!ShouldIndex(product, target))
                 {
+                    rejectedProductKeys.Add(product.Key);
                     skippedProducts++;
                     continue;
                 }
@@ -310,6 +320,28 @@ internal sealed class AlgoliaProductIndexExecutor
                 target.Currency,
                 records.Count,
                 skippedProducts);
+
+            if (rejectedProductKeys.Count > 0)
+            {
+                _logger.LogDebug(
+                    "Algolia removing {Count} filter-rejected products from index {IndexName} for store {Store} locale {Locale} currency {Currency}.",
+                    rejectedProductKeys.Count,
+                    indexName,
+                    target.Alias,
+                    target.Locale,
+                    target.Currency);
+
+                if (target.Indexing.Variants)
+                    await DeleteByProductIdsAsync(indexName, rejectedProductKeys, waitForTasks: true, ct).ConfigureAwait(false);
+                else
+                    await _client.DeleteObjectsAsync(
+                        indexName: indexName,
+                        objectIDs: rejectedProductKeys.Select(key => key.ToString()).ToList(),
+                        batchSize: batchSize,
+                        waitForTasks: true,
+                        options: null,
+                        cancellationToken: ct).ConfigureAwait(false);
+            }
 
             if (records.Count == 0)
             {
@@ -380,9 +412,6 @@ internal sealed class AlgoliaProductIndexExecutor
         }
 
         _searchCacheVersions.InvalidateStore(store.Alias);
-
-        if (missingKeys.Count > 0)
-            await DeleteAsync(store, missingKeys, ct).ConfigureAwait(false);
     }
 
     private async Task DeleteAsync(AlgoliaResolvedStore store, IReadOnlyCollection<Guid> keys, CancellationToken ct)
