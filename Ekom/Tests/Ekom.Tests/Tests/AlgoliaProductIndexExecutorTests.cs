@@ -3,6 +3,8 @@ using Algolia.Search.Models.Search;
 using Ekom.Algolia;
 using Ekom.Algolia.Indexing;
 using Ekom.Algolia.Mappers;
+using Ekom.Algolia.Models.Indexing;
+using Ekom.Algolia.Services;
 using Ekom.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -511,6 +513,206 @@ public class AlgoliaProductIndexExecutorTests
         var result = AlgoliaProductIndexExecutor.ShouldIndex(product, store, filters);
 
         Assert.False(result);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Deletes_Filter_Rejected_Products_Even_When_No_Records_Are_Saved(bool variants)
+    {
+        var client = new Mock<ISearchClient>();
+        client.Setup(x => x.DeleteByAsync(
+                It.IsAny<string>(), It.IsAny<DeleteByParams>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UpdatedAtResponse { TaskID = 123 });
+        var mapper = new Mock<IAlgoliaProductIndexMapper>();
+        var versions = new AlgoliaSearchCacheVersionProvider();
+        var executor = CreateExecutor(client.Object, mapper.Object, [new ProductIndexFilter(false)], versions);
+        var store = new AlgoliaResolvedStore
+        {
+            Alias = "Store",
+            Indexing = new AlgoliaIndexingOptions { Variants = variants, BatchSize = 100 },
+        };
+        var product = CreateProduct();
+        using var cts = new CancellationTokenSource();
+
+        await executor.UpsertProductsAsync(store, [product], cts.Token);
+
+        var indexName = CreateIndexName(store);
+        if (variants)
+        {
+            var deletion = Assert.Single(client.Invocations, x => x.Method.Name == "DeleteByAsync");
+            Assert.Equal(indexName, deletion.Arguments[0]);
+            Assert.Equal($"ProductId:{product.Key}", Assert.IsType<DeleteByParams>(deletion.Arguments[1]).Filters);
+            Assert.Equal(cts.Token, deletion.Arguments[3]);
+            Assert.Single(client.Invocations, x => x.Method.Name == "WaitForTaskAsync");
+            Assert.DoesNotContain(client.Invocations, x => x.Method.Name == "DeleteObjectsAsync");
+        }
+        else
+        {
+            var deletion = Assert.Single(client.Invocations, x => x.Method.Name == "DeleteObjectsAsync");
+            Assert.Equal(indexName, deletion.Arguments[0]);
+            Assert.Equal([product.Key.ToString()], Assert.IsAssignableFrom<IEnumerable<string>>(deletion.Arguments[1]));
+            Assert.Equal(true, deletion.Arguments[2]);
+            Assert.Equal(100, deletion.Arguments[3]);
+            Assert.Equal(cts.Token, deletion.Arguments[5]);
+            Assert.DoesNotContain(client.Invocations, x => x.Method.Name == "DeleteByAsync");
+        }
+        Assert.DoesNotContain(client.Invocations, x => x.Method.Name.StartsWith("SaveObjects", StringComparison.Ordinal));
+        Assert.Empty(mapper.Invocations);
+        Assert.Equal(1, versions.GetVersion(store.Alias));
+    }
+
+    [Fact]
+    public async Task Deletes_Rejected_Products_And_Saves_Accepted_Products_In_The_Same_Batch()
+    {
+        var client = new Mock<ISearchClient>();
+        var mapper = new Mock<IAlgoliaProductIndexMapper>();
+        var accepted = CreateProduct();
+        var rejected = CreateProduct();
+        var record = new AlgoliaProductRecord { ObjectId = accepted.Key.ToString(), Title = "Accepted" };
+        mapper.Setup(x => x.MapRecords(accepted, It.IsAny<AlgoliaResolvedStore>(), It.IsAny<string>()))
+            .Returns([record]);
+        var filter = new Mock<IAlgoliaProductIndexFilter>();
+        filter.Setup(x => x.ShouldIndex(accepted, It.IsAny<AlgoliaResolvedStore>())).Returns(true);
+        var executor = CreateExecutor(client.Object, mapper.Object, [filter.Object], new AlgoliaSearchCacheVersionProvider());
+
+        await executor.UpsertProductsAsync(new AlgoliaResolvedStore { Alias = "Store" }, [accepted, rejected], CancellationToken.None);
+
+        var deletion = Assert.Single(client.Invocations, x => x.Method.Name == "DeleteObjectsAsync");
+        Assert.Equal([rejected.Key.ToString()], Assert.IsAssignableFrom<IEnumerable<string>>(deletion.Arguments[1]));
+        var save = Assert.Single(client.Invocations, x => x.Method.Name == "SaveObjectsAsync");
+        Assert.Equal([record], Assert.IsAssignableFrom<IEnumerable<AlgoliaProductRecord>>(save.Arguments[1]));
+        mapper.Verify(x => x.MapRecords(rejected, It.IsAny<AlgoliaResolvedStore>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Deletes_Only_From_The_Locale_And_Currency_Target_That_Rejects_The_Product()
+    {
+        var client = new Mock<ISearchClient>();
+        var mapper = new Mock<IAlgoliaProductIndexMapper>();
+        var product = CreateProduct();
+        mapper.Setup(x => x.MapRecords(product, It.IsAny<AlgoliaResolvedStore>(), It.IsAny<string>()))
+            .Returns([new AlgoliaProductRecord { ObjectId = product.Key.ToString(), Title = "Product" }]);
+        var filter = new Mock<IAlgoliaProductIndexFilter>();
+        filter.Setup(x => x.ShouldIndex(product, It.IsAny<AlgoliaResolvedStore>()))
+            .Returns((IProduct _, AlgoliaResolvedStore target) => target.Locale != "is-IS" || target.Currency != "ISK");
+        var store = new AlgoliaResolvedStore
+        {
+            Alias = "Store",
+            Locales = ["is-IS", "en-US"],
+            Currencies = ["ISK", "USD"],
+        };
+        var executor = CreateExecutor(client.Object, mapper.Object, [filter.Object], new AlgoliaSearchCacheVersionProvider());
+
+        await executor.UpsertProductsAsync(store, [product], CancellationToken.None);
+
+        var rejectedIndex = CreateIndexName(store.WithSelection("is-IS", "ISK"));
+        var deletion = Assert.Single(client.Invocations, x => x.Method.Name == "DeleteObjectsAsync");
+        Assert.Equal(rejectedIndex, deletion.Arguments[0]);
+        var saves = client.Invocations.Where(x => x.Method.Name == "SaveObjectsAsync").ToList();
+        Assert.Equal(3, saves.Count);
+        Assert.DoesNotContain(saves, x => Equals(x.Arguments[0], rejectedIndex));
+    }
+
+    [Fact]
+    public async Task Does_Not_Delete_Accepted_Products_When_The_Mapper_Returns_No_Records()
+    {
+        var client = new Mock<ISearchClient>();
+        var mapper = new Mock<IAlgoliaProductIndexMapper>();
+        mapper.Setup(x => x.MapRecords(It.IsAny<IProduct>(), It.IsAny<AlgoliaResolvedStore>(), It.IsAny<string>()))
+            .Returns(Array.Empty<AlgoliaProductRecord>());
+        var executor = CreateExecutor(client.Object, mapper.Object, [new ProductIndexFilter(true)], new AlgoliaSearchCacheVersionProvider());
+
+        await executor.UpsertProductsAsync(new AlgoliaResolvedStore { Alias = "Store" }, [CreateProduct()], CancellationToken.None);
+
+        Assert.DoesNotContain(client.Invocations, x => x.Method.Name is "DeleteObjectsAsync" or "DeleteByAsync" or "SaveObjectsAsync");
+    }
+
+    [Fact]
+    public async Task Propagates_Filter_Rejection_Delete_Failures_Without_Saving()
+    {
+        var client = new Mock<ISearchClient>();
+        var failure = new InvalidOperationException("Delete failed");
+        client.Setup(x => x.DeleteObjectsAsync(
+                It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), true, It.IsAny<int>(), null, CancellationToken.None, null))
+            .ThrowsAsync(failure);
+        var executor = CreateExecutor(
+            client.Object, Mock.Of<IAlgoliaProductIndexMapper>(), [new ProductIndexFilter(false)], new AlgoliaSearchCacheVersionProvider());
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            executor.UpsertProductsAsync(new AlgoliaResolvedStore { Alias = "Store" }, [CreateProduct()], CancellationToken.None));
+
+        Assert.Same(failure, exception);
+        Assert.DoesNotContain(client.Invocations, x => x.Method.Name.StartsWith("SaveObjects", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Cancelled_Upserts_Do_Not_Submit_Deletions_Or_Saves()
+    {
+        var client = new Mock<ISearchClient>();
+        var executor = CreateExecutor(
+            client.Object, Mock.Of<IAlgoliaProductIndexMapper>(), [new ProductIndexFilter(false)], new AlgoliaSearchCacheVersionProvider());
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            executor.UpsertProductsAsync(new AlgoliaResolvedStore { Alias = "Store" }, [CreateProduct()], cts.Token));
+
+        Assert.Empty(client.Invocations);
+    }
+
+    private static IProduct CreateProduct()
+    {
+        var product = new Mock<IProduct>();
+        product.SetupGet(x => x.Key).Returns(Guid.NewGuid());
+        return product.Object;
+    }
+
+    private static AlgoliaProductIndexExecutor CreateExecutor(
+        ISearchClient client,
+        IAlgoliaProductIndexMapper mapper,
+        IEnumerable<IAlgoliaProductIndexFilter> filters,
+        AlgoliaSearchCacheVersionProvider versions)
+    {
+        var options = CreateOptions();
+        var transformationWrites = new AlgoliaTransformationWriteService(
+            client, options, NullLogger<AlgoliaTransformationWriteService>.Instance);
+        return new AlgoliaProductIndexExecutor(
+            client,
+            new AlgoliaIndexReplacementService(client, transformationWrites, options, NullLogger<AlgoliaIndexReplacementService>.Instance),
+            transformationWrites,
+            options,
+            new AlgoliaStoreResolver(options, Mock.Of<IServiceProvider>(), NullLogger<AlgoliaStoreResolver>.Instance),
+            new IndexNameBuilder(options),
+            new NoOpQuerySuggestionsConfigurator(),
+            versions,
+            mapper,
+            new EmptyFacetAttributeSelector(),
+            filters,
+            NullLogger<AlgoliaProductIndexExecutor>.Instance);
+    }
+
+    private static string CreateIndexName(AlgoliaResolvedStore store)
+        => new IndexNameBuilder(CreateOptions()).BuildPrimary("products", store);
+
+    private static IOptions<AlgoliaOptions> CreateOptions()
+        => Options.Create(new AlgoliaOptions
+        {
+            ApplicationId = "app-id",
+            AdminApiKey = "admin-key",
+            SearchApiKey = "search-key",
+        });
+
+    private sealed class NoOpQuerySuggestionsConfigurator : IAlgoliaQuerySuggestionsConfigurator
+    {
+        public Task EnsureConfiguredAsync(AlgoliaResolvedStore store, string primaryIndexName, CancellationToken ct = default)
+            => Task.CompletedTask;
+    }
+
+    private sealed class EmptyFacetAttributeSelector : IAlgoliaFacetAttributeSelector
+    {
+        public IReadOnlyCollection<string> GetFacetAttributes(AlgoliaIndexingOptions indexing)
+            => Array.Empty<string>();
     }
 
     private sealed class ProductIndexFilter(bool shouldIndex) : IAlgoliaProductIndexFilter
