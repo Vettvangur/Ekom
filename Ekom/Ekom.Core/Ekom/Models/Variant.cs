@@ -99,13 +99,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual IProduct? Product
-    {
-        get
-        {
-            return Catalog.Instance.GetProduct(ProductId, Store.Alias);
-        }
-    }
+    public virtual IProduct? Product => Catalog.Instance.GetProduct(ProductId, Store.Alias, raiseEvent: false);
 
     /// <summary>
     /// 
