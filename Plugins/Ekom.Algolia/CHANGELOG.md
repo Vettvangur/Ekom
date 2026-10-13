@@ -24,6 +24,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.66](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.65...Ekom.Algolia-v0.2.66) (2026-10-13)
+
+
+### Bug Fixes
+
+* **algolia:** set query store alias during product rebuilds ([#1020](https://github.com/Vettvangur/Ekom/issues/1020)) ([f9a29e7](https://github.com/Vettvangur/Ekom/commit/f9a29e7df0f419ca9425ac01ce7140981cb2d815))
+
 ## [0.2.65](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.64...Ekom.Algolia-v0.2.65) (2026-10-13)
 
 
