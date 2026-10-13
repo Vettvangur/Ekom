@@ -132,7 +132,7 @@ internal sealed class AlgoliaProductIndexExecutor
         if (!store.Indexing.Enabled || !store.Indexing.Products)
             return;
 
-        var query = new ProductQuery { RaiseEvents = true };
+        var query = new ProductQuery { StoreAlias = store.Alias, RaiseEvents = true };
         var response = await Catalog.Instance.GetAllProductsAsync(store.Alias, query, ct: ct);
         var products = response.Products?.ToList() ?? [];
 
