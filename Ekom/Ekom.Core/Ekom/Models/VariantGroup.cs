@@ -21,7 +21,7 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public IProduct? Product => Catalog.Instance.GetProduct(ParentKey, storeAlias);
+    public IProduct? Product => Catalog.Instance.GetProduct(ParentKey, storeAlias, raiseEvent: false);
 
     /// <summary>
     /// 
