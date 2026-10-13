@@ -70,7 +70,7 @@ internal sealed class AlgoliaAvailabilityUpdateService
         if (!store.Indexing.Enabled || !store.Indexing.Products || !store.EnableAvailabilityUpdates)
             return;
 
-        var product = await Catalog.Instance.GetProductAsync(args.Key, store.Alias, raiseEvent: false, ct: ct).ConfigureAwait(false);
+        var product = await Catalog.Instance.GetProductAsync(args.Key, store.Alias, raiseEvent: true, ct: ct).ConfigureAwait(false);
 
         if (product is not null)
         {
