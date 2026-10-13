@@ -173,7 +173,7 @@ internal sealed class AlgoliaCategoryIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
 
-            var category = await Catalog.Instance.GetCategoryAsync(key, store.Alias, raiseEvent: false, ct: ct).ConfigureAwait(false);
+            var category = await Catalog.Instance.GetCategoryAsync(key, store.Alias, raiseEvent: true, ct: ct).ConfigureAwait(false);
             if (category == null)
             {
                 missingKeys.Add(key);

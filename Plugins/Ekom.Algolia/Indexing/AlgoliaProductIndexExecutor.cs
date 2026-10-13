@@ -252,7 +252,7 @@ internal sealed class AlgoliaProductIndexExecutor
         {
             ct.ThrowIfCancellationRequested();
 
-            var product = await Catalog.Instance.GetProductAsync(key, store.Alias, raiseEvent: false, ct: ct);
+            var product = await Catalog.Instance.GetProductAsync(key, store.Alias, raiseEvent: true, ct: ct);
             if (product == null)
             {
                 _logger.LogDebug("Algolia: product {Key} not found for store {Store}, enqueue delete.", key, store.Alias);
