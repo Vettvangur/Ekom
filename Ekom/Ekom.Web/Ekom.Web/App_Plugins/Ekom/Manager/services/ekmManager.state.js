@@ -12,6 +12,7 @@
         orderStatus: "CompletedOrders",
         store: "",
         paymentProvider: "",
+        giftcardCode: "",
         productSku: "",
         trackingSource: "",
         trackingMedium: "",
@@ -38,6 +39,9 @@
       },
       setProductSku: function (productSku) {
         state.filters.productSku = productSku || "";
+      },
+      setGiftcardCode: function (giftcardCode) {
+        state.filters.giftcardCode = giftcardCode || "";
       },
       setTrackingField: function (field, value) {
         state.filters[field] = value || "";

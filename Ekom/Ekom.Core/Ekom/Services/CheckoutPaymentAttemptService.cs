@@ -12,7 +12,7 @@ using System.Net;
 
 namespace Ekom.Services;
 
-internal sealed class CheckoutPaymentAttemptService
+internal sealed partial class CheckoutPaymentAttemptService
 {
     private readonly DatabaseFactory _factory;
     private readonly IStockReservationService _stock;
@@ -407,8 +407,15 @@ internal sealed class CheckoutPaymentAttemptService
     public async Task EnsureWriteAllowedAsync(DbContext db, Guid orderId, CancellationToken ct = default)
     {
         var ambient = CheckoutPaymentOperationScope.Current;
-        if (ambient?.OrderId == orderId && ambient.IsManagerOverride) return;
         var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleOrDefaultAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false);
+        if (ambient?.OrderId == orderId && ambient.IsManagerOverride)
+        {
+            // Manager writes can bypass an idle attempt's edit restrictions, not an operation
+            // currently releasing external claims or changing payment/stock ownership.
+            if (operation?.Owner != null)
+                throw Conflict("Another checkout operation owns this order. Retry after it finishes.", CheckoutConflictReason.Busy);
+            return;
+        }
         if (operation?.ReconciliationRequired == true &&
             !(ambient?.OrderId == orderId && ambient.IsOrderInformationUpdate))
             throw Conflict("This order requires manual payment reconciliation before it can be changed.", CheckoutConflictReason.PaymentReview);
@@ -632,6 +639,11 @@ internal sealed class CheckoutPaymentAttemptService
         data.UpdateDate = DateTime.Now;
         var updated = await db.GetTable<OrderData>()
             .Where(x => x.UniqueId == data.UniqueId && x.PaidDate == null &&
+                x.OrderStatusCol != nameof(OrderStatus.OfflinePayment) && x.OrderStatusCol != nameof(OrderStatus.Closed) &&
+                x.OrderStatusCol != nameof(OrderStatus.ReadyForDispatch) && x.OrderStatusCol != nameof(OrderStatus.ReadyForDispatchWhenStockArrives) &&
+                x.OrderStatusCol != nameof(OrderStatus.ReadyForPickup) && x.OrderStatusCol != nameof(OrderStatus.Dispatched) &&
+                x.OrderStatusCol != nameof(OrderStatus.Returned) &&
+                !db.GetTable<CheckoutStockCompletionData>().Any(completion => completion.OrderId == x.UniqueId) &&
                 db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == scope.Owner))
             .Set(x => x.OrderInfo, data.OrderInfo).Set(x => x.OrderStatusCol, data.OrderStatusCol)
             .Set(x => x.UpdateDate, data.UpdateDate).UpdateAsync(ct).ConfigureAwait(false);

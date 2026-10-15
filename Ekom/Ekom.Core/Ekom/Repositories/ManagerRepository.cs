@@ -71,9 +71,9 @@ public class ManagerRepository
         return order;
     }
 
-    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null)
+    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
     {
-        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider);
+        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode);
 
         var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
         var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
@@ -114,6 +114,7 @@ public class ManagerRepository
             store,
             paymentProvider = paymentProviderValue,
             couponCode = string.IsNullOrWhiteSpace(couponCode) ? null : couponCode.Trim(),
+            giftcardCode = string.IsNullOrWhiteSpace(giftcardCode) ? null : giftcardCode.Trim(),
             shippingProvider = Guid.TryParse(shippingProvider, out Guid parsedShippingProvider) ? parsedShippingProvider.ToString() : null,
             productSku = string.IsNullOrWhiteSpace(productSku) ? null : productSku.Trim(),
             trackingSource = string.IsNullOrWhiteSpace(trackingSource) ? null : trackingSource.Trim(),
@@ -148,9 +149,9 @@ public class ManagerRepository
         return _storeService.GetStoreByAlias(storeAlias)?.Currency.CurrencyValue;
     }
   
-    public async Task<List<OrderData>> GetOrdersForExportAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderInfo, string? couponCode = null, string? shippingProvider = null)
+    public async Task<List<OrderData>> GetOrdersForExportAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderInfo, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
     {
-        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider);
+        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode);
         string orderInfoColumn = includeOrderInfo ? ",OrderInfo" : string.Empty;
         string sqlQuery = $"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate{orderInfoColumn} FROM EkomOrders {whereClause} ORDER BY ReferenceId desc";
 
@@ -174,6 +175,7 @@ public class ManagerRepository
             store,
             paymentProvider = paymentProviderValue,
             couponCode = string.IsNullOrWhiteSpace(couponCode) ? null : couponCode.Trim(),
+            giftcardCode = string.IsNullOrWhiteSpace(giftcardCode) ? null : giftcardCode.Trim(),
             shippingProvider = Guid.TryParse(shippingProvider, out Guid parsedShippingProvider) ? parsedShippingProvider.ToString() : null,
             productSku = string.IsNullOrWhiteSpace(productSku) ? null : productSku.Trim(),
             trackingSource = string.IsNullOrWhiteSpace(trackingSource) ? null : trackingSource.Trim(),
@@ -223,7 +225,7 @@ ORDER BY {bucketDateExpression}";
         return await db.QueryToListAsync<ChartAggregateRow>(sql, param).ConfigureAwait(false);
     }
 
-    private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider, string productSku = "", string trackingSource = "", string trackingMedium = "", string trackingCampaign = "", string trackingTerm = "", string trackingContent = "", string trackingClickId = "", string? couponCode = null, string? shippingProvider = null)
+    private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider, string productSku = "", string trackingSource = "", string trackingMedium = "", string trackingCampaign = "", string trackingTerm = "", string trackingContent = "", string trackingClickId = "", string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
     {
         var whereClause = new StringBuilder();
 
@@ -284,6 +286,13 @@ ORDER BY {bucketDateExpression}";
             {
                 whereClause.Append(" AND EXISTS (SELECT 1 FROM OPENJSON(OrderInfo, '$.OrderLines') WITH (SKU nvarchar(200) '$.Product.SKU') AS orderLines WHERE LOWER(orderLines.SKU) = LOWER(@productSku))");
             }
+        }
+
+        if (!string.IsNullOrWhiteSpace(giftcardCode))
+        {
+            whereClause.Append(_databaseFactory.IsSqlite
+                ? " AND EXISTS (SELECT 1 FROM json_each(OrderInfo, '$.Giftcards') AS giftcards WHERE lower(json_extract(giftcards.value, '$.Code')) = lower(@giftcardCode))"
+                : " AND EXISTS (SELECT 1 FROM OPENJSON(OrderInfo, '$.Giftcards') WITH (Code nvarchar(max) '$.Code') AS giftcards WHERE LOWER(giftcards.Code) = LOWER(@giftcardCode))");
         }
 
         AppendTrackingJsonFilter(whereClause, trackingSource, "Source", "trackingSource");

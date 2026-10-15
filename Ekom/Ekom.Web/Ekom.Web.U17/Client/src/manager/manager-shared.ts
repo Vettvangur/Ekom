@@ -6,6 +6,7 @@ export type ManagerFilters = {
   paymentProvider: string;
   shippingProvider: string;
   couponCode: string;
+  giftcardCode: string;
   productSku: string;
   trackingSource: string;
   trackingMedium: string;
@@ -122,6 +123,7 @@ export const managerState: ManagerState = {
     paymentProvider: '',
     shippingProvider: '',
     couponCode: '',
+    giftcardCode: '',
     productSku: '',
     trackingSource: '',
     trackingMedium: '',

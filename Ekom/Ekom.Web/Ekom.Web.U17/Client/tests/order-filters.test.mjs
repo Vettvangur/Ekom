@@ -4,7 +4,7 @@ import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 
-function loadModule(relativePath, modules = {}) {
+function loadModule(relativePath, modules = {}, globals = {}) {
   const source = readFileSync(new URL(relativePath, import.meta.url), 'utf8');
   const compiled = ts.transpileModule(source, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
@@ -18,17 +18,18 @@ function loadModule(relativePath, modules = {}) {
     },
     HTMLElement: class {},
     customElements: { define() {} },
+    ...globals,
   });
   return exports;
 }
 
-function createFixture() {
+function createFixture(globals = {}) {
   const shared = loadModule('../src/manager/manager-shared.ts');
   const { EkomOrdersSectionViewElement } = loadModule('../src/manager/orders-section-view.element.ts', {
     './manager-shared': shared,
     '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
     '@umbraco-cms/backoffice/notification': { UMB_NOTIFICATION_CONTEXT: Symbol('notification') },
-  });
+  }, globals);
   const element = new EkomOrdersSectionViewElement();
   const notifications = [];
   element.render = () => {};
@@ -36,9 +37,10 @@ function createFixture() {
   return { shared, state: shared.managerState, element, notifications };
 }
 
-test('the filter overlay includes shipping providers and escaped order-level coupon input', () => {
+test('the filter overlay includes shipping providers and escaped coupon and gift card inputs', () => {
   const { state, element } = createFixture();
   state.filters.couponCode = 'SPRING"<10>';
+  state.filters.giftcardCode = '0012"<3456>';
   state.filters.shippingProvider = 'shipping-key';
   state.shippingFilterProviders = [{ key: 'shipping-key', title: 'Delivery <Express>' }];
   const html = element.renderFilterOverlay();
@@ -48,18 +50,23 @@ test('the filter overlay includes shipping providers and escaped order-level cou
   assert.ok(html.includes('value="shipping-key" selected>Delivery &lt;Express&gt;</option>'));
   assert.ok(html.includes('data-filter-field="couponCode" value="SPRING&quot;&lt;10&gt;"'));
   assert.ok(html.includes('Exact order-level coupon code'));
+  assert.ok(html.includes('Gift card number:'));
+  assert.ok(html.includes('data-filter-field="giftcardCode" value="0012&quot;&lt;3456&gt;"'));
+  assert.ok(html.includes('Full gift card number'));
 });
 
-test('applying the overlay captures both new filters without changing the store', () => {
+test('applying the overlay captures filters and trims the full gift card number without changing the store', () => {
   const { state, element } = createFixture();
   state.filters.store = 'main';
   element.querySelectorAll = () => [
     { dataset: { filterField: 'couponCode' }, value: 'SPRING10' },
+    { dataset: { filterField: 'giftcardCode' }, value: '  001234567890  ' },
     { dataset: { filterField: 'shippingProvider' }, value: 'shipping-key' },
   ];
   element.applyFilterOverlay();
 
   assert.equal(state.filters.couponCode, 'SPRING10');
+  assert.equal(state.filters.giftcardCode, '001234567890');
   assert.equal(state.filters.shippingProvider, 'shipping-key');
   assert.equal(state.filters.store, 'main');
 });
@@ -67,6 +74,7 @@ test('applying the overlay captures both new filters without changing the store'
 test('search and both export modes forward the same new filters', async () => {
   const { shared, state } = createFixture();
   state.filters.couponCode = 'SPRING10';
+  state.filters.giftcardCode = '001234567890';
   state.filters.shippingProvider = 'shipping-key';
   state.filters.store = 'main';
   const api = new shared.EkomManagerApi();
@@ -81,11 +89,132 @@ test('search and both export modes forward the same new filters', async () => {
   assert.equal(calls.length, 3);
   for (const { parameters } of calls) {
     assert.equal(parameters.couponCode, 'SPRING10');
+    assert.equal(parameters.giftcardCode, '001234567890');
     assert.equal(parameters.shippingProvider, 'shipping-key');
     assert.equal(parameters.store, 'main');
   }
   assert.equal(calls[1].parameters.includeOrderLines, false);
   assert.equal(calls[2].parameters.includeOrderLines, true);
+});
+
+test('the gift card filter defaults to empty and can be cleared with whitespace', () => {
+  const { state, element } = createFixture();
+  assert.equal(state.filters.giftcardCode, '');
+  state.filters.giftcardCode = '001234567890';
+  element.querySelectorAll = () => [{ dataset: { filterField: 'giftcardCode' }, value: '   ' }];
+  element.applyFilterOverlay();
+  assert.equal(state.filters.giftcardCode, '');
+});
+
+test('reservation actions require confirmation and refresh the order, logs and available actions', async () => {
+  const confirmations = [];
+  const { element } = createFixture({ window: { confirm: message => { confirmations.push(message); return true; } } });
+  const key = 'ekom.release-checkout:token';
+  element.selectedOrder = { uniqueId: 'order-id', orderStatus: 'WaitingForPayment' };
+  element.orderActions = [{ key, label: 'Release checkout reservations', enabled: true, confirmMessage: 'Release all reservations?' }];
+  const calls = [];
+  element.api.executeOrderAction = async (orderId, actionKey) => {
+    calls.push(['execute', orderId, actionKey]);
+    return { blob: async () => ({ text: async () => '{"message":"Reservations released successfully."}' }), headers: { get: () => '' } };
+  };
+  element.api.orderInfo = async orderId => {
+    calls.push(['order', orderId]);
+    return { uniqueId: orderId, orderStatus: 'Incomplete' };
+  };
+  element.loadOrderLogs = async orderId => { calls.push(['logs', orderId]); };
+  element.loadOrderActions = async orderId => { calls.push(['actions', orderId]); };
+
+  await element.executeOrderAction(key);
+
+  assert.deepEqual(confirmations, ['Release all reservations?']);
+  assert.deepEqual(calls, [['execute', 'order-id', key], ['order', 'order-id'], ['logs', 'order-id'], ['actions', 'order-id']]);
+  assert.equal(element.selectedOrder.orderStatus, 'Incomplete');
+  assert.equal(element.executingActionKey, '');
+});
+
+test('declining a gift card release confirmation does not send the action', async () => {
+  const { element } = createFixture({ window: { confirm: () => false } });
+  const key = 'ekom.release-giftcards:token';
+  element.selectedOrder = { uniqueId: 'order-id' };
+  element.orderActions = [{ key, confirmMessage: 'Release the gift card reservation?' }];
+  element.api.executeOrderAction = async () => assert.fail('Declined action must not execute');
+
+  await element.executeOrderAction(key);
+
+  assert.equal(element.executingActionKey, '');
+});
+
+test('legacy gift card input trims state and reaches search and both export query strings', async () => {
+  const registrations = {};
+  const calls = [];
+  const handlers = {};
+  const angular = {
+    module: () => ({
+      factory: (name, dependencies) => { registrations[name] = dependencies.at(-1); },
+      controller: (name, dependencies) => { registrations[name] = dependencies.at(-1); },
+    }),
+    noop() {},
+    isDate: value => value instanceof Date,
+    isString: value => typeof value === 'string',
+    forEach: (object, callback) => Object.entries(object).forEach(([key, value]) => callback(value, key)),
+    element: () => ({ ready() {} }),
+  };
+  const document = {
+    body: { appendChild() {}, classList: { remove() {} } },
+    createElement: () => ({}),
+  };
+  const base = '../../../Ekom.Web/App_Plugins/Ekom/Manager/';
+  for (const file of [
+    'services/ekmManager.state.js',
+    'controllers/ekmFilter.controller.js',
+    'controllers/ekmManager.controller.js',
+    'resources/ekmManager.resources.js',
+  ]) {
+    runInNewContext(readFileSync(new URL(base + file, import.meta.url), 'utf8'), {
+      angular,
+      document,
+      URL: { createObjectURL: () => 'blob:export' },
+      Umbraco: { Sys: { ServerVariables: { ekom: { managerEndpoint: '/ekom/manager/' } } } },
+    });
+  }
+  const state = registrations['Ekom.Manager.State']();
+  assert.equal(state.getState().filters.giftcardCode, '');
+  const resources = registrations['Ekom.Manager.Resources'](async request => {
+    calls.push(request);
+    return { data: { count: 1, orders: [] } };
+  });
+  const events = {
+    on: (name, callback) => { handlers[name] = callback; },
+    emit: (name, args) => handlers[name](null, args),
+  };
+  const dashboard = { $on() {} };
+  registrations['Ekom.Manager.Dashboard'](
+    dashboard, { error: () => assert.fail('Unexpected legacy request error') }, resources,
+    { path: () => '/orders' }, { on() {} }, events, state, {}, () => {}, {},
+  );
+  const filter = {};
+  registrations['Ekom.Manager.Filter'](filter, events, state);
+  filter.filters.giftcardCode = '  001234567890  ';
+  filter.onGiftcardCodeChanged();
+  assert.equal(state.getState().filters.giftcardCode, '001234567890');
+  await dashboard.GetData();
+  await dashboard.ExportCsv(null, false);
+  await dashboard.ExportCsv(null, true);
+
+  assert.equal(calls.length, 4);
+  for (const call of calls) {
+    assert.equal(new URL(call.url, 'https://example.test').searchParams.get('giftcardCode'), '001234567890');
+  }
+  assert.equal(new URL(calls[2].url, 'https://example.test').searchParams.get('includeOrderLines'), 'false');
+  assert.equal(new URL(calls[3].url, 'https://example.test').searchParams.get('includeOrderLines'), 'true');
+  filter.filters.giftcardCode = '   ';
+  filter.onGiftcardCodeChanged();
+  assert.equal(state.getState().filters.giftcardCode, '');
+
+  const html = readFileSync(new URL(base + 'views/overlays/ekmFilter.html', import.meta.url), 'utf8');
+  assert.ok(html.includes('Gift card number:'));
+  assert.ok(html.includes('ng-model="filters.giftcardCode"'));
+  assert.ok(html.includes('ng-change="onGiftcardCodeChanged()"'));
 });
 
 test('changing stores reloads options and clears both provider filters, not the coupon', async () => {

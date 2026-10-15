@@ -36,6 +36,7 @@
       eventsService.on("filter.changed", function (_, args) {
       state.setPaymentProvider(args.paymentProvider);
       state.setProductSku(args.productSku);
+      state.setGiftcardCode(args.giftcardCode);
       state.setTrackingField("trackingSource", args.trackingSource);
       state.setTrackingField("trackingMedium", args.trackingMedium);
       state.setTrackingField("trackingCampaign", args.trackingCampaign);
@@ -115,6 +116,7 @@
         store: $scope.filters.store,
         paymentProvider: $scope.filters.paymentProvider,
         productSku: $scope.filters.productSku,
+        giftcardCode: $scope.filters.giftcardCode,
         trackingSource: $scope.filters.trackingSource,
         trackingMedium: $scope.filters.trackingMedium,
         trackingCampaign: $scope.filters.trackingCampaign,

@@ -126,6 +126,7 @@ static class Registrations
         services.AddTransient<IOrderActivityLogService, OrderActivityLogService>();
         services.AddTransient<PaymentSuccessLogService>();
         services.AddTransient<IOrderManagerActionService, OrderManagerActionService>();
+        services.AddTransient<IOrderManagerActionProvider, ReservationReleaseManagerActionProvider>();
         services.AddTransient<IProductFilterService, ProductFilterService>();
 
         services.AddSingleton<IObjectFactory<IStore>, StoreFactory>();

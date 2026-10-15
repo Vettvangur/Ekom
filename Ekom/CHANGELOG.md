@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+* **manager:** filter orders and exports by full gift-card number and add confirmed, audited actions to release unpaid gift-card and checkout/stock reservations using normal payment ownership safeguards.
+
 ### Breaking Changes
 
 * **order:** `GrandTotal` and `GrandTotalWithOutVat` now retain the discounted order value including shipping and payment fees before gift-card payment. Use `ChargedAmount` for the remaining amount payable. Default payment requests and SQL `TotalAmount` retain their existing payable semantics. Historical JSON can contain the previous grand-total values; preserve frozen payment snapshots and deploy consistently across instances.

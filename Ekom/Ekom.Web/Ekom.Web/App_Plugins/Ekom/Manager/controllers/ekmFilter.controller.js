@@ -12,6 +12,7 @@
     function emitFilterChange() {
       eventsService.emit("filter.changed", {
         paymentProvider: managerState.filters.paymentProvider,
+        giftcardCode: managerState.filters.giftcardCode,
         productSku: managerState.filters.productSku,
         trackingSource: managerState.filters.trackingSource,
         trackingMedium: managerState.filters.trackingMedium,
@@ -42,6 +43,11 @@
 
     $scope.onProductSkuChanged = function () {
       state.setProductSku(($scope.filters.productSku || "").trim());
+      emitFilterChange();
+    };
+
+    $scope.onGiftcardCodeChanged = function () {
+      state.setGiftcardCode(($scope.filters.giftcardCode || "").trim());
       emitFilterChange();
     };
 

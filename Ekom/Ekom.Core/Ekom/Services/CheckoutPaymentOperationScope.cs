@@ -39,6 +39,14 @@ internal sealed class CheckoutPaymentOperationScope : IAsyncDisposable
     internal static CheckoutPaymentOperationScope BeginManagerOverride(Guid orderId)
         => new(orderId, string.Empty, null) { IsManagerOverride = true };
 
+    // Recovery actions must acquire real database ownership, never borrow a manager override.
+    internal static IDisposable Suppress()
+    {
+        var previous = Ambient.Value;
+        Ambient.Value = null;
+        return new Activation(previous);
+    }
+
     // Activation must happen in the caller's execution context, after awaiting Begin.
     public IDisposable Enter()
     {

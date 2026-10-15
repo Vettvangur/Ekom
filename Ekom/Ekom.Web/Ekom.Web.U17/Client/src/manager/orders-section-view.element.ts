@@ -414,6 +414,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
               </select>
             </label>
             ${this.renderFilterInput('couponCode', 'Coupon code:', 'Exact order-level coupon code')}
+            ${this.renderFilterInput('giftcardCode', 'Gift card number:', 'Full gift card number')}
             ${this.renderFilterInput('trackingSource', 'Tracking source:', 'facebook')}
             ${this.renderFilterInput('trackingMedium', 'Tracking medium:', 'paid-social')}
             ${this.renderFilterInput('trackingCampaign', 'Tracking campaign:', 'summer_2026')}
@@ -930,7 +931,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       const field = input.dataset.filterField;
 
       if (field && field in managerState.filters) {
-        (managerState.filters as Record<string, string>)[field] = input.value;
+        (managerState.filters as Record<string, string>)[field] = field === 'giftcardCode' ? input.value.trim() : input.value;
       }
     });
   }
