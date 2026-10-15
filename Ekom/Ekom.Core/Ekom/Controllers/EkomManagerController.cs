@@ -155,6 +155,33 @@ public class EkomManagerController : ControllerBase
     }
 
     [HttpGet]
+    [Route("orderLockStatus/{orderId:guid}")]
+    [UmbracoUserAuthorize]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> GetOrderLockStatusAsync(Guid orderId, CancellationToken ct = default)
+    {
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(orderId, ct).ConfigureAwait(false);
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            return Ok(await _repo.GetOrderLockStatusAsync(orderId, ct).ConfigureAwait(false));
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get checkout lock status. {OrderId}", orderId);
+            return StatusCode(500, "Checkout lock status could not be loaded. Refresh before attempting recovery.");
+        }
+    }
+
+    [HttpGet]
     [Route("OrderActions/{orderId}")]
     [UmbracoUserAuthorize]
     public async Task<IActionResult> GetOrderActionsAsync(Guid orderId, CancellationToken ct = default)

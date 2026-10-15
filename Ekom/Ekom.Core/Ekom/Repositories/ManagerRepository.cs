@@ -71,6 +71,31 @@ public class ManagerRepository
         return order;
     }
 
+    internal async Task<OrderLockStatus> GetOrderLockStatusAsync(Guid orderId, CancellationToken ct = default)
+    {
+        await using DbContext db = _databaseFactory.GetDatabase();
+        var operation = await db.GetTable<CheckoutPaymentOperationData>()
+            .SingleOrDefaultAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false);
+        var preparationLocked = await db.GetTable<CheckoutPreparationData>()
+            .AnyAsync(x => x.OrderId == orderId && x.Owner != null, ct).ConfigureAwait(false);
+        var attempt = operation?.ActiveAttemptId is Guid attemptId
+            ? await db.GetTable<CheckoutPaymentAttemptData>()
+                .SingleOrDefaultAsync(x => x.OrderId == orderId && x.AttemptId == attemptId, ct).ConfigureAwait(false)
+            : null;
+
+        // Report durable ownership, not liveness: neither owner table has a heartbeat or timestamp.
+        // Never return the owner capability itself to a backoffice client.
+        return new OrderLockStatus
+        {
+            PaymentOperationLocked = operation?.Owner != null,
+            PreparationLocked = preparationLocked,
+            ReconciliationRequired = operation?.ReconciliationRequired == true ||
+                attempt?.State == CheckoutPaymentAttemptState.ReconciliationRequired,
+            AttemptId = operation?.ActiveAttemptId,
+            AttemptState = attempt?.State.ToString(),
+        };
+    }
+
     public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
     {
         string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode);

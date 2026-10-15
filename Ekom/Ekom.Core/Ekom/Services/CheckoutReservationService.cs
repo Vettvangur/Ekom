@@ -350,26 +350,54 @@ internal sealed class CheckoutReservationService
     internal Task<CheckoutPreparationData> AcquirePreparationAsync(Guid orderId, CancellationToken ct)
         => StockReservationService.RetryAsync(async () =>
         {
-            await using var db = _database.GetDatabase();
-            await using var tx = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
-            var row = await db.GetTable<CheckoutPreparationData>().SingleOrDefaultAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false);
-            if (row?.Owner != null)
-                throw new StockException("Checkout preparation is already owned by another request; retry after it completes or reconcile an interrupted preparation.");
             var owner = Guid.NewGuid().ToString();
-            if (row == null)
+            var ownershipWriteStarted = false;
+            try
             {
-                row = new CheckoutPreparationData { OrderId = orderId, Owner = owner };
-                await db.InsertAsync(row, token: ct).ConfigureAwait(false);
+                CheckoutPreparationData row;
+                await using (var db = _database.GetDatabase())
+                {
+                    await using var tx = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+                    var existing = await db.GetTable<CheckoutPreparationData>().SingleOrDefaultAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false);
+                    if (existing?.Owner != null)
+                        throw new StockException("Checkout preparation is already owned by another request; retry after it completes or reconcile an interrupted preparation.");
+                    row = existing ?? new CheckoutPreparationData { OrderId = orderId };
+                    ownershipWriteStarted = true;
+                    if (existing == null)
+                    {
+                        row.Owner = owner;
+                        await db.InsertAsync(row, token: ct).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        var changed = await db.GetTable<CheckoutPreparationData>().Where(x => x.OrderId == orderId && x.Owner == null)
+                            .Set(x => x.Owner, owner).UpdateAsync(ct).ConfigureAwait(false);
+                        if (changed != 1) throw new DBConcurrencyException("Preparation ownership changed.");
+                        row.Owner = owner;
+                    }
+                    // Finish the local commit even if the HTTP request has gone away.
+                    await tx.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+                }
+                ct.ThrowIfCancellationRequested();
+                return row;
             }
-            else
+            catch (Exception acquisitionError) when (ownershipWriteStarted)
             {
-                var changed = await db.GetTable<CheckoutPreparationData>().Where(x => x.OrderId == orderId && x.Owner == null)
-                    .Set(x => x.Owner, owner).UpdateAsync(ct).ConfigureAwait(false);
-                if (changed != 1) throw new DBConcurrencyException("Preparation ownership changed.");
-                row.Owner = owner;
+                // Disposal/rollback must finish before this separate connection resolves an
+                // uncertain write. No caller work has started, so only our exact owner is safe to clear.
+                try
+                {
+                    await using var db = _database.GetDatabase();
+                    await db.GetTable<CheckoutPreparationData>().Where(x => x.OrderId == orderId && x.Owner == owner)
+                        .Set(x => x.Owner, (string?)null).UpdateAsync(CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception cleanupError)
+                {
+                    throw new AggregateException("Checkout preparation acquisition and ownership cleanup failed; reconciliation is required.",
+                        acquisitionError, cleanupError);
+                }
+                throw;
             }
-            await tx.CommitAsync(ct).ConfigureAwait(false);
-            return row;
         }, ct);
 
     internal async Task ProtectPreparationAsync(CheckoutPreparationData ownership, IEnumerable<string> ids, CancellationToken ct)

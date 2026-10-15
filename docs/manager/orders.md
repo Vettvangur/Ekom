@@ -102,16 +102,22 @@ It can also remove an existing line after confirmation. Add and remove operation
 
 ## Release reservations
 
-The order action buttons can release reservations for an unpaid order without waiting for provider expiry. Both actions require confirmation and the same store access as viewing the order:
+Reservation release requires confirmation and the same store access as viewing the order:
 
-- **Release gift-card reservations** releases unredeemed external gift-card holds through the registered `ICheckoutGiftcardReservations` integration. For standalone legacy gift-card holds, stock reservations and order status are kept. If a gift card belongs to an active payment attempt, the confirmation explains that the entire attempt, including its gift-card and stock reservations, will be released instead.
+- **Release gift card**, beside each gift-card item, releases only that card's unredeemed external hold through the registered `ICheckoutGiftcardReservations` integration. Other gift cards, stock reservations, and order status are kept. A card committed to a submitted payment attempt cannot be released individually: close the unpaid checkout attempt first using the separate order action. The per-card button never escalates to releasing all reservations. Unavailable buttons show the reason, including missing claim metadata, settlement, payment state, or a missing integration.
 - **Release checkout reservations** closes the unpaid payment attempt, releases its stock and gift-card holds, clears reservation metadata, and returns the order to **Incomplete**. The order and its lines are retained.
 
 Released gift cards remain selected with their code, amount, and validity date. These actions are **not refunds** and do not cancel a pending payment at an external payment provider. Confirm that payment has not been collected before proceeding. A late successful callback after release requires payment reconciliation rather than ordinary order completion.
 
-Actions are not available for paid/completed orders, completing payments, reconciliation-required orders, or redeemed/settled gift cards. Gift-card releases require a registered integration; without one, applicable release buttons are disabled rather than merely clearing Ekom's metadata. The integration must confirm successful, idempotent external release; a provider failure leaves claim metadata intact for investigation or retry.
+Release is refused for paid/completed orders, completing payments, reconciliation-required orders, or redeemed/settled gift cards. Gift-card releases require a registered integration; without one, applicable release buttons are disabled rather than merely clearing Ekom's metadata. The integration must confirm successful, idempotent external release; a provider failure leaves claim metadata intact for investigation or retry.
 
 Execution re-reads persisted state and acquires normal checkout ownership, even though other Manager actions may use a manager override. A running checkout/preparation operation blocks release; these buttons do not forcibly clear an orphaned owner lock. A changed order or newer payment attempt invalidates the loaded confirmation: refresh and confirm again. Repeating an already completed release is safe. The activity log records the requesting backoffice user and the outcome without logging gift-card codes. The order view refreshes after successful execution.
+
+### Checkout lock status
+
+When an ownership or reconciliation block exists, a **Checkout lock** panel appears below the Payment amount and above Order actions. It identifies payment-operation ownership, checkout-preparation ownership, and payment reconciliation independently, with the linked payment attempt ID and state when available. **Refresh status** re-reads the persisted state; a load failure is shown explicitly rather than implying that the order is unlocked.
+
+An **Incomplete** order can still have retained ownership. Ownership has no automatic expiry, timestamp, or heartbeat, so the panel cannot establish whether an operation is currently running, when it acquired ownership, or whether its owner is orphaned. It does not expose the ownership capability or offer force-unlock. Interrupted operations require provider/database reconciliation and confirmation that the old writer cannot resume before administrative recovery; order status and lock age alone are insufficient.
 
 ## Custom order actions
 

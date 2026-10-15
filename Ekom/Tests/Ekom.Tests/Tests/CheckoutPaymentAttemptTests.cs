@@ -418,6 +418,121 @@ public sealed class CheckoutPaymentAttemptTests
     }
 
     [Fact]
+    public async Task ConfirmedGiftcardReserveRejectionClosesNewAttemptAndAllowsRetryWithoutReleasingClaims()
+    {
+        using var f = new Fixture();
+        using var db = f.Database.Factory.GetDatabase();
+        var json = JObject.Parse((await f.ReadAsync()).OrderInfo);
+        json["Giftcards"] = new JArray(new JObject
+        {
+            ["Code"] = "secret-code", ["Amount"] = 5, ["Claimed"] = false,
+            ["ValidUntil"] = DateTime.UtcNow.AddYears(1), ["ProviderSelection"] = "keep-provider-metadata",
+        });
+        var original = json.ToString(Formatting.None);
+        await db.GetTable<OrderData>().Where(x => x.UniqueId == f.OrderId).Set(x => x.OrderInfo, original).UpdateAsync();
+        var adapter = new Mock<ICheckoutGiftcardReservations>();
+        var rejection = new GiftcardReservationRejectedException("Confirmed rejection");
+        adapter.Setup(x => x.ReserveAsync(f.OrderId, It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()))
+            .Returns((Guid _, Guid _, IReadOnlyList<Giftcard> selections, CancellationToken _) =>
+            {
+                // Adapter-side mutation must not replace the durable pre-call metadata.
+                selections[0].ClaimId = "local-only-not-an-external-hold";
+                return Task.FromException<IReadOnlyList<Giftcard>>(rejection);
+            });
+        var service = f.NewService(adapter.Object);
+        var order = new OrderInfo(await f.ReadAsync());
+
+        Assert.Same(rejection, await Assert.ThrowsAsync<GiftcardReservationRejectedException>(() => service.BeginCheckoutAsync(order)));
+
+        var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleAsync();
+        Assert.Null(operation.Owner);
+        Assert.Null(operation.ActiveAttemptId);
+        Assert.False(operation.ReconciliationRequired);
+        var rejected = await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync();
+        Assert.Equal(CheckoutPaymentAttemptState.Released, rejected.State);
+        Assert.NotNull(rejected.ClosedUtc);
+        Assert.Equal(original, (await f.ReadAsync()).OrderInfo);
+        Assert.Null(order.Giftcards.Single().ClaimId);
+        adapter.Verify(x => x.ReleaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Never);
+
+        adapter.Setup(x => x.ReserveAsync(f.OrderId, It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { new Giftcard { Code = "secret-code", Amount = 5, ClaimId = "retry-claim" } });
+        var retry = await service.BeginCheckoutAsync(order);
+        Assert.NotEqual(rejected.AttemptId, retry.AttemptId);
+        Assert.Equal("retry-claim", order.Giftcards.Single().ClaimId);
+        await retry.DisposeAsync();
+        Assert.Null((await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+        adapter.Verify(x => x.ReleaseAsync(f.OrderId, retry.AttemptId!.Value,
+            It.Is<IReadOnlyList<Giftcard>>(x => x.Single().ClaimId == "retry-claim"), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("insufficient balance")]
+    [InlineData("timeout")]
+    [InlineData("cancelled")]
+    public async Task UnconfirmedGiftcardReserveFailureRetainsDurableOwnerAndMetadata(string failure)
+    {
+        using var f = new Fixture();
+        using var db = f.Database.Factory.GetDatabase();
+        var json = JObject.Parse((await f.ReadAsync()).OrderInfo);
+        json["Giftcards"] = JArray.FromObject(new[] { new Giftcard { Code = "secret-code", Amount = 5 } });
+        var original = json.ToString(Formatting.None);
+        await db.GetTable<OrderData>().Where(x => x.UniqueId == f.OrderId).Set(x => x.OrderInfo, original).UpdateAsync();
+        Exception error = failure switch
+        {
+            "timeout" => new TimeoutException(),
+            "cancelled" => new OperationCanceledException(),
+            _ => new InvalidOperationException(failure),
+        };
+        var adapter = new Mock<ICheckoutGiftcardReservations>();
+        adapter.Setup(x => x.ReserveAsync(f.OrderId, It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(error);
+
+        var order = new OrderInfo(await f.ReadAsync());
+        Assert.Same(error, await Assert.ThrowsAnyAsync<Exception>(() => f.NewService(adapter.Object).BeginCheckoutAsync(order)));
+
+        var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleAsync();
+        Assert.NotNull(operation.Owner);
+        Assert.NotNull(operation.ActiveAttemptId);
+        Assert.Equal(CheckoutPaymentAttemptState.Preparing, (await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync()).State);
+        Assert.Equal(original, (await f.ReadAsync()).OrderInfo);
+        adapter.Verify(x => x.ReleaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Never);
+        var conflict = await Assert.ThrowsAsync<CheckoutConflictException>(() => f.NewService().BeginCheckoutAsync(order));
+        Assert.Equal(CheckoutConflictReason.Busy, conflict.Reason);
+    }
+
+    [Fact]
+    public async Task ConfirmedGiftcardReserveRejectionRestoresPriorReleasedAttemptWithoutReleasingUnderNewToken()
+    {
+        using var f = new Fixture();
+        var previous = await f.SubmittedAsync(claimed: true);
+        await f.Database.MakeDueAsync(JsonConvert.DeserializeObject<List<string>>(previous.ReservationIds)!.Single());
+        var adapter = new Mock<ICheckoutGiftcardReservations>();
+        adapter.Setup(x => x.ReleaseAsync(f.OrderId, previous.AttemptId, It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        adapter.Setup(x => x.ReserveAsync(f.OrderId, It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new GiftcardReservationRejectedException());
+        var order = new OrderInfo(await f.ReadAsync());
+
+        await Assert.ThrowsAsync<GiftcardReservationRejectedException>(() => f.NewService(adapter.Object).BeginCheckoutAsync(order));
+
+        using var db = f.Database.Factory.GetDatabase();
+        var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleAsync();
+        Assert.Null(operation.Owner);
+        Assert.Equal(previous.AttemptId, operation.ActiveAttemptId);
+        Assert.All(await db.GetTable<CheckoutPaymentAttemptData>().ToListAsync(), x => Assert.Equal(CheckoutPaymentAttemptState.Released, x.State));
+        var giftcard = JObject.Parse((await f.ReadAsync()).OrderInfo)["Giftcards"]!.Single()!.ToObject<Giftcard>()!;
+        Assert.Null(giftcard.ClaimId);
+        Assert.NotNull(giftcard.ValidUntil);
+        Assert.Equal("secret-code", giftcard.Code);
+        Assert.Equal(10, await f.Database.StockAsync(f.StockKey));
+        adapter.Verify(x => x.ReleaseAsync(f.OrderId, previous.AttemptId,
+            It.Is<IReadOnlyList<Giftcard>>(x => x.Single().ClaimId == "claim"), It.IsAny<CancellationToken>()), Times.Once);
+        adapter.Verify(x => x.ReleaseAsync(f.OrderId, It.Is<Guid>(x => x != previous.AttemptId),
+            It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task LegacyOwnedStockMissingFromJsonStillReleasesBeforeEdit()
     {
         using var f = new Fixture();

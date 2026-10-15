@@ -7,6 +7,7 @@ import {
   OrderAction,
   OrderActivityLog,
   OrderInfo,
+  OrderLockStatus,
   OrderListItem,
   OrderSearchResult,
   ShippingProviderItem,
@@ -69,6 +70,11 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private orderActions: OrderAction[] = [];
   private orderActionsLoading = false;
   private executingActionKey = '';
+  private orderRequestId = 0;
+  private lockRequestId = 0;
+  private orderLockStatus?: OrderLockStatus;
+  private orderLockLoading = false;
+  private orderLockError = false;
   private trackingExpanded = false;
   private consentExpanded = false;
   private customerEditorOpen = false;
@@ -494,6 +500,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         <p>Paid date: ${escapeHtml(formatDate(order.paidDate))}</p>
         <p>Store: ${escapeHtml(order.storeInfo?.alias || order.storeAlias)}</p>
         <p>Payment: <strong>${escapeHtml(order.chargedAmount?.currencyString)}</strong></p>
+        ${this.renderOrderLockStatus()}
         ${this.renderOrderActions()}
       </div>
       <div class="ekmSplit">
@@ -550,7 +557,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     return `<div class="ekmOrderGiftcards"><h4>Gift cards</h4><ul class="ekmOrderTracking__list">${giftcards.map((card: Record<string, any>) => {
       const expired = card.validUntil && Date.parse(card.validUntil) <= Date.now();
       const status = card.claimed ? 'Claimed' : expired ? 'Expired' : 'Available';
-      return `<li><strong>${escapeHtml(card.code)}</strong>: ${escapeHtml(this.formatGiftcardAmount(card.amount, order))} (${status})${card.validUntil ? ` · Expires ${escapeHtml(formatDate(card.validUntil))}` : ''}</li>`;
+      return `<li><strong>${escapeHtml(card.code)}</strong>: ${escapeHtml(this.formatGiftcardAmount(card.amount, order))} (${status})${card.validUntil ? ` · Expires ${escapeHtml(formatDate(card.validUntil))}` : ''}${this.orderActions.filter(action => action.giftcardCode != null && action.giftcardCode === card.code).map(action => this.renderAction(action)).join('')}</li>`;
     }).join('')}</ul></div>`;
   }
 
@@ -671,11 +678,28 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private renderOrderActions(): string {
-    if (!this.orderActions.length && !this.orderActionsLoading) {
+    const actions = this.orderActions.filter(action => action.giftcardCode == null);
+    if (!actions.length && !this.orderActionsLoading) {
       return '';
     }
 
-    return `<div style="margin-top:15px;"><h4>Order Actions</h4><div style="display:flex; flex-wrap:wrap; gap:10px;">${this.orderActions.map(action => `<button type="button" class="${action.look === 'primary' ? 'btn-success' : 'btn-outline'}" data-action="execute-order-action" data-action-key="${escapeHtml(action.key)}" ${action.enabled === false || this.executingActionKey === action.key ? 'disabled' : ''}>${escapeHtml(action.label)}</button>`).join('')}</div>${this.orderActionsLoading ? '<p>Loading actions...</p>' : ''}</div>`;
+    return `<div style="margin-top:15px;"><h4>Order Actions</h4><div style="display:flex; flex-wrap:wrap; gap:10px;">${actions.map(action => this.renderAction(action)).join('')}</div>${this.orderActionsLoading ? '<p>Loading actions...</p>' : ''}</div>`;
+  }
+
+  private renderAction(action: OrderAction): string {
+    const executing = this.executingActionKey === action.key;
+    return `<span style="display:inline-block; margin:4px;"><button type="button" class="${action.look === 'primary' ? 'btn-success' : 'btn-outline'}" data-action="execute-order-action" data-action-key="${escapeHtml(action.key)}" ${action.enabled === false || this.executingActionKey ? 'disabled' : ''}>${escapeHtml(action.label)}${executing ? ' (Working...)' : ''}</button>${action.enabled === false && action.disabledReason ? `<small style="display:block;">${escapeHtml(action.disabledReason)}</small>` : ''}</span>`;
+  }
+
+  private renderOrderLockStatus(): string {
+    const status = this.orderLockStatus;
+    const refresh = `<button type="button" class="btn-outline" data-action="refresh-lock-status" ${this.orderLockLoading ? 'disabled' : ''}>${this.orderLockLoading ? 'Refreshing status...' : 'Refresh status'}</button>`;
+    const error = this.orderLockError ? '<p role="alert">Unable to load lock status. Current ownership is unknown; do not assume the order is unlocked.</p>' : '';
+    if (!status?.hasLock) {
+      return this.orderLockError ? `<div>${error}${refresh}</div>` : this.orderLockLoading ? '<p>Loading lock status...</p>' : '';
+    }
+
+    return `<section class="ekmOrderTracking"><h4>Checkout lock</h4>${error}<ul>${status.paymentOperationLocked ? '<li>Payment operation ownership retained.</li>' : ''}${status.preparationLocked ? '<li>Checkout preparation ownership retained.</li>' : ''}${status.reconciliationRequired ? '<li>Reconciliation required.</li>' : ''}</ul><p>Attempt ID: ${escapeHtml(status.attemptId || 'Not available')}</p><p>Attempt state: ${escapeHtml(status.attemptState || 'Not available')}</p><p>Ownership is durable and does not automatically expire. This status does not indicate activity or progress. Interrupted or uncertain operations require reconciliation before further payment or reservation changes.</p>${refresh}</section>`;
   }
 
   private renderCustomerEditor(): string {
@@ -813,6 +837,11 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         this.activityLogExpandedIndexes.add(index);
       }
       this.renderPreservingOverlayScroll();
+      return;
+    }
+
+    if (action === 'refresh-lock-status') {
+      if (this.selectedOrder?.uniqueId) await this.loadOrderLockStatus(this.selectedOrder.uniqueId);
       return;
     }
 
@@ -961,8 +990,19 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return;
     }
 
+    const requestId = ++this.orderRequestId;
+    ++this.lockRequestId;
+    this.selectedOrder = undefined;
+    this.orderActions = [];
+    this.executingActionKey = '';
+    this.orderLockStatus = undefined;
+    this.orderLockError = false;
+    this.orderLockLoading = false;
+    this.render();
     try {
-      this.selectedOrder = await this.api.orderInfo(orderId);
+      const order = await this.api.orderInfo(orderId);
+      if (requestId !== this.orderRequestId) return;
+      this.selectedOrder = order;
       this.overlay = 'order';
       this.trackingExpanded = false;
       this.consentExpanded = false;
@@ -970,39 +1010,70 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       this.orderLogsError = false;
       this.activityLogExpandedIndexes.clear();
       this.render();
-      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId)]);
+      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId)]);
     } catch (error) {
+      if (requestId !== this.orderRequestId) return;
       this.showError(getErrorMessage(error, 'Error on getting orderInfo.'));
     }
   }
 
   private async loadOrderLogs(orderId: string): Promise<void> {
+    const requestId = this.orderRequestId;
     this.orderLogsLoading = true;
     this.orderLogsError = false;
     this.render();
 
     try {
-      this.orderLogs = await this.api.orderLogs(orderId);
+      const logs = await this.api.orderLogs(orderId);
+      if (requestId !== this.orderRequestId) return;
+      this.orderLogs = logs;
     } catch {
+      if (requestId !== this.orderRequestId) return;
       this.orderLogs = [];
       this.orderLogsError = true;
     } finally {
+      if (requestId !== this.orderRequestId) return;
       this.orderLogsLoading = false;
       this.render();
     }
   }
 
   private async loadOrderActions(orderId: string): Promise<void> {
+    const requestId = this.orderRequestId;
     this.orderActionsLoading = true;
     this.render();
 
     try {
-      this.orderActions = await this.api.orderActions(orderId);
+      const actions = await this.api.orderActions(orderId);
+      if (requestId !== this.orderRequestId) return;
+      this.orderActions = actions;
     } catch {
+      if (requestId !== this.orderRequestId) return;
       this.orderActions = [];
     } finally {
+      if (requestId !== this.orderRequestId) return;
       this.orderActionsLoading = false;
       this.render();
+    }
+  }
+
+  private async loadOrderLockStatus(orderId: string): Promise<void> {
+    const requestId = ++this.lockRequestId;
+    const orderRequestId = this.orderRequestId;
+    const isCurrent = (): boolean => requestId === this.lockRequestId && orderRequestId === this.orderRequestId && orderId === this.selectedOrder?.uniqueId;
+    this.orderLockLoading = true;
+    this.orderLockError = false;
+    this.render();
+    try {
+      const status = await this.api.orderLockStatus(orderId);
+      if (isCurrent()) this.orderLockStatus = status;
+    } catch {
+      if (isCurrent()) this.orderLockError = true;
+    } finally {
+      if (isCurrent()) {
+        this.orderLockLoading = false;
+        this.render();
+      }
     }
   }
 
@@ -1065,6 +1136,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private closeOverlay(): void {
+    ++this.orderRequestId;
+    ++this.lockRequestId;
     this.overlay = '';
     this.selectedOrder = undefined;
     this.customerEditorOpen = false;
@@ -1114,6 +1187,10 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     const action = this.orderActions.find(item => item.key === actionKey);
 
+    if (!action || action.enabled === false) return;
+    const orderId = this.selectedOrder.uniqueId;
+    const requestId = this.orderRequestId;
+
     if (action?.confirmMessage && !window.confirm(action.confirmMessage)) {
       return;
     }
@@ -1122,7 +1199,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     this.render();
 
     try {
-      const response = await this.api.executeOrderAction(this.selectedOrder.uniqueId, actionKey);
+      const response = await this.api.executeOrderAction(orderId, actionKey);
       const blob = await response.blob();
       const contentDisposition = response.headers.get('content-disposition') || '';
       const contentType = response.headers.get('content-type') || '';
@@ -1134,12 +1211,16 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         this.showSuccess(tryParseMessage(message));
       }
 
-      this.selectedOrder = await this.api.orderInfo(this.selectedOrder.uniqueId);
-      await this.loadOrderLogs(this.selectedOrder.uniqueId);
-      await this.loadOrderActions(this.selectedOrder.uniqueId);
+      if (requestId !== this.orderRequestId) return;
+      const [order] = await Promise.all([this.api.orderInfo(orderId), this.loadOrderLockStatus(orderId)]);
+      if (requestId !== this.orderRequestId) return;
+      this.selectedOrder = order;
+      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId)]);
     } catch (error) {
+      if (requestId !== this.orderRequestId) return;
       this.showError(getErrorMessage(error, 'Order action failed.'));
     } finally {
+      if (requestId !== this.orderRequestId) return;
       this.executingActionKey = '';
       this.render();
     }

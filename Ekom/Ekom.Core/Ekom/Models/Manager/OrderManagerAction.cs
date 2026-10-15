@@ -12,5 +12,9 @@ public sealed class OrderManagerAction
 
     public string? ConfirmMessage { get; init; }
 
+    public string? GiftcardCode { get; init; }
+
+    public string? DisabledReason { get; init; }
+
     public int SortOrder { get; init; }
 }

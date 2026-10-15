@@ -76,6 +76,9 @@ angular.module("umbraco.resources").factory("Ekom.Manager.Resources", [
       OrderActions: function (orderId) {
         return get(backofficeBaseUrl + "OrderActions/" + orderId);
       },
+      orderLockStatus: function (orderId) {
+        return get(backofficeBaseUrl + "orderLockStatus/" + encodeURIComponent(orderId));
+      },
       ExecuteOrderAction: function (orderId, actionKey) {
         return $http({
           method: "POST",

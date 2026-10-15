@@ -15,10 +15,8 @@ namespace Ekom.Tests.Tests;
 [Collection("Reservations")]
 public sealed class OrderManagerReservationReleaseTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ManagerReleaseOfSubmittedAttemptReleasesAllHoldsAndAuditsUserExactlyOnce(bool giftcardsOnly)
+    [Fact]
+    public async Task ManagerReleaseOfSubmittedAttemptReleasesAllHoldsAndAuditsUserExactlyOnce()
     {
         using var f = new Fixture();
         var attempt = await f.SubmittedAsync(claimed: true);
@@ -32,8 +30,8 @@ public sealed class OrderManagerReservationReleaseTests
         Assert.True(state.HasCheckoutReservations);
         Assert.True(state.CanRelease);
 
-        Assert.True(await service.ReleaseForManagerAsync(f.OrderId, "main", state.Token, giftcardsOnly, "manager@example.test", default));
-        Assert.False(await service.ReleaseForManagerAsync(f.OrderId, "main", state.Token, giftcardsOnly, "manager@example.test", default));
+        Assert.True(await service.ReleaseForManagerAsync(f.OrderId, "main", state.Token, false, "manager@example.test", default));
+        Assert.False(await service.ReleaseForManagerAsync(f.OrderId, "main", state.Token, false, "manager@example.test", default));
 
         var saved = await f.ReadAsync();
         Assert.Equal("Incomplete", saved.OrderStatusCol);
@@ -66,7 +64,10 @@ public sealed class OrderManagerReservationReleaseTests
         var service = f.NewService(adapter.Object);
         var state = (await service.GetManagerReleaseStateAsync(f.OrderId, default))!;
         Assert.False(state.HasActiveAttempt);
-        Assert.True(await service.ReleaseForManagerAsync(f.OrderId, "main", state.Token, giftcardsOnly, "Operator", default));
+        var card = Assert.Single(await service.GetManagerGiftcardReleaseStatesAsync(f.OrderId, default));
+        Assert.True(giftcardsOnly
+            ? await service.ReleaseGiftcardForManagerAsync(f.OrderId, "main", card.Identifier, card.Token, "Operator", default)
+            : await service.ReleaseForManagerAsync(f.OrderId, "main", state.Token, false, "Operator", default));
 
         var after = await f.ReadAsync();
         var json = JObject.Parse(after.OrderInfo);
@@ -83,7 +84,9 @@ public sealed class OrderManagerReservationReleaseTests
             Assert.Empty(json["ReservationIds"]!);
             Assert.Empty(json["HangfireJobs"]!);
         }
-        Assert.False(await service.ReleaseForManagerAsync(f.OrderId, "main", state.Token, giftcardsOnly, "Operator", default));
+        Assert.False(giftcardsOnly
+            ? await service.ReleaseGiftcardForManagerAsync(f.OrderId, "main", card.Identifier, card.Token, "Operator", default)
+            : await service.ReleaseForManagerAsync(f.OrderId, "main", state.Token, false, "Operator", default));
         adapter.Verify(x => x.ReleaseAsync(f.OrderId, Guid.Empty, It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -148,7 +151,7 @@ public sealed class OrderManagerReservationReleaseTests
     [InlineData("TransactionId")]
     [InlineData("UsedDate")]
     [InlineData("SubmittedTransactionId")]
-    public async Task ManagerUnsafeOrdersHaveNoActionsAndRefuseReleaseWithoutEffects(string unsafeState)
+    public async Task ManagerUnsafeOrdersHaveDisabledCardActionsAndRefuseReleaseWithoutEffects(string unsafeState)
     {
         using var f = new Fixture();
         var attempt = await f.SubmittedAsync(claimed: true);
@@ -194,7 +197,10 @@ public sealed class OrderManagerReservationReleaseTests
         var before = await f.ReadAsync();
         var attemptBefore = await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync();
         Assert.Null(await service.GetManagerReleaseStateAsync(f.OrderId, default));
-        Assert.Empty(await Provider(service).GetActionsAsync(new OrderInfo(before)));
+        var unavailable = Assert.Single(await Provider(service).GetActionsAsync(new OrderInfo(before)));
+        Assert.Equal("secret-code", unavailable.GiftcardCode);
+        Assert.False(unavailable.Enabled);
+        Assert.NotNull(unavailable.DisabledReason);
 
         await Assert.ThrowsAnyAsync<EkomHttpException>(() => service.ReleaseForManagerAsync(f.OrderId, "main", token, false, "Operator", default));
 
@@ -241,7 +247,8 @@ public sealed class OrderManagerReservationReleaseTests
             .Returns(Task.CompletedTask);
         var service = f.NewService(adapter.Object);
         var provider = Provider(service);
-        var action = (await provider.GetActionsAsync(new OrderInfo(before))).Single(x => x.Key.StartsWith("ekom.release-giftcards:", StringComparison.Ordinal));
+        var action = (await provider.GetActionsAsync(new OrderInfo(before))).Single(x =>
+            legacy ? x.GiftcardCode != null : x.GiftcardCode == null);
 
         Assert.IsType<OrderManagerActionBadRequestResult>(await provider.ExecuteAsync(new OrderInfo(before), action.Key, "Operator"));
         Assert.Equal(before.OrderInfo, (await f.ReadAsync()).OrderInfo);
@@ -290,7 +297,7 @@ public sealed class OrderManagerReservationReleaseTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task ManagerDiscoveryRequiresConfirmationAndDescribesWholeAttemptVersusLegacyGiftcardRelease(bool activeAttempt)
+    public async Task ManagerDiscoveryRequiresConfirmationAndDisablesPerCardReleaseForSubmittedAttempt(bool activeAttempt)
     {
         using var f = new Fixture();
         if (activeAttempt) await f.SubmittedAsync(claimed: true);
@@ -300,12 +307,14 @@ public sealed class OrderManagerReservationReleaseTests
         Assert.Equal(2, actions.Count);
         Assert.All(actions, x =>
         {
-            Assert.True(x.Enabled);
             Assert.False(string.IsNullOrWhiteSpace(x.ConfirmMessage));
-            Assert.Equal(64, x.Key[(x.Key.IndexOf(':') + 1)..].Length);
+            Assert.All(x.Key.Split(':').Skip(1), part => Assert.Equal(64, part.Length));
         });
         var giftcard = actions.Single(x => x.Key.StartsWith("ekom.release-giftcards:", StringComparison.Ordinal));
-        Assert.Contains(activeAttempt ? "entire unpaid payment attempt" : "Stock reservations", giftcard.ConfirmMessage, StringComparison.Ordinal);
+        Assert.Equal(!activeAttempt, giftcard.Enabled);
+        Assert.Equal("secret-code", giftcard.GiftcardCode);
+        Assert.Contains("Stock reservations", giftcard.ConfirmMessage, StringComparison.Ordinal);
+        if (activeAttempt) Assert.Contains("submitted payment attempt", giftcard.DisabledReason, StringComparison.Ordinal);
         var checkout = actions.Single(x => x.Key.StartsWith("ekom.release-checkout:", StringComparison.Ordinal));
         Assert.Contains("does not cancel a payment", checkout.ConfirmMessage, StringComparison.Ordinal);
         Assert.Null(await provider.ExecuteAsync(new OrderInfo(await f.ReadAsync()), "another-provider:action"));

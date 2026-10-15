@@ -27,18 +27,38 @@
     <p>Store: {{ model.editModel.order.storeInfo.alias }}</p>
     <p>Payment: <strong>{{ model.editModel.order.chargedAmount.currencyString }}</strong></p>
 
-    <div ng-if="orderActions.length > 0 || orderActionsLoading" style="margin-top:15px;">
+    <section class="ekmOrderTracking" ng-if="orderLockStatus.hasLock">
+      <h4>Checkout lock</h4>
+      <ul>
+        <li ng-if="orderLockStatus.paymentOperationLocked">Payment operation ownership retained.</li>
+        <li ng-if="orderLockStatus.preparationLocked">Checkout preparation ownership retained.</li>
+        <li ng-if="orderLockStatus.reconciliationRequired">Reconciliation required.</li>
+      </ul>
+      <p>Attempt ID: {{ orderLockStatus.attemptId || 'Not available' }}</p>
+      <p>Attempt state: {{ orderLockStatus.attemptState || 'Not available' }}</p>
+      <p>Ownership is durable and does not automatically expire. This status does not indicate activity or progress. Interrupted or uncertain operations require reconciliation before further payment or reservation changes.</p>
+      <button type="button" class="btn btn-outline umb-outline" ng-click="refreshOrderLockStatus()" ng-disabled="orderLockLoading">{{ orderLockLoading ? 'Refreshing status...' : 'Refresh status' }}</button>
+    </section>
+    <p ng-if="orderLockLoading && !orderLockStatus.hasLock">Loading lock status...</p>
+    <div ng-if="orderLockError" role="alert">
+      <p>Unable to load lock status. Current ownership is unknown; do not assume the order is unlocked.</p>
+      <button type="button" class="btn btn-outline umb-outline" ng-if="!orderLockStatus.hasLock" ng-click="refreshOrderLockStatus()" ng-disabled="orderLockLoading">Refresh status</button>
+    </div>
+
+    <div ng-if="getGlobalOrderActions().length > 0 || orderActionsLoading" style="margin-top:15px;">
       <h4 style="margin-bottom:10px;">Order Actions</h4>
       <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        <span ng-repeat="action in getGlobalOrderActions() track by action.key">
         <button
           type="button"
           class="btn umb-button__button"
-          ng-repeat="action in orderActions track by action.key"
           ng-class="getOrderActionButtonClass(action)"
           ng-click="executeOrderAction(action)"
-          ng-disabled="!action.enabled || executingOrderActionKey === action.key">
-          {{ action.label }}
+          ng-disabled="action.enabled === false || executingOrderActionKey">
+          {{ action.label }}{{ executingOrderActionKey === action.key ? ' (Working...)' : '' }}
         </button>
+        <small style="display:block;" ng-if="action.enabled === false && action.disabledReason">{{ action.disabledReason }}</small>
+        </span>
       </div>
       <p ng-if="orderActionsLoading" style="margin-top:10px;">Loading actions...</p>
     </div>
@@ -197,6 +217,12 @@
         <strong>{{ card.code }}</strong>: {{ card.amount | currency:(model.editModel.order.storeInfo.currency.isoCurrencySymbol || model.editModel.order.currency):model.editModel.order.storeInfo.currency.currencyDecimalDigits }}
         ({{ giftcardStatus(card) }})
         <span ng-if="card.validUntil">· Expires {{ card.validUntil | date:'dd. MMMM yyyy HH:mm' }}</span>
+        <span ng-repeat="action in getGiftcardActions(card) track by action.key" style="display:inline-block; margin:4px;">
+          <button type="button" class="btn umb-button__button" ng-class="getOrderActionButtonClass(action)" ng-click="executeOrderAction(action)" ng-disabled="action.enabled === false || executingOrderActionKey">
+            {{ action.label }}{{ executingOrderActionKey === action.key ? ' (Working...)' : '' }}
+          </button>
+          <small style="display:block;" ng-if="action.enabled === false && action.disabledReason">{{ action.disabledReason }}</small>
+        </span>
       </li>
     </ul>
   </div>

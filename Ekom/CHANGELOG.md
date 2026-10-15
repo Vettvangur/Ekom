@@ -17,6 +17,9 @@
 
 ### Bug Fixes
 
+* **checkout:** make local ownership cleanup independent of HTTP request cancellation and retain confirmed gift-card claim metadata for safe pre-submission compensation, while keeping uncertain provider and persistence outcomes fenced.
+* **manager:** place gift-card release controls on individual gift-card items without releasing other cards or stock, and display retained checkout ownership and reconciliation status above order actions.
+* **checkout:** allow gift-card integrations to explicitly report a confirmed no-effects reservation rejection so checkout can close the rejected attempt and release ownership safely; unknown outcomes remain fenced for reconciliation.
 * **catalog:** pass explicit store context to product filters independently of the mutable query, preserving existing filter implementations and overrides.
 * **imports:** refresh affected loaded descendants after parent moves before reusing them, evict successfully deleted subtrees from import snapshots, and check canceled move/delete operations; use bounded ID batches without full-catalog reloads or added refresh reads for unchanged products.
 * **order:** remove full-order snapshot tracking and JSON/date SQL write predicates to support legacy `datetime` columns without migrations or extra reads; retain payment ownership fencing, but full-order saves no longer reject stale or untracked snapshots. Targeted JSON updates retain expected-value checks using their existing transaction, with atomic SQL comparisons when that transaction is unavailable.

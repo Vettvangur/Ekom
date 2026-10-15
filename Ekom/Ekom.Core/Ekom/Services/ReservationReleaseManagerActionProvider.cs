@@ -14,27 +14,28 @@ internal sealed class ReservationReleaseManagerActionProvider(
 
     public async Task<IReadOnlyCollection<OrderManagerAction>> GetActionsAsync(IOrderInfo orderInfo, CancellationToken ct = default)
     {
-        var state = await attempts.GetManagerReleaseStateAsync(orderInfo.UniqueId, ct).ConfigureAwait(false);
-        if (state == null || !state.HasCheckoutReservations)
-            return Array.Empty<OrderManagerAction>();
-
         var actions = new List<OrderManagerAction>();
-        if (state.HasGiftcardClaims)
+        var cards = await attempts.GetManagerGiftcardReleaseStatesAsync(orderInfo.UniqueId, ct).ConfigureAwait(false);
+        foreach (var card in cards)
             actions.Add(new OrderManagerAction
             {
-                Key = GiftcardsPrefix + state.Token,
-                Label = "Release gift-card reservations",
-                Enabled = state.CanRelease,
-                ConfirmMessage = state.HasActiveAttempt
-                    ? "This gift card belongs to a payment attempt. Release the entire unpaid payment attempt, including all gift-card and stock reservations? Do not proceed if payment may already have been collected. This does not cancel a payment at the payment provider or issue a refund."
-                    : "Release this order's unredeemed gift-card reservations with the provider? Stock reservations and the selected gift cards will be kept. This is not a refund.",
+                Key = GiftcardsPrefix + card.Identifier + ":" + card.Token,
+                Label = "Release gift card",
+                GiftcardCode = card.Code,
+                Enabled = card.DisabledReason == null,
+                DisabledReason = card.DisabledReason,
+                ConfirmMessage = "Release only this gift card's unredeemed reservation with the provider? Stock reservations, other gift-card reservations, and all selected gift cards will be kept. This is not a refund.",
                 SortOrder = 900,
             });
+        var state = await attempts.GetManagerReleaseStateAsync(orderInfo.UniqueId, ct).ConfigureAwait(false);
+        if (state == null || !state.HasCheckoutReservations)
+            return actions;
         actions.Add(new OrderManagerAction
         {
             Key = CheckoutPrefix + state.Token,
             Label = "Release checkout reservations",
             Enabled = state.CanRelease,
+            DisabledReason = state.CanRelease ? null : "The gift-card reservation integration is not configured.",
             ConfirmMessage = "Release all stock and unredeemed gift-card reservations and close the current unpaid payment attempt? The order will return to Incomplete. Do not proceed if payment may already have been collected. This does not cancel a payment at the payment provider or issue a refund.",
             SortOrder = 910,
         });
@@ -48,13 +49,16 @@ internal sealed class ReservationReleaseManagerActionProvider(
         if (!giftcardsOnly && !actionKey.StartsWith(CheckoutPrefix, StringComparison.Ordinal))
             return null;
 
-        var token = actionKey[(giftcardsOnly ? GiftcardsPrefix.Length : CheckoutPrefix.Length)..];
-        if (token.Length != 64 || !token.All(Uri.IsHexDigit))
+        var parts = actionKey[(giftcardsOnly ? GiftcardsPrefix.Length : CheckoutPrefix.Length)..].Split(':');
+        if (parts.Length != (giftcardsOnly ? 2 : 1) || parts.Any(part => part.Length != 64 || !part.All(Uri.IsHexDigit)))
             return new OrderManagerActionBadRequestResult { Message = "Invalid reservation release action. Refresh the order." };
         try
         {
-            var released = await attempts.ReleaseForManagerAsync(orderInfo.UniqueId, orderInfo.StoreInfo.Alias,
-                token, giftcardsOnly, userName, ct).ConfigureAwait(false);
+            var released = giftcardsOnly
+                ? await attempts.ReleaseGiftcardForManagerAsync(orderInfo.UniqueId, orderInfo.StoreInfo.Alias,
+                    parts[0], parts[1], userName, ct).ConfigureAwait(false)
+                : await attempts.ReleaseForManagerAsync(orderInfo.UniqueId, orderInfo.StoreInfo.Alias,
+                    parts[0], false, userName, ct).ConfigureAwait(false);
             return new OrderManagerActionSuccessResult
             {
                 Message = released ? "Reservations released successfully." : "These reservations have already been released.",
