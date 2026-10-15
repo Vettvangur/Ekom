@@ -38,6 +38,11 @@
     </div>
 
     <div style="margin-top: 15px;">
+      <label for="ekmFilterGiftcardCode" style="display:block;">Gift card number:</label>
+      <input id="ekmFilterGiftcardCode" type="text" class="form-control" no-dirty-check ng-model="filters.giftcardCode" ng-model-options="{ updateOn: 'default blur', debounce: { default: 300, blur: 0 } }" ng-change="onGiftcardCodeChanged()" placeholder="Full gift card number" />
+    </div>
+
+    <div style="margin-top: 15px;">
       <label for="ekmFilterTrackingSource" style="display:block;">Tracking source:</label>
       <input id="ekmFilterTrackingSource" type="text" class="form-control" no-dirty-check ng-model="filters.trackingSource" ng-model-options="{ updateOn: 'default blur', debounce: { default: 300, blur: 0 } }" ng-change="onTrackingFieldChanged('trackingSource')" placeholder="facebook" />
     </div>

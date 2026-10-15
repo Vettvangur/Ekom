@@ -78,9 +78,9 @@ class OrderRepository
                 var owner = capability?.OrderId == orderData.UniqueId ? capability.Owner : null;
                 var updated = await db.OrderData
                     .Where(x => x.UniqueId == orderData.UniqueId)
-                    .Where(x => isManagerOverride || (owner == null
+                    .Where(x => (isManagerOverride || owner == null)
                         ? !db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner != null)
-                        : db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == owner)))
+                        : db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == owner))
                     .Set(x => x.OrderInfo, orderData.OrderInfo)
                     .Set(x => x.OrderStatusCol, orderData.OrderStatusCol)
                     .Set(x => x.OrderNumber, orderData.OrderNumber)
@@ -150,9 +150,9 @@ class OrderRepository
                 var capability = CheckoutPaymentOperationScope.Current;
                 var isManagerOverride = capability?.OrderId == orderId && capability.IsManagerOverride;
                 var owner = capability?.OrderId == orderId ? capability.Owner : null;
-                rows = rows.Where(x => isManagerOverride || (owner == null
+                rows = rows.Where(x => (isManagerOverride || owner == null)
                     ? !db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner != null)
-                    : db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == owner)));
+                    : db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == owner));
             }
             else
             {

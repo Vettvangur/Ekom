@@ -41,10 +41,13 @@ The additional filter panel supports:
 - payment provider for the selected store;
 - shipping provider for the selected store (Umbraco 17 and 18);
 - exact order-level coupon code (Umbraco 17 and 18);
+- exact gift-card number;
 - exact product SKU;
 - tracking source, medium, campaign, term, content, and click ID.
 
 Product SKU, coupon code, and tracking-value comparisons are case-insensitive. They are exact comparisons rather than partial-text searches; leading/trailing whitespace in filter input is ignored. Coupon filtering checks only the saved order-level code, not coupons on individual order lines. Shipping-provider filtering matches the saved provider key, not a title that may have changed.
+
+Gift-card filtering matches the full saved `Giftcards[].Code`, not a reservation claim ID or transaction ID. Input whitespace is trimmed, leading zeroes are preserved, and comparisons are case-insensitive. Any matching gift card includes the order once, regardless of reservation or redemption state. To find abandoned or unpaid orders, select **All Orders** or the relevant unpaid status and an appropriate date range. The filter applies to order results, summary cards, and both CSV export formats; it does not change analytics charts.
 
 In Umbraco 17 and 18, changing the store reloads payment and shipping filter options and clears both provider selections. An empty coupon field or the **All shipping providers** option adds no restriction. These filters combine with the other selected filters and affect the order list, count/payment-summary cards, and both CSV export formats. Analytics charts and most-sold-product reports retain their existing date/status/store filtering.
 
@@ -96,6 +99,19 @@ The detail view can add a line with:
 - a positive quantity.
 
 It can also remove an existing line after confirmation. Add and remove operations use Ekom's regular order APIs with events enabled, so catalog lookup, stock rules, and order validation still apply. The manager does not bypass them.
+
+## Release reservations
+
+The order action buttons can release reservations for an unpaid order without waiting for provider expiry. Both actions require confirmation and the same store access as viewing the order:
+
+- **Release gift-card reservations** releases unredeemed external gift-card holds through the registered `ICheckoutGiftcardReservations` integration. For standalone legacy gift-card holds, stock reservations and order status are kept. If a gift card belongs to an active payment attempt, the confirmation explains that the entire attempt, including its gift-card and stock reservations, will be released instead.
+- **Release checkout reservations** closes the unpaid payment attempt, releases its stock and gift-card holds, clears reservation metadata, and returns the order to **Incomplete**. The order and its lines are retained.
+
+Released gift cards remain selected with their code, amount, and validity date. These actions are **not refunds** and do not cancel a pending payment at an external payment provider. Confirm that payment has not been collected before proceeding. A late successful callback after release requires payment reconciliation rather than ordinary order completion.
+
+Actions are not available for paid/completed orders, completing payments, reconciliation-required orders, or redeemed/settled gift cards. Gift-card releases require a registered integration; without one, applicable release buttons are disabled rather than merely clearing Ekom's metadata. The integration must confirm successful, idempotent external release; a provider failure leaves claim metadata intact for investigation or retry.
+
+Execution re-reads persisted state and acquires normal checkout ownership, even though other Manager actions may use a manager override. A running checkout/preparation operation blocks release; these buttons do not forcibly clear an orphaned owner lock. A changed order or newer payment attempt invalidates the loaded confirmation: refresh and confirm again. Repeating an already completed release is safe. The activity log records the requesting backoffice user and the outcome without logging gift-card codes. The order view refreshes after successful execution.
 
 ## Custom order actions
 

@@ -233,20 +233,20 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("SearchOrders")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null)
+    public async Task<IActionResult> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
     {
         if (!CanAccessStore(store))
         {
             return ForbidStore(store);
         }
 
-        return Ok(await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, page, pageSize, couponCode, shippingProvider));
+        return Ok(await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, page, pageSize, couponCode, shippingProvider, giftcardCode));
     }
 
     [HttpGet]
     [Route("ExportOrders")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> ExportOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderLines, string? couponCode = null, string? shippingProvider = null, CancellationToken ct = default)
+    public async Task<IActionResult> ExportOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderLines, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, CancellationToken ct = default)
     {
         if (!CanAccessStore(store))
         {
@@ -255,7 +255,7 @@ public class EkomManagerController : ControllerBase
 
         try
         {
-            List<OrderData> orders = await _repo.GetOrdersForExportAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, includeOrderLines, couponCode, shippingProvider).ConfigureAwait(false);
+            List<OrderData> orders = await _repo.GetOrdersForExportAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, includeOrderLines, couponCode, shippingProvider, giftcardCode).ConfigureAwait(false);
             string csv = CreateOrderCsv(orders, includeOrderLines);
             string fileName = includeOrderLines ? "orders-with-orderlines.csv" : "orders.csv";
 
@@ -268,6 +268,10 @@ public class EkomManagerController : ControllerBase
             return StatusCode(500, "An unexpected error occurred.");
         }
     }
+
+    [NonAction]
+    public Task<IActionResult> ExportOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderLines, string? couponCode, string? shippingProvider, CancellationToken ct)
+        => ExportOrdersAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, includeOrderLines, couponCode, shippingProvider, giftcardCode: null, ct: ct);
 
     [NonAction]
     public Task<IActionResult> ExportOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderLines, CancellationToken ct)

@@ -81,10 +81,42 @@ public class ManagerRepositoryTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
+    public void GenerateWhereClause_UsesParameterizedExactGiftcardCode(bool sqlite)
+    {
+        const string giftcardCode = " GIFT%_' OR 1=1 -- ";
+
+        string whereClause = GenerateWhereClause(CreateRepository(sqlite), string.Empty, giftcardCode: giftcardCode);
+
+        Assert.Contains(sqlite
+            ? "EXISTS (SELECT 1 FROM json_each(OrderInfo, '$.Giftcards') AS giftcards WHERE lower(json_extract(giftcards.value, '$.Code')) = lower(@giftcardCode))"
+            : "EXISTS (SELECT 1 FROM OPENJSON(OrderInfo, '$.Giftcards') WITH (Code nvarchar(max) '$.Code') AS giftcards WHERE LOWER(giftcards.Code) = LOWER(@giftcardCode))",
+            whereClause, StringComparison.Ordinal);
+        Assert.DoesNotContain(giftcardCode, whereClause, StringComparison.Ordinal);
+        Assert.DoesNotContain("LIKE", whereClause, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(true, null)]
+    [InlineData(false, null)]
+    [InlineData(true, "")]
+    [InlineData(false, "")]
+    [InlineData(true, " \t ")]
+    [InlineData(false, " \t ")]
+    public void GenerateWhereClause_IgnoresBlankGiftcardCode(bool sqlite, string? giftcardCode)
+    {
+        string whereClause = GenerateWhereClause(CreateRepository(sqlite), string.Empty, giftcardCode: giftcardCode);
+
+        Assert.DoesNotContain("@giftcardCode", whereClause, StringComparison.Ordinal);
+        Assert.DoesNotContain("Giftcards", whereClause, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     public void GenerateWhereClause_CombinesNewAndExistingFilters(bool sqlite)
     {
         string whereClause = GenerateWhereClause(CreateRepository(sqlite), "customer", "SAVE", Guid.NewGuid().ToString(),
-            paymentProvider: Guid.NewGuid().ToString(), productSku: "SKU", trackingSource: "newsletter");
+            paymentProvider: Guid.NewGuid().ToString(), productSku: "SKU", trackingSource: "newsletter", giftcardCode: "GIFT");
 
         Assert.Contains("@query", whereClause, StringComparison.Ordinal);
         Assert.Contains("@paymentProvider", whereClause, StringComparison.Ordinal);
@@ -92,6 +124,98 @@ public class ManagerRepositoryTests
         Assert.Contains("@trackingSource", whereClause, StringComparison.Ordinal);
         Assert.Contains("@couponCode", whereClause, StringComparison.Ordinal);
         Assert.Contains("@shippingProvider", whereClause, StringComparison.Ordinal);
+        Assert.Contains("@giftcardCode", whereClause, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SearchAndExport_FilterGiftcardsOncePerOrderWithConsistentTotals()
+    {
+        using var database = new OrderDatabase();
+        Guid shippingProvider = Guid.NewGuid();
+        Guid paymentProvider = Guid.NewGuid();
+        Guid first = database.Add("SAVE", shippingProvider, 10m, paymentProvider: paymentProvider,
+            giftcardCodes: new[] { "other", "Gift123", "GIFT123" });
+        Guid second = database.Add("SAVE", shippingProvider, 30m, paymentProvider: paymentProvider,
+            giftcardCodes: new[] { "gift123" });
+        database.Add("SAVE", shippingProvider, 100m, giftcardCodes: new[] { "Gift123-extra" });
+        database.Add("SAVE", shippingProvider, 200m, giftcardCodes: Array.Empty<string>());
+        database.Add("Gift123", shippingProvider, 300m);
+        database.Add("SAVE", Guid.NewGuid(), 400m, giftcardCodes: new[] { "Gift123" });
+
+        OrderListData giftcardOnly = await SearchAsync(database.Repository, null, null, giftcardCode: " gift123 ");
+        Assert.Equal(3, giftcardOnly.Count);
+
+        OrderListData results = await SearchAsync(database.Repository, " save ", shippingProvider.ToString(), "1",
+            giftcardCode: " gift123 ");
+
+        Assert.Equal(second, Assert.Single(results.Orders).UniqueId);
+        Assert.Equal(2, results.Count);
+        Assert.Equal(2, results.TotalPages);
+        Assert.Equal(40m.ToString("C", CultureInfo.GetCultureInfo("en-US")), results.GrandTotal);
+        Assert.Equal(20m.ToString("C", CultureInfo.GetCultureInfo("en-US")), results.AverageAmount);
+
+        OrderListData combined = await SearchAsync(database.Repository, " save ", shippingProvider.ToString(), "30",
+            paymentProvider.ToString(), " sku ", " EMAIL ", giftcardCode: " gift123 ");
+        Assert.Equal(2, combined.Count);
+        Assert.Equal(new[] { second, first }, combined.Orders.Select(x => x.UniqueId));
+
+        foreach (bool includeOrderInfo in new[] { false, true })
+        {
+            List<OrderData> export = await database.Repository.GetOrdersForExportAsync(database.Date, database.Date, "", "main", "AllOrders",
+                paymentProvider.ToString(), " sku ", " EMAIL ", "", "", "", "", "", includeOrderInfo,
+                couponCode: " save ", shippingProvider: shippingProvider.ToString(), giftcardCode: " gift123 ");
+
+            Assert.Equal(new[] { second, first }, export.Select(x => x.UniqueId));
+            Assert.All(export, x => Assert.Equal(includeOrderInfo, !string.IsNullOrEmpty(x.OrderInfo)));
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" \t ")]
+    public async Task SearchAndExport_IgnoreBlankGiftcardCode(string? giftcardCode)
+    {
+        using var database = new OrderDatabase();
+        database.Add(null, Guid.NewGuid(), 10m, giftcardCodes: new[] { "GIFT" });
+        database.Add(null, Guid.NewGuid(), 20m);
+        database.Add(null, Guid.NewGuid(), 30m, giftcardCodes: Array.Empty<string>());
+
+        OrderListData results = await SearchAsync(database.Repository, null, null, giftcardCode: giftcardCode);
+        Assert.Equal(3, results.Count);
+        Assert.Equal(3, results.Orders.Count());
+
+        List<OrderData> export = await database.Repository.GetOrdersForExportAsync(database.Date, database.Date, "", "main", "AllOrders",
+            "", "", "", "", "", "", "", "", false, giftcardCode: giftcardCode);
+        Assert.Equal(3, export.Count);
+    }
+
+    [Theory]
+    [InlineData(" gift%_' or 1=1 -- ", true)]
+    [InlineData("missing", false)]
+    [InlineData("gift", false)]
+    public async Task SearchAndExport_MatchGiftcardCodeLiterally(string giftcardCode, bool matches)
+    {
+        using var database = new OrderDatabase();
+        Guid literal = database.Add(null, Guid.NewGuid(), 10m, giftcardCodes: new[] { "GIFT%_' OR 1=1 --" });
+        database.Add(null, Guid.NewGuid(), 20m, giftcardCodes: new[] { "GIFTanything" });
+        database.Add(null, Guid.NewGuid(), 30m);
+
+        OrderListData results = await SearchAsync(database.Repository, null, null, giftcardCode: giftcardCode);
+        List<OrderData> export = await database.Repository.GetOrdersForExportAsync(database.Date, database.Date, "", "main", "AllOrders",
+            "", "", "", "", "", "", "", "", false, giftcardCode: giftcardCode);
+
+        Assert.Equal(matches ? 1 : 0, results.Count);
+        if (matches)
+        {
+            Assert.Equal(literal, Assert.Single(results.Orders).UniqueId);
+            Assert.Equal(literal, Assert.Single(export).UniqueId);
+        }
+        else
+        {
+            Assert.Empty(results.Orders);
+            Assert.Empty(export);
+        }
     }
 
     [Fact]
@@ -219,12 +343,12 @@ public class ManagerRepositoryTests
     }
 
     private static Task<OrderListData> SearchAsync(ManagerRepository repository, string? couponCode, string? shippingProvider,
-        string pageSize = "30", string paymentProvider = "", string productSku = "", string trackingSource = "")
+        string pageSize = "30", string paymentProvider = "", string productSku = "", string trackingSource = "", string? giftcardCode = null)
         => repository.SearchOrdersAsync(OrderDatabase.OrderDate, OrderDatabase.OrderDate, "", "main", "AllOrders", paymentProvider,
-            productSku, trackingSource, "", "", "", "", "", "1", pageSize, couponCode, shippingProvider);
+            productSku, trackingSource, "", "", "", "", "", "1", pageSize, couponCode, shippingProvider, giftcardCode);
 
     private static string GenerateWhereClause(ManagerRepository repository, string query, string? couponCode = null,
-        string? shippingProvider = null, string paymentProvider = "", string productSku = "", string trackingSource = "")
+        string? shippingProvider = null, string paymentProvider = "", string productSku = "", string trackingSource = "", string? giftcardCode = null)
     {
         MethodInfo method = typeof(ManagerRepository).GetMethod(
             "GenerateWhereClause",
@@ -245,6 +369,7 @@ public class ManagerRepositoryTests
             string.Empty,
             couponCode,
             shippingProvider,
+            giftcardCode,
         })!;
     }
 
@@ -293,7 +418,8 @@ public class ManagerRepositoryTests
         public ManagerRepository Repository { get; }
         public DateTime Date => OrderDate;
 
-        public Guid Add(string? coupon, Guid shippingProvider, decimal amount, string? lineCoupon = null, Guid? paymentProvider = null)
+        public Guid Add(string? coupon, Guid shippingProvider, decimal amount, string? lineCoupon = null, Guid? paymentProvider = null,
+            string[]? giftcardCodes = null)
         {
             Guid id = Guid.NewGuid();
             using var db = _factory.GetDatabase();
@@ -308,6 +434,7 @@ public class ManagerRepositoryTests
                 OrderInfo = JsonSerializer.Serialize(new
                 {
                     Coupon = coupon,
+                    Giftcards = giftcardCodes?.Select(code => new { Code = code }).ToArray(),
                     ShippingProvider = new { Key = shippingProvider },
                     PaymentProvider = new { Key = paymentProvider },
                     Tracking = new { Source = "email" },

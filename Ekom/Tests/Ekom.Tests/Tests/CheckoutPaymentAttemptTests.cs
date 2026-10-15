@@ -639,7 +639,7 @@ public sealed class CheckoutPaymentAttemptTests
         Assert.Equal(legacySnapshot, (await f.Service.GetSubmittedOrderAsync(f.OrderId, attempt.AttemptId))!.OrderInfo);
     }
 
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         private readonly ConfigurationScope _configuration = new(overrides: new Dictionary<string, string?>());
         public StockReservationTests.ReservationDatabase Database { get; } = new();
