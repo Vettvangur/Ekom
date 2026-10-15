@@ -105,6 +105,29 @@ public sealed class OrderManagerGiftcardReleaseTests
     }
 
     [Theory]
+    [InlineData(1)]
+    [InlineData(-1)]
+    public async Task SavedExpiryWithoutReservationReferenceDoesNotProveProviderHasNoHold(int hoursUntilExpiry)
+    {
+        using var f = new Fixture();
+        await SeedAsync(f, true);
+        using var db = f.Database.Factory.GetDatabase();
+        var json = JObject.Parse((await f.ReadAsync()).OrderInfo);
+        json["Giftcards"]![0]!["ClaimId"] = null;
+        json["Giftcards"]![0]!["ValidUntil"] = DateTime.UtcNow.AddHours(hoursUntilExpiry);
+        await db.GetTable<OrderData>().Set(x => x.OrderInfo, json.ToString(Formatting.None)).UpdateAsync();
+        var adapter = Adapter();
+        var provider = Provider(f.NewService(adapter.Object));
+
+        var action = (await provider.GetActionsAsync(new OrderInfo(await f.ReadAsync())))
+            .Single(x => x.GiftcardCode == "secret-code");
+
+        Assert.False(action.Enabled);
+        Assert.Equal("No reservation reference is saved. Check the gift-card provider if an amount is still held.", action.DisabledReason);
+        adapter.Verify(x => x.ReleaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
     [InlineData("Claim")]
     [InlineData("Amount")]
     [InlineData("Submitted")]

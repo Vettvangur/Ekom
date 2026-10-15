@@ -111,7 +111,7 @@ The built-in cancel/error return and cart-edit lifecycle explicitly releases the
 
 Completion verifies attached IDs against the order's eligible requirements, consumes covered active holds, deducts only uncovered quantities, and inserts an `EkomCheckoutStockCompletion` receipt in one SQL transaction. Existing holds are honored even if `Enabled` is later switched off. Completion receipts are retained without scheduled cleanup.
 
-`EkomCheckoutPreparation` ownership has no timed takeover. A crashed owner or uncertain save can block further preparation. There is no automatic recovery endpoint: stop or confirm the old request, inspect order reservation IDs and provider state, preserve submitted/protected IDs, and only then repair the owner row. The expiry worker can release due stock but does not unlock preparation ownership.
+`EkomCheckoutPreparation` ownership has no timed takeover. A crashed owner or uncertain save can block further preparation. There is no automatic recovery endpoint. After confirming the old request has stopped and checking provider/payment state, an authorized store editor can use Manager's [Release Lock](../manager/orders.md#checkout-lock-and-manual-recovery) override to reset checkout, release active holds, and retain a recovery snapshot. This is an explicit editor decision, not proof that a provider payment was cancelled. The expiry worker can release due stock but does not unlock preparation ownership.
 
 ## Worker behavior
 

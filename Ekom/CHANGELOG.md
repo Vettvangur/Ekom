@@ -17,6 +17,8 @@
 
 ### Bug Fixes
 
+* **manager:** improve gift-card summaries with per-card actions and expandable details, and flag missing reservation references instead of presenting unconfirmed availability.
+* **manager:** add an editor-confirmed Release Lock checkout reset with recovery history and external-release warnings, and replace technical lock-status text with plain-language guidance and collapsed details.
 * **checkout:** make local ownership cleanup independent of HTTP request cancellation and retain confirmed gift-card claim metadata for safe pre-submission compensation, while keeping uncertain provider and persistence outcomes fenced.
 * **manager:** place gift-card release controls on individual gift-card items without releasing other cards or stock, and display retained checkout ownership and reconciliation status above order actions.
 * **checkout:** allow gift-card integrations to explicitly report a confirmed no-effects reservation rejection so checkout can close the rejected attempt and release ownership safely; unknown outcomes remain fenced for reconciliation.

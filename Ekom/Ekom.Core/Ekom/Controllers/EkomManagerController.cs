@@ -181,6 +181,36 @@ public class EkomManagerController : ControllerBase
         }
     }
 
+    [HttpPost]
+    [Route("releaseOrderLock/{orderId:guid}")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> ReleaseOrderLockAsync(Guid orderId, [FromBody] OrderLockReleaseRequest? request,
+        [FromServices] IOrderManagerLockService lockService, CancellationToken ct = default)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.ReleaseToken))
+            return BadRequest(new { message = "Reopen the order and confirm Release Lock before trying again." });
+        try
+        {
+            var order = await _repo.GetOrderAsync(orderId, ct).ConfigureAwait(false);
+            if (!CanAccessStore(order.StoreAlias)) return ForbidStore(order.StoreAlias);
+            return Ok(await lockService.ReleaseOrderLockAsync(orderId, request.ReleaseToken,
+                _managerAccessService.GetAllowedStoreAliases(), HttpContext?.User?.Identity?.Name, ct).ConfigureAwait(false));
+        }
+        catch (EkomHttpException ex)
+        {
+            return StatusCode((int)ex.StatusCode, new { message = ex.Message });
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Checkout lock recovery failed. OrderId: {OrderId}; FailureType: {FailureType}", orderId, ex.GetType().Name);
+            return StatusCode(500, new { message = "We could not confirm that checkout was unlocked. Check the updated order before trying again, or contact support." });
+        }
+    }
+
     [HttpGet]
     [Route("OrderActions/{orderId}")]
     [UmbracoUserAuthorize]

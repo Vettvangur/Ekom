@@ -97,6 +97,14 @@ export type OrderLockStatus = {
   reconciliationRequired: boolean;
   attemptId: string | null;
   attemptState: string | null;
+  releaseToken?: string | null;
+  canRelease: boolean;
+  releaseUnavailableReason?: string | null;
+};
+
+export type OrderLockReleaseResult = {
+  message: string;
+  warning?: string | null;
 };
 
 export type OrderActivityLog = {
@@ -202,6 +210,10 @@ export class EkomManagerApi {
 
   async orderLockStatus(orderId: string): Promise<OrderLockStatus> {
     return this.getJson(`/ekom/manager/orderLockStatus/${encodeURIComponent(orderId)}`);
+  }
+
+  async releaseOrderLock(orderId: string, releaseToken: string): Promise<OrderLockReleaseResult> {
+    return this.postBody(`/ekom/manager/releaseOrderLock/${encodeURIComponent(orderId)}`, { releaseToken });
   }
 
   async executeOrderAction(orderId: string, actionKey: string): Promise<Response> {
@@ -503,6 +515,17 @@ export const managerStyles = `
   .ekmOrderTracking, .ekmOrderGiftcards, .ekmOrderActivityLog { border: 1px solid #d8d7d9; margin: 30px 0; padding: 14px 16px; }
   .ekmOrderTracking__header { align-items: center; display: flex; justify-content: space-between; }
   .ekmOrderTracking__wrap { overflow-wrap: anywhere; word-break: break-word; }
+  .ekmOrderGiftcards__list { list-style: none; margin: 0; padding: 0; }
+  .ekmOrderGiftcards__list > li { border-top: 1px solid #d8d7d9; padding: 16px 0; overflow-wrap: anywhere; }
+  .ekmOrderGiftcards__summary, .ekmOrderGiftcards__actions { align-items: baseline; display: flex; flex-wrap: wrap; gap: 12px; }
+  .ekmOrderGiftcards__summary strong { font-size: 16px; }
+  .ekmOrderGiftcards__summary { gap: 4px 12px; }
+  .ekmOrderGiftcards__summary strong + strong { margin-left: auto; }
+  .ekmOrderGiftcards__summary > span { flex-basis: 100%; font-weight: 600; }
+  .ekmOrderGiftcards__actions { margin: 12px 0; }
+  .ekmOrderGiftcards details summary { cursor: pointer; }
+  .ekmOrderGiftcards dt { font-weight: 600; margin-top: 8px; }
+  .ekmOrderGiftcards dd { margin: 2px 0 0; white-space: pre-wrap; }
   .ekmOrderActivityLog__list { border-top: 1px solid #eee; }
   .ekmOrderActivityLog__item { border-bottom: 1px solid #eee; padding: 12px 0; }
   .ekmOrderActivityLog__content { align-items: flex-start; display: flex; gap: 12px; }
