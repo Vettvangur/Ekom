@@ -13,4 +13,10 @@ public sealed class OrderLockStatus
     public Guid? AttemptId { get; init; }
 
     public string? AttemptState { get; init; }
+
+    public string? ReleaseToken { get; init; }
+
+    public bool CanRelease { get; init; }
+
+    public string? ReleaseUnavailableReason { get; init; }
 }

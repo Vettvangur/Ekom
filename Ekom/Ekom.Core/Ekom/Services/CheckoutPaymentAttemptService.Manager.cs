@@ -10,6 +10,8 @@ namespace Ekom.Services;
 
 internal sealed partial class CheckoutPaymentAttemptService
 {
+    private const string MissingGiftcardReservationReason = "No reservation reference is saved. Check the gift-card provider if an amount is still held.";
+
     internal sealed record ManagerReleaseState(string Token, bool HasGiftcardClaims, bool HasCheckoutReservations,
         bool HasActiveAttempt, bool CanRelease);
 
@@ -45,7 +47,7 @@ internal sealed partial class CheckoutPaymentAttemptService
                 : active != null && (active.State != CheckoutPaymentAttemptState.Preparing || active.SubmittedUtc != null || active.SubmittedOrderInfo != null)
                     ? "This card belongs to a submitted payment attempt. Use Release checkout reservations to release the entire unpaid attempt."
                 : HasSettledGiftcards([card]) ? "This gift card is redeemed or settled and cannot be released as a reservation."
-                : string.IsNullOrWhiteSpace(card.ClaimId) ? "This gift card has no reservation to release."
+                : string.IsNullOrWhiteSpace(card.ClaimId) ? MissingGiftcardReservationReason
                 : cards.Count(other => string.Equals(other.Code, card.Code, StringComparison.Ordinal)) != 1
                     ? "Duplicate gift-card selections require reconciliation before release."
                 : _giftcards == null ? "The gift-card reservation integration is not configured." : null;
@@ -79,7 +81,7 @@ internal sealed partial class CheckoutPaymentAttemptService
             var state = matches[0];
             var card = ReadGiftcards(data.OrderInfo).Single(x => string.Equals(x.Code, state.Code, StringComparison.Ordinal));
             // A repeat of an already successful release is harmless; never release a replacement claim.
-            if (state.DisabledReason == "This gift card has no reservation to release.")
+            if (state.DisabledReason == MissingGiftcardReservationReason)
             {
                 await LogManagerReleaseAsync(orderId, $"Manual release completed; target={target}; outcome=AlreadyReleased", userName).ConfigureAwait(false);
                 return false;

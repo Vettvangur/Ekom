@@ -102,6 +102,10 @@ It can also remove an existing line after confirmation. Add and remove operation
 
 ## Release reservations
 
+Each selected gift card has its own summary with the card number, amount, saved status and expiry information. Its release action and any reason it is unavailable stay visible inside that card. Expand **More details** to inspect the saved reservation reference, dates, transaction reference and other available fields; missing values are shown as **Not recorded**.
+
+Gift-card status is based on saved order information, not a live provider balance check. A future expiry without a reservation reference is shown as **Needs checking**, not **Available**. In the GiftToWallet integration, the saved validity date represents the reservation deadline. Without a reservation reference, the UI labels it **Saved expiry** rather than promising that the provider has an active hold or that Ekom can release it. Check provider records if an amount is still held; the date alone cannot identify a reservation.
+
 Reservation release requires confirmation and the same store access as viewing the order:
 
 - **Release gift card**, beside each gift-card item, releases only that card's unredeemed external hold through the registered `ICheckoutGiftcardReservations` integration. Other gift cards, stock reservations, and order status are kept. A card committed to a submitted payment attempt cannot be released individually: close the unpaid checkout attempt first using the separate order action. The per-card button never escalates to releasing all reservations. Unavailable buttons show the reason, including missing claim metadata, settlement, payment state, or a missing integration.
@@ -113,11 +117,17 @@ Release is refused for paid/completed orders, completing payments, reconciliatio
 
 Execution re-reads persisted state and acquires normal checkout ownership, even though other Manager actions may use a manager override. A running checkout/preparation operation blocks release; these buttons do not forcibly clear an orphaned owner lock. A changed order or newer payment attempt invalidates the loaded confirmation: refresh and confirm again. Repeating an already completed release is safe. The activity log records the requesting backoffice user and the outcome without logging gift-card codes. The order view refreshes after successful execution.
 
-### Checkout lock status
+### Checkout lock and manual recovery
 
-When an ownership or reconciliation block exists, a **Checkout lock** panel appears below the Payment amount and above Order actions. It identifies payment-operation ownership, checkout-preparation ownership, and payment reconciliation independently, with the linked payment attempt ID and state when available. **Refresh status** re-reads the persisted state; a load failure is shown explicitly rather than implying that the order is unlocked.
+When an ownership or reconciliation block exists, a **Checkout is locked** panel appears below the Payment amount and above Order actions. The main text explains what this means for the customer in plain language. Attempt IDs, internal payment states, and the individual ownership/reconciliation flags are available under the collapsed **Technical details** section. A load failure is shown explicitly rather than implying that the order is unlocked.
 
-An **Incomplete** order can still have retained ownership. Ownership has no automatic expiry, timestamp, or heartbeat, so the panel cannot establish whether an operation is currently running, when it acquired ownership, or whether its owner is orphaned. It does not expose the ownership capability or offer force-unlock. Interrupted operations require provider/database reconciliation and confirmation that the old writer cannot resume before administrative recovery; order status and lock age alone are insufficient.
+The panel has one recovery button: **Release Lock**. This is an explicit editor override, separate from the ordinary reservation-release actions above. It uses the editor's existing store access, not an additional administrator-only role. Confirm that the previous checkout has stopped and that no payment is being processed before proceeding. An **Incomplete** order can still be locked; order status and lock age alone do not establish that a reset is safe.
+
+After confirmation, Release Lock replaces the observed payment/preparation ownership with a recovery operation, closes the old payment attempt, releases active stock reservations, clears local gift-card reservation metadata and the checkout reconciliation block, and returns the order to **Incomplete**. Order lines, customer details, and selected gift-card codes, amounts, and validity dates are kept. Paid/completed orders and consumed stock are not undone: this operation is not a refund or stock-return workflow. If the order changes before execution, refresh and confirm again rather than resetting a newer checkout.
+
+Known unredeemed gift-card claims are submitted to the registered integration for release. Unlike the ordinary release actions, a missing integration or an unconfirmed external release does **not** prevent this editor-authorized local reset. The response prominently warns that gift-card holds must be checked separately, and does not claim that the provider released them. A durable recovery snapshot preserves the pre-reset purchase and claim information without changing old frozen payment snapshots; the activity log records the editor, recovery reference, and outcome without exposing owner capabilities. Database or stock-release failures do not manufacture a successful reset.
+
+Ownership has no automatic expiry, timestamp, or heartbeat, so the panel cannot establish whether the old operation is currently running or orphaned. Release Lock trusts the editor's confirmation; it cannot stop an already-running external provider request or cancel/refund a gateway payment. Late successful payment callbacks still require reconciliation rather than completing a freshly reset basket.
 
 ## Custom order actions
 

@@ -73,6 +73,9 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private orderRequestId = 0;
   private lockRequestId = 0;
   private orderLockStatus?: OrderLockStatus;
+  private releasingOrderLock = false;
+  private orderLockWarning = '';
+  private orderLockReleaseError = '';
   private orderLockLoading = false;
   private orderLockError = false;
   private trackingExpanded = false;
@@ -554,10 +557,14 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return '';
     }
 
-    return `<div class="ekmOrderGiftcards"><h4>Gift cards</h4><ul class="ekmOrderTracking__list">${giftcards.map((card: Record<string, any>) => {
-      const expired = card.validUntil && Date.parse(card.validUntil) <= Date.now();
-      const status = card.claimed ? 'Claimed' : expired ? 'Expired' : 'Available';
-      return `<li><strong>${escapeHtml(card.code)}</strong>: ${escapeHtml(this.formatGiftcardAmount(card.amount, order))} (${status})${card.validUntil ? ` · Expires ${escapeHtml(formatDate(card.validUntil))}` : ''}${this.orderActions.filter(action => action.giftcardCode != null && action.giftcardCode === card.code).map(action => this.renderAction(action)).join('')}</li>`;
+    return `<div class="ekmOrderGiftcards"><h4>Gift cards</h4><ul class="ekmOrderGiftcards__list">${giftcards.map((card: Record<string, any>) => {
+      const summary = giftcardSummary(card);
+      const fields = giftcardDetails(card);
+      return `<li><div class="ekmOrderGiftcards__summary"><strong>${escapeHtml(card.code)}</strong><strong>${escapeHtml(this.formatGiftcardAmount(card.amount, order))}</strong><span>${escapeHtml(summary.status)}</span></div>
+        <p>${escapeHtml(summary.expiryLabel)}: ${escapeHtml(summary.expiry)}</p>
+        ${summary.warning ? `<p role="alert">${escapeHtml(summary.warning)}</p>` : ''}
+        <div class="ekmOrderGiftcards__actions">${this.orderActions.filter(action => action.giftcardCode != null && action.giftcardCode === card.code).map(action => this.renderAction(action)).join('')}</div>
+        <details><summary>More details</summary><dl>${fields.map(field => `<dt>${escapeHtml(field.label)}</dt><dd>${escapeHtml(field.value)}</dd>`).join('')}</dl></details></li>`;
     }).join('')}</ul></div>`;
   }
 
@@ -688,18 +695,20 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
   private renderAction(action: OrderAction): string {
     const executing = this.executingActionKey === action.key;
-    return `<span style="display:inline-block; margin:4px;"><button type="button" class="${action.look === 'primary' ? 'btn-success' : 'btn-outline'}" data-action="execute-order-action" data-action-key="${escapeHtml(action.key)}" ${action.enabled === false || this.executingActionKey ? 'disabled' : ''}>${escapeHtml(action.label)}${executing ? ' (Working...)' : ''}</button>${action.enabled === false && action.disabledReason ? `<small style="display:block;">${escapeHtml(action.disabledReason)}</small>` : ''}</span>`;
+    return `<span style="display:inline-block; margin:4px;"><button type="button" class="${action.look === 'primary' ? 'btn-success' : 'btn-outline'}" data-action="execute-order-action" data-action-key="${escapeHtml(action.key)}" ${action.enabled === false || this.executingActionKey || this.releasingOrderLock ? 'disabled' : ''}>${escapeHtml(action.label)}${executing ? ' (Working...)' : ''}</button>${action.enabled === false && action.disabledReason ? `<small style="display:block;">${escapeHtml(action.disabledReason)}</small>` : ''}</span>`;
   }
 
   private renderOrderLockStatus(): string {
     const status = this.orderLockStatus;
-    const refresh = `<button type="button" class="btn-outline" data-action="refresh-lock-status" ${this.orderLockLoading ? 'disabled' : ''}>${this.orderLockLoading ? 'Refreshing status...' : 'Refresh status'}</button>`;
-    const error = this.orderLockError ? '<p role="alert">Unable to load lock status. Current ownership is unknown; do not assume the order is unlocked.</p>' : '';
+    const warning = this.orderLockWarning ? `<p role="alert">${escapeHtml(this.orderLockWarning)}</p>` : '';
+    const error = this.orderLockError ? '<p role="alert">We could not check whether checkout is locked. Reopen the order to try again.</p>' : '';
+    const releaseError = this.orderLockReleaseError ? `<p role="alert">${escapeHtml(this.orderLockReleaseError)}</p>` : '';
     if (!status?.hasLock) {
-      return this.orderLockError ? `<div>${error}${refresh}</div>` : this.orderLockLoading ? '<p>Loading lock status...</p>' : '';
+      return `${warning}${error}${releaseError}${this.orderLockLoading ? '<p>Checking checkout...</p>' : ''}`;
     }
 
-    return `<section class="ekmOrderTracking"><h4>Checkout lock</h4>${error}<ul>${status.paymentOperationLocked ? '<li>Payment operation ownership retained.</li>' : ''}${status.preparationLocked ? '<li>Checkout preparation ownership retained.</li>' : ''}${status.reconciliationRequired ? '<li>Reconciliation required.</li>' : ''}</ul><p>Attempt ID: ${escapeHtml(status.attemptId || 'Not available')}</p><p>Attempt state: ${escapeHtml(status.attemptState || 'Not available')}</p><p>Ownership is durable and does not automatically expire. This status does not indicate activity or progress. Interrupted or uncertain operations require reconciliation before further payment or reservation changes.</p>${refresh}</section>`;
+    const unavailable = !status.canRelease || !status.releaseToken ? status.releaseUnavailableReason || 'This checkout lock cannot be released right now.' : '';
+    return `<section class="ekmOrderTracking"><h4>Checkout is locked</h4>${warning}${error}${releaseError}<p>${status.reconciliationRequired && !status.paymentOperationLocked && !status.preparationLocked ? 'The previous payment needs checking before the customer can pay or edit their basket.' : 'A previous checkout did not finish. This prevents the customer from paying or editing their basket.'}</p><p>If you have checked that no payment is being processed, Release Lock resets checkout and lets the customer try again.</p><button type="button" class="btn-outline" data-action="release-order-lock" ${unavailable || this.orderLockLoading || this.orderLockError || this.releasingOrderLock || this.executingActionKey ? 'disabled' : ''}>Release Lock</button>${unavailable ? `<p>${escapeHtml(unavailable)}</p>` : ''}<details><summary>Technical details</summary><ul>${status.paymentOperationLocked ? '<li>Payment operation ownership retained.</li>' : ''}${status.preparationLocked ? '<li>Checkout preparation ownership retained.</li>' : ''}${status.reconciliationRequired ? '<li>Reconciliation required.</li>' : ''}</ul><p>Attempt ID: ${escapeHtml(status.attemptId || 'Not available')}</p><p>Attempt state: ${escapeHtml(status.attemptState || 'Not available')}</p></details></section>`;
   }
 
   private renderCustomerEditor(): string {
@@ -840,8 +849,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return;
     }
 
-    if (action === 'refresh-lock-status') {
-      if (this.selectedOrder?.uniqueId) await this.loadOrderLockStatus(this.selectedOrder.uniqueId);
+    if (action === 'release-order-lock') {
+      await this.releaseOrderLock();
       return;
     }
 
@@ -996,6 +1005,9 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     this.orderActions = [];
     this.executingActionKey = '';
     this.orderLockStatus = undefined;
+    this.releasingOrderLock = false;
+    this.orderLockWarning = '';
+    this.orderLockReleaseError = '';
     this.orderLockError = false;
     this.orderLockLoading = false;
     this.render();
@@ -1072,6 +1084,43 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     } finally {
       if (isCurrent()) {
         this.orderLockLoading = false;
+        this.render();
+      }
+    }
+  }
+
+  private async releaseOrderLock(): Promise<void> {
+    const orderId = this.selectedOrder?.uniqueId;
+    const status = this.orderLockStatus;
+    if (!orderId || !status?.hasLock || !status.canRelease || !status.releaseToken || this.orderLockLoading || this.orderLockError || this.releasingOrderLock || this.executingActionKey) return;
+    if (!window.confirm("Release this checkout lock? Confirm that no payment is currently being processed and the previous checkout has stopped. The customer's basket will be kept, and they can try checkout again. This does not cancel or refund a payment. Any gift-card hold that cannot be released must be checked separately.")) return;
+
+    const requestId = this.orderRequestId;
+    const isCurrent = (): boolean => requestId === this.orderRequestId && orderId === this.selectedOrder?.uniqueId;
+    this.releasingOrderLock = true;
+    this.orderLockReleaseError = '';
+    let released = false;
+    this.render();
+    try {
+      const result = await this.api.releaseOrderLock(orderId, status.releaseToken);
+      if (!isCurrent()) return;
+      released = true;
+      this.orderLockWarning = result.warning || '';
+      this.showSuccess(result.message);
+      const [order] = await Promise.all([this.api.orderInfo(orderId), this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId)]);
+      if (isCurrent()) this.selectedOrder = order;
+    } catch (error) {
+      if (!isCurrent()) return;
+      this.orderLockReleaseError = released
+        ? 'Checkout was unlocked, but we could not refresh all order details. Reopen the order to check them.'
+        : getErrorMessage(error, 'We could not confirm the checkout reset. Check the updated order before trying again.');
+      // A failed response can still have acquired a recovery owner. Fetch a fresh
+      // confirmation token, but never automatically repeat the editor's POST.
+      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId),
+        this.api.orderInfo(orderId).then(order => { if (isCurrent()) this.selectedOrder = order; }).catch(() => {})]);
+    } finally {
+      if (isCurrent()) {
+        this.releasingOrderLock = false;
         this.render();
       }
     }
@@ -1181,7 +1230,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private async executeOrderAction(actionKey: string): Promise<void> {
-    if (!this.selectedOrder?.uniqueId || !actionKey || this.executingActionKey) {
+    if (!this.selectedOrder?.uniqueId || !actionKey || this.executingActionKey || this.releasingOrderLock) {
       return;
     }
 
@@ -1406,6 +1455,73 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+function hasGiftcardValue(value: unknown): boolean {
+  return value != null && (typeof value !== 'string' || value.trim() !== '');
+}
+
+function giftcardFieldLabel(key: string): string {
+  if (key === 'code') return 'Gift-card number';
+  if (key === 'claimId') return 'Reservation reference';
+  if (key === 'transactionId') return 'Transaction reference';
+  if (key === 'usedDate') return 'Used on';
+  if (key === 'validUntil') return 'Saved expiry';
+  if (key === 'claimDate') return 'Payment claim date';
+  const label = key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ');
+  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase().replace(/\bid\b/g, 'ID');
+}
+
+function giftcardFieldValue(value: unknown): string {
+  if (!hasGiftcardValue(value)) return 'Not recorded';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) return value.length ? value.map(giftcardFieldValue).join('; ') : 'Empty list';
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>);
+    return entries.length ? entries.map(([key, item]) => `${giftcardFieldLabel(key)}: ${giftcardFieldValue(item)}`).join('; ') : 'Empty object';
+  }
+  return String(value);
+}
+
+function giftcardDetails(card: Record<string, unknown>): { label: string; value: string }[] {
+  const known = ['code', 'amount', 'claimId', 'claimDate', 'transactionId', 'usedDate', 'claimed', 'validUntil'];
+  return [...known, ...Object.keys(card).filter(key => !known.includes(key))]
+    .map(key => ({ label: giftcardFieldLabel(key), value: giftcardFieldValue(card[key]) }));
+}
+
+function giftcardSummary(card: Record<string, unknown>, now = Date.now()) {
+  const hasReference = hasGiftcardValue(card.claimId);
+  const hasExpiry = hasGiftcardValue(card.validUntil);
+  const expiryTime = hasExpiry ? Date.parse(String(card.validUntil)) : NaN;
+  const future = expiryTime > now;
+  const used = card.claimed === true || hasGiftcardValue(card.transactionId) || hasGiftcardValue(card.claimDate) || hasGiftcardValue(card.usedDate);
+  const status = used ? 'Used' : hasReference && future ? 'Reserved'
+    : hasReference && expiryTime <= now ? 'Reservation expired'
+    : hasReference || hasExpiry ? 'Needs checking' : 'Selected';
+  let warning = '';
+  if (!used && !hasReference && hasExpiry) {
+    warning = 'An expiry time is saved, but the reservation reference is missing. Check the gift-card provider if an amount is still held.';
+  } else if (!used && hasReference && expiryTime <= now) {
+    warning = 'The saved reservation expiry has passed. This does not confirm that the provider has released the hold.';
+  } else if (!used && hasReference && !hasExpiry) {
+    warning = 'No expiry time is saved. Check the gift-card provider if an amount is still held.';
+  }
+  if (hasExpiry && !Number.isFinite(expiryTime)) {
+    warning += `${warning ? ' ' : ''}The saved expiry time could not be read. Check the gift-card provider.`;
+  }
+  let expiry = 'Not recorded';
+  if (hasExpiry) {
+    expiry = Number.isFinite(expiryTime)
+      ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'long' }).format(new Date(expiryTime))
+      : String(card.validUntil);
+    if (future) {
+      const minutes = Math.ceil((expiryTime - now) / 60000);
+      const value = minutes < 60 ? minutes : minutes < 1440 ? Math.ceil(minutes / 60) : Math.ceil(minutes / 1440);
+      const unit = minutes < 60 ? 'minute' : minutes < 1440 ? 'hour' : 'day';
+      expiry += ` (in about ${value} ${unit}${value === 1 ? '' : 's'})`;
+    }
+  }
+  return { status, warning, expiryLabel: !used && hasReference ? 'Reservation ends' : 'Saved expiry', expiry };
 }
 
 function labelFromKey(key: string): string {

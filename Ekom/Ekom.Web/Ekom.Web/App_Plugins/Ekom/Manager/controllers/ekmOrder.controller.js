@@ -28,6 +28,35 @@
     $scope.orderLockStatus = null;
     $scope.orderLockLoading = false;
     $scope.orderLockError = false;
+    $scope.releasingOrderLock = false;
+    $scope.orderLockWarning = "";
+    $scope.orderLockReleaseError = "";
+
+    $scope.releaseOrderLock = function () {
+      var orderId = getCurrentOrderId();
+      var status = $scope.orderLockStatus;
+      if (!orderId || !status || !status.hasLock || !status.canRelease || !status.releaseToken || $scope.orderLockLoading || $scope.orderLockError || $scope.releasingOrderLock || $scope.executingOrderActionKey) return;
+      if (!window.confirm("Release this checkout lock? Confirm that no payment is currently being processed and the previous checkout has stopped. The customer's basket will be kept, and they can try checkout again. This does not cancel or refund a payment. Any gift-card hold that cannot be released must be checked separately.")) return;
+
+      var generation = orderGeneration;
+      function isCurrent() { return generation === orderGeneration && orderId === getCurrentOrderId(); }
+      $scope.releasingOrderLock = true;
+      $scope.orderLockReleaseError = "";
+      return resources.releaseOrderLock(orderId, status.releaseToken).then(function (result) {
+        if (!isCurrent()) return;
+        $scope.orderLockWarning = result.data.warning || "";
+        notificationsService.success("Success", result.data.message);
+        return refreshOrderView();
+      }).catch(function (error) {
+        if (!isCurrent()) return;
+        $scope.orderLockReleaseError = getErrorMessage(error, "We could not confirm the checkout reset. Check the updated order before trying again.");
+        // Recovery may have started before the response failed. Refresh the token
+        // and history, but require another editor confirmation before retrying.
+        return refreshOrderView();
+      }).finally(function () {
+        if (isCurrent()) $scope.releasingOrderLock = false;
+      });
+    };
 
     $scope.getGlobalOrderActions = function () {
       return $scope.orderActions.filter(function (action) { return action.giftcardCode == null; });
@@ -42,10 +71,11 @@
     $scope.refreshOrderLockStatus = function () {
       var orderId = getCurrentOrderId();
       var requestId = ++lockRequestId;
+      var generation = orderGeneration;
       if (!orderId) return Promise.resolve();
       $scope.orderLockLoading = true;
       $scope.orderLockError = false;
-      function isCurrent() { return requestId === lockRequestId && orderId === getCurrentOrderId(); }
+      function isCurrent() { return requestId === lockRequestId && generation === orderGeneration && orderId === getCurrentOrderId(); }
       return resources.orderLockStatus(orderId).then(function (result) {
         if (isCurrent()) $scope.orderLockStatus = result.data;
       }, function () {
@@ -149,10 +179,74 @@
 
     $scope.orderChangeStatus = $scope.getStatus(managerState.currentOrderStatus);
 
-    $scope.giftcardStatus = function (card) {
-      if (card.claimed) return "Claimed";
-      if (card.validUntil && new Date(card.validUntil).getTime() <= Date.now()) return "Expired";
-      return "Available";
+    function hasGiftcardValue(value) {
+      return value != null && (typeof value !== "string" || value.trim() !== "");
+    }
+
+    function giftcardFieldLabel(key) {
+      if (key === "code") return "Gift-card number";
+      if (key === "claimId") return "Reservation reference";
+      if (key === "transactionId") return "Transaction reference";
+      if (key === "usedDate") return "Used on";
+      if (key === "validUntil") return "Saved expiry";
+      if (key === "claimDate") return "Payment claim date";
+      var label = key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ");
+      return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase().replace(/\bid\b/g, "ID");
+    }
+
+    function giftcardFieldValue(value) {
+      if (!hasGiftcardValue(value)) return "Not recorded";
+      if (typeof value === "boolean") return value ? "Yes" : "No";
+      if (Array.isArray(value)) return value.length ? value.map(giftcardFieldValue).join("; ") : "Empty list";
+      if (typeof value === "object") {
+        var keys = Object.keys(value);
+        return keys.length ? keys.map(function (key) {
+          return giftcardFieldLabel(key) + ": " + giftcardFieldValue(value[key]);
+        }).join("; ") : "Empty object";
+      }
+      return String(value);
+    }
+
+    $scope.giftcardDetails = function (card) {
+      var known = ["code", "amount", "claimId", "claimDate", "transactionId", "usedDate", "claimed", "validUntil"];
+      return known.concat(Object.keys(card).filter(function (key) { return known.indexOf(key) === -1; }))
+        .map(function (key) { return { label: giftcardFieldLabel(key), value: giftcardFieldValue(card[key]) }; });
+    };
+
+    $scope.giftcardSummary = function (card) {
+      var now = Date.now();
+      var hasReference = hasGiftcardValue(card.claimId);
+      var hasExpiry = hasGiftcardValue(card.validUntil);
+      var expiryTime = hasExpiry ? Date.parse(String(card.validUntil)) : NaN;
+      var future = expiryTime > now;
+      var used = card.claimed === true || hasGiftcardValue(card.transactionId) || hasGiftcardValue(card.claimDate) || hasGiftcardValue(card.usedDate);
+      var status = used ? "Used" : hasReference && future ? "Reserved"
+        : hasReference && expiryTime <= now ? "Reservation expired"
+        : hasReference || hasExpiry ? "Needs checking" : "Selected";
+      var warning = "";
+      if (!used && !hasReference && hasExpiry) {
+        warning = "An expiry time is saved, but the reservation reference is missing. Check the gift-card provider if an amount is still held.";
+      } else if (!used && hasReference && expiryTime <= now) {
+        warning = "The saved reservation expiry has passed. This does not confirm that the provider has released the hold.";
+      } else if (!used && hasReference && !hasExpiry) {
+        warning = "No expiry time is saved. Check the gift-card provider if an amount is still held.";
+      }
+      if (hasExpiry && !Number.isFinite(expiryTime)) {
+        warning += (warning ? " " : "") + "The saved expiry time could not be read. Check the gift-card provider.";
+      }
+      var expiry = "Not recorded";
+      if (hasExpiry) {
+        expiry = Number.isFinite(expiryTime)
+          ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "long" }).format(new Date(expiryTime))
+          : String(card.validUntil);
+        if (future) {
+          var minutes = Math.ceil((expiryTime - now) / 60000);
+          var value = minutes < 60 ? minutes : minutes < 1440 ? Math.ceil(minutes / 60) : Math.ceil(minutes / 1440);
+          var unit = minutes < 60 ? "minute" : minutes < 1440 ? "hour" : "day";
+          expiry += " (in about " + value + " " + unit + (value === 1 ? "" : "s") + ")";
+        }
+      }
+      return { status: status, warning: warning, expiryLabel: !used && hasReference ? "Reservation ends" : "Saved expiry", expiry: expiry };
     };
 
     $scope.eligibleGiftcardValue = function () {
@@ -484,9 +578,7 @@
       return loadOrder()
         .then(function () {
           if (generation !== orderGeneration || orderId !== getCurrentOrderId()) return;
-          loadActivityLogs();
-          $scope.refreshOrderLockStatus();
-          return loadOrderActions();
+          return Promise.all([loadActivityLogs(), $scope.refreshOrderLockStatus(), loadOrderActions()]);
         });
     }
 
@@ -499,7 +591,7 @@
     };
 
     $scope.executeOrderAction = function (action) {
-      if (!action || !action.key || action.enabled === false || $scope.executingOrderActionKey) {
+      if (!action || !action.key || action.enabled === false || $scope.executingOrderActionKey || $scope.releasingOrderLock) {
         return;
       }
 
@@ -858,6 +950,7 @@
 
     function loadActivityLogs() {
       var orderId = getCurrentOrderId();
+      var generation = orderGeneration;
 
       if (!orderId) {
         $scope.activityLogs = [];
@@ -868,16 +961,16 @@
       $scope.activityLogsLoading = true;
       $scope.activityLogsError = false;
 
-      resources.OrderLogs(orderId)
+      return resources.OrderLogs(orderId)
         .then(function (result) {
-          if (orderId !== getCurrentOrderId()) {
+          if (generation !== orderGeneration || orderId !== getCurrentOrderId()) {
             return;
           }
 
           $scope.activityLogs = result.data || [];
           $scope.activityLogExpandedStates = {};
         }, function () {
-          if (orderId !== getCurrentOrderId()) {
+          if (generation !== orderGeneration || orderId !== getCurrentOrderId()) {
             return;
           }
 
@@ -885,7 +978,7 @@
           $scope.activityLogsError = true;
         })
         .finally(function () {
-          if (orderId !== getCurrentOrderId()) {
+          if (generation !== orderGeneration || orderId !== getCurrentOrderId()) {
             return;
           }
 
@@ -910,6 +1003,9 @@
       ++orderGeneration;
       ++lockRequestId;
       $scope.orderLockStatus = null;
+      $scope.releasingOrderLock = false;
+      $scope.orderLockWarning = "";
+      $scope.orderLockReleaseError = "";
       $scope.orderLockError = false;
       $scope.orderLockLoading = false;
 
