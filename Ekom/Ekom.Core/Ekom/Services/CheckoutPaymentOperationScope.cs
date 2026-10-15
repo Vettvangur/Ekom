@@ -6,6 +6,7 @@ internal sealed class CheckoutPaymentOperationScope : IAsyncDisposable
     private readonly Func<Task>? _release;
     private readonly CheckoutPaymentOperationScope? _parent;
     private bool _preserveOwnership;
+    private bool _submissionInProgress;
     private bool _disposed;
     internal static CheckoutPaymentOperationScope? Current => Ambient.Value;
     public Guid OrderId { get; }
@@ -21,6 +22,17 @@ internal sealed class CheckoutPaymentOperationScope : IAsyncDisposable
         }
     }
     internal bool IsCheckout { get; set; }
+    // Remains true until SubmitAsync has returned successfully, including transaction disposal.
+    // Nested scopes must communicate this boundary to the outer owner's cleanup callback.
+    internal bool SubmissionInProgress
+    {
+        get => _parent?.SubmissionInProgress ?? _submissionInProgress;
+        set
+        {
+            if (_parent != null) _parent.SubmissionInProgress = value;
+            else _submissionInProgress = value;
+        }
+    }
     internal bool IsOrderInformationUpdate { get; set; }
     internal bool IsManagerOverride { get; init; }
     // Nested information updates retain an enclosing cart/checkout operation's authority.

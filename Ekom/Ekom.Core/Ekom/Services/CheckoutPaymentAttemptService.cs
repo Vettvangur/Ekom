@@ -75,31 +75,67 @@ internal sealed partial class CheckoutPaymentAttemptService
             Apply(order, data);
 
             var attemptId = Guid.NewGuid();
-            await using (var transaction = await db.BeginTransactionAsync().ConfigureAwait(false))
-            {
-                await db.InsertAsync(new CheckoutPaymentAttemptData
-                {
-                    AttemptId = attemptId, OrderId = order.UniqueId,
-                    State = CheckoutPaymentAttemptState.Preparing, CreatedUtc = DateTime.UtcNow,
-                }, token: ct).ConfigureAwait(false);
-                var changed = await db.GetTable<CheckoutPaymentOperationData>()
-                    .Where(x => x.OrderId == scope.OrderId && x.Owner == scope.Owner)
-                    .Set(x => x.ActiveAttemptId, (Guid?)attemptId).UpdateAsync(ct).ConfigureAwait(false);
-                if (changed != 1) throw Conflict("Checkout ownership changed.");
-                scope.PreserveOwnership = true;
-                await transaction.CommitAsync(ct).ConfigureAwait(false);
-                scope.PreserveOwnership = false;
-            }
             scope.AttemptId = attemptId;
             scope.IsCheckout = true;
+            await using (var transaction = await db.BeginTransactionAsync().ConfigureAwait(false))
+            {
+                try
+                {
+                    await db.InsertAsync(new CheckoutPaymentAttemptData
+                    {
+                        AttemptId = attemptId, OrderId = order.UniqueId,
+                        State = CheckoutPaymentAttemptState.Preparing, CreatedUtc = DateTime.UtcNow,
+                    }, token: ct).ConfigureAwait(false);
+                    var changed = await db.GetTable<CheckoutPaymentOperationData>()
+                        .Where(x => x.OrderId == scope.OrderId && x.Owner == scope.Owner)
+                        .Set(x => x.ActiveAttemptId, (Guid?)attemptId).UpdateAsync(ct).ConfigureAwait(false);
+                    if (changed != 1) throw Conflict("Checkout ownership changed.");
+                    scope.PreserveOwnership = true;
+                    ct.ThrowIfCancellationRequested();
+                    await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+                    scope.PreserveOwnership = false;
+                }
+                catch
+                {
+                    await ResolveLocalTransactionFailureAsync(transaction, scope).ConfigureAwait(false);
+                    throw;
+                }
+            }
 
             var selections = ReadGiftcards(data.OrderInfo);
             if (_giftcards != null && selections.Count > 0)
             {
+                ct.ThrowIfCancellationRequested();
                 // Persist renewed claims before any provider invocation. Uncertain writes
                 // retain ownership so another node cannot release unknown external holds.
                 scope.PreserveOwnership = true;
-                var renewed = await _giftcards.ReserveAsync(order.UniqueId, attemptId, selections, ct).ConfigureAwait(false);
+                IReadOnlyList<Giftcard> renewed;
+                try
+                {
+                    renewed = await _giftcards.ReserveAsync(order.UniqueId, attemptId, selections, ct).ConfigureAwait(false);
+                }
+                catch (GiftcardReservationRejectedException)
+                {
+                    // Only this explicit integration guarantee proves the failed reserve
+                    // left all external holds unchanged. Restore the pre-reserve attempt
+                    // pointer and keep the purchase/claim metadata intact. Ordinary scope
+                    // cleanup would release prior claims using the rejected attempt's ID.
+                    await using var transaction = await db.BeginTransactionAsync().ConfigureAwait(false);
+                    var restored = await db.GetTable<CheckoutPaymentOperationData>()
+                        .Where(x => x.OrderId == scope.OrderId && x.Owner == scope.Owner && x.ActiveAttemptId == attemptId)
+                        .Set(x => x.ActiveAttemptId, active == null ? (Guid?)null : active.AttemptId)
+                        .UpdateAsync(CancellationToken.None).ConfigureAwait(false);
+                    if (restored != 1) throw Conflict("Checkout ownership changed.");
+                    await db.GetTable<CheckoutPaymentAttemptData>().Where(x => x.AttemptId == attemptId)
+                        .Set(x => x.State, CheckoutPaymentAttemptState.Released)
+                        .Set(x => x.ClosedUtc, (DateTime?)DateTime.UtcNow)
+                        .UpdateAsync(CancellationToken.None).ConfigureAwait(false);
+                    await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+                    scope.IsCheckout = false;
+                    scope.AttemptId = null;
+                    scope.PreserveOwnership = false;
+                    throw;
+                }
                 if (HasSettledGiftcards(renewed))
                 {
                     await ReconciliationAsync(order.UniqueId, attemptId, "Giftcard reserve returned redeemed or settled selection").ConfigureAwait(false);
@@ -108,10 +144,11 @@ internal sealed partial class CheckoutPaymentAttemptService
                 var json = JObject.Parse(data.OrderInfo);
                 json[nameof(OrderInfo.Giftcards)] = JArray.FromObject(renewed);
                 data.OrderInfo = json.ToString(Formatting.None);
-                await SaveOrderAsync(db, scope, data, ct).ConfigureAwait(false);
+                await SaveOrderAsync(db, scope, data, CancellationToken.None).ConfigureAwait(false);
                 Apply(order, data);
                 scope.PreserveOwnership = false;
             }
+            ct.ThrowIfCancellationRequested();
             return scope;
         }
         catch
@@ -122,6 +159,15 @@ internal sealed partial class CheckoutPaymentAttemptService
     }
 
     public async Task<Guid> SubmitAsync(IOrderInfo order, CancellationToken ct = default)
+    {
+        var attemptId = await SubmitOwnedAsync(order, ct).ConfigureAwait(false);
+        // The caller may invoke the gateway only after all local transaction/connection
+        // disposal has succeeded. A throw before this point leaves compensation enabled.
+        CheckoutPaymentOperationScope.Current!.SubmissionInProgress = false;
+        return attemptId;
+    }
+
+    private async Task<Guid> SubmitOwnedAsync(IOrderInfo order, CancellationToken ct)
     {
         var scope = CheckoutPaymentOperationScope.Current;
         if (scope == null || !scope.IsCheckout || scope.OrderId != order.UniqueId || scope.AttemptId == null)
@@ -141,38 +187,75 @@ internal sealed partial class CheckoutPaymentAttemptService
         var ids = ReadIds(data.OrderInfo).Distinct(StringComparer.Ordinal).ToList();
         if (!await HoldsActiveAsync(db, ids, false, ct).ConfigureAwait(false))
             throw Conflict("Payment reservations expired or closed before submission.");
+        scope.SubmissionInProgress = true;
         scope.PreserveOwnership = true;
-        DateTime? deadline = null;
-        if (ids.Count > 0)
+        try
         {
-            deadline = await db.GetTable<StockReservationData>().Where(x => ids.Contains(x.Id))
-                .MinAsync(x => (DateTime?)x.ExpiresUtc, ct).ConfigureAwait(false);
-            if (deadline == null) throw Conflict("Payment reservations disappeared before submission.");
-            var now = DateTime.UtcNow;
-            var orderId = order.UniqueId.ToString();
-            var aligned = await db.GetTable<StockReservationData>()
-                .Where(x => ids.Contains(x.Id) && x.OrderId == orderId && x.State == StockReservationState.Active && x.ExpiresUtc > now)
-                .Set(x => x.ExpiresUtc, deadline.Value).UpdateAsync(ct).ConfigureAwait(false);
-            if (aligned != ids.Count) throw Conflict("Payment reservations changed before submission.");
+            DateTime? deadline = null;
+            if (ids.Count > 0)
+            {
+                deadline = await db.GetTable<StockReservationData>().Where(x => ids.Contains(x.Id))
+                    .MinAsync(x => (DateTime?)x.ExpiresUtc, ct).ConfigureAwait(false);
+                if (deadline == null) throw Conflict("Payment reservations disappeared before submission.");
+                var now = DateTime.UtcNow;
+                var orderId = order.UniqueId.ToString();
+                var aligned = await db.GetTable<StockReservationData>()
+                    .Where(x => ids.Contains(x.Id) && x.OrderId == orderId && x.State == StockReservationState.Active && x.ExpiresUtc > now)
+                    .Set(x => x.ExpiresUtc, deadline.Value).UpdateAsync(ct).ConfigureAwait(false);
+                if (aligned != ids.Count) throw Conflict("Payment reservations changed before submission.");
+            }
+            else
+            {
+                // No hold ends this attempt, so without a deadline an abandoned payment keeps the basket busy until it is edited.
+                deadline = DateTime.UtcNow + Configuration.Instance.GetReservationTimeout(order.StoreInfo.Alias);
+            }
+            var updated = await db.GetTable<CheckoutPaymentAttemptData>()
+                .Where(x => x.AttemptId == active.AttemptId && x.State == CheckoutPaymentAttemptState.Preparing)
+                .Set(x => x.SubmittedOrderData, JsonConvert.SerializeObject(data))
+                .Set(x => x.SubmittedOrderInfo, data.OrderInfo)
+                .Set(x => x.ReservationIds, JsonConvert.SerializeObject(ids))
+                .Set(x => x.SubmittedUtc, (DateTime?)DateTime.UtcNow)
+                .Set(x => x.ExpiresUtc, deadline)
+                .Set(x => x.State, CheckoutPaymentAttemptState.Submitted)
+                .UpdateAsync(ct).ConfigureAwait(false);
+            if (updated != 1) throw Conflict("The payment attempt changed before submission.");
+            ct.ThrowIfCancellationRequested();
+            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+            scope.PreserveOwnership = false;
+            return active.AttemptId;
         }
-        else
+        catch
         {
-            // No hold ends this attempt, so without a deadline an abandoned payment keeps the basket busy until it is edited.
-            deadline = DateTime.UtcNow + Configuration.Instance.GetReservationTimeout(order.StoreInfo.Alias);
+            await ResolveLocalTransactionFailureAsync(transaction, scope).ConfigureAwait(false);
+            throw;
         }
-        var updated = await db.GetTable<CheckoutPaymentAttemptData>()
-            .Where(x => x.AttemptId == active.AttemptId && x.State == CheckoutPaymentAttemptState.Preparing)
-            .Set(x => x.SubmittedOrderData, JsonConvert.SerializeObject(data))
-            .Set(x => x.SubmittedOrderInfo, data.OrderInfo)
-            .Set(x => x.ReservationIds, JsonConvert.SerializeObject(ids))
-            .Set(x => x.SubmittedUtc, (DateTime?)DateTime.UtcNow)
-            .Set(x => x.ExpiresUtc, deadline)
-            .Set(x => x.State, CheckoutPaymentAttemptState.Submitted)
-            .UpdateAsync(ct).ConfigureAwait(false);
-        if (updated != 1) throw Conflict("The payment attempt changed before submission.");
-        await transaction.CommitAsync(ct).ConfigureAwait(false);
-        scope.PreserveOwnership = false;
-        return active.AttemptId;
+    }
+
+    // These transactions contain local writes only. A canceled/failed commit may
+    // already be durable; end the transaction before probing on a fresh connection.
+    // Failed rollback or an unreadable/inconsistent outcome must retain the fence.
+    private async Task ResolveLocalTransactionFailureAsync(LinqToDB.Data.DataConnectionTransaction transaction,
+        CheckoutPaymentOperationScope scope)
+    {
+        scope.PreserveOwnership = true;
+        try
+        {
+            await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+            await using var probe = _factory.GetDatabase();
+            var operation = await probe.GetTable<CheckoutPaymentOperationData>()
+                .SingleAsync(x => x.OrderId == scope.OrderId, CancellationToken.None).ConfigureAwait(false);
+            if (operation.Owner != scope.Owner) return;
+            var active = await ReadActiveAsync(probe, scope.OrderId, CancellationToken.None).ConfigureAwait(false);
+            if (active == null && operation.ActiveAttemptId == null || active != null &&
+                (active.State == CheckoutPaymentAttemptState.Released || active.AttemptId == scope.AttemptId &&
+                    active.State is CheckoutPaymentAttemptState.Preparing or CheckoutPaymentAttemptState.Submitted))
+                scope.PreserveOwnership = false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Checkout transaction outcome could not be resolved. OrderId: {OrderId}; FailureType: {FailureType}",
+                scope.OrderId, ex.GetType().Name);
+        }
     }
 
     public async Task<OrderData?> GetSubmittedOrderAsync(Guid orderId, Guid attemptId, CancellationToken ct = default)
@@ -468,8 +551,29 @@ internal sealed partial class CheckoutPaymentAttemptService
                 if (!await db.GetTable<CheckoutPaymentOperationData>().AnyAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false)) throw;
             }
         }
-        var claimed = await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == orderId && x.Owner == null)
-            .Set(x => x.Owner, owner).UpdateAsync(ct).ConfigureAwait(false);
+        int claimed;
+        try
+        {
+            claimed = await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == orderId && x.Owner == null)
+                .Set(x => x.Owner, owner).UpdateAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception acquisitionError)
+        {
+            // The update can commit and then throw before a scope exists. This
+            // generated capability has performed no other work and is safe to clear.
+            try
+            {
+                await using var cleanup = _factory.GetDatabase();
+                await cleanup.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == orderId && x.Owner == owner)
+                    .Set(x => x.Owner, (string?)null).UpdateAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception cleanupError)
+            {
+                throw new AggregateException("Checkout ownership acquisition and cleanup failed; reconciliation is required.",
+                    acquisitionError, cleanupError);
+            }
+            throw;
+        }
         if (claimed != 1)
         {
             if (await RequiresReconciliationAsync(db, orderId, ct).ConfigureAwait(false))
@@ -487,19 +591,30 @@ internal sealed partial class CheckoutPaymentAttemptService
             await using var releaseDb = _factory.GetDatabase();
             try
             {
-                // A validation return or exception before submission must not
-                // strand a Preparing attempt. Preparation compensation has run
+                // A validation return or failed submission must not strand an
+                // attempt that never reached gateway invocation. Preparation compensation has run
                 // before the outer checkout scope is disposed by the caller.
                 if (scope is { IsCheckout: true, AttemptId: not null })
                 {
+                    if (!await releaseDb.GetTable<CheckoutPaymentOperationData>()
+                        .AnyAsync(x => x.OrderId == orderId && x.Owner == owner, CancellationToken.None).ConfigureAwait(false))
+                        return;
                     var active = await ReadActiveAsync(releaseDb, orderId, CancellationToken.None).ConfigureAwait(false);
-                    if (active?.AttemptId == scope.AttemptId && active.State == CheckoutPaymentAttemptState.Preparing)
+                    if (active?.AttemptId == scope.AttemptId && (active.State == CheckoutPaymentAttemptState.Preparing ||
+                        scope.SubmissionInProgress && active.State == CheckoutPaymentAttemptState.Submitted))
                     {
                         await EnsurePreparationAllowedAsync(releaseDb, orderId, CancellationToken.None).ConfigureAwait(false);
                         var data = await ReadOrderAsync(releaseDb, orderId, CancellationToken.None).ConfigureAwait(false);
-                        await ReleaseOwnedAsync(releaseDb, scope, active, data, "Checkout ended before payment submission", CancellationToken.None).ConfigureAwait(false);
+                        await ReleaseOwnedAsync(releaseDb, scope, active, data, "Checkout ended before payment invocation", CancellationToken.None).ConfigureAwait(false);
                     }
                 }
+            }
+            catch
+            {
+                // Failed preparation compensation/probes must not expose an idle
+                // owner while the external release outcome remains uncertain.
+                scope!.PreserveOwnership = true;
+                throw;
             }
             finally
             {

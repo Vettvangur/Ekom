@@ -86,6 +86,17 @@ export type OrderAction = {
   enabled?: boolean;
   look?: string;
   confirmMessage?: string;
+  giftcardCode?: string;
+  disabledReason?: string;
+};
+
+export type OrderLockStatus = {
+  hasLock: boolean;
+  paymentOperationLocked: boolean;
+  preparationLocked: boolean;
+  reconciliationRequired: boolean;
+  attemptId: string | null;
+  attemptState: string | null;
 };
 
 export type OrderActivityLog = {
@@ -187,6 +198,10 @@ export class EkomManagerApi {
 
   async orderActions(orderId: string): Promise<OrderAction[]> {
     return this.getJson(`/ekom/manager/OrderActions/${encodeURIComponent(orderId)}`);
+  }
+
+  async orderLockStatus(orderId: string): Promise<OrderLockStatus> {
+    return this.getJson(`/ekom/manager/orderLockStatus/${encodeURIComponent(orderId)}`);
   }
 
   async executeOrderAction(orderId: string, actionKey: string): Promise<Response> {

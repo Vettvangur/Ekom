@@ -70,12 +70,15 @@ class OrderRepository
         else
         {
             await using var transaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+            var writeStarted = false;
             try
             {
                 await _paymentAttempts.EnsureWriteAllowedAsync(db, orderData.UniqueId, ct).ConfigureAwait(false);
                 var capability = CheckoutPaymentOperationScope.Current;
                 var isManagerOverride = capability?.OrderId == orderData.UniqueId && capability.IsManagerOverride;
                 var owner = capability?.OrderId == orderData.UniqueId ? capability.Owner : null;
+                ct.ThrowIfCancellationRequested();
+                writeStarted = true;
                 var updated = await db.OrderData
                     .Where(x => x.UniqueId == orderData.UniqueId)
                     .Where(x => (isManagerOverride || owner == null)
@@ -103,7 +106,9 @@ class OrderRepository
             catch (Exception ex) when (ex is DbException or OperationCanceledException)
             {
                 var operation = CheckoutPaymentOperationScope.Current;
-                if (operation?.OrderId == orderData.UniqueId) operation.PreserveOwnership = true;
+                // Cancellation of the read-only ownership check cannot make this save uncertain.
+                // Once a write starts, retain the fence unless its outcome is independently known.
+                if (writeStarted && operation?.OrderId == orderData.UniqueId) operation.PreserveOwnership = true;
                 throw;
             }
         }

@@ -23,6 +23,37 @@
     $scope.orderActions = [];
     $scope.orderActionsLoading = false;
     $scope.executingOrderActionKey = null;
+    var lockRequestId = 0;
+    var orderGeneration = 0;
+    $scope.orderLockStatus = null;
+    $scope.orderLockLoading = false;
+    $scope.orderLockError = false;
+
+    $scope.getGlobalOrderActions = function () {
+      return $scope.orderActions.filter(function (action) { return action.giftcardCode == null; });
+    };
+
+    $scope.getGiftcardActions = function (card) {
+      return $scope.orderActions.filter(function (action) {
+        return action.giftcardCode != null && action.giftcardCode === card.code;
+      });
+    };
+
+    $scope.refreshOrderLockStatus = function () {
+      var orderId = getCurrentOrderId();
+      var requestId = ++lockRequestId;
+      if (!orderId) return Promise.resolve();
+      $scope.orderLockLoading = true;
+      $scope.orderLockError = false;
+      function isCurrent() { return requestId === lockRequestId && orderId === getCurrentOrderId(); }
+      return resources.orderLockStatus(orderId).then(function (result) {
+        if (isCurrent()) $scope.orderLockStatus = result.data;
+      }, function () {
+        if (isCurrent()) $scope.orderLockError = true;
+      }).finally(function () {
+        if (isCurrent()) $scope.orderLockLoading = false;
+      });
+    };
     $scope.ga4TrackingData = [];
     $scope.metaTrackingData = [];
     $scope.algoliaTrackingLines = [];
@@ -331,6 +362,7 @@
 
     function loadOrder() {
       var orderId = getCurrentOrderId();
+      var generation = orderGeneration;
 
       if (!orderId) {
         return Promise.resolve();
@@ -338,13 +370,13 @@
 
       return resources.OrderInfo(orderId)
         .then(function (result) {
-          if (orderId !== getCurrentOrderId()) {
+          if (generation !== orderGeneration || orderId !== getCurrentOrderId()) {
             return;
           }
 
           applyOrderData(result.data);
         }, function (error) {
-          if (orderId !== getCurrentOrderId()) {
+          if (generation !== orderGeneration || orderId !== getCurrentOrderId()) {
             return;
           }
 
@@ -354,6 +386,7 @@
 
     function loadOrderActions() {
       var orderId = getCurrentOrderId();
+      var generation = orderGeneration;
 
       if (!orderId) {
         $scope.orderActions = [];
@@ -365,13 +398,13 @@
 
       return resources.OrderActions(orderId)
         .then(function (result) {
-          if (orderId !== getCurrentOrderId()) {
+          if (generation !== orderGeneration || orderId !== getCurrentOrderId()) {
             return;
           }
 
           $scope.orderActions = result.data || [];
         }, function (error) {
-          if (orderId !== getCurrentOrderId()) {
+          if (generation !== orderGeneration || orderId !== getCurrentOrderId()) {
             return;
           }
 
@@ -379,7 +412,7 @@
           window.alert(getErrorMessage(error, "Failed to load order actions."));
         })
         .finally(function () {
-          if (orderId !== getCurrentOrderId()) {
+          if (generation !== orderGeneration || orderId !== getCurrentOrderId()) {
             return;
           }
 
@@ -446,9 +479,13 @@
     }
 
     function refreshOrderView() {
+      var orderId = getCurrentOrderId();
+      var generation = orderGeneration;
       return loadOrder()
         .then(function () {
+          if (generation !== orderGeneration || orderId !== getCurrentOrderId()) return;
           loadActivityLogs();
+          $scope.refreshOrderLockStatus();
           return loadOrderActions();
         });
     }
@@ -462,7 +499,7 @@
     };
 
     $scope.executeOrderAction = function (action) {
-      if (!action || !action.key || $scope.executingOrderActionKey) {
+      if (!action || !action.key || action.enabled === false || $scope.executingOrderActionKey) {
         return;
       }
 
@@ -477,17 +514,20 @@
       }
 
       $scope.executingOrderActionKey = action.key;
+      var generation = orderGeneration;
 
-      resources.ExecuteOrderAction(orderId, action.key)
+      return resources.ExecuteOrderAction(orderId, action.key)
         .then(function (response) {
+          if (generation !== orderGeneration || orderId !== getCurrentOrderId()) return;
           if (isFileResponse(response)) {
             var fileUrl = window.URL.createObjectURL(response.data);
             window.open(fileUrl, "_blank");
-            return;
+            return refreshOrderView();
           }
 
           return readBlobText(response.data)
             .then(function (text) {
+              if (generation !== orderGeneration || orderId !== getCurrentOrderId()) return;
               var message = tryParseMessage(text);
 
               if (message) {
@@ -499,11 +539,13 @@
         }, function (error) {
           return readBlobText(error.data)
             .then(function (text) {
+              if (generation !== orderGeneration || orderId !== getCurrentOrderId()) return;
               var message = tryParseMessage(text) || getErrorMessage(error, "Order action failed.");
               notificationsService.error("Error", message);
             });
         })
         .finally(function () {
+          if (generation !== orderGeneration) return;
           $scope.executingOrderActionKey = null;
         });
     };
@@ -865,6 +907,11 @@
       $scope.orderActions = [];
       $scope.orderActionsLoading = false;
       $scope.executingOrderActionKey = null;
+      ++orderGeneration;
+      ++lockRequestId;
+      $scope.orderLockStatus = null;
+      $scope.orderLockError = false;
+      $scope.orderLockLoading = false;
 
       if (!newOrderId) {
         return;
@@ -874,10 +921,13 @@
 
       loadActivityLogs();
       loadOrderActions();
+      $scope.refreshOrderLockStatus();
     });
 
     loadActivityLogs();
     loadOrderActions();
+    $scope.refreshOrderLockStatus();
+    $scope.$on("$destroy", function () { ++lockRequestId; ++orderGeneration; });
 
     var printOrderButton = document.getElementById("printOrder");
 
