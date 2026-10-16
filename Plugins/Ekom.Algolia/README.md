@@ -925,6 +925,7 @@ Modifier behavior:
 
 - `|array` parses JSON arrays such as `["Web","Store"]` into Algolia string arrays.
 - `|decimal` accepts comma or dot decimal separators, such as `0,1` and `0.0`.
+- `|unix` and `|unixms` convert dates to Unix seconds and milliseconds. Typed custom Umbraco Date/Time values are serialized by Ekom's cache adapters in invariant round-trip format, avoiding server-culture day/month ambiguity. Text properties still use the existing date-parsing behavior; ambiguous localized text needs a known source format. Dates without timezone information retain the mapper's existing server-local interpretation. After upgrading Ekom's date serialization, rebuild its catalog cache and reindex Algolia to replace old timestamps.
 - `|striphtml` converts direct HTML or rich-text JSON with a `markup` property to plain text. It removes script and style content, decodes HTML entities, and normalizes tags and whitespace to single spaces.
 - Metafields with `Enable Multiple Choice` enabled are automatically indexed as string arrays. The `|array` modifier can still be used to explicitly index other metafields as arrays.
 - Invalid `|array`, `|int`, and `|decimal` values are skipped instead of being indexed as strings.

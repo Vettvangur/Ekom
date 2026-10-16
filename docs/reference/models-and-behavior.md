@@ -18,6 +18,14 @@ Important members include `Alias`, `Vat`, primary `Culture` and all `Cultures`, 
 
 Products expose direct/related category relationships, images, metadata, variant groups, SKU, summary/description, and related-product methods. Several graph/navigation properties are JSON-ignored to prevent large recursive HTTP payloads.
 
+### Custom Date/Time properties
+
+Ekom's Umbraco adapters serialize custom Date/Time properties into the string-based catalog cache using invariant round-trip (`O`) format, rather than the server's display culture. This covers `Umbraco.DateTime` in Umbraco 13, 17, and 18, plus `Umbraco.DateTimeUnspecified` and `Umbraco.DateTimeWithTimeZone` in 17/18. For example, a UTC value is stored as `2026-04-10T14:03:55.0000000Z`. This prevents day/month ambiguity when consumers such as Algolia convert cached dates to Unix timestamps.
+
+UTC/offset information is retained when supplied by a typed source value. An unspecified `DateTime` remains unspecified: serialization does not assign a timezone or convert the time. Modern JSON-backed Date/Time editors use their converted date value (or their stored ISO date in the `IContent` path); the unspecified editor retains wall-clock time and the timezone-aware editor retains its offset. Date-only/time-only editors, custom editors, and text properties containing date-like strings are not reinterpreted. Algolia's existing text-parsing and unspecified-timezone behavior remain unchanged.
+
+**Compatibility:** custom Date/Time values read as strings through Ekom are now ISO-formatted. Format them explicitly for display rather than relying on culture-formatted cache text. Rebuild Ekom's catalog cache and reindex Algolia after upgrading so existing cached/indexed values are replaced.
+
 ### `ICategory`
 
 `Products`/`ProductsAsync` returns direct products; `ProductsRecursive` includes descendant categories. `SubCategories` is direct, while `SubCategoriesRecursive` and `Ancestors` traverse the tree. `Filters[Async]` derives metafield filters. A category stock buffer applies to products in the primary category unless a product buffer overrides it.

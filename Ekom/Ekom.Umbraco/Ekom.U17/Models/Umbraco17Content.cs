@@ -1,4 +1,5 @@
 using Ekom.Models;
+using System.Globalization;
 using System.Text.Json;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -117,9 +118,25 @@ internal class Umbraco17Content : UmbracoContent
                     : content.Value<string>(prop.Alias) ?? string.Empty;
             }
 
-            return prop.PropertyType.VariesByCulture()
-                ? prop.GetSourceValue(firstCulture)?.ToString() ?? string.Empty
-                : prop.GetSourceValue()?.ToString() ?? string.Empty;
+            var culture = prop.PropertyType.VariesByCulture() ? firstCulture : null;
+            var sourceValue = prop.GetSourceValue(culture);
+            var value = sourceValue;
+            var isDate = IsDateEditor(prop.PropertyType.EditorAlias);
+            if (prop.PropertyType.EditorAlias == "Umbraco.DateTimeWithTimeZone" && sourceValue is string storedDate
+                && !TryFormatStoredDate(storedDate, prop.PropertyType.EditorAlias, out _))
+                return storedDate;
+
+            if (isDate && sourceValue is not DateTime and not DateTimeOffset
+                && !string.IsNullOrWhiteSpace(sourceValue?.ToString()) && prop.HasValue(culture))
+            {
+                var converted = prop.GetValue(culture);
+                // The legacy converter uses MinValue for invalid or missing dates.
+                if (converted is DateTime date && (prop.PropertyType.EditorAlias != "Umbraco.DateTime" || date != DateTime.MinValue)
+                    || converted is DateTimeOffset)
+                    value = converted;
+            }
+
+            return isDate ? FormatPropertyValue(value) : value?.ToString() ?? string.Empty;
         }
         catch (Exception ex)
         {
@@ -145,6 +162,61 @@ internal class Umbraco17Content : UmbracoContent
             return rteValue;
         }
 
+        var editorAlias = prop?.PropertyType.PropertyEditorAlias;
+        if (IsDateEditor(editorAlias))
+        {
+            var value = content.GetValue(alias);
+            if (value is DateTime or DateTimeOffset)
+                return FormatPropertyValue(value);
+
+            // Modern Date/Time editors store a date/offset in JSON, not a database DateTime.
+            if (editorAlias != "Umbraco.DateTime" && value is string text
+                && TryFormatStoredDate(text, editorAlias, out var formatted))
+                return formatted;
+        }
+
         return content.GetValue<string>(alias) ?? string.Empty;
     }
+
+    private static bool IsDateEditor(string? editorAlias) => editorAlias is
+        "Umbraco.DateTime" or "Umbraco.DateTimeUnspecified" or "Umbraco.DateTimeWithTimeZone";
+
+    private static bool TryFormatStoredDate(string value, string? editorAlias, out string formatted)
+    {
+        formatted = string.Empty;
+        try
+        {
+            using var document = JsonDocument.Parse(value);
+            if (document.RootElement.ValueKind != JsonValueKind.Object
+                || !document.RootElement.TryGetProperty("date", out var date)
+                || date.ValueKind != JsonValueKind.String)
+                return false;
+
+            var dateText = date.GetString() ?? string.Empty;
+            if (editorAlias == "Umbraco.DateTimeWithTimeZone"
+                && !dateText.EndsWith('Z')
+                && !(dateText.Length >= 6 && dateText[^3] == ':' && dateText[^6] is '+' or '-'))
+                return false;
+
+            if (!date.TryGetDateTimeOffset(out var dateTimeOffset))
+                return false;
+
+            formatted = editorAlias == "Umbraco.DateTimeUnspecified"
+                ? dateTimeOffset.DateTime.ToString("O", CultureInfo.InvariantCulture)
+                : dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
+            return true;
+        }
+        catch (JsonException)
+        {
+            // Preserve malformed source values rather than guessing a date or timezone.
+            return false;
+        }
+    }
+
+    private static string FormatPropertyValue(object? value) => value switch
+    {
+        DateTime date => date.ToString("O", CultureInfo.InvariantCulture),
+        DateTimeOffset date => date.ToString("O", CultureInfo.InvariantCulture),
+        _ => value?.ToString() ?? string.Empty,
+    };
 }
