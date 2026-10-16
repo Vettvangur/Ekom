@@ -16,6 +16,7 @@ function loadModule(path, modules = {}, globals = {}) {
     HTMLElement: class {},
     customElements: { define() {} },
     URLSearchParams,
+    Error,
     ...globals,
   });
   return exports;
@@ -129,3 +130,104 @@ test('pending and failed config disable both status paths and failures remain vi
   await EkomOrdersSectionViewElement.prototype.loadOrders.call(element);
   assert.match(element.configError, /Order status updates are disabled/);
 });
+
+const conflictGuidance = 'Checkout is still processing. Wait for it to finish before changing the order status.';
+
+function createStatusApi(responseStatus, requests, persistedOrder) {
+  const { EkomManagerApi } = loadModule('../src/manager/manager-shared.ts', {}, {
+    fetch: async (url, options) => {
+      const request = new URL(url, 'https://example.test');
+      requests.push({ request, options });
+      if (request.pathname === '/ekom/manager/changeOrderStatus') {
+        return new Response(JSON.stringify(responseStatus === 409 ? { message: conflictGuidance } : true), {
+          status: responseStatus,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      assert.equal(request.pathname, '/ekom/manager/SearchOrders');
+      return new Response(JSON.stringify({ orders: [persistedOrder], count: 1, totalPages: 1 }));
+    },
+  });
+  return new EkomManagerApi();
+}
+
+test('table 409 displays API guidance, never reports success, and reloads persisted status', async () => {
+  const element = createElement();
+  const requests = [];
+  const errors = [];
+  const persistedOrder = { uniqueId: 'order-A', orderStatusCol: 'Pending' };
+  element.config = { managerOrderStatusFireEventsByDefault: false };
+  element.result = { orders: [persistedOrder], count: 1, totalPages: 1 };
+  element.api = createStatusApi(409, requests, persistedOrder);
+  element.showSuccess = () => assert.fail('A conflict must not report success');
+  element.showError = message => errors.push(message);
+  element.loadOrders = EkomOrdersSectionViewElement.prototype.loadOrders;
+  shared.managerState.filters.store = 'store';
+  shared.managerState.statusList = [{ value: 'Pending', label: 'Pending' }, { value: 'Processed', label: 'Processed' }];
+  let renderedRow = '';
+  element.render = () => { renderedRow = element.renderOrderRow(element.result.orders[0]); };
+
+  await element.changeRowStatus({ dataset: { orderId: 'order-A' }, value: 'Processed' });
+
+  assert.deepEqual(errors, [conflictGuidance]);
+  assert.equal(persistedOrder.orderStatusCol, 'Pending');
+  assert.equal(element.result.orders[0].orderStatusCol, 'Pending');
+  assert.match(renderedRow, /value="Pending" selected/);
+  assert.doesNotMatch(renderedRow, /value="Processed" selected/);
+  assert.equal(requests.length, 2, 'Conflict reloads orders without retrying the status change');
+  assert.equal(requests[0].options.method, 'POST');
+  assert.equal(requests[0].options.credentials, 'same-origin');
+  assert.equal(requests[0].request.searchParams.get('notify'), 'false');
+});
+
+for (const notify of [true, false]) {
+  test(`detail 409 restores saved status and preserves Fire events override ${notify}`, async () => {
+    const element = createElement();
+    const requests = [];
+    const errors = [];
+    const select = { value: 'Processed' };
+    element.config = { managerOrderStatusFireEventsByDefault: !notify };
+    element.selectedOrder = { uniqueId: 'order-A', orderStatus: 'Pending' };
+    await element.handleFieldChange({ currentTarget: { dataset: { field: 'notifyOrderStatus' }, checked: notify } });
+    element.querySelector = () => select;
+    element.api = createStatusApi(409, requests);
+    element.showSuccess = () => assert.fail('A conflict must not report success');
+    element.showError = message => errors.push(message);
+    element.loadOrders = async () => assert.fail('A rejected detail update must not take the success path');
+
+    await element.saveOverlayStatus();
+
+    assert.deepEqual(errors, [conflictGuidance]);
+    assert.equal(element.selectedOrder.orderStatus, 'Pending');
+    assert.equal(select.value, 'Pending');
+    assert.equal(element.notifyOrderStatus, notify);
+    assert.equal(checkboxIsChecked(element), notify);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].request.searchParams.get('notify'), String(notify));
+    assert.equal(requests[0].request.searchParams.get('orderStatus'), 'Processed');
+  });
+}
+
+for (const view of ['table', 'detail']) {
+  test(`${view} successful status update still uses the API and reports success`, async () => {
+    const element = createElement();
+    const requests = [];
+    const successes = [];
+    const order = { uniqueId: 'order-A', orderStatus: 'Pending', orderStatusCol: 'Pending' };
+    element.config = { managerOrderStatusFireEventsByDefault: true };
+    element.selectedOrder = order;
+    element.result = { orders: [order], count: 1, totalPages: 1 };
+    element.api = createStatusApi(200, requests);
+    element.showSuccess = message => successes.push(message);
+    if (view === 'table') {
+      await element.changeRowStatus({ dataset: { orderId: 'order-A' }, value: 'Processed' });
+      assert.equal(order.orderStatusCol, 'Processed');
+    } else {
+      await element.saveOverlayStatus();
+      assert.equal(order.orderStatus, 'Processed');
+    }
+    assert.deepEqual(successes, ['Order status updated.']);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].request.searchParams.get('orderStatus'), 'Processed');
+  });
+}

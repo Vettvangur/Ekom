@@ -207,7 +207,7 @@ All routes below are relative to `/ekom/manager`. Routes taking `store`, or load
 | `GET` | `/stores` | Stores available to the current manager. |
 | `GET` | `/paymentproviders/{storeAlias}` | Payment-provider options for an authorized store. |
 | `GET` | `/shippingproviders/{storeAlias}` | Shipping-provider options for an authorized store. |
-| `POST` | `/changeOrderStatus?orderId=...&orderStatus=...&notify=...` | Changes status; `notify` controls order events. |
+| `POST` | `/changeOrderStatus?orderId=...&orderStatus=...&notify=...` | Changes status; `notify` controls order events. Checkout conflicts return `409` with a safe `message` explaining recovery. |
 | `POST` | `/UpdateCustomerInformation` | Updates customer/shipping fields for an order. |
 | `POST` | `/Order/{orderId}/OrderLines` | Adds/sets a line from `OrderLineAddRequest`. |
 | `DELETE` | `/Order/{orderId}/OrderLines/{lineId}` | Removes an order line. |
