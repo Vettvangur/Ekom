@@ -257,9 +257,24 @@
     };
 
     var changeOrderStatusButton = document.getElementById("changeOrderStatusButton");
+    var notifyOrderStatus = document.getElementById("notifyOrderStatus");
+
+    $scope.orderStatusConfigLoaded = false;
+    resources.Config().then(function (result) {
+      var configuredDefault = result.data.managerOrderStatusFireEventsByDefault;
+      if (!notifyOrderStatus) return;
+      notifyOrderStatus.checked = typeof configuredDefault === "boolean" ? configuredDefault : false;
+      $scope.orderStatusConfigLoaded = true;
+    }, function () {
+      notificationsService.error("Error", "Could not load order status event settings. Reopen the order before changing order status.");
+    });
 
     if (changeOrderStatusButton) {
       changeOrderStatusButton.addEventListener("click", function () {
+        if (!$scope.orderStatusConfigLoaded) {
+          notificationsService.error("Error", "Order status event settings are not loaded. Reopen the order before changing order status.");
+          return;
+        }
         var notify = document.getElementById("notifyOrderStatus");
 
         resources.ChangeOrderStatus({

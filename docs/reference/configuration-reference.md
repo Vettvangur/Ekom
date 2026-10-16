@@ -84,6 +84,28 @@ See [Stock reservations](../guides/reservations.md) for lifecycle and migration 
 
 `SectionAccessGroup` is a comma-separated string. `StoreGroupPermissions` maps exact store aliases to arrays of Umbraco group aliases. Ekom combines both when deriving recognized manager groups and still checks store access per operation. The legacy `Ekom:SectionAccessRules` setting only affects Umbraco 13 dashboard visibility when current manager groups are empty; it does not grant manager API or store access.
 
+## Manager order-status events
+
+`Ekom:Manager:OrderStatusFireEventsByDefault` optionally sets the event default for status changes in the manager:
+
+```json
+{
+  "Ekom": {
+    "Manager": {
+      "OrderStatusFireEventsByDefault": false
+    }
+  }
+}
+```
+
+| Value | List-row status changes | Detail **Fire events?** initial value |
+| --- | --- | --- |
+| Not configured | Fire events | Unchecked |
+| `false` | Do not fire events | Unchecked |
+| `true` | Fire events | Checked |
+
+The detail checkbox can still be overridden for an individual update. This setting applies to the manager in Umbraco 13, 17, and 18; it does not change event defaults for other callers of the order API. Events can invoke application handlers, not just email notifications.
+
 ## Variant app
 
 `Ekom:VariantApp:VariantGroups` and `Ekom:VariantApp:Variants` are string arrays containing property aliases on the fixed `ekmProductVariantGroup` and `ekmProductVariant` document types.

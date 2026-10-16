@@ -303,6 +303,7 @@ function createLegacy(resources = {}, confirm = () => true) {
     $on: () => {},
   };
   controller(scope, { success() {}, error() {} }, {
+    Config: async () => ({ data: {} }),
     OrderLogs: async () => ({ data: [] }),
     OrderInfo: async id => ({ data: { uniqueId: id, customerInformation: { customer: {}, shipping: {} } } }),
     OrderActions: async () => ({ data: actions }),

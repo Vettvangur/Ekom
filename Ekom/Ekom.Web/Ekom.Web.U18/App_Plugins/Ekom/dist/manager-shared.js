@@ -1,12 +1,13 @@
-const f = /* @__PURE__ */ new Date(), y = new Date(f.getFullYear(), 0, 1), w = {
+const b = /* @__PURE__ */ new Date(), y = new Date(b.getFullYear(), 0, 1), w = {
   filters: {
-    dateFrom: x(y),
-    dateTo: x(f),
+    dateFrom: h(y),
+    dateTo: h(b),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
     shippingProvider: "",
     couponCode: "",
+    giftcardCode: "",
     productSku: "",
     trackingSource: "",
     trackingMedium: "",
@@ -21,7 +22,10 @@ const f = /* @__PURE__ */ new Date(), y = new Date(f.getFullYear(), 0, 1), w = {
   paymentProviders: [],
   shippingFilterProviders: []
 };
-class m {
+class l {
+  async config() {
+    return this.getJson("/ekom/backoffice/Config");
+  }
   async searchOrders(e, r, t = 20) {
     return this.getJson("/ekom/manager/SearchOrders", {
       ...e,
@@ -62,6 +66,12 @@ class m {
   async orderActions(e) {
     return this.getJson(`/ekom/manager/OrderActions/${encodeURIComponent(e)}`);
   }
+  async orderLockStatus(e) {
+    return this.getJson(`/ekom/manager/orderLockStatus/${encodeURIComponent(e)}`);
+  }
+  async releaseOrderLock(e, r) {
+    return this.postBody(`/ekom/manager/releaseOrderLock/${encodeURIComponent(e)}`, { releaseToken: r });
+  }
   async executeOrderAction(e, r) {
     const t = await fetch(`/ekom/manager/OrderActions/${encodeURIComponent(e)}/${encodeURIComponent(r)}`, {
       method: "POST",
@@ -69,7 +79,7 @@ class m {
       headers: { Accept: "application/json, application/octet-stream" }
     });
     if (!t.ok)
-      throw await m.createError(t, "Order action failed.");
+      throw await l.createError(t, "Order action failed.");
     return t;
   }
   async changeOrderStatus(e, r, t) {
@@ -91,7 +101,7 @@ class m {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await m.createError(t, "Error removing order line.");
+      throw await l.createError(t, "Error removing order line.");
     return t.json();
   }
   async charts(e) {
@@ -118,7 +128,7 @@ class m {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await m.createError(t, "Request failed.");
+      throw await l.createError(t, "Request failed.");
     return t.json();
   }
   async getBlob(e, r) {
@@ -127,7 +137,7 @@ class m {
       headers: { Accept: "text/csv, application/octet-stream" }
     });
     if (!t.ok)
-      throw await m.createError(t, "Request failed.");
+      throw await l.createError(t, "Request failed.");
     return t.blob();
   }
   async postJson(e, r) {
@@ -137,7 +147,7 @@ class m {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await m.createError(t, "Request failed.");
+      throw await l.createError(t, "Request failed.");
     return t.json();
   }
   async postBody(e, r) {
@@ -151,7 +161,7 @@ class m {
       body: JSON.stringify(r)
     });
     if (!t.ok)
-      throw await m.createError(t, "Request failed.");
+      throw await l.createError(t, "Request failed.");
     return t.json();
   }
   static async createError(e, r) {
@@ -173,7 +183,7 @@ function u(a) {
   const r = e.toString();
   return r ? `?${r}` : "";
 }
-function x(a) {
+function h(a) {
   const e = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
   return `${a.getFullYear()}-${e}-${r}`;
 }
@@ -189,10 +199,10 @@ function _(a) {
     minute: "2-digit"
   }).format(e);
 }
-function v(a) {
+function O(a) {
   return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function O(a) {
+function v(a) {
   const e = document.createElement("textarea");
   return e.innerHTML = String(a ?? ""), e.value;
 }
@@ -213,7 +223,7 @@ function L(a, e) {
   const r = URL.createObjectURL(a), t = document.createElement("a");
   t.href = r, t.download = e, document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
 }
-const M = `
+const I = `
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -266,6 +276,17 @@ const M = `
   .ekmOrderTracking, .ekmOrderGiftcards, .ekmOrderActivityLog { border: 1px solid #d8d7d9; margin: 30px 0; padding: 14px 16px; }
   .ekmOrderTracking__header { align-items: center; display: flex; justify-content: space-between; }
   .ekmOrderTracking__wrap { overflow-wrap: anywhere; word-break: break-word; }
+  .ekmOrderGiftcards__list { list-style: none; margin: 0; padding: 0; }
+  .ekmOrderGiftcards__list > li { border-top: 1px solid #d8d7d9; padding: 16px 0; overflow-wrap: anywhere; }
+  .ekmOrderGiftcards__summary, .ekmOrderGiftcards__actions { align-items: baseline; display: flex; flex-wrap: wrap; gap: 12px; }
+  .ekmOrderGiftcards__summary strong { font-size: 16px; }
+  .ekmOrderGiftcards__summary { gap: 4px 12px; }
+  .ekmOrderGiftcards__summary strong + strong { margin-left: auto; }
+  .ekmOrderGiftcards__summary > span { flex-basis: 100%; font-weight: 600; }
+  .ekmOrderGiftcards__actions { margin: 12px 0; }
+  .ekmOrderGiftcards details summary { cursor: pointer; }
+  .ekmOrderGiftcards dt { font-weight: 600; margin-top: 8px; }
+  .ekmOrderGiftcards dd { margin: 2px 0 0; white-space: pre-wrap; }
   .ekmOrderActivityLog__list { border-top: 1px solid #eee; }
   .ekmOrderActivityLog__item { border-bottom: 1px solid #eee; padding: 12px 0; }
   .ekmOrderActivityLog__content { align-items: flex-start; display: flex; gap: 12px; }
@@ -338,7 +359,7 @@ const M = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-function A(a, e, r) {
+function M(a, e, r) {
   const t = a.getBoundingClientRect(), n = window.devicePixelRatio || 1, d = Math.max(t.width, 300), i = Math.max(t.height, 220);
   a.width = d * n, a.height = i * n;
   const o = a.getContext("2d");
@@ -346,27 +367,27 @@ function A(a, e, r) {
     return;
   o.scale(n, n), o.clearRect(0, 0, d, i), o.strokeStyle = "#e5e5e5", o.lineWidth = 1;
   for (let s = 0; s < 5; s += 1) {
-    const l = 20 + (i - 50) / 4 * s;
-    o.beginPath(), o.moveTo(40, l), o.lineTo(d - 10, l), o.stroke();
+    const m = 20 + (i - 50) / 4 * s;
+    o.beginPath(), o.moveTo(40, m), o.lineTo(d - 10, m), o.stroke();
   }
-  const p = e.points || [], k = p.map((s) => Number(s.y || 0)), b = Math.max(...k, 1), h = p.length > 1 ? (d - 60) / (p.length - 1) : 0;
-  o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), p.forEach((s, l) => {
-    const c = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
-    l === 0 ? o.moveTo(c, g) : o.lineTo(c, g);
-  }), o.stroke(), o.fillStyle = r, p.forEach((s, l) => {
-    const c = 40 + h * l, g = i - 30 - Number(s.y || 0) / b * (i - 60);
-    o.beginPath(), o.arc(c, g, 3, 0, Math.PI * 2), o.fill();
+  const c = e.points || [], k = c.map((s) => Number(s.y || 0)), f = Math.max(...k, 1), x = c.length > 1 ? (d - 60) / (c.length - 1) : 0;
+  o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((s, m) => {
+    const p = 40 + x * m, g = i - 30 - Number(s.y || 0) / f * (i - 60);
+    m === 0 ? o.moveTo(p, g) : o.lineTo(p, g);
+  }), o.stroke(), o.fillStyle = r, c.forEach((s, m) => {
+    const p = 40 + x * m, g = i - 30 - Number(s.y || 0) / f * (i - 60);
+    o.beginPath(), o.arc(p, g, 3, 0, Math.PI * 2), o.fill();
   });
 }
 export {
-  m as E,
-  M as a,
+  l as E,
+  I as a,
   L as b,
-  O as d,
-  v as e,
+  v as d,
+  O as e,
   _ as f,
   S as g,
   w as m,
   C as p,
-  A as r
+  M as r
 };

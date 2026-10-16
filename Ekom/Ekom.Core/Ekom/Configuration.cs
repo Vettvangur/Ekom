@@ -219,6 +219,14 @@ public class Configuration
     }
 
     /// <summary>
+    /// Ekom:Manager:OrderStatusFireEventsByDefault
+    /// Default for manager status-change events. Null preserves the existing
+    /// list (true) and detail (false) defaults.
+    /// </summary>
+    public virtual bool? ManagerOrderStatusFireEventsByDefault =>
+        _configuration.GetValue<bool?>("Ekom:Manager:OrderStatusFireEventsByDefault");
+
+    /// <summary>
     /// Ekom:Manager:SectionAccessGroup Access Groups
     /// Section Group alias acess rules, comma sepereated
     /// </summary>

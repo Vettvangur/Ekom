@@ -1,3 +1,7 @@
+export type ManagerConfig = {
+  managerOrderStatusFireEventsByDefault?: boolean | null;
+};
+
 export type ManagerFilters = {
   dateFrom: string;
   dateTo: string;
@@ -159,6 +163,10 @@ export const managerState: ManagerState = {
 };
 
 export class EkomManagerApi {
+  async config(): Promise<ManagerConfig> {
+    return this.getJson('/ekom/backoffice/Config');
+  }
+
   async searchOrders(filters: ManagerFilters, page: number, pageSize = 20): Promise<OrderSearchResult> {
     return this.getJson('/ekom/manager/SearchOrders', {
       ...filters,
