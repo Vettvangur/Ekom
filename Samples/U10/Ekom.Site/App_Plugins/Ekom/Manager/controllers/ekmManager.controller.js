@@ -579,8 +579,12 @@
       })
         .then(function () {
           notificationsService.success("Success", "Order status updated.");
-        }, function () {
-          notificationsService.error("Error", "Error updating order status.");
+        }, function (response) {
+          var message = response && response.status === 409 && response.data && typeof response.data.message === "string" && response.data.message.trim()
+            ? response.data.message
+            : "Error updating order status.";
+          notificationsService.error("Error", message);
+          $scope.GetData();
         });
     };
 

@@ -89,6 +89,12 @@ Status updates use Ekom's normal order API and can produce activity entries or i
 
 See [Manager order-status events](../reference/configuration-reference.md#manager-order-status-events) for configuration examples.
 
+### Blocked status changes
+
+If checkout ownership prevents a status update, the manager shows recovery guidance rather than a server-error page and restores the saved status. The status-change endpoint returns HTTP `409 Conflict` with a safe message; changing status does not automatically release a checkout lock.
+
+For a locked checkout, open the order using **View**. Confirm with the payment provider that no payment is being processed before using **Release Lock**. Review any warnings from the release, then retry the status update. If the message indicates payment reconciliation or a completed checkout instead, review the payment and current order state before taking further action; do not release a lock or retry blindly.
+
 ## Customer information
 
 **Edit customer information** edits standard billing and shipping fields plus captured custom customer and shipping properties. Ekom validates and updates the order through its normal customer-information API. A validation failure is returned without a successful update.

@@ -149,8 +149,12 @@
             loadActivityLogs();
             notificationsService.success("Success", "Order status updated.");
             eventsService.emit("order.changed", {});
-          }, function () {
-            notificationsService.error("Error", "Error updating order status.");
+          }, function (response) {
+            $scope.orderChangeStatus = $scope.getStatus($scope.model.editModel.order.orderStatus);
+            var message = response && response.status === 409 && response.data && typeof response.data.message === "string" && response.data.message.trim()
+              ? response.data.message
+              : "Error updating order status.";
+            notificationsService.error("Error", message);
           });
       });
     }

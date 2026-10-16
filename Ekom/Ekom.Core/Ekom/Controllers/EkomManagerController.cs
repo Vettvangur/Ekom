@@ -441,11 +441,18 @@ public class EkomManagerController : ControllerBase
         {
             await using var operation = CheckoutPaymentOperationScope.BeginManagerOverride(orderId);
             using var activation = operation.Enter();
-            await Order.Instance.UpdateStatusAsync(status, orderId, HttpContext?.User?.Identity?.Name, new ChangeOrderSettings
+            try
             {
-                FireEvents = notify
+                await Order.Instance.UpdateStatusAsync(status, orderId, HttpContext?.User?.Identity?.Name, new ChangeOrderSettings
+                {
+                    FireEvents = notify
 
-            });
+                });
+            }
+            catch (CheckoutConflictException ex)
+            {
+                return Conflict(GetStatusConflictResponse(ex.Reason, order.OrderNumber));
+            }
 
             return Ok(true);
         }
@@ -453,6 +460,26 @@ public class EkomManagerController : ControllerBase
         {
             return BadRequest("Invalid order status.");
         }
+    }
+
+    internal static object GetStatusConflictResponse(CheckoutConflictReason reason, string? orderNumber)
+    {
+        var subject = string.IsNullOrWhiteSpace(orderNumber)
+            ? "The order status"
+            : $"The status of order {System.Net.WebUtility.HtmlEncode(orderNumber)}";
+        var guidance = reason switch
+        {
+            CheckoutConflictReason.Busy => "checkout is locked. Open the order via View, confirm that no payment is processing, then use Release Lock and review its warnings before retrying the status change.",
+            CheckoutConflictReason.PaymentReview => "the payment needs review. Open the order via View and check and reconcile the payment with the provider before considering Release Lock. Review its warnings; do not blindly retry the status change or payment.",
+            CheckoutConflictReason.Completed => "checkout has already completed. Reload the order and verify the completed payment before making any further changes.",
+            _ => "the checkout state could not be confirmed. Reload the order and review its checkout and payment state before making any further changes.",
+        };
+
+        return new
+        {
+            code = new CheckoutStateError(reason).Code,
+            message = $"{subject} was not changed because {guidance}",
+        };
     }
 
     [HttpPost]

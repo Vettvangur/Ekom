@@ -1159,7 +1159,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return;
     }
 
-    const status = this.querySelector<HTMLSelectElement>('[data-field="orderStatusOverlay"]')?.value || '';
+    const select = this.querySelector<HTMLSelectElement>('[data-field="orderStatusOverlay"]');
+    const status = select?.value || '';
     const notify = this.notifyOrderStatus;
 
     try {
@@ -1169,6 +1170,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       await this.loadOrders();
       await this.loadOrderLogs(this.selectedOrder.uniqueId);
     } catch (error) {
+      if (select) select.value = this.getOrderStatusValue(this.selectedOrder?.orderStatus);
       this.showError(getErrorMessage(error, 'Error updating order status.'));
     }
   }

@@ -1,5 +1,6 @@
 using Ekom.API;
 using Ekom.Cache;
+using Ekom.Controllers;
 using Ekom.Events;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
@@ -11,12 +12,15 @@ using Ekom.Tracking;
 using Ekom.Utilities;
 using LinqToDB;
 using LinqToDB.Data;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Xunit;
@@ -744,6 +748,54 @@ public sealed class OrderReservationReleaseTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task ManagerStatusConflictReturnsSafeGuidanceAndPreservesCheckout(bool notify)
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync();
+        using var db = fixture.Database.Factory.GetDatabase();
+        await db.OrderData.Where(x => x.UniqueId == fixture.Order.UniqueId)
+            .Set(x => x.OrderNumber, "IS-1234").UpdateAsync();
+        await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == fixture.Order.UniqueId)
+            .Set(x => x.Owner, "secret-payment-owner").UpdateAsync();
+        var frozen = await fixture.AttemptAsync();
+        var access = new Mock<IManagerAccessService>();
+        access.Setup(x => x.CanAccessStore("main")).Returns(true);
+        var repository = new ManagerRepository(NullLogger<ManagerRepository>.Instance,
+            Configuration.Instance, fixture.Database.Factory, Mock.Of<IStoreService>());
+        var controller = new EkomManagerController(repository, access.Object, Mock.Of<INodeService>(),
+            Mock.Of<IOrderActivityLogService>(), Mock.Of<IOrderManagerActionService>(), null!,
+            NullLogger<EkomManagerController>.Instance)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+        };
+
+        var result = await controller.ChangeOrderStatusAsync(fixture.Order.UniqueId, "ReadyForDispatch", notify);
+
+        var conflict = Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(StatusCodes.Status409Conflict, conflict.StatusCode);
+        var payload = JObject.FromObject(conflict.Value!);
+        Assert.Equal("checkoutBusy", payload["code"]!.Value<string>());
+        var message = payload["message"]!.Value<string>()!;
+        Assert.Contains("IS-1234", message, StringComparison.Ordinal);
+        Assert.Contains("was not changed", message, StringComparison.Ordinal);
+        Assert.Contains("View", message, StringComparison.Ordinal);
+        Assert.Contains("Release Lock", message, StringComparison.Ordinal);
+        Assert.DoesNotContain("secret-payment-owner", payload.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("stack", payload.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(OrderStatus.Pending, (await fixture.Repository.GetOrderAsync(fixture.Order.UniqueId))!.OrderStatus);
+        var current = await fixture.AttemptAsync();
+        Assert.Equal(frozen.State, current.State);
+        Assert.Equal(frozen.SubmittedOrderInfo, current.SubmittedOrderInfo);
+        Assert.Equal(frozen.ReservationIds, current.ReservationIds);
+        var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleAsync();
+        Assert.Equal("secret-payment-owner", operation.Owner);
+        Assert.False(operation.ReconciliationRequired);
+        Assert.Single(fixture.Logger.Entries, x => x.Level == LogLevel.Warning);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task TargetedUpdateUsesOwnerFenceWhenGuardedAndSnapshotPredicatesOtherwise(bool guarded)
     {
         using var fixture = new Fixture();
@@ -916,6 +968,7 @@ public sealed class OrderReservationReleaseTests
             {
                 services.AddSingleton(Database.NewStockApi());
                 services.AddSingleton(Database.NewCheckout());
+                services.AddSingleton(_ => CreateOrderApi(stores.Object));
                 services.AddSingleton(new Ekom.API.Store(stores.Object, Mock.Of<ICacheRefreshService>()));
                 services.AddSingleton(sp => new Providers(sp.GetRequiredService<Configuration>(), NullLogger<Providers>.Instance,
                     Mock.Of<IPerStoreCache<IShippingProvider>>(x => x["main"] == new ConcurrentDictionary<Guid, IShippingProvider>()),
@@ -981,6 +1034,10 @@ public sealed class OrderReservationReleaseTests
         public OrderService Service { get; }
         public RecordingLogger<OrderService> Logger { get; } = new();
         public CheckoutPaymentAttemptService Attempts { get; }
+
+        // Resolved only after fixture construction, when Service and Repository are initialized.
+        private Order CreateOrderApi(IStoreService stores) => new(_scope.Instance, NullLogger<Order>.Instance,
+            null!, null!, Service, null!, stores, Repository, null!, Mock.Of<IOrderActivityLogService>(), null!);
 
         public OrderSettings Settings() => new() { OrderInfo = Order, FireEvents = false, FireOnOrderUpdatedEvent = false };
 
