@@ -414,8 +414,21 @@ partial class OrderService
             ClearCustomerOrderReference(order);
         }
 
-        await _orderRepository.UpdateOrderAsync(order, ct)
-            .ConfigureAwait(false);
+        try
+        {
+            await _orderRepository.UpdateOrderAsync(order, ct)
+                .ConfigureAwait(false);
+        }
+        catch (CheckoutConflictException ex)
+        {
+            _logger.LogWarning(ex,
+                "Order status change blocked for order {OrderNumber} (UniqueId: {OrderUniqueId}): {PreviousStatus} -> {RequestedStatus}.",
+                order.OrderNumber,
+                uniqueId,
+                oldStatus,
+                status);
+            throw;
+        }
 
         var orderInfo = new OrderInfo(order);
         _memoryCache.Set(
