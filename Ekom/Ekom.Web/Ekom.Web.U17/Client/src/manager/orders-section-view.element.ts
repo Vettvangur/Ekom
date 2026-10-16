@@ -3,6 +3,7 @@ import { UMB_NOTIFICATION_CONTEXT, type UmbNotificationColor } from '@umbraco-cm
 import {
   CustomerInformationField,
   EkomManagerApi,
+  ManagerConfig,
   ManagerFilters,
   OrderAction,
   OrderActivityLog,
@@ -60,6 +61,9 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private page = 1;
   private loading = true;
   private error = '';
+  private config?: ManagerConfig;
+  private configError = '';
+  private notifyOrderStatusOverride?: boolean;
   private searchTimer = 0;
   private overlay = '';
   private selectedOrder?: OrderInfo;
@@ -161,6 +165,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       const [statuses, stores] = await Promise.all([
         this.api.statusList(),
         this.api.stores(),
+        this.loadConfig(),
       ]);
 
       managerState.statusList = statuses || [];
@@ -177,6 +182,21 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       this.loading = false;
       this.render();
     }
+  }
+
+  private async loadConfig(): Promise<void> {
+    this.config = undefined;
+    this.configError = '';
+    try {
+      this.config = await this.api.config();
+    } catch {
+      this.configError = 'Unable to load Ekom configuration. Order status updates are disabled. Reload to try again.';
+    }
+    this.render();
+  }
+
+  private get notifyOrderStatus(): boolean {
+    return this.notifyOrderStatusOverride ?? this.config?.managerOrderStatusFireEventsByDefault ?? false;
   }
 
   private async loadFilterProviders(resetSelection = false): Promise<void> {
@@ -261,6 +281,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       <style>${managerStyles}</style>
       <section class="ekmManager">
         <div class="ekmManager__body">
+          ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
           ${this.renderOrders()}
         </div>
       </section>
@@ -359,7 +380,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         <div class="umb-table-cell not-fixed" data-label="Action"><button class="btn-success" type="button" data-action="view-order" data-order-id="${escapeHtml(order.uniqueId)}">View</button></div>
         <div class="umb-table-cell" data-label="Order Number" title="${escapeHtml(order.uniqueId)}">${escapeHtml(order.referenceId)}</div>
         <div class="umb-table-cell" data-label="Status">
-          <select data-action="change-row-status" data-order-id="${escapeHtml(order.uniqueId)}">
+          <select data-action="change-row-status" data-order-id="${escapeHtml(order.uniqueId)}" ${this.config ? '' : 'disabled'}>
             ${managerState.statusList.map(status => {
               const value = getStatusValue(status);
               return `<option value="${escapeHtml(value)}" ${order.orderStatusCol === value ? 'selected' : ''}>${escapeHtml(status.label)}</option>`;
@@ -487,17 +508,18 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         <h1>Order number: ${escapeHtml(order.referenceId)}</h1>
         <div class="ekmOrderStatusBar">
           <label class="ekmOrderStatusBar__status">Order Status:
-            <select data-field="orderStatusOverlay">
+            <select data-field="orderStatusOverlay" ${this.config ? '' : 'disabled'}>
               ${managerState.statusList.map(status => {
                 const value = getStatusValue(status);
                 return `<option value="${escapeHtml(value)}" ${orderStatus === value ? 'selected' : ''}>${escapeHtml(status.label)}</option>`;
               }).join('')}
             </select>
           </label>
-          <label class="ekmCheckboxLabel"><input type="checkbox" data-field="notifyOrderStatus"> Fire events?</label>
-          <button type="button" class="btn-success" data-action="save-overlay-status">Save</button>
+          <label class="ekmCheckboxLabel"><input type="checkbox" data-field="notifyOrderStatus" ${this.notifyOrderStatus ? 'checked' : ''} ${this.config ? '' : 'disabled'}> Fire events?</label>
+          <button type="button" class="btn-success" data-action="save-overlay-status" ${this.config ? '' : 'disabled'}>Save</button>
           <button type="button" class="btn-outline ekmOrderStatusBar__print" data-action="print-order">Print</button>
         </div>
+        ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
         <p>UniqueId: ${escapeHtml(order.uniqueId)}</p>
         <p>Created date: ${escapeHtml(formatDate(order.createDate))}</p>
         <p>Paid date: ${escapeHtml(formatDate(order.paidDate))}</p>
@@ -938,7 +960,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return;
     }
 
-    if (field === 'orderStatusOverlay' || field === 'notifyOrderStatus' || field === 'query') {
+    if (field === 'notifyOrderStatus') {
+      this.notifyOrderStatusOverride = (target as HTMLInputElement).checked;
+      return;
+    }
+
+    if (field === 'orderStatusOverlay' || field === 'query') {
       return;
     }
 
@@ -1001,6 +1028,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     const requestId = ++this.orderRequestId;
     ++this.lockRequestId;
+    this.notifyOrderStatusOverride = undefined;
     this.selectedOrder = undefined;
     this.orderActions = [];
     this.executingActionKey = '';
@@ -1127,12 +1155,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private async saveOverlayStatus(): Promise<void> {
-    if (!this.selectedOrder?.uniqueId) {
+    if (!this.config || !this.selectedOrder?.uniqueId) {
       return;
     }
 
     const status = this.querySelector<HTMLSelectElement>('[data-field="orderStatusOverlay"]')?.value || '';
-    const notify = this.querySelector<HTMLInputElement>('[data-field="notifyOrderStatus"]')?.checked || false;
+    const notify = this.notifyOrderStatus;
 
     try {
       await this.api.changeOrderStatus(this.selectedOrder.uniqueId, status, notify);
@@ -1210,12 +1238,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private async changeRowStatus(select: HTMLSelectElement): Promise<void> {
     const orderId = select.dataset.orderId || '';
 
-    if (!orderId) {
+    if (!this.config || !orderId) {
       return;
     }
 
     try {
-      await this.api.changeOrderStatus(orderId, select.value, true);
+      await this.api.changeOrderStatus(orderId, select.value, this.config.managerOrderStatusFireEventsByDefault ?? true);
       const order = this.result.orders.find(item => item.uniqueId === orderId);
 
       if (order) {

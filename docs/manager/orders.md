@@ -80,11 +80,14 @@ In Umbraco 17 and 18, the Discount total includes the saved order-level coupon c
 
 Status can be changed from the list or the detail view.
 
-- A list-row status change fires events.
-- In the detail view, **Fire events?** controls the `FireEvents` setting for that update.
+- By default, a list-row status change fires events and the detail **Fire events?** checkbox starts unchecked.
+- Set `Ekom:Manager:OrderStatusFireEventsByDefault` to `true` or `false` to use that default for both list-row changes and the detail checkbox. Leaving it unconfigured preserves the existing, different defaults.
+- In the detail view, **Fire events?** can still be changed for an individual update and controls the `FireEvents` setting for that update.
 - Ekom passes the current backoffice identity name to the status-update flow.
 
 Status updates use Ekom's normal order API and can produce activity entries or invoke application event handlers. Confirm the effects of a target status before changing a production order.
+
+See [Manager order-status events](../reference/configuration-reference.md#manager-order-status-events) for configuration examples.
 
 ## Customer information
 

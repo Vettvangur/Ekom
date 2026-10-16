@@ -15,6 +15,12 @@ public sealed class ManagerOptions
     public string? SectionAccessGroup { get; set; }
 
     /// <summary>
+    /// Default for manager status-change events. Null preserves the existing
+    /// list (true) and detail (false) defaults.
+    /// </summary>
+    public bool? OrderStatusFireEventsByDefault { get; set; }
+
+    /// <summary>
     /// Key = store alias (e.g. "store1")
     /// Value = allowed groups for that store
     /// </summary>

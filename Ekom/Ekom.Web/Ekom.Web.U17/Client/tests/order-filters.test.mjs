@@ -174,13 +174,14 @@ test('legacy gift card input trims state and reaches search and both export quer
       angular,
       document,
       URL: { createObjectURL: () => 'blob:export' },
-      Umbraco: { Sys: { ServerVariables: { ekom: { managerEndpoint: '/ekom/manager/' } } } },
+      Umbraco: { Sys: { ServerVariables: { ekom: { managerEndpoint: '/ekom/manager/', backofficeApiEndpoint: '/ekom/backoffice/' } } } },
     });
   }
   const state = registrations['Ekom.Manager.State']();
   assert.equal(state.getState().filters.giftcardCode, '');
   const resources = registrations['Ekom.Manager.Resources'](async request => {
     calls.push(request);
+    if (request.url === '/ekom/backoffice/Config') return { data: {} };
     return { data: { count: 1, orders: [] } };
   });
   const events = {
@@ -201,12 +202,15 @@ test('legacy gift card input trims state and reaches search and both export quer
   await dashboard.ExportCsv(null, false);
   await dashboard.ExportCsv(null, true);
 
-  assert.equal(calls.length, 4);
-  for (const call of calls) {
+  const configCalls = calls.filter(call => call.url === '/ekom/backoffice/Config');
+  const orderCalls = calls.filter(call => call.url !== '/ekom/backoffice/Config');
+  assert.equal(configCalls.length, 1);
+  assert.equal(orderCalls.length, 4);
+  for (const call of orderCalls) {
     assert.equal(new URL(call.url, 'https://example.test').searchParams.get('giftcardCode'), '001234567890');
   }
-  assert.equal(new URL(calls[2].url, 'https://example.test').searchParams.get('includeOrderLines'), 'false');
-  assert.equal(new URL(calls[3].url, 'https://example.test').searchParams.get('includeOrderLines'), 'true');
+  assert.equal(new URL(orderCalls[2].url, 'https://example.test').searchParams.get('includeOrderLines'), 'false');
+  assert.equal(new URL(orderCalls[3].url, 'https://example.test').searchParams.get('includeOrderLines'), 'true');
   filter.filters.giftcardCode = '   ';
   filter.onGiftcardCodeChanged();
   assert.equal(state.getState().filters.giftcardCode, '');

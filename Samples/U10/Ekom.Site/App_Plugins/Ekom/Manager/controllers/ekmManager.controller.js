@@ -6,6 +6,16 @@
     var unbindDocumentClick = angular.noop;
     var searchDebouncePromise = null;
 
+    $scope.orderStatusConfigLoaded = false;
+    var orderStatusFireEventsByDefault;
+    resources.Config().then(function (result) {
+      var configuredDefault = result.data.managerOrderStatusFireEventsByDefault;
+      orderStatusFireEventsByDefault = typeof configuredDefault === "boolean" ? configuredDefault : true;
+      $scope.orderStatusConfigLoaded = true;
+    }, function () {
+      notificationsService.error("Error", "Could not load order status event settings. Reload the manager before changing order status.");
+    });
+
     $scope.loading = true;
     $scope.loadingMostSoldProducts = true;
     $scope.result = {
@@ -558,10 +568,14 @@
     };
 
     $scope.onStatusChanged = function (order) {
+      if (!$scope.orderStatusConfigLoaded) {
+        notificationsService.error("Error", "Order status event settings are not loaded. Reload the manager before changing order status.");
+        return;
+      }
       resources.ChangeOrderStatus({
         orderId: order.uniqueId,
         orderStatus: order.orderStatusCol,
-        notify: true
+        notify: orderStatusFireEventsByDefault
       })
         .then(function () {
           notificationsService.success("Success", "Order status updated.");

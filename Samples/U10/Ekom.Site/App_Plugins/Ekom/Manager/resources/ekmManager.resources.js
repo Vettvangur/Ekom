@@ -51,6 +51,9 @@ angular.module("umbraco.resources").factory("Ekom.Manager.Resources", [
     }
 
     return {
+      Config: function () {
+        return get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + "Config");
+      },
       SearchOrders: function (query) {
         return get(backofficeBaseUrl + "SearchOrders", query);
       },
