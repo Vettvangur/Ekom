@@ -33,6 +33,7 @@ function createFixture(globals = {}) {
   const element = new EkomOrdersSectionViewElement();
   const notifications = [];
   element.render = () => {};
+  element.api.giftcardRecovery = async () => [];
   element.showNotification = (...args) => notifications.push(args);
   return { shared, state: shared.managerState, element, notifications };
 }

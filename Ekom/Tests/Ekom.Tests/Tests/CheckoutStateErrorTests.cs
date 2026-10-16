@@ -48,6 +48,43 @@ public sealed class CheckoutStateErrorTests
     }
 
     [Fact]
+    public async Task GiftcardFailureReceiptIsNotExposedToTheCustomer()
+    {
+        var failure = new GiftcardReservationFailure
+        {
+            OrderId = Guid.NewGuid(),
+            AttemptId = Guid.NewGuid(),
+            Claims = [new GiftcardRecoveryClaim { CardCode = Secret, ClaimId = Secret, RawReturnedAmount = Secret }],
+        };
+        var exception = new GiftcardReservationFailureException(failure, new FormatException(Secret));
+
+        var response = await Controller().HandleCheckoutStateAsync(new PaymentRequest { ReturnUrl = "/basket" },
+            _ => Task.FromException<CheckoutResponse>(exception));
+
+        Assert.Equal(409, response.HttpStatusCode);
+        Assert.Equal("/basket", response.ReturnUrl);
+        var error = Assert.IsType<CheckoutStateError>(response.ResponseBody);
+        Assert.False(error.CanRetry);
+        Assert.DoesNotContain(Secret, JsonSerializer.Serialize(error), StringComparison.Ordinal);
+        Assert.DoesNotContain(Secret, Newtonsoft.Json.JsonConvert.SerializeObject(error), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task GiftcardFailureAfterPaymentInvocationStillPropagates()
+    {
+        var exception = new GiftcardReservationFailureException(new GiftcardReservationFailure());
+
+        var actual = await Assert.ThrowsAsync<GiftcardReservationFailureException>(() => Controller().HandleCheckoutStateAsync(
+            new PaymentRequest(), paymentStarting =>
+            {
+                paymentStarting();
+                return Task.FromException<CheckoutResponse>(exception);
+            }));
+
+        Assert.Same(exception, actual);
+    }
+
+    [Fact]
     public async Task ExistingOutOfStockResponseIsReturnedUnchanged()
     {
         var stockError = new StockError { OrderLineKey = Guid.NewGuid(), IsVariant = true };

@@ -198,6 +198,9 @@ AND EXISTS (SELECT 1 FROM pragma_index_info(i.name) k WHERE k.name = 'UniqueId' 
         db.CreateTable<CheckoutPreparationData>(tableOptions: TableOptions.CreateIfNotExists);
         db.CreateTable<CheckoutPaymentAttemptData>(tableOptions: TableOptions.CreateIfNotExists);
         db.CreateTable<CheckoutPaymentOperationData>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<GiftcardReservationRecoveryData>(tableOptions: TableOptions.CreateIfNotExists);
+        DatabaseIndexInstaller.EnsureIndex(db, _databaseFactory.IsSqlServer, "EkomGiftcardReservationRecovery",
+            "IX_EkomGiftcardReservationRecovery_OrderId", nameof(GiftcardReservationRecoveryData.OrderId));
         // Separate idempotent index creation also repairs a partially completed schema setup.
         if (_databaseFactory.IsSqlServer)
         {

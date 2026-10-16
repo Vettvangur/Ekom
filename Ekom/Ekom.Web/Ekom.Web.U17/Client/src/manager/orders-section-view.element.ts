@@ -3,6 +3,7 @@ import { UMB_NOTIFICATION_CONTEXT, type UmbNotificationColor } from '@umbraco-cm
 import {
   CustomerInformationField,
   EkomManagerApi,
+  GiftcardRecoveryAttempt,
   ManagerConfig,
   ManagerFilters,
   OrderAction,
@@ -73,6 +74,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private activityLogExpandedIndexes = new Set<number>();
   private orderActions: OrderAction[] = [];
   private orderActionsLoading = false;
+  private orderActionsError = false;
   private executingActionKey = '';
   private orderRequestId = 0;
   private lockRequestId = 0;
@@ -82,6 +84,15 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private orderLockReleaseError = '';
   private orderLockLoading = false;
   private orderLockError = false;
+  private recoveryAttempts?: GiftcardRecoveryAttempt[];
+  private recoveryLoading = false;
+  private recoveryError = false;
+  private recoveryRequestId = 0;
+  private recoveryOperation = '';
+  private recoveryMessage = '';
+  private recoveryActionError = '';
+  private recoveryRefreshError = false;
+  private recoveryScrollTop?: number;
   private trackingExpanded = false;
   private consentExpanded = false;
   private customerEditorOpen = false;
@@ -289,6 +300,10 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     `;
 
     this.bindEvents();
+    if (this.recoveryScrollTop !== undefined) {
+      const overlay = this.querySelector<HTMLElement>('.ekmOverlay');
+      if (overlay) overlay.scrollTop = this.recoveryScrollTop;
+    }
   }
 
   private renderOrders(): string {
@@ -537,6 +552,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         <div class="ekmSplit__column">${order.shippingProvider ? this.renderProvider('Shipping Method', order.shippingProvider, 'customshipping') : '<h4>Shipping Method</h4>'}<button type="button" class="btn-outline" data-action="open-shipping-provider-editor">${order.shippingProvider ? 'Change shipping provider' : 'Add shipping provider'}</button></div>
       </div>
       ${this.renderGiftcards(order)}
+      ${this.renderGiftcardRecovery()}
       ${this.renderOrderLines(order)}
       ${this.renderTracking(order)}
       ${this.renderConsent(order)}
@@ -598,6 +614,42 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     } catch {
       return String(amount);
     }
+  }
+
+  private get recoveryBusy(): boolean {
+    return !!this.recoveryOperation || this.recoveryLoading || this.recoveryError || this.recoveryRefreshError
+      || !!this.executingActionKey || this.releasingOrderLock || this.orderLockLoading || this.orderLockError
+      || this.orderActionsLoading || this.orderActionsError;
+  }
+
+  private renderGiftcardRecovery(): string {
+    const field = (label: string, value: unknown): string => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value ?? 'Not recorded')}</dd>`;
+    return `<section class="ekmOrderTracking ekmGiftcardRecovery"><h4>Failed gift-card preparation</h4>
+      <p>Recovery history for failed checkout preparation, not accepted payment. These actions do not refund a payment or retry checkout.</p>
+      ${this.recoveryMessage ? `<p role="status">${escapeHtml(this.recoveryMessage)}</p>` : ''}
+      ${this.recoveryActionError ? `<p role="alert">${escapeHtml(this.recoveryActionError)}</p>` : ''}
+      ${this.recoveryRefreshError ? '<p role="alert">We could not refresh all order details. Reopen the order before taking another recovery action.</p>' : ''}
+      ${this.orderActionsError ? '<p role="alert">We could not refresh order actions. Recovery actions are unavailable. Reopen the order to try again.</p>' : ''}
+      ${this.recoveryLoading ? '<p>Loading recovery history...</p>' : ''}
+      ${this.recoveryError ? '<p role="alert">We could not load gift-card recovery history. Recovery actions are unavailable. Reopen the order to try again.</p>' : ''}
+      ${!this.recoveryError && !this.recoveryLoading && this.recoveryAttempts?.length === 0 ? '<p>No failed gift-card preparation history.</p>' : ''}
+      ${this.recoveryAttempts === undefined && !this.recoveryLoading && !this.recoveryError ? '<p>Recovery history has not been checked. Recovery actions are unavailable.</p>' : ''}
+      ${(this.recoveryAttempts || []).map(attempt => {
+        const canReconcile = attempt.canReconcile && !!attempt.reconcileToken;
+        return `<article><h5>Preparation attempt: ${escapeHtml(attempt.attemptId)}</h5>
+          <dl>${field('Created', formatDate(attempt.createdUtc))}${field('Recovery state', attempt.state)}${field('Reason', attempt.reason)}</dl>
+          ${attempt.hasUnknownEffects ? '<p role="alert">Unknown provider effects need reconciliation. A missing claim reference is not evidence that no hold exists. Do not release by card number or amount.</p>' : ''}
+          ${attempt.claims.map(claim => {
+            const canRelease = claim.canRelease && !!claim.releaseToken;
+            return `<div class="ekmGiftcardRecovery__claim"><dl>${field('Masked card', claim.cardReference)}${field('Claim reference', claim.claimReference)}${field('Provider', claim.provider)}${field('Account', claim.account)}${field('Requested amount', `${claim.requestedAmount} ${claim.currency}`)}${field('Raw returned amount', claim.rawReturnedAmount)}${field('Returned amount type', claim.returnedAmountType)}${field('Raw expiry', claim.rawExpiry)}${field('Cleanup status', claim.cleanupState)}</dl>
+              ${claim.claimReference ? `<button type="button" class="btn-outline" data-action="release-giftcard-recovery" data-attempt-id="${escapeHtml(attempt.attemptId)}" data-claim-id="${escapeHtml(claim.id)}" ${!canRelease || this.recoveryBusy ? 'disabled' : ''}>Release failed-preparation hold${this.recoveryOperation === `release:${attempt.attemptId}:${claim.id}` ? ' (Working...)' : ''}</button>` : '<p>Missing claim reference: needs reconciliation. No release action is available.</p>'}
+              <p>${escapeHtml(canRelease && claim.claimReference ? 'Release allowed after confirmation.' : claim.unavailableReason || 'Release unavailable; check reconciliation requirements.')}</p></div>`;
+          }).join('')}
+          ${!attempt.claims.length && attempt.hasUnknownEffects ? '<p>No known claim to release. Reconcile unknown provider effects.</p>' : ''}
+          <button type="button" class="btn-outline" data-action="reconcile-giftcard-recovery" data-attempt-id="${escapeHtml(attempt.attemptId)}" ${!canReconcile || this.recoveryBusy ? 'disabled' : ''}>Reconcile failed preparation${this.recoveryOperation === `reconcile:${attempt.attemptId}` ? ' (Working...)' : ''}</button>
+          <p>${escapeHtml(canReconcile ? 'Reconciliation allowed after confirmation.' : attempt.unavailableReason || 'Reconciliation unavailable.')}</p>
+        </article>`;
+      }).join('')}</section>`;
   }
 
   private renderOrderLines(order: OrderInfo): string {
@@ -717,7 +769,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
   private renderAction(action: OrderAction): string {
     const executing = this.executingActionKey === action.key;
-    return `<span style="display:inline-block; margin:4px;"><button type="button" class="${action.look === 'primary' ? 'btn-success' : 'btn-outline'}" data-action="execute-order-action" data-action-key="${escapeHtml(action.key)}" ${action.enabled === false || this.executingActionKey || this.releasingOrderLock ? 'disabled' : ''}>${escapeHtml(action.label)}${executing ? ' (Working...)' : ''}</button>${action.enabled === false && action.disabledReason ? `<small style="display:block;">${escapeHtml(action.disabledReason)}</small>` : ''}</span>`;
+    return `<span style="display:inline-block; margin:4px;"><button type="button" class="${action.look === 'primary' ? 'btn-success' : 'btn-outline'}" data-action="execute-order-action" data-action-key="${escapeHtml(action.key)}" ${action.enabled === false || this.executingActionKey || this.releasingOrderLock || this.recoveryOperation ? 'disabled' : ''}>${escapeHtml(action.label)}${executing ? ' (Working...)' : ''}</button>${action.enabled === false && action.disabledReason ? `<small style="display:block;">${escapeHtml(action.disabledReason)}</small>` : ''}</span>`;
   }
 
   private renderOrderLockStatus(): string {
@@ -730,7 +782,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     }
 
     const unavailable = !status.canRelease || !status.releaseToken ? status.releaseUnavailableReason || 'This checkout lock cannot be released right now.' : '';
-    return `<section class="ekmOrderTracking"><h4>Checkout is locked</h4>${warning}${error}${releaseError}<p>${status.reconciliationRequired && !status.paymentOperationLocked && !status.preparationLocked ? 'The previous payment needs checking before the customer can pay or edit their basket.' : 'A previous checkout did not finish. This prevents the customer from paying or editing their basket.'}</p><p>If you have checked that no payment is being processed, Release Lock resets checkout and lets the customer try again.</p><button type="button" class="btn-outline" data-action="release-order-lock" ${unavailable || this.orderLockLoading || this.orderLockError || this.releasingOrderLock || this.executingActionKey ? 'disabled' : ''}>Release Lock</button>${unavailable ? `<p>${escapeHtml(unavailable)}</p>` : ''}<details><summary>Technical details</summary><ul>${status.paymentOperationLocked ? '<li>Payment operation ownership retained.</li>' : ''}${status.preparationLocked ? '<li>Checkout preparation ownership retained.</li>' : ''}${status.reconciliationRequired ? '<li>Reconciliation required.</li>' : ''}</ul><p>Attempt ID: ${escapeHtml(status.attemptId || 'Not available')}</p><p>Attempt state: ${escapeHtml(status.attemptState || 'Not available')}</p></details></section>`;
+    return `<section class="ekmOrderTracking"><h4>Checkout is locked</h4>${warning}${error}${releaseError}<p>${status.reconciliationRequired && !status.paymentOperationLocked && !status.preparationLocked ? 'The previous payment needs checking before the customer can pay or edit their basket.' : 'A previous checkout did not finish. This prevents the customer from paying or editing their basket.'}</p><p>If you have checked that no payment is being processed, Release Lock resets checkout and lets the customer try again.</p><button type="button" class="btn-outline" data-action="release-order-lock" ${unavailable || this.orderLockLoading || this.orderLockError || this.releasingOrderLock || this.executingActionKey || this.recoveryOperation ? 'disabled' : ''}>Release Lock</button>${unavailable ? `<p>${escapeHtml(unavailable)}</p>` : ''}<details><summary>Technical details</summary><ul>${status.paymentOperationLocked ? '<li>Payment operation ownership retained.</li>' : ''}${status.preparationLocked ? '<li>Checkout preparation ownership retained.</li>' : ''}${status.reconciliationRequired ? '<li>Reconciliation required.</li>' : ''}</ul><p>Attempt ID: ${escapeHtml(status.attemptId || 'Not available')}</p><p>Attempt state: ${escapeHtml(status.attemptState || 'Not available')}</p></details></section>`;
   }
 
   private renderCustomerEditor(): string {
@@ -873,6 +925,11 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     if (action === 'release-order-lock') {
       await this.releaseOrderLock();
+      return;
+    }
+
+    if (action === 'release-giftcard-recovery' || action === 'reconcile-giftcard-recovery') {
+      await this.executeGiftcardRecovery(target.dataset.attemptId || '', action === 'release-giftcard-recovery' ? target.dataset.claimId || '' : undefined);
       return;
     }
 
@@ -1028,9 +1085,19 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     const requestId = ++this.orderRequestId;
     ++this.lockRequestId;
+    ++this.recoveryRequestId;
+    this.recoveryAttempts = undefined;
+    this.recoveryLoading = false;
+    this.recoveryError = false;
+    this.recoveryOperation = '';
+    this.recoveryMessage = '';
+    this.recoveryActionError = '';
+    this.recoveryRefreshError = false;
+    this.recoveryScrollTop = undefined;
     this.notifyOrderStatusOverride = undefined;
     this.selectedOrder = undefined;
     this.orderActions = [];
+    this.orderActionsError = false;
     this.executingActionKey = '';
     this.orderLockStatus = undefined;
     this.releasingOrderLock = false;
@@ -1050,7 +1117,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       this.orderLogsError = false;
       this.activityLogExpandedIndexes.clear();
       this.render();
-      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId)]);
+      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId)]);
     } catch (error) {
       if (requestId !== this.orderRequestId) return;
       this.showError(getErrorMessage(error, 'Error on getting orderInfo.'));
@@ -1081,6 +1148,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private async loadOrderActions(orderId: string): Promise<void> {
     const requestId = this.orderRequestId;
     this.orderActionsLoading = true;
+    this.orderActionsError = false;
     this.render();
 
     try {
@@ -1090,6 +1158,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     } catch {
       if (requestId !== this.orderRequestId) return;
       this.orderActions = [];
+      this.orderActionsError = true;
     } finally {
       if (requestId !== this.orderRequestId) return;
       this.orderActionsLoading = false;
@@ -1117,10 +1186,82 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     }
   }
 
+  private async loadGiftcardRecovery(orderId: string): Promise<void> {
+    const requestId = ++this.recoveryRequestId;
+    const orderRequestId = this.orderRequestId;
+    const isCurrent = (): boolean => requestId === this.recoveryRequestId && orderRequestId === this.orderRequestId && orderId === this.selectedOrder?.uniqueId;
+    this.recoveryLoading = true;
+    this.recoveryError = false;
+    this.render();
+    try {
+      const attempts = await this.api.giftcardRecovery(orderId);
+      if (!Array.isArray(attempts) || attempts.some(attempt => !Array.isArray(attempt.claims))) {
+        throw new Error('Invalid recovery history response.');
+      }
+      if (isCurrent()) this.recoveryAttempts = attempts;
+    } catch {
+      if (isCurrent()) this.recoveryError = true;
+    } finally {
+      if (isCurrent()) {
+        this.recoveryLoading = false;
+        this.render();
+      }
+    }
+  }
+
+  private async executeGiftcardRecovery(attemptId: string, claimId?: string): Promise<void> {
+    const orderId = this.selectedOrder?.uniqueId;
+    const attempt = this.recoveryAttempts?.find(item => item.attemptId === attemptId);
+    if (!orderId || !attempt || this.recoveryBusy) return;
+    const release = claimId !== undefined;
+    const claim = release ? attempt.claims.find(item => item.id === claimId) : undefined;
+    const token = release ? claim?.releaseToken : attempt.reconcileToken;
+    if (!token || (release ? !claim?.canRelease || !claim.claimReference : !attempt.canReconcile)) return;
+    const confirmation = release
+      ? `Release the failed-preparation hold for masked card ${claim!.cardReference}, claim ${claim!.claimReference}? This calls the provider through audited recovery. It does not refund an accepted payment or retry payment or checkout. Unknown effects may still need reconciliation.`
+      : 'Reconcile this failed gift-card preparation? The audited backend will check known claims and unknown provider effects. This does not refund an accepted payment or retry payment or checkout. Unresolved effects may remain blocked.';
+    if (!window.confirm(confirmation)) return;
+
+    const requestId = this.orderRequestId;
+    const isCurrent = (): boolean => requestId === this.orderRequestId && orderId === this.selectedOrder?.uniqueId;
+    this.recoveryOperation = release ? `release:${attemptId}:${claimId}` : `reconcile:${attemptId}`;
+    this.recoveryScrollTop = this.querySelector<HTMLElement>('.ekmOverlay')?.scrollTop;
+    this.recoveryMessage = '';
+    this.recoveryActionError = '';
+    this.render();
+    try {
+      const result = release
+        ? await this.api.releaseGiftcardRecovery(orderId, attemptId, claim!.id, token)
+        : await this.api.reconcileGiftcardRecovery(orderId, attemptId, token);
+      if (!isCurrent()) return;
+      this.recoveryMessage = `${result.message} ${result.resolved ? 'Failed preparation resolved.' : 'Recovery remains unresolved; check the updated history.'}`;
+    } catch (error) {
+      if (!isCurrent()) return;
+      this.recoveryActionError = getErrorMessage(error, 'Recovery could not be confirmed. Check the updated history before trying again.');
+    } finally {
+      if (isCurrent()) {
+        // Even a failed POST may have reached the provider. Refresh tokens and
+        // evidence, never automatically retry the operation.
+        await Promise.all([
+          this.loadGiftcardRecovery(orderId), this.loadOrderLockStatus(orderId),
+          this.loadOrderActions(orderId), this.loadOrderLogs(orderId),
+          this.api.orderInfo(orderId).then(order => {
+            if (isCurrent()) this.selectedOrder = order;
+          }).catch(() => { if (isCurrent()) this.recoveryRefreshError = true; }),
+        ]);
+        if (isCurrent()) {
+          this.recoveryOperation = '';
+          this.render();
+          this.recoveryScrollTop = undefined;
+        }
+      }
+    }
+  }
+
   private async releaseOrderLock(): Promise<void> {
     const orderId = this.selectedOrder?.uniqueId;
     const status = this.orderLockStatus;
-    if (!orderId || !status?.hasLock || !status.canRelease || !status.releaseToken || this.orderLockLoading || this.orderLockError || this.releasingOrderLock || this.executingActionKey) return;
+    if (!orderId || !status?.hasLock || !status.canRelease || !status.releaseToken || this.orderLockLoading || this.orderLockError || this.releasingOrderLock || this.executingActionKey || this.recoveryOperation) return;
     if (!window.confirm("Release this checkout lock? Confirm that no payment is currently being processed and the previous checkout has stopped. The customer's basket will be kept, and they can try checkout again. This does not cancel or refund a payment. Any gift-card hold that cannot be released must be checked separately.")) return;
 
     const requestId = this.orderRequestId;
@@ -1135,7 +1276,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       released = true;
       this.orderLockWarning = result.warning || '';
       this.showSuccess(result.message);
-      const [order] = await Promise.all([this.api.orderInfo(orderId), this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId)]);
+      const [order] = await Promise.all([this.api.orderInfo(orderId), this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId)]);
       if (isCurrent()) this.selectedOrder = order;
     } catch (error) {
       if (!isCurrent()) return;
@@ -1144,7 +1285,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         : getErrorMessage(error, 'We could not confirm the checkout reset. Check the updated order before trying again.');
       // A failed response can still have acquired a recovery owner. Fetch a fresh
       // confirmation token, but never automatically repeat the editor's POST.
-      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId),
+      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId),
         this.api.orderInfo(orderId).then(order => { if (isCurrent()) this.selectedOrder = order; }).catch(() => {})]);
     } finally {
       if (isCurrent()) {
@@ -1217,6 +1358,9 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private closeOverlay(): void {
     ++this.orderRequestId;
     ++this.lockRequestId;
+    ++this.recoveryRequestId;
+    this.recoveryOperation = '';
+    this.recoveryScrollTop = undefined;
     this.overlay = '';
     this.selectedOrder = undefined;
     this.customerEditorOpen = false;
@@ -1260,7 +1404,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private async executeOrderAction(actionKey: string): Promise<void> {
-    if (!this.selectedOrder?.uniqueId || !actionKey || this.executingActionKey || this.releasingOrderLock) {
+    if (!this.selectedOrder?.uniqueId || !actionKey || this.executingActionKey || this.releasingOrderLock || this.recoveryOperation) {
       return;
     }
 
@@ -1291,7 +1435,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       }
 
       if (requestId !== this.orderRequestId) return;
-      const [order] = await Promise.all([this.api.orderInfo(orderId), this.loadOrderLockStatus(orderId)]);
+      const [order] = await Promise.all([this.api.orderInfo(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId)]);
       if (requestId !== this.orderRequestId) return;
       this.selectedOrder = order;
       await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId)]);

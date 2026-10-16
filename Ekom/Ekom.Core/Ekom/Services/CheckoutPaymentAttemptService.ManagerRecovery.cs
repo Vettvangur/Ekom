@@ -15,7 +15,7 @@ internal sealed partial class CheckoutPaymentAttemptService : IOrderManagerLockS
 {
     private sealed record ManagerRecoveryState(OrderData Order, CheckoutPaymentOperationData? Operation,
         CheckoutPreparationData? Preparation, CheckoutPaymentAttemptData? Attempt, List<string> Ids,
-        IReadOnlyList<CheckoutPaymentAttemptData> Snapshots, string Token, string? UnavailableReason);
+        IReadOnlyList<CheckoutPaymentAttemptData> Snapshots, string Token, string? UnavailableReason, bool GiftcardRecoveryRequired);
 
     private static JObject? ReadManagerRecoveryMetadata(CheckoutPaymentAttemptData attempt)
         => string.IsNullOrWhiteSpace(attempt.SubmittedOrderData) ? null
@@ -73,7 +73,10 @@ internal sealed partial class CheckoutPaymentAttemptService : IOrderManagerLockS
         var receipts = await db.GetTable<StockReservationData>()
             .Where(x => x.OrderId == orderKey || ids.Contains(x.Id)).OrderBy(x => x.Id).ToListAsync(ct).ConfigureAwait(false);
         var paid = await IsPaidOrCompletedAsync(db, data, ct).ConfigureAwait(false);
-        var reason = (operation?.ActiveAttemptId != null && attempt == null
+        var giftcardRecovery = await db.GetTable<GiftcardReservationRecoveryData>().Where(x => x.OrderId == orderId)
+            .OrderBy(x => x.AttemptId).ToListAsync(ct).ConfigureAwait(false);
+        var giftcardRecoveryRequired = giftcardRecovery.Any(x => x.State is GiftcardReservationRecoveryState.Pending or GiftcardReservationRecoveryState.Unresolved);
+        var reason = giftcardRecoveryRequired ? "Gift-card reservation effects require dedicated gift-card recovery. Reconcile or release the recorded claims before unlocking checkout." : (operation?.ActiveAttemptId != null && attempt == null
             ? "Checkout history is missing. Contact support before unlocking this order." : chain.Error) ?? (paid || chain.Snapshots.Any(snapshot => snapshot.State == CheckoutPaymentAttemptState.Completed)
             ? "This order has already been paid or completed and cannot be unlocked."
             : receipts.Any(x => x.State == StockReservationState.Consumed)
@@ -84,8 +87,8 @@ internal sealed partial class CheckoutPaymentAttemptService : IOrderManagerLockS
                 (attempt == null || attempt.State == CheckoutPaymentAttemptState.Released) && ids.Count == 0 && !HasClaims(ReadGiftcards(data.OrderInfo))
                 ? "This checkout is not locked and has no reservations to release." : null);
         var token = HashManagerValue(JsonConvert.SerializeObject(new { Order = data, Operation = operation,
-            Preparation = preparation, Attempts = chain.Snapshots, ReservationIds = ids, Receipts = receipts, Paid = paid }));
-        return new(data, operation, preparation, attempt, ids, snapshots, token, reason);
+            Preparation = preparation, Attempts = chain.Snapshots, ReservationIds = ids, Receipts = receipts, Paid = paid, GiftcardRecovery = giftcardRecovery }));
+        return new(data, operation, preparation, attempt, ids, snapshots, token, reason, giftcardRecoveryRequired);
     }
 
     internal static async Task<OrderLockStatus> ReadManagerLockStatusAsync(DbContext db, Guid orderId, CancellationToken ct)
@@ -95,7 +98,7 @@ internal sealed partial class CheckoutPaymentAttemptService : IOrderManagerLockS
         {
             PaymentOperationLocked = state.Operation?.Owner != null,
             PreparationLocked = state.Preparation?.Owner != null,
-            ReconciliationRequired = state.Operation?.ReconciliationRequired == true || state.Attempt?.State == CheckoutPaymentAttemptState.ReconciliationRequired,
+            ReconciliationRequired = state.GiftcardRecoveryRequired || state.Operation?.ReconciliationRequired == true || state.Attempt?.State == CheckoutPaymentAttemptState.ReconciliationRequired,
             AttemptId = state.Operation?.ActiveAttemptId,
             AttemptState = state.Attempt?.State.ToString(),
             ReleaseToken = state.UnavailableReason == null ? state.Token : null,
@@ -129,6 +132,8 @@ internal sealed partial class CheckoutPaymentAttemptService : IOrderManagerLockS
             if (!string.Equals(state.Token, releaseToken, StringComparison.Ordinal))
                 throw Conflict("Checkout state changed. Refresh the order and confirm Release Lock again.");
             if (state.UnavailableReason != null) throw Conflict(state.UnavailableReason);
+            if (await HasUnresolvedGiftcardRecoveryAsync(db, orderId, ct).ConfigureAwait(false))
+                throw Conflict("Use dedicated gift-card recovery before unlocking checkout.");
             if (state.Operation == null)
                 await db.InsertAsync(new CheckoutPaymentOperationData { OrderId = orderId, Owner = recoveryOwner, ActiveAttemptId = recoveryId }, token: ct).ConfigureAwait(false);
             else if (await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == orderId && x.Owner == state.Operation.Owner)
@@ -240,6 +245,8 @@ internal sealed partial class CheckoutPaymentAttemptService : IOrderManagerLockS
             state.Order.OrderInfo = json.ToString(Formatting.None);
             state.Order.OrderStatus = OrderStatus.Incomplete;
             await using var transaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, CancellationToken.None).ConfigureAwait(false);
+            if (await HasUnresolvedGiftcardRecoveryAsync(db, orderId, CancellationToken.None).ConfigureAwait(false))
+                throw Conflict("Gift-card reservation evidence now requires dedicated recovery. Checkout remains locked.");
             var scope = new CheckoutPaymentOperationScope(orderId, recoveryOwner, null);
             await SaveOrderAsync(db, scope, state.Order, CancellationToken.None).ConfigureAwait(false);
             recoverySnapshot["ManagerRecovery"]!["Outcome"] = warning == null ? "Released" : "LocalResetGiftcardsRequireReview";

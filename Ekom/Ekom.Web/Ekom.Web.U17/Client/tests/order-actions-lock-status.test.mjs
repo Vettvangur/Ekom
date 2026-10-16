@@ -44,6 +44,7 @@ const actions = [
 function createElement() {
   const element = new EkomOrdersSectionViewElement();
   element.render = () => {};
+  element.api.giftcardRecovery = async () => [];
   element.orderActions = actions;
   element.selectedOrder = { uniqueId: 'order-A', giftcards: [{ code: 'Card-A', amount: 10 }, { code: 'Card-B', amount: 20 }], currency: 'USD' };
   return element;

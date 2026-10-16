@@ -21,6 +21,12 @@ namespace Ekom.Services;
 /// Provider rejection text (including insufficient balance), timeouts, and uncertain
 /// or partially successful outcomes are not proof of no effects. Confirmed rejection
 /// closes the new attempt without releasing prior holds or discarding claim metadata.
+/// When effects occurred or their outcome is unknown, preserve structured evidence with
+/// <see cref="Ekom.Exceptions.GiftcardReservationFailureException"/> instead of converting
+/// it to a generic checkout conflict. Confirmed compensation is distinct from no effects.
+/// Implement <see cref="ICheckoutGiftcardReservationRecovery"/> on this adapter to support
+/// targeted recovery. Use provider idempotency/lookup or a durable integration journal
+/// keyed by order/attempt to recover outcomes lost before a response reaches Ekom.
 /// Codes and amounts remain selected when a claim is released. ValidUntil may mean
 /// card validity or provider hold expiry: preserve it on release, and return the
 /// renewed provider expiry from ReserveAsync when appropriate. This adapter must
