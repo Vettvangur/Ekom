@@ -237,6 +237,18 @@ public class CheckoutControllerService
         {
             return await prepare(() => paymentStarted = true).ConfigureAwait(false);
         }
+        catch (GiftcardReservationFailureException ex) when (!paymentStarted)
+        {
+            // The receipt/inner exception may contain financial references or raw provider data.
+            Logger.LogWarning("Gift-card preparation failed. OrderId: {OrderId}; AttemptId: {AttemptId}",
+                ex.Failure.OrderId, ex.Failure.AttemptId);
+            return new CheckoutResponse
+            {
+                HttpStatusCode = 409,
+                ReturnUrl = request.ReturnUrl,
+                ResponseBody = new CheckoutStateError(),
+            };
+        }
         catch (EkomHttpException ex) when (!paymentStarted && ex.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
             return CheckoutStateConflict(request, ex);

@@ -498,7 +498,88 @@ public sealed class CheckoutPaymentAttemptTests
         Assert.Equal(original, (await f.ReadAsync()).OrderInfo);
         adapter.Verify(x => x.ReleaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Never);
         var conflict = await Assert.ThrowsAsync<CheckoutConflictException>(() => f.NewService().BeginCheckoutAsync(order));
-        Assert.Equal(CheckoutConflictReason.Busy, conflict.Reason);
+        Assert.Equal(CheckoutConflictReason.PaymentReview, conflict.Reason);
+        var recovery = await db.GetTable<GiftcardReservationRecoveryData>().SingleAsync();
+        Assert.Equal(GiftcardReservationRecoveryState.Unresolved, recovery.State);
+        Assert.Contains(error.GetType().Name, recovery.Reason, StringComparison.Ordinal);
+        Assert.Equal(GiftcardReservationFailureOutcome.Unknown,
+            JsonConvert.DeserializeObject<GiftcardReservationFailure>(recovery.EvidenceJson)!.Outcome);
+
+        // An externally cleared owner is not proof that an interrupted provider
+        // invocation had no effects. The durable ledger must still fence retry.
+        await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == f.OrderId)
+            .Set(x => x.Owner, (string?)null).UpdateAsync();
+        conflict = await Assert.ThrowsAsync<CheckoutConflictException>(() => f.NewService(adapter.Object).BeginCheckoutAsync(order));
+        Assert.Equal(CheckoutConflictReason.PaymentReview, conflict.Reason);
+        Assert.Equal(original, (await f.ReadAsync()).OrderInfo);
+        Assert.Single(await db.GetTable<CheckoutPaymentAttemptData>().ToListAsync());
+        Assert.Null((await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+        adapter.Verify(x => x.ReserveAsync(f.OrderId, It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Once);
+        adapter.Verify(x => x.ReleaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task DelayedGiftcardReserveSuccessCannotWriteAfterRecoveryTakesOwnership(bool newerAttempt, bool settled)
+    {
+        using var f = new Fixture();
+        using var db = f.Database.Factory.GetDatabase();
+        var json = JObject.Parse((await f.ReadAsync()).OrderInfo);
+        json["Giftcards"] = JArray.FromObject(new[] { new Giftcard { Code = "secret-code", Amount = 5 } });
+        var original = json.ToString(Formatting.None);
+        await db.GetTable<OrderData>().Where(x => x.UniqueId == f.OrderId).Set(x => x.OrderInfo, original).UpdateAsync();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var response = new TaskCompletionSource<IReadOnlyList<Giftcard>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var adapter = new Mock<ICheckoutGiftcardReservations>();
+        adapter.Setup(x => x.ReserveAsync(f.OrderId, It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()))
+            .Returns(() =>
+            {
+                entered.SetResult();
+                return response.Task;
+            });
+        var checkout = f.NewService(adapter.Object).BeginCheckoutAsync(new OrderInfo(await f.ReadAsync()));
+        await entered.Task;
+        var recovery = await db.GetTable<GiftcardReservationRecoveryData>().SingleAsync();
+        Assert.Equal(GiftcardReservationRecoveryState.Pending, recovery.State);
+        var activeId = newerAttempt ? Guid.NewGuid() : recovery.AttemptId;
+        var recoveryOwner = Guid.NewGuid().ToString();
+        var revision = Guid.NewGuid();
+        await using (var transaction = await db.BeginTransactionAsync())
+        {
+            if (newerAttempt)
+                await db.InsertAsync(new CheckoutPaymentAttemptData
+                {
+                    OrderId = f.OrderId, AttemptId = activeId,
+                    State = CheckoutPaymentAttemptState.Preparing, CreatedUtc = DateTime.UtcNow,
+                });
+            await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == f.OrderId)
+                .Set(x => x.Owner, recoveryOwner).Set(x => x.ActiveAttemptId, (Guid?)activeId).UpdateAsync();
+            await db.GetTable<GiftcardReservationRecoveryData>().Where(x => x.AttemptId == recovery.AttemptId)
+                .Set(x => x.Owner, recoveryOwner).Set(x => x.Revision, revision)
+                .Set(x => x.State, GiftcardReservationRecoveryState.Unresolved)
+                .Set(x => x.Reason, "Recovery owns the interrupted invocation").UpdateAsync();
+            await transaction.CommitAsync();
+        }
+        var expectedRecovery = JsonConvert.SerializeObject(await db.GetTable<GiftcardReservationRecoveryData>().SingleAsync());
+        var expectedAttempts = JsonConvert.SerializeObject(await db.GetTable<CheckoutPaymentAttemptData>().OrderBy(x => x.AttemptId).ToListAsync());
+        response.SetResult(new[] { new Giftcard
+        {
+            Code = "secret-code", Amount = 5, ClaimId = "late-claim", Claimed = true,
+            TransactionId = settled ? "late-settlement" : null,
+        } });
+
+        await Assert.ThrowsAnyAsync<EkomHttpException>(() => checkout);
+
+        Assert.Equal(original, (await f.ReadAsync()).OrderInfo);
+        var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleAsync();
+        Assert.Equal(recoveryOwner, operation.Owner);
+        Assert.Equal(activeId, operation.ActiveAttemptId);
+        Assert.Equal(expectedRecovery, JsonConvert.SerializeObject(await db.GetTable<GiftcardReservationRecoveryData>().SingleAsync()));
+        Assert.Equal(expectedAttempts, JsonConvert.SerializeObject(await db.GetTable<CheckoutPaymentAttemptData>().OrderBy(x => x.AttemptId).ToListAsync()));
+        adapter.Verify(x => x.ReleaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

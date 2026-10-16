@@ -111,6 +111,40 @@ export type OrderLockReleaseResult = {
   warning?: string | null;
 };
 
+export type GiftcardRecoveryClaim = {
+  id: string;
+  cardReference: string;
+  claimReference: string;
+  provider: string;
+  account: string;
+  requestedAmount: number;
+  currency: string;
+  rawReturnedAmount?: string | null;
+  returnedAmountType?: string | null;
+  rawExpiry?: string | null;
+  cleanupState: string;
+  canRelease: boolean;
+  releaseToken?: string | null;
+  unavailableReason?: string | null;
+};
+
+export type GiftcardRecoveryAttempt = {
+  attemptId: string;
+  createdUtc: string;
+  state: string;
+  reason: string;
+  hasUnknownEffects: boolean;
+  canReconcile: boolean;
+  reconcileToken?: string | null;
+  unavailableReason?: string | null;
+  claims: GiftcardRecoveryClaim[];
+};
+
+export type GiftcardRecoveryResult = {
+  message: string;
+  resolved: boolean;
+};
+
 export type OrderActivityLog = {
   date?: string;
   message?: string;
@@ -222,6 +256,18 @@ export class EkomManagerApi {
 
   async releaseOrderLock(orderId: string, releaseToken: string): Promise<OrderLockReleaseResult> {
     return this.postBody(`/ekom/manager/releaseOrderLock/${encodeURIComponent(orderId)}`, { releaseToken });
+  }
+
+  async giftcardRecovery(orderId: string): Promise<GiftcardRecoveryAttempt[]> {
+    return this.getJson(`/ekom/manager/giftcardRecovery/${encodeURIComponent(orderId)}`);
+  }
+
+  async releaseGiftcardRecovery(orderId: string, attemptId: string, claimId: string, token: string): Promise<GiftcardRecoveryResult> {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(orderId)}/release`, { attemptId, claimId, token });
+  }
+
+  async reconcileGiftcardRecovery(orderId: string, attemptId: string, token: string): Promise<GiftcardRecoveryResult> {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(orderId)}/reconcile`, { attemptId, token });
   }
 
   async executeOrderAction(orderId: string, actionKey: string): Promise<Response> {
@@ -534,6 +580,11 @@ export const managerStyles = `
   .ekmOrderGiftcards details summary { cursor: pointer; }
   .ekmOrderGiftcards dt { font-weight: 600; margin-top: 8px; }
   .ekmOrderGiftcards dd { margin: 2px 0 0; white-space: pre-wrap; }
+  .ekmGiftcardRecovery { overflow-wrap: anywhere; }
+  .ekmGiftcardRecovery article { border-top: 1px solid #d8d7d9; margin-top: 16px; padding-top: 12px; }
+  .ekmGiftcardRecovery__claim { border-left: 3px solid #d8d7d9; margin: 16px 0; padding-left: 12px; }
+  .ekmGiftcardRecovery dt { font-weight: 600; margin-top: 8px; }
+  .ekmGiftcardRecovery dd { margin: 2px 0 0; white-space: pre-wrap; }
   .ekmOrderActivityLog__list { border-top: 1px solid #eee; }
   .ekmOrderActivityLog__item { border-bottom: 1px solid #eee; padding: 12px 0; }
   .ekmOrderActivityLog__content { align-items: flex-start; display: flex; gap: 12px; }

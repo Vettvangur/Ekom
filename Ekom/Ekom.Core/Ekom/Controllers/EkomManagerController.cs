@@ -212,6 +212,77 @@ public class EkomManagerController : ControllerBase
     }
 
     [HttpGet]
+    [Route("giftcardRecovery/{orderId:guid}")]
+    [UmbracoUserAuthorize]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> GetGiftcardRecoveryAsync(Guid orderId,
+        [FromServices] IOrderManagerGiftcardRecoveryService recoveryService, CancellationToken ct = default)
+    {
+        try
+        {
+            return Ok(await recoveryService.GetGiftcardRecoveryAsync(orderId,
+                _managerAccessService.GetAllowedStoreAliases(), ct).ConfigureAwait(false));
+        }
+        catch (EkomHttpException ex)
+        {
+            return StatusCode((int)ex.StatusCode, new { message = ex.Message });
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Gift-card recovery evidence could not be loaded. OrderId: {OrderId}; FailureType: {FailureType}", orderId, ex.GetType().Name);
+            return StatusCode(500, new { message = "Gift-card recovery evidence could not be loaded. Refresh or contact support." });
+        }
+    }
+
+    [HttpPost]
+    [Route("giftcardRecovery/{orderId:guid}/release")]
+    [UmbracoUserAuthorize]
+    public Task<IActionResult> ReleaseGiftcardRecoveryAsync(Guid orderId, [FromBody] GiftcardRecoveryRequest? request,
+        [FromServices] IOrderManagerGiftcardRecoveryService recoveryService, CancellationToken ct = default)
+        => RunGiftcardRecoveryAsync(orderId, request, false, recoveryService, ct);
+
+    [HttpPost]
+    [Route("giftcardRecovery/{orderId:guid}/reconcile")]
+    [UmbracoUserAuthorize]
+    public Task<IActionResult> ReconcileGiftcardRecoveryAsync(Guid orderId, [FromBody] GiftcardRecoveryRequest? request,
+        [FromServices] IOrderManagerGiftcardRecoveryService recoveryService, CancellationToken ct = default)
+        => RunGiftcardRecoveryAsync(orderId, request, true, recoveryService, ct);
+
+    private async Task<IActionResult> RunGiftcardRecoveryAsync(Guid orderId, GiftcardRecoveryRequest? request,
+        bool reconcile, IOrderManagerGiftcardRecoveryService recoveryService, CancellationToken ct)
+    {
+        if (request == null || request.AttemptId == Guid.Empty || string.IsNullOrWhiteSpace(request.Token) ||
+            !reconcile && string.IsNullOrWhiteSpace(request.ClaimId))
+            return BadRequest(new { message = "Refresh the order and confirm the gift-card recovery action before trying again." });
+        try
+        {
+            return Ok(await recoveryService.RecoverGiftcardAsync(orderId, request, reconcile,
+                _managerAccessService.GetAllowedStoreAliases(), HttpContext?.User?.Identity?.Name, ct).ConfigureAwait(false));
+        }
+        catch (CheckoutConflictException ex)
+        {
+            return StatusCode(409, new { message = ex.Message });
+        }
+        catch (EkomHttpException ex)
+        {
+            return StatusCode((int)ex.StatusCode, new { message = ex.Message });
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Gift-card recovery failed. OrderId: {OrderId}; AttemptId: {AttemptId}; FailureType: {FailureType}", orderId, request.AttemptId, ex.GetType().Name);
+            return StatusCode(500, new { message = "Gift-card recovery could not be confirmed. Checkout remains blocked; refresh or contact support." });
+        }
+    }
+
+    [HttpGet]
     [Route("OrderActions/{orderId}")]
     [UmbracoUserAuthorize]
     public async Task<IActionResult> GetOrderActionsAsync(Guid orderId, CancellationToken ct = default)

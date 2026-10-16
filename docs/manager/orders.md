@@ -134,9 +134,19 @@ The panel has one recovery button: **Release Lock**. This is an explicit editor 
 
 After confirmation, Release Lock replaces the observed payment/preparation ownership with a recovery operation, closes the old payment attempt, releases active stock reservations, clears local gift-card reservation metadata and the checkout reconciliation block, and returns the order to **Incomplete**. Order lines, customer details, and selected gift-card codes, amounts, and validity dates are kept. Paid/completed orders and consumed stock are not undone: this operation is not a refund or stock-return workflow. If the order changes before execution, refresh and confirm again rather than resetting a newer checkout.
 
-Known unredeemed gift-card claims are submitted to the registered integration for release. Unlike the ordinary release actions, a missing integration or an unconfirmed external release does **not** prevent this editor-authorized local reset. The response prominently warns that gift-card holds must be checked separately, and does not claim that the provider released them. A durable recovery snapshot preserves the pre-reset purchase and claim information without changing old frozen payment snapshots; the activity log records the editor, recovery reference, and outcome without exposing owner capabilities. Database or stock-release failures do not manufacture a successful reset.
+**Pending or unresolved failed gift-card preparation evidence blocks Release Lock.** Use the separate failed-preparation recovery section described below; the generic reset cannot bypass those obligations.
+
+For legacy checkout state without unresolved failed-preparation records, known unredeemed gift-card claims are submitted to the registered integration for release. Unlike the ordinary release actions, a missing integration or an unconfirmed external release does **not** prevent this editor-authorized legacy local reset. The response prominently warns that gift-card holds must be checked separately, and does not claim that the provider released them. A durable recovery snapshot preserves the pre-reset purchase and claim information without changing old frozen payment snapshots; the activity log records the editor, recovery reference, and outcome without exposing owner capabilities. Database or stock-release failures do not manufacture a successful reset.
 
 Ownership has no automatic expiry, timestamp, or heartbeat, so the panel cannot establish whether the old operation is currently running or orphaned. Release Lock trusts the editor's confirmation; it cannot stop an already-running external provider request or cancel/refund a gateway payment. Late successful payment callbacks still require reconciliation rather than completing a freshly reset basket.
+
+### Failed gift-card preparation
+
+Umbraco 17/18 order details show failed-preparation evidence separately from accepted gift-card payment contributions, even when the current order no longer contains those cards. The section retains original attempt references, masked card/claim references, requested and raw returned amounts, expiry, and cleanup status. Resolved records remain visible as history.
+
+When supported by the configured integration, **Release failed-preparation hold** targets exactly one positively identified newly acquired hold; it never refunds or releases other claims. **Reconcile failed preparation** performs read-only provider verification of the original request, including unknown effects without claim references. Each action requires confirmation, revalidates its snapshot and payment/ownership state, and records the operator and outcome. Unknown effects and partial cleanup keep checkout blocked. Paid, submitted, settled, or completed outcomes are not automatically unlocked.
+
+See [Failed gift-card preparation recovery](../guides/giftcard-recovery.md) for adapter requirements, crash recovery limitations, and handling historical incidents without structured evidence.
 
 ## Custom order actions
 

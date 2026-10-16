@@ -38,6 +38,7 @@ function createElement() {
   element.loadOrderLogs = async () => {};
   element.loadOrderActions = async () => {};
   element.loadOrderLockStatus = async () => {};
+  element.api.giftcardRecovery = async () => [];
   element.api.orderInfo = async uniqueId => ({ uniqueId, orderStatus: 'Pending' });
   element.querySelector = () => ({ value: 'Processed' });
   return element;

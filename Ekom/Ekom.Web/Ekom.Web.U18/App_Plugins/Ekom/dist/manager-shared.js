@@ -72,6 +72,15 @@ class l {
   async releaseOrderLock(e, r) {
     return this.postBody(`/ekom/manager/releaseOrderLock/${encodeURIComponent(e)}`, { releaseToken: r });
   }
+  async giftcardRecovery(e) {
+    return this.getJson(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}`);
+  }
+  async releaseGiftcardRecovery(e, r, t, n) {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}/release`, { attemptId: r, claimId: t, token: n });
+  }
+  async reconcileGiftcardRecovery(e, r, t) {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}/reconcile`, { attemptId: r, token: t });
+  }
   async executeOrderAction(e, r) {
     const t = await fetch(`/ekom/manager/OrderActions/${encodeURIComponent(e)}/${encodeURIComponent(r)}`, {
       method: "POST",
@@ -199,10 +208,10 @@ function _(a) {
     minute: "2-digit"
   }).format(e);
 }
-function O(a) {
+function v(a) {
   return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function v(a) {
+function O(a) {
   const e = document.createElement("textarea");
   return e.innerHTML = String(a ?? ""), e.value;
 }
@@ -219,11 +228,11 @@ function C(a, e) {
   }
   return t.length && Number(t[t.length - 1]) < n && t.push(`...${n}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
 }
-function L(a, e) {
+function R(a, e) {
   const r = URL.createObjectURL(a), t = document.createElement("a");
   t.href = r, t.download = e, document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
 }
-const I = `
+const L = `
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -287,6 +296,11 @@ const I = `
   .ekmOrderGiftcards details summary { cursor: pointer; }
   .ekmOrderGiftcards dt { font-weight: 600; margin-top: 8px; }
   .ekmOrderGiftcards dd { margin: 2px 0 0; white-space: pre-wrap; }
+  .ekmGiftcardRecovery { overflow-wrap: anywhere; }
+  .ekmGiftcardRecovery article { border-top: 1px solid #d8d7d9; margin-top: 16px; padding-top: 12px; }
+  .ekmGiftcardRecovery__claim { border-left: 3px solid #d8d7d9; margin: 16px 0; padding-left: 12px; }
+  .ekmGiftcardRecovery dt { font-weight: 600; margin-top: 8px; }
+  .ekmGiftcardRecovery dd { margin: 2px 0 0; white-space: pre-wrap; }
   .ekmOrderActivityLog__list { border-top: 1px solid #eee; }
   .ekmOrderActivityLog__item { border-bottom: 1px solid #eee; padding: 12px 0; }
   .ekmOrderActivityLog__content { align-items: flex-start; display: flex; gap: 12px; }
@@ -359,7 +373,7 @@ const I = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-function M(a, e, r) {
+function I(a, e, r) {
   const t = a.getBoundingClientRect(), n = window.devicePixelRatio || 1, d = Math.max(t.width, 300), i = Math.max(t.height, 220);
   a.width = d * n, a.height = i * n;
   const o = a.getContext("2d");
@@ -381,13 +395,13 @@ function M(a, e, r) {
 }
 export {
   l as E,
-  I as a,
-  L as b,
-  v as d,
-  O as e,
+  L as a,
+  R as b,
+  O as d,
+  v as e,
   _ as f,
   S as g,
   w as m,
   C as p,
-  M as r
+  I as r
 };

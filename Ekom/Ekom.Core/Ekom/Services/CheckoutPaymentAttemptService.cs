@@ -109,6 +109,29 @@ internal sealed partial class CheckoutPaymentAttemptService
                 // Persist renewed claims before any provider invocation. Uncertain writes
                 // retain ownership so another node cannot release unknown external holds.
                 scope.PreserveOwnership = true;
+                var recovery = new GiftcardReservationRecoveryData
+                {
+                    AttemptId = attemptId, OrderId = order.UniqueId, Owner = scope.Owner,
+                    Revision = Guid.NewGuid(), State = GiftcardReservationRecoveryState.Pending,
+                    PreparationOwner = CheckoutPreparationScope.Current?.Ownership.OrderId == order.UniqueId
+                        ? CheckoutPreparationScope.Current.Ownership.Owner : null,
+                    SelectionsJson = JObject.Parse(data.OrderInfo)[nameof(OrderInfo.Giftcards)]?.ToString(Formatting.None) ?? "[]",
+                    EvidenceJson = JsonConvert.SerializeObject(new GiftcardReservationFailure { OrderId = order.UniqueId, AttemptId = attemptId }),
+                    Reason = "Reservation invocation pending; external effects not yet known",
+                    CreatedUtc = DateTime.UtcNow, UpdatedUtc = DateTime.UtcNow,
+                };
+                // Commit the intent before crossing the integration boundary. A process
+                // death from this point onward must remain visible without an owner flag.
+                await using (var transaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false))
+                {
+                    if (!await db.GetTable<CheckoutPaymentOperationData>().AnyAsync(x => x.OrderId == scope.OrderId &&
+                        x.Owner == scope.Owner && x.ActiveAttemptId == attemptId, ct).ConfigureAwait(false) ||
+                        !await db.GetTable<CheckoutPaymentAttemptData>().AnyAsync(x => x.OrderId == scope.OrderId &&
+                            x.AttemptId == attemptId && x.State == CheckoutPaymentAttemptState.Preparing && x.SubmittedUtc == null, ct).ConfigureAwait(false))
+                        throw Conflict("Checkout ownership changed before giftcard reservation.");
+                    await db.InsertAsync(recovery, token: ct).ConfigureAwait(false);
+                    await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+                }
                 IReadOnlyList<Giftcard> renewed;
                 try
                 {
@@ -121,30 +144,66 @@ internal sealed partial class CheckoutPaymentAttemptService
                     // pointer and keep the purchase/claim metadata intact. Ordinary scope
                     // cleanup would release prior claims using the rejected attempt's ID.
                     await using var transaction = await db.BeginTransactionAsync().ConfigureAwait(false);
+                    await UpdateGiftcardRecoveryAsync(db, scope, recovery, GiftcardReservationRecoveryState.Resolved,
+                        JsonConvert.SerializeObject(new GiftcardReservationFailure
+                        {
+                            OrderId = order.UniqueId, AttemptId = attemptId,
+                            Outcome = GiftcardReservationFailureOutcome.NoEffects, AllEffectsAccountedFor = true,
+                        }), "Adapter guaranteed failed reservation had no effects", CancellationToken.None).ConfigureAwait(false);
                     var restored = await db.GetTable<CheckoutPaymentOperationData>()
                         .Where(x => x.OrderId == scope.OrderId && x.Owner == scope.Owner && x.ActiveAttemptId == attemptId)
                         .Set(x => x.ActiveAttemptId, active == null ? (Guid?)null : active.AttemptId)
                         .UpdateAsync(CancellationToken.None).ConfigureAwait(false);
                     if (restored != 1) throw Conflict("Checkout ownership changed.");
-                    await db.GetTable<CheckoutPaymentAttemptData>().Where(x => x.AttemptId == attemptId)
+                    var closed = await db.GetTable<CheckoutPaymentAttemptData>().Where(x => x.OrderId == order.UniqueId && x.AttemptId == attemptId &&
+                            x.State == CheckoutPaymentAttemptState.Preparing && x.SubmittedUtc == null)
                         .Set(x => x.State, CheckoutPaymentAttemptState.Released)
                         .Set(x => x.ClosedUtc, (DateTime?)DateTime.UtcNow)
                         .UpdateAsync(CancellationToken.None).ConfigureAwait(false);
+                    if (closed != 1) throw Conflict("Payment attempt changed during rejected reservation cleanup.");
                     await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                     scope.IsCheckout = false;
                     scope.AttemptId = null;
                     scope.PreserveOwnership = false;
                     throw;
                 }
+                catch (GiftcardReservationFailureException ex)
+                {
+                    await UpdateGiftcardRecoveryAsync(db, scope, recovery, GiftcardReservationRecoveryState.Unresolved,
+                        CaptureGiftcardFailure(recovery, ex.Failure), "Reservation failed with integration evidence; cleanup requires verification",
+                        CancellationToken.None).ConfigureAwait(false);
+                    if (!await CompleteFailedGiftcardRecoveryAsync(db, scope, recovery, CancellationToken.None).ConfigureAwait(false))
+                        await ReconciliationAsync(order.UniqueId, attemptId, "Giftcard reservation effects or checkout ownership remain unresolved", false).ConfigureAwait(false);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    await UpdateGiftcardRecoveryAsync(db, scope, recovery, GiftcardReservationRecoveryState.Unresolved,
+                        recovery.EvidenceJson, "Reservation failed without an effects guarantee: " + ex.GetType().Name,
+                        CancellationToken.None).ConfigureAwait(false);
+                    await ReconciliationAsync(order.UniqueId, attemptId, "Giftcard reservation failed without an effects guarantee", false).ConfigureAwait(false);
+                    throw;
+                }
+                // Capture returned claims before validation and order persistence, both
+                // of which can fail after external effects have already occurred.
+                await UpdateGiftcardRecoveryAsync(db, scope, recovery, GiftcardReservationRecoveryState.Unresolved,
+                    CaptureGiftcardFailure(recovery, ReturnedGiftcardEvidence(order.UniqueId, attemptId, renewed)),
+                    "Reservation returned; metadata not yet durably accepted", CancellationToken.None).ConfigureAwait(false);
                 if (HasSettledGiftcards(renewed))
                 {
-                    await ReconciliationAsync(order.UniqueId, attemptId, "Giftcard reserve returned redeemed or settled selection").ConfigureAwait(false);
+                    await ReconciliationAsync(order.UniqueId, attemptId, "Giftcard reserve returned redeemed or settled selection", false).ConfigureAwait(false);
                     throw Conflict("A redeemed or settled giftcard requires reconciliation before another payment can be submitted.", CheckoutConflictReason.PaymentReview);
                 }
                 var json = JObject.Parse(data.OrderInfo);
                 json[nameof(OrderInfo.Giftcards)] = JArray.FromObject(renewed);
                 data.OrderInfo = json.ToString(Formatting.None);
-                await SaveOrderAsync(db, scope, data, CancellationToken.None).ConfigureAwait(false);
+                await using (var transaction = await db.BeginTransactionAsync().ConfigureAwait(false))
+                {
+                    await SaveOrderAsync(db, scope, data, CancellationToken.None).ConfigureAwait(false);
+                    await UpdateGiftcardRecoveryAsync(db, scope, recovery, GiftcardReservationRecoveryState.Accepted,
+                        recovery.EvidenceJson, "Reservation metadata durably accepted by preparing attempt", CancellationToken.None).ConfigureAwait(false);
+                    await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+                }
                 Apply(order, data);
                 scope.PreserveOwnership = false;
             }
@@ -499,7 +558,7 @@ internal sealed partial class CheckoutPaymentAttemptService
                 throw Conflict("Another checkout operation owns this order. Retry after it finishes.", CheckoutConflictReason.Busy);
             return;
         }
-        if (operation?.ReconciliationRequired == true &&
+        if ((operation?.ReconciliationRequired == true || await HasUnresolvedGiftcardRecoveryAsync(db, orderId, ct).ConfigureAwait(false)) &&
             !(ambient?.OrderId == orderId && ambient.IsOrderInformationUpdate))
             throw Conflict("This order requires manual payment reconciliation before it can be changed.", CheckoutConflictReason.PaymentReview);
         if (operation?.Owner != null && (ambient?.OrderId != orderId || ambient.Owner != operation.Owner))
@@ -781,7 +840,11 @@ internal sealed partial class CheckoutPaymentAttemptService
         => db.GetTable<CheckoutPaymentAttemptData>().Where(x => x.AttemptId == attemptId).Set(x => x.State, state).UpdateAsync(ct);
 
     private static Task<bool> RequiresReconciliationAsync(DbContext db, Guid orderId, CancellationToken ct)
-        => db.GetTable<CheckoutPaymentOperationData>().AnyAsync(x => x.OrderId == orderId && x.ReconciliationRequired, ct);
+        => RequiresGiftcardOrPaymentReconciliationAsync(db, orderId, ct);
+
+    private static async Task<bool> RequiresGiftcardOrPaymentReconciliationAsync(DbContext db, Guid orderId, CancellationToken ct)
+        => await HasUnresolvedGiftcardRecoveryAsync(db, orderId, ct).ConfigureAwait(false) ||
+            await db.GetTable<CheckoutPaymentOperationData>().AnyAsync(x => x.OrderId == orderId && x.ReconciliationRequired, ct).ConfigureAwait(false);
 
     private static async Task<bool> HasExpiredAsync(DbContext db, CheckoutPaymentAttemptData attempt, OrderData data, CancellationToken ct)
     {
@@ -832,7 +895,10 @@ internal sealed partial class CheckoutPaymentAttemptService
             !string.IsNullOrWhiteSpace(x.TransactionId) || x.ClaimDate != null || x.UsedDate != null);
 
     private static bool HasSettledGiftcards(IEnumerable<Giftcard> selections)
-        => selections.Any(x => x.Claimed || !string.IsNullOrWhiteSpace(x.TransactionId) || x.ClaimDate != null || x.UsedDate != null);
+        => selections.Any(IsSettledClaim);
+
+    private static bool IsSettledClaim(Giftcard selection)
+        => selection.Claimed || !string.IsNullOrWhiteSpace(selection.TransactionId) || selection.ClaimDate != null || selection.UsedDate != null;
 
     private static bool IsPaid(OrderData data)
         => data.PaidDate != null || data.OrderStatus is OrderStatus.OfflinePayment or OrderStatus.Closed or
