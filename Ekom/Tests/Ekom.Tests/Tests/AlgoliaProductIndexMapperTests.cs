@@ -4,6 +4,7 @@ using Ekom.Algolia.Mappers;
 using Ekom.Models.Umbraco;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Globalization;
 using System.Text.Json;
 using Xunit;
 
@@ -187,6 +188,66 @@ public class AlgoliaProductIndexMapperTests
 
         Assert.NotNull(record);
         Assert.Equal("Hello world Next", Assert.IsType<string>(record!.Data["body"]));
+    }
+
+    [Theory]
+    [InlineData("is-IS", "unix")]
+    [InlineData("en-US", "unix")]
+    [InlineData("is-IS", "unixms")]
+    [InlineData("en-US", "unixms")]
+    public void Maps_Invariant_Cached_FirstPublishDate_To_Unix_Regardless_Of_Current_Culture(
+        string culture,
+        string modifier)
+    {
+        var originalCulture = CultureInfo.CurrentCulture;
+        var originalUICulture = CultureInfo.CurrentUICulture;
+
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(culture);
+            var mapper = CreateMapper(productProperties: [$"firstPublishDate|{modifier}"]);
+
+            // April 10 can be misread as October 4; June 23 has a day that cannot be interpreted as a month.
+            var dates = new[]
+            {
+                new DateTime(2026, 4, 10, 13, 14, 15, 123),
+                new DateTime(2026, 6, 23, 13, 14, 15, 123)
+            };
+            foreach (var date in dates)
+            {
+                foreach (var suffix in new[] { "Z", "+02:00", string.Empty })
+                {
+                    var rawValue = date.ToString("O", CultureInfo.InvariantCulture) + suffix;
+                    var offset = suffix switch
+                    {
+                        "Z" => TimeSpan.Zero,
+                        "+02:00" => TimeSpan.FromHours(2),
+                        // Unspecified dates retain the mapper's existing server-local interpretation.
+                        _ => TimeZoneInfo.Local.GetUtcOffset(date)
+                    };
+                    var expectedDate = new DateTimeOffset(date, offset);
+                    var expected = modifier == "unixms"
+                        ? expectedDate.ToUnixTimeMilliseconds()
+                        : expectedDate.ToUnixTimeSeconds();
+                    var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["firstPublishDate"] = rawValue
+                    });
+
+                    var record = mapper.Map(product.Object, CreateStore(), "products");
+
+                    Assert.NotNull(record);
+                    Assert.Equal(rawValue, Assert.IsType<string>(record!.Data["firstPublishDate"]));
+                    Assert.Equal(expected, Assert.IsType<long>(record.Data["firstPublishDateUnix"]));
+                }
+            }
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUICulture;
+        }
     }
 
     [Fact]

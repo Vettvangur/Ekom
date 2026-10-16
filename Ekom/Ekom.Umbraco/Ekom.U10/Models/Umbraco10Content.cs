@@ -1,5 +1,6 @@
 using Ekom.Models;
 using Ekom.Umb.Services;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Umbraco.Cms.Core.Models;
@@ -54,11 +55,20 @@ class Umbraco10Content : UmbracoContent
 
                         } else
                         {
-                            var value = prop.PropertyType.VariesByCulture()
-                                ? prop.GetSourceValue(firstCulture)?.ToString() ?? string.Empty
-                                : prop.GetSourceValue()?.ToString() ?? string.Empty;
+                            var culture = prop.PropertyType.VariesByCulture() ? firstCulture : null;
+                            var sourceValue = prop.GetSourceValue(culture);
+                            var value = sourceValue;
+                            var isDate = prop.PropertyType.EditorAlias == "Umbraco.DateTime";
+                            if (isDate && sourceValue is not DateTime and not DateTimeOffset
+                                && !string.IsNullOrWhiteSpace(sourceValue?.ToString()) && prop.HasValue(culture))
+                            {
+                                var converted = prop.GetValue(culture);
+                                // The legacy converter uses MinValue for invalid or missing dates.
+                                if (converted is DateTime date && date != DateTime.MinValue || converted is DateTimeOffset)
+                                    value = converted;
+                            }
                             
-                            return ResolveLocalLinks(value, richTextResolver);
+                            return ResolveLocalLinks(isDate ? FormatPropertyValue(value) : value?.ToString() ?? string.Empty, richTextResolver);
                         }
                     }
                     catch (Exception ex)
@@ -119,9 +129,23 @@ class Umbraco10Content : UmbracoContent
 
         }
 
+        if (prop?.PropertyType.PropertyEditorAlias == "Umbraco.DateTime")
+        {
+            var value = content.GetValue(alias);
+            if (value is DateTime or DateTimeOffset)
+                return FormatPropertyValue(value);
+        }
+
         return ResolveLocalLinks(content.GetValue<string>(alias) ?? string.Empty, richTextResolver);
 
     }
+
+    private static string FormatPropertyValue(object? value) => value switch
+    {
+        DateTime date => date.ToString("O", CultureInfo.InvariantCulture),
+        DateTimeOffset date => date.ToString("O", CultureInfo.InvariantCulture),
+        _ => value?.ToString() ?? string.Empty,
+    };
 
     private static string ResolveLocalLinks(string value, IEkomRichTextResolver? richTextResolver)
     {

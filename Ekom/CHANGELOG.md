@@ -17,6 +17,7 @@
 
 ### Bug Fixes
 
+* **cache:** serialize typed custom Umbraco Date/Time properties as invariant round-trip values to prevent culture-dependent day/month swaps in consumers such as Algolia; retain timezone information and leave date-like text unchanged. Rebuild the catalog cache and reindex dependent search indexes after upgrading; raw date property strings are now ISO-formatted.
 * **manager:** return a safe conflict response for checkout-blocked status updates, show editors recovery guidance in the list and detail views, and restore the saved status without automatically releasing checkout locks.
 * **order:** include the order number, UniqueId, and previous/requested status in warning logs when a checkout conflict blocks a status update, preserving the original exception and checkout safeguards.
 * **manager:** allow `Ekom:Manager:OrderStatusFireEventsByDefault` to configure list status-change events and the initial detail checkbox, preserving existing defaults when omitted and allowing per-update detail overrides.
