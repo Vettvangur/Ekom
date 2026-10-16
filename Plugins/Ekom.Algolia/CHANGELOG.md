@@ -25,6 +25,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.68](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.67...Ekom.Algolia-v0.2.68) (2026-10-16)
+
+
+### Bug Fixes
+
+* **cache:** serialize Umbraco dates in invariant round-trip format ([#1038](https://github.com/Vettvangur/Ekom/issues/1038)) ([c658a2f](https://github.com/Vettvangur/Ekom/commit/c658a2f2c849714b28ac9b1d3520e185aba47060))
+
 ## [0.2.67](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.66...Ekom.Algolia-v0.2.67) (2026-10-13)
 
 
