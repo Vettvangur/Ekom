@@ -17,6 +17,7 @@
 
 ### Bug Fixes
 
+* **order:** include the order number, UniqueId, and previous/requested status in warning logs when a checkout conflict blocks a status update, preserving the original exception and checkout safeguards.
 * **manager:** allow `Ekom:Manager:OrderStatusFireEventsByDefault` to configure list status-change events and the initial detail checkbox, preserving existing defaults when omitted and allowing per-update detail overrides.
 * **manager:** improve gift-card summaries with per-card actions and expandable details, and flag missing reservation references instead of presenting unconfirmed availability.
 * **manager:** add an editor-confirmed Release Lock checkout reset with recovery history and external-release warnings, and replace technical lock-status text with plain-language guidance and collapsed details.

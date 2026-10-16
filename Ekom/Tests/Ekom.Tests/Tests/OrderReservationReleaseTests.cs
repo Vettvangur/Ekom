@@ -13,6 +13,7 @@ using LinqToDB;
 using LinqToDB.Data;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
@@ -699,6 +700,50 @@ public sealed class OrderReservationReleaseTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task ChangeOrderStatusLogsConflictAndPreservesPersistedStatus(bool paymentReview)
+    {
+        using var fixture = new Fixture();
+        await fixture.PrepareAsync();
+        using var db = fixture.Database.Factory.GetDatabase();
+        const string orderNumber = "IS-1234";
+        await db.OrderData.Where(x => x.UniqueId == fixture.Order.UniqueId)
+            .Set(x => x.OrderNumber, orderNumber).UpdateAsync();
+        if (paymentReview)
+        {
+            await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == fixture.Order.UniqueId)
+                .Set(x => x.ReconciliationRequired, true).UpdateAsync();
+        }
+        else
+        {
+            await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == fixture.Order.UniqueId)
+                .Set(x => x.Owner, "another-node").UpdateAsync();
+        }
+
+        var error = await Assert.ThrowsAsync<CheckoutConflictException>(() => fixture.Service.ChangeOrderStatusAsync(
+            fixture.Order.UniqueId, OrderStatus.ReadyForDispatch,
+            settings: new ChangeOrderSettings { FireOnOrderStatusChangingEvent = false }));
+
+        Assert.Equal(paymentReview ? CheckoutConflictReason.PaymentReview : CheckoutConflictReason.Busy, error.Reason);
+        var warning = Assert.Single(fixture.Logger.Entries, x => x.Level == LogLevel.Warning);
+        Assert.Same(error, warning.Exception);
+        Assert.Equal("Order status change blocked for order {OrderNumber} (UniqueId: {OrderUniqueId}): {PreviousStatus} -> {RequestedStatus}.",
+            warning.Fields["{OriginalFormat}"]);
+        Assert.Equal(orderNumber, warning.Fields["OrderNumber"]);
+        Assert.Equal(fixture.Order.UniqueId, warning.Fields["OrderUniqueId"]);
+        Assert.Equal(OrderStatus.Pending, warning.Fields["PreviousStatus"]);
+        Assert.Equal(OrderStatus.ReadyForDispatch, warning.Fields["RequestedStatus"]);
+        Assert.Equal($"Order status change blocked for order {orderNumber} (UniqueId: {fixture.Order.UniqueId}): Pending -> ReadyForDispatch.",
+            warning.Message);
+        Assert.DoesNotContain(fixture.Logger.Entries, x => x.Level == LogLevel.Debug
+            && Equals(x.Fields.GetValueOrDefault("{OriginalFormat}"), "Change Order {OrderNumber} status to {Status}"));
+        var persisted = (await fixture.Repository.GetOrderAsync(fixture.Order.UniqueId))!;
+        Assert.Equal(OrderStatus.Pending, persisted.OrderStatus);
+        Assert.Equal(orderNumber, persisted.OrderNumber);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task TargetedUpdateUsesOwnerFenceWhenGuardedAndSnapshotPredicatesOtherwise(bool guarded)
     {
         using var fixture = new Fixture();
@@ -814,6 +859,24 @@ public sealed class OrderReservationReleaseTests
         }
     }
 
+    private sealed record LogEntry(LogLevel Level, Exception? Exception, string Message,
+        Dictionary<string, object?> Fields);
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<LogEntry> Entries { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            var fields = ((IEnumerable<KeyValuePair<string, object?>>)(object)state!)
+                .ToDictionary(x => x.Key, x => x.Value);
+            Entries.Add(new LogEntry(logLevel, exception, formatter(state, exception), fields));
+        }
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly ConfigurationScope _scope;
@@ -902,7 +965,7 @@ public sealed class OrderReservationReleaseTests
             var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
             context.Request.Headers.Cookie = $"ekmOrder-main={Order.UniqueId}";
             Service = new OrderService(_scope.Instance, Repository, null!, Mock.Of<IOrderActivityLogService>(),
-                NullLogger<OrderService>.Instance, stores.Object, _cache, Mock.Of<IMemberService>(), null!,
+                Logger, stores.Object, _cache, Mock.Of<IMemberService>(), null!,
                 Mock.Of<IOrderTrackingService>(), new Microsoft.AspNetCore.Http.HttpContextAccessor { HttpContext = context },
                 paymentAttempts: Attempts);
         }
@@ -916,6 +979,7 @@ public sealed class OrderReservationReleaseTests
         public OrderInfo Order { get; private set; }
         public OrderRepository Repository { get; }
         public OrderService Service { get; }
+        public RecordingLogger<OrderService> Logger { get; } = new();
         public CheckoutPaymentAttemptService Attempts { get; }
 
         public OrderSettings Settings() => new() { OrderInfo = Order, FireEvents = false, FireOnOrderUpdatedEvent = false };
