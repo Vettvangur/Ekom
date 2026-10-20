@@ -303,6 +303,90 @@ public class AlgoliaProductIndexMapperTests
         Assert.Equal(["Web", "Store"], Assert.IsAssignableFrom<IReadOnlyList<string>>(record!.Data["channels"]));
     }
 
+    [Theory]
+    [InlineData(false, "splitcomma")]
+    [InlineData(true, "splitcomma")]
+    [InlineData(true, "SPLITCOMMA")]
+    public void Splits_Comma_Separated_Product_Properties_Into_Arrays(bool facet, string modifier)
+    {
+        var field = $"foodCategories|{modifier}";
+        var mapper = CreateMapper(
+            productProperties: facet ? [] : [field],
+            facetAttributes: facet ? [field] : []);
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["foodCategories"] = " Lambakjöt, Nautakjöt, ,Pottréttir, Villibráð, lambakjöt, "
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        using var json = JsonDocument.Parse(JsonSerializer.Serialize(record));
+        var fields = facet ? json.RootElement.GetProperty("attributes") : json.RootElement;
+        Assert.Equal(
+            ["Lambakjöt", "Nautakjöt", "Pottréttir", "Villibráð"],
+            fields.GetProperty("foodCategories").EnumerateArray().Select(value => value.GetString()));
+    }
+
+    [Theory]
+    [InlineData("Lambakjöt")]
+    [InlineData("0")]
+    [InlineData("true")]
+    public void Keeps_Single_SplitComma_Value_As_String_Array(string rawValue)
+    {
+        var mapper = CreateMapper(productProperties: ["foodCategories|splitcomma"]);
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["foodCategories"] = rawValue
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal([rawValue], Assert.IsAssignableFrom<IReadOnlyList<string>>(record.Data["foodCategories"]));
+    }
+
+    [Theory]
+    [InlineData(false, "")]
+    [InlineData(false, "   ")]
+    [InlineData(false, ", , ,")]
+    [InlineData(true, "")]
+    [InlineData(true, "   ")]
+    [InlineData(true, ", , ,")]
+    public void Omits_Empty_SplitComma_Product_Properties(bool facet, string rawValue)
+    {
+        const string field = "foodCategories|splitcomma";
+        var mapper = CreateMapper(
+            productProperties: facet ? [] : [field],
+            facetAttributes: facet ? [field] : []);
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["foodCategories"] = rawValue
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.DoesNotContain("foodCategories", record.Data.Keys);
+        Assert.DoesNotContain("attributes", record.Data.Keys);
+    }
+
+    [Fact]
+    public void Preserves_Comma_Separated_Product_Properties_Without_Modifier()
+    {
+        var mapper = CreateMapper(productProperties: ["foodCategories"]);
+        const string rawValue = "Lambakjöt, Nautakjöt";
+        var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["foodCategories"] = rawValue
+        });
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(rawValue, Assert.IsType<string>(record.Data["foodCategories"]));
+    }
+
     [Fact]
     public void Skips_Invalid_Int_Product_Properties_From_Configured_Modifier()
     {
@@ -333,13 +417,15 @@ public class AlgoliaProductIndexMapperTests
         Assert.DoesNotContain("weight", record!.Data.Keys);
     }
 
-    [Fact]
-    public void Skips_Invalid_Array_Product_Properties_From_Configured_Modifier()
+    [Theory]
+    [InlineData("Web")]
+    [InlineData("Web, Store")]
+    public void Skips_Invalid_Array_Product_Properties_From_Configured_Modifier(string rawValue)
     {
         var mapper = CreateMapper(productProperties: ["channels|array"]);
         var product = CreateProduct(properties: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["channels"] = "Web"
+            ["channels"] = rawValue
         });
 
         var record = mapper.Map(product.Object, CreateStore(), "products");

@@ -882,7 +882,7 @@ Product indexes are configured with `AttributeForDistinct = ProductId`. `Search:
 
 ### Additional product properties and metafields
 
-`Indexing:ProductProperties` adds extra product properties and metafields that are not part of the default product record fields listed above. The built-in `summary` and `description` aliases may also be configured with `|striphtml` to transform their top-level record fields. Each entry supports one optional modifier: `|array`, `|int`, `|decimal`, `|unix`, `|unixms`, or `|striphtml`.
+`Indexing:ProductProperties` adds extra product properties and metafields that are not part of the default product record fields listed above. The built-in `summary` and `description` aliases may also be configured with `|striphtml` to transform their top-level record fields. Each entry supports one optional modifier: `|array`, `|splitcomma`, `|int`, `|decimal`, `|unix`, `|unixms`, or `|striphtml`.
 
 ```json
 {
@@ -924,6 +924,7 @@ Metafields can be indexed explicitly with `metafield:<alias>`:
 Modifier behavior:
 
 - `|array` parses JSON arrays such as `["Web","Store"]` into Algolia string arrays.
+- `|splitcomma` splits comma-separated text into string arrays, trims whitespace, removes empty entries, and deduplicates values case-insensitively while preserving the first spelling and order. Empty results are omitted. Every comma is a separator; quoted/escaped CSV values are not supported. This is opt-in and does not change `|array` behavior.
 - `|decimal` accepts comma or dot decimal separators, such as `0,1` and `0.0`.
 - `|unix` and `|unixms` convert dates to Unix seconds and milliseconds. Typed custom Umbraco Date/Time values are serialized by Ekom's cache adapters in invariant round-trip format, avoiding server-culture day/month ambiguity. Text properties still use the existing date-parsing behavior; ambiguous localized text needs a known source format. Dates without timezone information retain the mapper's existing server-local interpretation. After upgrading Ekom's date serialization, rebuild its catalog cache and reindex Algolia to replace old timestamps.
 - `|striphtml` converts direct HTML or rich-text JSON with a `markup` property to plain text. It removes script and style content, decodes HTML entities, and normalizes tags and whitespace to single spaces.
@@ -966,6 +967,32 @@ This produces values such as:
   }
 }
 ```
+
+For a textstring product property containing comma-separated values, configure `|splitcomma`:
+
+```json
+{
+  "Ekom": {
+    "Algolia": {
+      "Indexing": {
+        "FacetAttributes": ["foodCategories|splitcomma"]
+      }
+    }
+  }
+}
+```
+
+For example, `Lambakjöt, Nautakjöt, Pottréttir, Villibráð` becomes:
+
+```json
+{
+  "attributes": {
+    "foodCategories": ["Lambakjöt", "Nautakjöt", "Pottréttir", "Villibráð"]
+  }
+}
+```
+
+The plugin registers `attributes.foodCategories` for faceting automatically. Filter individual values with an Algolia filter such as `attributes.foodCategories:"Lambakjöt"`. Replace `foodCategories` with your product property alias. If the store has its own `Stores[*]:Indexing` override, configure `FacetAttributes` there instead. Rebuild the product index after changing the configuration to update existing records and facet settings.
 
 `Indexing:VariantFacetAttributes` maps output facet names to properties on either the variant group or variant node. When variant indexing is disabled, each configured facet is added to the product record as a distinct array of values from all variants. When variant indexing is enabled, facets are stored on individual variant records to support combination-safe filtering. This supports two-level variants such as color groups containing size variants:
 
