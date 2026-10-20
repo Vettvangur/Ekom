@@ -711,6 +711,14 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         if (valueType == AlgoliaFieldValueType.Array)
             return TryParseStringArray(value);
 
+        if (valueType == AlgoliaFieldValueType.SplitComma)
+        {
+            var values = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            return values.Length > 0 ? values : null;
+        }
+
         if (bool.TryParse(value, out var booleanValue))
             return booleanValue;
 
@@ -865,6 +873,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
                 "int" => new ConfiguredField(alias, source, AlgoliaFieldValueType.Int, AlgoliaFieldTransform.None),
                 "decimal" => new ConfiguredField(alias, source, AlgoliaFieldValueType.Decimal, AlgoliaFieldTransform.None),
                 "array" => new ConfiguredField(alias, source, AlgoliaFieldValueType.Array, AlgoliaFieldTransform.None),
+                "splitcomma" => new ConfiguredField(alias, source, AlgoliaFieldValueType.SplitComma, AlgoliaFieldTransform.None),
                 "unix" => new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixSeconds),
                 "unixms" => new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.UnixMilliseconds),
                 "striphtml" => new ConfiguredField(alias, source, AlgoliaFieldValueType.None, AlgoliaFieldTransform.StripHtml),
@@ -929,7 +938,8 @@ internal enum AlgoliaFieldValueType
     None,
     Int,
     Decimal,
-    Array
+    Array,
+    SplitComma
 }
 
 internal enum AlgoliaVariantFacetSource

@@ -263,6 +263,23 @@ public class AlgoliaProductIndexExecutorTests
         Assert.Equal(["filterOnly(categoryPageId)"], attributes);
     }
 
+    [Theory]
+    [InlineData(false, "attributes.foodCategories")]
+    [InlineData(true, "afterDistinct(attributes.foodCategories)")]
+    public void Configures_SplitComma_Facet_Using_Property_Alias(bool variants, string expected)
+    {
+        var options = new AlgoliaIndexingOptions
+        {
+            Variants = variants,
+            FacetAttributes = ["foodCategories|splitcomma"],
+        };
+
+        var attributes = AlgoliaProductIndexExecutor.BuildAttributesForFaceting(options);
+
+        Assert.Contains(expected, attributes);
+        Assert.DoesNotContain(attributes, attribute => attribute.Contains('|'));
+    }
+
     [Fact]
     public void Configures_Facets_After_Distinct_When_Variants_Are_Enabled()
     {
