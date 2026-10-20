@@ -26,6 +26,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.69](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.68...Ekom.Algolia-v0.2.69) (2026-10-20)
+
+
+### Features
+
+* **algolia:** support comma-separated product facets ([#1042](https://github.com/Vettvangur/Ekom/issues/1042)) ([ae25811](https://github.com/Vettvangur/Ekom/commit/ae258116cd3494f6ce1eeade51a404496743b470))
+
 ## [0.2.68](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.67...Ekom.Algolia-v0.2.68) (2026-10-16)
 
 
