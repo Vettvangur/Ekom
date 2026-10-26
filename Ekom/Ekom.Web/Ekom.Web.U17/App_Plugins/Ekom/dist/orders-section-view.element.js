@@ -456,6 +456,8 @@ class se extends Z(HTMLElement) {
   }
   renderGiftcardRecovery() {
     var t;
+    if (((t = this.recoveryAttempts) == null ? void 0 : t.length) === 0 && !this.recoveryLoading && !this.recoveryError && !this.recoveryOperation && !this.recoveryMessage && !this.recoveryActionError && !this.recoveryRefreshError && !this.orderActionsError)
+      return "";
     const e = (r, a) => `<dt>${s(r)}</dt><dd>${s(a ?? "Not recorded")}</dd>`;
     return `<section class="ekmOrderTracking ekmGiftcardRecovery"><h4>Failed gift-card preparation</h4>
       <p>Recovery history for failed checkout preparation, not accepted payment. These actions do not refund a payment or retry checkout.</p>
@@ -465,7 +467,6 @@ class se extends Z(HTMLElement) {
       ${this.orderActionsError ? '<p role="alert">We could not refresh order actions. Recovery actions are unavailable. Reopen the order to try again.</p>' : ""}
       ${this.recoveryLoading ? "<p>Loading recovery history...</p>" : ""}
       ${this.recoveryError ? '<p role="alert">We could not load gift-card recovery history. Recovery actions are unavailable. Reopen the order to try again.</p>' : ""}
-      ${!this.recoveryError && !this.recoveryLoading && ((t = this.recoveryAttempts) == null ? void 0 : t.length) === 0 ? "<p>No failed gift-card preparation history.</p>" : ""}
       ${this.recoveryAttempts === void 0 && !this.recoveryLoading && !this.recoveryError ? "<p>Recovery history has not been checked. Recovery actions are unavailable.</p>" : ""}
       ${(this.recoveryAttempts || []).map((r) => {
       const a = r.canReconcile && !!r.reconcileToken;
@@ -493,8 +494,8 @@ class se extends Z(HTMLElement) {
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
         <div class="umb-table-body">
           ${t.map((m) => {
-      var O, g, w, I, A, x, C, P, R, _, T, q;
-      return `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${s(m.key)}" data-product-title="${s((O = m.product) == null ? void 0 : O.title)}" ${this.removingOrderLineId === m.key ? "disabled" : ""} aria-label="Remove ${s((g = m.product) == null ? void 0 : g.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><span>${ce(m.product)} (${s((w = m.product) == null ? void 0 : w.sku)})</span>${m.variant ? `<small style="display:block; margin-top:3px;">${s(m.variant.title)} ${m.variant.sku ? `(${s(m.variant.sku)})` : ""}</small>` : ""}${ue(m)}</div><div class="umb-table-cell">${s(m.quantity)}</div><div class="umb-table-cell">${s((x = (A = (I = m.product) == null ? void 0 : I.price) == null ? void 0 : A.withVat) == null ? void 0 : x.currencyString)}</div><div class="umb-table-cell">${s((P = (C = m.amount) == null ? void 0 : C.vat) == null ? void 0 : P.currencyString)}</div><div class="umb-table-cell">-${s((_ = (R = m.amount) == null ? void 0 : R.discountAmount) == null ? void 0 : _.currencyString)}</div><div class="umb-table-cell"><strong>${s((q = (T = m.amount) == null ? void 0 : T.withVat) == null ? void 0 : q.currencyString)}</strong></div></div>`;
+      var O, y, w, I, A, x, C, P, R, _, T, q;
+      return `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${s(m.key)}" data-product-title="${s((O = m.product) == null ? void 0 : O.title)}" ${this.removingOrderLineId === m.key ? "disabled" : ""} aria-label="Remove ${s((y = m.product) == null ? void 0 : y.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><span>${ce(m.product)} (${s((w = m.product) == null ? void 0 : w.sku)})</span>${m.variant ? `<small style="display:block; margin-top:3px;">${s(m.variant.title)} ${m.variant.sku ? `(${s(m.variant.sku)})` : ""}</small>` : ""}${ue(m)}</div><div class="umb-table-cell">${s(m.quantity)}</div><div class="umb-table-cell">${s((x = (A = (I = m.product) == null ? void 0 : I.price) == null ? void 0 : A.withVat) == null ? void 0 : x.currencyString)}</div><div class="umb-table-cell">${s((P = (C = m.amount) == null ? void 0 : C.vat) == null ? void 0 : P.currencyString)}</div><div class="umb-table-cell">-${s((_ = (R = m.amount) == null ? void 0 : R.discountAmount) == null ? void 0 : _.currencyString)}</div><div class="umb-table-cell"><strong>${s((q = (T = m.amount) == null ? void 0 : T.withVat) == null ? void 0 : q.currencyString)}</strong></div></div>`;
     }).join("")}
         </div>
         <div class="umb-table-footer">
@@ -818,32 +819,32 @@ class se extends Z(HTMLElement) {
   }
   async executeGiftcardRecovery(e, t) {
     var b, m, O;
-    const r = (b = this.selectedOrder) == null ? void 0 : b.uniqueId, a = (m = this.recoveryAttempts) == null ? void 0 : m.find((g) => g.attemptId === e);
+    const r = (b = this.selectedOrder) == null ? void 0 : b.uniqueId, a = (m = this.recoveryAttempts) == null ? void 0 : m.find((y) => y.attemptId === e);
     if (!r || !a || this.recoveryBusy) return;
-    const o = t !== void 0, n = o ? a.claims.find((g) => g.id === t) : void 0, c = o ? n == null ? void 0 : n.releaseToken : a.reconcileToken;
+    const o = t !== void 0, n = o ? a.claims.find((y) => y.id === t) : void 0, c = o ? n == null ? void 0 : n.releaseToken : a.reconcileToken;
     if (!c || (o ? !(n != null && n.canRelease) || !n.claimReference : !a.canReconcile)) return;
     const h = o ? `Release the failed-preparation hold for masked card ${n.cardReference}, claim ${n.claimReference}? This calls the provider through audited recovery. It does not refund an accepted payment or retry payment or checkout. Unknown effects may still need reconciliation.` : "Reconcile this failed gift-card preparation? The audited backend will check known claims and unknown provider effects. This does not refund an accepted payment or retry payment or checkout. Unresolved effects may remain blocked.";
     if (!window.confirm(h)) return;
     const p = this.orderRequestId, v = () => {
-      var g;
-      return p === this.orderRequestId && r === ((g = this.selectedOrder) == null ? void 0 : g.uniqueId);
+      var y;
+      return p === this.orderRequestId && r === ((y = this.selectedOrder) == null ? void 0 : y.uniqueId);
     };
     this.recoveryOperation = o ? `release:${e}:${t}` : `reconcile:${e}`, this.recoveryScrollTop = (O = this.querySelector(".ekmOverlay")) == null ? void 0 : O.scrollTop, this.recoveryMessage = "", this.recoveryActionError = "", this.render();
     try {
-      const g = o ? await this.api.releaseGiftcardRecovery(r, e, n.id, c) : await this.api.reconcileGiftcardRecovery(r, e, c);
+      const y = o ? await this.api.releaseGiftcardRecovery(r, e, n.id, c) : await this.api.reconcileGiftcardRecovery(r, e, c);
       if (!v()) return;
-      this.recoveryMessage = `${g.message} ${g.resolved ? "Failed preparation resolved." : "Recovery remains unresolved; check the updated history."}`;
-    } catch (g) {
+      this.recoveryMessage = `${y.message} ${y.resolved ? "Failed preparation resolved." : "Recovery remains unresolved; check the updated history."}`;
+    } catch (y) {
       if (!v()) return;
-      this.recoveryActionError = f(g, "Recovery could not be confirmed. Check the updated history before trying again.");
+      this.recoveryActionError = f(y, "Recovery could not be confirmed. Check the updated history before trying again.");
     } finally {
       v() && (await Promise.all([
         this.loadGiftcardRecovery(r),
         this.loadOrderLockStatus(r),
         this.loadOrderActions(r),
         this.loadOrderLogs(r),
-        this.api.orderInfo(r).then((g) => {
-          v() && (this.selectedOrder = g);
+        this.api.orderInfo(r).then((y) => {
+          v() && (this.selectedOrder = y);
         }).catch(() => {
           v() && (this.recoveryRefreshError = !0);
         })
@@ -952,7 +953,7 @@ class se extends Z(HTMLElement) {
           window.open(URL.createObjectURL(c), "_blank");
         else {
           const b = await c.text();
-          this.showSuccess(ge(b));
+          this.showSuccess(ye(b));
         }
         if (a !== this.orderRequestId) return;
         const [v] = await Promise.all([this.api.orderInfo(r), this.loadOrderLockStatus(r), this.loadGiftcardRecovery(r)]);
@@ -1162,13 +1163,13 @@ function pe(i) {
 }
 function ve(i) {
   var o, n, c, h, p, v;
-  const l = Object.entries(((o = i.ga4) == null ? void 0 : o.data) || {}), e = Object.entries(((n = i.meta) == null ? void 0 : n.data) || {}), t = i.algolia, r = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], a = W(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${y("User token", t.userToken)}${r.length ? `<ul>${r.map((b) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${s(b.orderLineKey)}<br><strong>Query ID</strong>: ${s(b.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
-  return `<div class="ekmSplit"><div class="ekmSplit__column">${y("Captured", $(i.capturedAtUtc))}${y("Capture method", i.captureMethod)}${i.hasCookieSupport !== null && i.hasCookieSupport !== void 0 ? `<p>Cookie support: ${i.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${y("Source", i.source)}${y("Medium", i.medium)}${y("Campaign", i.campaign)}${y("Term", i.term)}${y("Content", i.content)}${y("Click ID", i.clickId)}${y("Click ID Type", i.clickIdType)}${y("Landing URL", i.landingUrl)}${y("Referrer", i.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${y("Client ID", (c = i.ga4) == null ? void 0 : c.clientId)}${y("Session ID", (h = i.ga4) == null ? void 0 : h.sessionId)}${D(l)}<h5>Meta</h5>${y("FBP", (p = i.meta) == null ? void 0 : p.fbp)}${y("FBC", (v = i.meta) == null ? void 0 : v.fbc)}${D(e)}${a}</div></div>`;
+  const l = Object.entries(((o = i.ga4) == null ? void 0 : o.data) || {}), e = Object.entries(((n = i.meta) == null ? void 0 : n.data) || {}), t = i.algolia, r = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], a = W(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${g("User token", t.userToken)}${r.length ? `<ul>${r.map((b) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${s(b.orderLineKey)}<br><strong>Query ID</strong>: ${s(b.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
+  return `<div class="ekmSplit"><div class="ekmSplit__column">${g("Captured", $(i.capturedAtUtc))}${g("Capture method", i.captureMethod)}${i.hasCookieSupport !== null && i.hasCookieSupport !== void 0 ? `<p>Cookie support: ${i.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${g("Source", i.source)}${g("Medium", i.medium)}${g("Campaign", i.campaign)}${g("Term", i.term)}${g("Content", i.content)}${g("Click ID", i.clickId)}${g("Click ID Type", i.clickIdType)}${g("Landing URL", i.landingUrl)}${g("Referrer", i.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${g("Client ID", (c = i.ga4) == null ? void 0 : c.clientId)}${g("Session ID", (h = i.ga4) == null ? void 0 : h.sessionId)}${D(l)}<h5>Meta</h5>${g("FBP", (p = i.meta) == null ? void 0 : p.fbp)}${g("FBC", (v = i.meta) == null ? void 0 : v.fbc)}${D(e)}${a}</div></div>`;
 }
 function W(i) {
   return !!(i && (i.userToken || Array.isArray(i.lines) && i.lines.length));
 }
-function y(i, l) {
+function g(i, l) {
   return l ? `<p class="ekmOrderTracking__wrap">${s(i)}: ${s(l)}</p>` : "";
 }
 function D(i) {
@@ -1202,7 +1203,7 @@ function U(i, l) {
 function G(i) {
   return Object.fromEntries(i.map((l) => [l.key, l.value || ""]));
 }
-function ge(i) {
+function ye(i) {
   try {
     return JSON.parse(i).message || i;
   } catch {

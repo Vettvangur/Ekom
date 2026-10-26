@@ -1,6 +1,7 @@
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Events;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Umbraco;
 using Ekom.Services;
@@ -11,6 +12,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using Xunit;
 
@@ -347,6 +350,187 @@ public class NativeDiscountPriceTests
         Assert.Equal(380m, order.GrandTotalWithOutVat.Value);
     }
 
+    [Theory]
+    [InlineData(false, false, 0.2, 7497.5)]
+    [InlineData(true, false, 0.2, 7497.5)]
+    [InlineData(false, false, 0.6, 5998)]
+    [InlineData(true, false, 0.6, 5998)]
+    [InlineData(false, false, 0.5, 7497.5)]
+    [InlineData(false, true, 0.2, 5998)]
+    [InlineData(true, true, 0.2, 5998)]
+    public void GrandTotal_UsesSelectedCustomerPriceDiscountBeforeAndAfterReload(
+        bool variant, bool stackable, decimal orderPercentage, decimal expected)
+    {
+        using var fixture = new Fixture();
+        Mock.Get(fixture.Store).SetupGet(x => x.Culture).Returns(new CultureInfoDto { Name = "en-US" });
+        var order = new OrderInfo(new OrderData { OrderStatus = OrderStatus.Incomplete }, fixture.Store)
+        {
+            Discount = PercentageDiscount(orderPercentage, stackable),
+        };
+        var product = fixture.Product("14995", "");
+        var staffDiscount = PercentageDiscount(0.5m);
+        var staffPrice = new Price(14995m, fixture.Store.Currency, 0, true, staffDiscount);
+        var dynamicRequest = new OrderDynamicRequest
+        {
+            Prices = variant ? null : [staffPrice],
+            VariantPrices = variant ? [staffPrice] : null,
+        };
+        var variantGroup = new Mock<IVariantGroup>();
+        variantGroup.SetupGet(x => x.Properties).Returns(new Dictionary<string, string>());
+        var selectedVariant = new Mock<IVariant>();
+        selectedVariant.SetupGet(x => x.Properties).Returns(new Dictionary<string, string>
+        {
+            ["id"] = "400",
+            ["__Key"] = Guid.NewGuid().ToString(),
+            ["__Path"] = "-1,100,200,300,400",
+        });
+        selectedVariant.SetupGet(x => x.Prices).Returns([new Price(14995m, fixture.Store.Currency, 0, true)]);
+        selectedVariant.SetupGet(x => x.VariantGroup).Returns(variantGroup.Object);
+        var line = new OrderLine(product, 1, Guid.NewGuid(), order, [], variant ? selectedVariant.Object : null, dynamicRequest);
+        order.UpdateOrderlines([line]);
+
+        // Read payable totals first: they must not depend on a cart having read Amount earlier.
+        Assert.Equal(expected, order.ChargedAmount.Value);
+        Assert.Equal(expected, order.GrandTotal.Value);
+        Assert.Equal(expected, order.GrandTotalWithOutVat.Value);
+        Assert.Equal(expected, line.Amount.Value);
+        Assert.Equal(expected, order.OrderLineTotal.Value);
+        Assert.Equal(
+            stackable ? expected : 14995m * (1 - orderPercentage),
+            order.GetChargedAmountForDiscountComparison());
+        Assert.Equal(expected, order.ChargedAmount.Value);
+
+        var reloaded = new OrderInfo(new OrderData
+        {
+            OrderInfo = JsonConvert.SerializeObject(order, EkomJsonDotNet.Settings),
+        });
+
+        Assert.Equal(expected, reloaded.ChargedAmount.Value);
+        Assert.Equal(expected, reloaded.GrandTotal.Value);
+        Assert.Equal(expected, reloaded.GrandTotalWithOutVat.Value);
+        Assert.Equal(expected, Assert.Single(reloaded.OrderLines).Amount.Value);
+    }
+
+    [Fact]
+    public void ChargedAmount_PreservesStaffDiscountWithWholeKronaRounding()
+    {
+        using var fixture = new Fixture();
+        var currency = new CurrencyModel { CurrencyValue = "is-IS", CurrencyFormat = "C0" };
+        Mock.Get(fixture.Store).SetupGet(x => x.Currency).Returns(currency);
+        Mock.Get(fixture.Store).SetupGet(x => x.Currencies).Returns([currency]);
+        Mock.Get(fixture.Store).SetupGet(x => x.Culture).Returns(new CultureInfoDto { Name = "is-IS" });
+        var order = new OrderInfo(new OrderData(), fixture.Store)
+        {
+            Discount = PercentageDiscount(0.2m),
+        };
+        var line = new OrderLine(fixture.Product("14995", ""), 1, Guid.NewGuid(), order, [],
+            orderDynamic: new OrderDynamicRequest
+            {
+                Prices = [new Price(14995m, currency, 0, true, PercentageDiscount(0.5m))],
+            });
+        order.UpdateOrderlines([line]);
+
+        Assert.Equal(7498m, order.ChargedAmount.Value);
+        Assert.Equal(7498m, line.Amount.Value);
+        Assert.Equal(7498m, order.GrandTotalWithOutVat.Value);
+    }
+
+    [Theory]
+    [InlineData(true, 120)]
+    [InlineData(false, 100)]
+    public void GrandTotal_PreservesBetterProductDiscountWithVatFeesAndGiftcards(
+        bool vatIncluded, decimal original)
+    {
+        using var fixture = new Fixture(vatIncluded, 0.2m);
+        Mock.Get(fixture.Store).SetupGet(x => x.Culture).Returns(new CultureInfoDto { Name = "en-US" });
+        var order = new OrderInfo(new OrderData(), fixture.Store)
+        {
+            Discount = PercentageDiscount(0.2m),
+        };
+        var product = fixture.Product(original.ToString(System.Globalization.CultureInfo.InvariantCulture), "");
+        var line = new OrderLine(product, 2, Guid.NewGuid(), order, [], orderDynamic: new OrderDynamicRequest
+        {
+            Prices = [new Price(original, fixture.Store.Currency, 0.2m, vatIncluded, PercentageDiscount(0.5m))],
+        });
+        order.UpdateOrderlines([line]);
+        var fee = new JObject
+        {
+            ["Id"] = 1,
+            ["Key"] = Guid.NewGuid(),
+            ["Title"] = "Fee",
+            ["Price"] = JToken.FromObject(
+                new Price(vatIncluded ? 12m : 10m, fixture.Store.Currency, 0.2m, vatIncluded)),
+        };
+        order.ShippingProvider = new OrderedShippingProvider(fee, order.StoreInfo);
+        order.PaymentProvider = new OrderedPaymentProvider(fee, order.StoreInfo);
+        order.Giftcards = [new Giftcard { Amount = 25m, Code = "staff-giftcard" }];
+
+        Assert.Equal(144m, order.GrandTotal.Value);
+        Assert.Equal(120m, order.GrandTotalWithOutVat.Value);
+        Assert.Equal(119m, order.ChargedAmount.Value);
+        Assert.Equal(120m, order.OrderLineTotal.Value);
+        Assert.Equal(100m, order.OrderLineTotalWithOutVat.Value);
+        Assert.Equal(20m, order.Vat.Value);
+    }
+
+    [Theory]
+    [InlineData(OrderDiscountQuantityMode.None, 530)]
+    [InlineData(OrderDiscountQuantityMode.Repeating, 610)]
+    public void GrandTotal_CombinesStaffAndOrderDiscountsWithoutStackingOnTheSameLine(
+        OrderDiscountQuantityMode mode, decimal expected)
+    {
+        using var fixture = new Fixture();
+        Mock.Get(fixture.Store).SetupGet(x => x.Culture).Returns(new CultureInfoDto { Name = "en-US" });
+        var order = new OrderInfo(new OrderData(), fixture.Store)
+        {
+            Discount = new OrderedDiscount(Guid.NewGuid(), "Order discount", false, 0.2m,
+                DiscountType.Percentage, ["200"], [], new Constraints(), false, true,
+                mode, ["200"], 3, 1),
+        };
+        var staffLine = new OrderLine(fixture.Product("100", "50"), 1, Guid.NewGuid(), order, []);
+        var ordinaryLine = new OrderLine(fixture.Product("200", ""), 3, Guid.NewGuid(), order, []);
+        order.UpdateOrderlines([staffLine, ordinaryLine]);
+
+        Assert.Equal(expected, order.ChargedAmount.Value);
+        Assert.Equal(50m, staffLine.Amount.Value);
+        Assert.Equal(expected - 50m, ordinaryLine.Amount.Value);
+        Assert.Equal(expected, order.GrandTotalWithOutVat.Value);
+        Assert.Equal(order.OrderLineTotal.Value, order.GrandTotal.Value);
+    }
+
+    [Fact]
+    public void GrandTotal_ReusesQuantityAllocationWithinCalculationButNotAfterBasketChanges()
+    {
+        var nodes = new Mock<INodeService>();
+        nodes.Setup(x => x.NodeById("100", false)).Returns(new UmbracoContent { Path = "1,100" });
+        using var fixture = new Fixture(nodeService: nodes.Object);
+        Mock.Get(fixture.Store).SetupGet(x => x.Culture).Returns(new CultureInfoDto { Name = "en-US" });
+        var order = new OrderInfo(new OrderData(), fixture.Store) { Discount = PercentageDiscount(0.2m) };
+        var product = fixture.Product("100", "50");
+        product.SetCategories("100");
+        var lines = Enumerable.Range(0, 10)
+            .Select(_ => new OrderLine(product, 1, Guid.NewGuid(), order, []))
+            .ToList();
+        order.UpdateOrderlines(lines);
+
+        using (OrderPricingCalculationScope.Enter(order))
+        {
+            Assert.Equal(500m, order.GrandTotal.Value);
+            Assert.Equal(500m, order.GrandTotalWithOutVat.Value);
+            Assert.Equal(500m, order.ChargedAmount.Value);
+            nodes.Verify(x => x.NodeById("100", false), Times.Once);
+        }
+
+        lines[0].Quantity = 2;
+
+        Assert.Equal(550m, order.ChargedAmount.Value);
+        nodes.Verify(x => x.NodeById("100", false), Times.Exactly(2));
+    }
+
+    private static OrderedDiscount PercentageDiscount(decimal amount, bool stackable = false)
+        => new(Guid.NewGuid(), "Customer discount", stackable, amount, DiscountType.Percentage,
+            [], [], new Constraints(), false, true);
+
     private static UmbracoContent Content(
         string price,
         string target,
@@ -380,6 +564,7 @@ public class NativeDiscountPriceTests
     private sealed class TestProduct(UmbracoContent content, IStore store) : Product(content, store)
     {
         public void SetTarget(string target) => _properties["ekmDiscountPrice"] = target;
+        public void SetCategories(string categories) => _properties["categories"] = categories;
     }
 
     private sealed class Fixture : IDisposable
@@ -389,7 +574,7 @@ public class NativeDiscountPriceTests
         public DiscountEvents Events { get; } = new();
         public IStore Store { get; }
 
-        public Fixture(bool vatIncluded = true, decimal vat = 0, bool useSecondCurrency = false)
+        public Fixture(bool vatIncluded = true, decimal vat = 0, bool useSecondCurrency = false, INodeService? nodeService = null)
         {
             var usd = new CurrencyModel { CurrencyValue = "en-US", CurrencyFormat = "C" };
             var gbp = new CurrencyModel { CurrencyValue = "en-GB", CurrencyFormat = "C" };
@@ -411,6 +596,8 @@ public class NativeDiscountPriceTests
                 services.AddSingleton(new ProductDiscountService(discounts.Object, Events));
                 services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
                 services.AddSingleton<IStoreService>(stores.Object);
+                services.AddSingleton(new Ekom.API.Store(stores.Object, Mock.Of<ICacheRefreshService>()));
+                if (nodeService != null) services.AddSingleton(nodeService);
                 services.AddTransient(sp => new Catalog(Mock.Of<ILogger<Catalog>>(),
                     sp.GetRequiredService<Configuration>(), sp.GetRequiredService<IServiceScopeFactory>(),
                     Mock.Of<IPerStoreIndexedCache<IProduct>>(), Mock.Of<IPerStoreIndexedCache<ICategory>>(),

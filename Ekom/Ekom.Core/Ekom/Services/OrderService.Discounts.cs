@@ -605,7 +605,7 @@ partial class OrderService
 
         if (discount is IProductDiscount productDiscount)
         {
-            decimal oldTotal = orderInfo.ChargedAmount.Value;
+            decimal oldTotal = orderInfo.GetChargedAmountForDiscountComparison();
 
             // Save original discounts
             OrderedDiscount prevOrderDiscount = orderInfo.Discount;
@@ -619,12 +619,11 @@ partial class OrderService
                     line.Discount = new OrderedDiscount(productDiscount);
                 }
             }
-            // In case of an exclusive discount, we remove since OrderInfo ChargedAmount ignores
-            // product discounts when an exclusive order discount is applied.
-            // This ignoring happens for comparison reasons and is explained in ChargedAmount.
+            // Compare the product-discount candidate without the existing order discount.
+            // Only the comparison calculation ignores products for an exclusive order discount.
             orderInfo.Discount = null;
             // Compare
-            bool result = orderInfo.ChargedAmount.Value < oldTotal;
+            bool result = orderInfo.GetChargedAmountForDiscountComparison() < oldTotal;
 
             // Reset to previous discounts
             orderInfo.Discount = prevOrderDiscount;
@@ -645,11 +644,11 @@ partial class OrderService
             //}
 
             OrderedDiscount oldDiscount = orderInfo.Discount;
-            decimal oldTotal = orderInfo.ChargedAmount.Value;
+            decimal oldTotal = orderInfo.GetChargedAmountForDiscountComparison();
 
             orderInfo.Discount = new OrderedDiscount(discount);
 
-            bool result = orderInfo.ChargedAmount.Value < oldTotal;
+            bool result = orderInfo.GetChargedAmountForDiscountComparison() < oldTotal;
 
             orderInfo.Discount = oldDiscount;
 
