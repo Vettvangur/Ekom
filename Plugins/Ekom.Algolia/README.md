@@ -67,7 +67,7 @@ public sealed class ProductSearchController
                 {
                     Query = "shoe",
                     HitsPerPage = 20,
-                    Filters = "Available:1"
+                    Filters = "available:1"
                 }
             },
             ct).ConfigureAwait(false);
@@ -714,7 +714,7 @@ var response = await algoliaSearchService.SearchProductsAsync(
         {
             Query = "shoe",
             HitsPerPage = 20,
-            Filters = "Available:1"
+            Filters = "available:1"
         }
     },
     ct).ConfigureAwait(false);
