@@ -49,12 +49,18 @@ public static class OrderMapper
         KlaviyoProfileSubscribeRequest? consent = null;
 
         var customer = order.CustomerInformation.Customer;
-        var hasChannelConsent = customer.Properties.ContainsKey("customerKlaviyoConsentToSubscribeEmail")
-            || customer.Properties.ContainsKey("customerKlaviyoConsentToSubscribeSms");
-        var legacyConsent = !hasChannelConsent && customer.Value("customerKlaviyoConsentToSubscribe").IsBoolean();
+        var hasEmailConsent = customer.Properties.TryGetValue(
+            "customerKlaviyoConsentToSubscribeEmail", out var emailValue);
+        var hasSmsConsent = customer.Properties.TryGetValue(
+            "customerKlaviyoConsentToSubscribeSms", out var smsValue);
+
+        var legacyConsent = !hasEmailConsent && !hasSmsConsent
+            && customer.Value("customerKlaviyoConsentToSubscribe").IsBoolean();
+        var emailConsent = legacyConsent || (emailValue ?? string.Empty).IsBoolean();
+        var smsConsent = legacyConsent || (smsValue ?? string.Empty).IsBoolean();
         var consents = new List<KlaviyoProfileConsentChange>();
 
-        if (legacyConsent || customer.Value("customerKlaviyoConsentToSubscribeEmail").IsBoolean())
+        if (emailConsent)
         {
             consents.Add(new KlaviyoProfileConsentChange(
                 Channel: KlaviyoProfileConsentChannel.Email,
@@ -65,7 +71,7 @@ public static class OrderMapper
                 Ip: order.CustomerInformation.CustomerIpAddress));
         }
 
-        if (legacyConsent || customer.Value("customerKlaviyoConsentToSubscribeSms").IsBoolean())
+        if (smsConsent)
         {
             consents.Add(new KlaviyoProfileConsentChange(
                 Channel: KlaviyoProfileConsentChannel.Sms,
