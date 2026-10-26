@@ -170,6 +170,21 @@ List resolution precedence:
 
 If none are set, profiles are not added to a list.
 
+### Checkout marketing consent
+
+Checkout customer fields select the marketing channels independently:
+
+| Field | Meaning when `true`, `1`, or `on` (case-insensitive) |
+|-----|-----|
+| `customerKlaviyoConsentToSubscribeEmail` | Subscribe to email marketing. |
+| `customerKlaviyoConsentToSubscribeSms` | Subscribe to SMS marketing using `customerPhone`. |
+
+Set both fields to subscribe to both channels. Send `false` for unchecked choices on every customer-information submission so an earlier choice is cleared. Missing or false choices do not unsubscribe existing Klaviyo subscriptions; they simply omit that channel from the subscription request. When neither channel is selected, no subscription request is created.
+
+For backward compatibility, `customerKlaviyoConsentToSubscribe` continues to subscribe to both channels only when neither new field exists in the order's customer properties. The presence of either new field takes precedence over the legacy field, including when its value is `false`.
+
+The U10 sample checkout demonstrates separate email and SMS checkboxes. Consent is submitted during placed-order processing, which requires `Orders.TrackingPlacedOrders` and `Subscriptions.Enabled` to be enabled. SMS subscriptions require a valid phone number in Klaviyo's expected international format.
+
 
 ## Catalog
 

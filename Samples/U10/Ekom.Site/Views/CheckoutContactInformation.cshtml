@@ -1,3 +1,4 @@
+@using Ekom.Klaviyo.Helpers;
 @using Umbraco.Cms.Web.Common.PublishedModels;
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
@@ -138,12 +139,17 @@
                                 </div>
                             </div>
 
-                            <div class="sm:col-span-2">
-                                <label for="marketing" class="block text-sm font-medium text-gray-700">Marketing</label>
-                                <div class="mt-1">
-                                    <input type="text" name="customerKlaviyoConsentToSubscribe" id="marketing" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <fieldset class="sm:col-span-2">
+                                <legend class="block text-sm font-medium text-gray-700">Marketing</legend>
+                                <div class="mt-1 flex items-center">
+                                    <input type="checkbox" name="customerKlaviyoConsentToSubscribeEmail" id="marketing-email" value="true" @(order.CustomerInformation.Customer.Value("customerKlaviyoConsentToSubscribeEmail").IsBoolean() ? "checked" : "") class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <label for="marketing-email" class="ml-2 text-sm text-gray-900">Subscribe to email marketing</label>
                                 </div>
-                            </div>
+                                <div class="mt-1 flex items-center">
+                                    <input type="checkbox" name="customerKlaviyoConsentToSubscribeSms" id="marketing-sms" value="true" @(order.CustomerInformation.Customer.Value("customerKlaviyoConsentToSubscribeSms").IsBoolean() ? "checked" : "") class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <label for="marketing-sms" class="ml-2 text-sm text-gray-900">Subscribe to SMS marketing</label>
+                                </div>
+                            </fieldset>
                         </div>
                     </div>
 
@@ -209,6 +215,8 @@
                     formData.forEach((value, key) => {
                         params.append(key, value);
                     });
+                    params.set('customerKlaviyoConsentToSubscribeEmail', formData.has('customerKlaviyoConsentToSubscribeEmail') ? 'true' : 'false');
+                    params.set('customerKlaviyoConsentToSubscribeSms', formData.has('customerKlaviyoConsentToSubscribeSms') ? 'true' : 'false');
                     return params.toString();
                 },
                 async post() {

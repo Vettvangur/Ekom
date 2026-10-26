@@ -48,30 +48,41 @@ public static class OrderMapper
 
         KlaviyoProfileSubscribeRequest? consent = null;
 
-        var consentValue = order.CustomerInformation.Customer.Value("customerKlaviyoConsentToSubscribe");
+        var customer = order.CustomerInformation.Customer;
+        var hasChannelConsent = customer.Properties.ContainsKey("customerKlaviyoConsentToSubscribeEmail")
+            || customer.Properties.ContainsKey("customerKlaviyoConsentToSubscribeSms");
+        var legacyConsent = !hasChannelConsent && customer.Value("customerKlaviyoConsentToSubscribe").IsBoolean();
+        var consents = new List<KlaviyoProfileConsentChange>();
 
-        if (consentValue.IsBoolean())
+        if (legacyConsent || customer.Value("customerKlaviyoConsentToSubscribeEmail").IsBoolean())
+        {
+            consents.Add(new KlaviyoProfileConsentChange(
+                Channel: KlaviyoProfileConsentChannel.Email,
+                State: KlaviyoProfileConsentState.Subscribed,
+                Source: "checkout",
+                TimestampUtc: DateTimeOffset.UtcNow,
+                ConsentTextVersion: "checkout-v1",
+                Ip: order.CustomerInformation.CustomerIpAddress));
+        }
+
+        if (legacyConsent || customer.Value("customerKlaviyoConsentToSubscribeSms").IsBoolean())
+        {
+            consents.Add(new KlaviyoProfileConsentChange(
+                Channel: KlaviyoProfileConsentChannel.Sms,
+                State: KlaviyoProfileConsentState.Subscribed,
+                Source: "checkout",
+                TimestampUtc: DateTimeOffset.UtcNow,
+                ConsentTextVersion: "checkout-v1",
+                Ip: order.CustomerInformation.CustomerIpAddress));
+        }
+
+        if (consents.Count > 0)
         {
             consent = new KlaviyoProfileSubscribeRequest(
                 StoreAlias: order.StoreInfo.Alias,
-                Email: order.CustomerInformation.Customer.Email ?? string.Empty,
-                Consents: new List<KlaviyoProfileConsentChange>
-                {
-                    new KlaviyoProfileConsentChange(
-                        Channel: KlaviyoProfileConsentChannel.Email,
-                        State: KlaviyoProfileConsentState.Subscribed,
-                        Source: "checkout",
-                        TimestampUtc: DateTimeOffset.UtcNow,
-                        ConsentTextVersion: "checkout-v1", 
-                        Ip: order.CustomerInformation.CustomerIpAddress),
-                    new KlaviyoProfileConsentChange(
-                        Channel: KlaviyoProfileConsentChannel.Sms,
-                        State: KlaviyoProfileConsentState.Subscribed,
-                        Source: "checkout",
-                        TimestampUtc: DateTimeOffset.UtcNow,
-                        ConsentTextVersion: "checkout-v1",
-                        Ip: order.CustomerInformation.CustomerIpAddress)
-                },
+                Email: customer.Email ?? string.Empty,
+                Consents: consents,
+                PhoneNumber: customer.Phone,
                 CustomProperties: string.IsNullOrWhiteSpace(locale)
                     ? null
                     : new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
