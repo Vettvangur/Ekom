@@ -41,13 +41,14 @@ public class CheckoutConsentTests
     }
 
     [Theory]
-    [InlineData("false", "false", false, false)]
-    [InlineData("true", "false", true, false)]
-    [InlineData("false", "true", false, true)]
-    [InlineData("false", null, false, false)]
-    [InlineData(null, "false", false, false)]
-    [InlineData("", null, false, false)]
-    public void ExplicitChannelsOverrideLegacyConsent(string? email, string? sms, bool expectEmail, bool expectSms)
+    [InlineData("false", "false")]
+    [InlineData("true", "false")]
+    [InlineData("false", "true")]
+    [InlineData("true", "true")]
+    [InlineData("false", null)]
+    [InlineData(null, "false")]
+    [InlineData("", null)]
+    public void LegacyConsentSubscribesBothRegardlessOfExplicitChannels(string? email, string? sms)
     {
         var properties = new Dictionary<string, string>
         {
@@ -55,6 +56,23 @@ public class CheckoutConsentTests
         };
         SetProperty(properties, "customerKlaviyoConsentToSubscribeEmail", email);
         SetProperty(properties, "customerKlaviyoConsentToSubscribeSms", sms);
+
+        AssertConsent(properties, true, true);
+    }
+
+    [Theory]
+    [InlineData("false", "false", false, false)]
+    [InlineData("true", "false", true, false)]
+    [InlineData("false", "true", false, true)]
+    [InlineData("true", "true", true, true)]
+    public void ClearedLegacyConsentAllowsIndependentChannels(string email, string sms, bool expectEmail, bool expectSms)
+    {
+        var properties = new Dictionary<string, string>
+        {
+            ["customerKlaviyoConsentToSubscribe"] = "false",
+            ["customerKlaviyoConsentToSubscribeEmail"] = email,
+            ["customerKlaviyoConsentToSubscribeSms"] = sms,
+        };
 
         AssertConsent(properties, expectEmail, expectSms);
     }
