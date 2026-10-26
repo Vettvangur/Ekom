@@ -106,14 +106,14 @@ internal sealed class AlgoliaAvailabilityUpdateService
             var variantAttributes = new Dictionary<string, object?>();
             if (store.IncludeStock)
             {
-                variantAttributes["Stock"] = variant.Stock;
+                variantAttributes["stock"] = variant.Stock;
                 variantAttributes["variantStock"] = variant.Stock;
             }
 
             if (variantWasAvailable != variantIsAvailable)
             {
                 var availability = variantIsAvailable ? 1 : 0;
-                variantAttributes["Available"] = availability;
+                variantAttributes["available"] = availability;
                 variantAttributes["variantAvailable"] = availability;
             }
 
@@ -122,7 +122,7 @@ internal sealed class AlgoliaAvailabilityUpdateService
 
         var productAttributes = new Dictionary<string, object?>();
         if (productWasAvailable != productIsAvailable)
-            productAttributes["Available"] = productIsAvailable ? 1 : 0;
+            productAttributes["available"] = productIsAvailable ? 1 : 0;
 
         await PartialUpdateAsync(store, parentProduct.Key.ToString(), productAttributes, ct).ConfigureAwait(false);
     }
@@ -134,10 +134,10 @@ internal sealed class AlgoliaAvailabilityUpdateService
         var wasAvailable = product.Backorder || StockBufferHelper.GetEffectiveStock(args.OldValue, product) > 0;
 
         if (!hasVariants && wasAvailable != product.Available)
-            attributes["Available"] = product.Available ? 1 : 0;
+            attributes["available"] = product.Available ? 1 : 0;
 
         if (includeStock)
-            attributes["Stock"] = product.Stock;
+            attributes["stock"] = product.Stock;
 
         return attributes;
     }
