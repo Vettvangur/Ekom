@@ -755,6 +755,59 @@ public sealed class ReinitializeOrderPricingTests
         Assert.Equal(25m, fixture.Order.ChargedAmount.Value);
     }
 
+    [Fact]
+    public async Task RefreshSelectsBetterGlobalDiscountDespiteUnchangedBetterProductPrice()
+    {
+        using var fixture = new Fixture();
+        var product = fixture.AddProduct(100);
+        fixture.AddLine(product, 1);
+        await fixture.SaveAsync();
+        var productDiscount = new OrderedDiscount(Guid.NewGuid(), "Customer price", false, 0.5m,
+            DiscountType.Percentage, [], [], new Constraints(), false, false);
+        var discount20 = new OrderedDiscount(Guid.NewGuid(), "Global 20", false, 0.2m,
+            DiscountType.Percentage, [], [], new Constraints(), false, true);
+        var discount30 = new OrderedDiscount(Guid.NewGuid(), "Global 30", false, 0.3m,
+            DiscountType.Percentage, [], [], new Constraints(), false, true);
+        var discount10 = new OrderedDiscount(Guid.NewGuid(), "Global 10", false, 0.1m,
+            DiscountType.Percentage, [], [], new Constraints(), false, true);
+        Func<object, AddingOrderlineEventArgs, CancellationToken, Task> adding = (_, args, _) =>
+        {
+            args.Settings.OrderDynamicRequest.Prices =
+                [new Price(100m, fixture.Order.StoreInfo.Currency, 0, false, productDiscount)];
+            return Task.CompletedTask;
+        };
+        OrderEvents.AddingOrderlineAsync += adding;
+        try
+        {
+            // Offer one candidate per refresh so dictionary enumeration cannot determine the winner.
+            fixture.Discounts[discount20.Key] = discount20;
+            await fixture.RefreshAsync();
+            var first = await fixture.ReloadAsync();
+            Assert.Equal(discount20.Key, first.Discount?.Key);
+            Assert.Equal(50m, first.ChargedAmount.Value);
+
+            fixture.Discounts.Clear();
+            fixture.Discounts[discount30.Key] = discount30;
+            await fixture.RefreshAsync();
+            var better = await fixture.ReloadAsync();
+            Assert.Equal(discount30.Key, better.Discount?.Key);
+            Assert.Equal(0.3m, better.Discount!.Amount);
+            Assert.Equal(50m, better.ChargedAmount.Value);
+
+            fixture.Discounts.Clear();
+            fixture.Discounts[discount10.Key] = discount10;
+            await fixture.RefreshAsync();
+            var unchanged = await fixture.ReloadAsync();
+            Assert.Equal(discount30.Key, unchanged.Discount?.Key);
+            Assert.Equal(50m, unchanged.ChargedAmount.Value);
+            Assert.Equal(50m, Assert.Single(unchanged.OrderLines).Product.Price.AfterDiscount.Value);
+        }
+        finally
+        {
+            OrderEvents.AddingOrderlineAsync -= adding;
+        }
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly ConfigurationScope _scope;
@@ -770,6 +823,7 @@ public sealed class ReinitializeOrderPricingTests
             store.SetupGet(x => x.Culture).Returns(new CultureInfoDto { Name = "en-US" });
             store.SetupGet(x => x.Cultures).Returns([new CultureInfoDto { Name = "en-US" }]);
             store.SetupGet(x => x.Currencies).Returns([new CurrencyModel { CurrencyValue = "en-US" }]);
+            store.SetupGet(x => x.Currency).Returns(new CurrencyModel { CurrencyValue = "en-US" });
             var stores = new Mock<IStoreService>();
             stores.Setup(x => x.GetStoreByAlias("main")).Returns(store.Object);
             stores.Setup(x => x.GetStoreFromCache()).Returns(store.Object);
@@ -781,7 +835,7 @@ public sealed class ReinitializeOrderPricingTests
             var discounts = new Mock<IPerStoreCache<IDiscount>>();
             discounts.SetupGet(x => x.Cache).Returns(new ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>>
             {
-                ["main"] = new(),
+                ["main"] = Discounts,
             });
             _scope = new ConfigurationScope(addServices: services =>
             {
@@ -824,6 +878,7 @@ public sealed class ReinitializeOrderPricingTests
         public OrderInfo Order { get; }
         public OrderRepository Repository { get; }
         public OrderService Service { get; }
+        public ConcurrentDictionary<Guid, IDiscount> Discounts { get; } = new();
 
         public List<IPrice> Prices(decimal amount) => [new Price(amount, Order.StoreInfo.Currency, 0, false)];
 

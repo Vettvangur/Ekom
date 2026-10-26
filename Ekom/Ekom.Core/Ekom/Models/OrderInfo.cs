@@ -218,7 +218,7 @@ public class OrderInfo : IOrderInfo
         }
 
         return new Price(
-            line.Amount.OriginalValue,
+            (line.Variant?.Price ?? line.Product.Price).OriginalValue,
             StoreInfo.Currency,
             line.Vat,
             StoreInfo.VatIncludedInPrice,
@@ -226,6 +226,29 @@ public class OrderInfo : IOrderInfo
             line.Quantity,
             discountedQuantity: discountedQuantity
         );
+    }
+
+    // Exclusive candidates are compared without product discounts. This must never
+    // replace the resolved line prices used for public totals and payment.
+    internal decimal GetChargedAmountForDiscountComparison()
+    {
+        if (Discount?.Stackable != false)
+        {
+            return ChargedAmount.Value;
+        }
+
+        using var calculationScope = OrderPricingCalculationScope.Enter(this);
+        var allocations = calculationScope.Allocations;
+        decimal amount = 0;
+        foreach (var line in orderLines)
+        {
+            amount += LinePriceWithOrderDiscount(line, allocations).Value;
+        }
+
+        if (ShippingProvider != null) amount += ShippingProvider.Price.Value;
+        if (PaymentProvider != null) amount += PaymentProvider.Price.Value;
+
+        return Math.Max(0, amount - GetApplicableGiftcardAmount());
     }
 
     /// <inheritdoc />
@@ -273,17 +296,12 @@ public class OrderInfo : IOrderInfo
         get
         {
             using var calculationScope = OrderPricingCalculationScope.Enter(this);
-            decimal amount = OrderLines.Sum(line =>
+            var allocations = calculationScope.Allocations;
+            decimal amount = 0;
+            foreach (var line in orderLines)
             {
-                // Preserve exclusive order-discount comparisons even when the
-                // lines temporarily still contain a product discount.
-                if (line.Discount == null || Discount?.Stackable == false)
-                {
-                    return LinePriceWithOrderDiscount(line, calculationScope.Allocations).Value;
-                }
-
-                return line.Amount.Value;
-            });
+                amount += line.CalculateAmount(allocations).Value;
+            }
 
             if (ShippingProvider != null) amount += ShippingProvider.Price.Value;
             if (PaymentProvider != null) amount += PaymentProvider.Price.Value;
@@ -301,15 +319,12 @@ public class OrderInfo : IOrderInfo
         get
         {
             using var calculationScope = OrderPricingCalculationScope.Enter(this);
-            decimal amount = OrderLines.Sum(line =>
+            var allocations = calculationScope.Allocations;
+            decimal amount = 0;
+            foreach (var line in orderLines)
             {
-                if (line.Discount == null || Discount?.Stackable == false)
-                {
-                    var lineWithOrderDiscount = LinePriceWithOrderDiscount(line, calculationScope.Allocations);
-                    return lineWithOrderDiscount.WithoutVat.Value;  // line net (already rounded per-line)
-                }
-                return line.Amount.WithoutVat.Value;
-            });
+                amount += line.CalculateAmount(allocations).WithoutVat.Value;
+            }
 
             if (ShippingProvider != null) amount += ShippingProvider.Price.WithoutVat.Value;
             if (PaymentProvider != null) amount += PaymentProvider.Price.WithoutVat.Value;

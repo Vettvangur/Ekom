@@ -623,6 +623,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private renderGiftcardRecovery(): string {
+    if (this.recoveryAttempts?.length === 0 && !this.recoveryLoading && !this.recoveryError
+      && !this.recoveryOperation && !this.recoveryMessage && !this.recoveryActionError
+      && !this.recoveryRefreshError && !this.orderActionsError) {
+      return '';
+    }
+
     const field = (label: string, value: unknown): string => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value ?? 'Not recorded')}</dd>`;
     return `<section class="ekmOrderTracking ekmGiftcardRecovery"><h4>Failed gift-card preparation</h4>
       <p>Recovery history for failed checkout preparation, not accepted payment. These actions do not refund a payment or retry checkout.</p>
@@ -632,7 +638,6 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       ${this.orderActionsError ? '<p role="alert">We could not refresh order actions. Recovery actions are unavailable. Reopen the order to try again.</p>' : ''}
       ${this.recoveryLoading ? '<p>Loading recovery history...</p>' : ''}
       ${this.recoveryError ? '<p role="alert">We could not load gift-card recovery history. Recovery actions are unavailable. Reopen the order to try again.</p>' : ''}
-      ${!this.recoveryError && !this.recoveryLoading && this.recoveryAttempts?.length === 0 ? '<p>No failed gift-card preparation history.</p>' : ''}
       ${this.recoveryAttempts === undefined && !this.recoveryLoading && !this.recoveryError ? '<p>Recovery history has not been checked. Recovery actions are unavailable.</p>' : ''}
       ${(this.recoveryAttempts || []).map(attempt => {
         const canReconcile = attempt.canReconcile && !!attempt.reconcileToken;

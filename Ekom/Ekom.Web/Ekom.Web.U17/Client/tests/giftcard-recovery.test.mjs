@@ -85,6 +85,49 @@ test('independent panel retains unresolved and resolved history without selected
   assert.ok(html.indexOf('Failed gift-card preparation') < html.indexOf('Order Details'));
 });
 
+test('successful empty history hides the entire recovery section in the order view', async () => {
+  const { element } = fixture();
+  element.recoveryAttempts = undefined;
+  const pending = deferred();
+  element.api.giftcardRecovery = () => pending.promise;
+  const loading = element.loadGiftcardRecovery('order-A');
+  assert.match(element.renderGiftcardRecovery(), /Loading recovery history/);
+
+  pending.resolve([]);
+  await loading;
+
+  assert.equal(element.recoveryError, false);
+  assert.equal(element.renderGiftcardRecovery(), '');
+  assert.doesNotMatch(element.renderOrderDetails(element.selectedOrder), /ekmGiftcardRecovery|Failed gift-card preparation|No failed gift-card preparation history/);
+});
+
+test('empty history never hides loading failures or recovery operation diagnostics', () => {
+  for (const [key, value, expected] of [
+    ['recoveryLoading', true, /Loading recovery history/],
+    ['recoveryError', true, /We could not load gift-card recovery history/],
+    ['recoveryMessage', 'Hold released.', /Hold released/],
+    ['recoveryActionError', 'Please confirm again.', /Please confirm again/],
+    ['recoveryRefreshError', true, /We could not refresh all order details/],
+    ['orderActionsError', true, /We could not refresh order actions/],
+  ]) {
+    const { element } = fixture();
+    element.recoveryAttempts = [];
+    element[key] = value;
+    assert.match(element.renderGiftcardRecovery(), expected, key);
+  }
+});
+
+test('missing or malformed history remains a visible error even after a previous empty response', async () => {
+  const { element } = fixture();
+  element.recoveryAttempts = [];
+  for (const response of [undefined, null, {}, [{ claims: null }]]) {
+    element.api.giftcardRecovery = async () => response;
+    await element.loadGiftcardRecovery('order-A');
+    assert.equal(element.recoveryError, true);
+    assert.match(element.renderGiftcardRecovery(), /role="alert">We could not load gift-card recovery history/);
+  }
+});
+
 test('all ledger values and attribute IDs are escaped; raw evidence is displayed without interpreting it', () => {
   const { element } = fixture();
   element.recoveryAttempts = [{ ...attempt, attemptId: '<attempt>', reason: '<reason>', state: '<state>', unavailableReason: '<blocked>', canReconcile: false, claims: [{ ...claim,
