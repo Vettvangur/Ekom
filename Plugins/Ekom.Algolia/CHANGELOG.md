@@ -26,6 +26,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.70](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.69...Ekom.Algolia-v0.2.70) (2026-10-26)
+
+
+### Bug Fixes
+
+* **algolia:** Stock changes now update product availability in search ([#1044](https://github.com/Vettvangur/Ekom/issues/1044)) ([06a2145](https://github.com/Vettvangur/Ekom/commit/06a2145397df33b9022426ad0f867ea767850e1e))
+
 ## [0.2.69](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.68...Ekom.Algolia-v0.2.69) (2026-10-20)
 
 
