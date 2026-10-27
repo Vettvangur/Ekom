@@ -170,6 +170,24 @@ List resolution precedence:
 
 If none are set, profiles are not added to a list.
 
+### Checkout marketing consent
+
+Checkout customer fields select the marketing channels:
+
+| Field | Meaning when `true`, `1`, or `on` (case-insensitive) |
+|-----|-----|
+| `customerKlaviyoConsentToSubscribeEmail` | Subscribe to email marketing. |
+| `customerKlaviyoConsentToSubscribeSms` | Subscribe to SMS marketing using `customerPhone`. |
+| `customerKlaviyoConsentToSubscribe` | Legacy combined opt-in: subscribe to both email and SMS marketing, regardless of the channel-specific fields. |
+
+Email consent is enabled when either the email field or the legacy combined field is true. SMS consent is enabled when either the SMS field or the legacy combined field is true. Set both channel-specific fields to subscribe to both channels without using the legacy field.
+
+Send `false` for unchecked choices on every customer-information submission so an earlier choice is cleared. A channel is omitted from the subscription request only when neither its channel-specific field nor the legacy combined field is true. When all three fields are missing or false, no subscription request is created. These fields do not unsubscribe existing Klaviyo subscriptions.
+
+When migrating to channel-specific fields, explicitly set `customerKlaviyoConsentToSubscribe` to `false` on existing carts. Customer-information updates retain properties omitted from the submitted form, so simply removing the legacy input does not clear a previously stored `true`. A legacy value of `true` continues to subscribe both channels even when the new fields are explicitly `false`.
+
+The U10 sample checkout demonstrates separate email and SMS checkboxes. Consent is submitted during placed-order processing, which requires `Orders.TrackingPlacedOrders` and `Subscriptions.Enabled` to be enabled. SMS subscriptions require a valid phone number in Klaviyo's expected international format.
+
 
 ## Catalog
 

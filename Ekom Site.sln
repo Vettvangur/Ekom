@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32112.339
@@ -59,6 +59,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Mailchimp", "Plugins\Ekom.Mailchimp\Ekom.Mailchimp.csproj", "{FC802CF9-DA97-4091-BCE1-B07F0BC17EA0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Mailchimp.Tests", "Plugins\Ekom.Mailchimp.Tests\Ekom.Mailchimp.Tests.csproj", "{D9800724-EC82-4A6D-B776-6FB38EFE4E37}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Klaviyo.Tests", "Plugins\Ekom.Klaviyo.Tests\Ekom.Klaviyo.Tests.csproj", "{9CB67D6C-5325-4C30-A3C8-9480E3151244}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -140,6 +142,10 @@ Global
 		{D9800724-EC82-4A6D-B776-6FB38EFE4E37}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9800724-EC82-4A6D-B776-6FB38EFE4E37}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9800724-EC82-4A6D-B776-6FB38EFE4E37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9CB67D6C-5325-4C30-A3C8-9480E3151244}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9CB67D6C-5325-4C30-A3C8-9480E3151244}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9CB67D6C-5325-4C30-A3C8-9480E3151244}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9CB67D6C-5325-4C30-A3C8-9480E3151244}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -164,6 +170,7 @@ Global
 		{DA8BFCB0-44D2-4732-BBA2-5CB974348A36} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{FC802CF9-DA97-4091-BCE1-B07F0BC17EA0} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{D9800724-EC82-4A6D-B776-6FB38EFE4E37} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{9CB67D6C-5325-4C30-A3C8-9480E3151244} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {411ECB7B-B382-43CA-8534-05EA8ED2F48D}
