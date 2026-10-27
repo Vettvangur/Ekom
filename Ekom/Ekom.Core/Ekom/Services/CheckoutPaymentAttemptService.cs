@@ -596,35 +596,19 @@ internal sealed partial class CheckoutPaymentAttemptService
             await EnsureWriteAllowedAsync(nestedDb, orderId, ct).ConfigureAwait(false);
             return nested;
         }
-        await using var db = _factory.GetDatabase();
         var owner = Guid.NewGuid().ToString();
-        if (!await db.GetTable<CheckoutPaymentOperationData>().AnyAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false))
-        {
-            try
-            {
-                await db.InsertAsync(new CheckoutPaymentOperationData { OrderId = orderId }, token: ct).ConfigureAwait(false);
-            }
-            catch (Exception) when (!ct.IsCancellationRequested)
-            {
-                // Only tolerate a competing first insert; all other errors propagate.
-                if (!await db.GetTable<CheckoutPaymentOperationData>().AnyAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false)) throw;
-            }
-        }
-        int claimed;
         try
         {
-            claimed = await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == orderId && x.Owner == null)
-                .Set(x => x.Owner, owner).UpdateAsync(ct).ConfigureAwait(false);
+            // The connection must be disposed before handing ownership to the caller.
+            await AcquireOwnerAsync(orderId, owner, ct).ConfigureAwait(false);
         }
         catch (Exception acquisitionError)
         {
-            // The update can commit and then throw before a scope exists. This
-            // generated capability has performed no other work and is safe to clear.
+            // No external work has started. Even an ambiguous claim/disposal failure
+            // can safely clear this generated owner, without touching a newer owner.
             try
             {
-                await using var cleanup = _factory.GetDatabase();
-                await cleanup.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == orderId && x.Owner == owner)
-                    .Set(x => x.Owner, (string?)null).UpdateAsync(CancellationToken.None).ConfigureAwait(false);
+                await ClearOwnerAsync(orderId, owner).ConfigureAwait(false);
             }
             catch (Exception cleanupError)
             {
@@ -633,28 +617,18 @@ internal sealed partial class CheckoutPaymentAttemptService
             }
             throw;
         }
-        if (claimed != 1)
-        {
-            if (await RequiresReconciliationAsync(db, orderId, ct).ConfigureAwait(false))
-                throw Conflict("This order requires manual payment reconciliation before checkout.", CheckoutConflictReason.PaymentReview);
-            var active = await ReadActiveAsync(db, orderId, ct).ConfigureAwait(false);
-            if (active?.State == CheckoutPaymentAttemptState.Completed)
-                throw Conflict("The current payment attempt is completed.", CheckoutConflictReason.Completed);
-            if (active?.State is CheckoutPaymentAttemptState.CompletionPending or CheckoutPaymentAttemptState.ReconciliationRequired)
-                throw Conflict("The current payment attempt requires review before checkout.", CheckoutConflictReason.PaymentReview);
-            throw Conflict("Another checkout operation owns this order. Retry after it finishes.", CheckoutConflictReason.Busy);
-        }
+        var compensationCompleted = false;
         CheckoutPaymentOperationScope? scope = null;
         scope = new CheckoutPaymentOperationScope(orderId, owner, async () =>
         {
-            await using var releaseDb = _factory.GetDatabase();
             try
             {
                 // A validation return or failed submission must not strand an
                 // attempt that never reached gateway invocation. Preparation compensation has run
                 // before the outer checkout scope is disposed by the caller.
-                if (scope is { IsCheckout: true, AttemptId: not null })
+                if (!compensationCompleted && scope is { IsCheckout: true, AttemptId: not null })
                 {
+                    await using var releaseDb = _factory.GetDatabase();
                     if (!await releaseDb.GetTable<CheckoutPaymentOperationData>()
                         .AnyAsync(x => x.OrderId == orderId && x.Owner == owner, CancellationToken.None).ConfigureAwait(false))
                         return;
@@ -667,6 +641,7 @@ internal sealed partial class CheckoutPaymentAttemptService
                         await ReleaseOwnedAsync(releaseDb, scope, active, data, "Checkout ended before payment invocation", CancellationToken.None).ConfigureAwait(false);
                     }
                 }
+                compensationCompleted = true;
             }
             catch
             {
@@ -678,23 +653,70 @@ internal sealed partial class CheckoutPaymentAttemptService
             finally
             {
                 if (scope?.PreserveOwnership != true)
-                    await releaseDb.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == orderId && x.Owner == owner)
-                        .Set(x => x.Owner, (string?)null).UpdateAsync(CancellationToken.None).ConfigureAwait(false);
+                    await ClearOwnerAsync(orderId, owner).ConfigureAwait(false);
             }
         })
         {
             IsOrderInformationUpdate = orderInformationUpdate,
             IsInformationOnly = orderInformationUpdate,
         };
-        try
+        return scope;
+    }
+
+    private async Task AcquireOwnerAsync(Guid orderId, string owner, CancellationToken ct)
+    {
+        await using var db = _factory.GetDatabase();
+        if (!await db.GetTable<CheckoutPaymentOperationData>().AnyAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false))
         {
-            await EnsurePreparationAllowedAsync(db, orderId, ct).ConfigureAwait(false);
-            return scope;
+            try
+            {
+                await db.InsertAsync(new CheckoutPaymentOperationData { OrderId = orderId }, token: ct).ConfigureAwait(false);
+            }
+            catch (Exception) when (!ct.IsCancellationRequested)
+            {
+                // Only tolerate a competing first insert; all other errors propagate.
+                if (!await db.GetTable<CheckoutPaymentOperationData>().AnyAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false)) throw;
+            }
         }
-        catch
+        var claimed = await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == orderId && x.Owner == null)
+            .Set(x => x.Owner, owner).UpdateAsync(ct).ConfigureAwait(false);
+        if (claimed != 1)
         {
-            await scope.DisposeAsync().ConfigureAwait(false);
-            throw;
+            if (await RequiresReconciliationAsync(db, orderId, ct).ConfigureAwait(false))
+                throw Conflict("This order requires manual payment reconciliation before checkout.", CheckoutConflictReason.PaymentReview);
+            var active = await ReadActiveAsync(db, orderId, ct).ConfigureAwait(false);
+            if (active?.State == CheckoutPaymentAttemptState.Completed)
+                throw Conflict("The current payment attempt is completed.", CheckoutConflictReason.Completed);
+            if (active?.State is CheckoutPaymentAttemptState.CompletionPending or CheckoutPaymentAttemptState.ReconciliationRequired)
+                throw Conflict("The current payment attempt requires review before checkout.", CheckoutConflictReason.PaymentReview);
+            throw Conflict("Another checkout operation owns this order. Retry after it finishes.", CheckoutConflictReason.Busy);
+        }
+        await EnsurePreparationAllowedAsync(db, orderId, ct).ConfigureAwait(false);
+    }
+
+    private async Task ClearOwnerAsync(Guid orderId, string owner)
+    {
+        // Only retry this idempotent, owner-conditional database update. Never retry
+        // payment compensation here, and never reuse a failed connection.
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await using var db = _factory.GetDatabase();
+                await db.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == orderId && x.Owner == owner)
+                    .Set(x => x.Owner, (string?)null).UpdateAsync(CancellationToken.None).ConfigureAwait(false);
+                return;
+            }
+            catch (Exception ex) when (attempt < 3)
+            {
+                _logger.LogWarning(ex, "Checkout ownership cleanup failed for order {OrderId}; retry {CleanupRetry}", orderId, attempt);
+                await Task.Delay(TimeSpan.FromMilliseconds(50 * attempt), CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Checkout ownership cleanup could not be confirmed for order {OrderId}", orderId);
+                throw;
+            }
         }
     }
 

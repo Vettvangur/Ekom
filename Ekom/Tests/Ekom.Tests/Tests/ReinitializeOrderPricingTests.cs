@@ -22,6 +22,44 @@ namespace Ekom.Tests.Tests;
 [Collection("Reservations")]
 public sealed class ReinitializeOrderPricingTests
 {
+    [Theory]
+    [InlineData("success")]
+    [InlineData("failure")]
+    [InlineData("cancellation")]
+    public async Task PricingAlwaysReleasesOrdinaryBasketOwnership(string outcome)
+    {
+        using var fixture = new Fixture(withOwnership: true);
+        fixture.AddLine(fixture.AddProduct(10), 1);
+        await fixture.SaveAsync();
+        using var cancellation = new CancellationTokenSource();
+        Func<object, AddingOrderlineEventArgs, CancellationToken, Task> handler = (_, _, ct) =>
+        {
+            if (outcome == "failure") throw new InvalidOperationException("Pricing unavailable");
+            if (outcome == "cancellation")
+            {
+                cancellation.Cancel();
+                ct.ThrowIfCancellationRequested();
+            }
+            return Task.CompletedTask;
+        };
+        OrderEvents.AddingOrderlineAsync += handler;
+        try
+        {
+            if (outcome == "success") await fixture.RefreshAsync(ct: cancellation.Token);
+            else if (outcome == "failure")
+                await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.RefreshAsync(ct: cancellation.Token));
+            else
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fixture.RefreshAsync(ct: cancellation.Token));
+        }
+        finally
+        {
+            OrderEvents.AddingOrderlineAsync -= handler;
+        }
+        await fixture.AssertOwnershipReleasedAsync();
+        await fixture.RefreshAsync();
+        await fixture.AssertOwnershipReleasedAsync();
+    }
+
     [Fact]
     public async Task RefreshUsesFreshProductAndVariantPricesDespiteZeroStockAndSavesOnce()
     {
@@ -816,7 +854,7 @@ public sealed class ReinitializeOrderPricingTests
         private readonly Mock<IPerStoreIndexedCache<IProduct>> _products = new();
         private readonly ConcurrentDictionary<Guid, IVariant> _variants = new();
 
-        public Fixture()
+        public Fixture(bool withOwnership = false)
         {
             var store = new Mock<IStore>();
             store.SetupGet(x => x.Alias).Returns("main");
@@ -854,6 +892,9 @@ public sealed class ReinitializeOrderPricingTests
             });
             using var db = _database.Factory.GetDatabase();
             db.CreateTable<OrderData>();
+            db.CreateTable<OrderActivityLog>();
+            db.CreateTable<CheckoutPaymentOperationData>(tableOptions: TableOptions.CreateIfNotExists);
+            db.CreateTable<CheckoutPaymentAttemptData>(tableOptions: TableOptions.CreateIfNotExists);
             var currency = new CurrencyModel { CurrencyValue = "en-US" };
             var storeInfo = new StoreInfo(Guid.NewGuid(), currency, [currency], "en-US", "main", false, 0, false);
             var data = new OrderData
@@ -870,9 +911,18 @@ public sealed class ReinitializeOrderPricingTests
             db.Insert(data);
             Order = new OrderInfo(data);
             Repository = new OrderRepository(NullLogger<OrderRepository>.Instance, _scope.Instance, _database.Factory, _cache);
+            var attempts = withOwnership ? new CheckoutPaymentAttemptService(_database.Factory, _database.Service,
+                new ActivityLogRepository(NullLogger<ActivityLogRepository>.Instance, _database.Factory),
+                NullLogger<CheckoutPaymentAttemptService>.Instance, _cache) : null;
             Service = new OrderService(_scope.Instance, Repository, null!, Mock.Of<IOrderActivityLogService>(),
                 NullLogger<OrderService>.Instance, stores.Object, _cache, Mock.Of<IMemberService>(), null!,
-                Mock.Of<IOrderTrackingService>());
+                Mock.Of<IOrderTrackingService>(), paymentAttempts: attempts);
+        }
+
+        public async Task AssertOwnershipReleasedAsync()
+        {
+            using var db = _database.Factory.GetDatabase();
+            Assert.Null((await db.GetTable<CheckoutPaymentOperationData>().SingleAsync(x => x.OrderId == Order.UniqueId)).Owner);
         }
 
         public OrderInfo Order { get; }

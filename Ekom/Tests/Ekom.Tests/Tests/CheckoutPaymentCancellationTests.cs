@@ -4,6 +4,7 @@ using Ekom.Services;
 using Ekom.Utilities;
 using LinqToDB;
 using LinqToDB.Data;
+using LinqToDB.Interceptors;
 using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -334,8 +335,154 @@ public sealed class CheckoutPaymentCancellationTests
             It.Is<IReadOnlyList<Giftcard>>(cards => cards.Count == 1 && cards[0].ClaimId == "known-claim"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task AcquisitionConnectionDisposalFailureClearsBasketOwner()
+    {
+        using var f = new CheckoutPaymentAttemptTests.Fixture();
+        var order = new OrderInfo(await f.ReadAsync());
+        var attached = false;
+        using (var fault = new TraceFault(f, info =>
+        {
+            if (attached || !IsOwnerUpdate(info) || info.TraceInfoStep != TraceInfoStep.AfterExecute) return;
+            attached = true;
+            info.DataConnection.AddInterceptor(new FailingCloseInterceptor());
+        }))
+            await Assert.ThrowsAsync<InvalidOperationException>(() => f.Service.BeginEditAsync(order, "price-refresh"));
+
+        Assert.True(attached);
+        using var db = f.Database.Factory.GetDatabase();
+        Assert.Null((await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+        await using var retry = await f.Service.BeginEditAsync(order, "quantity");
+    }
+
+    [Theory]
+    [InlineData(TraceInfoStep.BeforeExecute)]
+    [InlineData(TraceInfoStep.AfterExecute)]
+    public async Task BasketOwnerReleaseRetriesTransientFailure(TraceInfoStep failureStep)
+    {
+        using var f = new CheckoutPaymentAttemptTests.Fixture();
+        var order = new OrderInfo(await f.ReadAsync());
+        var edit = await f.Service.BeginEditAsync(order, "price-refresh");
+        var failed = false;
+        using (var fault = new TraceFault(f, info =>
+        {
+            if (failed || !IsOwnerUpdate(info) || info.TraceInfoStep != failureStep) return;
+            failed = true;
+            throw new InvalidOperationException("Temporary release failure");
+        }))
+            await edit.DisposeAsync();
+
+        Assert.True(failed);
+        using var db = f.Database.Factory.GetDatabase();
+        Assert.Null((await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+        await using var retry = await f.Service.BeginEditAsync(order, "quantity");
+    }
+
+    [Fact]
+    public async Task ExhaustedBasketReleaseCanBeRetriedWithoutReenteringScope()
+    {
+        using var f = new CheckoutPaymentAttemptTests.Fixture();
+        var order = new OrderInfo(await f.ReadAsync());
+        var edit = await f.Service.BeginEditAsync(order, "quantity");
+        var failures = 0;
+        using (var fault = new TraceFault(f, info =>
+        {
+            if (!IsOwnerUpdate(info) || info.TraceInfoStep != TraceInfoStep.BeforeExecute) return;
+            failures++;
+            throw new InvalidOperationException("Database unavailable");
+        }))
+            await Assert.ThrowsAsync<InvalidOperationException>(() => edit.DisposeAsync().AsTask());
+
+        Assert.Equal(3, failures);
+        Assert.Throws<ObjectDisposedException>(() => edit.Enter());
+        using var db = f.Database.Factory.GetDatabase();
+        Assert.Equal(edit.Owner, (await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+        await edit.DisposeAsync();
+        Assert.Null((await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+        await using var retry = await f.Service.BeginEditAsync(order, "quantity");
+    }
+
+    [Fact]
+    public async Task ConcurrentDisposalsWaitForOneRelease()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var calls = 0;
+        var scope = new CheckoutPaymentOperationScope(Guid.NewGuid(), "owner", async () =>
+        {
+            Interlocked.Increment(ref calls);
+            started.SetResult();
+            await finish.Task;
+        });
+        var first = scope.DisposeAsync().AsTask();
+        await started.Task;
+        var second = scope.DisposeAsync().AsTask();
+        try
+        {
+            Assert.False(second.IsCompleted);
+        }
+        finally
+        {
+            finish.SetResult();
+            await Task.WhenAll(first, second);
+        }
+        Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public async Task RetryingOwnerCleanupDoesNotRepeatGiftcardCompensation()
+    {
+        using var f = new CheckoutPaymentAttemptTests.Fixture();
+        await SelectGiftcardAsync(f);
+        var adapter = new Mock<ICheckoutGiftcardReservations>();
+        adapter.Setup(x => x.ReserveAsync(f.OrderId, It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { new Giftcard { Code = "selected", Amount = 5, ClaimId = "known-claim" } });
+        adapter.Setup(x => x.ReleaseAsync(f.OrderId, It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var checkout = await f.NewService(adapter.Object).BeginCheckoutAsync(new OrderInfo(await f.ReadAsync()));
+        using (var fault = new TraceFault(f, info =>
+        {
+            if (IsOwnerUpdate(info) && info.TraceInfoStep == TraceInfoStep.BeforeExecute)
+                throw new InvalidOperationException("Owner cleanup unavailable");
+        }))
+            await Assert.ThrowsAsync<InvalidOperationException>(() => checkout.DisposeAsync().AsTask());
+
+        await checkout.DisposeAsync();
+        using var db = f.Database.Factory.GetDatabase();
+        Assert.Null((await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+        adapter.Verify(x => x.ReleaseAsync(f.OrderId, It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ReleaseRetryCannotClearANewerOwner()
+    {
+        using var f = new CheckoutPaymentAttemptTests.Fixture();
+        var edit = await f.Service.BeginEditAsync(new OrderInfo(await f.ReadAsync()), "quantity");
+        var replaced = false;
+        using var fault = new TraceFault(f, info =>
+        {
+            if (replaced || !IsOwnerUpdate(info) || info.TraceInfoStep != TraceInfoStep.AfterExecute) return;
+            replaced = true;
+            using var replacement = f.Database.Factory.GetDatabase();
+            replacement.GetTable<CheckoutPaymentOperationData>().Where(x => x.OrderId == f.OrderId)
+                .Set(x => x.Owner, "newer-owner").Update();
+            throw new InvalidOperationException("Cleanup committed but acknowledgement failed");
+        });
+        await edit.DisposeAsync();
+        Assert.True(replaced);
+        using var db = f.Database.Factory.GetDatabase();
+        Assert.Equal("newer-owner", (await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+    }
+
+    private sealed class FailingCloseInterceptor : DataContextInterceptor
+    {
+        public override Task OnClosedAsync(DataContextEventData eventData)
+            => throw new InvalidOperationException("Acquisition connection disposal failed");
+    }
+
     private static bool IsOwnerUpdate(TraceInfo info)
         => info.Command?.CommandText is string sql && sql.StartsWith("UPDATE", StringComparison.Ordinal) &&
+            sql.Split("SET", 2, StringSplitOptions.None)[0].Contains("EkomCheckoutPaymentOperation", StringComparison.Ordinal) &&
             sql.Contains("Owner", StringComparison.Ordinal) && !sql.Contains("ActiveAttemptId", StringComparison.Ordinal);
 
     private static string? ReadClaim(OrderData data)
