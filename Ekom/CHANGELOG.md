@@ -18,6 +18,8 @@
 
 ### Bug Fixes
 
+* **checkout:** release basket ownership when acquisition connection disposal fails, retry owner-conditional cleanup on fresh connections, and allow failed disposal cleanup to be retried without repeating completed payment compensation. Uncertain payment outcomes remain blocked.
+
 * **manager:** hide the failed gift-card preparation section after successfully loading empty recovery history, while retaining actual history, recovery results, and error warnings in U17/U18 order views.
 * **order:** retain the better product/customer discount in payable gross and net totals when a weaker non-stackable order discount is present; keep exclusive discount-candidate comparisons separate from payment totals and reuse quantity allocations across each calculation.
 * **cache:** serialize typed custom Umbraco Date/Time properties as invariant round-trip values to prevent culture-dependent day/month swaps in consumers such as Algolia; retain timezone information and leave date-like text unchanged. Rebuild the catalog cache and reindex dependent search indexes after upgrading; raw date property strings are now ISO-formatted.

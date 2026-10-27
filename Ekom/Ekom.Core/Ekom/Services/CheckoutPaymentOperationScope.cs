@@ -7,7 +7,9 @@ internal sealed class CheckoutPaymentOperationScope : IAsyncDisposable
     private readonly CheckoutPaymentOperationScope? _parent;
     private bool _preserveOwnership;
     private bool _submissionInProgress;
-    private bool _disposed;
+    private volatile bool _disposed;
+    private readonly object _disposeGate = new();
+    private Task? _disposeTask;
     internal static CheckoutPaymentOperationScope? Current => Ambient.Value;
     public Guid OrderId { get; }
     public string Owner { get; }
@@ -68,10 +70,21 @@ internal sealed class CheckoutPaymentOperationScope : IAsyncDisposable
         return new Activation(previous);
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (_disposed) return;
-        _disposed = true;
+        lock (_disposeGate)
+        {
+            // Share in-progress/successful cleanup. A failed cleanup may be retried,
+            // but disposal permanently prevents this scope from authorizing new work.
+            _disposed = true;
+            if (_disposeTask == null || _disposeTask.IsFaulted || _disposeTask.IsCanceled)
+                _disposeTask = ReleaseAsync();
+            return new ValueTask(_disposeTask);
+        }
+    }
+
+    private async Task ReleaseAsync()
+    {
         if (!PreserveOwnership && _release != null) await _release().ConfigureAwait(false);
     }
 
