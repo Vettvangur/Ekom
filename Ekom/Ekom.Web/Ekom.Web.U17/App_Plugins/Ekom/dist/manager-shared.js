@@ -75,8 +75,8 @@ class l {
   async giftcardRecovery(e) {
     return this.getJson(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}`);
   }
-  async releaseGiftcardRecovery(e, r, t, n) {
-    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}/release`, { attemptId: r, claimId: t, token: n });
+  async releaseGiftcardRecovery(e, r, t, o) {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}/release`, { attemptId: r, claimId: t, token: o });
   }
   async reconcileGiftcardRecovery(e, r, t) {
     return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}/reconcile`, { attemptId: r, token: t });
@@ -97,8 +97,8 @@ class l {
   async updateCustomerInformation(e, r, t) {
     return this.postBody("/ekom/manager/UpdateCustomerInformation", { orderId: e, customer: r, shipping: t });
   }
-  async addOrderLine(e, r, t, n) {
-    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines`, { productId: r, variantId: t, quantity: n });
+  async addOrderLine(e, r, t, o) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines`, { productId: r, variantId: t, quantity: o });
   }
   async updateShippingProvider(e, r, t) {
     return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/ShippingProvider`, { providerId: r, customData: t });
@@ -175,20 +175,20 @@ class l {
   }
   static async createError(e, r) {
     const t = await e.text();
-    let n = t || r;
+    let o = t || r;
     try {
-      n = JSON.parse(t).message || n;
+      o = JSON.parse(t).message || o;
     } catch {
     }
-    return new Error(n || `${r} Status ${e.status}.`);
+    return new Error(o || `${r} Status ${e.status}.`);
   }
 }
 function u(a) {
   if (!a)
     return "";
   const e = new URLSearchParams();
-  for (const [t, n] of Object.entries(a))
-    e.set(t, n == null ? "" : String(n));
+  for (const [t, o] of Object.entries(a))
+    e.set(t, o == null ? "" : String(o));
   const r = e.toString();
   return r ? `?${r}` : "";
 }
@@ -219,18 +219,18 @@ function S(a) {
   return a.enumValue || a.value || "";
 }
 function C(a, e) {
-  const t = [], n = Math.max(e || 1, 1);
+  const t = [], o = Math.max(e || 1, 1);
   let d;
-  a <= Math.floor(5 / 2) ? d = 1 : a + Math.floor(5 / 2) >= n ? d = Math.max(n - 5 + 1, 1) : d = a - Math.floor(5 / 2);
+  a <= Math.floor(5 / 2) ? d = 1 : a + Math.floor(5 / 2) >= o ? d = Math.max(o - 5 + 1, 1) : d = a - Math.floor(5 / 2);
   for (let i = 0; i < 5; i += 1) {
-    const o = d + i;
-    o <= n && t.push(o);
+    const n = d + i;
+    n <= o && t.push(n);
   }
-  return t.length && Number(t[t.length - 1]) < n && t.push(`...${n}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
+  return t.length && Number(t[t.length - 1]) < o && t.push(`...${o}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
 }
 function R(a, e) {
   const r = URL.createObjectURL(a), t = document.createElement("a");
-  t.href = r, t.download = e, document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
+  t.href = r, t.download = e, t.addEventListener("click", (o) => o.stopPropagation()), document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
 }
 const L = `
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
@@ -374,23 +374,23 @@ const L = `
   }
 `;
 function I(a, e, r) {
-  const t = a.getBoundingClientRect(), n = window.devicePixelRatio || 1, d = Math.max(t.width, 300), i = Math.max(t.height, 220);
-  a.width = d * n, a.height = i * n;
-  const o = a.getContext("2d");
-  if (!o)
+  const t = a.getBoundingClientRect(), o = window.devicePixelRatio || 1, d = Math.max(t.width, 300), i = Math.max(t.height, 220);
+  a.width = d * o, a.height = i * o;
+  const n = a.getContext("2d");
+  if (!n)
     return;
-  o.scale(n, n), o.clearRect(0, 0, d, i), o.strokeStyle = "#e5e5e5", o.lineWidth = 1;
+  n.scale(o, o), n.clearRect(0, 0, d, i), n.strokeStyle = "#e5e5e5", n.lineWidth = 1;
   for (let s = 0; s < 5; s += 1) {
     const m = 20 + (i - 50) / 4 * s;
-    o.beginPath(), o.moveTo(40, m), o.lineTo(d - 10, m), o.stroke();
+    n.beginPath(), n.moveTo(40, m), n.lineTo(d - 10, m), n.stroke();
   }
   const c = e.points || [], k = c.map((s) => Number(s.y || 0)), f = Math.max(...k, 1), x = c.length > 1 ? (d - 60) / (c.length - 1) : 0;
-  o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((s, m) => {
+  n.strokeStyle = r, n.lineWidth = 2, n.beginPath(), c.forEach((s, m) => {
     const p = 40 + x * m, g = i - 30 - Number(s.y || 0) / f * (i - 60);
-    m === 0 ? o.moveTo(p, g) : o.lineTo(p, g);
-  }), o.stroke(), o.fillStyle = r, c.forEach((s, m) => {
+    m === 0 ? n.moveTo(p, g) : n.lineTo(p, g);
+  }), n.stroke(), n.fillStyle = r, c.forEach((s, m) => {
     const p = 40 + x * m, g = i - 30 - Number(s.y || 0) / f * (i - 60);
-    o.beginPath(), o.arc(p, g, 3, 0, Math.PI * 2), o.fill();
+    n.beginPath(), n.arc(p, g, 3, 0, Math.PI * 2), n.fill();
   });
 }
 export {
