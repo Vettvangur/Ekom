@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+* **manager:** prevent the backoffice router from intercepting CSV order downloads and attempting to navigate to a blob URL.
+
 ### Features
 
 * **checkout:** persist gift-card reservation intent and structured failed-preparation evidence independently of payment contributions; provide guarded, audited U17/U18 Manager recovery actions through an optional integration capability. Unknown effects remain blocked, including the generic Release Lock override. Integrations must adopt the recovery contract and authoritative provider correlation; existing historical holds are not automatically repaired.

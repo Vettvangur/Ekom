@@ -510,6 +510,8 @@ export function downloadBlob(blob: Blob, filename: string): void {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
+  // Keep the backoffice router from handling this native download as navigation.
+  anchor.addEventListener('click', event => event.stopPropagation());
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
