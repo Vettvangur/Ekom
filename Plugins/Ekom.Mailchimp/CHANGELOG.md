@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+* **mailchimp:** resolve root-relative product and image URLs against `SiteBaseUrl` instead of treating them as file URLs; preserve root and CDN URL semantics
+
 ### Features
 
 * **mailchimp:** add queued raw and template Mailchimp Transactional messages with attachments and inline images

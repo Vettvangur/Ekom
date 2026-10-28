@@ -114,25 +114,32 @@ public static class MailchimpOrderMapper
         Country = NullIfWhiteSpace(customer.Country),
     };
 
-    private static Uri? CombineUrl(Uri? baseUrl, string? path)
+    internal static Uri? CombineUrl(Uri? baseUrl, string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
             return null;
         }
 
-        if (Uri.TryCreate(path, UriKind.Absolute, out Uri? absolute))
+        // Root-relative and protocol-relative web paths can be parsed as file URIs.
+        // Resolve them against the site before considering an absolute URI.
+        if (!path.StartsWith('/') && Uri.TryCreate(path, UriKind.Absolute, out Uri? absolute))
         {
-            return absolute;
+            return IsWebUrl(absolute) ? absolute : null;
         }
 
-        if (baseUrl == null || !baseUrl.IsAbsoluteUri)
+        if (baseUrl == null || !IsWebUrl(baseUrl))
         {
             return null;
         }
 
-        return new Uri(baseUrl, path.TrimStart('/'));
+        return Uri.TryCreate(baseUrl, path, out Uri? resolved) && IsWebUrl(resolved)
+            ? resolved
+            : null;
     }
+
+    private static bool IsWebUrl(Uri uri)
+        => uri.IsAbsoluteUri && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 
     private static DateTimeOffset ToDateTimeOffset(DateTime value)
         => value.Kind == DateTimeKind.Unspecified
