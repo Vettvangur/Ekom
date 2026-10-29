@@ -70,7 +70,7 @@ class OrderRepository
         else
         {
             await using var transaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
-            var writeStarted = false;
+            var commitStarted = false;
             try
             {
                 await _paymentAttempts.EnsureWriteAllowedAsync(db, orderData.UniqueId, ct).ConfigureAwait(false);
@@ -78,7 +78,6 @@ class OrderRepository
                 var isManagerOverride = capability?.OrderId == orderData.UniqueId && capability.IsManagerOverride;
                 var owner = capability?.OrderId == orderData.UniqueId ? capability.Owner : null;
                 ct.ThrowIfCancellationRequested();
-                writeStarted = true;
                 var updated = await db.OrderData
                     .Where(x => x.UniqueId == orderData.UniqueId)
                     .Where(x => (isManagerOverride || owner == null)
@@ -101,14 +100,15 @@ class OrderRepository
                     .UpdateAsync(ct).ConfigureAwait(false);
                 if (updated != 1)
                     throw new InvalidOperationException("The order was not updated. It may no longer exist or checkout operation ownership was lost.");
+                commitStarted = true;
                 await transaction.CommitAsync(ct).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is DbException or OperationCanceledException)
             {
                 var operation = CheckoutPaymentOperationScope.Current;
-                // Cancellation of the read-only ownership check cannot make this save uncertain.
-                // Once a write starts, retain the fence unless its outcome is independently known.
-                if (writeStarted && operation?.OrderId == orderData.UniqueId) operation.PreserveOwnership = true;
+                // Before the commit the transaction rolls back, so the save is known not to have happened.
+                // Only a failed commit leaves the outcome unknown; retain the fence for that alone.
+                if (commitStarted && operation?.OrderId == orderData.UniqueId) operation.PreserveOwnership = true;
                 throw;
             }
         }

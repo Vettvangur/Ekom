@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 * **manager:** prevent the backoffice router from intercepting CSV order downloads and attempting to navigate to a blob URL.
+* **order:** release the basket lock when an order save fails or is cancelled before its commit. Only a failed commit keeps the order locked.
 
 ### Features
 
