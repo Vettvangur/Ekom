@@ -7,4 +7,5 @@ public class MostSoldProduct
     public Guid Key { get; set; }
     public int Id { get; set; }
     public decimal ProductCount { get; set; }
+    public decimal Total { get; set; }
 }

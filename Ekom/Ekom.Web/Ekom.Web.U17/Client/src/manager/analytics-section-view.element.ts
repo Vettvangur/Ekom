@@ -4,6 +4,7 @@ import {
   EkomManagerApi,
   MostSoldProductsResult,
   escapeHtml,
+  formatAnalyticsAmount,
   getStatusValue,
   managerState,
   managerStyles,
@@ -19,11 +20,24 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   private chartData?: ChartData;
   private mostSoldProducts: MostSoldProductsResult = { products: [], count: 0, totalPages: 0, page: 1 };
   private pageMostSoldProducts = 1;
+  private resizeObserver?: ResizeObserver;
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.render();
+    this.resizeObserver = new ResizeObserver(() => this.renderCharts());
+    this.resizeObserver.observe(this);
     void this.initialize();
+  }
+
+  override disconnectedCallback(): void {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
+    super.disconnectedCallback();
+  }
+
+  private get currency() {
+    return managerState.stores.find(store => store.alias === managerState.filters.store)?.currency;
   }
 
   private async initialize(): Promise<void> {
@@ -101,7 +115,9 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
 
   private render(): void {
     this.innerHTML = `
-      <style>${managerStyles}</style>
+      <style>${managerStyles}
+        ekom-analytics-section-view { display: block; }
+      </style>
       <section class="ekmManager">
         <div class="ekmManager__body">
           ${this.renderToolbar()}
@@ -155,6 +171,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       </div>
       <div class="card ekmChartCard">
         <h3>Most Sold Products</h3>
+        <p>Totals include VAT and discounts, excluding shipping and payment fees.</p>
         ${this.loadingMostSoldProducts ? '<p>Loading most sold products...</p>' : this.renderMostSoldProducts()}
       </div>
     `;
@@ -169,7 +186,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       <div class="umb-table">
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell">Product</div><div class="umb-table-cell">Sku</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Total</div></div></div>
         <div class="umb-table-body">
-          ${this.mostSoldProducts.products.map(product => `<div class="umb-table-row"><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'title', 'productTitle', 'name'))}</div><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'sku', 'productSku'))}</div><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'quantity', 'count'))}</div><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'formattedTotal', 'total'))}</div></div>`).join('')}
+          ${this.mostSoldProducts.products.map(product => `<div class="umb-table-row"><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'title', 'productTitle', 'name'))}</div><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'sku', 'productSku'))}</div><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'productCount', 'quantity', 'count'))}</div><div class="umb-table-cell">${escapeHtml(formatAnalyticsAmount(Number(readProductValue(product, 'total')), this.currency))}</div></div>`).join('')}
         </div>
       </div>
       ${this.mostSoldProducts.totalPages > 1 ? this.renderMostSoldProductsPagination() : ''}
@@ -199,15 +216,15 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     const average = this.querySelector<HTMLCanvasElement>('#chartAvarage');
 
     if (revenue) {
-      renderLineChart(revenue, this.chartData.revenueChart, 'rgba(30, 64, 175, 1)');
+      renderLineChart(revenue, this.chartData.revenueChart, 'rgba(30, 64, 175, 1)', { currency: this.currency });
     }
 
     if (orders) {
-      renderLineChart(orders, this.chartData.ordersChart, 'rgba(8, 145, 178, 1)');
+      renderLineChart(orders, this.chartData.ordersChart, 'rgba(8, 145, 178, 1)', { integer: true });
     }
 
     if (average) {
-      renderLineChart(average, this.chartData.avarageChart, 'rgba(217, 119, 6, 1)');
+      renderLineChart(average, this.chartData.avarageChart, 'rgba(217, 119, 6, 1)', { currency: this.currency });
     }
   }
 
