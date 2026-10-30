@@ -56,7 +56,8 @@ public sealed class CustomerOrderHistoryTests
         var baseline = await db.OrderData.ToListAsync();
         var expected = baseline.Where(x =>
                 (byUsername ? x.CustomerUsername == "customer" : x.CustomerId == 42)
-                && x.OrderStatus is OrderStatus.ReadyForDispatch or OrderStatus.OfflinePayment or OrderStatus.Dispatched
+                && x.OrderStatus is OrderStatus.ReadyForDispatch or OrderStatus.ReadyForPickup
+                    or OrderStatus.ReadyForDispatchWhenStockArrives or OrderStatus.OfflinePayment or OrderStatus.Dispatched
                 && (string.IsNullOrEmpty(storeAlias) || x.StoreAlias == storeAlias))
             .Select(x => x.UniqueId).OrderBy(x => x).ToList();
         fixture.Commands.Clear();

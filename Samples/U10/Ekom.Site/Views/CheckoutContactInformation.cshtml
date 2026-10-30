@@ -1,4 +1,3 @@
-@using Ekom.Klaviyo.Helpers;
 @using Umbraco.Cms.Web.Common.PublishedModels;
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
@@ -22,6 +21,9 @@
     var customerRegion = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Region) ? order.CustomerInformation.Customer.Region : memberAsContent != null ? memberAsContent.Value<string>("region") : "";
     var customerZipCode = !string.IsNullOrEmpty(order.CustomerInformation.Customer.ZipCode) ? order.CustomerInformation.Customer.ZipCode : memberAsContent != null ? memberAsContent.Value<string>("zipCode") : "";
     var customerPhone = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Phone) ? order.CustomerInformation.Customer.Phone : memberAsContent != null ? memberAsContent.Value<string>("phone") : "";
+
+    var emailConsent = bool.TryParse(order.CustomerInformation.Customer.Value("customerKlaviyoConsentToSubscribeEmail"), out var subscribedToEmail) && subscribedToEmail;
+    var smsConsent = bool.TryParse(order.CustomerInformation.Customer.Value("customerKlaviyoConsentToSubscribeSms"), out var subscribedToSms) && subscribedToSms;
 
     var shippingAddress = order.CustomerInformation.Shipping.Address;
     var shippingApartment = order.CustomerInformation.Shipping.Apartment;
@@ -142,11 +144,11 @@
                             <fieldset class="sm:col-span-2">
                                 <legend class="block text-sm font-medium text-gray-700">Marketing</legend>
                                 <div class="mt-1 flex items-center">
-                                    <input type="checkbox" name="customerKlaviyoConsentToSubscribeEmail" id="marketing-email" value="true" @(order.CustomerInformation.Customer.Value("customerKlaviyoConsentToSubscribeEmail").IsBoolean() ? "checked" : "") class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <input type="checkbox" name="customerKlaviyoConsentToSubscribeEmail" id="marketing-email" value="true" checked="@emailConsent" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                                     <label for="marketing-email" class="ml-2 text-sm text-gray-900">Subscribe to email marketing</label>
                                 </div>
                                 <div class="mt-1 flex items-center">
-                                    <input type="checkbox" name="customerKlaviyoConsentToSubscribeSms" id="marketing-sms" value="true" @(order.CustomerInformation.Customer.Value("customerKlaviyoConsentToSubscribeSms").IsBoolean() ? "checked" : "") class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <input type="checkbox" name="customerKlaviyoConsentToSubscribeSms" id="marketing-sms" value="true" checked="@smsConsent" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                                     <label for="marketing-sms" class="ml-2 text-sm text-gray-900">Subscribe to SMS marketing</label>
                                 </div>
                             </fieldset>
