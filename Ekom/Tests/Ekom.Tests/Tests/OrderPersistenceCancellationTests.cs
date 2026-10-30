@@ -40,7 +40,7 @@ public sealed class OrderPersistenceCancellationTests
     }
 
     [Fact]
-    public async Task CancelledSaveAfterWriteStartsStillPreservesUncertainOwnership()
+    public async Task CancelledSaveBeforeCommitReleasesOwnership()
     {
         using var f = new Fixture();
         using var cache = new MemoryCache(new MemoryCacheOptions());
@@ -50,6 +50,28 @@ public sealed class OrderPersistenceCancellationTests
         using var cancelled = new CancellationTokenSource();
         using (var fault = new CancelSql(f, cancelled, sql => sql.TrimStart().StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase)
             && sql.Contains("EkomOrders", StringComparison.Ordinal)))
+        {
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Repository(f, cache).UpdateOrderAsync(data, cancelled.Token));
+            Assert.True(fault.Triggered);
+        }
+
+        Assert.False(operation.PreserveOwnership);
+        await operation.DisposeAsync();
+        using var db = f.Database.Factory.GetDatabase();
+        Assert.Null((await db.GetTable<CheckoutPaymentOperationData>().SingleAsync()).Owner);
+    }
+
+    [Fact]
+    public async Task CancelledCommitStillPreservesUncertainOwnership()
+    {
+        using var f = new Fixture();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var data = await f.ReadAsync();
+        await using var operation = await f.Service.BeginCheckoutAsync(new OrderInfo(data));
+        using var activation = operation.Enter();
+        using var cancelled = new CancellationTokenSource();
+        using (var fault = new CancelSql(f, cancelled, (TraceInfo info) =>
+            info.Operation == TraceOperation.CommitTransaction && info.TraceInfoStep == TraceInfoStep.AfterExecute))
         {
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Repository(f, cache).UpdateOrderAsync(data, cancelled.Token));
             Assert.True(fault.Triggered);
@@ -72,13 +94,18 @@ public sealed class OrderPersistenceCancellationTests
         public bool Triggered { get; private set; }
 
         public CancelSql(Fixture f, CancellationTokenSource cancelled, Func<string, bool> matches)
+            : this(f, cancelled, (TraceInfo info) =>
+                info.TraceInfoStep == TraceInfoStep.BeforeExecute && info.Command?.CommandText is string sql && matches(sql))
+        {
+        }
+
+        public CancelSql(Fixture f, CancellationTokenSource cancelled, Func<TraceInfo, bool> matches)
         {
             using var db = f.Database.Factory.GetDatabase();
             var connectionString = db.ConnectionString;
             DataConnection.DefaultOnTraceConnection = info =>
             {
-                if (!Triggered && info.DataConnection.ConnectionString == connectionString &&
-                    info.TraceInfoStep == TraceInfoStep.BeforeExecute && info.Command?.CommandText is string sql && matches(sql))
+                if (!Triggered && info.DataConnection.ConnectionString == connectionString && matches(info))
                 {
                     Triggered = true;
                     cancelled.Cancel();

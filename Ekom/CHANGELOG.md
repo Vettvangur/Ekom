@@ -7,6 +7,7 @@
 * **manager:** restore analytics product quantities, add saved order-line totals, and show currency-aware chart date/value axes and point tooltips in U17/U18, with integer order counts and responsive redraws. Product totals use saved discounted line amounts including VAT, excluding shipping and payment fees.
 
 * **manager:** prevent the backoffice router from intercepting CSV order downloads and attempting to navigate to a blob URL.
+* **order:** release the basket lock when an order save fails or is cancelled before its commit. Only a failed commit keeps the order locked.
 
 ### Features
 
