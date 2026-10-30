@@ -89,6 +89,13 @@
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
+## [0.2.343](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.342...Ekom-v0.2.343) (2026-10-30)
+
+
+### Bug Fixes
+
+* **manager:** restore analytics totals and chart details ([#1056](https://github.com/Vettvangur/Ekom/issues/1056)) ([7cc3a5f](https://github.com/Vettvangur/Ekom/commit/7cc3a5fd2fc56e44c0d8a36027fa3ddd1da0ed96))
+
 ## [0.2.342](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.341...Ekom-v0.2.342) (2026-10-28)
 
 
