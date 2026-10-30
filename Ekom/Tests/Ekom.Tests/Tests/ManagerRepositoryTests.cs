@@ -342,6 +342,47 @@ public class ManagerRepositoryTests
         Assert.Equal("sumar\u00c1", db.Execute<string>("SELECT lower(@upper)", parameters));
     }
 
+    [Fact]
+    public async Task MostSoldProducts_SumsSavedLineAmountsWithoutMultiplyingQuantityAgain()
+    {
+        using var database = new OrderDatabase();
+        database.Add(null, Guid.Empty, 25m);
+        database.Add(null, Guid.Empty, 12.5m);
+
+        var result = await database.Repository.MostSoldProductsPaged(
+            database.Date, database.Date, "main", "AllOrders", 1, 20);
+
+        var product = Assert.Single(result.Products);
+        Assert.Equal(4m, product.ProductCount);
+        Assert.Equal(37.5m, product.Total);
+        Assert.Equal(1, result.Count);
+    }
+
+    [Fact]
+    public async Task MostSoldProducts_GroupsProductsAndPaginatesByQuantity()
+    {
+        using var database = new OrderDatabase();
+        // Saved amounts already reflect discounts and tax; quantity must not multiply them again.
+        database.Add(null, Guid.Empty, 15m, productId: 1, quantity: 3m);
+        database.Add(null, Guid.Empty, 7.5m, productId: 1, quantity: 1.5m);
+        database.Add(null, Guid.Empty, 100m, productId: 2, quantity: 1m);
+
+        var firstPage = await database.Repository.MostSoldProductsPaged(
+            database.Date, database.Date, "main", "AllOrders", 1, 1);
+        var secondPage = await database.Repository.MostSoldProductsPaged(
+            database.Date, database.Date, "main", "AllOrders", 2, 1);
+        var first = Assert.Single(firstPage.Products);
+        var second = Assert.Single(secondPage.Products);
+        Assert.Equal(1, first.Id);
+        Assert.Equal(4.5m, first.ProductCount);
+        Assert.Equal(22.5m, first.Total);
+        Assert.Equal(2, second.Id);
+        Assert.Equal(100m, second.Total);
+        Assert.Equal(2, firstPage.Count);
+        Assert.Equal(2, firstPage.TotalPages);
+        Assert.Equal(2, secondPage.Page);
+    }
+
     private static Task<OrderListData> SearchAsync(ManagerRepository repository, string? couponCode, string? shippingProvider,
         string pageSize = "30", string paymentProvider = "", string productSku = "", string trackingSource = "", string? giftcardCode = null)
         => repository.SearchOrdersAsync(OrderDatabase.OrderDate, OrderDatabase.OrderDate, "", "main", "AllOrders", paymentProvider,
@@ -419,7 +460,7 @@ public class ManagerRepositoryTests
         public DateTime Date => OrderDate;
 
         public Guid Add(string? coupon, Guid shippingProvider, decimal amount, string? lineCoupon = null, Guid? paymentProvider = null,
-            string[]? giftcardCodes = null)
+            string[]? giftcardCodes = null, int productId = 1, decimal quantity = 2m)
         {
             Guid id = Guid.NewGuid();
             using var db = _factory.GetDatabase();
@@ -438,7 +479,7 @@ public class ManagerRepositoryTests
                     ShippingProvider = new { Key = shippingProvider },
                     PaymentProvider = new { Key = paymentProvider },
                     Tracking = new { Source = "email" },
-                    OrderLines = new[] { new { Coupon = lineCoupon, Product = new { SKU = "SKU" } } },
+                    OrderLines = new[] { new { Coupon = lineCoupon, Product = new { Id = productId, SKU = "SKU", Title = "Product" }, Quantity = quantity, Amount = new { Value = amount } } },
                 }),
             });
             return id;

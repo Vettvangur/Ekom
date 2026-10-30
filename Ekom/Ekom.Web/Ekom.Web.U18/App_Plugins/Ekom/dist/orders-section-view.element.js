@@ -3,7 +3,7 @@ var H = (i, l, e) => l in i ? z(i, l, { enumerable: !0, configurable: !0, writab
 var d = (i, l, e) => H(i, typeof l != "symbol" ? l + "" : l, e);
 import { UmbElementMixin as Z } from "@umbraco-cms/backoffice/element-api";
 import { UMB_NOTIFICATION_CONTEXT as Q } from "@umbraco-cms/backoffice/notification";
-import { E as Y, m as u, a as J, e as s, g as S, f as $, p as X, d as L, b as ee } from "./manager-shared.js";
+import { E as Y, m as u, a as J, e as s, g as S, b as $, p as X, d as L, c as ee } from "./manager-shared.js";
 const te = [
   { key: "customerName", label: "Name", property: "name" },
   { key: "customerEmail", label: "Email", property: "email" },

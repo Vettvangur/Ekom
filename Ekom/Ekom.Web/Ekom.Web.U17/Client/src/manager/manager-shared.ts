@@ -30,6 +30,7 @@ export type StatusItem = {
 export type StoreItem = {
   alias: string;
   title: string;
+  currency?: { isoCurrencySymbol?: string; currencyValue?: string; currencyDecimalDigits?: number };
 };
 
 export type PaymentProviderItem = {
@@ -660,60 +661,118 @@ export const managerStyles = `
   }
 `;
 
-export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, color: string): void {
+export function formatAnalyticsAmount(value: number, currency?: StoreItem['currency']): string {
+  const code = currency?.isoCurrencySymbol;
+  const digits = currency?.currencyDecimalDigits ?? 2;
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+    ...(code && /^[A-Z]{3}$/.test(code) ? { style: 'currency', currency: code, currencyDisplay: 'code' } : {}),
+  }).format(value);
+}
+
+export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, color: string,
+  options: { currency?: StoreItem['currency']; integer?: boolean } = {}): void {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  const width = Math.max(rect.width, 300);
-  const height = Math.max(rect.height, 220);
+  const width = rect.width || 300;
+  const height = rect.height || 320;
   canvas.width = width * dpr;
   canvas.height = height * dpr;
-
   const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return;
-  }
-
+  if (!ctx) return;
   ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, width, height);
-  ctx.strokeStyle = '#e5e5e5';
-  ctx.lineWidth = 1;
-
-  for (let i = 0; i < 5; i += 1) {
-    const y = 20 + ((height - 50) / 4) * i;
-    ctx.beginPath();
-    ctx.moveTo(40, y);
-    ctx.lineTo(width - 10, y);
-    ctx.stroke();
-  }
+  ctx.font = '12px sans-serif';
 
   const points = series.points || [];
   const values = points.map(point => Number(point.y || 0));
-  const max = Math.max(...values, 1);
-  const step = points.length > 1 ? (width - 60) / (points.length - 1) : 0;
+  const min = Math.min(0, ...values);
+  const rawMax = Math.max(1, ...values);
+  const max = options.integer ? Math.ceil(rawMax / 4) * 4 : rawMax;
+  const formatValue = (value: number) => options.currency
+    ? formatAnalyticsAmount(value, options.currency)
+    : value.toLocaleString(undefined, { maximumFractionDigits: options.integer ? 0 : 2 });
+  const ticks = Array.from({ length: 5 }, (_, i) => max - (max - min) * i / 4);
+  const left = Math.max(48, ...ticks.map(value => ctx.measureText(formatValue(value)).width + 12));
+  const right = width - 16;
+  const top = 20;
+  const bottom = height - 52;
+  const positions = points.map((point, index) => ({
+    x: points.length > 1 ? left + (right - left) * index / (points.length - 1) : (left + right) / 2,
+    y: bottom - (values[index] - min) / (max - min) * (bottom - top),
+    date: point.x || series.labels?.[index] || '',
+    value: values[index],
+  }));
 
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-
-  points.forEach((point, index) => {
-    const x = 40 + step * index;
-    const y = height - 30 - ((Number(point.y || 0) / max) * (height - 60));
-
-    if (index === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
-  });
-
-  ctx.stroke();
-
-  ctx.fillStyle = color;
-  points.forEach((point, index) => {
-    const x = 40 + step * index;
-    const y = height - 30 - ((Number(point.y || 0) / max) * (height - 60));
+  const draw = (active = -1) => {
+    ctx.clearRect(0, 0, width, height);
+    ctx.font = '12px sans-serif';
+    ctx.lineWidth = 1;
+    ctx.textAlign = 'right';
+    ticks.forEach((value, index) => {
+      const y = top + (bottom - top) * index / 4;
+      ctx.fillStyle = '#555';
+      ctx.fillText(formatValue(value), left - 8, y + 4);
+      ctx.strokeStyle = '#e5e5e5';
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(right, y);
+      ctx.stroke();
+    });
+    const labelWidth = Math.max(90, ...positions.map(point => ctx.measureText(point.date).width + 16));
+    const labelCount = Math.max(2, Math.floor((right - left) / labelWidth));
+    const labelIndices = new Set(Array.from({ length: Math.min(labelCount, positions.length) }, (_, i) =>
+      Math.round(i * (positions.length - 1) / Math.max(1, Math.min(labelCount, positions.length) - 1))));
+    ctx.fillStyle = '#555';
+    positions.forEach((point, index) => {
+      if (!labelIndices.has(index)) return;
+      ctx.textAlign = positions.length === 1 ? 'center' : index === 0 ? 'left' : index === positions.length - 1 ? 'right' : 'center';
+      ctx.fillText(point.date, point.x, bottom + 24);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI * 2);
-    ctx.fill();
-  });
+    positions.forEach((point, index) => {
+      if (index === 0) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    });
+    ctx.stroke();
+    ctx.fillStyle = color;
+    positions.forEach((point, index) => {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, index === active ? 5 : 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    if (!positions.length) {
+      ctx.textAlign = 'center';
+      ctx.fillText('No data for this period', (left + right) / 2, height / 2);
+    }
+    const point = positions[active];
+    if (point) {
+      const lines = [point.date, formatValue(point.value)];
+      const boxWidth = Math.max(...lines.map(line => ctx.measureText(line).width)) + 20;
+      const x = Math.max(0, Math.min(width - boxWidth, point.x - boxWidth / 2));
+      const y = point.y > 70 ? point.y - 62 : point.y + 12;
+      ctx.fillStyle = '#222';
+      ctx.fillRect(x, y, boxWidth, 48);
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'left';
+      lines.forEach((line, index) => ctx.fillText(line, x + 10, y + 19 + index * 18));
+    }
+  };
+  canvas.onmousemove = event => {
+    const bounds = canvas.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) * width / bounds.width;
+    const y = (event.clientY - bounds.top) * height / bounds.height;
+    let active = -1;
+    let distance = 16;
+    positions.forEach((point, index) => {
+      const current = Math.hypot(point.x - x, point.y - y);
+      if (current < distance) { active = index; distance = current; }
+    });
+    canvas.style.cursor = active >= 0 ? 'pointer' : 'default';
+    draw(active);
+  };
+  canvas.onmouseleave = () => { canvas.style.cursor = 'default'; draw(); };
+  draw();
 }

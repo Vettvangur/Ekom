@@ -1,9 +1,9 @@
 var u = Object.defineProperty;
-var h = (s, r, t) => r in s ? u(s, r, { enumerable: !0, configurable: !0, writable: !0, value: t }) : s[r] = t;
-var d = (s, r, t) => h(s, typeof r != "symbol" ? r + "" : r, t);
+var h = (a, r, t) => r in a ? u(a, r, { enumerable: !0, configurable: !0, writable: !0, value: t }) : a[r] = t;
+var d = (a, r, t) => h(a, typeof r != "symbol" ? r + "" : r, t);
 import { UmbElementMixin as v } from "@umbraco-cms/backoffice/element-api";
-import { E as m, m as e, a as g, e as o, g as p, p as b, r as n } from "./manager-shared.js";
-class f extends v(HTMLElement) {
+import { E as m, m as s, a as g, e as i, g as p, f as b, p as f, r as n } from "./manager-shared.js";
+class S extends v(HTMLElement) {
   constructor() {
     super(...arguments);
     d(this, "api", new m());
@@ -13,17 +13,26 @@ class f extends v(HTMLElement) {
     d(this, "chartData");
     d(this, "mostSoldProducts", { products: [], count: 0, totalPages: 0, page: 1 });
     d(this, "pageMostSoldProducts", 1);
+    d(this, "resizeObserver");
   }
   connectedCallback() {
-    super.connectedCallback(), this.render(), this.initialize();
+    super.connectedCallback(), this.render(), this.resizeObserver = new ResizeObserver(() => this.renderCharts()), this.resizeObserver.observe(this), this.initialize();
+  }
+  disconnectedCallback() {
+    var t;
+    (t = this.resizeObserver) == null || t.disconnect(), this.resizeObserver = void 0, super.disconnectedCallback();
+  }
+  get currency() {
+    var t;
+    return (t = s.stores.find((e) => e.alias === s.filters.store)) == null ? void 0 : t.currency;
   }
   async initialize() {
     try {
-      const [t, a] = await Promise.all([
+      const [t, e] = await Promise.all([
         this.api.statusList(),
         this.api.stores()
       ]);
-      e.statusList = t || [], e.stores = a || [], !e.filters.store && e.stores.length && (e.filters.store = e.stores[0].alias), await this.loadAnalytics();
+      s.statusList = t || [], s.stores = e || [], !s.filters.store && s.stores.length && (s.filters.store = s.stores[0].alias), await this.loadAnalytics();
     } catch (t) {
       this.error = c(t, "Error loading Ekom analytics."), this.loading = !1, this.loadingMostSoldProducts = !1, this.render();
     }
@@ -35,13 +44,13 @@ class f extends v(HTMLElement) {
     ]);
   }
   async loadCharts() {
-    if (!e.filters.store) {
+    if (!s.filters.store) {
       this.loading = !1;
       return;
     }
     this.loading = !0, this.error = "", this.render();
     try {
-      this.chartData = await this.api.charts(e.filters);
+      this.chartData = await this.api.charts(s.filters);
     } catch (t) {
       this.error = c(t, "Error on chart data.");
     } finally {
@@ -49,13 +58,13 @@ class f extends v(HTMLElement) {
     }
   }
   async loadMostSoldProducts() {
-    if (!e.filters.store) {
+    if (!s.filters.store) {
       this.loadingMostSoldProducts = !1;
       return;
     }
     this.loadingMostSoldProducts = !0, this.render();
     try {
-      this.mostSoldProducts = await this.api.mostSoldProducts(e.filters, this.pageMostSoldProducts), this.mostSoldProducts.products = this.mostSoldProducts.products || [], this.pageMostSoldProducts = this.mostSoldProducts.page || this.pageMostSoldProducts;
+      this.mostSoldProducts = await this.api.mostSoldProducts(s.filters, this.pageMostSoldProducts), this.mostSoldProducts.products = this.mostSoldProducts.products || [], this.pageMostSoldProducts = this.mostSoldProducts.page || this.pageMostSoldProducts;
     } catch (t) {
       this.error = c(t, "Error on most sold products data.");
     } finally {
@@ -64,18 +73,20 @@ class f extends v(HTMLElement) {
   }
   render() {
     this.innerHTML = `
-      <style>${g}</style>
+      <style>${g}
+        ekom-analytics-section-view { display: block; }
+      </style>
       <section class="ekmManager">
         <div class="ekmManager__body">
           ${this.renderToolbar()}
-          ${this.error ? `<p class="status status--error">${o(this.error)}</p>` : ""}
+          ${this.error ? `<p class="status status--error">${i(this.error)}</p>` : ""}
           ${this.renderAnalytics()}
         </div>
       </section>
     `, this.bindEvents(), this.renderCharts();
   }
   renderToolbar() {
-    const t = e.filters;
+    const t = s.filters;
     return `
       <div class="umb-sub-header">
         <div class="ekmManager__filters">
@@ -83,21 +94,21 @@ class f extends v(HTMLElement) {
             <select data-field="orderStatus">
               <option value="CompletedOrders" ${t.orderStatus === "CompletedOrders" ? "selected" : ""}>Completed Orders</option>
               <option value="AllOrders" ${t.orderStatus === "AllOrders" ? "selected" : ""}>All Orders</option>
-              ${e.statusList.map((a) => {
-      const i = p(a);
-      return `<option value="${o(i)}" ${t.orderStatus === i ? "selected" : ""}>${o(a.label)}</option>`;
+              ${s.statusList.map((e) => {
+      const o = p(e);
+      return `<option value="${i(o)}" ${t.orderStatus === o ? "selected" : ""}>${i(e.label)}</option>`;
     }).join("")}
             </select>
           </label>
           <label class="ekmManager__filter">Date From:
-            <input type="date" data-field="dateFrom" value="${o(t.dateFrom)}">
+            <input type="date" data-field="dateFrom" value="${i(t.dateFrom)}">
           </label>
           <label class="ekmManager__filter">Date To:
-            <input type="date" data-field="dateTo" value="${o(t.dateTo)}">
+            <input type="date" data-field="dateTo" value="${i(t.dateTo)}">
           </label>
           <label class="ekmManager__filter">Store:
             <select data-field="store">
-              ${e.stores.map((a) => `<option value="${o(a.alias)}" ${t.store === a.alias ? "selected" : ""}>${o(a.title)}</option>`).join("")}
+              ${s.stores.map((e) => `<option value="${i(e.alias)}" ${t.store === e.alias ? "selected" : ""}>${i(e.title)}</option>`).join("")}
             </select>
           </label>
         </div>
@@ -113,6 +124,7 @@ class f extends v(HTMLElement) {
       </div>
       <div class="card ekmChartCard">
         <h3>Most Sold Products</h3>
+        <p>Totals include VAT and discounts, excluding shipping and payment fees.</p>
         ${this.loadingMostSoldProducts ? "<p>Loading most sold products...</p>" : this.renderMostSoldProducts()}
       </div>
     `;
@@ -122,7 +134,7 @@ class f extends v(HTMLElement) {
       <div class="umb-table">
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell">Product</div><div class="umb-table-cell">Sku</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Total</div></div></div>
         <div class="umb-table-body">
-          ${this.mostSoldProducts.products.map((t) => `<div class="umb-table-row"><div class="umb-table-cell">${o(l(t, "title", "productTitle", "name"))}</div><div class="umb-table-cell">${o(l(t, "sku", "productSku"))}</div><div class="umb-table-cell">${o(l(t, "quantity", "count"))}</div><div class="umb-table-cell">${o(l(t, "formattedTotal", "total"))}</div></div>`).join("")}
+          ${this.mostSoldProducts.products.map((t) => `<div class="umb-table-row"><div class="umb-table-cell">${i(l(t, "title", "productTitle", "name"))}</div><div class="umb-table-cell">${i(l(t, "sku", "productSku"))}</div><div class="umb-table-cell">${i(l(t, "productCount", "quantity", "count"))}</div><div class="umb-table-cell">${i(b(Number(l(t, "total")), this.currency))}</div></div>`).join("")}
         </div>
       </div>
       ${this.mostSoldProducts.totalPages > 1 ? this.renderMostSoldProductsPagination() : ""}
@@ -132,9 +144,9 @@ class f extends v(HTMLElement) {
     return `
       <div class="pagination">
         <ul>
-          ${b(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((t) => {
-      const a = Number(String(t).replace("...", ""));
-      return `<li class="${a === this.pageMostSoldProducts ? "active" : ""}"><button type="button" data-action="set-most-sold-page" data-page="${a}" ${a === this.pageMostSoldProducts ? "disabled" : ""}>${o(t)}</button></li>`;
+          ${f(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((t) => {
+      const e = Number(String(t).replace("...", ""));
+      return `<li class="${e === this.pageMostSoldProducts ? "active" : ""}"><button type="button" data-action="set-most-sold-page" data-page="${e}" ${e === this.pageMostSoldProducts ? "disabled" : ""}>${i(t)}</button></li>`;
     }).join("")}
         </ul>
       </div>
@@ -143,36 +155,36 @@ class f extends v(HTMLElement) {
   renderCharts() {
     if (!this.chartData)
       return;
-    const t = this.querySelector("#chartRevenue"), a = this.querySelector("#chartOrders"), i = this.querySelector("#chartAvarage");
-    t && n(t, this.chartData.revenueChart, "rgba(30, 64, 175, 1)"), a && n(a, this.chartData.ordersChart, "rgba(8, 145, 178, 1)"), i && n(i, this.chartData.avarageChart, "rgba(217, 119, 6, 1)");
+    const t = this.querySelector("#chartRevenue"), e = this.querySelector("#chartOrders"), o = this.querySelector("#chartAvarage");
+    t && n(t, this.chartData.revenueChart, "rgba(30, 64, 175, 1)", { currency: this.currency }), e && n(e, this.chartData.ordersChart, "rgba(8, 145, 178, 1)", { integer: !0 }), o && n(o, this.chartData.avarageChart, "rgba(217, 119, 6, 1)", { currency: this.currency });
   }
   bindEvents() {
     this.querySelectorAll("[data-action]").forEach((t) => {
-      t.addEventListener("click", (a) => void this.handleAction(a));
+      t.addEventListener("click", (e) => void this.handleAction(e));
     }), this.querySelectorAll("[data-field]").forEach((t) => {
-      t.addEventListener("change", (a) => void this.handleFieldChange(a));
+      t.addEventListener("change", (e) => void this.handleFieldChange(e));
     });
   }
   async handleAction(t) {
-    const a = t.currentTarget;
-    a.dataset.action === "set-most-sold-page" && (this.pageMostSoldProducts = Number(a.dataset.page || 1), await this.loadMostSoldProducts());
+    const e = t.currentTarget;
+    e.dataset.action === "set-most-sold-page" && (this.pageMostSoldProducts = Number(e.dataset.page || 1), await this.loadMostSoldProducts());
   }
   async handleFieldChange(t) {
-    const a = t.currentTarget, i = a.dataset.field;
-    !i || !(i in e.filters) || (e.filters[i] = a.value, this.pageMostSoldProducts = 1, await this.loadAnalytics());
+    const e = t.currentTarget, o = e.dataset.field;
+    !o || !(o in s.filters) || (s.filters[o] = e.value, this.pageMostSoldProducts = 1, await this.loadAnalytics());
   }
 }
-function l(s, ...r) {
+function l(a, ...r) {
   for (const t of r)
-    if (s[t] != null)
-      return s[t];
+    if (a[t] != null)
+      return a[t];
   return "";
 }
-function c(s, r) {
-  return s instanceof Error ? s.message : r;
+function c(a, r) {
+  return a instanceof Error ? a.message : r;
 }
-customElements.define("ekom-analytics-section-view", f);
+customElements.define("ekom-analytics-section-view", S);
 export {
-  f as EkomAnalyticsSectionViewElement,
-  f as default
+  S as EkomAnalyticsSectionViewElement,
+  S as default
 };

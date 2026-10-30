@@ -1,7 +1,7 @@
-const b = /* @__PURE__ */ new Date(), y = new Date(b.getFullYear(), 0, 1), w = {
+const j = /* @__PURE__ */ new Date(), U = new Date(j.getFullYear(), 0, 1), P = {
   filters: {
-    dateFrom: h(y),
-    dateTo: h(b),
+    dateFrom: G(U),
+    dateTo: G(j),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
@@ -22,7 +22,7 @@ const b = /* @__PURE__ */ new Date(), y = new Date(b.getFullYear(), 0, 1), w = {
   paymentProviders: [],
   shippingFilterProviders: []
 };
-class l {
+class b {
   async config() {
     return this.getJson("/ekom/backoffice/Config");
   }
@@ -88,7 +88,7 @@ class l {
       headers: { Accept: "application/json, application/octet-stream" }
     });
     if (!t.ok)
-      throw await l.createError(t, "Order action failed.");
+      throw await b.createError(t, "Order action failed.");
     return t;
   }
   async changeOrderStatus(e, r, t) {
@@ -110,7 +110,7 @@ class l {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await l.createError(t, "Error removing order line.");
+      throw await b.createError(t, "Error removing order line.");
     return t.json();
   }
   async charts(e) {
@@ -132,31 +132,31 @@ class l {
     });
   }
   async getJson(e, r) {
-    const t = await fetch(e + u(r), {
+    const t = await fetch(e + I(r), {
       credentials: "same-origin",
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await l.createError(t, "Request failed.");
+      throw await b.createError(t, "Request failed.");
     return t.json();
   }
   async getBlob(e, r) {
-    const t = await fetch(e + u(r), {
+    const t = await fetch(e + I(r), {
       credentials: "same-origin",
       headers: { Accept: "text/csv, application/octet-stream" }
     });
     if (!t.ok)
-      throw await l.createError(t, "Request failed.");
+      throw await b.createError(t, "Request failed.");
     return t.blob();
   }
   async postJson(e, r) {
-    const t = await fetch(e + u(r), {
+    const t = await fetch(e + I(r), {
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await l.createError(t, "Request failed.");
+      throw await b.createError(t, "Request failed.");
     return t.json();
   }
   async postBody(e, r) {
@@ -170,7 +170,7 @@ class l {
       body: JSON.stringify(r)
     });
     if (!t.ok)
-      throw await l.createError(t, "Request failed.");
+      throw await b.createError(t, "Request failed.");
     return t.json();
   }
   static async createError(e, r) {
@@ -183,24 +183,24 @@ class l {
     return new Error(n || `${r} Status ${e.status}.`);
   }
 }
-function u(a) {
-  if (!a)
+function I(o) {
+  if (!o)
     return "";
   const e = new URLSearchParams();
-  for (const [t, n] of Object.entries(a))
+  for (const [t, n] of Object.entries(o))
     e.set(t, n == null ? "" : String(n));
   const r = e.toString();
   return r ? `?${r}` : "";
 }
-function h(a) {
-  const e = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
-  return `${a.getFullYear()}-${e}-${r}`;
+function G(o) {
+  const e = String(o.getMonth() + 1).padStart(2, "0"), r = String(o.getDate()).padStart(2, "0");
+  return `${o.getFullYear()}-${e}-${r}`;
 }
-function _(a) {
-  if (!a)
+function E(o) {
+  if (!o)
     return "";
-  const e = new Date(a);
-  return Number.isNaN(e.getTime()) ? a : new Intl.DateTimeFormat(void 0, {
+  const e = new Date(o);
+  return Number.isNaN(e.getTime()) ? o : new Intl.DateTimeFormat(void 0, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -208,31 +208,31 @@ function _(a) {
     minute: "2-digit"
   }).format(e);
 }
-function v(a) {
-  return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+function J(o) {
+  return String(o ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function O(a) {
+function D(o) {
   const e = document.createElement("textarea");
-  return e.innerHTML = String(a ?? ""), e.value;
+  return e.innerHTML = String(o ?? ""), e.value;
 }
-function S(a) {
-  return a.enumValue || a.value || "";
+function F(o) {
+  return o.enumValue || o.value || "";
 }
-function C(a, e) {
+function N(o, e) {
   const t = [], n = Math.max(e || 1, 1);
-  let d;
-  a <= Math.floor(5 / 2) ? d = 1 : a + Math.floor(5 / 2) >= n ? d = Math.max(n - 5 + 1, 1) : d = a - Math.floor(5 / 2);
-  for (let i = 0; i < 5; i += 1) {
-    const o = d + i;
-    o <= n && t.push(o);
+  let p;
+  o <= Math.floor(5 / 2) ? p = 1 : o + Math.floor(5 / 2) >= n ? p = Math.max(n - 5 + 1, 1) : p = o - Math.floor(5 / 2);
+  for (let g = 0; g < 5; g += 1) {
+    const u = p + g;
+    u <= n && t.push(u);
   }
   return t.length && Number(t[t.length - 1]) < n && t.push(`...${n}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
 }
-function R(a, e) {
-  const r = URL.createObjectURL(a), t = document.createElement("a");
-  t.href = r, t.download = e, document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
+function q(o, e) {
+  const r = URL.createObjectURL(o), t = document.createElement("a");
+  t.href = r, t.download = e, t.addEventListener("click", (n) => n.stopPropagation()), document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
 }
-const L = `
+const V = `
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -373,35 +373,68 @@ const L = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-function I(a, e, r) {
-  const t = a.getBoundingClientRect(), n = window.devicePixelRatio || 1, d = Math.max(t.width, 300), i = Math.max(t.height, 220);
-  a.width = d * n, a.height = i * n;
-  const o = a.getContext("2d");
-  if (!o)
-    return;
-  o.scale(n, n), o.clearRect(0, 0, d, i), o.strokeStyle = "#e5e5e5", o.lineWidth = 1;
-  for (let s = 0; s < 5; s += 1) {
-    const m = 20 + (i - 50) / 4 * s;
-    o.beginPath(), o.moveTo(40, m), o.lineTo(d - 10, m), o.stroke();
-  }
-  const c = e.points || [], k = c.map((s) => Number(s.y || 0)), f = Math.max(...k, 1), x = c.length > 1 ? (d - 60) / (c.length - 1) : 0;
-  o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((s, m) => {
-    const p = 40 + x * m, g = i - 30 - Number(s.y || 0) / f * (i - 60);
-    m === 0 ? o.moveTo(p, g) : o.lineTo(p, g);
-  }), o.stroke(), o.fillStyle = r, c.forEach((s, m) => {
-    const p = 40 + x * m, g = i - 30 - Number(s.y || 0) / f * (i - 60);
-    o.beginPath(), o.arc(p, g, 3, 0, Math.PI * 2), o.fill();
-  });
+function B(o, e) {
+  const r = e == null ? void 0 : e.isoCurrencySymbol, t = (e == null ? void 0 : e.currencyDecimalDigits) ?? 2;
+  return new Intl.NumberFormat(void 0, {
+    minimumFractionDigits: t,
+    maximumFractionDigits: t,
+    ...r && /^[A-Z]{3}$/.test(r) ? { style: "currency", currency: r, currencyDisplay: "code" } : {}
+  }).format(o);
+}
+function W(o, e, r, t = {}) {
+  const n = o.getBoundingClientRect(), p = window.devicePixelRatio || 1, g = n.width || 300, u = n.height || 320;
+  o.width = g * p, o.height = u * p;
+  const a = o.getContext("2d");
+  if (!a) return;
+  a.scale(p, p), a.font = "12px sans-serif";
+  const w = e.points || [], _ = w.map((s) => Number(s.y || 0)), O = Math.min(0, ..._), T = Math.max(1, ..._), S = t.integer ? Math.ceil(T / 4) * 4 : T, C = (s) => t.currency ? B(s, t.currency) : s.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), $ = Array.from({ length: 5 }, (s, l) => S - (S - O) * l / 4), h = Math.max(48, ...$.map((s) => a.measureText(C(s)).width + 12)), y = g - 16, R = 20, v = u - 52, m = w.map((s, l) => {
+    var x;
+    return {
+      x: w.length > 1 ? h + (y - h) * l / (w.length - 1) : (h + y) / 2,
+      y: v - (_[l] - O) / (S - O) * (v - R),
+      date: s.x || ((x = e.labels) == null ? void 0 : x[l]) || "",
+      value: _[l]
+    };
+  }), L = (s = -1) => {
+    a.clearRect(0, 0, g, u), a.font = "12px sans-serif", a.lineWidth = 1, a.textAlign = "right", $.forEach((i, d) => {
+      const f = R + (v - R) * d / 4;
+      a.fillStyle = "#555", a.fillText(C(i), h - 8, f + 4), a.strokeStyle = "#e5e5e5", a.beginPath(), a.moveTo(h, f), a.lineTo(y, f), a.stroke();
+    });
+    const l = Math.max(90, ...m.map((i) => a.measureText(i.date).width + 16)), x = Math.max(2, Math.floor((y - h) / l)), M = new Set(Array.from({ length: Math.min(x, m.length) }, (i, d) => Math.round(d * (m.length - 1) / Math.max(1, Math.min(x, m.length) - 1))));
+    a.fillStyle = "#555", m.forEach((i, d) => {
+      M.has(d) && (a.textAlign = m.length === 1 ? "center" : d === 0 ? "left" : d === m.length - 1 ? "right" : "center", a.fillText(i.date, i.x, v + 24));
+    }), a.strokeStyle = r, a.lineWidth = 2, a.beginPath(), m.forEach((i, d) => {
+      d === 0 ? a.moveTo(i.x, i.y) : a.lineTo(i.x, i.y);
+    }), a.stroke(), a.fillStyle = r, m.forEach((i, d) => {
+      a.beginPath(), a.arc(i.x, i.y, d === s ? 5 : 3, 0, Math.PI * 2), a.fill();
+    }), m.length || (a.textAlign = "center", a.fillText("No data for this period", (h + y) / 2, u / 2));
+    const c = m[s];
+    if (c) {
+      const i = [c.date, C(c.value)], d = Math.max(...i.map((A) => a.measureText(A).width)) + 20, f = Math.max(0, Math.min(g - d, c.x - d / 2)), k = c.y > 70 ? c.y - 62 : c.y + 12;
+      a.fillStyle = "#222", a.fillRect(f, k, d, 48), a.fillStyle = "#fff", a.textAlign = "left", i.forEach((A, z) => a.fillText(A, f + 10, k + 19 + z * 18));
+    }
+  };
+  o.onmousemove = (s) => {
+    const l = o.getBoundingClientRect(), x = (s.clientX - l.left) * g / l.width, M = (s.clientY - l.top) * u / l.height;
+    let c = -1, i = 16;
+    m.forEach((d, f) => {
+      const k = Math.hypot(d.x - x, d.y - M);
+      k < i && (c = f, i = k);
+    }), o.style.cursor = c >= 0 ? "pointer" : "default", L(c);
+  }, o.onmouseleave = () => {
+    o.style.cursor = "default", L();
+  }, L();
 }
 export {
-  l as E,
-  L as a,
-  R as b,
-  O as d,
-  v as e,
-  _ as f,
-  S as g,
-  w as m,
-  C as p,
-  I as r
+  b as E,
+  V as a,
+  E as b,
+  q as c,
+  D as d,
+  J as e,
+  B as f,
+  F as g,
+  P as m,
+  N as p,
+  W as r
 };

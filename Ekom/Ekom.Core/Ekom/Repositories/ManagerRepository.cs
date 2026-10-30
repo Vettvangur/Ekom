@@ -389,7 +389,7 @@ ORDER BY {bucketDateExpression}";
             whereClause += " AND CreateDate >= @startDate AND CreateDate <= @endDate";
         }
 
-        if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders")
+        if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders" && orderStatus != "AllOrders")
         {
             whereClause += " AND OrderStatusCol = @orderStatus";
         }
@@ -418,7 +418,8 @@ ORDER BY {bucketDateExpression}";
                 MAX(json_extract(OL.value, '$.Product.SKU')) as SKU,
                 MAX(json_extract(OL.value, '$.Product.Title')) as Title,
                 json_extract(OL.value, '$.Product.Id') as Id,
-                SUM(CAST(json_extract(OL.value, '$.Quantity') AS REAL)) AS ProductCount 
+                SUM(CAST(json_extract(OL.value, '$.Quantity') AS REAL)) AS ProductCount,
+                SUM(COALESCE(CAST(json_extract(OL.value, '$.Amount.Value') AS REAL), 0)) AS Total
             FROM 
                 EkomOrders O
             JOIN 
@@ -428,7 +429,8 @@ ORDER BY {bucketDateExpression}";
                 MAX(OL.SKU) as SKU,
                 MAX(OL.Title) as Title,
                 OL.Id,
-                SUM(OL.Quantity) AS ProductCount 
+                SUM(OL.Quantity) AS ProductCount,
+                SUM(COALESCE(OL.Amount, 0)) AS Total
             FROM 
                 EkomOrders O
             CROSS APPLY 
@@ -437,7 +439,8 @@ ORDER BY {bucketDateExpression}";
                     SKU nvarchar(200) '$.Product.SKU',
                     Title nvarchar(200) '$.Product.Title',
                     Id int '$.Product.Id',
-                    Quantity decimal '$.Quantity'
+                    Quantity decimal(18, 4) '$.Quantity',
+                    Amount decimal(18, 4) '$.Amount.Value'
                 ) AS OL
             WHERE ").ToString();
 
@@ -445,9 +448,9 @@ ORDER BY {bucketDateExpression}";
 
         sqlBuilder.Append(whereClause);
 
-        sqlBuilder.Append(@" 
-            GROUP BY
-                OL.Id");
+        sqlBuilder.Append(_databaseFactory.IsSqlite
+            ? " GROUP BY json_extract(OL.value, '$.Product.Id')"
+            : " GROUP BY OL.Id");
 
         string groupedSql = sqlBuilder.ToString();
 
