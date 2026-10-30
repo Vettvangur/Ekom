@@ -2445,6 +2445,8 @@ partial class OrderService
             x => x.CustomerUsername == userName && (!filterStore || x.StoreAlias == storeAlias),
             ct,
             OrderStatus.ReadyForDispatch,
+            OrderStatus.ReadyForPickup,
+            OrderStatus.ReadyForDispatchWhenStockArrives,
             OrderStatus.OfflinePayment,
             OrderStatus.Dispatched
 
@@ -2480,6 +2482,8 @@ partial class OrderService
             x => x.CustomerId == customerId && (!filterStore || x.StoreAlias == storeAlias),
             ct,
             OrderStatus.ReadyForDispatch,
+            OrderStatus.ReadyForPickup,
+            OrderStatus.ReadyForDispatchWhenStockArrives,
             OrderStatus.OfflinePayment,
             OrderStatus.Dispatched
 
