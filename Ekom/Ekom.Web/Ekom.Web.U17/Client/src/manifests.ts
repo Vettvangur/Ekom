@@ -92,6 +92,12 @@ export const manifests: Array<UmbExtensionManifest> = [
     ],
   },
   {
+    type: 'condition',
+    alias: 'Ekom.Condition.CatalogPicker',
+    name: 'Ekom Catalog Picker Condition',
+    api: () => import('./catalog/catalog-picker.condition'),
+  },
+  {
     type: 'collectionView',
     alias: 'Ekom.CollectionView.Catalog',
     name: 'Ekom Catalog Collection View',
@@ -106,6 +112,10 @@ export const manifests: Array<UmbExtensionManifest> = [
       {
         alias: 'Umb.Condition.CollectionAlias',
         match: 'Umb.Collection.Document',
+      },
+      {
+        alias: 'Ekom.Condition.CatalogPicker',
+        allowInPickers: false,
       },
     ],
   },

@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+* **catalog:** exclude the custom catalog collection view from content pickers by default in U17/U18. Optional picker use delegates to Umbraco's native document table, preserving picker navigation and selection settings while retaining the normal workspace catalog. Keep a native view enabled in the collection layouts for the default picker fallback.
+
 * **manager:** restore analytics product quantities, add saved order-line totals, and show currency-aware chart date/value axes and point tooltips in U17/U18, with integer order counts and responsive redraws. Product totals use saved discounted line amounts including VAT, excluding shipping and payment fees.
 
 * **manager:** prevent the backoffice router from intercepting CSV order downloads and attempting to navigate to a blob URL.

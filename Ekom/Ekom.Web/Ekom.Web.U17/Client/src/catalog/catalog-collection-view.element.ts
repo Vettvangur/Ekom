@@ -1,5 +1,8 @@
 import { UMB_COLLECTION_CONTEXT } from '@umbraco-cms/backoffice/collection';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
+import { UmbExtensionElementInitializer } from '@umbraco-cms/backoffice/extension-api';
+import { umbExtensionsRegistry } from '@umbraco-cms/backoffice/extension-registry';
+import { isCatalogPicker } from './catalog-picker-context';
 import '@umbraco-cms/backoffice/imaging';
 
 type CatalogNode = {
@@ -61,6 +64,9 @@ const SORT_STORAGE_KEY = 'ekomCatalogSort';
 const HISTORY_STATE_KEY = 'ekomCatalog';
 
 class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
+  private pickerMode = false;
+  private initialized = false;
+  private pickerView?: UmbExtensionElementInitializer;
   private nodeId = '';
   private query = '';
   private sort = getStoredSort();
@@ -89,21 +95,32 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     super.connectedCallback();
     this.style.setProperty('display', 'block', 'important');
     this.style.setProperty('visibility', 'visible', 'important');
-    window.addEventListener('popstate', this.onPopState);
-    window.addEventListener('resize', this.onResize);
-    this.revealCollectionHost();
-    this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250);
-
-    this.nodeId = this.getNodeIdFromUrl();
-    this.sort = getStoredSort();
-    this.restorePageFromHistory();
-
+    // Wait for the local collection before inspecting the URL. In a picker the URL
+    // belongs to the document behind the modal, not the category being browsed.
     this.consumeContext(UMB_COLLECTION_CONTEXT, context => {
+      if (context == null) return;
+
+      this.pickerMode = isCatalogPicker(context.getConfig());
+      if (this.pickerMode) {
+        this.initializePickerView();
+        return;
+      }
+
+      if (!this.initialized) {
+        this.initialized = true;
+        window.addEventListener('popstate', this.onPopState);
+        window.addEventListener('resize', this.onResize);
+        this.revealCollectionHost();
+        this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250);
+        this.nodeId = this.getNodeIdFromUrl();
+        this.sort = getStoredSort();
+        this.restorePageFromHistory();
+      }
+
       const unique = context?.getConfig()?.unique;
       if (this.getCatalogNodeFromUrl() == null && unique != null && unique !== this.nodeId) {
         this.nodeId = unique;
         this.restorePageFromHistory();
-        void this.load();
       }
 
       if (context?.selection != null) {
@@ -114,16 +131,36 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
       }
 
       this.observe(context?.filter, filter => this.setQueryFromCollectionFilter(filter), 'ekomCatalogCollectionFilter');
+      this.render();
+      if (this.nodeId) {
+        void this.load();
+      }
     });
+  }
 
-    this.render();
+  private initializePickerView(): void {
+    if (this.pickerView != null) return;
 
-    if (this.nodeId) {
-      void this.load();
-    }
+    // Use the host collection's native data, selection constraints and navigation.
+    // Do not use the catalog endpoint or change the picker's selection manager.
+    this.pickerView = new UmbExtensionElementInitializer(
+      this,
+      umbExtensionsRegistry,
+      'Umb.CollectionView.Document.Table',
+      (permitted, controller) => {
+        if (permitted && controller.component != null) {
+          this.replaceChildren(controller.component);
+        } else {
+          this.textContent = 'The Umbraco document table view is unavailable.';
+        }
+      },
+    );
   }
 
   override disconnectedCallback(): void {
+    this.pickerView?.destroy();
+    this.pickerView = undefined;
+    this.initialized = false;
     window.removeEventListener('popstate', this.onPopState);
     window.removeEventListener('resize', this.onResize);
     if (this.revealTimer != null) {
@@ -139,6 +176,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private async load(showLoading = true): Promise<void> {
+    if (this.pickerMode) return;
     if (!this.nodeId) {
       this.loading = false;
       this.error = 'Unable to determine the current catalog node.';
@@ -341,6 +379,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private revealCollectionHost(): void {
+    if (this.pickerMode) return;
     for (const collection of this.getComposedAncestors('umb-collection-default')) {
       const collectionRoot = collection.shadowRoot;
       const router = collectionRoot?.querySelector<HTMLElement>('#router');
@@ -402,6 +441,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private render(): void {
+    if (this.pickerMode) return;
     this.innerHTML = `
       <style>${styles}</style>
       <div class="catalog-shell">
