@@ -355,11 +355,7 @@ public partial class EkomOrderController : ControllerBase
         if (Request.HasFormContentType)
         {
             var form = await Request.ReadFormAsync();
-            customerData = form.ToDictionary(
-                k => k.Key,
-                v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(v.Value.ToString()),
-                StringComparer.OrdinalIgnoreCase
-            );
+            customerData = OrderCustomData.FromForm(form);
         }
         else if (Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
         {
@@ -368,19 +364,14 @@ public partial class EkomOrderController : ControllerBase
 
             if (!string.IsNullOrWhiteSpace(body))
             {
-                var json = JObject.Parse(body);
+                var json = OrderCustomData.ParseJson(body);
 
                 consent = json["consent"]?.ToObject<OrderConsent>();
                 tracking = json["tracking"]?.ToObject<OrderTracking>();
 
-                customerData = json.Properties()
-                    .Where(p => !p.Name.Equals("consent", StringComparison.OrdinalIgnoreCase))
-                    .Where(p => !p.Name.Equals("tracking", StringComparison.OrdinalIgnoreCase))
-                    .ToDictionary(
-                        p => p.Name,
-                        p => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(p.Value?.ToString() ?? ""),
-                        StringComparer.OrdinalIgnoreCase
-                    );
+                customerData = OrderCustomData.FromJson(json);
+                customerData.Remove("consent");
+                customerData.Remove("tracking");
             }
         }
         else
@@ -461,7 +452,7 @@ public partial class EkomOrderController : ControllerBase
         if (Request.HasFormContentType)
         {
             var form = await Request.ReadFormAsync(ct);
-            var formDict = form.ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+            var formDict = OrderCustomData.FromForm(form);
 
             if (formDict.TryGetValue(providerKey, out var formProviderStr) &&
                 Guid.TryParse(formProviderStr, out var parsedFormGuid))
@@ -471,11 +462,7 @@ public partial class EkomOrderController : ControllerBase
 
             formDict.TryGetValue("storeAlias", out storeAlias);
 
-            allData = formDict.ToDictionary(
-                x => x.Key,
-                x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value),
-                StringComparer.OrdinalIgnoreCase
-            );
+            allData = formDict;
         }
         else if (Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
         {
@@ -484,10 +471,9 @@ public partial class EkomOrderController : ControllerBase
 
             if (!string.IsNullOrWhiteSpace(body))
             {
-                var json = JObject.Parse(body);
+                var json = OrderCustomData.ParseJson(body);
 
-                var jsonDict = json.Properties()
-                    .ToDictionary(p => p.Name, p => p.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+                var jsonDict = OrderCustomData.FromJson(json);
 
                 if (jsonDict.TryGetValue(providerKey, out var jsonProviderStr) &&
                     Guid.TryParse(jsonProviderStr, out var parsedJsonGuid))
@@ -497,11 +483,7 @@ public partial class EkomOrderController : ControllerBase
 
                 jsonDict.TryGetValue("storeAlias", out storeAlias);
 
-                allData = jsonDict.ToDictionary(
-                    x => x.Key,
-                    x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value),
-                    StringComparer.OrdinalIgnoreCase
-                );
+                allData = jsonDict;
             }
         }
 

@@ -153,6 +153,9 @@ public interface IOrderInfo
 
     OrderTracking? Tracking { get; set; }
 
+    /// <summary>Order-level metadata. Existing implementations default to an empty collection.</summary>
+    IReadOnlyDictionary<string, string> CustomData => System.Collections.ObjectModel.ReadOnlyDictionary<string, string>.Empty;
+
     /// <summary>
     /// 
     /// </summary>

@@ -504,6 +504,16 @@ public partial class Order
             .ConfigureAwait(false);
     }
 
+    /// <summary>Merges order metadata by ID. The caller must authorize access to the order.</summary>
+    public async Task<IOrderInfo> UpdateCustomDataAsync(Guid orderId, IReadOnlyDictionary<string, string> updates,
+        OrderSettings? settings = null, CancellationToken ct = default)
+        => await _orderService.UpdateCustomDataAsync(orderId, updates, settings, ct).ConfigureAwait(false);
+
+    /// <summary>Removes order metadata keys, ignoring case. Missing keys are ignored.</summary>
+    public async Task<IOrderInfo> RemoveCustomDataAsync(Guid orderId, IReadOnlyCollection<string> keys,
+        OrderSettings? settings = null, CancellationToken ct = default)
+        => await _orderService.RemoveCustomDataAsync(orderId, keys, settings, ct).ConfigureAwait(false);
+
     public async Task<IOrderInfo> UpdateTrackingAsync(
         string storeAlias,
         OrderTracking tracking,
