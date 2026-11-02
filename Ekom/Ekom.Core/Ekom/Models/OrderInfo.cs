@@ -39,6 +39,7 @@ public class OrderInfo : IOrderInfo
         CustomerInformation = source.CustomerInformation;
         Consent = source.Consent;
         Tracking = source.Tracking;
+        CustomData = new Dictionary<string, string>(source.CustomData, StringComparer.OrdinalIgnoreCase);
         ReservationIds = source.ReservationIds.ToList();
     }
 
@@ -74,6 +75,9 @@ public class OrderInfo : IOrderInfo
             CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
             Consent = CreateConsentFromJson(orderInfoJObject);
             Tracking = CreateTrackingFromJson(orderInfoJObject);
+            CustomData = new Dictionary<string, string>(
+                orderInfoJObject[nameof(CustomData)]?.ToObject<Dictionary<string, string>>() ?? new(),
+                StringComparer.OrdinalIgnoreCase);
             Giftcards = orderInfoJObject[nameof(Giftcards)]?.ToObject<List<Giftcard>>() ?? new List<Giftcard>();
             Discount = CreateOrderedDiscountFromJson(orderInfoJObject[nameof(Discount)]);
             Coupon = orderInfoJObject[nameof(Coupon)]?.ToObject<string>();
@@ -174,6 +178,11 @@ public class OrderInfo : IOrderInfo
     public CustomerInfo CustomerInformation { get; set; } = new CustomerInfo();
     public OrderConsent? Consent { get; set; }
     public OrderTracking? Tracking { get; set; }
+
+    /// <summary>Order-level metadata with case-insensitive keys.</summary>
+    public Dictionary<string, string> CustomData { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    IReadOnlyDictionary<string, string> IOrderInfo.CustomData => CustomData;
 
     /// <inheritdoc />
     public ICalculatedPrice OrderLineTotal

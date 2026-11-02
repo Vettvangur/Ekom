@@ -2023,6 +2023,8 @@ partial class OrderService
         OrderInfo orderInfo,
         CancellationToken ct)
     {
+        OrderCustomData.Merge(orderInfo.CustomData, OrderCustomData.ReadFields(form));
+
         // Metadata-only edits should not invalidate an already selected provider.
         var verifyProviders = HasProviderRelevantCustomerChanges(form, orderInfo);
         var previousCustomerCountry = orderInfo.CustomerInformation.Customer.Country;
@@ -2113,6 +2115,11 @@ partial class OrderService
         var operation = CheckoutPaymentOperationScope.Current;
         var previouslyAllowedProviderUpdates = operation?.AllowsCustomerProviderUpdates ?? false;
         if (operation != null) operation.AllowsCustomerProviderUpdates = true;
+        var previousSettingsOrder = settings.OrderInfo;
+        var previousEventHandler = settings.IsEventHandler;
+        settings.OrderInfo = orderInfo;
+        // The customer update already holds this order's lock; nested provider updates must not reacquire it.
+        settings.IsEventHandler = true;
         try
         {
             if (shippingProviderKey != null && shippingProviderValue != null)
@@ -2127,12 +2134,15 @@ partial class OrderService
             {
                 if (Guid.TryParse(paymentProviderValue, out Guid _providerKey) && (orderInfo.PaymentProvider?.Key ?? Guid.Empty) != _providerKey)
                 {
+                    settings.OrderInfo = orderInfo;
                     orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customPaymentData ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), settings, ct).ConfigureAwait(false);
                 }
             }
         }
         finally
         {
+            settings.OrderInfo = previousSettingsOrder;
+            settings.IsEventHandler = previousEventHandler;
             if (operation != null) operation.AllowsCustomerProviderUpdates = previouslyAllowedProviderUpdates;
         }
 
@@ -2262,6 +2272,8 @@ partial class OrderService
     {
         _logger.LogDebug("UpdateShippingInformation...");
 
+        var customData = OrderCustomData.ReadFields(allData);
+
         IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
         if (settings == null)
@@ -2297,6 +2309,7 @@ partial class OrderService
 
                 orderInfo.ShippingProvider = null;
                 orderInfo.ShippingProviderInvalidation = null;
+                OrderCustomData.Merge(orderInfo.CustomData, customData);
                 return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                     .ConfigureAwait(false);
             }
@@ -2315,6 +2328,7 @@ partial class OrderService
             }
 
             orderInfo.ShippingProvider = orderedShippingProvider;
+            OrderCustomData.Merge(orderInfo.CustomData, customData);
             orderInfo.ShippingProviderInvalidation = null;
 
             await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
@@ -2361,6 +2375,8 @@ partial class OrderService
     {
         _logger.LogDebug("UpdatePaymentInformation...");
 
+        var customData = OrderCustomData.ReadFields(allData);
+
         IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
         if (settings == null)
@@ -2403,6 +2419,7 @@ partial class OrderService
             orderedPaymentProvider.Title = OrderProviderTitleResolver.Resolve(provider.Properties, storeAlias, ResolveOrderCulture(orderInfo));
 
             orderInfo.PaymentProvider = orderedPaymentProvider;
+            OrderCustomData.Merge(orderInfo.CustomData, customData);
 
             await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
 

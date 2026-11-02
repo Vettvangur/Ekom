@@ -950,6 +950,8 @@ internal sealed partial class CheckoutPaymentAttemptService
                     property.Name.Equals("OrderStatusCol", StringComparison.OrdinalIgnoreCase) ||
                     property.Name.Equals("UpdateDate", StringComparison.OrdinalIgnoreCase) ||
                     property.Name.Equals("PaidDate", StringComparison.OrdinalIgnoreCase)) property.Remove();
+            // Order metadata can change independently through the information-update API.
+            value.Remove(nameof(OrderInfo.CustomData));
             // Fulfillment metadata can change after submission without changing the purchase.
             // Ignore only the properties writable through UpdateOrderLineMetadataAsync.
             if (value[nameof(OrderInfo.OrderLines)] is JArray lines)

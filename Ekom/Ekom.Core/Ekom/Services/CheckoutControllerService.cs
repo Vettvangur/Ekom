@@ -461,9 +461,10 @@ public class CheckoutControllerService
     {
         Dictionary<string, string> formCollection = collection;
 
-        if (formCollection.Keys.Contains("ekomUpdateInformation", StringComparer.OrdinalIgnoreCase))
+        var hasCustomData = OrderCustomData.ReadFields(formCollection).Count > 0;
+        if (hasCustomData || formCollection.Keys.Contains("ekomUpdateInformation", StringComparer.OrdinalIgnoreCase))
         {
-            bool saveCustomerData = false;
+            bool saveCustomerData = hasCustomData;
 
             // Ensure storeAlias is present
             if (!formCollection.Keys.Any(k => string.Equals(k, "storeAlias", StringComparison.OrdinalIgnoreCase)))
@@ -504,7 +505,7 @@ public class CheckoutControllerService
 
             if (saveCustomerData)
             {
-                order = await Order.Instance.UpdateCustomerInformationAsync(formCollection, ct: ct).ConfigureAwait(false);
+                order = await Order.Instance.UpdateCustomerInformationAsync(formCollection, new OrderSettings { OrderInfo = order }, ct: ct).ConfigureAwait(false);
             }
         }
 

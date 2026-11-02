@@ -149,6 +149,10 @@ The dictionary must contain `storeAlias`. Keys beginning with lowercase `custome
 
 Adding the first non-empty customer email raises `CustomerEmailAddedAsync`, which optional tracking integrations use as the checkout-started signal.
 
+## Order custom data
+
+Use `OrderInfo.CustomData` for order-level string values such as a gift message or purchase reference. Checkout forms use `CustomData[GiftMessage]`; JSON requests use a nested `CustomData` object. Keys are case-insensitive, and updates merge without deleting omitted entries. See [Order custom data](order-custom-data.md) for form, JSON, and C# examples.
+
 ## Shipping and payment providers
 
 Provider selection saves an ordered snapshot and recalculates the basket; it does not submit payment:

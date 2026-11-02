@@ -735,9 +735,25 @@ public sealed class LinkedOrderLinesTests
         Assert.False(checkout.PaymentCalled);
     }
 
+    [Fact]
+    public async Task CustomData_PayInformationStepSavesWithoutCustomerFlagOrProviderChange()
+    {
+        using var fixture = new Fixture();
+        var checkout = fixture.CreateCheckout();
+        var result = await checkout.UpdateInformationAsync(new Dictionary<string, string>
+        {
+            ["CustomData[GiftMessage]"] = "A & B",
+        }, fixture.Order);
+        Assert.Equal("A & B", result.CustomData["giftmessage"]);
+        Assert.Equal("A & B", (await fixture.ReloadAsync()).CustomData["giftmessage"]);
+    }
+
     private sealed class ShippingCheckout : CheckoutControllerService
     {
         public bool PaymentCalled { get; private set; }
+
+        public Task<IOrderInfo> UpdateInformationAsync(Dictionary<string, string> data, IOrderInfo order)
+            => base.UpdateOrderDateAsync(data, order);
 
         public ShippingCheckout(Configuration config, DatabaseFactory database, IServiceProvider services)
             : base(NullLogger.Instance, config, database, Mock.Of<IMemberService>(),
@@ -822,6 +838,87 @@ public sealed class LinkedOrderLinesTests
         Assert.Equal(order.UniqueId, updated.UniqueId);
     }
 
+    [Theory]
+    [InlineData("customer", false)]
+    [InlineData("customer", true)]
+    [InlineData("shipping", false)]
+    [InlineData("shipping", true)]
+    [InlineData("payment", false)]
+    [InlineData("payment", true)]
+    public async Task CustomData_CheckoutEndpointsPersistPlainText(string endpoint, bool json)
+    {
+        using var fixture = new Fixture();
+        var shipping = fixture.AddShippingProvider(0);
+        var payment = fixture.AddPaymentProvider();
+        var controller = new EkomOrderController(NullLogger<EkomOrderController>.Instance, fixture.CreateHttpOrderApi());
+        var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+        controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext { HttpContext = context };
+        const string message = "A & B <gift>";
+        for (var update = 0; update < 2; update++)
+        {
+            var value = update == 0 ? "first" : message;
+            if (json)
+            {
+                context.Request.ContentType = "application/json";
+                var payload = new JObject
+                {
+                    ["storeAlias"] = "main",
+                    ["ShippingProvider"] = shipping.ToString(),
+                    ["PaymentProvider"] = payment.ToString(),
+                    ["customDATA"] = new JObject { ["giftMessage"] = value },
+                };
+                context.Request.Body = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(payload.ToString()));
+            }
+            else
+            {
+                context.Request.ContentType = "application/x-www-form-urlencoded";
+                context.Request.Form = new Microsoft.AspNetCore.Http.FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+                {
+                    ["storeAlias"] = "main",
+                    ["ShippingProvider"] = shipping.ToString(),
+                    ["PaymentProvider"] = payment.ToString(),
+                    ["customDATA[giftMessage]"] = value,
+                });
+            }
+            var response = endpoint switch
+            {
+                "customer" => await controller.UpdateCustomerInformation(),
+                "shipping" => await controller.UpdateShippingProvider(),
+                _ => await controller.UpdatePaymentProvider(),
+            };
+            Assert.IsType<Microsoft.AspNetCore.Mvc.OkObjectResult>(response);
+        }
+        Assert.Equal(message, (await fixture.ReloadAsync()).CustomData["GIFTMESSAGE"]);
+    }
+
+    [Fact]
+    public async Task CustomData_DirectApiMergesRemovesAndPreservesOtherOrderJson()
+    {
+        using var fixture = new Fixture();
+        var before = JObject.Parse((await fixture.Repository.GetOrderAsync(fixture.Order.UniqueId))!.OrderInfo);
+        await fixture.Service.UpdateCustomDataAsync(fixture.Order.UniqueId,
+            new Dictionary<string, string> { ["GiftMessage"] = "first", ["Reference"] = "keep" });
+        await fixture.Service.UpdateCustomDataAsync(fixture.Order.UniqueId,
+            new Dictionary<string, string> { ["giftmessage"] = "" });
+        var updated = await fixture.ReloadAsync();
+        Assert.Equal("", updated.CustomData["GIFTMESSAGE"]);
+        Assert.Equal("keep", updated.CustomData["reference"]);
+        await fixture.Service.RemoveCustomDataAsync(fixture.Order.UniqueId, ["GIFTmessage", "missing"]);
+        var after = JObject.Parse((await fixture.Repository.GetOrderAsync(fixture.Order.UniqueId))!.OrderInfo);
+        Assert.Single((await fixture.ReloadAsync()).CustomData);
+        after.Remove("CustomData");
+        Assert.True(JToken.DeepEquals(before, after));
+    }
+
+    [Fact]
+    public async Task CustomData_InvalidBatchDoesNotPartiallyUpdateOrder()
+    {
+        using var fixture = new Fixture();
+        await Assert.ThrowsAsync<Ekom.Exceptions.OrderCustomDataException>(() => fixture.Service.UpdateCustomDataAsync(
+            fixture.Order.UniqueId, new Dictionary<string, string> { ["valid"] = "value", [" "] = "invalid" }));
+        Assert.Empty((await fixture.ReloadAsync()).CustomData);
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly ConfigurationScope _scope;
@@ -829,6 +926,7 @@ public sealed class LinkedOrderLinesTests
         private readonly Mock<IPerStoreIndexedCache<IProduct>> _products = new();
         private readonly StockReservationTests.ReservationDatabase _database = new();
         private readonly ConcurrentDictionary<Guid, IShippingProvider> _shippingProviders = new();
+        private readonly ConcurrentDictionary<Guid, IPaymentProvider> _paymentProviders = new();
         private readonly IStoreService _stores;
         public Mock<IOrderActivityLogService> ActivityLogs { get; } = new();
         public DiscountEvents DiscountEvents { get; } = new();
@@ -874,7 +972,7 @@ public sealed class LinkedOrderLinesTests
                     sp.GetRequiredService<Configuration>(),
                     NullLogger<Providers>.Instance,
                     Mock.Of<IPerStoreCache<IShippingProvider>>(x => x["main"] == _shippingProviders),
-                    Mock.Of<IPerStoreCache<IPaymentProvider>>(x => x["main"] == new ConcurrentDictionary<Guid, IPaymentProvider>()),
+                    Mock.Of<IPerStoreCache<IPaymentProvider>>(x => x["main"] == _paymentProviders),
                     Mock.Of<IBaseCache<IZone>>(),
                     stores.Object,
                     null!));
@@ -954,6 +1052,32 @@ public sealed class LinkedOrderLinesTests
             provider.SetupGet(x => x.Constraints).Returns(constraints.Object);
             _shippingProviders[key] = provider.Object;
             return key;
+        }
+
+        public Guid AddPaymentProvider()
+        {
+            var key = Guid.NewGuid();
+            var provider = new Mock<IPaymentProvider>();
+            provider.SetupGet(x => x.Key).Returns(key);
+            provider.SetupGet(x => x.Title).Returns("Payment");
+            provider.SetupGet(x => x.Properties).Returns(new Dictionary<string, string> { ["title"] = "Payment" });
+            provider.SetupGet(x => x.Prices).Returns([new Price(0, Order.StoreInfo.Currency, 0, false)]);
+            var constraints = new Mock<IConstraints>();
+            constraints.Setup(x => x.IsValid(It.IsAny<string>(), It.IsAny<decimal>())).Returns(true);
+            provider.SetupGet(x => x.Constraints).Returns(constraints.Object);
+            _paymentProviders[key] = provider.Object;
+            return key;
+        }
+
+        public Ekom.API.Order CreateHttpOrderApi()
+        {
+            var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+            context.Request.Headers.Cookie = $"ekmOrder-main={Order.UniqueId}";
+            var service = new OrderService(_scope.Instance, Repository, null!, ActivityLogs.Object,
+                NullLogger<OrderService>.Instance, _stores, _cache, Mock.Of<IMemberService>(), null!,
+                Mock.Of<IOrderTrackingService>(), Mock.Of<Microsoft.AspNetCore.Http.IHttpContextAccessor>(x => x.HttpContext == context));
+            return new Ekom.API.Order(_scope.Instance, NullLogger<Ekom.API.Order>.Instance, null!, null!,
+                service, null!, _stores, Repository, null!, ActivityLogs.Object, DiscountEvents);
         }
 
         public void RemoveShippingProvider(Guid key) => _shippingProviders.TryRemove(key, out _);

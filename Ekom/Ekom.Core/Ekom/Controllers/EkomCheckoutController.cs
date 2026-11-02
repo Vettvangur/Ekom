@@ -1,6 +1,7 @@
 using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Localization;
@@ -73,12 +74,12 @@ public class EkomCheckoutApiController : ControllerBase
                     "PaymentProvider", "ShippingProvider", "CardNumber", "CVV", "Year", "Month", "StoreAlias", "ReturnUrl", "Culture"
                 };
 
-                paymentRequest.AdditionalData = form
+                additionalData = OrderCustomData.FromForm(form, encodeOtherFields: false)
                     .Where(kvp => !knownKeys.Contains(kvp.Key))
                     .ToDictionary(
-                        kvp => kvp.Key.Trim(),
-                        kvp => kvp.Value.ToString().Trim()
-                    );
+                        kvp => OrderCustomData.IsField(kvp.Key) ? kvp.Key : kvp.Key.Trim(),
+                        kvp => OrderCustomData.IsField(kvp.Key) ? kvp.Value : kvp.Value.Trim(),
+                        StringComparer.OrdinalIgnoreCase);
 
             }
             else
@@ -86,7 +87,7 @@ public class EkomCheckoutApiController : ControllerBase
                 // Expect JSON
                 using var reader = new StreamReader(Request.Body);
                 var jsonString = await reader.ReadToEndAsync();
-                var jObject = JObject.Parse(jsonString);
+                var jObject = JObject.Parse(jsonString, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });
 
                 paymentRequest = jObject.ToObject<PaymentRequest>();
 
@@ -95,9 +96,11 @@ public class EkomCheckoutApiController : ControllerBase
                     return BadRequest("Invalid payment request data.");
                 }
 
-                additionalData = jObject.Properties()
-                    .DistinctBy(p => p.Name)
-                    .ToDictionary(p => p.Name.Trim(), p => p.Value.ToString().Trim());
+                additionalData = OrderCustomData.FromJson(jObject, encodeOtherFields: false)
+                    .ToDictionary(
+                        kvp => OrderCustomData.IsField(kvp.Key) ? kvp.Key : kvp.Key.Trim(),
+                        kvp => OrderCustomData.IsField(kvp.Key) ? kvp.Value : kvp.Value.Trim(),
+                        StringComparer.OrdinalIgnoreCase);
             }
 
             paymentRequest!.AdditionalData = additionalData;
@@ -339,9 +342,7 @@ public class CheckoutController : ControllerBase
 
             var form = Request.Form;
 
-            Dictionary<string, string> additionalData = form
-                .GroupBy(kvp => kvp.Key)
-                .ToDictionary(g => g.Key, g => g.First().Value.ToString());
+            Dictionary<string, string> additionalData = OrderCustomData.FromForm(form, encodeOtherFields: false);
 
             paymentRequest.AdditionalData = additionalData;
 
