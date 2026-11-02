@@ -21,6 +21,7 @@ import {
   managerState,
   managerStyles,
   pageRange,
+  printOrderDocument,
 } from './manager-shared';
 
 type EditorFieldDefinition = {
@@ -560,6 +561,33 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     `;
   }
 
+  private renderPrintableOrder(order: OrderInfo): string {
+    const customer = order.customerInformation?.customer || {};
+    const shipping = order.customerInformation?.shipping || {};
+    const statusValue = this.getOrderStatusValue(order.orderStatus);
+    const status = managerState.statusList.find(item => getStatusValue(item) === statusValue)?.label || statusValue;
+    return `
+      <main class="ekmOrder">
+        <h1>Order number: ${escapeHtml(order.referenceId)}</h1>
+        <p>Order status: ${escapeHtml(status)}</p>
+        <p>UniqueId: ${escapeHtml(order.uniqueId)}</p>
+        <p>Created date: ${escapeHtml(formatDate(order.createDate))}</p>
+        <p>Paid date: ${escapeHtml(formatDate(order.paidDate))}</p>
+        <p>Store: ${escapeHtml(order.storeInfo?.alias || order.storeAlias)}</p>
+        <p>Payment: <strong>${escapeHtml(order.chargedAmount?.currencyString)}</strong></p>
+        <section class="ekmSplit">
+          <div class="ekmSplit__column"><h4>Billing</h4>${this.renderAddress(customer)}${this.renderExtraProperties(customer.properties, 'customer')}</div>
+          <div class="ekmSplit__column"><h4>Shipping</h4>${hasShippingInfo(shipping) ? `${this.renderAddress(shipping)}${this.renderExtraProperties(shipping.properties, 'shipping')}` : '<p>Same as billing address</p>'}</div>
+        </section>
+        <section class="ekmSplit">
+          <div class="ekmSplit__column">${this.renderProvider('Payment Method', order.paymentProvider, 'custompayment')}</div>
+          <div class="ekmSplit__column">${this.renderProvider('Shipping Method', order.shippingProvider, 'customshipping')}</div>
+        </section>
+        ${this.renderGiftcards(order)}
+        ${this.renderOrderLines(order)}
+      </main>`;
+  }
+
   private renderAddress(info: Record<string, any>): string {
     return ['name', 'email', 'address', 'apartment', 'city', 'country', 'zipCode', 'phone']
       .filter(key => info[key])
@@ -901,7 +929,13 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     }
 
     if (action === 'print-order') {
-      window.print();
+      if (this.selectedOrder) {
+        try {
+          await printOrderDocument(this.renderPrintableOrder(this.selectedOrder), `Order ${this.selectedOrder.referenceId}`);
+        } catch {
+          this.showError('Unable to prepare the order for printing. Please try again.');
+        }
+      }
       return;
     }
 

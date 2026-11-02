@@ -1,7 +1,7 @@
-const j = /* @__PURE__ */ new Date(), U = new Date(j.getFullYear(), 0, 1), P = {
+const $ = /* @__PURE__ */ new Date(), P = new Date($.getFullYear(), 0, 1), J = {
   filters: {
-    dateFrom: G(U),
-    dateTo: G(j),
+    dateFrom: E(P),
+    dateTo: E($),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
@@ -22,7 +22,7 @@ const j = /* @__PURE__ */ new Date(), U = new Date(j.getFullYear(), 0, 1), P = {
   paymentProviders: [],
   shippingFilterProviders: []
 };
-class b {
+class x {
   async config() {
     return this.getJson("/ekom/backoffice/Config");
   }
@@ -88,7 +88,7 @@ class b {
       headers: { Accept: "application/json, application/octet-stream" }
     });
     if (!t.ok)
-      throw await b.createError(t, "Order action failed.");
+      throw await x.createError(t, "Order action failed.");
     return t;
   }
   async changeOrderStatus(e, r, t) {
@@ -110,7 +110,7 @@ class b {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await b.createError(t, "Error removing order line.");
+      throw await x.createError(t, "Error removing order line.");
     return t.json();
   }
   async charts(e) {
@@ -132,31 +132,31 @@ class b {
     });
   }
   async getJson(e, r) {
-    const t = await fetch(e + I(r), {
+    const t = await fetch(e + T(r), {
       credentials: "same-origin",
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await b.createError(t, "Request failed.");
+      throw await x.createError(t, "Request failed.");
     return t.json();
   }
   async getBlob(e, r) {
-    const t = await fetch(e + I(r), {
+    const t = await fetch(e + T(r), {
       credentials: "same-origin",
       headers: { Accept: "text/csv, application/octet-stream" }
     });
     if (!t.ok)
-      throw await b.createError(t, "Request failed.");
+      throw await x.createError(t, "Request failed.");
     return t.blob();
   }
   async postJson(e, r) {
-    const t = await fetch(e + I(r), {
+    const t = await fetch(e + T(r), {
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await b.createError(t, "Request failed.");
+      throw await x.createError(t, "Request failed.");
     return t.json();
   }
   async postBody(e, r) {
@@ -170,7 +170,7 @@ class b {
       body: JSON.stringify(r)
     });
     if (!t.ok)
-      throw await b.createError(t, "Request failed.");
+      throw await x.createError(t, "Request failed.");
     return t.json();
   }
   static async createError(e, r) {
@@ -183,24 +183,24 @@ class b {
     return new Error(n || `${r} Status ${e.status}.`);
   }
 }
-function I(o) {
-  if (!o)
+function T(a) {
+  if (!a)
     return "";
   const e = new URLSearchParams();
-  for (const [t, n] of Object.entries(o))
+  for (const [t, n] of Object.entries(a))
     e.set(t, n == null ? "" : String(n));
   const r = e.toString();
   return r ? `?${r}` : "";
 }
-function G(o) {
-  const e = String(o.getMonth() + 1).padStart(2, "0"), r = String(o.getDate()).padStart(2, "0");
-  return `${o.getFullYear()}-${e}-${r}`;
+function E(a) {
+  const e = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
+  return `${a.getFullYear()}-${e}-${r}`;
 }
-function E(o) {
-  if (!o)
+function D(a) {
+  if (!a)
     return "";
-  const e = new Date(o);
-  return Number.isNaN(e.getTime()) ? o : new Intl.DateTimeFormat(void 0, {
+  const e = new Date(a);
+  return Number.isNaN(e.getTime()) ? a : new Intl.DateTimeFormat(void 0, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -208,28 +208,75 @@ function E(o) {
     minute: "2-digit"
   }).format(e);
 }
-function J(o) {
-  return String(o ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+function U(a) {
+  return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function D(o) {
+function F(a) {
   const e = document.createElement("textarea");
-  return e.innerHTML = String(o ?? ""), e.value;
+  return e.innerHTML = String(a ?? ""), e.value;
 }
-function F(o) {
-  return o.enumValue || o.value || "";
+function N(a) {
+  return a.enumValue || a.value || "";
 }
-function N(o, e) {
+function q(a, e) {
   const t = [], n = Math.max(e || 1, 1);
-  let p;
-  o <= Math.floor(5 / 2) ? p = 1 : o + Math.floor(5 / 2) >= n ? p = Math.max(n - 5 + 1, 1) : p = o - Math.floor(5 / 2);
-  for (let g = 0; g < 5; g += 1) {
-    const u = p + g;
+  let m;
+  a <= Math.floor(5 / 2) ? m = 1 : a + Math.floor(5 / 2) >= n ? m = Math.max(n - 5 + 1, 1) : m = a - Math.floor(5 / 2);
+  for (let p = 0; p < 5; p += 1) {
+    const u = m + p;
     u <= n && t.push(u);
   }
   return t.length && Number(t[t.length - 1]) < n && t.push(`...${n}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
 }
-function q(o, e) {
-  const r = URL.createObjectURL(o), t = document.createElement("a");
+async function W(a, e) {
+  const r = document.createElement("iframe");
+  r.title = e, r.setAttribute("aria-hidden", "true"), r.style.cssText = "position:fixed;left:-10000px;top:0;width:800px;height:600px;border:0;";
+  try {
+    const t = new Promise((m, p) => {
+      r.onload = () => m(), r.onerror = () => p(new Error("Unable to load the print document."));
+    });
+    r.srcdoc = j(a, e), document.body.append(r), await t;
+    const n = r.contentWindow;
+    if (!n) throw new Error("Print window unavailable.");
+    await n.document.fonts.ready, n.addEventListener("afterprint", () => r.remove(), { once: !0 }), n.focus(), n.print();
+  } catch (t) {
+    throw r.remove(), t;
+  }
+}
+function j(a, e) {
+  const r = document.createElement("template");
+  return r.innerHTML = a, r.content.querySelectorAll("button, input, select, .ekmOrderGiftcards__actions").forEach((t) => t.remove()), r.content.querySelectorAll("details").forEach((t) => t.setAttribute("open", "")), r.content.querySelectorAll("summary").forEach((t) => t.remove()), r.content.querySelectorAll("a").forEach((t) => t.replaceWith(...Array.from(t.childNodes))), `<!doctype html><html><head><meta charset="utf-8"><title>${U(e)}</title><style>
+    @page { size: auto; margin: 14mm; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: auto; overflow: visible; }
+    body { color: #111; background: white; font: 10pt/1.4 Arial, sans-serif; overflow-wrap: anywhere; }
+    h1 { font-size: 19pt; margin: 0 0 12px; }
+    h4 { font-size: 11pt; margin: 18px 0 8px; }
+    h5 { font-size: 10pt; margin: 12px 0 6px !important; }
+    h1, h4, h5 { break-after: avoid; }
+    p { margin: 4px 0; }
+    ul { padding-left: 18px; margin: 6px 0; }
+    li { margin: 3px 0; }
+    .ekmSplit { display: block; margin-bottom: 16px; }
+    .ekmSplit__column { margin-bottom: 12px; }
+    .umb-table { display: table; width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 9pt; }
+    .umb-table-head { display: table-header-group; font-weight: bold; break-inside: avoid; }
+    .umb-table-body, .umb-table-footer { display: table-row-group; }
+    .umb-table-footer { break-inside: avoid; }
+    .umb-table-row { display: table-row; break-inside: avoid; }
+    .umb-table-cell { display: table-cell; vertical-align: top; padding: 7px 5px; border-bottom: 1px solid #ccc; white-space: normal; overflow-wrap: anywhere; }
+    .umb-table-cell:first-child { display: none; }
+    .umb-table-cell:nth-child(2) { width: 35%; }
+    .umb-table-cell:nth-child(3) { width: 9%; }
+    .umb-table-cell:nth-child(n+4) { width: 14%; text-align: right; }
+    .umb-table-footer .umb-table-cell:nth-child(6) { font-weight: bold; }
+    .ekmOrderGiftcards__summary { display: flex; flex-wrap: wrap; gap: 12px; }
+    dt { font-weight: bold; margin-top: 6px; }
+    dd { margin: 0 0 4px; white-space: pre-wrap; }
+  </style></head><body>${r.innerHTML}</body></html>`;
+}
+function H(a, e) {
+  const r = URL.createObjectURL(a), t = document.createElement("a");
   t.href = r, t.download = e, t.addEventListener("click", (n) => n.stopPropagation()), document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
 }
 const V = `
@@ -373,68 +420,69 @@ const V = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-function B(o, e) {
+function B(a, e) {
   const r = e == null ? void 0 : e.isoCurrencySymbol, t = (e == null ? void 0 : e.currencyDecimalDigits) ?? 2;
   return new Intl.NumberFormat(void 0, {
     minimumFractionDigits: t,
     maximumFractionDigits: t,
     ...r && /^[A-Z]{3}$/.test(r) ? { style: "currency", currency: r, currencyDisplay: "code" } : {}
-  }).format(o);
+  }).format(a);
 }
-function W(o, e, r, t = {}) {
-  const n = o.getBoundingClientRect(), p = window.devicePixelRatio || 1, g = n.width || 300, u = n.height || 320;
-  o.width = g * p, o.height = u * p;
-  const a = o.getContext("2d");
-  if (!a) return;
-  a.scale(p, p), a.font = "12px sans-serif";
-  const w = e.points || [], _ = w.map((s) => Number(s.y || 0)), O = Math.min(0, ..._), T = Math.max(1, ..._), S = t.integer ? Math.ceil(T / 4) * 4 : T, C = (s) => t.currency ? B(s, t.currency) : s.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), $ = Array.from({ length: 5 }, (s, l) => S - (S - O) * l / 4), h = Math.max(48, ...$.map((s) => a.measureText(C(s)).width + 12)), y = g - 16, R = 20, v = u - 52, m = w.map((s, l) => {
-    var x;
+function Y(a, e, r, t = {}) {
+  const n = a.getBoundingClientRect(), m = window.devicePixelRatio || 1, p = n.width || 300, u = n.height || 320;
+  a.width = p * m, a.height = u * m;
+  const o = a.getContext("2d");
+  if (!o) return;
+  o.scale(m, m), o.font = "12px sans-serif";
+  const w = e.points || [], _ = w.map((s) => Number(s.y || 0)), O = Math.min(0, ..._), I = Math.max(1, ..._), S = t.integer ? Math.ceil(I / 4) * 4 : I, C = (s) => t.currency ? B(s, t.currency) : s.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), z = Array.from({ length: 5 }, (s, l) => S - (S - O) * l / 4), h = Math.max(48, ...z.map((s) => o.measureText(C(s)).width + 12)), y = p - 16, A = 20, v = u - 52, c = w.map((s, l) => {
+    var b;
     return {
       x: w.length > 1 ? h + (y - h) * l / (w.length - 1) : (h + y) / 2,
-      y: v - (_[l] - O) / (S - O) * (v - R),
-      date: s.x || ((x = e.labels) == null ? void 0 : x[l]) || "",
+      y: v - (_[l] - O) / (S - O) * (v - A),
+      date: s.x || ((b = e.labels) == null ? void 0 : b[l]) || "",
       value: _[l]
     };
   }), L = (s = -1) => {
-    a.clearRect(0, 0, g, u), a.font = "12px sans-serif", a.lineWidth = 1, a.textAlign = "right", $.forEach((i, d) => {
-      const f = R + (v - R) * d / 4;
-      a.fillStyle = "#555", a.fillText(C(i), h - 8, f + 4), a.strokeStyle = "#e5e5e5", a.beginPath(), a.moveTo(h, f), a.lineTo(y, f), a.stroke();
+    o.clearRect(0, 0, p, u), o.font = "12px sans-serif", o.lineWidth = 1, o.textAlign = "right", z.forEach((i, d) => {
+      const f = A + (v - A) * d / 4;
+      o.fillStyle = "#555", o.fillText(C(i), h - 8, f + 4), o.strokeStyle = "#e5e5e5", o.beginPath(), o.moveTo(h, f), o.lineTo(y, f), o.stroke();
     });
-    const l = Math.max(90, ...m.map((i) => a.measureText(i.date).width + 16)), x = Math.max(2, Math.floor((y - h) / l)), M = new Set(Array.from({ length: Math.min(x, m.length) }, (i, d) => Math.round(d * (m.length - 1) / Math.max(1, Math.min(x, m.length) - 1))));
-    a.fillStyle = "#555", m.forEach((i, d) => {
-      M.has(d) && (a.textAlign = m.length === 1 ? "center" : d === 0 ? "left" : d === m.length - 1 ? "right" : "center", a.fillText(i.date, i.x, v + 24));
-    }), a.strokeStyle = r, a.lineWidth = 2, a.beginPath(), m.forEach((i, d) => {
-      d === 0 ? a.moveTo(i.x, i.y) : a.lineTo(i.x, i.y);
-    }), a.stroke(), a.fillStyle = r, m.forEach((i, d) => {
-      a.beginPath(), a.arc(i.x, i.y, d === s ? 5 : 3, 0, Math.PI * 2), a.fill();
-    }), m.length || (a.textAlign = "center", a.fillText("No data for this period", (h + y) / 2, u / 2));
-    const c = m[s];
-    if (c) {
-      const i = [c.date, C(c.value)], d = Math.max(...i.map((A) => a.measureText(A).width)) + 20, f = Math.max(0, Math.min(g - d, c.x - d / 2)), k = c.y > 70 ? c.y - 62 : c.y + 12;
-      a.fillStyle = "#222", a.fillRect(f, k, d, 48), a.fillStyle = "#fff", a.textAlign = "left", i.forEach((A, z) => a.fillText(A, f + 10, k + 19 + z * 18));
+    const l = Math.max(90, ...c.map((i) => o.measureText(i.date).width + 16)), b = Math.max(2, Math.floor((y - h) / l)), R = new Set(Array.from({ length: Math.min(b, c.length) }, (i, d) => Math.round(d * (c.length - 1) / Math.max(1, Math.min(b, c.length) - 1))));
+    o.fillStyle = "#555", c.forEach((i, d) => {
+      R.has(d) && (o.textAlign = c.length === 1 ? "center" : d === 0 ? "left" : d === c.length - 1 ? "right" : "center", o.fillText(i.date, i.x, v + 24));
+    }), o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((i, d) => {
+      d === 0 ? o.moveTo(i.x, i.y) : o.lineTo(i.x, i.y);
+    }), o.stroke(), o.fillStyle = r, c.forEach((i, d) => {
+      o.beginPath(), o.arc(i.x, i.y, d === s ? 5 : 3, 0, Math.PI * 2), o.fill();
+    }), c.length || (o.textAlign = "center", o.fillText("No data for this period", (h + y) / 2, u / 2));
+    const g = c[s];
+    if (g) {
+      const i = [g.date, C(g.value)], d = Math.max(...i.map((M) => o.measureText(M).width)) + 20, f = Math.max(0, Math.min(p - d, g.x - d / 2)), k = g.y > 70 ? g.y - 62 : g.y + 12;
+      o.fillStyle = "#222", o.fillRect(f, k, d, 48), o.fillStyle = "#fff", o.textAlign = "left", i.forEach((M, G) => o.fillText(M, f + 10, k + 19 + G * 18));
     }
   };
-  o.onmousemove = (s) => {
-    const l = o.getBoundingClientRect(), x = (s.clientX - l.left) * g / l.width, M = (s.clientY - l.top) * u / l.height;
-    let c = -1, i = 16;
-    m.forEach((d, f) => {
-      const k = Math.hypot(d.x - x, d.y - M);
-      k < i && (c = f, i = k);
-    }), o.style.cursor = c >= 0 ? "pointer" : "default", L(c);
-  }, o.onmouseleave = () => {
-    o.style.cursor = "default", L();
+  a.onmousemove = (s) => {
+    const l = a.getBoundingClientRect(), b = (s.clientX - l.left) * p / l.width, R = (s.clientY - l.top) * u / l.height;
+    let g = -1, i = 16;
+    c.forEach((d, f) => {
+      const k = Math.hypot(d.x - b, d.y - R);
+      k < i && (g = f, i = k);
+    }), a.style.cursor = g >= 0 ? "pointer" : "default", L(g);
+  }, a.onmouseleave = () => {
+    a.style.cursor = "default", L();
   }, L();
 }
 export {
-  b as E,
+  x as E,
   V as a,
-  E as b,
-  q as c,
-  D as d,
-  J as e,
+  D as b,
+  W as c,
+  F as d,
+  U as e,
   B as f,
-  F as g,
-  P as m,
-  N as p,
-  W as r
+  N as g,
+  H as h,
+  J as m,
+  q as p,
+  Y as r
 };
