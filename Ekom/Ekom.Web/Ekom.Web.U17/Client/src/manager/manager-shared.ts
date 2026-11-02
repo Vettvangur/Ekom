@@ -506,6 +506,71 @@ export function pageRange(page: number, totalPages: number): Array<number | stri
   return result;
 }
 
+/** Print an isolated document so backoffice shadow roots and scroll containers cannot clip it. */
+export async function printOrderDocument(content: string, title: string): Promise<void> {
+  const frame = document.createElement('iframe');
+  frame.title = title;
+  frame.setAttribute('aria-hidden', 'true');
+  frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:800px;height:600px;border:0;';
+  try {
+    const loaded = new Promise<void>((resolve, reject) => {
+      frame.onload = () => resolve();
+      frame.onerror = () => reject(new Error('Unable to load the print document.'));
+    });
+    frame.srcdoc = createOrderPrintDocument(content, title);
+    document.body.append(frame);
+    await loaded;
+    const printWindow = frame.contentWindow;
+    if (!printWindow) throw new Error('Print window unavailable.');
+    await printWindow.document.fonts.ready;
+    printWindow.addEventListener('afterprint', () => frame.remove(), { once: true });
+    printWindow.focus();
+    printWindow.print();
+  } catch (error) {
+    frame.remove();
+    throw error;
+  }
+}
+
+export function createOrderPrintDocument(content: string, title: string): string {
+  const template = document.createElement('template');
+  template.innerHTML = content;
+  template.content.querySelectorAll('button, input, select, .ekmOrderGiftcards__actions').forEach(element => element.remove());
+  template.content.querySelectorAll('details').forEach(element => element.setAttribute('open', ''));
+  template.content.querySelectorAll('summary').forEach(element => element.remove());
+  // Preserve product names without backoffice links or browser-added link URLs.
+  template.content.querySelectorAll('a').forEach(element => element.replaceWith(...Array.from(element.childNodes)));
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>
+    @page { size: auto; margin: 14mm; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: auto; overflow: visible; }
+    body { color: #111; background: white; font: 10pt/1.4 Arial, sans-serif; overflow-wrap: anywhere; }
+    h1 { font-size: 19pt; margin: 0 0 12px; }
+    h4 { font-size: 11pt; margin: 18px 0 8px; }
+    h5 { font-size: 10pt; margin: 12px 0 6px !important; }
+    h1, h4, h5 { break-after: avoid; }
+    p { margin: 4px 0; }
+    ul { padding-left: 18px; margin: 6px 0; }
+    li { margin: 3px 0; }
+    .ekmSplit { display: block; margin-bottom: 16px; }
+    .ekmSplit__column { margin-bottom: 12px; }
+    .umb-table { display: table; width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 9pt; }
+    .umb-table-head { display: table-header-group; font-weight: bold; break-inside: avoid; }
+    .umb-table-body, .umb-table-footer { display: table-row-group; }
+    .umb-table-footer { break-inside: avoid; }
+    .umb-table-row { display: table-row; break-inside: avoid; }
+    .umb-table-cell { display: table-cell; vertical-align: top; padding: 7px 5px; border-bottom: 1px solid #ccc; white-space: normal; overflow-wrap: anywhere; }
+    .umb-table-cell:first-child { display: none; }
+    .umb-table-cell:nth-child(2) { width: 35%; }
+    .umb-table-cell:nth-child(3) { width: 9%; }
+    .umb-table-cell:nth-child(n+4) { width: 14%; text-align: right; }
+    .umb-table-footer .umb-table-cell:nth-child(6) { font-weight: bold; }
+    .ekmOrderGiftcards__summary { display: flex; flex-wrap: wrap; gap: 12px; }
+    dt { font-weight: bold; margin-top: 6px; }
+    dd { margin: 0 0 4px; white-space: pre-wrap; }
+  </style></head><body>${template.innerHTML}</body></html>`;
+}
+
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
