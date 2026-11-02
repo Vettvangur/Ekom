@@ -92,6 +92,12 @@ const e = [
     ]
   },
   {
+    type: "condition",
+    alias: "Ekom.Condition.CatalogPicker",
+    name: "Ekom Catalog Picker Condition",
+    api: () => import("./catalog-picker.condition.js")
+  },
+  {
     type: "collectionView",
     alias: "Ekom.CollectionView.Catalog",
     name: "Ekom Catalog Collection View",
@@ -106,6 +112,10 @@ const e = [
       {
         alias: "Umb.Condition.CollectionAlias",
         match: "Umb.Collection.Document"
+      },
+      {
+        alias: "Ekom.Condition.CatalogPicker",
+        allowInPickers: !1
       }
     ]
   },

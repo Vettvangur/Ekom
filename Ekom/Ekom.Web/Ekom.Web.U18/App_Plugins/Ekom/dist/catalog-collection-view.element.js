@@ -1,67 +1,91 @@
-var P = Object.defineProperty;
-var C = (r, d, e) => d in r ? P(r, d, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[d] = e;
-var l = (r, d, e) => C(r, typeof d != "symbol" ? d + "" : d, e);
+var C = Object.defineProperty;
+var P = (o, d, e) => d in o ? C(o, d, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[d] = e;
+var n = (o, d, e) => P(o, typeof d != "symbol" ? d + "" : d, e);
 import { UMB_COLLECTION_CONTEXT as E } from "@umbraco-cms/backoffice/collection";
-import { UmbElementMixin as T } from "@umbraco-cms/backoffice/element-api";
+import { UmbElementMixin as z } from "@umbraco-cms/backoffice/element-api";
+import { UmbExtensionElementInitializer as T } from "@umbraco-cms/backoffice/extension-api";
+import { umbExtensionsRegistry as I } from "@umbraco-cms/backoffice/extension-registry";
+import { i as q } from "./catalog-picker-context.js";
 import "@umbraco-cms/backoffice/imaging";
-const I = 16, m = "sortOrderAsc", f = "ekomCatalogNode", y = 14, z = 220, q = 4, A = "ekomCatalogParent:", S = "ekomCatalogSort", b = "ekomCatalog";
-class O extends T(HTMLElement) {
+const A = 16, m = "sortOrderAsc", f = "ekomCatalogNode", y = 14, O = 220, L = 4, N = "ekomCatalogParent:", S = "ekomCatalogSort", b = "ekomCatalog";
+class H extends z(HTMLElement) {
   constructor() {
     super(...arguments);
-    l(this, "nodeId", "");
-    l(this, "query", "");
-    l(this, "sort", v());
-    l(this, "page", 1);
-    l(this, "pageSize", I);
-    l(this, "loading", !0);
-    l(this, "error", "");
-    l(this, "data");
-    l(this, "revealTimer");
-    l(this, "resizeTimer");
-    l(this, "collectionPaginationObserver");
-    l(this, "selection");
-    l(this, "onPopState", () => this.restoreNodeFromHistory());
-    l(this, "onResize", () => {
+    n(this, "pickerMode", !1);
+    n(this, "initialized", !1);
+    n(this, "pickerView");
+    n(this, "nodeId", "");
+    n(this, "query", "");
+    n(this, "sort", v());
+    n(this, "page", 1);
+    n(this, "pageSize", A);
+    n(this, "loading", !0);
+    n(this, "error", "");
+    n(this, "data");
+    n(this, "revealTimer");
+    n(this, "resizeTimer");
+    n(this, "collectionPaginationObserver");
+    n(this, "selection");
+    n(this, "onPopState", () => this.restoreNodeFromHistory());
+    n(this, "onResize", () => {
       this.resizeTimer != null && window.clearTimeout(this.resizeTimer), this.resizeTimer = window.setTimeout(() => {
         this.updatePageSizeForViewport() && this.nodeId && this.data != null && !this.loading && this.load(!1);
       }, 150);
     });
   }
   connectedCallback() {
-    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), window.addEventListener("popstate", this.onPopState), window.addEventListener("resize", this.onResize), this.revealCollectionHost(), this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250), this.nodeId = this.getNodeIdFromUrl(), this.sort = v(), this.restorePageFromHistory(), this.consumeContext(E, (e) => {
+    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), this.consumeContext(E, (e) => {
       var i;
+      if (e == null) return;
+      if (this.pickerMode = q(e.getConfig()), this.pickerMode) {
+        this.initializePickerView();
+        return;
+      }
+      this.initialized || (this.initialized = !0, window.addEventListener("popstate", this.onPopState), window.addEventListener("resize", this.onResize), this.revealCollectionHost(), this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250), this.nodeId = this.getNodeIdFromUrl(), this.sort = v(), this.restorePageFromHistory());
       const t = (i = e == null ? void 0 : e.getConfig()) == null ? void 0 : i.unique;
-      this.getCatalogNodeFromUrl() == null && t != null && t !== this.nodeId && (this.nodeId = t, this.restorePageFromHistory(), this.load()), (e == null ? void 0 : e.selection) != null && (this.selection = e.selection, this.selection.setSelectable(!0), this.selection.setMultiple(!0), this.observe(e.selection.selection, () => this.render(), "ekomCatalogCollectionSelection")), this.observe(e == null ? void 0 : e.filter, (o) => this.setQueryFromCollectionFilter(o), "ekomCatalogCollectionFilter");
-    }), this.render(), this.nodeId && this.load();
+      this.getCatalogNodeFromUrl() == null && t != null && t !== this.nodeId && (this.nodeId = t, this.restorePageFromHistory()), (e == null ? void 0 : e.selection) != null && (this.selection = e.selection, this.selection.setSelectable(!0), this.selection.setMultiple(!0), this.observe(e.selection.selection, () => this.render(), "ekomCatalogCollectionSelection")), this.observe(e == null ? void 0 : e.filter, (s) => this.setQueryFromCollectionFilter(s), "ekomCatalogCollectionFilter"), this.render(), this.nodeId && this.load();
+    });
+  }
+  initializePickerView() {
+    this.pickerView == null && (this.pickerView = new T(
+      this,
+      I,
+      "Umb.CollectionView.Document.Table",
+      (e, t) => {
+        e && t.component != null ? this.replaceChildren(t.component) : this.textContent = "The Umbraco document table view is unavailable.";
+      }
+    ));
   }
   disconnectedCallback() {
-    var e;
-    window.removeEventListener("popstate", this.onPopState), window.removeEventListener("resize", this.onResize), this.revealTimer != null && window.clearTimeout(this.revealTimer), this.resizeTimer != null && window.clearTimeout(this.resizeTimer), (e = this.collectionPaginationObserver) == null || e.disconnect(), this.collectionPaginationObserver = void 0, super.disconnectedCallback();
+    var e, t;
+    (e = this.pickerView) == null || e.destroy(), this.pickerView = void 0, this.initialized = !1, window.removeEventListener("popstate", this.onPopState), window.removeEventListener("resize", this.onResize), this.revealTimer != null && window.clearTimeout(this.revealTimer), this.resizeTimer != null && window.clearTimeout(this.resizeTimer), (t = this.collectionPaginationObserver) == null || t.disconnect(), this.collectionPaginationObserver = void 0, super.disconnectedCallback();
   }
   async load(e = !0) {
-    if (!this.nodeId) {
-      this.loading = !1, this.error = "Unable to determine the current catalog node.", this.render();
-      return;
-    }
-    this.loading = e, this.error = "", this.updatePageSizeForViewport(), e && this.render();
-    try {
-      const t = new URLSearchParams({
-        query: this.query,
-        sort: this.sort,
-        page: String(this.page),
-        pageSize: String(this.pageSize)
-      });
-      this.data = await this.fetchJson(`/ekom/backoffice/CatalogCollection/${encodeURIComponent(this.nodeId)}?${t}`), this.page = this.data.page, this.pageSize = this.data.pageSize, this.storeParentNode(this.data);
-    } catch (t) {
-      if (t instanceof x && t.status === 404 && this.redirectToParent())
+    if (!this.pickerMode) {
+      if (!this.nodeId) {
+        this.loading = !1, this.error = "Unable to determine the current catalog node.", this.render();
         return;
-      this.error = t instanceof Error ? t.message : "Unable to load catalog.";
-    } finally {
-      this.loading = !1, this.render();
+      }
+      this.loading = e, this.error = "", this.updatePageSizeForViewport(), e && this.render();
+      try {
+        const t = new URLSearchParams({
+          query: this.query,
+          sort: this.sort,
+          page: String(this.page),
+          pageSize: String(this.pageSize)
+        });
+        this.data = await this.fetchJson(`/ekom/backoffice/CatalogCollection/${encodeURIComponent(this.nodeId)}?${t}`), this.page = this.data.page, this.pageSize = this.data.pageSize, this.storeParentNode(this.data);
+      } catch (t) {
+        if (t instanceof x && t.status === 404 && this.redirectToParent())
+          return;
+        this.error = t instanceof Error ? t.message : "Unable to load catalog.";
+      } finally {
+        this.loading = !1, this.render();
+      }
     }
   }
   drillTo(e) {
-    var o;
+    var s;
     const t = e.key || String(e.id), i = history.state != null && typeof history.state == "object" ? history.state : {};
     history.pushState({
       ...i,
@@ -69,7 +93,7 @@ class O extends T(HTMLElement) {
         nodeId: t,
         page: 1
       }
-    }, "", this.getDocumentHref(t)), this.nodeId = t, this.query = "", this.page = 1, (o = this.selection) == null || o.clearSelection(), this.load();
+    }, "", this.getDocumentHref(t)), this.nodeId = t, this.query = "", this.page = 1, (s = this.selection) == null || s.clearSelection(), this.load();
   }
   restoreNodeFromHistory() {
     var t;
@@ -87,14 +111,14 @@ class O extends T(HTMLElement) {
     return e ? (window.location.replace(this.getDocumentHref(e)), !0) : !1;
   }
   getParentStorageKey(e) {
-    return `${A}${e}`;
+    return `${N}${e}`;
   }
   restorePageFromHistory() {
     const e = history.state, t = e == null ? void 0 : e[b];
     if (t == null || typeof t != "object")
       return;
-    const { nodeId: i, page: o } = t;
-    i === this.nodeId && typeof o == "number" && Number.isInteger(o) && o > 0 && (this.page = o);
+    const { nodeId: i, page: s } = t;
+    i === this.nodeId && typeof s == "number" && Number.isInteger(s) && s > 0 && (this.page = s);
   }
   storePageInHistory() {
     if (!this.nodeId)
@@ -128,7 +152,7 @@ class O extends T(HTMLElement) {
     const e = Math.max(0, this.clientWidth - 48);
     if (e === 0)
       return !1;
-    const i = Math.max(1, Math.floor((e + y) / (z + y))) * q;
+    const i = Math.max(1, Math.floor((e + y) / (O + y))) * L;
     return i === this.pageSize ? !1 : (this.pageSize = i, !0);
   }
   toggleProduct(e) {
@@ -139,16 +163,18 @@ class O extends T(HTMLElement) {
     var a;
     if (this.selection == null)
       return;
-    const t = (((a = this.data) == null ? void 0 : a.products) ?? []).map((s) => s.key), i = t.length > 0 && t.every((s) => this.selection.isSelected(s)), o = this.selection.getSelection();
-    this.selection.setSelection(i ? o.filter((s) => !t.includes(s)) : [.../* @__PURE__ */ new Set([...o, ...t])]);
+    const t = (((a = this.data) == null ? void 0 : a.products) ?? []).map((r) => r.key), i = t.length > 0 && t.every((r) => this.selection.isSelected(r)), s = this.selection.getSelection();
+    this.selection.setSelection(i ? s.filter((r) => !t.includes(r)) : [.../* @__PURE__ */ new Set([...s, ...t])]);
   }
   revealCollectionHost() {
-    for (const e of this.getComposedAncestors("umb-collection-default")) {
-      const t = e.shadowRoot, i = t == null ? void 0 : t.querySelector("#router"), o = t == null ? void 0 : t.querySelector("umb-body-layout"), a = t == null ? void 0 : t.querySelector("#empty-state");
-      i == null || i.style.setProperty("visibility", "visible", "important"), a == null || a.style.setProperty("display", "none", "important"), o == null || o.classList.add("has-items");
+    if (!this.pickerMode) {
+      for (const e of this.getComposedAncestors("umb-collection-default")) {
+        const t = e.shadowRoot, i = t == null ? void 0 : t.querySelector("#router"), s = t == null ? void 0 : t.querySelector("umb-body-layout"), a = t == null ? void 0 : t.querySelector("#empty-state");
+        i == null || i.style.setProperty("visibility", "visible", "important"), a == null || a.style.setProperty("display", "none", "important"), s == null || s.classList.add("has-items");
+      }
+      for (const e of this.getComposedShadowRoots())
+        this.hideDefaultCollectionPagination(e), this.observeDefaultCollectionPagination(e);
     }
-    for (const e of this.getComposedShadowRoots())
-      this.hideDefaultCollectionPagination(e), this.observeDefaultCollectionPagination(e);
   }
   hideDefaultCollectionPagination(e) {
     var t;
@@ -174,12 +200,12 @@ class O extends T(HTMLElement) {
     return [...e];
   }
   render() {
-    this.innerHTML = `
-      <style>${L}</style>
+    this.pickerMode || (this.innerHTML = `
+      <style>${D}</style>
       <div class="catalog-shell">
         ${this.renderContent()}
       </div>
-    `, this.revealCollectionHost(), this.bindEvents();
+    `, this.revealCollectionHost(), this.bindEvents());
   }
   renderContent() {
     return this.loading ? this.renderLoading() : this.error ? `<div class="surface state error"><strong>Catalog unavailable</strong><span>${p(this.error)}</span><button type="button" data-action="retry">Retry</button></div>` : this.data == null ? '<div class="surface state">No catalog data.</div>' : !this.query && this.data.productCount === 0 && this.data.subcategoryCount === 0 ? `
@@ -234,10 +260,10 @@ class O extends T(HTMLElement) {
   }
   renderBreadcrumbs(e) {
     return `<nav class="breadcrumbs">${e.breadcrumbs.map((t, i) => {
-      const o = i === e.breadcrumbs.length - 1, a = p(t.name), s = t.siblings.filter((c) => c.key !== t.key), h = t.contentTypeAlias === "ekmCategory" && s.length > 0 ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(t.key)}" data-breadcrumb-link-key="${p(t.key)}" ${o ? 'aria-current="page"' : ""}>${a}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${a}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${s.map((c) => {
+      const s = i === e.breadcrumbs.length - 1, a = p(t.name), r = t.siblings.filter((c) => c.key !== t.key), h = t.contentTypeAlias === "ekmCategory" && r.length > 0 ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(t.key)}" data-breadcrumb-link-key="${p(t.key)}" ${s ? 'aria-current="page"' : ""}>${a}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${a}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${r.map((c) => {
         const u = p(c.name);
         return `<button type="button" data-breadcrumb-category-key="${p(c.key)}" role="menuitem">${u}</button>`;
-      }).join("")}</div></details></div>` : o ? `<span aria-current="page">${a}</span>` : `<a href="${this.getDocumentHref(t.key)}">${a}</a>`;
+      }).join("")}</div></details></div>` : s ? `<span aria-current="page">${a}</span>` : `<a href="${this.getDocumentHref(t.key)}">${a}</a>`;
       return `${i > 0 ? '<span class="sep">/</span>' : ""}${h}`;
     }).join("")}</nav>`;
   }
@@ -254,8 +280,8 @@ class O extends T(HTMLElement) {
   }
   renderToolbar(e) {
     const t = e.products.length > 0 && e.products.every((i) => {
-      var o;
-      return (o = this.selection) == null ? void 0 : o.isSelected(i.key);
+      var s;
+      return (s = this.selection) == null ? void 0 : s.isSelected(i.key);
     });
     return `
       <div class="toolbar">
@@ -308,8 +334,8 @@ class O extends T(HTMLElement) {
     `;
   }
   renderProduct(e) {
-    var o;
-    const t = ((o = this.selection) == null ? void 0 : o.isSelected(e.key)) ?? !1, i = `/umbraco/section/content/workspace/document/edit/${e.key}`;
+    var s;
+    const t = ((s = this.selection) == null ? void 0 : s.isSelected(e.key)) ?? !1, i = `/umbraco/section/content/workspace/document/edit/${e.key}`;
     return `
       <article class="card ${t ? "selected" : ""}">
         <button type="button" class="checkbox ${t ? "checked" : ""}" data-product-key="${e.key}">${t ? "✓" : ""}</button>
@@ -330,7 +356,7 @@ class O extends T(HTMLElement) {
       <footer class="pagination">
         <div>
           <button type="button" data-page="${e.page - 1}" ${e.page <= 1 ? "disabled" : ""}>‹ Prev</button>
-          ${this.paginationItems(e.page, e.totalPages).map((o) => o === "…" ? "<span>…</span>" : `<button type="button" class="${o === e.page ? "current" : ""}" data-page="${o}">${o}</button>`).join("")}
+          ${this.paginationItems(e.page, e.totalPages).map((s) => s === "…" ? "<span>…</span>" : `<button type="button" class="${s === e.page ? "current" : ""}" data-page="${s}">${s}</button>`).join("")}
           <button type="button" data-page="${e.page + 1}" ${e.page >= e.totalPages ? "disabled" : ""}>Next ›</button>
         </div>
         <span>${t}–${i} of ${e.filteredProductCount}</span>
@@ -339,45 +365,45 @@ class O extends T(HTMLElement) {
   }
   paginationItems(e, t) {
     if (t <= 7)
-      return Array.from({ length: t }, (s, n) => n + 1);
-    const o = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((s) => s >= 1 && s <= t).sort((s, n) => s - n), a = [];
-    for (const s of o) {
-      const n = a[a.length - 1];
-      typeof n == "number" && s - n > 1 && a.push("…"), a.push(s);
+      return Array.from({ length: t }, (r, l) => l + 1);
+    const s = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((r) => r >= 1 && r <= t).sort((r, l) => r - l), a = [];
+    for (const r of s) {
+      const l = a[a.length - 1];
+      typeof l == "number" && r - l > 1 && a.push("…"), a.push(r);
     }
     return a;
   }
   bindEvents() {
-    var e, t, i, o, a;
+    var e, t, i, s, a;
     (e = this.querySelector('[data-action="retry"]')) == null || e.addEventListener("click", () => void this.load()), (t = this.querySelector('[data-action="back"]')) == null || t.addEventListener("click", () => {
-      var s;
-      ((s = this.data) == null ? void 0 : s.parent) != null && this.drillTo(this.data.parent);
-    }), (i = this.querySelector('[data-action="toggle-page"]')) == null || i.addEventListener("click", () => this.toggleCurrentPage()), (o = this.querySelector('[data-field="sort"]')) == null || o.addEventListener("input", (s) => this.setSort(s.target.value)), (a = this.querySelector('[data-field="sort"]')) == null || a.addEventListener("change", (s) => this.setSort(s.target.value)), this.querySelectorAll("[data-product-key]").forEach((s) => {
-      s.addEventListener("click", (n) => {
+      var r;
+      ((r = this.data) == null ? void 0 : r.parent) != null && this.drillTo(this.data.parent);
+    }), (i = this.querySelector('[data-action="toggle-page"]')) == null || i.addEventListener("click", () => this.toggleCurrentPage()), (s = this.querySelector('[data-field="sort"]')) == null || s.addEventListener("input", (r) => this.setSort(r.target.value)), (a = this.querySelector('[data-field="sort"]')) == null || a.addEventListener("change", (r) => this.setSort(r.target.value)), this.querySelectorAll("[data-product-key]").forEach((r) => {
+      r.addEventListener("click", (l) => {
         var u;
-        n.preventDefault();
-        const h = s.dataset.productKey, c = (u = this.data) == null ? void 0 : u.products.find((g) => g.key === h);
+        l.preventDefault();
+        const h = r.dataset.productKey, c = (u = this.data) == null ? void 0 : u.products.find((g) => g.key === h);
         c != null && this.toggleProduct(c);
       });
-    }), this.querySelectorAll("[data-page]").forEach((s) => {
-      s.addEventListener("click", () => this.setPage(Number(s.dataset.page)));
-    }), this.querySelectorAll("[data-breadcrumb-link-key]").forEach((s) => {
-      s.addEventListener("click", (n) => {
+    }), this.querySelectorAll("[data-page]").forEach((r) => {
+      r.addEventListener("click", () => this.setPage(Number(r.dataset.page)));
+    }), this.querySelectorAll("[data-breadcrumb-link-key]").forEach((r) => {
+      r.addEventListener("click", (l) => {
         var u;
-        n.preventDefault();
-        const h = s.dataset.breadcrumbLinkKey, c = (u = this.data) == null ? void 0 : u.breadcrumbs.find((g) => g.key === h);
+        l.preventDefault();
+        const h = r.dataset.breadcrumbLinkKey, c = (u = this.data) == null ? void 0 : u.breadcrumbs.find((g) => g.key === h);
         c != null && this.drillTo(c);
       });
-    }), this.querySelectorAll("[data-breadcrumb-category-key]").forEach((s) => {
-      s.addEventListener("click", () => {
+    }), this.querySelectorAll("[data-breadcrumb-category-key]").forEach((r) => {
+      r.addEventListener("click", () => {
         var c;
-        const n = s.dataset.breadcrumbCategoryKey, h = (c = this.data) == null ? void 0 : c.breadcrumbs.flatMap((u) => u.siblings).find((u) => u.key === n);
+        const l = r.dataset.breadcrumbCategoryKey, h = (c = this.data) == null ? void 0 : c.breadcrumbs.flatMap((u) => u.siblings).find((u) => u.key === l);
         h != null && this.drillTo(h);
       });
-    }), this.querySelectorAll(".breadcrumb-menu").forEach((s) => {
-      s.addEventListener("toggle", () => {
-        s.open && this.querySelectorAll(".breadcrumb-menu").forEach((n) => {
-          n !== s && (n.open = !1);
+    }), this.querySelectorAll(".breadcrumb-menu").forEach((r) => {
+      r.addEventListener("toggle", () => {
+        r.open && this.querySelectorAll(".breadcrumb-menu").forEach((l) => {
+          l !== r && (l.open = !1);
         });
       });
     });
@@ -389,8 +415,8 @@ class O extends T(HTMLElement) {
     const t = window.location.href, i = t.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
     if (i != null)
       return i[0];
-    const o = t.match(/\/edit\/([^/?#]+)/i);
-    return (o == null ? void 0 : o[1]) ?? "";
+    const s = t.match(/\/edit\/([^/?#]+)/i);
+    return (s == null ? void 0 : s[1]) ?? "";
   }
   getDocumentHref(e) {
     const t = new URL(window.location.href);
@@ -412,13 +438,13 @@ class x extends Error {
     super(d), this.status = e;
   }
 }
-function p(r) {
-  return r.replace(/[&<>"]/g, (d) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[d] ?? d);
+function p(o) {
+  return o.replace(/[&<>"]/g, (d) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[d] ?? d);
 }
-function k(r) {
-  return r === "Published" ? "published" : r === "Pending changes" ? "pending" : "unpublished";
+function k(o) {
+  return o === "Published" ? "published" : o === "Pending changes" ? "pending" : "unpublished";
 }
-function $(r) {
+function $(o) {
   return [
     "sortOrderAsc",
     "sortOrderDesc",
@@ -428,23 +454,23 @@ function $(r) {
     "createdDesc",
     "updatedAsc",
     "updatedDesc"
-  ].includes(r);
+  ].includes(o);
 }
 function v() {
   try {
-    const r = window.localStorage.getItem(S);
-    return r != null && $(r) ? r : m;
+    const o = window.localStorage.getItem(S);
+    return o != null && $(o) ? o : m;
   } catch {
     return m;
   }
 }
-function w(r) {
+function w(o) {
   try {
-    window.localStorage.setItem(S, r);
+    window.localStorage.setItem(S, o);
   } catch {
   }
 }
-const L = `
+const D = `
   ekom-catalog-collection-view { color: #1f1f1f; display: block !important; font-family: Lato, sans-serif; visibility: visible !important; }
   .catalog-shell { background: #f6f4f4; min-height: 100%; padding: 24px; }
   .surface, .empty { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; }
@@ -550,7 +576,7 @@ const L = `
   .pagination button { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; min-width: 34px; padding: 7px 10px; }
   .pagination .current { background: #1b264f; border-color: #1b264f; color: #fff; }
 `;
-customElements.define("ekom-catalog-collection-view", O);
+customElements.define("ekom-catalog-collection-view", H);
 export {
-  O as default
+  H as default
 };
