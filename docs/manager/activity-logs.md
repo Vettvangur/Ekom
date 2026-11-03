@@ -52,6 +52,14 @@ Ekom writes activity entries from core order and checkout workflows, including s
 
 Custom manager actions and external integrations can add their own entries with `Order.Instance.AddActivityLogAsync`.
 
+## Payment cancellation and reservation release
+
+A release writes one durable activity entry before releasing any holds, then updates that same entry with the outcome. Successful payment cancellation displays **Payment cancelled. Payment reservations released.**, together with the attempt ID and reason. The success entry is committed with the order reset. Repeated callbacks for an already-released attempt do not add another activity entry.
+
+A failed or uncertain release updates the entry to an `Alert` with the attempt ID, reason, failure type, and review guidance. Separate reconciliation warnings remain visible when manual intervention is required. If the process stops or the outcome cannot be saved, the entry remains **release in progress; completion not yet confirmed** rather than claiming success. Failure to save the initial entry prevents release.
+
+Request and per-reservation progress details are written to diagnostic logs. Existing historical activity entries are not changed.
+
 ## Reading entries
 
 The backoffice uses `GET /ekom/manager/OrderLogs/{orderId}`. It is an authenticated manager endpoint and is not intended as a public order-history API.

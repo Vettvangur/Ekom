@@ -330,7 +330,7 @@ internal sealed partial class CheckoutPaymentAttemptService
 
     public async Task<OrderData?> ReleaseAsync(Guid orderId, Guid? attemptId, string reason, CancellationToken ct = default)
     {
-        await LogAsync(orderId, $"Payment release attempted; attempt={attemptId}; reason={reason}; outcome=Requested", true).ConfigureAwait(false);
+        _logger.LogDebug("Payment release requested. OrderId: {OrderId}; AttemptId: {AttemptId}; Reason: {Reason}", orderId, attemptId, reason);
         CheckoutPaymentOperationScope scope;
         try
         {
@@ -338,7 +338,7 @@ internal sealed partial class CheckoutPaymentAttemptService
         }
         catch (Exception ex)
         {
-            await LogAsync(orderId, $"Payment release blocked; attempt={attemptId}; reason={reason}; outcome=Blocked; FailureType={ex.GetType().Name}").ConfigureAwait(false);
+            await LogAsync(orderId, $"Payment release blocked; attempt={attemptId}; reason={reason}; outcome=Blocked; FailureType={ex.GetType().Name}", OrderActivityLogType.Alert).ConfigureAwait(false);
             throw;
         }
         await using var ownership = scope;
@@ -359,12 +359,12 @@ internal sealed partial class CheckoutPaymentAttemptService
         }
         if (active?.State == CheckoutPaymentAttemptState.Released)
         {
-            await LogAsync(orderId, $"Payment release already terminal; attempt={attemptId}; reason={reason}; outcome=AlreadyReleased").ConfigureAwait(false);
+            _logger.LogDebug("Payment release skipped. OrderId: {OrderId}; AttemptId: {AttemptId}; Reason: {Reason}; Outcome: {Outcome}", orderId, attemptId, reason, "AlreadyReleased");
             return null;
         }
         if (active == null && !await HasOwnedHoldsAsync(db, data, ct).ConfigureAwait(false) && !HasClaims(ReadGiftcards(data.OrderInfo)))
         {
-            await LogAsync(orderId, $"Payment release already terminal; attempt={attemptId}; reason={reason}; outcome=NoOwnedHolds").ConfigureAwait(false);
+            _logger.LogDebug("Payment release skipped. OrderId: {OrderId}; AttemptId: {AttemptId}; Reason: {Reason}; Outcome: {Outcome}", orderId, attemptId, reason, "NoOwnedHolds");
             return null;
         }
         return await ReleaseOwnedAsync(db, scope, active, data, reason, ct).ConfigureAwait(false);
@@ -734,14 +734,26 @@ internal sealed partial class CheckoutPaymentAttemptService
         if (await IsPaidOrCompletedAsync(db, data, ct).ConfigureAwait(false))
             throw Conflict("Paid or completed orders cannot release payment holds.", CheckoutConflictReason.Completed);
         // Audit persistence precedes all release effects; if it fails, release fails closed.
-        await LogAsync(data.UniqueId, $"Payment release attempted; attempt={attempt?.AttemptId}; reason={reason}", true).ConfigureAwait(false);
-        if (attempt != null) await SetStateAsync(db, attempt.AttemptId, CheckoutPaymentAttemptState.ReleasePending, ct).ConfigureAwait(false);
-        var ids = attempt?.SubmittedOrderInfo != null
-            ? JsonConvert.DeserializeObject<List<string>>(attempt.ReservationIds) ?? []
-            : await ReadOwnedIdsAsync(db, data, ct).ConfigureAwait(false);
-        var giftcards = ReadGiftcards(attempt?.SubmittedOrderInfo ?? data.OrderInfo);
+        var activityId = Guid.NewGuid();
+        await using (var auditDb = _factory.GetDatabase())
+        {
+            await auditDb.InsertAsync(new OrderActivityLog
+            {
+                UniqueID = activityId,
+                Key = data.UniqueId,
+                Log = $"Payment reservation release in progress; completion not yet confirmed. Attempt: {attempt?.AttemptId}; reason={reason}",
+                UserName = "Customer",
+                Date = DateTime.Now,
+                LogType = OrderActivityLogType.Info,
+            }, token: CancellationToken.None).ConfigureAwait(false);
+        }
         try
         {
+            if (attempt != null) await SetStateAsync(db, attempt.AttemptId, CheckoutPaymentAttemptState.ReleasePending, ct).ConfigureAwait(false);
+            var ids = attempt?.SubmittedOrderInfo != null
+                ? JsonConvert.DeserializeObject<List<string>>(attempt.ReservationIds) ?? []
+                : await ReadOwnedIdsAsync(db, data, ct).ConfigureAwait(false);
+            var giftcards = ReadGiftcards(attempt?.SubmittedOrderInfo ?? data.OrderInfo);
             if (HasSettledGiftcards(giftcards))
             {
                 await ReconciliationAsync(data.UniqueId, attempt?.AttemptId, "Redeemed or settled giftcard cannot be released as a payment hold").ConfigureAwait(false);
@@ -766,11 +778,11 @@ internal sealed partial class CheckoutPaymentAttemptService
                 }
                 catch
                 {
-                    await LogAsync(data.UniqueId, FormattableString.Invariant($"Payment reservation release failed; attempt={attempt?.AttemptId}; id={id}; stockKey={reservation?.Key}; quantity={reservation?.Quantity ?? 0}; restored=0; outcome=Failed; reason={reason}")).ConfigureAwait(false);
+                    _logger.LogWarning("Payment reservation release failed. OrderId: {OrderId}; AttemptId: {AttemptId}; ReservationId: {ReservationId}; StockKey: {StockKey}; Quantity: {Quantity}; Reason: {Reason}", data.UniqueId, attempt?.AttemptId, id, reservation?.Key, reservation?.Quantity ?? 0, reason);
                     throw;
                 }
                 var restored = result.Status == StockReservationStatus.Released ? reservation?.Quantity ?? 0 : 0;
-                await LogAsync(data.UniqueId, FormattableString.Invariant($"Payment reservation release; attempt={attempt?.AttemptId}; id={id}; stockKey={reservation?.Key}; quantity={reservation?.Quantity ?? 0}; restored={restored}; outcome={result.Status}; reason={reason}")).ConfigureAwait(false);
+                _logger.LogDebug("Payment reservation release. OrderId: {OrderId}; AttemptId: {AttemptId}; ReservationId: {ReservationId}; StockKey: {StockKey}; Quantity: {Quantity}; Restored: {Restored}; Outcome: {Outcome}; Reason: {Reason}", data.UniqueId, attempt?.AttemptId, id, reservation?.Key, reservation?.Quantity ?? 0, restored, result.Status, reason);
                 if (result.Status is not (StockReservationStatus.Released or StockReservationStatus.AlreadyReleased or StockReservationStatus.AlreadyExpired or StockReservationStatus.Expired or StockReservationStatus.NotFound))
                 {
                     if (result.Status is StockReservationStatus.AlreadyConsumed or StockReservationStatus.Consumed or StockReservationStatus.LateConsumption)
@@ -816,18 +828,47 @@ internal sealed partial class CheckoutPaymentAttemptService
                 await db.GetTable<CheckoutPaymentAttemptData>().Where(x => x.AttemptId == attempt.AttemptId)
                     .Set(x => x.State, CheckoutPaymentAttemptState.Released)
                     .Set(x => x.ClosedUtc, (DateTime?)DateTime.UtcNow).UpdateAsync(ct).ConfigureAwait(false);
+            var summary = reason == "payment-cancel"
+                ? "Payment cancelled. Payment reservations released."
+                : "Payment reservations released.";
+            // Commit the outcome with the order reset so success is never recorded before release completes.
+            await UpdateReleaseActivityAsync(db, activityId, data.UniqueId,
+                $"{summary} Attempt: {attempt?.AttemptId}; reason={reason}", OrderActivityLogType.Success).ConfigureAwait(false);
             await transaction.CommitAsync(ct).ConfigureAwait(false);
             scope.PreserveOwnership = false;
             ClearCache(data.UniqueId);
-            await LogAsync(data.UniqueId, $"Payment release completed; attempt={attempt?.AttemptId}; reason={reason}").ConfigureAwait(false);
             return data;
         }
         catch (Exception ex)
         {
             _logger.LogError("Payment release failed. OrderId: {OrderId}; AttemptId: {AttemptId}; Reason: {Reason}; FailureType: {FailureType}", data.UniqueId, attempt?.AttemptId, reason, ex.GetType().Name);
-            await LogAsync(data.UniqueId, $"Payment release failed; attempt={attempt?.AttemptId}; reason={reason}; outcome=Failed; FailureType={ex.GetType().Name}").ConfigureAwait(false);
+            try
+            {
+                await using var auditDb = _factory.GetDatabase();
+                await UpdateReleaseActivityAsync(auditDb, activityId, data.UniqueId,
+                    $"Payment reservation release could not be confirmed. Review payment and reservation status before retrying. Attempt: {attempt?.AttemptId}; reason={reason}; FailureType={ex.GetType().Name}",
+                    OrderActivityLogType.Alert).ConfigureAwait(false);
+            }
+            catch (Exception auditException)
+            {
+                // Keep the original in-progress entry and original release exception if the outcome cannot be saved.
+                _logger.LogError("Failed to update payment release activity. OrderId: {OrderId}; ActivityId: {ActivityId}; FailureType: {FailureType}",
+                    data.UniqueId, activityId, auditException.GetType().Name);
+            }
             throw;
         }
+    }
+
+    private static async Task UpdateReleaseActivityAsync(DbContext db, Guid activityId, Guid orderId,
+        string message, OrderActivityLogType logType)
+    {
+        var updated = await db.GetTable<OrderActivityLog>()
+            .Where(x => x.UniqueID == activityId && x.Key == orderId)
+            .Set(x => x.Log, message)
+            .Set(x => x.LogType, logType)
+            .Set(x => x.Date, DateTime.Now)
+            .UpdateAsync(CancellationToken.None).ConfigureAwait(false);
+        if (updated != 1) throw new InvalidOperationException("Payment release activity could not be updated.");
     }
 
     private async Task SaveOrderAsync(DbContext db, CheckoutPaymentOperationScope scope, OrderData data, CancellationToken ct)
@@ -999,16 +1040,15 @@ internal sealed partial class CheckoutPaymentAttemptService
         _cache.Remove(orderId.ToString());
     }
 
-    private async Task LogAsync(Guid orderId, string message, bool required = false)
+    private async Task LogAsync(Guid orderId, string message, OrderActivityLogType logType = OrderActivityLogType.Info)
     {
         try
         {
-            await _activity.InsertAsync([new OrderActivityLogWrite(orderId, message, "Customer", DateTime.Now, OrderActivityLogType.Info)], CancellationToken.None).ConfigureAwait(false);
+            await _activity.InsertAsync([new OrderActivityLogWrite(orderId, message, "Customer", DateTime.Now, logType)], CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogError("Failed to persist payment attempt activity. OrderId: {OrderId}; FailureType: {FailureType}", orderId, ex.GetType().Name);
-            if (required) throw;
         }
     }
 
@@ -1039,7 +1079,7 @@ internal sealed partial class CheckoutPaymentAttemptService
             if (scope != null) scope.PreserveOwnership = previouslyPreserved;
         }
         _logger.LogWarning("Payment NEEDS RECONCILIATION. OrderId: {OrderId}; AttemptId: {AttemptId}; Reason: {Reason}", orderId, attemptId, reason);
-        await LogAsync(orderId, $"Payment NEEDS RECONCILIATION; attempt={attemptId}; reason={reason}").ConfigureAwait(false);
+        await LogAsync(orderId, $"Payment NEEDS RECONCILIATION; attempt={attemptId}; reason={reason}", OrderActivityLogType.Alert).ConfigureAwait(false);
     }
 
     private static EkomHttpException Conflict(string message, CheckoutConflictReason? reason = null)
