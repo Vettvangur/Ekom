@@ -20,6 +20,16 @@ public sealed class MailchimpOptions
 public sealed class MailchimpSubscriptionOptions
 {
     public bool Enabled { get; set; } = true;
+    public MailchimpActionRateLimitOptions SubscribeRateLimit { get; set; } = new();
+    public MailchimpActionRateLimitOptions UnsubscribeRateLimit { get; set; } = new();
+}
+
+/// <summary>Per-instance admission limits for one subscription action and configured store.</summary>
+public sealed class MailchimpActionRateLimitOptions
+{
+    public bool Enabled { get; set; } = true;
+    public int PermitLimit { get; set; } = 60;
+    public int WindowSeconds { get; set; } = 60;
 }
 
 public sealed class MailchimpPurchaseOptions
