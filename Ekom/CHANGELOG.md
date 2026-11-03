@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+* **manager:** hide SKU parentheses on order lines when the product or variant SKU is missing, empty, or whitespace-only.
+
 * **manager:** print U17/U18 orders in an isolated, paginated document so backoffice navigation and overlay scrolling cannot clip order data. Include saved status, addresses, provider data, gift cards, all order lines and totals; omit editing/recovery controls, consent, tracking and activity logs.
 
 * **catalog:** exclude the custom catalog collection view from content pickers by default in U17/U18. Optional picker use delegates to Umbraco's native document table, preserving picker navigation and selection settings while retaining the normal workspace catalog. Keep a native view enabled in the collection layouts for the default picker fallback.
@@ -14,6 +16,8 @@
 * **order:** release the basket lock when an order save fails or is cancelled before its commit. Only a failed commit keeps the order locked.
 
 ### Features
+
+* **manager:** display order custom data as neutral, wrapping key/value badges below order actions and above billing, including printed orders, in Umbraco 13, 17, and 18.
 
 * **order:** persist case-insensitive order custom data, accept bracketed checkout form fields and nested JSON in customer/shipping/payment updates, and add C# merge/removal operations.
 

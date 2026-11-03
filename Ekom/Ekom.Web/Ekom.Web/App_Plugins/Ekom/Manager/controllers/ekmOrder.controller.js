@@ -444,6 +444,9 @@
       var customPaymentProps = (order.paymentProvider && order.paymentProvider.customData) || {};
 
       $scope.model.editModel.order = order;
+      $scope.orderCustomData = Object.entries(order.customData || {}).filter(function (entry) {
+        return entry[0].trim() && typeof entry[1] === "string" && entry[1].trim();
+      });
       $scope.ga4TrackingData = tracking && tracking.ga4 && tracking.ga4.data ? Object.entries(tracking.ga4.data) : [];
       $scope.metaTrackingData = tracking && tracking.meta && tracking.meta.data ? Object.entries(tracking.meta.data) : [];
       $scope.algoliaTrackingLines = tracking && tracking.algolia && Array.isArray(tracking.algolia.lines) ? tracking.algolia.lines : [];

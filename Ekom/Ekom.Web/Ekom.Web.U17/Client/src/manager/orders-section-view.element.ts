@@ -544,6 +544,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         ${this.renderOrderLockStatus()}
         ${this.renderOrderActions()}
       </div>
+      ${this.renderOrderCustomData(order)}
       <div class="ekmSplit">
         <div class="ekmSplit__column"><h4>Billing</h4><button type="button" class="btn-outline" data-action="open-customer-editor" style="margin-bottom:10px;">Edit customer information</button>${this.renderAddress(customer)}${this.renderExtraProperties(customer.properties, 'customer')}</div>
         <div class="ekmSplit__column"><h4>Shipping</h4>${hasShippingInfo(shipping) ? `${this.renderAddress(shipping)}${this.renderExtraProperties(shipping.properties, 'shipping')}` : '<p style="font-weight:bold">Same as billing address</p>'}</div>
@@ -561,6 +562,18 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     `;
   }
 
+  private renderOrderCustomData(order: OrderInfo): string {
+    const entries = Object.entries(order.customData || {})
+      .filter(([key, value]) => key.trim() && typeof value === 'string' && value.trim());
+    if (!entries.length) return '';
+
+    return `<dl class="ekmOrderCustomData" aria-label="Order custom data">${entries.map(([key, value]) => `
+      <div class="ekmOrderCustomData__item">
+        <dt class="ekmOrderCustomData__key">${escapeHtml(key)}</dt>
+        <dd class="ekmOrderCustomData__value">${escapeHtml(value)}</dd>
+      </div>`).join('')}</dl>`;
+  }
+
   private renderPrintableOrder(order: OrderInfo): string {
     const customer = order.customerInformation?.customer || {};
     const shipping = order.customerInformation?.shipping || {};
@@ -575,6 +588,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         <p>Paid date: ${escapeHtml(formatDate(order.paidDate))}</p>
         <p>Store: ${escapeHtml(order.storeInfo?.alias || order.storeAlias)}</p>
         <p>Payment: <strong>${escapeHtml(order.chargedAmount?.currencyString)}</strong></p>
+        ${this.renderOrderCustomData(order)}
         <section class="ekmSplit">
           <div class="ekmSplit__column"><h4>Billing</h4>${this.renderAddress(customer)}${this.renderExtraProperties(customer.properties, 'customer')}</div>
           <div class="ekmSplit__column"><h4>Shipping</h4>${hasShippingInfo(shipping) ? `${this.renderAddress(shipping)}${this.renderExtraProperties(shipping.properties, 'shipping')}` : '<p>Same as billing address</p>'}</div>
@@ -694,7 +708,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       <div class="umb-table">
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
         <div class="umb-table-body">
-          ${lines.map((line: Record<string, any>) => `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${escapeHtml(line.key)}" data-product-title="${escapeHtml(line.product?.title)}" ${this.removingOrderLineId === line.key ? 'disabled' : ''} aria-label="Remove ${escapeHtml(line.product?.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><span>${renderOrderLineProductTitle(line.product)} (${escapeHtml(line.product?.sku)})</span>${line.variant ? `<small style="display:block; margin-top:3px;">${escapeHtml(line.variant.title)} ${line.variant.sku ? `(${escapeHtml(line.variant.sku)})` : ''}</small>` : ''}${renderOrderLineProperties(line)}</div><div class="umb-table-cell">${escapeHtml(line.quantity)}</div><div class="umb-table-cell">${escapeHtml(line.product?.price?.withVat?.currencyString)}</div><div class="umb-table-cell">${escapeHtml(line.amount?.vat?.currencyString)}</div><div class="umb-table-cell">-${escapeHtml(line.amount?.discountAmount?.currencyString)}</div><div class="umb-table-cell"><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></div></div>`).join('')}
+          ${lines.map((line: Record<string, any>) => `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${escapeHtml(line.key)}" data-product-title="${escapeHtml(line.product?.title)}" ${this.removingOrderLineId === line.key ? 'disabled' : ''} aria-label="Remove ${escapeHtml(line.product?.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><span>${renderOrderLineProductTitle(line.product)}${line.product?.sku?.trim() ? ` (${escapeHtml(line.product.sku)})` : ''}</span>${line.variant ? `<small style="display:block; margin-top:3px;">${escapeHtml(line.variant.title)} ${line.variant.sku?.trim() ? `(${escapeHtml(line.variant.sku)})` : ''}</small>` : ''}${renderOrderLineProperties(line)}</div><div class="umb-table-cell">${escapeHtml(line.quantity)}</div><div class="umb-table-cell">${escapeHtml(line.product?.price?.withVat?.currencyString)}</div><div class="umb-table-cell">${escapeHtml(line.amount?.vat?.currencyString)}</div><div class="umb-table-cell">-${escapeHtml(line.amount?.discountAmount?.currencyString)}</div><div class="umb-table-cell"><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></div></div>`).join('')}
         </div>
         <div class="umb-table-footer">
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${escapeHtml(order.subTotal?.withVat?.currencyString)}</div></div>

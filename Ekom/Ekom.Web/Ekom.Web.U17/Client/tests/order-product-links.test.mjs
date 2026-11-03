@@ -74,5 +74,5 @@ test('titles and URL attributes are escaped and surrounding URL whitespace is tr
 
 test('the legacy template uses conditional escaped bindings and keeps the SKU outside the link', () => {
   assert.match(legacyTemplate, /<a ng-if="getProductUrl\(orderLine\.product\)" ng-href="\{\{ getProductUrl\(orderLine\.product\) \}\}" target="_blank" rel="noopener noreferrer">\{\{ orderLine\.product\.title \}\}<\/a>/);
-  assert.ok(legacyTemplate.includes('<span ng-if="!getProductUrl(orderLine.product)">{{ orderLine.product.title }}</span> ({{ orderLine.product.sku }})'));
+  assert.ok(legacyTemplate.includes('<span ng-if="!getProductUrl(orderLine.product)">{{ orderLine.product.title }}</span><span ng-if="orderLine.product.sku && orderLine.product.sku.trim()"> ({{ orderLine.product.sku }})</span>'));
 });

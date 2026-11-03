@@ -101,6 +101,10 @@ Existing `customer...`, `shipping...`, `customshipping...`, and `custompayment..
 
 All checkout inputs, including hidden fields, are customer-controlled and may overwrite matching order custom-data keys. Do not use this collection as a trusted source for prices, permissions, payment state, or internal-only metadata. Order custom data is treated as editable information rather than part of the submitted purchase comparison.
 
+## Backoffice order view
+
+The order view displays non-empty custom data below Order Actions and above Billing as neutral key/value badges. Keys appear as stored, values wrap to fit the panel, and no colors are inferred from the data. The section is hidden when there are no non-empty values and is included when printing an order. This display is read-only and available in Umbraco 13, 17, and 18.
+
 ## Related guides
 
 - [Orders and baskets](orders-and-baskets.md)

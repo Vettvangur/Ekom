@@ -72,6 +72,13 @@
 
   </div>
 
+  <dl class="ekmOrderCustomData" aria-label="Order custom data" ng-if="orderCustomData.length">
+    <div class="ekmOrderCustomData__item" ng-repeat="entry in orderCustomData track by entry[0]">
+      <dt class="ekmOrderCustomData__key" ng-bind="entry[0]"></dt>
+      <dd class="ekmOrderCustomData__value" ng-bind="entry[1]"></dd>
+    </div>
+  </dl>
+
   <div class="ekmSplit">
 
     <div class="ekmOrder__shipping ekmSplit__column">
@@ -268,10 +275,10 @@
         </div>
         <div class="umb-table-cell not-fixed" style="flex-direction:column;">
           <div>
-            <a ng-if="getProductUrl(orderLine.product)" ng-href="{{ getProductUrl(orderLine.product) }}" target="_blank" rel="noopener noreferrer">{{ orderLine.product.title }}</a><span ng-if="!getProductUrl(orderLine.product)">{{ orderLine.product.title }}</span> ({{ orderLine.product.sku }})
+            <a ng-if="getProductUrl(orderLine.product)" ng-href="{{ getProductUrl(orderLine.product) }}" target="_blank" rel="noopener noreferrer">{{ orderLine.product.title }}</a><span ng-if="!getProductUrl(orderLine.product)">{{ orderLine.product.title }}</span><span ng-if="orderLine.product.sku && orderLine.product.sku.trim()"> ({{ orderLine.product.sku }})</span>
           </div>
           <small ng-if="orderLine.variant" style="font-style:italic; display:block; margin-top:3px; text-overflow: unset !important; white-space:normal !important;">
-            {{ orderLine.variant.title }} <span ng-if="orderLine.variant.sku">({{ orderLine.variant.sku }})</span>
+            {{ orderLine.variant.title }} <span ng-if="orderLine.variant.sku && orderLine.variant.sku.trim()">({{ orderLine.variant.sku }})</span>
           </small>
           <small ng-repeat="property in orderLine.displayProperties track by $index" style="display:block; margin-top:3px; text-overflow: unset !important; white-space:normal !important;">
             <strong>{{ property.key }}</strong>: {{ property.value }}
