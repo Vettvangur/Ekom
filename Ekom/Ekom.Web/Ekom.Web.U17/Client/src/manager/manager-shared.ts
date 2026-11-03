@@ -506,6 +506,13 @@ export function pageRange(page: number, totalPages: number): Array<number | stri
   return result;
 }
 
+const orderCustomDataStyles = `
+  .ekmOrderCustomData { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; padding: 14px 16px; border: 1px solid #e1e3e8; border-radius: 12px; }
+  .ekmOrderCustomData__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 7px 12px; border: 1px solid #e1e3e8; border-radius: 8px; background: #f6f7f9; line-height: 1.5; break-inside: avoid; }
+  .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
+  .ekmOrderCustomData__value { margin: 0; min-width: 0; color: #252830; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
+`;
+
 /** Print an isolated document so backoffice shadow roots and scroll containers cannot clip it. */
 export async function printOrderDocument(content: string, title: string): Promise<void> {
   const frame = document.createElement('iframe');
@@ -541,6 +548,7 @@ export function createOrderPrintDocument(content: string, title: string): string
   // Preserve product names without backoffice links or browser-added link URLs.
   template.content.querySelectorAll('a').forEach(element => element.replaceWith(...Array.from(element.childNodes)));
   return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>
+    ${orderCustomDataStyles}
     @page { size: auto; margin: 14mm; }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: auto; overflow: visible; }
@@ -585,6 +593,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
 }
 
 export const managerStyles = `
+  ${orderCustomDataStyles}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }

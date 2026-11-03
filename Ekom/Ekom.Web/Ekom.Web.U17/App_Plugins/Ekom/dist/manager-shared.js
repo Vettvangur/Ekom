@@ -1,7 +1,7 @@
-const $ = /* @__PURE__ */ new Date(), P = new Date($.getFullYear(), 0, 1), J = {
+const E = /* @__PURE__ */ new Date(), U = new Date(E.getFullYear(), 0, 1), J = {
   filters: {
-    dateFrom: E(P),
-    dateTo: E($),
+    dateFrom: $(U),
+    dateTo: $(E),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
@@ -22,7 +22,7 @@ const $ = /* @__PURE__ */ new Date(), P = new Date($.getFullYear(), 0, 1), J = {
   paymentProviders: [],
   shippingFilterProviders: []
 };
-class x {
+class b {
   async config() {
     return this.getJson("/ekom/backoffice/Config");
   }
@@ -88,7 +88,7 @@ class x {
       headers: { Accept: "application/json, application/octet-stream" }
     });
     if (!t.ok)
-      throw await x.createError(t, "Order action failed.");
+      throw await b.createError(t, "Order action failed.");
     return t;
   }
   async changeOrderStatus(e, r, t) {
@@ -110,7 +110,7 @@ class x {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await x.createError(t, "Error removing order line.");
+      throw await b.createError(t, "Error removing order line.");
     return t.json();
   }
   async charts(e) {
@@ -137,7 +137,7 @@ class x {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await x.createError(t, "Request failed.");
+      throw await b.createError(t, "Request failed.");
     return t.json();
   }
   async getBlob(e, r) {
@@ -146,7 +146,7 @@ class x {
       headers: { Accept: "text/csv, application/octet-stream" }
     });
     if (!t.ok)
-      throw await x.createError(t, "Request failed.");
+      throw await b.createError(t, "Request failed.");
     return t.blob();
   }
   async postJson(e, r) {
@@ -156,7 +156,7 @@ class x {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await x.createError(t, "Request failed.");
+      throw await b.createError(t, "Request failed.");
     return t.json();
   }
   async postBody(e, r) {
@@ -170,7 +170,7 @@ class x {
       body: JSON.stringify(r)
     });
     if (!t.ok)
-      throw await x.createError(t, "Request failed.");
+      throw await b.createError(t, "Request failed.");
     return t.json();
   }
   static async createError(e, r) {
@@ -192,11 +192,11 @@ function T(a) {
   const r = e.toString();
   return r ? `?${r}` : "";
 }
-function E(a) {
+function $(a) {
   const e = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
   return `${a.getFullYear()}-${e}-${r}`;
 }
-function D(a) {
+function F(a) {
   if (!a)
     return "";
   const e = new Date(a);
@@ -208,17 +208,17 @@ function D(a) {
     minute: "2-digit"
   }).format(e);
 }
-function U(a) {
+function j(a) {
   return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function F(a) {
+function N(a) {
   const e = document.createElement("textarea");
   return e.innerHTML = String(a ?? ""), e.value;
 }
-function N(a) {
+function q(a) {
   return a.enumValue || a.value || "";
 }
-function q(a, e) {
+function W(a, e) {
   const t = [], n = Math.max(e || 1, 1);
   let m;
   a <= Math.floor(5 / 2) ? m = 1 : a + Math.floor(5 / 2) >= n ? m = Math.max(n - 5 + 1, 1) : m = a - Math.floor(5 / 2);
@@ -228,14 +228,20 @@ function q(a, e) {
   }
   return t.length && Number(t[t.length - 1]) < n && t.push(`...${n}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
 }
-async function W(a, e) {
+const G = `
+  .ekmOrderCustomData { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; padding: 14px 16px; border: 1px solid #e1e3e8; border-radius: 12px; }
+  .ekmOrderCustomData__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 7px 12px; border: 1px solid #e1e3e8; border-radius: 8px; background: #f6f7f9; line-height: 1.5; break-inside: avoid; }
+  .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
+  .ekmOrderCustomData__value { margin: 0; min-width: 0; color: #252830; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
+`;
+async function H(a, e) {
   const r = document.createElement("iframe");
   r.title = e, r.setAttribute("aria-hidden", "true"), r.style.cssText = "position:fixed;left:-10000px;top:0;width:800px;height:600px;border:0;";
   try {
     const t = new Promise((m, p) => {
       r.onload = () => m(), r.onerror = () => p(new Error("Unable to load the print document."));
     });
-    r.srcdoc = j(a, e), document.body.append(r), await t;
+    r.srcdoc = D(a, e), document.body.append(r), await t;
     const n = r.contentWindow;
     if (!n) throw new Error("Print window unavailable.");
     await n.document.fonts.ready, n.addEventListener("afterprint", () => r.remove(), { once: !0 }), n.focus(), n.print();
@@ -243,9 +249,10 @@ async function W(a, e) {
     throw r.remove(), t;
   }
 }
-function j(a, e) {
+function D(a, e) {
   const r = document.createElement("template");
-  return r.innerHTML = a, r.content.querySelectorAll("button, input, select, .ekmOrderGiftcards__actions").forEach((t) => t.remove()), r.content.querySelectorAll("details").forEach((t) => t.setAttribute("open", "")), r.content.querySelectorAll("summary").forEach((t) => t.remove()), r.content.querySelectorAll("a").forEach((t) => t.replaceWith(...Array.from(t.childNodes))), `<!doctype html><html><head><meta charset="utf-8"><title>${U(e)}</title><style>
+  return r.innerHTML = a, r.content.querySelectorAll("button, input, select, .ekmOrderGiftcards__actions").forEach((t) => t.remove()), r.content.querySelectorAll("details").forEach((t) => t.setAttribute("open", "")), r.content.querySelectorAll("summary").forEach((t) => t.remove()), r.content.querySelectorAll("a").forEach((t) => t.replaceWith(...Array.from(t.childNodes))), `<!doctype html><html><head><meta charset="utf-8"><title>${j(e)}</title><style>
+    ${G}
     @page { size: auto; margin: 14mm; }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: auto; overflow: visible; }
@@ -275,11 +282,12 @@ function j(a, e) {
     dd { margin: 0 0 4px; white-space: pre-wrap; }
   </style></head><body>${r.innerHTML}</body></html>`;
 }
-function H(a, e) {
+function V(a, e) {
   const r = URL.createObjectURL(a), t = document.createElement("a");
   t.href = r, t.download = e, t.addEventListener("click", (n) => n.stopPropagation()), document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
 }
-const V = `
+const Y = `
+  ${G}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -428,18 +436,18 @@ function B(a, e) {
     ...r && /^[A-Z]{3}$/.test(r) ? { style: "currency", currency: r, currencyDisplay: "code" } : {}
   }).format(a);
 }
-function Y(a, e, r, t = {}) {
+function Q(a, e, r, t = {}) {
   const n = a.getBoundingClientRect(), m = window.devicePixelRatio || 1, p = n.width || 300, u = n.height || 320;
   a.width = p * m, a.height = u * m;
   const o = a.getContext("2d");
   if (!o) return;
   o.scale(m, m), o.font = "12px sans-serif";
   const w = e.points || [], _ = w.map((s) => Number(s.y || 0)), O = Math.min(0, ..._), I = Math.max(1, ..._), S = t.integer ? Math.ceil(I / 4) * 4 : I, C = (s) => t.currency ? B(s, t.currency) : s.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), z = Array.from({ length: 5 }, (s, l) => S - (S - O) * l / 4), h = Math.max(48, ...z.map((s) => o.measureText(C(s)).width + 12)), y = p - 16, A = 20, v = u - 52, c = w.map((s, l) => {
-    var b;
+    var x;
     return {
       x: w.length > 1 ? h + (y - h) * l / (w.length - 1) : (h + y) / 2,
       y: v - (_[l] - O) / (S - O) * (v - A),
-      date: s.x || ((b = e.labels) == null ? void 0 : b[l]) || "",
+      date: s.x || ((x = e.labels) == null ? void 0 : x[l]) || "",
       value: _[l]
     };
   }), L = (s = -1) => {
@@ -447,7 +455,7 @@ function Y(a, e, r, t = {}) {
       const f = A + (v - A) * d / 4;
       o.fillStyle = "#555", o.fillText(C(i), h - 8, f + 4), o.strokeStyle = "#e5e5e5", o.beginPath(), o.moveTo(h, f), o.lineTo(y, f), o.stroke();
     });
-    const l = Math.max(90, ...c.map((i) => o.measureText(i.date).width + 16)), b = Math.max(2, Math.floor((y - h) / l)), R = new Set(Array.from({ length: Math.min(b, c.length) }, (i, d) => Math.round(d * (c.length - 1) / Math.max(1, Math.min(b, c.length) - 1))));
+    const l = Math.max(90, ...c.map((i) => o.measureText(i.date).width + 16)), x = Math.max(2, Math.floor((y - h) / l)), R = new Set(Array.from({ length: Math.min(x, c.length) }, (i, d) => Math.round(d * (c.length - 1) / Math.max(1, Math.min(x, c.length) - 1))));
     o.fillStyle = "#555", c.forEach((i, d) => {
       R.has(d) && (o.textAlign = c.length === 1 ? "center" : d === 0 ? "left" : d === c.length - 1 ? "right" : "center", o.fillText(i.date, i.x, v + 24));
     }), o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((i, d) => {
@@ -458,14 +466,14 @@ function Y(a, e, r, t = {}) {
     const g = c[s];
     if (g) {
       const i = [g.date, C(g.value)], d = Math.max(...i.map((M) => o.measureText(M).width)) + 20, f = Math.max(0, Math.min(p - d, g.x - d / 2)), k = g.y > 70 ? g.y - 62 : g.y + 12;
-      o.fillStyle = "#222", o.fillRect(f, k, d, 48), o.fillStyle = "#fff", o.textAlign = "left", i.forEach((M, G) => o.fillText(M, f + 10, k + 19 + G * 18));
+      o.fillStyle = "#222", o.fillRect(f, k, d, 48), o.fillStyle = "#fff", o.textAlign = "left", i.forEach((M, P) => o.fillText(M, f + 10, k + 19 + P * 18));
     }
   };
   a.onmousemove = (s) => {
-    const l = a.getBoundingClientRect(), b = (s.clientX - l.left) * p / l.width, R = (s.clientY - l.top) * u / l.height;
+    const l = a.getBoundingClientRect(), x = (s.clientX - l.left) * p / l.width, R = (s.clientY - l.top) * u / l.height;
     let g = -1, i = 16;
     c.forEach((d, f) => {
-      const k = Math.hypot(d.x - b, d.y - R);
+      const k = Math.hypot(d.x - x, d.y - R);
       k < i && (g = f, i = k);
     }), a.style.cursor = g >= 0 ? "pointer" : "default", L(g);
   }, a.onmouseleave = () => {
@@ -473,16 +481,16 @@ function Y(a, e, r, t = {}) {
   }, L();
 }
 export {
-  x as E,
-  V as a,
-  D as b,
-  W as c,
-  F as d,
-  U as e,
+  b as E,
+  Y as a,
+  F as b,
+  H as c,
+  N as d,
+  j as e,
   B as f,
-  N as g,
-  H as h,
+  q as g,
+  V as h,
   J as m,
-  q as p,
-  Y as r
+  W as p,
+  Q as r
 };
