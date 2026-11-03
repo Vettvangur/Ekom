@@ -14,6 +14,13 @@
 * **mailchimp:** expose cached global audience tags through `IMailchimpService`
 * **mailchimp:** automatically use consent-aware, first-touch `mc_cid` and `mc_tc` order attribution
 
+## [1.5.3](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.5.2...Ekom.Mailchimp-v1.5.3) (2026-11-03)
+
+
+### Bug Fixes
+
+* **mailchimp:** rate limit subscribe and unsubscribe requests ([#1073](https://github.com/Vettvangur/Ekom/issues/1073)) ([3bee6be](https://github.com/Vettvangur/Ekom/commit/3bee6be1a0bdd6bb2246ece00d51276edcf1a62a))
+
 ## [1.5.2](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.5.1...Ekom.Mailchimp-v1.5.2) (2026-10-28)
 
 
