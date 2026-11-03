@@ -8,6 +8,8 @@
 
 ### Features
 
+* **mailchimp:** add independent configurable subscribe/unsubscribe admission limits (60 requests per minute by default) per configured store and application instance; reject excess or queue-full subscription requests explicitly without per-request log noise. Unknown store aliases share a bounded fallback partition.
+
 * **mailchimp:** add queued raw and template Mailchimp Transactional messages with attachments and inline images
 * **mailchimp:** expose cached global audience tags through `IMailchimpService`
 * **mailchimp:** automatically use consent-aware, first-touch `mc_cid` and `mc_tc` order attribution

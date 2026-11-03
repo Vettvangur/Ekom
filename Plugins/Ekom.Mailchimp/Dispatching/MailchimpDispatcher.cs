@@ -22,6 +22,7 @@ internal sealed class MailchimpDispatcher : BackgroundService, IMailchimpDispatc
     private readonly ILogger<MailchimpDispatcher> _logger;
     private readonly MailchimpDispatcherOptions _options;
     private readonly Channel<MailchimpWorkItem> _queue;
+    private readonly MailchimpSubscriptionRateLimiter _subscriptionRateLimiter;
 
     public MailchimpDispatcher(
         IOptions<MailchimpOptions> options,
@@ -30,6 +31,7 @@ internal sealed class MailchimpDispatcher : BackgroundService, IMailchimpDispatc
         ILogger<MailchimpDispatcher> logger)
     {
         _options = options.Value.Dispatching;
+        _subscriptionRateLimiter = new MailchimpSubscriptionRateLimiter(options.Value);
         _audienceClient = audienceClient;
         _ecommerceClient = ecommerceClient;
         _logger = logger;
@@ -45,8 +47,12 @@ internal sealed class MailchimpDispatcher : BackgroundService, IMailchimpDispatc
     {
         ArgumentNullException.ThrowIfNull(item);
         ct.ThrowIfCancellationRequested();
+        _subscriptionRateLimiter.Acquire(item);
         if (!_queue.Writer.TryWrite(item))
         {
+            // Never silently drop an opt-out or report a rejected subscription as accepted.
+            if (MailchimpSubscriptionRateLimiter.GetAction(item) is { } action)
+                throw new MailchimpSubscriptionQueueFullException(item.StoreAlias, action);
             _logger.LogWarning(
                 "Mailchimp queue is full; dropping {WorkType} for {Identifier} in store {StoreAlias}",
                 item.GetType().Name,
@@ -55,6 +61,12 @@ internal sealed class MailchimpDispatcher : BackgroundService, IMailchimpDispatc
         }
 
         return ValueTask.CompletedTask;
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        _subscriptionRateLimiter.Dispose();
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)

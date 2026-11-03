@@ -58,6 +58,49 @@ public sealed class MailchimpDispatcherTests
         Assert.DoesNotContain(subscriberHash, error, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task AdmissionRejectsExcessSubscriptionsWithoutLoggingErrors()
+    {
+        var options = new MailchimpOptions();
+        options.Subscriptions.SubscribeRateLimit.PermitLimit = 1;
+        var logger = new RecordingLogger<MailchimpDispatcher>();
+        using var dispatcher = new MailchimpDispatcher(Options.Create(options),
+            new FailingAudienceClient(() => { }), new NoopEcommerceClient(), logger);
+        var item = new SubscribeWorkItem(new MailchimpSubscribeRequest
+        {
+            StoreAlias = "store",
+            Email = "person@example.com",
+            Status = MailchimpSubscriptionStatus.Pending,
+        });
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => dispatcher.EnqueueAsync(item, cancelled.Token).AsTask());
+        await dispatcher.EnqueueAsync(item, CancellationToken.None);
+        await Assert.ThrowsAsync<MailchimpRateLimitExceededException>(() => dispatcher.EnqueueAsync(item, CancellationToken.None).AsTask());
+        await dispatcher.EnqueueAsync(new UnsubscribeWorkItem(new MailchimpUnsubscribeRequest
+        {
+            StoreAlias = "store",
+            Email = "person@example.com",
+        }), CancellationToken.None);
+        Assert.Empty(logger.Errors);
+    }
+
+    [Fact]
+    public async Task FullQueueDoesNotSilentlyLoseUnsubscribe()
+    {
+        var options = new MailchimpOptions();
+        options.Dispatching.MaxQueueSize = 1;
+        using var dispatcher = new MailchimpDispatcher(Options.Create(options),
+            new FailingAudienceClient(() => { }), new NoopEcommerceClient(), new RecordingLogger<MailchimpDispatcher>());
+        var item = new UnsubscribeWorkItem(new MailchimpUnsubscribeRequest
+        {
+            StoreAlias = "store",
+            Email = "person@example.com",
+        });
+        await dispatcher.EnqueueAsync(item, CancellationToken.None);
+        await Assert.ThrowsAsync<MailchimpSubscriptionQueueFullException>(() => dispatcher.EnqueueAsync(item, CancellationToken.None).AsTask());
+    }
+
     private sealed class FailingAudienceClient : IMailchimpAudienceClient
     {
         private readonly Action _subscribe;

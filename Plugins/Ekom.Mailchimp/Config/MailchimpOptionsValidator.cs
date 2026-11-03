@@ -29,6 +29,9 @@ internal sealed class MailchimpOptionsValidator : IValidateOptions<MailchimpOpti
             }
         }
 
+        ValidateRateLimit(options.Subscriptions.SubscribeRateLimit, "SubscribeRateLimit", failures);
+        ValidateRateLimit(options.Subscriptions.UnsubscribeRateLimit, "UnsubscribeRateLimit", failures);
+
         if (options.Dispatching.MaxQueueSize <= 0)
         {
             failures.Add("Ekom:Mailchimp:Dispatching:MaxQueueSize must be greater than zero.");
@@ -84,5 +87,11 @@ internal sealed class MailchimpOptionsValidator : IValidateOptions<MailchimpOpti
         return failures.Count == 0
             ? ValidateOptionsResult.Success
             : ValidateOptionsResult.Fail(failures);
+    }
+
+    private static void ValidateRateLimit(MailchimpActionRateLimitOptions? limit, string name, List<string> failures)
+    {
+        if (limit == null || limit.PermitLimit <= 0 || limit.WindowSeconds <= 0)
+            failures.Add($"Ekom:Mailchimp:Subscriptions:{name} requires positive PermitLimit and WindowSeconds values.");
     }
 }

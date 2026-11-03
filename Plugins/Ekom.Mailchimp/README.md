@@ -113,7 +113,7 @@ Dispatcher settings apply to the shared bounded in-memory work queue:
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `Dispatching:MaxQueueSize` | `1000` | Maximum queued work items. New work is dropped with a warning when the queue is full. |
+| `Dispatching:MaxQueueSize` | `1000` | Maximum queued work items. Subscribe/unsubscribe throw when full; other work is dropped with a warning. |
 | `Dispatching:MaxConcurrency` | `3` | Maximum number of work items processed concurrently. |
 | `Dispatching:MaxAttempts` | `4` | Maximum attempts for transient HTTP and network failures, including the initial request. |
 | `Dispatching:InitialRetryDelaySeconds` | `2` | Initial retry delay; subsequent retries use exponential backoff. |
@@ -176,6 +176,26 @@ IReadOnlyList<MailchimpTag> tags = await _mailchimp.GetTagsAsync(cancellationTok
 ```
 
 Successful responses are cached in memory for five minutes. Store-specific overrides are not used for this operation. If Mailchimp or subscriptions are disabled, the method returns an empty list. Mailchimp API, network, cancellation, configuration, and invalid-response errors are propagated to the caller.
+
+### Subscription rate limits
+
+Subscribe and unsubscribe each default to **60 requests per 60-second fixed window**, enforced before queue admission. Configure them independently under `Ekom:Mailchimp:Subscriptions`:
+
+```json
+"Subscriptions": {
+  "Enabled": true,
+  "SubscribeRateLimit": { "Enabled": true, "PermitLimit": 60, "WindowSeconds": 60 },
+  "UnsubscribeRateLimit": { "Enabled": true, "PermitLimit": 60, "WindowSeconds": 60 }
+}
+```
+
+Each explicitly configured `Stores` alias has its own budgets (case-insensitive). Aliases using global fallback configuration share one fallback budget, so arbitrary aliases cannot bypass the limit or create unlimited limiter state. Subscribe traffic cannot consume the unsubscribe budget. Set an individual limiter's `Enabled` to `false` to disable it; permit and window values must remain positive.
+
+These limits are per application instance, shared across requests and service scopes. They reset on restart; multiple instances have independent budgets. Fixed windows allow bursts around a window boundary. Limits count work items admitted for queueing, not individual HTTP calls or retries. A queue-full attempt also consumes a permit. Purchase tracking, tag retrieval, and transactional messages are unaffected. All Marketing work still shares the existing bounded queue.
+
+An excess request throws `Ekom.Mailchimp.Exceptions.MailchimpRateLimitExceededException` with `StoreAlias`, `Action`, and `RetryAfter`. A full or closed queue throws `MailchimpSubscriptionQueueFullException` for subscribe/unsubscribe. Neither rejection is queued or logged by the plugin. Handle these expected exceptions in the calling website rather than logging every rejection as an error. A dedicated subscription HTTP endpoint can return `429` with a `Retry-After` header rounded up from `RetryAfter.TotalSeconds` (minimum one second). Handle queue saturation as temporary unavailability. For checkout-triggered marketing, catch these exceptions without failing checkout and report the marketing result separately.
+
+Do not report a rejected unsubscribe as successful: offer a retry or durably retain the opt-out for later processing. Avoid immediate retry loops. Successful queue admission is still not confirmation from Mailchimp, and the in-memory queue is not durable. Add endpoint/IP protections separately to stop abusive traffic before it reaches application code.
 
 ### Subscribe a contact
 
@@ -404,4 +424,4 @@ Automatic tracking requires `Enabled`, `Purchases:Enabled`, and `Purchases:Track
 
 ### Queueing and failures
 
-Marketing service calls perform immediate guard and configuration checks before queueing; purchase payloads are also validated before queueing. They do not wait for Mailchimp to process the operation, so remote API failures occur asynchronously. The dispatcher uses a bounded in-memory queue and retries transient HTTP and network failures. When the queue is full, new work is dropped with a warning rather than blocking checkout. Remote failures are logged, including details from `MailchimpApiException`. Work still queued during process shutdown is not durable; call the relevant service method again to replay idempotent Marketing operations safely. Transactional messages use the stricter retry behavior described above and should not be blindly replayed after an ambiguous outcome.
+Marketing service calls perform immediate guard and configuration checks before queueing; purchase payloads are also validated before queueing. They do not wait for Mailchimp to process the operation, so remote API failures occur asynchronously. The dispatcher uses a bounded in-memory queue and retries transient HTTP and network failures. When the queue is full, subscribe/unsubscribe throw `MailchimpSubscriptionQueueFullException`; other Marketing work is dropped with a warning. Subscription rate limits can also reject work before queueing, as described above. Remote failures are logged, including details from `MailchimpApiException`. Work still queued during process shutdown is not durable; call the relevant service method again to replay idempotent Marketing operations safely. Transactional messages use the stricter retry behavior described above and should not be blindly replayed after an ambiguous outcome.
