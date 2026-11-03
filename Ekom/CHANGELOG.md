@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+* **manager:** add space above order custom-data badges to separate them from order action buttons.
+
 * **checkout:** consolidate payment reservation release into one activity entry updated to its confirmed outcome; keep request and per-reservation details in diagnostic logs, suppress repeated no-op release entries, and retain audit-before-release safeguards and failure alerts.
 
 * **manager:** hide SKU parentheses on order lines when the product or variant SKU is missing, empty, or whitespace-only.
