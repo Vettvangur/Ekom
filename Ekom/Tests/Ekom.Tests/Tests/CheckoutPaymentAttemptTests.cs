@@ -84,7 +84,7 @@ public sealed class CheckoutPaymentAttemptTests
         using var f = new Fixture();
         var attempt = await f.SubmittedAsync();
         var snapshot = attempt.SubmittedOrderInfo;
-        var result = await f.Service.ReleaseAsync(f.OrderId, attempt.AttemptId, "Customer cancel");
+        var result = await f.Service.ReleaseAsync(f.OrderId, attempt.AttemptId, "payment-cancel");
         Assert.NotNull(result);
         Assert.Equal(f.OrderId, result.UniqueId);
         Assert.Equal("Incomplete", result.OrderStatusCol);
@@ -97,9 +97,11 @@ public sealed class CheckoutPaymentAttemptTests
         Assert.Equal(CheckoutPaymentAttemptState.Released, stored.State);
         Assert.Equal(snapshot, stored.SubmittedOrderInfo);
         var logs = await db.GetTable<OrderActivityLog>().ToListAsync();
-        Assert.Contains(logs, x => x.Log.Contains("release attempted", StringComparison.Ordinal) && x.Log.Contains("Customer cancel", StringComparison.Ordinal));
-        Assert.Contains(logs, x => x.Log.Contains("quantity=3", StringComparison.Ordinal) && x.Log.Contains("restored=3", StringComparison.Ordinal) && x.Log.Contains("outcome=Released", StringComparison.Ordinal));
-        Assert.Contains(logs, x => x.Log.Contains("outcome=AlreadyReleased", StringComparison.Ordinal));
+        var releaseLog = Assert.Single(logs);
+        Assert.Equal(OrderActivityLogType.Success, releaseLog.LogType);
+        Assert.Contains("Payment reservations released.", releaseLog.Log, StringComparison.Ordinal);
+        Assert.Contains(attempt.AttemptId.ToString(), releaseLog.Log, StringComparison.Ordinal);
+        Assert.Contains("Payment cancelled.", releaseLog.Log, StringComparison.Ordinal);
         Assert.DoesNotContain(logs, x => x.Log.Contains("secret-code", StringComparison.Ordinal));
     }
 
@@ -656,6 +658,47 @@ public sealed class CheckoutPaymentAttemptTests
         await db.GetTable<CheckoutPaymentAttemptData>().Set(x => x.State, CheckoutPaymentAttemptState.Released).UpdateAsync();
         await db.GetTable<OrderData>().Set(x => x.OrderStatusCol, "Closed").UpdateAsync();
         await Assert.ThrowsAnyAsync<EkomHttpException>(() => f.Service.BeginReservationUpdateAsync(order));
+    }
+
+    [Fact]
+    public async Task ReleaseFailureUpdatesOneActivityEntryWithAnAlert()
+    {
+        using var f = new Fixture();
+        var attempt = await f.SubmittedAsync(claimed: true);
+        var adapter = new Mock<ICheckoutGiftcardReservations>();
+        adapter.Setup(x => x.ReleaseAsync(f.OrderId, attempt.AttemptId,
+                It.IsAny<IReadOnlyList<Giftcard>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("private-provider-detail"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => f.NewService(adapter.Object)
+            .ReleaseAsync(f.OrderId, attempt.AttemptId, "payment-cancel"));
+
+        using var db = f.Database.Factory.GetDatabase();
+        var entry = Assert.Single(await db.GetTable<OrderActivityLog>().ToListAsync());
+        Assert.Equal(OrderActivityLogType.Alert, entry.LogType);
+        Assert.Contains("could not be confirmed", entry.Log, StringComparison.Ordinal);
+        Assert.Contains(attempt.AttemptId.ToString(), entry.Log, StringComparison.Ordinal);
+        Assert.Contains("FailureType=InvalidOperationException", entry.Log, StringComparison.Ordinal);
+        Assert.DoesNotContain("private-provider-detail", entry.Log, StringComparison.Ordinal);
+        Assert.DoesNotContain("secret-code", entry.Log, StringComparison.Ordinal);
+        Assert.Equal(CheckoutPaymentAttemptState.ReleasePending, (await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync()).State);
+    }
+
+    [Fact]
+    public async Task ReleaseCannotCommitSuccessWithoutUpdatingItsActivityEntry()
+    {
+        using var f = new Fixture();
+        var attempt = await f.SubmittedAsync();
+        using var db = f.Database.Factory.GetDatabase();
+        db.Execute("CREATE TRIGGER FailReleaseOutcome BEFORE UPDATE ON EkomOrdersActivityLog BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END");
+
+        await Assert.ThrowsAnyAsync<Exception>(() => f.Service.ReleaseAsync(f.OrderId, attempt.AttemptId, "payment-cancel"));
+
+        var entry = Assert.Single(await db.GetTable<OrderActivityLog>().ToListAsync());
+        Assert.Contains("completion not yet confirmed", entry.Log, StringComparison.Ordinal);
+        Assert.Equal(OrderActivityLogType.Info, entry.LogType);
+        Assert.Equal(CheckoutPaymentAttemptState.ReleasePending, (await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync()).State);
+        Assert.Equal("Pending", (await f.ReadAsync()).OrderStatusCol);
     }
 
     [Fact]
