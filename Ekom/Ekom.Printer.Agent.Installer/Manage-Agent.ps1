@@ -192,7 +192,18 @@ try {
     if ($previous) { Remove-Item -LiteralPath $previous.Directory -Recurse -Force -ErrorAction SilentlyContinue }
     Write-Output "Installed Ekom Printer Agent $Version. Station configuration and recovery records were preserved."
 } catch {
-    Write-Error $_ -ErrorAction Continue
+    # Preserve failures that occur before the protected ProgramData transcript exists.
+    # Use a fresh unpredictable file in the invoking administrator's temp directory.
+    $bootstrapLog = Join-Path ([IO.Path]::GetTempPath()) ('EkomPrinterAgent-install-' + [Guid]::NewGuid().ToString('N') + '.log')
+    $failureText = $_ | Format-List * -Force | Out-String
+    try {
+        $stream = [IO.File]::Open($bootstrapLog, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+        try {
+            $bytes = [Text.Encoding]::UTF8.GetBytes($failureText)
+            $stream.Write($bytes, 0, $bytes.Length)
+        } finally { $stream.Dispose() }
+    } catch { Write-Warning "Could not write bootstrap diagnostics: $_" }
+    Write-Error $failureText -ErrorAction Continue
     exit 1
 } finally {
     if ($logging) { Stop-Transcript | Out-Null }

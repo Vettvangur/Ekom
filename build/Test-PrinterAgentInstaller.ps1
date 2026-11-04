@@ -11,6 +11,7 @@ if (Test-Path $data) { throw 'Use a clean test machine without existing station 
 $installer = (Resolve-Path $InstallerPath).Path
 $installRoot = Join-Path $env:ProgramFiles 'Ekom/Printer Agent'
 $log = Join-Path $data 'installer.log'
+$started = Get-Date
 $installed = $false
 $stdout = Join-Path ([IO.Path]::GetTempPath()) ([Guid]::NewGuid().ToString('N') + '.out.log')
 $stderr = Join-Path ([IO.Path]::GetTempPath()) ([Guid]::NewGuid().ToString('N') + '.err.log')
@@ -55,6 +56,7 @@ try {
     if ((Get-Content $probe) -ne 'Keep this through repair and uninstall.') { throw 'Repair altered retained data.' }
     Write-Output 'Fresh install, automatic startup, protected storage, setup connection and reinstall passed.' 
 } catch {
+    Get-ChildItem ([IO.Path]::GetTempPath()) -Filter 'EkomPrinterAgent-install-*.log' | Where-Object LastWriteTime -ge $started | ForEach-Object { Get-Content -LiteralPath $_.FullName | Write-Host }
     foreach ($diagnostic in @($log, $stdout, $stderr)) {
         if (Test-Path $diagnostic) { Get-Content -LiteralPath $diagnostic | Write-Host }
     }
