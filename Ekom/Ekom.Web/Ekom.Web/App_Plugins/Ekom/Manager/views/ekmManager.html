@@ -6,6 +6,7 @@
       <uui-tab-group>
         <uui-tab label="Orders" ng-click="navigateTo('orders')" ng-attr-active="{{ location === 'orders' ? '' : undefined }}">Orders</uui-tab>
         <uui-tab label="Analytics" ng-click="navigateTo('analytics')" ng-attr-active="{{ location === 'analytics' ? '' : undefined }}">Analytics</uui-tab>
+        <uui-tab ng-if="printingEnabled" label="Printing" ng-click="navigateTo('printing')" ng-attr-active="{{ location === 'printing' ? '' : undefined }}">Printing</uui-tab>
       </uui-tab-group>
     </div>
   </div>
@@ -155,6 +156,9 @@
         </div>
       </div>
 
+      <div ng-if="location == 'printing' && printingEnabled">
+        <ekom-printing-section-view></ekom-printing-section-view>
+      </div>
       <div ng-if="location == 'analytics'">
         <div class="umb-sub-header">
           <div class="ekmManager__filters">

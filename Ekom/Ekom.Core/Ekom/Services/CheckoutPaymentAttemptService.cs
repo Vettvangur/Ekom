@@ -20,10 +20,12 @@ internal sealed partial class CheckoutPaymentAttemptService
     private readonly ILogger<CheckoutPaymentAttemptService> _logger;
     private readonly IMemoryCache _cache;
     private readonly ICheckoutGiftcardReservations? _giftcards;
+    private readonly IOrderStatusPersistenceHandler[] _statusPersistenceHandlers;
 
     public CheckoutPaymentAttemptService(DatabaseFactory factory, IStockReservationService stock,
         ActivityLogRepository activity, ILogger<CheckoutPaymentAttemptService> logger,
-        IMemoryCache cache, ICheckoutGiftcardReservations? giftcards = null)
+        IMemoryCache cache, ICheckoutGiftcardReservations? giftcards = null,
+        IEnumerable<IOrderStatusPersistenceHandler>? statusPersistenceHandlers = null)
     {
         _factory = factory;
         _stock = stock;
@@ -31,6 +33,7 @@ internal sealed partial class CheckoutPaymentAttemptService
         _logger = logger;
         _cache = cache;
         _giftcards = giftcards;
+        _statusPersistenceHandlers = statusPersistenceHandlers?.ToArray() ?? Array.Empty<IOrderStatusPersistenceHandler>();
     }
 
     public async Task<CheckoutPaymentOperationScope> BeginCheckoutAsync(IOrderInfo order, CancellationToken ct = default)
@@ -873,6 +876,10 @@ internal sealed partial class CheckoutPaymentAttemptService
 
     private async Task SaveOrderAsync(DbContext db, CheckoutPaymentOperationScope scope, OrderData data, CancellationToken ct)
     {
+        await using var transaction = _statusPersistenceHandlers.Length != 0 && db.Transaction == null
+            ? await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false) : null;
+        var previous = _statusPersistenceHandlers.Length == 0 ? null
+            : await ReadOrderAsync(db, data.UniqueId, ct).ConfigureAwait(false);
         data.UpdateDate = DateTime.Now;
         var updated = await db.GetTable<OrderData>()
             .Where(x => x.UniqueId == data.UniqueId && x.PaidDate == null &&
@@ -885,6 +892,12 @@ internal sealed partial class CheckoutPaymentAttemptService
             .Set(x => x.OrderInfo, data.OrderInfo).Set(x => x.OrderStatusCol, data.OrderStatusCol)
             .Set(x => x.UpdateDate, data.UpdateDate).UpdateAsync(ct).ConfigureAwait(false);
         if (updated != 1) throw Conflict("Payment operation lost ownership or the order became paid.");
+        if (previous != null && !string.Equals(previous.OrderStatusCol, data.OrderStatusCol, StringComparison.Ordinal))
+        {
+            foreach (var handler in _statusPersistenceHandlers)
+                await handler.PersistAsync(db, data, previous.OrderStatusCol, ct).ConfigureAwait(false);
+        }
+        if (transaction != null) await transaction.CommitAsync(ct).ConfigureAwait(false);
         ClearCache(data.UniqueId);
     }
 

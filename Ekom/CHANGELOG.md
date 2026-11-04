@@ -21,6 +21,18 @@
 
 ### Features
 
+* **printer:** publish installer candidates from printer-agent version tags as draft GitHub pre-releases after Windows checks, with optional Authenticode signing, SHA-256 checksums, build provenance and protected published assets.
+
+* **printer:** package the Windows agent with an NSIS installer EXE, replacing WiX. Include staged upgrades with failure recovery, a setup shortcut, silent deployment, retained station data, and Windows reinstall/uninstall smoke checks.
+
+* **printer:** add a Windows agent and administrator setup prototype with encrypted station configuration, service-account printer selection/test printing, restricted HTML rendering, and journal-backed GDI spool submission. Add installer build/acceptance scripts; Windows installation and hardware validation remain pending.
+
+* **printer:** add an optional Printing tab alongside Manager Analytics for Umbraco 13/17/18, with store-scoped jobs, protected HTML previews, station health, and authorized, audited retry/cancel/reprint actions. The printing package owns the audit migration and retention.
+
+* **orders:** add an optional transactional status-persistence hook; Ekom.Printer uses package-owned capture records to recover eligible picking slips after restarts, including payment release/reset transitions.
+
+* **printer:** add the optional Ekom.Printer foundation with configurable HTML picking slips, package-owned migrations, authenticated station delivery, heartbeat health and an agent submission journal. Windows printing remains under development.
+
 * **manager:** display order custom data as neutral, wrapping key/value badges below order actions and above billing, including printed orders, in Umbraco 13, 17, and 18.
 
 * **order:** persist case-insensitive order custom data, accept bracketed checkout form fields and nested JSON in customer/shipping/payment updates, and add C# merge/removal operations.
