@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Document station token and TokenSha256 generation on macOS and Windows, including where each value is configured.
+
 - Capture eligible order statuses in the order transaction and recover pending jobs after restarts.
 - Add package-owned version 3 capture migration and retry failed custom snapshot creation in the background.
 

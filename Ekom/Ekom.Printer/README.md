@@ -68,7 +68,8 @@ disabled installations do not create printer tables or register a status capture
 Each station requires the SHA-256 hash (hex) of a cryptographically random bearer
 token of at least 32 characters. Store only the hash in server configuration and
 protect the raw token on the agent computer. Never commit production credentials.
-The placeholder above intentionally fails validation until replaced.
+The placeholder above intentionally fails validation until replaced. Follow
+[Create a station token and TokenSha256](#create-a-station-token-and-tokensha256) below.
 
 `OncePerOrder` creates one automatic job per order/store/station across selected
 statuses. `OncePerStatus` creates one per selected status. Repeated notifications
@@ -76,6 +77,83 @@ are deduplicated by the job primary key. Changing the policy changes that key an
 can allow another job on a later status transition. Enabling the feature does not
 backfill old orders. Saves with unchanged status are ignored. New orders initially
 inserted in a configured status are eligible as well.
+
+## Create a station token and TokenSha256
+
+Generate one random token per station, then hash the exact token text with SHA-256.
+You can generate it on your Mac even though the agent runs on Windows.
+
+### macOS Terminal
+
+Open Terminal and run:
+
+```bash
+token="$(openssl rand -base64 32)"
+hash="$(printf '%s' "$token" | shasum -a 256 | awk '{print $1}')"
+
+printf 'Agent station credential: %s\n' "$token"
+printf 'Website TokenSha256:     %s\n' "$hash"
+```
+
+Use `printf '%s'` as shown: it hashes the token without adding a newline.
+
+### Windows PowerShell
+
+Works with Windows PowerShell 5.1 and PowerShell 7:
+
+```powershell
+$bytes = New-Object byte[] 32
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$rng.Dispose()
+
+$token = [Convert]::ToBase64String($bytes)
+$sha = [Security.Cryptography.SHA256]::Create()
+$hash = $sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($token))
+$sha.Dispose()
+$tokenSha256 = ([BitConverter]::ToString($hash)).Replace('-', '').ToLowerInvariant()
+
+Write-Host "Agent station credential: $token"
+Write-Host "Website TokenSha256:     $tokenSha256"
+```
+
+### Where to put each value
+
+| Output | Destination |
+| --- | --- |
+| Agent station credential | Windows **Ekom Printer Agent Setup > Station credential**. Use the original token, not its hash. |
+| Website TokenSha256 | The matching station's `TokenSha256` under `Ekom:Printing:Stations` in website configuration. This is a 64-character hexadecimal hash. |
+
+For example, replace the hash placeholder in your existing station configuration:
+
+```json
+"Stations": [
+  {
+    "Alias": "main-warehouse",
+    "TokenSha256": "PASTE_THE_WEBSITE_HASH_HERE",
+    "StoreAliases": [ "main" ],
+    "PickingSlip": {
+      "Enabled": true,
+      "TriggerStatuses": [ "ReadyForDispatch" ],
+      "PrintPolicy": "OncePerOrder",
+      "Copies": 1
+    }
+  }
+]
+```
+
+Use the actual store and status aliases from your website. Keep the other printing
+settings from the full configuration example above, including `Enabled: true`.
+Restart the website after changing its configuration. On the Windows PC, enter the
+website URL and matching station alias, save the original token with automatic
+printing paused, and run **Test connection**, followed by **Test print**.
+
+These commands print the secret token in your terminal. Save it in a password manager
+and transfer it securely to the warehouse administrator; do not paste it into chat,
+logs, screenshots, source control or support tickets. The hash cannot recover the
+original token. Running the command again creates a different token: to replace an
+existing credential, update both the website hash and the agent credential, restart
+the website, and test the connection again.
 
 ## HTML customization contract
 

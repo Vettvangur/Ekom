@@ -50,6 +50,7 @@ is unsigned and intended for acceptance testing. Keep bundled third-party licens
 2. Open **Ekom Printer Agent Setup** from the Start menu and allow administrator elevation.
 3. Enter the HTTPS website URL, the station alias from `Ekom:Printing:Stations`, and the raw random station credential.
    The website stores the SHA-256 hash; the agent needs the original credential, not that hash.
+   Generate both values using the [macOS or Windows instructions](../Ekom.Printer/README.md#create-a-station-token-and-tokensha256).
 4. Select a printer from the service's list. Leave **Enable automatic printing** unchecked and save.
 5. Click **Test connection**. This checks station authentication/protocol and updates the server heartbeat.
 6. Click **Test print** and physically confirm the page. The service submits it using its own Windows identity.
