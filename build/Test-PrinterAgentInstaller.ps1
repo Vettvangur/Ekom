@@ -52,6 +52,10 @@ try {
     try { $service.WaitForStatus('Running', [TimeSpan]::FromSeconds(30)) } finally { $service.Dispose() }
     if ((Get-Content $probe) -ne 'Keep this through repair and uninstall.') { throw 'Repair altered retained data.' }
     Write-Output 'Fresh install, automatic startup, protected storage, setup connection and reinstall passed.' 
+} catch {
+    if (Test-Path $log) { Get-Content -LiteralPath $log | Write-Host }
+    Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-10) } -ErrorAction SilentlyContinue | Where-Object { $_.ProviderName -in @('Ekom Printer Agent', '.NET Runtime', 'Application Error') } | Select-Object TimeCreated, ProviderName, Message | Format-List | Out-Host
+    throw
 } finally {
     if ($installed) {
         # Run a copy so /_? wait semantics do not lock the installed uninstaller itself.
