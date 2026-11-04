@@ -19,6 +19,8 @@ No printer-specific code or migration is added to Ekom.Core. Core exposes a gene
 - Agent transport and durable submission-journal library in `Ekom.Printer.Agent.Client`.
 - Separate Printing tab alongside Analytics in Ekom Manager for Umbraco 13, 17 and 18.
 
+For the first warehouse deployment, follow the [staging acceptance checklist](../../docs/printer-staging-acceptance.md).
+
 ## Registration
 
 After registering Ekom's services:
@@ -83,8 +85,9 @@ and fonts. Encode customer-provided values with `HtmlEncoder.Default.Encode`.
 The default template does this. Custom renderers are trusted application code.
 
 The agent contract prohibits JavaScript, external network requests and local-file
-access. These restrictions must be enforced in the future agent renderer; the
-server stores HTML, it does not sanitize it or execute it. No PDF is generated.
+access. The Windows agent enforces these restrictions. The server stores HTML; it does
+not sanitize or execute it. The agent uses an in-memory PDF solely for pagination
+and rasterization before submitting pages to the Windows print spooler.
 
 Use `IPickingSlipContextFactory` to add additional order/line data into the
 snapshot's `Data` dictionaries. It receives an order reconstructed from the stored

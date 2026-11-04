@@ -32,30 +32,33 @@ any necessary durable status hook must be general-purpose.
 
 ## Windows agent setup and health
 
-Implemented and cross-compiled: service host, administrator setup window, service-account
-printer enumeration/test command, encrypted configuration, local setup pipe, heartbeat/poll
-loop, restricted Chromium pagination and GDI spool submission. Real Chromium tests pass on
-macOS. NSIS installer packaging replaces WiX. Build/signing scripts and Windows CI checks
-cover installation, service setup, reinstall, data preservation and uninstall.
-The remaining items below require Windows execution and hardware acceptance.
+Implemented: Windows service, administrator setup window, service-account printer
+selection/test command, encrypted configuration, protected local setup pipe,
+heartbeat/poll loop, restricted Chromium pagination and GDI spool submission.
 
-- Validate installer service registration and automatic startup on Windows.
-- Printer selection and test print run using the actual Windows service identity.
-- Validate the Chromium/PDFium/GDI renderer under the installed unattended service account.
-- Enforce no JavaScript, external requests or local-file access; support embedded assets.
-- Real printer test: fonts/images, long tables, page breaks, A4 margins and copies.
-- Wire the implemented heartbeat client into the Windows host; server records last-seen UTC.
-- Ekom displays online/offline using OfflineAfterSeconds; expired heartbeats do not lose jobs.
-- Store credentials securely, protect local HTML and remove it after acknowledged completion.
+GitHub Actions on Windows has passed NSIS packaging, protected-storage initialization,
+automatic service startup as LocalService, setup communication, same-version reinstall,
+data preservation, uninstall, bundled renderer tests and release-file checks.
+The installer helper isolates Windows PowerShell modules from inherited PowerShell 7
+module paths. Early installer failures are retained in unique temporary diagnostic logs.
+
+Hardware acceptance remains: select the actual printer, print under the service account,
+and inspect embedded fonts/images, long tables, page breaks, margins and copies.
+See [staging acceptance](../../docs/printer-staging-acceptance.md).
 
 ## Compatibility and release
 
-- Surface the implemented compatibility/upgrade errors in the Windows setup UI.
-- Validate migrations on SQL Server and SQLite, including simultaneous startup and upgrades.
-- Package and installer CI, deployment instructions, and end-to-end Windows acceptance test.
-- Release the new core transactional hook and printer package together with the correct minimum dependency version.
+- GitHub Actions tests and packs Ekom.Printer on .NET 8 and .NET 10.
+- NuGet trusted publishing policies have been configured by the maintainer; the first
+  authenticated publication remains untested.
+- Validate SQL Server migrations, simultaneous website startup and upgrades on a staging database.
+- Release the core transactional hook first, then compile and publish Ekom.Printer
+  against that published core version. Keep the minimum dependency version aligned.
+- Publish an agent release only after reviewing its draft, signing status and acceptance evidence.
+- No website or warehouse PC is currently available for the end-to-end acceptance run.
 
-## Explicit decisions still needed
+## Remaining product decisions
 
 - Cancellation policy for queued slips after an order becomes cancelled.
-- Safe HTML renderer / Windows service hosting strategy; prove hardware behaviour early.
+- Explicit operator reconciliation for uncertain physical print outcomes. Such jobs
+  remain NeedsReview and must not be automatically retried.
