@@ -89,8 +89,15 @@ try {
     Assert-NoReparse $data
     if (-not (Test-Path $data)) {
         New-Item $data -ItemType Directory -Force | Out-Null
-        $acl = New-Object Security.AccessControl.DirectorySecurity
-        $acl.SetSecurityDescriptorSddlForm('D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;LS)')
+        # Preserve the existing owner/group; a blank descriptor can fail Set-Acl on Windows.
+        $acl = Get-Acl -LiteralPath $data
+        $acl.SetAccessRuleProtection($true, $false)
+        foreach ($rule in @($acl.Access)) { $acl.RemoveAccessRuleSpecific($rule) }
+        foreach ($sid in @('S-1-5-18', 'S-1-5-19', 'S-1-5-32-544')) {
+            $identity = New-Object Security.Principal.SecurityIdentifier($sid)
+            $rule = New-Object Security.AccessControl.FileSystemAccessRule($identity, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+            $acl.AddAccessRule($rule)
+        }
         Set-Acl -LiteralPath $data -AclObject $acl
     }
     $acl = Get-Acl -LiteralPath $data

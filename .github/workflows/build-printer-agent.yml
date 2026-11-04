@@ -49,6 +49,17 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Verify Windows installer storage initialization
+        shell: pwsh
+        run: |
+          $data = Join-Path $env:ProgramData 'Ekom/PrinterAgent'
+          if (Test-Path $data) { throw 'Storage test requires a clean runner.' }
+          # A missing payload must fail only after protected storage was initialized.
+          $diagnostic = & "$env:SystemRoot/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./Ekom/Ekom.Printer.Agent.Installer/Manage-Agent.ps1 -Action Install -PayloadDirectory "$env:RUNNER_TEMP/missing-agent-payload" -Version 0.1.0 2>&1 | Out-String
+          Write-Host $diagnostic
+          if ($LASTEXITCODE -ne 1 -or $diagnostic -notmatch 'Missing payload:') { throw 'Installer storage initialization failed.' }
+          if (-not (Get-Acl $data).AreAccessRulesProtected) { throw 'Installer storage inherits access rules.' }
+          Remove-Item -LiteralPath $data -Recurse -Force
       - name: Install NSIS compiler
         shell: pwsh
         run: |
