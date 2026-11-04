@@ -116,6 +116,13 @@
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
+## [0.2.352](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.351...Ekom-v0.2.352) (2026-11-04)
+
+
+### Features
+
+* **printer:** add picking-slip printing and Windows agent ([#1075](https://github.com/Vettvangur/Ekom/issues/1075)) ([c8b723f](https://github.com/Vettvangur/Ekom/commit/c8b723f2a626269cd4930f109107c45d9cb841d2))
+
 ## [0.2.351](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.350...Ekom-v0.2.351) (2026-11-03)
 
 
