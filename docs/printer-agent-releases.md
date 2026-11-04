@@ -72,3 +72,20 @@ Windows publisher. These checks complement the Windows/hardware acceptance tests
 Local manual builds do not automatically have a GitHub provenance attestation.
 
 Pull requests targeting `Ekom` also build and smoke-test an unsigned installer using version `0.1.0`. Download it from the workflow artifacts for review. PR builds use read-only repository permissions, never use signing credentials, and never create releases. Attestation permissions belong only to the tag-triggered release job.
+
+## Publishing the Ekom.Printer NuGet package
+
+The server package uses `.github/workflows/publish-ekom-printer.yml`, independently of the Windows installer. PRs and manual runs test both frameworks and upload a package artifact without publishing. Pushing a reviewed `Ekom.Printer-v<major.minor.patch>` tag (optionally with a prerelease suffix) publishes through `NuGet/login@v1`.
+
+Before the first publication, a NuGet account owner must create a Trusted Publishing policy:
+
+- NuGet login user: `Vettvangur` (matching the existing repository publishing workflows).
+- GitHub repository owner: `Vettvangur`.
+- Repository: `Ekom`.
+- Workflow file: `publish-ekom-printer.yml` (filename only).
+- Environment: leave empty; this workflow does not use a GitHub environment.
+- Package scope: `Ekom.Printer`; allow creation of the new package if it does not yet exist, and updates for subsequent releases.
+
+See [NuGet Trusted Publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing). The policy is configured on nuget.org, not by adding an API-key secret in GitHub. Ensure the policy owner has the required package ownership and new-package scope.
+
+Release the matching Ekom.Core version with the transactional status hook first, and update `Ekom/Directory.Build.props` to that version before tagging Ekom.Printer. Tag builds compile the printer against that published NuGet dependency instead of local project references, preventing publication against an older core package missing the required API. PR package artifacts use local project references and are for review until that matching core release is available. No NuGet publishing policy is created automatically by this repository.

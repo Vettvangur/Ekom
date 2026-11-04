@@ -12,8 +12,10 @@ $installer = (Resolve-Path $InstallerPath).Path
 $installRoot = Join-Path $env:ProgramFiles 'Ekom/Printer Agent'
 $log = Join-Path $data 'installer.log'
 $installed = $false
+$stdout = Join-Path ([IO.Path]::GetTempPath()) ([Guid]::NewGuid().ToString('N') + '.out.log')
+$stderr = Join-Path ([IO.Path]::GetTempPath()) ([Guid]::NewGuid().ToString('N') + '.err.log')
 try {
-    $process = Start-Process -FilePath $installer -ArgumentList '/S' -Wait -PassThru
+    $process = Start-Process -FilePath $installer -ArgumentList '/S' -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
     if ($process.ExitCode -ne 0) { throw "Installer failed ($($process.ExitCode)); see $log" }
     $installed = $true
     $service = Get-Service EkomPrinterAgent
@@ -44,7 +46,7 @@ try {
     $probe = Join-Path $data 'retention-probe.txt'
     Set-Content $probe 'Keep this through repair and uninstall.'
     $before = Get-Content (Join-Path $installRoot 'installation.json') -Raw | ConvertFrom-Json
-    $repair = Start-Process -FilePath $installer -ArgumentList '/S' -Wait -PassThru
+    $repair = Start-Process -FilePath $installer -ArgumentList '/S' -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
     if ($repair.ExitCode -ne 0) { throw 'Same-version reinstall failed.' }
     $after = Get-Content (Join-Path $installRoot 'installation.json') -Raw | ConvertFrom-Json
     if ($before.Directory -eq $after.Directory) { throw 'Reinstall did not switch to a fresh payload.' }
@@ -53,7 +55,9 @@ try {
     if ((Get-Content $probe) -ne 'Keep this through repair and uninstall.') { throw 'Repair altered retained data.' }
     Write-Output 'Fresh install, automatic startup, protected storage, setup connection and reinstall passed.' 
 } catch {
-    if (Test-Path $log) { Get-Content -LiteralPath $log | Write-Host }
+    foreach ($diagnostic in @($log, $stdout, $stderr)) {
+        if (Test-Path $diagnostic) { Get-Content -LiteralPath $diagnostic | Write-Host }
+    }
     Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-10) } -ErrorAction SilentlyContinue | Where-Object { $_.ProviderName -in @('Ekom Printer Agent', '.NET Runtime', 'Application Error') } | Select-Object TimeCreated, ProviderName, Message | Format-List | Out-Host
     throw
 } finally {

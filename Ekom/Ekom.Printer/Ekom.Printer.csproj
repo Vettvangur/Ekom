@@ -9,6 +9,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageIcon>images/VV_Logo.png</PackageIcon>
     <IsPackable>true</IsPackable>
+    <EkomPackageVersion Condition="'$(EkomPackageVersion)' == ''">$(Version)</EkomPackageVersion>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <ItemGroup>
@@ -18,7 +19,8 @@
     <None Include="CHANGELOG.md" Pack="true" PackagePath="" />
     <None Include="IMPLEMENTATION.md" Pack="true" PackagePath="" />
     <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images/" />
-    <ProjectReference Include="..\Ekom.Core\Ekom\Ekom.csproj" />
+    <ProjectReference Include="..\Ekom.Core\Ekom\Ekom.csproj" Condition="'$(UseProjectReferences)' == 'true'" />
+    <PackageReference Include="Ekom.Core" Version="$(EkomPackageVersion)" Condition="'$(UseProjectReferences)' != 'true'" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <InternalsVisibleTo Include="Ekom.Printer.Tests" />
   </ItemGroup>

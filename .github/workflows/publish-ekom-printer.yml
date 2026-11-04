@@ -1,0 +1,74 @@
+name: publish-ekom-printer
+on:
+  pull_request:
+    branches: [Ekom]
+  push:
+    tags: ['Ekom.Printer-v*']
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Test printer package on both frameworks
+        run: dotnet test Ekom/Tests/Ekom.Printer.Tests/Ekom.Printer.Tests.csproj -c Release
+      - name: Pack printer package
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $arguments = @('pack', 'Ekom/Ekom.Printer/Ekom.Printer.csproj', '-c', 'Release', '-o', 'artifacts/printer-package')
+          if ($env:RELEASE_TAG) {
+            if ($env:RELEASE_TAG -notmatch '^Ekom\.Printer-v(?<version>(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?)$') { throw 'Invalid Ekom.Printer release tag.' }
+            $version = $Matches.version
+            [xml]$props = Get-Content Ekom/Directory.Build.props
+            $coreVersion = [string]$props.Project.PropertyGroup.Version
+            if ([string]::IsNullOrWhiteSpace($coreVersion)) { throw 'Missing Ekom.Core dependency version.' }
+            # Compile against the published dependency. This fails if the core release
+            # is missing the transactional status hook required by the printer package.
+            $arguments += @("-p:PackageVersion=$version", '-p:UseProjectReferences=false', "-p:EkomPackageVersion=$coreVersion")
+          }
+          & dotnet @arguments
+          if ($LASTEXITCODE -ne 0) { throw 'Printer package build failed.' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ekom.Printer-package
+          path: artifacts/printer-package/*.nupkg
+          if-no-files-found: error
+  publish:
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/Ekom.Printer-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Ekom.Printer-package
+          path: artifacts/printer-package
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: NuGet Login (OIDC)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: Vettvangur
+      - name: Publish Ekom.Printer
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          $packages = @(Get-ChildItem artifacts/printer-package/Ekom.Printer.*.nupkg)
+          if ($packages.Count -ne 1) { throw 'Expected exactly one Ekom.Printer package.' }
+          dotnet nuget push $packages[0].FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+          if ($LASTEXITCODE -ne 0) { throw 'NuGet publication failed.' }
