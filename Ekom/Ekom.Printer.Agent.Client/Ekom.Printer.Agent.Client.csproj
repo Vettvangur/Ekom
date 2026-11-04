@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Share the wire contract without bringing Ekom or its database dependencies onto warehouse computers. -->
+    <Compile Include="..\Ekom.Printer\Protocol\PrinterProtocol.cs" Link="Protocol\PrinterProtocol.cs" />
+  </ItemGroup>
+</Project>

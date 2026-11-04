@@ -1,5 +1,20 @@
 const e = [
   {
+    type: "condition",
+    alias: "Ekom.Condition.PrintingEnabled",
+    name: "Ekom Printing Enabled Condition",
+    api: () => import("./printing-enabled.condition.js")
+  },
+  {
+    type: "sectionView",
+    alias: "Ekom.SectionView.Manager.Printing",
+    name: "Ekom Manager Printing Section View",
+    element: "/App_Plugins/Ekom/dist/printing-section-view.element.js",
+    weight: 50,
+    meta: { label: "Printing", pathname: "printing", icon: "icon-print" },
+    conditions: [{ alias: "Umb.Condition.SectionAlias", match: "ekommanager" }, { alias: "Ekom.Condition.PrintingEnabled" }]
+  },
+  {
     type: "section",
     kind: "default",
     alias: "ekommanager",

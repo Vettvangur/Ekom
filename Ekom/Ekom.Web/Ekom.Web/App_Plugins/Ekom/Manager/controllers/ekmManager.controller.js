@@ -42,6 +42,16 @@
     $scope.mostSoldProductsCount = 0;
     $scope.mostSoldProductsTotalPages = 0;
     $scope.location = getLocationFromPath();
+    $scope.printingEnabled = false;
+    resources.PrintingCapabilities().then(function () {
+      return import("/App_Plugins/Ekom/Manager/libs/printing-section-view.element.js");
+    }).then(function () {
+      $scope.$evalAsync(function () { $scope.printingEnabled = true; });
+    }, function () {
+      $scope.$evalAsync(function () {
+        if ($scope.location === "printing") $scope.navigateTo("orders");
+      });
+    });
 
       eventsService.on("filter.changed", function (_, args) {
       state.setPaymentProvider(args.paymentProvider);
@@ -66,7 +76,7 @@
       var pathComponents = path.split("/");
       var lastPathComponent = pathComponents[pathComponents.length - 1];
 
-      if (lastPathComponent !== "analytics") {
+      if (lastPathComponent !== "analytics" && lastPathComponent !== "printing") {
         return "orders";
       }
 
@@ -305,6 +315,8 @@
 
       $scope.location = location;
       $location.path("/ekommanager/" + location);
+
+      if (location === "printing") return;
 
       if (location === "analytics") {
         $scope.analytics();

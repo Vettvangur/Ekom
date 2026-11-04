@@ -103,3 +103,15 @@ Ekom.Site/App_Plugins/EkomManager/css/react-table.css
 !**Ekom.Site/wwwroot/media/
 /.claude
 /nul
+
+# Generated Windows agent installer payloads
+/artifacts/
+
+# Keep the source-controlled agent build scripts despite the general Build/ exclusion.
+!/build/
+/build/*
+!/build/Build-PrinterAgent.ps1
+!/build/Test-PrinterAgentInstaller.ps1
+!/build/New-PrinterAgentRelease.ps1
+!/build/Publish-PrinterAgentDraft.ps1
+!/build/Test-PrinterAgentRelease.ps1

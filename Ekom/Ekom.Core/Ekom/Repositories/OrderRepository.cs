@@ -17,6 +17,7 @@ class OrderRepository
     readonly IMemoryCache _memoryCache;
     readonly DatabaseFactory _databaseFactory;
     readonly CheckoutPaymentAttemptService? _paymentAttempts;
+    readonly IOrderStatusPersistenceHandler[] _statusPersistenceHandlers;
     /// <summary>
     /// ctor
     /// </summary>
@@ -25,13 +26,15 @@ class OrderRepository
         Configuration config,
         DatabaseFactory databaseFactory,
         IMemoryCache memoryCache,
-        CheckoutPaymentAttemptService? paymentAttempts = null)
+        CheckoutPaymentAttemptService? paymentAttempts = null,
+        IEnumerable<IOrderStatusPersistenceHandler>? statusPersistenceHandlers = null)
     {
         _logger = logger;
         _config = config;
         _databaseFactory = databaseFactory;
         _memoryCache = memoryCache;
         _paymentAttempts = paymentAttempts;
+        _statusPersistenceHandlers = statusPersistenceHandlers?.ToArray() ?? Array.Empty<IOrderStatusPersistenceHandler>();
     }
 
     public async Task<OrderData?> GetOrderAsync(Guid uniqueId, CancellationToken ct = default)
@@ -50,10 +53,14 @@ class OrderRepository
     public async Task InsertOrderAsync(OrderData orderData, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
+        await using var transaction = _statusPersistenceHandlers.Length == 0 ? null
+            : await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
 
         var referenceId = await db.InsertWithIdentityAsync(orderData, token: ct).ConfigureAwait(false);
 
         orderData.ReferenceId = Convert.ToInt32(referenceId, System.Globalization.CultureInfo.InvariantCulture);
+        await PersistStatusAsync(db, orderData, null, ct).ConfigureAwait(false);
+        if (transaction != null) await transaction.CommitAsync(ct).ConfigureAwait(false);
     }
 
     public async Task UpdateOrderAsync(OrderData orderData, CancellationToken ct = default)
@@ -65,7 +72,14 @@ class OrderRepository
 
         if (_paymentAttempts == null)
         {
-            await db.UpdateAsync(orderData, token: ct).ConfigureAwait(false);
+            await using var transaction = _statusPersistenceHandlers.Length == 0 ? null
+                : await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+            var previous = _statusPersistenceHandlers.Length == 0 ? null
+                : await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderData.UniqueId, ct).ConfigureAwait(false);
+            var updated = await db.UpdateAsync(orderData, token: ct).ConfigureAwait(false);
+            if (previous != null && updated == 1)
+                await PersistStatusAsync(db, orderData, previous.OrderStatusCol, ct).ConfigureAwait(false);
+            if (transaction != null) await transaction.CommitAsync(ct).ConfigureAwait(false);
         }
         else
         {
@@ -74,6 +88,8 @@ class OrderRepository
             try
             {
                 await _paymentAttempts.EnsureWriteAllowedAsync(db, orderData.UniqueId, ct).ConfigureAwait(false);
+                var previous = _statusPersistenceHandlers.Length == 0 ? null
+                    : await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderData.UniqueId, ct).ConfigureAwait(false);
                 var capability = CheckoutPaymentOperationScope.Current;
                 var isManagerOverride = capability?.OrderId == orderData.UniqueId && capability.IsManagerOverride;
                 var owner = capability?.OrderId == orderData.UniqueId ? capability.Owner : null;
@@ -100,6 +116,8 @@ class OrderRepository
                     .UpdateAsync(ct).ConfigureAwait(false);
                 if (updated != 1)
                     throw new InvalidOperationException("The order was not updated. It may no longer exist or checkout operation ownership was lost.");
+                if (previous != null)
+                    await PersistStatusAsync(db, orderData, previous.OrderStatusCol, ct).ConfigureAwait(false);
                 commitStarted = true;
                 await transaction.CommitAsync(ct).ConfigureAwait(false);
             }
@@ -125,6 +143,13 @@ class OrderRepository
             _memoryCache.Remove(orderData.UniqueId);
             _memoryCache.Remove(orderData.UniqueId.ToString());
         }
+    }
+
+    private async Task PersistStatusAsync(DbContext database, OrderData order, string? previousStatus, CancellationToken ct)
+    {
+        if (string.Equals(previousStatus, order.OrderStatusCol, StringComparison.Ordinal)) return;
+        foreach (var handler in _statusPersistenceHandlers)
+            await handler.PersistAsync(database, order, previousStatus, ct).ConfigureAwait(false);
     }
 
     internal async Task<bool> TryUpdateOrderInfoAsync(

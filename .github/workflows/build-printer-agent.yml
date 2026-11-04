@@ -1,0 +1,162 @@
+name: Build printer agent installer
+on:
+  pull_request:
+    branches: [Ekom]
+  push:
+    tags:
+      - 'printer-agent-v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Installer version for branch test builds (major.minor.patch); tags determine release versions'
+        required: true
+        default: '0.1.0'
+permissions:
+  contents: read
+concurrency:
+  group: printer-agent-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: windows-2025
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.version.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve and validate version
+        id: version
+        shell: pwsh
+        env:
+          AGENT_REF_TYPE: ${{ github.ref_type }}
+          AGENT_REF_NAME: ${{ github.ref_name }}
+          AGENT_INPUT_VERSION: ${{ inputs.version || '0.1.0' }}
+        run: |
+          $version = $env:AGENT_INPUT_VERSION
+          $release = 'false'
+          if ($env:AGENT_REF_TYPE -eq 'tag') {
+            if ($env:AGENT_REF_NAME -notmatch '^printer-agent-v(?<version>(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*))$') { throw 'Invalid printer agent release tag.' }
+            $version = $Matches.version
+            $release = 'true'
+          }
+          if ($version -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') { throw 'Version must be major.minor.patch.' }
+          $parsed = [version]$version
+          if ($parsed.Major -gt 65535 -or $parsed.Minor -gt 65535 -or $parsed.Build -gt 65535) { throw 'Version components exceed Windows limits.' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "release=$release" >> $env:GITHUB_OUTPUT
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify Windows installer storage initialization
+        shell: pwsh
+        run: |
+          $data = Join-Path $env:ProgramData 'Ekom/PrinterAgent'
+          if (Test-Path $data) { throw 'Storage test requires a clean runner.' }
+          # A missing payload must fail only after protected storage was initialized.
+          $diagnostic = & "$env:SystemRoot/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./Ekom/Ekom.Printer.Agent.Installer/Manage-Agent.ps1 -Action Install -PayloadDirectory "$env:RUNNER_TEMP/missing-agent-payload" -Version 0.1.0 2>&1 | Out-String
+          Write-Host $diagnostic
+          if ($LASTEXITCODE -ne 1 -or $diagnostic -notmatch 'Missing payload:') { throw 'Installer storage initialization failed.' }
+          if (-not (Get-Acl $data).AreAccessRulesProtected) { throw 'Installer storage inherits access rules.' }
+          Remove-Item -LiteralPath $data -Recurse -Force
+          $global:LASTEXITCODE = 0
+      - name: Install NSIS compiler
+        shell: pwsh
+        run: |
+          choco install nsis --version=3.11 -y --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'NSIS installation failed.' }
+          "${env:ProgramFiles(x86)}\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Test transport and setup validation
+        run: dotnet test Ekom/Tests/Ekom.Printer.Agent.Tests/Ekom.Printer.Agent.Tests.csproj -f net10.0 -c Release
+      - name: Build installer with optional Authenticode signing
+        shell: pwsh
+        env:
+          AGENT_VERSION: ${{ steps.version.outputs.version }}
+          SIGNING_PFX: ${{ github.event_name != 'pull_request' && secrets.PRINTER_AGENT_SIGNING_PFX_BASE64 || '' }}
+          SIGNING_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.PRINTER_AGENT_SIGNING_PFX_PASSWORD || '' }}
+          SIGNING_TIMESTAMP: ${{ github.event_name != 'pull_request' && vars.PRINTER_AGENT_TIMESTAMP_URL || '' }}
+        run: |
+          $arguments = @{ Version = $env:AGENT_VERSION }
+          $certificate = $null
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'printer-agent-signing.pfx'
+          try {
+            if ($env:SIGNING_PFX) {
+              if (-not $env:SIGNING_TIMESTAMP) { throw 'Configure PRINTER_AGENT_TIMESTAMP_URL before signed builds.' }
+              [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:SIGNING_PFX))
+              $password = ConvertTo-SecureString $env:SIGNING_PASSWORD -AsPlainText -Force
+              $certificates = @(Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation Cert:\CurrentUser\My -Password $password)
+              $certificate = @($certificates | Where-Object HasPrivateKey)
+              if ($certificate.Count -ne 1) { throw 'Signing PFX must contain exactly one private-key certificate.' }
+              $certificate = $certificate[0]
+              $signTool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+              if (-not $signTool) { throw 'Windows SDK signtool.exe is missing.' }
+              $arguments.CertificateThumbprint = $certificate.Thumbprint
+              $arguments.TimestampUrl = $env:SIGNING_TIMESTAMP
+              $arguments.SignTool = $signTool.FullName
+            } elseif ($env:SIGNING_PASSWORD -or $env:SIGNING_TIMESTAMP) {
+              throw 'Signing configuration is incomplete: the PFX is missing.'
+            }
+            ./build/Build-PrinterAgent.ps1 @arguments
+          } finally {
+            Remove-Item $pfxPath -Force -ErrorAction SilentlyContinue
+            if ($certificate) { $certificate | ForEach-Object { Remove-Item "Cert:\CurrentUser\My\$($_.Thumbprint)" -DeleteKey -Force -ErrorAction SilentlyContinue } }
+          }
+      - name: Test bundled HTML renderer
+        shell: pwsh
+        run: |
+          $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $PWD 'artifacts/printer-agent/Agent/browsers'
+          $env:EKOM_RENDER_TESTS = '1'
+          dotnet test Ekom/Tests/Ekom.Printer.Agent.Tests/Ekom.Printer.Agent.Tests.csproj -f net10.0 -c Release --no-restore
+      - name: Verify install, setup, reinstall and uninstall
+        shell: pwsh
+        run: ./build/Test-PrinterAgentInstaller.ps1 -InstallerPath (Get-ChildItem artifacts/installers/*-setup.exe | Select-Object -First 1).FullName
+      - name: Diagnose installer helper after a failed acceptance test
+        if: failure()
+        shell: pwsh
+        env:
+          AGENT_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # This job uses a disposable runner with no customer configuration.
+          # Invoke the same helper directly so early errors cannot be hidden by NSIS.
+          $payload = Join-Path $PWD 'artifacts/printer-agent'
+          if (Test-Path "$payload/Agent/Ekom.Printer.Agent.exe") {
+            & "$env:SystemRoot/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./Ekom/Ekom.Printer.Agent.Installer/Manage-Agent.ps1 -Action Install -PayloadDirectory $payload -Version $env:AGENT_VERSION
+          }
+      - name: Prepare release notes and checksums
+        shell: pwsh
+        env:
+          AGENT_VERSION: ${{ steps.version.outputs.version }}
+        run: ./build/New-PrinterAgentRelease.ps1 -Version $env:AGENT_VERSION -SourceRevision $env:GITHUB_SHA -Repository $env:GITHUB_REPOSITORY
+      - name: Verify release guards without contacting GitHub
+        shell: pwsh
+        run: ./build/Test-PrinterAgentRelease.ps1 -InstallerPath (Get-ChildItem artifacts/installers/*-setup.exe | Select-Object -First 1).FullName
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ekom-Printer-Agent-${{ steps.version.outputs.version }}
+          path: artifacts/installers/*
+          if-no-files-found: error
+  release:
+    needs: build
+    if: needs.build.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Ekom-Printer-Agent-${{ needs.build.outputs.version }}
+          path: artifacts/installers
+      - name: Attest installer provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: artifacts/installers/*-setup.exe
+      - name: Create or refresh draft pre-release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AGENT_VERSION: ${{ needs.build.outputs.version }}
+        run: ./build/Publish-PrinterAgentDraft.ps1 -Version $env:AGENT_VERSION -Repository $env:GITHUB_REPOSITORY

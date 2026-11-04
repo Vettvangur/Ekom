@@ -16,6 +16,7 @@ export function createViteConfig(sourceRoot: string, outDir: string) {
           'metafield-picker.element': `${sourceRoot}/property-editors/metafield-picker.element.ts`,
           'metavalue-editor.element': `${sourceRoot}/property-editors/metavalue-editor.element.ts`,
           'analytics-section-view.element': `${sourceRoot}/manager/analytics-section-view.element.ts`,
+          'printing-section-view.element': `${sourceRoot}/manager/printing-section-view.element.ts`,
           'catalog-collection-view.element': `${sourceRoot}/catalog/catalog-collection-view.element.ts`,
           'orders-section-view.element': `${sourceRoot}/manager/orders-section-view.element.ts`,
           'price-editor.element': `${sourceRoot}/property-editors/price-editor.element.ts`,

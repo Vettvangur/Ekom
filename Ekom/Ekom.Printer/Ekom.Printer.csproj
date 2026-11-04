@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>Ekom.Printer</PackageId>
+    <Description>Optional HTML picking-slip queue and rendering for Ekom.</Description>
+    <Authors>Vettvangur</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>images/VV_Logo.png</PackageIcon>
+    <IsPackable>true</IsPackable>
+    <EkomPackageVersion Condition="'$(EkomPackageVersion)' == ''">$(Version)</EkomPackageVersion>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="..\..\README.md" />
+    <None Remove="..\CHANGELOG.md" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="CHANGELOG.md" Pack="true" PackagePath="" />
+    <None Include="IMPLEMENTATION.md" Pack="true" PackagePath="" />
+    <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images/" />
+    <ProjectReference Include="..\Ekom.Core\Ekom\Ekom.csproj" Condition="'$(UseProjectReferences)' == 'true'" />
+    <PackageReference Include="Ekom.Core" Version="$(EkomPackageVersion)" Condition="'$(UseProjectReferences)' != 'true'" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <InternalsVisibleTo Include="Ekom.Printer.Tests" />
+  </ItemGroup>
+</Project>

@@ -54,6 +54,9 @@ angular.module("umbraco.resources").factory("Ekom.Manager.Resources", [
       Config: function () {
         return get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + "Config");
       },
+      PrintingCapabilities: function () {
+        return get("/ekom/printer/manager/capabilities");
+      },
       SearchOrders: function (query) {
         return get(backofficeBaseUrl + "SearchOrders", query);
       },
