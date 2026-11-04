@@ -60,6 +60,7 @@ jobs:
           if ($LASTEXITCODE -ne 1 -or $diagnostic -notmatch 'Missing payload:') { throw 'Installer storage initialization failed.' }
           if (-not (Get-Acl $data).AreAccessRulesProtected) { throw 'Installer storage inherits access rules.' }
           Remove-Item -LiteralPath $data -Recurse -Force
+          $global:LASTEXITCODE = 0
       - name: Install NSIS compiler
         shell: pwsh
         run: |
