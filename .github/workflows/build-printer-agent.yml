@@ -99,6 +99,18 @@ jobs:
       - name: Verify install, setup, reinstall and uninstall
         shell: pwsh
         run: ./build/Test-PrinterAgentInstaller.ps1 -InstallerPath (Get-ChildItem artifacts/installers/*-setup.exe | Select-Object -First 1).FullName
+      - name: Diagnose installer helper after a failed acceptance test
+        if: failure()
+        shell: pwsh
+        env:
+          AGENT_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # This job uses a disposable runner with no customer configuration.
+          # Invoke the same helper directly so early errors cannot be hidden by NSIS.
+          $payload = Join-Path $PWD 'artifacts/printer-agent'
+          if (Test-Path "$payload/Agent/Ekom.Printer.Agent.exe") {
+            & "$env:SystemRoot/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./Ekom/Ekom.Printer.Agent.Installer/Manage-Agent.ps1 -Action Install -PayloadDirectory $payload -Version $env:AGENT_VERSION
+          }
       - name: Prepare release notes and checksums
         shell: pwsh
         env:
