@@ -15,8 +15,9 @@ customer's printer, service-account printer access, or an end-to-end warehouse o
 3. Enable printing for one test station and test store, with a single trigger status
    using the exact status alias configured on that website. Start with one copy and
    `OncePerOrder`. Use synthetic customer/order information.
-4. Generate a cryptographically random station token of at least 32 characters through
-   your secret-management process. Store its SHA-256 hexadecimal hash in the website's
+4. Generate a cryptographically random station token of at least 32 characters using the
+   [macOS or Windows commands](../Ekom/Ekom.Printer/README.md#create-a-station-token-and-tokensha256)
+   or your secret-management process. Store its SHA-256 hexadecimal hash in the website's
    `TokenSha256` setting; deliver the original token securely to the agent administrator.
    Do not put either value in a PR, test report or chat.
 5. Restart the website. Confirm package-owned migrations complete and the Printing tab
