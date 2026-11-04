@@ -6,6 +6,9 @@ param(
     [string]$PayloadDirectory,
     [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version
 )
+# An indirect launch through NSIS can inherit PowerShell 7 module paths.
+# This helper only uses built-in Windows PowerShell modules.
+$env:PSModulePath = $PSHOME + '\Modules'
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $serviceName = 'EkomPrinterAgent'
