@@ -44,6 +44,91 @@ Optional release signing uses a code-signing certificate already installed on th
 `signtool.exe` must be on PATH (or supply `-SignTool`). Without these parameters the output
 is unsigned and intended for acceptance testing. Keep bundled third-party license notices.
 
+## Windows security warnings and company-managed PCs
+
+Builds made without a signing certificate are unsigned. Windows may display
+**Windows protected your PC** and **Unknown publisher** when launching the installer
+or setup application. This is a SmartScreen publisher/reputation warning; by itself,
+it is not a malware detection and does not establish whether the application is safe.
+See [Microsoft's SmartScreen guidance](https://learn.microsoft.com/windows/apps/package-and-deploy/smartscreen-reputation).
+
+### Identify the block
+
+- **Windows protected your PC / Unknown publisher:** for a verified build you are
+  authorized to test, **More info > Run anyway** may be available. Check the download
+  source and checksum first. This is a per-launch choice, not a reason to disable antivirus.
+- **No Run anyway option:** a company policy may prevent bypassing SmartScreen.
+  Local administrator access does not necessarily override that policy. Contact IT
+  to identify the blocking control and approve the application through its deployment process.
+- **Smart App Control blocked this app:** this is a separate Windows control with
+  no per-app override. See the [Smart App Control FAQ](https://support.microsoft.com/en-us/windows/security/threat-malware-protection/smart-app-control-frequently-asked-questions).
+- **Threat detected or quarantined:** inspect Windows Security > Virus & threat
+  protection > Protection history and provide the detection name to IT and the
+  maintainer. Do not assume an antivirus detection is merely an unsigned-file warning.
+
+Do not disable company security controls or add broad antivirus exclusions to install
+this agent. Turning off Defender antivirus does not necessarily remove a SmartScreen,
+Smart App Control, or application-control policy block.
+
+### Verify the installer and request IT approval
+
+Download the exact version from this repository's release assets or its GitHub Actions
+artifact. Actions artifacts may require GitHub sign-in and are not permanent public
+release downloads. Extract the artifact ZIP, then calculate the installer EXE's hash:
+
+```powershell
+Get-FileHash -LiteralPath '.\Ekom.Printer.Agent-0.1.0-win-x64-setup.exe' -Algorithm SHA256
+```
+
+Replace the example filename with the one downloaded. Compare the result with that
+build's `SHA256SUMS.txt`, obtained from the trusted GitHub release or artifact. The hash
+is for the EXE, not its surrounding ZIP. Different builds can have the same filename
+but different hashes. A matching hash verifies file integrity against that manifest;
+it does not certify that the program is free of vulnerabilities or establish publisher identity.
+
+Provide IT with:
+
+- The exact GitHub release/artifact URL, installer filename, version and SHA-256 hash.
+- The signing status: unsigned, or the verified signing publisher if signing was enabled.
+- The full warning or detection name and whether the installer, setup app or service is blocked.
+- The deployment details below and the staging acceptance results, when available.
+
+Suggested request:
+
+> Please review and approve this Ekom Printer Agent build for the warehouse PC.
+> Windows blocks it without a Run anyway option. The attached download URL and SHA-256
+> identify the exact installer. Please identify the blocking policy and deploy or allow
+> the application through our approved software process if the review passes.
+
+IT may need to approve the installed service and setup executables as well as the
+installer. A hash-based approval generally needs updating for each changed binary.
+An internally issued code-signing certificate is another option if IT configures the
+appropriate trust and application-control rules; it is not automatically trusted on
+other clients' PCs and does not guarantee SmartScreen approval.
+
+### Security properties and signing
+
+The service runs as `NT AUTHORITY\LocalService`; installation and the separate setup
+application require administrator access. It connects outbound over HTTPS to the
+configured Ekom website, with no inbound agent TCP listener. Local setup uses a
+restricted named pipe. Printer/network access also depends on the configured Windows
+printer queue. Application files are under `%ProgramFiles%\Ekom\Printer Agent`;
+protected credentials and recovery records are under `%ProgramData%\Ekom\PrinterAgent`.
+See the configuration and rendering sections below for credential protection and HTML restrictions.
+
+Dependency review, security testing, least-privilege operation, checksums and build
+provenance improve release assurance, but do not replace publisher signing or company
+approval. Maintainers should review these before distributing customer builds.
+
+For broad customer distribution, use publicly trusted code signing with timestamping
+for the installer and installed executables. The current optional signing script signs
+the agent, setup application and installer; the generated NSIS uninstaller is not
+separately signed. Cloud/hardware-backed signing providers may require adapting the
+build integration. Signing identifies the publisher and protects integrity; it does
+not guarantee a clean security assessment or immediate SmartScreen reputation.
+Self-signed certificates do not establish public trust. See the
+[release and signing guide](../../../docs/printer-agent-releases.md).
+
 ## Configure a warehouse
 
 1. Install as administrator. The service starts automatically but does not claim orders until configured and enabled.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Document agent SmartScreen warnings, checksum verification, company IT approval and signing limitations.
+
 - Group printer source projects under Ekom/Printing and a shared Printing solution folder.
 
 - Document station token and TokenSha256 generation on macOS and Windows, including where each value is configured.
