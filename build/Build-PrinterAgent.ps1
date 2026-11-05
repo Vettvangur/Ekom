@@ -30,7 +30,7 @@ $installer = Join-Path $repo 'artifacts/installers'
 if (Test-Path $output) { Remove-Item $output -Recurse -Force }
 New-Item -ItemType Directory -Force $agent, $setup, $installer | Out-Null
 foreach ($item in @(@('Ekom.Printer.Agent', $agent), @('Ekom.Printer.Agent.Setup', $setup))) {
-    $project = Join-Path $repo "Ekom/$($item[0])/$($item[0]).csproj"
+    $project = Join-Path $repo "Ekom/Printing/$($item[0])/$($item[0]).csproj"
     Invoke-Checked 'dotnet' @('publish', $project, '-c', 'Release', '-r', 'win-x64', '--self-contained', 'true', '-p:PublishSingleFile=false', "-p:Version=$Version", '-o', $item[1])
 }
 
@@ -51,7 +51,7 @@ if ($CertificateThumbprint) {
 }
 $package = Join-Path $installer "Ekom.Printer.Agent-$Version-win-x64-setup.exe"
 Invoke-Checked $MakeNsis @('/V3', "/DAGENT_VERSION=$Version", "/DAGENT_PAYLOAD=$agent", "/DSETUP_PAYLOAD=$setup",
-    "/DOUTPUT_FILE=$package", (Join-Path $repo 'Ekom/Ekom.Printer.Agent.Installer/Agent.nsi'))
+    "/DOUTPUT_FILE=$package", (Join-Path $repo 'Ekom/Printing/Ekom.Printer.Agent.Installer/Agent.nsi'))
 if (-not (Test-Path $package)) { throw "Installer was not created: $package" }
 if ($CertificateThumbprint) {
     Invoke-Checked $SignTool @('sign', '/sha1', $CertificateThumbprint, '/fd', 'SHA256', '/tr', $TimestampUrl, '/td', 'SHA256', $package)

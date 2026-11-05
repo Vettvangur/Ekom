@@ -11,12 +11,12 @@ customer's printer, service-account printer access, or an end-to-end warehouse o
    must not be paired with an older public core package lacking that hook.
 2. Register `builder.Services.AddEkomPrinter(builder.Configuration)` after Ekom services,
    then `app.MapEkomPrinter()` after building the application. See the
-   [package configuration example](../Ekom/Ekom.Printer/README.md#registration).
+   [package configuration example](../Ekom/Printing/Ekom.Printer/README.md#registration).
 3. Enable printing for one test station and test store, with a single trigger status
    using the exact status alias configured on that website. Start with one copy and
    `OncePerOrder`. Use synthetic customer/order information.
 4. Generate a cryptographically random station token of at least 32 characters using the
-   [macOS or Windows commands](../Ekom/Ekom.Printer/README.md#create-a-station-token-and-tokensha256)
+   [macOS or Windows commands](../Ekom/Printing/Ekom.Printer/README.md#create-a-station-token-and-tokensha256)
    or your secret-management process. Store its SHA-256 hexadecimal hash in the website's
    `TokenSha256` setting; deliver the original token securely to the agent administrator.
    Do not put either value in a PR, test report or chat.

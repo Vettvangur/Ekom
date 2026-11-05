@@ -13,13 +13,13 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="..\..\README.md" />
-    <None Remove="..\CHANGELOG.md" />
+    <None Remove="..\..\..\README.md" />
+    <None Remove="..\..\CHANGELOG.md" />
     <None Include="README.md" Pack="true" PackagePath="" />
     <None Include="CHANGELOG.md" Pack="true" PackagePath="" />
     <None Include="IMPLEMENTATION.md" Pack="true" PackagePath="" />
-    <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images/" />
-    <ProjectReference Include="..\Ekom.Core\Ekom\Ekom.csproj" Condition="'$(UseProjectReferences)' == 'true'" />
+    <None Include="..\..\..\VV_Logo.png" Pack="true" PackagePath="images/" />
+    <ProjectReference Include="..\..\Ekom.Core\Ekom\Ekom.csproj" Condition="'$(UseProjectReferences)' == 'true'" />
     <PackageReference Include="Ekom.Core" Version="$(EkomPackageVersion)" Condition="'$(UseProjectReferences)' != 'true'" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <InternalsVisibleTo Include="Ekom.Printer.Tests" />

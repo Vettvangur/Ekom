@@ -19,7 +19,7 @@ Ekom is a free, open-source ecommerce platform for Umbraco. It provides a custom
 ### Windows printer agent
 
 [Download Windows Printer Agent releases](https://github.com/Vettvangur/Ekom/releases?q=printer-agent-v)
-and follow the [agent installation guide](Ekom/Ekom.Printer.Agent/README.md).
+and follow the [agent installation guide](Ekom/Printing/Ekom.Printer.Agent/README.md).
 Look for releases tagged `printer-agent-v*`; these are separate from Ekom's NuGet releases.
 The first installer releases are pre-releases for Windows and printer acceptance testing.
 If no public agent release is listed yet, it has not been published; draft releases are visible only to maintainers.

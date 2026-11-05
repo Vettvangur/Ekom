@@ -19,7 +19,7 @@ No printer-specific code or migration is added to Ekom.Core. Core exposes a gene
 - Agent transport and durable submission-journal library in `Ekom.Printer.Agent.Client`.
 - Separate Printing tab alongside Analytics in Ekom Manager for Umbraco 13, 17 and 18.
 
-For the first warehouse deployment, follow the [staging acceptance checklist](../../docs/printer-staging-acceptance.md).
+For the first warehouse deployment, follow the [staging acceptance checklist](../../../docs/printer-staging-acceptance.md).
 
 ## Registration
 
@@ -311,5 +311,5 @@ migrations, deduplication, rendering and retention have automated tests.
 
 ```sh
 dotnet test Ekom/Tests/Ekom.Printer.Tests/Ekom.Printer.Tests.csproj
-dotnet pack Ekom/Ekom.Printer/Ekom.Printer.csproj
+dotnet pack Ekom/Printing/Ekom.Printer/Ekom.Printer.csproj
 ```

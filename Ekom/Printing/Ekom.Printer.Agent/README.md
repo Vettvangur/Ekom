@@ -16,7 +16,7 @@ on Windows. Do not treat cross-compilation as proof of hardware compatibility.
 
 Public downloads are listed under [Printer Agent releases](https://github.com/Vettvangur/Ekom/releases?q=printer-agent-v).
 Tags named `printer-agent-v<version>` trigger tested installer builds and draft pre-releases;
-maintainers publish them after review. See the [release guide](../../docs/printer-agent-releases.md)
+maintainers publish them after review. See the [release guide](../../../docs/printer-agent-releases.md)
 for signing configuration, checksums, provenance verification and tag commands.
 
 On a Windows x64 build machine, install the .NET 10 SDK, PowerShell 7 and

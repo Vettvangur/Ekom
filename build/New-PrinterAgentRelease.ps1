@@ -13,7 +13,7 @@ $name = "Ekom.Printer.Agent-$Version-win-x64-setup.exe"
 $installer = Join-Path $OutputDirectory $name
 if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) { throw "Installer is missing: $name" }
 if (@(Get-ChildItem $OutputDirectory -Filter '*-setup.exe').Count -ne 1) { throw 'Release directory must contain exactly one installer.' }
-$protocolSource = Get-Content (Join-Path $repo 'Ekom/Ekom.Printer/Protocol/PrinterProtocol.cs') -Raw
+$protocolSource = Get-Content (Join-Path $repo 'Ekom/Printing/Ekom.Printer/Protocol/PrinterProtocol.cs') -Raw
 if ($protocolSource -notmatch 'const int CurrentVersion\s*=\s*(\d+)\s*;') { throw 'Cannot determine the agent protocol version.' }
 $protocol = [int]$Matches[1]
 $signed = $false
@@ -23,7 +23,7 @@ if ($IsWindows) {
     $signed = $signature.Status -eq 'Valid'
 }
 $signing = if ($signed) { 'Authenticode-signed installer.' } else { '**Unsigned test installer.** Use only for controlled acceptance testing until a signed release is available.' }
-Copy-Item (Join-Path $repo 'Ekom/Ekom.Printer.Agent/README.md') (Join-Path $OutputDirectory 'INSTALLATION.md')
+Copy-Item (Join-Path $repo 'Ekom/Printing/Ekom.Printer.Agent/README.md') (Join-Path $OutputDirectory 'INSTALLATION.md')
 Copy-Item (Join-Path $repo 'LICENSE') (Join-Path $OutputDirectory 'LICENSE.txt')
 @{
     version = $Version; sourceRevision = $SourceRevision; repository = $Repository;

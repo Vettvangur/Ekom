@@ -62,19 +62,23 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Mailchimp.Tests", "Plu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Klaviyo.Tests", "Plugins\Ekom.Klaviyo.Tests\Ekom.Klaviyo.Tests.csproj", "{9CB67D6C-5325-4C30-A3C8-9480E3151244}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer", "Ekom\Ekom.Printer\Ekom.Printer.csproj", "{D2B76E40-1A49-4A09-9CED-F752E58AC98F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer", "Ekom\Printing\Ekom.Printer\Ekom.Printer.csproj", "{D2B76E40-1A49-4A09-9CED-F752E58AC98F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer.Tests", "Ekom\Tests\Ekom.Printer.Tests\Ekom.Printer.Tests.csproj", "{C878BD4C-4923-469A-8961-11B94971B553}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer.Agent.Client", "Ekom\Ekom.Printer.Agent.Client\Ekom.Printer.Agent.Client.csproj", "{12FE0E4D-9642-4A35-A0B0-ED42E0323996}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer.Agent.Client", "Ekom\Printing\Ekom.Printer.Agent.Client\Ekom.Printer.Agent.Client.csproj", "{12FE0E4D-9642-4A35-A0B0-ED42E0323996}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer.Agent.Tests", "Ekom\Tests\Ekom.Printer.Agent.Tests\Ekom.Printer.Agent.Tests.csproj", "{A3791968-9020-4A78-823A-56A81053CD5B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ekom.Printer", "Ekom.Printer", "{EC7D404B-D6AC-8B4B-E729-9FC4748BD5BE}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Printing", "Printing", "{EC7D404B-D6AC-8B4B-E729-9FC4748BD5BE}"
+	ProjectSection(SolutionItems) = preProject
+		Ekom\Printing\Ekom.Printer.Agent.Installer\Agent.nsi = Ekom\Printing\Ekom.Printer.Agent.Installer\Agent.nsi
+		Ekom\Printing\Ekom.Printer.Agent.Installer\Manage-Agent.ps1 = Ekom\Printing\Ekom.Printer.Agent.Installer\Manage-Agent.ps1
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer.Agent", "Ekom\Ekom.Printer.Agent\Ekom.Printer.Agent.csproj", "{C87380D5-AF75-4238-967B-A2E6647DC84A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer.Agent", "Ekom\Printing\Ekom.Printer.Agent\Ekom.Printer.Agent.csproj", "{C87380D5-AF75-4238-967B-A2E6647DC84A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer.Agent.Setup", "Ekom\Ekom.Printer.Agent.Setup\Ekom.Printer.Agent.Setup.csproj", "{83DBC283-6716-42AC-9F91-C12280A7E578}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer.Agent.Setup", "Ekom\Printing\Ekom.Printer.Agent.Setup\Ekom.Printer.Agent.Setup.csproj", "{83DBC283-6716-42AC-9F91-C12280A7E578}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -401,6 +405,12 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{83DBC283-6716-42AC-9F91-C12280A7E578} = {EC7D404B-D6AC-8B4B-E729-9FC4748BD5BE}
+		{C87380D5-AF75-4238-967B-A2E6647DC84A} = {EC7D404B-D6AC-8B4B-E729-9FC4748BD5BE}
+		{A3791968-9020-4A78-823A-56A81053CD5B} = {EC7D404B-D6AC-8B4B-E729-9FC4748BD5BE}
+		{12FE0E4D-9642-4A35-A0B0-ED42E0323996} = {EC7D404B-D6AC-8B4B-E729-9FC4748BD5BE}
+		{C878BD4C-4923-469A-8961-11B94971B553} = {EC7D404B-D6AC-8B4B-E729-9FC4748BD5BE}
+		{D2B76E40-1A49-4A09-9CED-F752E58AC98F} = {EC7D404B-D6AC-8B4B-E729-9FC4748BD5BE}
 		{EBA991EB-CDAA-4939-B22D-8C8CCF8ED470} = {B5C9BAF3-857C-4182-B0E3-E11236D8C6F4}
 		{8C89F85B-D4D6-4FAF-AA00-2AA3F2F669B2} = {90A9A2E7-EAB5-40FA-AB46-6701D7A6B9FB}
 		{716A66D8-90B6-4D9D-8727-00CFAFFAF7E1} = {E41F0609-EAE2-42E8-B22D-7A54A36482E6}
@@ -421,8 +431,6 @@ Global
 		{FC802CF9-DA97-4091-BCE1-B07F0BC17EA0} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{D9800724-EC82-4A6D-B776-6FB38EFE4E37} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{9CB67D6C-5325-4C30-A3C8-9480E3151244} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{C87380D5-AF75-4238-967B-A2E6647DC84A} = {EC7D404B-D6AC-8B4B-E729-9FC4748BD5BE}
-		{83DBC283-6716-42AC-9F91-C12280A7E578} = {EC7D404B-D6AC-8B4B-E729-9FC4748BD5BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {411ECB7B-B382-43CA-8534-05EA8ED2F48D}

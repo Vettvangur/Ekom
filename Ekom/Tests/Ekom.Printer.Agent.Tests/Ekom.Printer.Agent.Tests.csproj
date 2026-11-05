@@ -11,7 +11,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Playwright" Version="1.64.1" />
     <PackageReference Include="PDFtoImage" Version="5.4.0" />
-    <ProjectReference Include="..\..\Ekom.Printer.Agent.Client\Ekom.Printer.Agent.Client.csproj" />
-    <Compile Include="../../Ekom.Printer.Agent/HtmlDocumentRenderer.cs" Link="Renderer/HtmlDocumentRenderer.cs" />
+    <ProjectReference Include="..\..\Printing\Ekom.Printer.Agent.Client\Ekom.Printer.Agent.Client.csproj" />
+    <Compile Include="../../Printing/Ekom.Printer.Agent/HtmlDocumentRenderer.cs" Link="Renderer/HtmlDocumentRenderer.cs" />
   </ItemGroup>
 </Project>

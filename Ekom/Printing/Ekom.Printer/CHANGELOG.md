@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Group printer source projects under Ekom/Printing and a shared Printing solution folder.
+
 - Document station token and TokenSha256 generation on macOS and Windows, including where each value is configured.
 
 - Capture eligible order statuses in the order transaction and recover pending jobs after restarts.
