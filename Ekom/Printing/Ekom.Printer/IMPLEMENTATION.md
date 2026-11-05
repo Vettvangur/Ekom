@@ -44,7 +44,7 @@ module paths. Early installer failures are retained in unique temporary diagnost
 
 Hardware acceptance remains: select the actual printer, print under the service account,
 and inspect embedded fonts/images, long tables, page breaks, margins and copies.
-See [staging acceptance](../../docs/printer-staging-acceptance.md).
+See [staging acceptance](../../../docs/printer-staging-acceptance.md).
 
 ## Compatibility and release
 

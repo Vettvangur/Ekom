@@ -25,7 +25,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $arguments = @('pack', 'Ekom/Ekom.Printer/Ekom.Printer.csproj', '-c', 'Release', '-o', 'artifacts/printer-package')
+          $arguments = @('pack', 'Ekom/Printing/Ekom.Printer/Ekom.Printer.csproj', '-c', 'Release', '-o', 'artifacts/printer-package')
           if ($env:RELEASE_TAG) {
             if ($env:RELEASE_TAG -notmatch '^Ekom\.Printer-v(?<version>(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?)$') { throw 'Invalid Ekom.Printer release tag.' }
             $version = $Matches.version
