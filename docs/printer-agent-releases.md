@@ -71,7 +71,7 @@ Checksums detect mismatched downloads; provenance identifies the build workflow;
 Windows publisher. These checks complement the Windows/hardware acceptance tests rather than replacing them.
 Local manual builds do not automatically have a GitHub provenance attestation.
 
-Pull requests targeting `Ekom` also build and smoke-test an unsigned installer using version `0.1.0`. Download it from the workflow artifacts for review. PR builds use read-only repository permissions, never use signing credentials, and never create releases. Attestation permissions belong only to the tag-triggered release job.
+Pull requests targeting `Ekom` also build and smoke-test an unsigned installer using version `1.0.0`. Download it from the workflow artifacts for review. PR builds use read-only repository permissions, never use signing credentials, and never create releases. Attestation permissions belong only to the tag-triggered release job.
 
 ## Publishing the Ekom.Printer NuGet package
 
@@ -79,7 +79,7 @@ The server package uses `.github/workflows/publish-ekom-printer.yml`, independen
 
 Release Please creates separate component release PRs (the linked Mailchimp
 packages remain grouped) and tracks `Ekom/Printing/Ekom.Printer` independently.
-Printer package changes create a separate release PR and advance its beta version
+Printer package changes create a separate release PR and advance its stable version
 (for example, `0.1.0-beta.1` to `0.1.0-beta.2`). Merging that PR updates the
 package version and changelog and creates the `Ekom.Printer-v...` release tag,
 which triggers the NuGet workflow. The existing `RELEASE_PLEASE_TOKEN` must be
