@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Keep the printer minimum Ekom.Core dependency at 0.2.352 independently of core releases and reject NuGet version substitution during publication.
+
 ## [0.1.0-beta.2](https://github.com/Vettvangur/Ekom/compare/Ekom.Printer-v0.1.0-beta.1...Ekom.Printer-v0.1.0-beta.2) (2026-11-06)
 
 
