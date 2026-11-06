@@ -12,7 +12,7 @@ const root = '/ekom/printer/manager';
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!));
 const date = (value?: string): string => value ? new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(value) ? value : value + 'Z').toLocaleString() : 'Never';
 export const stateLabel = (state: string): string => ({ PendingRender: 'Generating slip', Ready: 'Queued', Claimed: 'With agent',
-  Submitted: 'Submitted to Windows', NeedsReview: 'Needs review', Cancelled: 'Cancelled', RenderFailed: 'Generation failed' }[state] ?? state);
+  Submitted: 'Submitted to printer', NeedsReview: 'Needs review', Cancelled: 'Cancelled', RenderFailed: 'Generation failed' }[state] ?? state);
 
 export function availableActions(job: Job, canManage: boolean): string[] {
   const actions = job.hasHtml ? ['preview', 'history'] : ['history'];
@@ -110,7 +110,7 @@ export default class EkomPrintingSectionViewElement extends UmbElementMixin(HTML
       .pager{justify-content:space-between;margin:16px 0 0} dialog{width:min(1000px,95vw);height:90vh;background:var(--uui-color-surface,#fff);color:inherit;border:1px solid #aaa;padding:20px} dialog iframe{width:100%;height:calc(100% - 50px);border:1px solid #ddd;background:white} dialog::backdrop{background:#0006}
       @media(max-width:650px){main{padding:12px}section{padding:12px}}
     </style><main aria-busy="${this.loading}"><section><h2>Print jobs</h2>
-      <div class="filters"><label>State<select data-filter="state">${[['','All jobs'],['attention','Needs attention'],['PendingRender','Generating slip'],['Ready','Queued'],['Claimed','With agent'],['Submitted','Submitted to Windows'],['Cancelled','Cancelled']].map(([v,l]) => `<option value="${v}" ${v === this.state ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <div class="filters"><label>State<select data-filter="state">${[['','All jobs'],['attention','Needs attention'],['PendingRender','Generating slip'],['Ready','Queued'],['Claimed','With agent'],['Submitted','Submitted to printer'],['Cancelled','Cancelled']].map(([v,l]) => `<option value="${v}" ${v === this.state ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       <label>Station<select data-filter="station"><option value="">All stations</option>${this.stations.map(s => `<option value="${escape(s.alias)}" ${s.alias === this.station ? 'selected' : ''}>${escape(s.alias)}</option>`).join('')}</select></label>
       <label>Order number<input data-filter="search" value="${escape(this.search)}" maxlength="100" type="search"></label><button data-refresh ${disabled}>Refresh</button></div>
       ${this.error ? `<p class="error" role="alert">${escape(this.error)}</p>` : ''}
@@ -121,7 +121,7 @@ export default class EkomPrintingSectionViewElement extends UmbElementMixin(HTML
       <td><div class="actions">${availableActions(job, this.capabilities?.canManage === true).map(action => `<button data-job="${escape(job.id)}" data-action="${action}" ${disabled}>${({preview:'Preview',history:'History',retry:'Retry generation',cancel:'Cancel',reprint:'Reprint'} as Record<string,string>)[action]}</button>`).join('')}</div></td></tr>`).join('')}
       ${!this.loading && this.jobs.jobs.length === 0 ? '<tr><td colspan="5">No print jobs match these filters.</td></tr>' : ''}</tbody></table></div>
       <div class="pager"><button data-page="-1" ${this.page <= 1 || this.loading ? 'disabled' : ''}>Previous</button><span>Page ${this.page} of ${Math.max(1, Math.ceil(this.jobs.total / 25))}</span><button data-page="1" ${this.page * 25 >= this.jobs.total || this.loading ? 'disabled' : ''}>Next</button></div>
-      <p class="muted">Submitted to Windows means accepted by the print queue, not confirmed physical printing.</p></section>
+      <p class="muted">Submitted to printer means accepted by the print queue, not confirmed physical printing.</p></section>
       <section><h2>Stations</h2><p class="muted">Settings are read-only here. Configure printing in appsettings.json and select the printer in the Windows agent.</p>
       <div class="table"><table><thead><tr><th>Station / printer</th><th>Connection</th><th>Last seen</th><th>Trigger settings</th></tr></thead><tbody>${this.stations.map(s => `<tr><td>${escape(s.alias)}<small>${escape(s.health.printerName || 'Printer not reported')}</small><small>${escape(s.stores.join(', '))}</small></td><td>${s.health.online ? 'Online' : 'Offline'}<small>${s.health.agentVersion ? `Agent ${escape(s.health.agentVersion)}${s.health.compatible ? '' : ' — incompatible'}` : 'No agent connected'}</small></td><td>${escape(date(s.health.lastSeenUtc))}</td><td>${s.enabled ? escape(s.statuses.join(', ')) : 'Disabled'}<small>${escape(s.policy)} · ${s.copies} ${s.copies === 1 ? 'copy' : 'copies'}</small></td></tr>`).join('')}
       ${!this.loading && !this.stations.length ? '<tr><td colspan="4">No stations are available for your stores.</td></tr>' : ''}</tbody></table></div></section><dialog><button data-close>Close</button><div data-detail></div></dialog></main>`;

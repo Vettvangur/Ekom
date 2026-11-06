@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Rename the Printing status to "Submitted to printer" while retaining the print-queue explanation.
+
 - Route rejected checkout return URLs to the configured local provider error page when available, before starting payment.
 
 - Fix the Printing tab context host in Umbraco 17/18 while retaining a standalone Umbraco 13 view.
