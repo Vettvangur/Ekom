@@ -10,6 +10,8 @@ namespace Ekom.Models
     [Table(Name = "EkomOrders")]
     public class OrderData : ICloneable
     {
+        internal const int CustomerFieldMaxLength = 200;
+
         /// <summary>
         /// Primary means of identifying orders
         /// 
@@ -79,13 +81,13 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
-        [Column(Length = 200)]
+        [Column(Length = CustomerFieldMaxLength)]
         public string CustomerEmail { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        [Column(Length = 200)]
+        [Column(Length = CustomerFieldMaxLength)]
         public string? CustomerName { get; set; }
 
         /// <summary>

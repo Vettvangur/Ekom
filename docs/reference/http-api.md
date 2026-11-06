@@ -115,6 +115,9 @@ Base route: `/ekom/order`. These routes have no authorization attribute. In part
 
 `POST /add` accepts `productId`, optional `variantId`, `storeAlias`, decimal `quantity`, `action`, consent/tracking, and `linkedProducts`. Unknown top-level JSON/form values become HTML-encoded line custom data except reserved tracking fields. Linked child custom data is also encoded. See [Linked order lines](../guides/linked-order-lines.md).
 
+
+Customer updates reject invalid email addresses and effective customer names or emails longer than 200 characters with HTTP 400 and a `message` response. These validation failures do not produce error-level logs or echo submitted values. The name limit includes the combined first and last name when `customerName` is empty.
+
 ## Checkout
 
 ### API-style payment
