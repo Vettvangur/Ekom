@@ -29,12 +29,9 @@ jobs:
           if ($env:RELEASE_TAG) {
             if ($env:RELEASE_TAG -notmatch '^Ekom\.Printer-v(?<version>(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?)$') { throw 'Invalid Ekom.Printer release tag.' }
             $version = $Matches.version
-            [xml]$props = Get-Content Ekom/Directory.Build.props
-            $coreVersion = [string]$props.Project.PropertyGroup.Version
-            if ([string]::IsNullOrWhiteSpace($coreVersion)) { throw 'Missing Ekom.Core dependency version.' }
             # Compile against the published dependency. This fails if the core release
             # is missing the transactional status hook required by the printer package.
-            $arguments += @("-p:PackageVersion=$version", '-p:UseProjectReferences=false', "-p:EkomPackageVersion=$coreVersion")
+            $arguments += @("-p:PackageVersion=$version", '-p:UseProjectReferences=false', '-warnaserror:NU1601,NU1603')
           }
           & dotnet @arguments
           if ($LASTEXITCODE -ne 0) { throw 'Printer package build failed.' }
