@@ -11,8 +11,8 @@ Do not use the repository's `/releases/latest` link: it can point to an unrelate
 3. Tag the intended commit and push the tag, for example:
 
    ```bash
-   git tag -a printer-agent-v0.1.1 <reviewed-commit-sha> -m "Printer agent 0.1.1"
-   git push origin printer-agent-v0.1.1
+   git tag -a printer-agent-v1.0.1 <reviewed-commit-sha> -m "Printer agent 1.0.1"
+   git push origin printer-agent-v1.0.1
    ```
 
 4. Watch **Build printer agent installer** in GitHub Actions. The Windows runner builds the NSIS installer,
@@ -20,7 +20,7 @@ Do not use the repository's `/releases/latest` link: it can point to an unrelate
 5. After those checks and provenance attestation succeed, a separate job creates a **draft pre-release**.
    It contains the installer, `SHA256SUMS.txt`, `INSTALLATION.md`, `LICENSE.txt`, `release.json` and generated change notes.
 6. Edit the draft's notes with actual changes, known issues and tested Ekom.Printer package versions.
-   Test physical printing and recovery on Windows. Keep initial versions marked pre-release, then publish the draft.
+   Test physical printing and recovery on Windows. Keep unvalidated candidates marked pre-release; clear the pre-release flag when publishing a validated stable version.
 
 Manual workflow runs on a branch produce downloadable Actions artifacts only. A manual run on an existing
 `printer-agent-v*` tag follows the release path and derives the version from that tag, ignoring the version input.
@@ -57,14 +57,14 @@ Repository Actions permissions/policies must allow the release job's `contents: 
 Compare its SHA-256 with the matching entry in `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash ./Ekom.Printer.Agent-0.1.1-win-x64-setup.exe -Algorithm SHA256
-Get-AuthenticodeSignature ./Ekom.Printer.Agent-0.1.1-win-x64-setup.exe
+Get-FileHash ./Ekom.Printer.Agent-1.0.1-win-x64-setup.exe -Algorithm SHA256
+Get-AuthenticodeSignature ./Ekom.Printer.Agent-1.0.1-win-x64-setup.exe
 ```
 
 For GitHub build provenance:
 
 ```bash
-gh attestation verify Ekom.Printer.Agent-0.1.1-win-x64-setup.exe --repo Vettvangur/Ekom
+gh attestation verify Ekom.Printer.Agent-1.0.1-win-x64-setup.exe --repo Vettvangur/Ekom
 ```
 
 Checksums detect mismatched downloads; provenance identifies the build workflow; Authenticode identifies the
@@ -80,7 +80,7 @@ The server package uses `.github/workflows/publish-ekom-printer.yml`, independen
 Release Please creates separate component release PRs (the linked Mailchimp
 packages remain grouped) and tracks `Ekom/Printing/Ekom.Printer` independently.
 Printer package changes create a separate release PR and advance its stable version
-(for example, `0.1.0-beta.1` to `0.1.0-beta.2`). Merging that PR updates the
+(for example, `1.0.0` to `1.0.1`). Merging that PR updates the
 package version and changelog and creates the `Ekom.Printer-v...` release tag,
 which triggers the NuGet workflow. The existing `RELEASE_PLEASE_TOKEN` must be
 a token allowed to trigger other workflows; GitHub's default `GITHUB_TOKEN`
