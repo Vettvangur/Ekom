@@ -89,8 +89,7 @@
           "path": "Ekom.Printer.csproj",
           "xpath": "/Project/PropertyGroup/PackageVersion"
         }
-      ],
-      "release-as": "1.0.0"
+      ]
     }
   },
   "pull-request-title-pattern": "chore${scope}: release ${component} ${version}",
