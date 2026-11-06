@@ -70,6 +70,8 @@ An empty provider ID without `ClearShippingProvider` retains the existing API no
 
 For invalid shipping, the API returns HTTP 400 with a `ShippingValidationError` body (`code`, `providerKey`, `providerName`, `reason`, `message`, `currentAmount`, and applicable minimum/maximum amounts). MVC redirects to `PaymentRequest.ReturnUrl` with `errorStatus=invalidShippingProvider`, `errorReason`, and `errorMessage`. Set the return URL to your checkout/payment step and render the message as escaped text. Headless clients must display the error and let the customer change their selection. Other checkout validation responses are unchanged.
 
+MVC `returnUrl` values must be root-relative (or `~/` paths) or absolute URLs with the same scheme, host, and port as the request. Absolute URLs are converted to local paths. Invalid targets and repeated form `returnUrl` fields redirect to `/?errorStatus=badReturnUrl` before payment starts. Checkout result parameters (`errorStatus`, `errorReason`, `errorMessage`, `canRetry`, `errorType`, and `orderline`) are reserved and replaced; other query parameters must have a single value. Render query values using normal template escaping, never raw HTML.
+
 ## Submit payment
 
 For server-side code, call `Ekom.API.Order.PayAsync`:
