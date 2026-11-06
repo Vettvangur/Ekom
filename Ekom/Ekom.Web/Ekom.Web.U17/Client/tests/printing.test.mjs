@@ -142,3 +142,14 @@ test('review replacement requires confirmation and retries a lost response with 
   assert.equal(requests[0].body.requestId, requests[1].body.requestId);
   assert.equal(requests[0].headers['X-CSRF'], 'csrf');
 });
+
+test('explicit stations show the capture API instead of a missing-status warning', () => {
+  const view = new exports.default();
+  view.loading = false;
+  view.stations = [{ alias: 'warehouse', stores: ['main'], statuses: [], triggerMode: 'ExplicitCapture', policy: 'OncePerOrder', copies: 1, enabled: true,
+    health: { online: true, compatible: true } }];
+  view.render();
+  const card = view.shadowRoot.querySelector('.station-card');
+  assert.match(card.textContent, /Explicit capture API/);
+  assert.doesNotMatch(card.textContent, /No statuses configured/);
+});

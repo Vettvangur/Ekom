@@ -249,6 +249,80 @@ The agent health API is station-scoped; Manager displays stations for the user's
 Last-seen time is supplied by the server, not the agent clock.
 "Online" means a recent valid heartbeat, not confirmation that the printer has paper.
 
+## Explicit capture after warehouse processing
+
+Choose one trigger mode per station. `StatusChange` is the default, preserving existing
+configurations. `ExplicitCapture` ignores order-status events and accepts captures only
+through the public .NET service `Ekom.Printer.Services.IPickingSlipCapture`. This is a
+server-side integration API, not a new HTTP endpoint exposed to warehouse agents.
+
+For an explicitly triggered station, replace its `PickingSlip` settings with:
+
+```json
+"PickingSlip": {
+  "Enabled": true,
+  "TriggerMode": "ExplicitCapture",
+  "TriggerStatuses": [],
+  "PrintPolicy": "OncePerOrder",
+  "Copies": 1
+}
+```
+
+Startup validation rejects explicit capture combined with status triggers or
+`OncePerStatus`. Other stations can continue using status-based printing.
+
+`AddEkomPrinter` registers `IPickingSlipCapture` for dependency injection:
+
+```csharp
+using Ekom.Models;
+using Ekom.Printer.Services;
+
+public sealed class WarehousePrinting(IPickingSlipCapture capture)
+{
+    public Task<PickingSlipCaptureResult> CaptureSavedOrderAsync(
+        OrderData savedOrder, CancellationToken cancellationToken = default)
+        => capture.CaptureAsync(savedOrder, "warehouse", cancellationToken);
+}
+```
+
+Call this after DK completion and after committing the warehouse metadata to the order,
+before marking your durable dispatch work completed. Supply the committed `OrderData`
+including its updated `OrderInfo` JSON; do not pass an earlier checkout object or client
+request data. Warehouse values in other tables must first be copied into the saved order
+snapshot (for example `CustomData`). Your `IPickingSlipContextFactory` can copy these saved
+values to `PickingSlipContext.Data`, which the HTML renderer reads without loading the
+latest order or calling DK again.
+
+The capture owns a database transaction and returns only after it commits. It does not
+join the metadata save or dispatch transaction. Your integration must retain retryable
+dispatch work until capture succeeds. If saving metadata succeeds but capture fails,
+retry capture; if capture succeeds but marking dispatch complete fails, retry the same
+order and station. Database errors, deadlocks and cancellation propagate to the caller;
+never mark dispatch complete on those failures.
+
+Order ID + store alias + station alias form the idempotency key, using the existing
+`OncePerOrder` identity. No caller-generated request key is needed. `JobId` identifies the
+durable capture/job; `Created = false` means one already exists, including retained
+history tombstones. Changing status or retrying cannot create another slip. The first
+snapshot wins: a retry never replaces its metadata. Success means durable acceptance,
+not completed rendering or physical printing. Disabled printing, the wrong trigger mode,
+unknown stations and stores outside the station configuration fail without accepting work.
+
+### Switching an existing station
+
+Pause the integration while switching modes, remove its `TriggerStatuses`, and review
+existing captures and jobs before resuming. Changing configuration does not cancel work
+already captured. An earlier `OncePerOrder` capture is returned as existing and will not
+be upgraded with new warehouse metadata. Earlier `OncePerStatus` jobs have different keys
+and can still print alongside a new explicit capture. Reconcile those orders before
+rollout; do not change aliases or delete deduplication records to force printing.
+
+Use Manager's reviewed resolution/reprint actions when an operator actually needs another
+copy. The capture API is for initial durable acceptance, not manual reprinting. This feature
+uses the package's existing capture tables and migration; no new schema or agent protocol
+is required. Agent 1.0.0 remains compatible. Update Manager web assets with this change to
+show the station's **Explicit capture API** trigger label.
+
 ## Ekom Manager
 
 The optional **Printing** tab appears when the package is installed, mapped and enabled.

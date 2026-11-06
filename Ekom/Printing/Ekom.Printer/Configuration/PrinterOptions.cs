@@ -33,9 +33,16 @@ public sealed class PrinterStationOptions
 public sealed class PickingSlipOptions
 {
     public bool Enabled { get; set; } = true;
+    public PrinterTriggerMode TriggerMode { get; set; } = PrinterTriggerMode.StatusChange;
     public Collection<OrderStatus> TriggerStatuses { get; set; } = [];
     public PrintPolicy PrintPolicy { get; set; } = PrintPolicy.OncePerOrder;
     public int Copies { get; set; } = 1;
+}
+
+public enum PrinterTriggerMode
+{
+    StatusChange,
+    ExplicitCapture,
 }
 
 public enum PrintPolicy
@@ -65,12 +72,16 @@ internal sealed class PrinterOptionsValidator : IValidateOptions<PrinterOptions>
                 errors.Add($"Station {station.Alias} requires store aliases.");
             if (station.TokenSha256.Length != 64 || !station.TokenSha256.All(Uri.IsHexDigit))
                 errors.Add($"Station {station.Alias} requires a 64-character SHA-256 credential hash.");
-            var slip = station.PickingSlip;
-            if (slip.Copies is < 1 or > 100 || !Enum.IsDefined(slip.PrintPolicy) ||
-                slip.TriggerStatuses.Any(status => !Enum.IsDefined(status)) ||
-                (slip.Enabled && slip.TriggerStatuses.Count == 0))
-                errors.Add($"Station {station.Alias} has invalid picking-slip settings.");
+            if (!ValidSlip(station.PickingSlip))
+                errors.Add($"Station {station.Alias} has invalid picking-slip settings. ExplicitCapture requires OncePerOrder and no TriggerStatuses; enabled StatusChange requires statuses.");
         }
         return errors.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(errors);
     }
+
+    private static bool ValidSlip(PickingSlipOptions slip) =>
+        slip.Copies is >= 1 and <= 100 && Enum.IsDefined(slip.PrintPolicy) && Enum.IsDefined(slip.TriggerMode) &&
+        slip.TriggerStatuses.All(Enum.IsDefined) &&
+        (slip.TriggerMode == PrinterTriggerMode.ExplicitCapture
+            ? slip.TriggerStatuses.Count == 0 && slip.PrintPolicy == PrintPolicy.OncePerOrder
+            : !slip.Enabled || slip.TriggerStatuses.Count > 0);
 }

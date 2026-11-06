@@ -21,24 +21,32 @@ internal sealed class PrinterStatusCapture(IOptions<PrinterOptions> options, Tim
         foreach (var station in options.Value.Stations)
         {
             var slip = station.PickingSlip;
-            if (!slip.Enabled || !slip.TriggerStatuses.Contains(order.OrderStatus) ||
+            if (!slip.Enabled || slip.TriggerMode != PrinterTriggerMode.StatusChange || !slip.TriggerStatuses.Contains(order.OrderStatus) ||
                 !station.StoreAliases.Contains(order.StoreAlias, StringComparer.OrdinalIgnoreCase)) continue;
-            var identity = new PickingSlipContext(order.UniqueId, order.OrderNumber, order.StoreAlias,
-                station.Alias, order.OrderStatus, now, Array.Empty<PickingSlipLine>());
-            var id = PrinterJobStore.GetJobId(identity, slip.PrintPolicy);
-            if (await database.GetTable<PrintJob>().AnyAsync(x => x.Id == id, cancellationToken).ConfigureAwait(false) ||
-                await database.GetTable<CapturedStatus>().AnyAsync(x => x.Id == id, cancellationToken).ConfigureAwait(false)) continue;
-            await database.InsertAsync(new CapturedStatus
-            {
-                Id = id,
-                StationAlias = station.Alias,
-                Status = order.OrderStatus,
-                PrintPolicy = slip.PrintPolicy,
-                Copies = slip.Copies,
-                CreatedUtc = now,
-                RetryAfterUtc = now,
-                OrderJson = JsonSerializer.Serialize(order, SnapshotOptions),
-            }, token: cancellationToken).ConfigureAwait(false);
+            await CaptureAsync(database, order, station, now, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    internal static async Task<PickingSlipCaptureResult> CaptureAsync(DbContext database, OrderData order,
+        PrinterStationOptions station, DateTime now, CancellationToken cancellationToken)
+    {
+        var slip = station.PickingSlip;
+        var identity = new PickingSlipContext(order.UniqueId, order.OrderNumber, order.StoreAlias,
+            station.Alias, order.OrderStatus, now, Array.Empty<PickingSlipLine>());
+        var id = PrinterJobStore.GetJobId(identity, slip.PrintPolicy);
+        if (await database.GetTable<PrintJob>().AnyAsync(x => x.Id == id, cancellationToken).ConfigureAwait(false) ||
+            await database.GetTable<CapturedStatus>().AnyAsync(x => x.Id == id, cancellationToken).ConfigureAwait(false)) return new(id, false);
+        await database.InsertAsync(new CapturedStatus
+        {
+            Id = id,
+            StationAlias = station.Alias,
+            Status = order.OrderStatus,
+            PrintPolicy = slip.PrintPolicy,
+            Copies = slip.Copies,
+            CreatedUtc = now,
+            RetryAfterUtc = now,
+            OrderJson = JsonSerializer.Serialize(order, SnapshotOptions),
+        }, token: cancellationToken).ConfigureAwait(false);
+        return new(id, true);
     }
 }
