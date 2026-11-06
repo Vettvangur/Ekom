@@ -1,3 +1,5 @@
+import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
+
 type Capabilities = { enabled: boolean; canManage: boolean; csrfHeader: string; csrfToken: string };
 type Job = { id: string; orderNumber: string; storeAlias: string; stationAlias: string; state: string; createdUtc: string; copies: number; hasHtml: boolean; errorCode?: string };
 type Jobs = { jobs: Job[]; total: number; page: number; pageSize: number };
@@ -49,7 +51,7 @@ export function createPreviewDocument(html: string): string {
     + output.head.innerHTML + '</head><body>' + output.body.innerHTML + '</body></html>';
 }
 
-export default class EkomPrintingSectionViewElement extends HTMLElement {
+export default class EkomPrintingSectionViewElement extends UmbElementMixin(HTMLElement) {
   private readonly panel = this.attachShadow({ mode: 'open' });
   private capabilities?: Capabilities;
   private jobs: Jobs = { jobs: [], total: 0, page: 1, pageSize: 25 };
@@ -64,8 +66,8 @@ export default class EkomPrintingSectionViewElement extends HTMLElement {
   private generation = 0;
   private requests = new Map<string, string>();
 
-  override connectedCallback(): void { this.render(); void this.initialize(); }
-  override disconnectedCallback(): void { this.generation++; }
+  override connectedCallback(): void { super.connectedCallback(); this.render(); void this.initialize(); }
+  override disconnectedCallback(): void { this.generation++; super.disconnectedCallback(); }
 
   private async json<T>(path: string, init?: RequestInit): Promise<T> {
     const response = await fetch(root + path, { credentials: 'same-origin', ...init,
