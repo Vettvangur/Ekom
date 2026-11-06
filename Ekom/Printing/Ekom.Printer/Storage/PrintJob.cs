@@ -12,6 +12,7 @@ public enum PrintJobState
     NeedsReview,
     Cancelled,
     RenderFailed,
+    ConfirmedPrinted,
 }
 
 [Table("EkomPrinterJob")]

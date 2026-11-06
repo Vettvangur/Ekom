@@ -10,7 +10,7 @@ on:
       version:
         description: 'Installer version for branch test builds (major.minor.patch); tags determine release versions'
         required: true
-        default: '0.1.0'
+        default: '1.0.0'
 permissions:
   contents: read
 concurrency:
@@ -32,7 +32,7 @@ jobs:
         env:
           AGENT_REF_TYPE: ${{ github.ref_type }}
           AGENT_REF_NAME: ${{ github.ref_name }}
-          AGENT_INPUT_VERSION: ${{ inputs.version || '0.1.0' }}
+          AGENT_INPUT_VERSION: ${{ inputs.version || '1.0.0' }}
         run: |
           $version = $env:AGENT_INPUT_VERSION
           $release = 'false'

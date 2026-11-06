@@ -38,12 +38,15 @@ test('preview removes active content and navigation while preserving print layou
 });
 
 test('claimed and uncertain jobs cannot be cancelled or reprinted, and readers cannot mutate', () => {
-  for (const state of ['Claimed', 'NeedsReview']) {
+  for (const state of ['Claimed']) {
     assert.equal(exports.availableActions({ state, hasHtml: true }, true).join(','), 'preview,history');
   }
   assert.equal(exports.availableActions({ state: 'Submitted', hasHtml: true }, false).join(','), 'preview,history');
   assert.equal(exports.availableActions({ state: 'Submitted', hasHtml: false }, true).join(','), 'history');
   assert.equal(exports.availableActions({ state: 'RenderFailed', hasHtml: false }, true).join(','), 'history,retry,cancel');
+  assert.equal(exports.availableActions({ state: 'NeedsReview', hasHtml: true }, true).join(','), 'preview,history,resolve-printed,resolve-reprint');
+  assert.equal(exports.availableActions({ state: 'NeedsReview', hasHtml: true }, false).join(','), 'preview,history');
+  assert.equal(exports.availableActions({ state: 'NeedsReview', hasHtml: false }, true).join(','), 'history,resolve-printed');
   assert.equal(exports.stateLabel('Submitted'), 'Submitted to printer');
 });
 

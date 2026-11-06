@@ -223,3 +223,23 @@ an Apps & Features uninstall entry and a Start menu setup shortcut, and logs to
 as command-line arguments. Close the setup window before upgrading or uninstalling.
 The smoke test verifies installation, service identity, storage permissions, setup IPC,
 same-version reinstall, data preservation and uninstall. It never submits a print job.
+
+## Connection diagnostics
+
+Save settings before using **Test connection**. The agent uses the saved configuration.
+
+- **HTTP 404:** verify the final website URL, install Ekom.Printer, enable
+  `Ekom:Printing:Enabled`, and map its endpoints on that website.
+- **HTTP 401:** check the exact station alias and original station token. The agent needs
+  the token; only the website appsettings use its SHA-256 hash.
+- **HTTP 403:** check website firewall, proxy and access rules.
+- **HTTP 3xx:** save the final HTTPS URL (including www or an application path if needed).
+  Redirects deliberately do not receive the station credential.
+- **HTTP 426 / incompatible protocol:** install compatible package and agent versions.
+- **HTTP 5xx:** check website logs, database connectivity and package migration startup.
+- **DNS, HTTPS or timeout:** check connectivity under the Windows service account,
+  certificate trust, system clock and proxy access. Do not disable certificate validation.
+
+Agent 1.0.0 and Ekom.Printer 1.0.0 use protocol 1. Update Ekom web assets to 0.2.358
+or later for the Manager review-resolution actions. A successful connection test confirms
+website access; use **Test print** separately to verify physical output.

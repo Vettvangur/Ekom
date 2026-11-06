@@ -63,7 +63,14 @@ internal sealed class PrinterDeliveryStore(DatabaseFactory databaseFactory, IOpt
             .Set(x => x.State, state).Set(x => x.CompletedUtc, acknowledgement.Submitted ? (DateTime?)now : null)
             .Set(x => x.ErrorCode, acknowledgement.Submitted ? null : "AgentReportedUncertainPrint")
             .UpdateAsync(cancellationToken).ConfigureAwait(false);
-        if (changed != 1) return false; // Disposal rolls back the acknowledgement as well.
+        if (changed != 1)
+        {
+            // A reviewed job stays resolved, but accept its late report so the agent can clear
+            // its durable journal and continue. The claim token was validated above.
+            var resolved = await db.GetTable<PrinterManagerAction>().AnyAsync(x => x.JobId == jobId &&
+                (x.Action == "resolve-printed" || x.Action == "resolve-reprint"), cancellationToken).ConfigureAwait(false);
+            if (!resolved) return false;
+        }
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
@@ -108,7 +115,7 @@ internal sealed class PrinterDeliveryStore(DatabaseFactory databaseFactory, IOpt
         await db.GetTable<PrinterManagerAction>().Where(x => x.CreatedUtc < cutoff)
             .DeleteAsync(cancellationToken).ConfigureAwait(false);
         await db.GetTable<PrinterDelivery>().Where(delivery => db.GetTable<PrintJob>().Any(job =>
-                job.Id == delivery.JobId && (job.State == PrintJobState.Submitted || job.State == PrintJobState.Cancelled) &&
+                job.Id == delivery.JobId && (job.State == PrintJobState.Submitted || job.State == PrintJobState.ConfirmedPrinted || job.State == PrintJobState.Cancelled) &&
                 job.CompletedUtc < cutoff)).DeleteAsync(cancellationToken).ConfigureAwait(false);
         await db.GetTable<PrinterStation>().Where(x => x.LastSeenUtc < cutoff).DeleteAsync(cancellationToken).ConfigureAwait(false);
     }
