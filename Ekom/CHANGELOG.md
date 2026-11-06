@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Route rejected checkout return URLs to the configured local provider error page when available, before starting payment.
+
 - Fix the Printing tab context host in Umbraco 17/18 while retaining a standalone Umbraco 13 view.
 
 * **checkout:** validate MVC checkout return URLs before payment and on error redirects; accept only local or same-origin destinations, reject unsafe markup and duplicate inputs, and replace checkout result parameters instead of appending duplicate values.

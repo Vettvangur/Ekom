@@ -1007,6 +1007,17 @@ public class CheckoutControllerService
         }
     }
 
+    internal virtual async Task<string?> ResolveCheckoutErrorUrlAsync(PaymentRequest request, CancellationToken ct)
+    {
+        var order = await Order.Instance.GetOrderAsync(request.StoreAlias, ct).ConfigureAwait(false);
+        if (order == null) return null;
+        var key = request.PaymentProvider ?? order.PaymentProvider?.Key;
+        if (key == null || key == Guid.Empty) return null;
+        var provider = await Providers.Instance.GetPaymentProviderAsync(key.Value, order.StoreInfo.Alias, ct: ct)
+            .ConfigureAwait(false);
+        return provider == null ? null : ResolvePaymentProviderUrl(provider, "errorUrl", order, request.Culture);
+    }
+
     internal virtual string ResolvePaymentProviderUrl(
         Models.IPaymentProvider paymentProvider,
         string propertyAlias,

@@ -1,6 +1,7 @@
 using Ekom.Controllers;
 using Ekom.Exceptions;
 using Ekom.Models;
+using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -124,13 +125,35 @@ public sealed class CheckoutReturnUrlTests
         Assert.Equal(providerUrl, result.Url);
     }
 
-    private static CheckoutController Controller()
+    [Theory]
+    [InlineData("/payment-error/?step=3", "/payment-error/?step=3&errorStatus=badReturnUrl")]
+    [InlineData("https://www.hverslun.is/payment-error/", "/payment-error/?errorStatus=badReturnUrl")]
+    [InlineData("https://other.example/", "/?errorStatus=badReturnUrl")]
+    public async Task DuplicateTargetsUseConfiguredLocalProviderErrorPage(string configuredUrl, string expected)
+    {
+        var controller = Controller(configuredUrl);
+        controller.Request.Form = new FormCollection(new Dictionary<string, StringValues>
+        {
+            ["returnUrl"] = new StringValues(["/karfa/", "/karfa/"]),
+        });
+        var result = Assert.IsType<RedirectResult>(await controller.Pay(new PaymentRequest { ReturnUrl = "/karfa/" }));
+        Assert.Equal(expected, result.Url);
+    }
+
+    private sealed class ErrorUrlService(HttpContext context, string? errorUrl) : CheckoutControllerService(
+        NullLogger.Instance, null!, null!, null!, new HttpContextAccessor { HttpContext = context }, null!, null!, null!)
+    {
+        internal override Task<string?> ResolveCheckoutErrorUrlAsync(PaymentRequest request, CancellationToken ct)
+            => Task.FromResult(errorUrl);
+    }
+
+    private static CheckoutController Controller(string? errorUrl = null)
     {
         var context = new DefaultHttpContext();
         context.Request.Scheme = "https";
         context.Request.Host = new HostString("www.hverslun.is");
         context.Request.Form = new FormCollection(new Dictionary<string, StringValues>());
-        return new CheckoutController(NullLogger<CheckoutController>.Instance, null!)
+        return new CheckoutController(NullLogger<CheckoutController>.Instance, new ErrorUrlService(context, errorUrl))
         {
             ControllerContext = new ControllerContext { HttpContext = context },
         };
