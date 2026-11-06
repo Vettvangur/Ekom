@@ -23,6 +23,7 @@ public static class PrinterServiceCollectionExtensions
         services.TryAddSingleton<PrinterJobStore>();
         services.TryAddSingleton<PrinterDeliveryStore>();
         services.TryAddSingleton<CapturedStatusStore>();
+        services.TryAddScoped<IPickingSlipCapture, PickingSlipCapture>();
         services.AddAntiforgery();
         services.TryAddScoped<PrinterManagerService>();
         if (configuration.GetValue<bool>(PrinterOptions.SectionName + ":Enabled"))

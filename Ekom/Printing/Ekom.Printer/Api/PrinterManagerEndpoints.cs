@@ -39,6 +39,7 @@ internal static class PrinterManagerEndpoints
                 var stores = station.StoreAliases.Where(access.CanAccessStore).ToArray();
                 if (stores.Length == 0) continue;
                 stations.Add(new { alias = station.Alias, stores,
+                    triggerMode = station.PickingSlip.TriggerMode.ToString(),
                     statuses = station.PickingSlip.TriggerStatuses.Select(x => x.ToString()).ToArray(),
                     policy = station.PickingSlip.PrintPolicy.ToString(), copies = station.PickingSlip.Copies,
                     enabled = station.PickingSlip.Enabled,

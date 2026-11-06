@@ -7,6 +7,7 @@ using Ekom.Printer.Storage;
 using Ekom.Utilities;
 using LinqToDB;
 using Microsoft.Extensions.Options;
+using Microsoft.Data.Sqlite;
 using System.Text.Json;
 using Xunit;
 
@@ -122,6 +123,136 @@ public sealed class StatusCaptureTests
         Assert.Empty(await captures.GetPendingAsync());
     }
 
+    [Fact]
+    public async Task ExplicitCaptureIgnoresStatusesAndKeepsFirstSavedSnapshotAcrossRetries()
+    {
+        using var fixture = new PrinterTests.DatabaseFixture();
+        await new PrinterMigration(fixture.Factory).ApplyAsync();
+        var settings = Settings();
+        settings.Stations[0].PickingSlip.TriggerMode = PrinterTriggerMode.ExplicitCapture;
+        settings.Stations[0].PickingSlip.TriggerStatuses.Clear();
+        var options = Options.Create(settings);
+        var order = Order();
+        order.OrderInfo = "{\"OrderLines\":[],\"CustomData\":{\"warehouseReference\":\"DK-123\"}}";
+        await using var db = fixture.Factory.GetDatabase();
+        var statusCapture = new PrinterStatusCapture(options, TimeProvider.System);
+        await statusCapture.PersistAsync(db, order, "Incomplete");
+        Assert.Equal(0, await db.GetTable<CapturedStatus>().CountAsync());
+        var api = new PickingSlipCapture(fixture.Factory, options, TimeProvider.System);
+        var first = await api.CaptureAsync(order, "WAREHOUSE");
+        Assert.True(first.Created);
+        order.OrderNumber = "changed";
+        order.OrderInfo = "{\"warehouseReference\":\"changed\"}";
+        order.OrderStatus = OrderStatus.ReadyForDispatch;
+        await statusCapture.PersistAsync(db, order, "OfflinePayment");
+        var retry = await api.CaptureAsync(order, "warehouse");
+        Assert.Equal(first.JobId, retry.JobId);
+        Assert.False(retry.Created);
+        var saved = await db.GetTable<CapturedStatus>().SingleAsync();
+        var snapshot = JsonSerializer.Deserialize<OrderData>(saved.OrderJson, PrinterStatusCapture.SnapshotOptions)!;
+        Assert.Contains("DK-123", snapshot.OrderInfo, StringComparison.Ordinal);
+        Assert.Equal("original", snapshot.OrderNumber);
+        var jobs = new PrinterJobStore(fixture.Factory);
+        var captures = new CapturedStatusStore(fixture.Factory, jobs, TimeProvider.System);
+        await captures.MaterializeAsync(saved, new TestContextFactory());
+        var restarted = new PickingSlipCapture(fixture.Factory, options, TimeProvider.System);
+        Assert.False((await restarted.CaptureAsync(order, "warehouse")).Created);
+        Assert.Single(await jobs.GetPendingAsync());
+        Assert.Empty(await captures.GetPendingAsync());
+        var materialized = JsonSerializer.Deserialize<PickingSlipContext>((await jobs.GetPendingAsync())[0].SnapshotJson!)!;
+        Assert.Equal("original", materialized.OrderNumber);
+        Assert.Equal("DK-123", materialized.Data["warehouseReference"]);
+    }
+
+    [Fact]
+    public async Task ExplicitCaptureFailsClosedForWrongModeDisabledStationOrWrongStore()
+    {
+        using var fixture = new PrinterTests.DatabaseFixture();
+        await new PrinterMigration(fixture.Factory).ApplyAsync();
+        var settings = Settings();
+        var api = new PickingSlipCapture(fixture.Factory, Options.Create(settings), TimeProvider.System);
+        var order = Order();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => api.CaptureAsync(order, "warehouse"));
+        settings.Stations[0].PickingSlip.TriggerMode = PrinterTriggerMode.ExplicitCapture;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => api.CaptureAsync(order, "warehouse"));
+        settings.Stations[0].PickingSlip.TriggerStatuses.Clear();
+        settings.Enabled = false;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => api.CaptureAsync(order, "warehouse"));
+        settings.Enabled = true;
+        settings.Stations[0].PickingSlip.Enabled = false;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => api.CaptureAsync(order, "warehouse"));
+        settings.Stations[0].PickingSlip.Enabled = true;
+        order.StoreAlias = "other";
+        await Assert.ThrowsAsync<InvalidOperationException>(() => api.CaptureAsync(order, "warehouse"));
+        order.StoreAlias = "main";
+        await Assert.ThrowsAsync<InvalidOperationException>(() => api.CaptureAsync(order, "missing"));
+        order.UniqueId = Guid.Empty;
+        await Assert.ThrowsAsync<ArgumentException>(() => api.CaptureAsync(order, "warehouse"));
+        await using var db = fixture.Factory.GetDatabase();
+        Assert.Equal(0, await db.GetTable<CapturedStatus>().CountAsync());
+    }
+
+    [Fact]
+    public async Task SwitchingToExplicitModeDoesNotReplaceAnEarlierOncePerOrderCapture()
+    {
+        using var fixture = new PrinterTests.DatabaseFixture();
+        await new PrinterMigration(fixture.Factory).ApplyAsync();
+        var settings = Settings();
+        var options = Options.Create(settings);
+        var order = Order();
+        await using var db = fixture.Factory.GetDatabase();
+        await new PrinterStatusCapture(options, TimeProvider.System).PersistAsync(db, order, "Incomplete");
+        settings.Stations[0].PickingSlip.TriggerMode = PrinterTriggerMode.ExplicitCapture;
+        settings.Stations[0].PickingSlip.TriggerStatuses.Clear();
+        var result = await new PickingSlipCapture(fixture.Factory, options, TimeProvider.System).CaptureAsync(order, "warehouse");
+        Assert.False(result.Created);
+        Assert.Equal(1, await db.GetTable<CapturedStatus>().CountAsync());
+    }
+
+    [Fact]
+    public void TriggerModeValidationPreventsMixedTriggersAndStatusBasedExplicitDeduplication()
+    {
+        var settings = Settings();
+        settings.Stations[0].TokenSha256 = new string('a', 64);
+        var validator = new PrinterOptionsValidator();
+        Assert.True(validator.Validate(null, settings).Succeeded);
+        var slip = settings.Stations[0].PickingSlip;
+        slip.TriggerMode = PrinterTriggerMode.ExplicitCapture;
+        Assert.True(validator.Validate(null, settings).Failed);
+        slip.TriggerStatuses.Clear();
+        Assert.True(validator.Validate(null, settings).Succeeded);
+        slip.PrintPolicy = PrintPolicy.OncePerStatus;
+        Assert.True(validator.Validate(null, settings).Failed);
+    }
+
+    [Fact]
+    public async Task ConcurrentExplicitCapturesAcceptOnlyOneSnapshot()
+    {
+        using var fixture = new PrinterTests.DatabaseFixture();
+        await new PrinterMigration(fixture.Factory).ApplyAsync();
+        var settings = Settings();
+        settings.Stations[0].PickingSlip.TriggerMode = PrinterTriggerMode.ExplicitCapture;
+        settings.Stations[0].PickingSlip.TriggerStatuses.Clear();
+        var api = new PickingSlipCapture(fixture.Factory, Options.Create(settings), TimeProvider.System);
+        var order = Order();
+        async Task<PickingSlipCaptureResult> CaptureWithRetryAsync()
+        {
+            for (var attempt = 0; ; attempt++)
+            {
+                try { return await api.CaptureAsync(order, "warehouse"); }
+                catch (SqliteException ex) when (attempt < 3 && ex.SqliteErrorCode is 5 or 6)
+                {
+                    await Task.Delay(25);
+                }
+            }
+        }
+        var results = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => Task.Run(CaptureWithRetryAsync)));
+        Assert.Single(results.Where(x => x.Created));
+        Assert.Single(results.Select(x => x.JobId).Distinct());
+        await using var db = fixture.Factory.GetDatabase();
+        Assert.Equal(1, await db.GetTable<CapturedStatus>().CountAsync());
+    }
+
     private static PrinterOptions Settings() => new()
     {
         Enabled = true,
@@ -144,7 +275,8 @@ public sealed class StatusCaptureTests
         public PickingSlipContext Create(IOrderInfo order, string stationAlias, OrderStatus triggerStatus)
         {
             if (Fail) throw new InvalidOperationException("Simulated template data failure.");
-            return new(order.UniqueId, order.OrderNumber, "main", stationAlias, triggerStatus, DateTime.UtcNow, []);
+            return new(order.UniqueId, order.OrderNumber, "main", stationAlias, triggerStatus, DateTime.UtcNow, [])
+            { Data = new Dictionary<string, string>(order.CustomData) };
         }
     }
 }

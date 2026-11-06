@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add a public durable capture service and mutually exclusive station trigger modes for post-warehouse printing.
+- Reuse OncePerOrder identities, immutable snapshots and durable processing for explicit-capture retries.
+
 - Resolve uncertain jobs with audited operator confirmation or an idempotent replacement.
 - Preserve operator resolutions when delayed agent reports arrive.
 - Apply configured retention to confirmed jobs.
