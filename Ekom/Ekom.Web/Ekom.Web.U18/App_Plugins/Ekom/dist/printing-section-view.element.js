@@ -1,38 +1,38 @@
 var b = Object.defineProperty;
-var m = (a, o, e) => o in a ? b(a, o, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[o] = e;
-var c = (a, o, e) => m(a, typeof o != "symbol" ? o + "" : o, e);
+var m = (a, r, e) => r in a ? b(a, r, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[r] = e;
+var c = (a, r, e) => m(a, typeof r != "symbol" ? r + "" : r, e);
 import { UmbElementMixin as f } from "@umbraco-cms/backoffice/element-api";
-const y = "/ekom/printer/manager", i = (a) => String(a ?? "").replace(/[&<>"']/g, (o) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[o]), g = (a) => a ? new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(a) ? a : a + "Z").toLocaleString() : "Never", v = (a) => ({
+const y = "/ekom/printer/manager", i = (a) => String(a ?? "").replace(/[&<>"']/g, (r) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[r]), g = (a) => a ? new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(a) ? a : a + "Z").toLocaleString() : "Never", v = (a) => ({
   PendingRender: "Generating slip",
   Ready: "Queued",
   Claimed: "With agent",
-  Submitted: "Submitted to Windows",
+  Submitted: "Submitted to printer",
   NeedsReview: "Needs review",
   Cancelled: "Cancelled",
   RenderFailed: "Generation failed"
 })[a] ?? a;
-function $(a, o) {
+function $(a, r) {
   const e = a.hasHtml ? ["preview", "history"] : ["history"];
-  return o && (a.state === "RenderFailed" && e.push("retry"), ["PendingRender", "Ready", "RenderFailed"].includes(a.state) && e.push("cancel"), a.state === "Submitted" && a.hasHtml && e.push("reprint")), e;
+  return r && (a.state === "RenderFailed" && e.push("retry"), ["PendingRender", "Ready", "RenderFailed"].includes(a.state) && e.push("cancel"), a.state === "Submitted" && a.hasHtml && e.push("reprint")), e;
 }
 function w(a) {
-  const o = document.createElement("template");
-  o.innerHTML = a;
+  const r = document.createElement("template");
+  r.innerHTML = a;
   const e = document.implementation.createHTMLDocument("Picking slip"), s = new Set("div span p h1 h2 h3 h4 h5 h6 header footer main section article aside table thead tbody tfoot tr th td caption colgroup col ul ol li dl dt dd strong em b i u small br hr pre code blockquote img style".split(" ")), n = new Set("script iframe frame object embed svg math template meta link base form input button textarea select".split(" ")), h = new Set("class id style colspan rowspan scope width height alt title".split(" ")), p = (t, l) => {
     if (t.nodeType === Node.TEXT_NODE) {
       l.appendChild(e.createTextNode(t.textContent ?? ""));
       return;
     }
     if (!(t instanceof Element) || t.namespaceURI !== "http://www.w3.org/1999/xhtml") return;
-    const r = t.localName;
-    if (n.has(r)) return;
-    const d = s.has(r) ? e.createElement(r) : e.createElement("span");
+    const o = t.localName;
+    if (n.has(o)) return;
+    const d = s.has(o) ? e.createElement(o) : e.createElement("span");
     for (const u of Array.from(t.attributes))
-      h.has(u.name) && d.setAttribute(u.name, u.value), r === "img" && u.name === "src" && /^data:image\/(png|jpeg|gif|webp);base64,/i.test(u.value) && d.setAttribute("src", u.value);
+      h.has(u.name) && d.setAttribute(u.name, u.value), o === "img" && u.name === "src" && /^data:image\/(png|jpeg|gif|webp);base64,/i.test(u.value) && d.setAttribute("src", u.value);
     for (const u of Array.from(t.childNodes)) p(u, d);
     l.appendChild(d);
   };
-  for (const t of Array.from(o.content.childNodes)) p(t, e.body);
+  for (const t of Array.from(r.content.childNodes)) p(t, e.body);
   return '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:; base-uri &#39;none&#39;; form-action &#39;none&#39;; connect-src &#39;none&#39;">' + e.head.innerHTML + "</head><body>" + e.body.innerHTML + "</body></html>";
 }
 class x extends f(HTMLElement) {
@@ -103,7 +103,7 @@ class x extends f(HTMLElement) {
       .pager{justify-content:space-between;margin:16px 0 0} dialog{width:min(1000px,95vw);height:90vh;background:var(--uui-color-surface,#fff);color:inherit;border:1px solid #aaa;padding:20px} dialog iframe{width:100%;height:calc(100% - 50px);border:1px solid #ddd;background:white} dialog::backdrop{background:#0006}
       @media(max-width:650px){main{padding:12px}section{padding:12px}}
     </style><main aria-busy="${this.loading}"><section><h2>Print jobs</h2>
-      <div class="filters"><label>State<select data-filter="state">${[["", "All jobs"], ["attention", "Needs attention"], ["PendingRender", "Generating slip"], ["Ready", "Queued"], ["Claimed", "With agent"], ["Submitted", "Submitted to Windows"], ["Cancelled", "Cancelled"]].map(([t, l]) => `<option value="${t}" ${t === this.state ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      <div class="filters"><label>State<select data-filter="state">${[["", "All jobs"], ["attention", "Needs attention"], ["PendingRender", "Generating slip"], ["Ready", "Queued"], ["Claimed", "With agent"], ["Submitted", "Submitted to printer"], ["Cancelled", "Cancelled"]].map(([t, l]) => `<option value="${t}" ${t === this.state ? "selected" : ""}>${l}</option>`).join("")}</select></label>
       <label>Station<select data-filter="station"><option value="">All stations</option>${this.stations.map((t) => `<option value="${i(t.alias)}" ${t.alias === this.station ? "selected" : ""}>${i(t.alias)}</option>`).join("")}</select></label>
       <label>Order number<input data-filter="search" value="${i(this.search)}" maxlength="100" type="search"></label><button data-refresh ${e}>Refresh</button></div>
       ${this.error ? `<p class="error" role="alert">${i(this.error)}</p>` : ""}
@@ -113,11 +113,11 @@ class x extends f(HTMLElement) {
       var l;
       return `<tr><td>${i(t.orderNumber)}<small>${i(t.storeAlias)}</small></td><td>${i(t.stationAlias)}<small>${t.copies} ${t.copies === 1 ? "copy" : "copies"}</small></td>
       <td class="${["NeedsReview", "RenderFailed"].includes(t.state) ? "attention" : ""}">${i(v(t.state))}${t.state === "NeedsReview" ? "<small>Check the printer before arranging another copy.</small>" : ""}</td><td>${i(g(t.createdUtc))}</td>
-      <td><div class="actions">${$(t, ((l = this.capabilities) == null ? void 0 : l.canManage) === !0).map((r) => `<button data-job="${i(t.id)}" data-action="${r}" ${e}>${{ preview: "Preview", history: "History", retry: "Retry generation", cancel: "Cancel", reprint: "Reprint" }[r]}</button>`).join("")}</div></td></tr>`;
+      <td><div class="actions">${$(t, ((l = this.capabilities) == null ? void 0 : l.canManage) === !0).map((o) => `<button data-job="${i(t.id)}" data-action="${o}" ${e}>${{ preview: "Preview", history: "History", retry: "Retry generation", cancel: "Cancel", reprint: "Reprint" }[o]}</button>`).join("")}</div></td></tr>`;
     }).join("")}
       ${!this.loading && this.jobs.jobs.length === 0 ? '<tr><td colspan="5">No print jobs match these filters.</td></tr>' : ""}</tbody></table></div>
       <div class="pager"><button data-page="-1" ${this.page <= 1 || this.loading ? "disabled" : ""}>Previous</button><span>Page ${this.page} of ${Math.max(1, Math.ceil(this.jobs.total / 25))}</span><button data-page="1" ${this.page * 25 >= this.jobs.total || this.loading ? "disabled" : ""}>Next</button></div>
-      <p class="muted">Submitted to Windows means accepted by the print queue, not confirmed physical printing.</p></section>
+      <p class="muted">Submitted to printer means accepted by the print queue, not confirmed physical printing.</p></section>
       <section><h2>Stations</h2><p class="muted">Settings are read-only here. Configure printing in appsettings.json and select the printer in the Windows agent.</p>
       <div class="table"><table><thead><tr><th>Station / printer</th><th>Connection</th><th>Last seen</th><th>Trigger settings</th></tr></thead><tbody>${this.stations.map((t) => `<tr><td>${i(t.alias)}<small>${i(t.health.printerName || "Printer not reported")}</small><small>${i(t.stores.join(", "))}</small></td><td>${t.health.online ? "Online" : "Offline"}<small>${t.health.agentVersion ? `Agent ${i(t.health.agentVersion)}${t.health.compatible ? "" : " — incompatible"}` : "No agent connected"}</small></td><td>${i(g(t.health.lastSeenUtc))}</td><td>${t.enabled ? i(t.statuses.join(", ")) : "Disabled"}<small>${i(t.policy)} · ${t.copies} ${t.copies === 1 ? "copy" : "copies"}</small></td></tr>`).join("")}
       ${!this.loading && !this.stations.length ? '<tr><td colspan="4">No stations are available for your stores.</td></tr>' : ""}</tbody></table></div></section><dialog><button data-close>Close</button><div data-detail></div></dialog></main>`, (s = this.panel.querySelector("[data-refresh]")) == null || s.addEventListener("click", () => {
@@ -141,11 +141,11 @@ class x extends f(HTMLElement) {
         if (s === "preview" || s === "history") {
           const t = this.panel.querySelector("dialog"), l = this.panel.querySelector("[data-detail]");
           if (s === "preview") {
-            const r = await this.json(`/jobs/${e}/preview`), d = document.createElement("iframe");
-            d.title = "Picking slip preview", d.setAttribute("sandbox", ""), d.referrerPolicy = "no-referrer", d.srcdoc = w(r.html), l.replaceChildren(d), l.style.height = "90%";
+            const o = await this.json(`/jobs/${e}/preview`), d = document.createElement("iframe");
+            d.title = "Picking slip preview", d.setAttribute("sandbox", ""), d.referrerPolicy = "no-referrer", d.srcdoc = w(o.html), l.replaceChildren(d), l.style.height = "90%";
           } else {
-            const r = await this.json(`/jobs/${e}/history`);
-            l.style.height = "auto", l.innerHTML = `<h3>Job history</h3>${r.delivery ? `<p>Claimed: ${i(g(r.delivery.claimedUtc))}</p><p>Reported: ${i(g(r.delivery.reportedUtc))}</p><p>Windows queue reference: ${i(r.delivery.spoolJobId || "Not reported")}</p>` : "<p>Not yet claimed by an agent.</p>"}<ul>${r.actions.map((d) => `<li>${i(g(d.createdUtc))} — ${i(d.action)} by ${i(d.actor)}</li>`).join("")}</ul>`;
+            const o = await this.json(`/jobs/${e}/history`);
+            l.style.height = "auto", l.innerHTML = `<h3>Job history</h3>${o.delivery ? `<p>Claimed: ${i(g(o.delivery.claimedUtc))}</p><p>Reported: ${i(g(o.delivery.reportedUtc))}</p><p>Windows queue reference: ${i(o.delivery.spoolJobId || "Not reported")}</p>` : "<p>Not yet claimed by an agent.</p>"}<ul>${o.actions.map((d) => `<li>${i(g(d.createdUtc))} — ${i(d.action)} by ${i(d.actor)}</li>`).join("")}</ul>`;
           }
           t.showModal();
           return;

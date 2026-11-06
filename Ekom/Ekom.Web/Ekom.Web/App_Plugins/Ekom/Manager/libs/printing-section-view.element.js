@@ -10,7 +10,7 @@ const f = (a) => class extends a {
   PendingRender: "Generating slip",
   Ready: "Queued",
   Claimed: "With agent",
-  Submitted: "Submitted to Windows",
+  Submitted: "Submitted to printer",
   NeedsReview: "Needs review",
   Cancelled: "Cancelled",
   RenderFailed: "Generation failed"
@@ -22,17 +22,17 @@ function $(a, n) {
 function w(a) {
   const n = document.createElement("template");
   n.innerHTML = a;
-  const e = document.implementation.createHTMLDocument("Picking slip"), s = new Set("div span p h1 h2 h3 h4 h5 h6 header footer main section article aside table thead tbody tfoot tr th td caption colgroup col ul ol li dl dt dd strong em b i u small br hr pre code blockquote img style".split(" ")), o = new Set("script iframe frame object embed svg math template meta link base form input button textarea select".split(" ")), h = new Set("class id style colspan rowspan scope width height alt title".split(" ")), p = (t, l) => {
+  const e = document.implementation.createHTMLDocument("Picking slip"), s = new Set("div span p h1 h2 h3 h4 h5 h6 header footer main section article aside table thead tbody tfoot tr th td caption colgroup col ul ol li dl dt dd strong em b i u small br hr pre code blockquote img style".split(" ")), r = new Set("script iframe frame object embed svg math template meta link base form input button textarea select".split(" ")), h = new Set("class id style colspan rowspan scope width height alt title".split(" ")), p = (t, l) => {
     if (t.nodeType === Node.TEXT_NODE) {
       l.appendChild(e.createTextNode(t.textContent ?? ""));
       return;
     }
     if (!(t instanceof Element) || t.namespaceURI !== "http://www.w3.org/1999/xhtml") return;
-    const r = t.localName;
-    if (o.has(r)) return;
-    const d = s.has(r) ? e.createElement(r) : e.createElement("span");
+    const o = t.localName;
+    if (r.has(o)) return;
+    const d = s.has(o) ? e.createElement(o) : e.createElement("span");
     for (const u of Array.from(t.attributes))
-      h.has(u.name) && d.setAttribute(u.name, u.value), r === "img" && u.name === "src" && /^data:image\/(png|jpeg|gif|webp);base64,/i.test(u.value) && d.setAttribute("src", u.value);
+      h.has(u.name) && d.setAttribute(u.name, u.value), o === "img" && u.name === "src" && /^data:image\/(png|jpeg|gif|webp);base64,/i.test(u.value) && d.setAttribute("src", u.value);
     for (const u of Array.from(t.childNodes)) p(u, d);
     l.appendChild(d);
   };
@@ -63,13 +63,13 @@ class x extends f(HTMLElement) {
     this.generation++, super.disconnectedCallback();
   }
   async json(e, s) {
-    const o = await fetch(y + e, {
+    const r = await fetch(y + e, {
       credentials: "same-origin",
       ...s,
       headers: { Accept: "application/json", ...s == null ? void 0 : s.headers }
     });
-    if (!o.ok) throw new Error(o.status === 404 ? "Printing is unavailable or the stored slip has expired." : o.status === 403 ? "You do not have permission to perform this action." : o.status === 409 ? "The job changed or cannot be updated. Refresh the list." : "Could not contact printing. Try refreshing.");
-    return o.json();
+    if (!r.ok) throw new Error(r.status === 404 ? "Printing is unavailable or the stored slip has expired." : r.status === 403 ? "You do not have permission to perform this action." : r.status === 409 ? "The job changed or cannot be updated. Refresh the list." : "Could not contact printing. Try refreshing.");
+    return r.json();
   }
   async initialize() {
     try {
@@ -82,9 +82,9 @@ class x extends f(HTMLElement) {
     const e = ++this.generation;
     this.loading = !0, this.error = "", this.render();
     try {
-      const s = new URLSearchParams({ page: String(this.page), state: this.state, station: this.station, search: this.search }), [o, h] = await Promise.all([this.json("/jobs?" + s), this.json("/stations")]);
+      const s = new URLSearchParams({ page: String(this.page), state: this.state, station: this.station, search: this.search }), [r, h] = await Promise.all([this.json("/jobs?" + s), this.json("/stations")]);
       if (e !== this.generation) return;
-      this.jobs = o, this.stations = h;
+      this.jobs = r, this.stations = h;
     } catch (s) {
       e === this.generation && (this.error = s.message);
     } finally {
@@ -92,7 +92,7 @@ class x extends f(HTMLElement) {
     }
   }
   render() {
-    var s, o, h, p;
+    var s, r, h, p;
     const e = this.loading || this.busy ? "disabled" : "";
     this.panel.innerHTML = `<style>
       :host{display:block;font:inherit;color:var(--uui-color-text,#303033)} *{box-sizing:border-box}
@@ -107,7 +107,7 @@ class x extends f(HTMLElement) {
       .pager{justify-content:space-between;margin:16px 0 0} dialog{width:min(1000px,95vw);height:90vh;background:var(--uui-color-surface,#fff);color:inherit;border:1px solid #aaa;padding:20px} dialog iframe{width:100%;height:calc(100% - 50px);border:1px solid #ddd;background:white} dialog::backdrop{background:#0006}
       @media(max-width:650px){main{padding:12px}section{padding:12px}}
     </style><main aria-busy="${this.loading}"><section><h2>Print jobs</h2>
-      <div class="filters"><label>State<select data-filter="state">${[["", "All jobs"], ["attention", "Needs attention"], ["PendingRender", "Generating slip"], ["Ready", "Queued"], ["Claimed", "With agent"], ["Submitted", "Submitted to Windows"], ["Cancelled", "Cancelled"]].map(([t, l]) => `<option value="${t}" ${t === this.state ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      <div class="filters"><label>State<select data-filter="state">${[["", "All jobs"], ["attention", "Needs attention"], ["PendingRender", "Generating slip"], ["Ready", "Queued"], ["Claimed", "With agent"], ["Submitted", "Submitted to printer"], ["Cancelled", "Cancelled"]].map(([t, l]) => `<option value="${t}" ${t === this.state ? "selected" : ""}>${l}</option>`).join("")}</select></label>
       <label>Station<select data-filter="station"><option value="">All stations</option>${this.stations.map((t) => `<option value="${i(t.alias)}" ${t.alias === this.station ? "selected" : ""}>${i(t.alias)}</option>`).join("")}</select></label>
       <label>Order number<input data-filter="search" value="${i(this.search)}" maxlength="100" type="search"></label><button data-refresh ${e}>Refresh</button></div>
       ${this.error ? `<p class="error" role="alert">${i(this.error)}</p>` : ""}
@@ -117,17 +117,17 @@ class x extends f(HTMLElement) {
       var l;
       return `<tr><td>${i(t.orderNumber)}<small>${i(t.storeAlias)}</small></td><td>${i(t.stationAlias)}<small>${t.copies} ${t.copies === 1 ? "copy" : "copies"}</small></td>
       <td class="${["NeedsReview", "RenderFailed"].includes(t.state) ? "attention" : ""}">${i(v(t.state))}${t.state === "NeedsReview" ? "<small>Check the printer before arranging another copy.</small>" : ""}</td><td>${i(g(t.createdUtc))}</td>
-      <td><div class="actions">${$(t, ((l = this.capabilities) == null ? void 0 : l.canManage) === !0).map((r) => `<button data-job="${i(t.id)}" data-action="${r}" ${e}>${{ preview: "Preview", history: "History", retry: "Retry generation", cancel: "Cancel", reprint: "Reprint" }[r]}</button>`).join("")}</div></td></tr>`;
+      <td><div class="actions">${$(t, ((l = this.capabilities) == null ? void 0 : l.canManage) === !0).map((o) => `<button data-job="${i(t.id)}" data-action="${o}" ${e}>${{ preview: "Preview", history: "History", retry: "Retry generation", cancel: "Cancel", reprint: "Reprint" }[o]}</button>`).join("")}</div></td></tr>`;
     }).join("")}
       ${!this.loading && this.jobs.jobs.length === 0 ? '<tr><td colspan="5">No print jobs match these filters.</td></tr>' : ""}</tbody></table></div>
       <div class="pager"><button data-page="-1" ${this.page <= 1 || this.loading ? "disabled" : ""}>Previous</button><span>Page ${this.page} of ${Math.max(1, Math.ceil(this.jobs.total / 25))}</span><button data-page="1" ${this.page * 25 >= this.jobs.total || this.loading ? "disabled" : ""}>Next</button></div>
-      <p class="muted">Submitted to Windows means accepted by the print queue, not confirmed physical printing.</p></section>
+      <p class="muted">Submitted to printer means accepted by the print queue, not confirmed physical printing.</p></section>
       <section><h2>Stations</h2><p class="muted">Settings are read-only here. Configure printing in appsettings.json and select the printer in the Windows agent.</p>
       <div class="table"><table><thead><tr><th>Station / printer</th><th>Connection</th><th>Last seen</th><th>Trigger settings</th></tr></thead><tbody>${this.stations.map((t) => `<tr><td>${i(t.alias)}<small>${i(t.health.printerName || "Printer not reported")}</small><small>${i(t.stores.join(", "))}</small></td><td>${t.health.online ? "Online" : "Offline"}<small>${t.health.agentVersion ? `Agent ${i(t.health.agentVersion)}${t.health.compatible ? "" : " — incompatible"}` : "No agent connected"}</small></td><td>${i(g(t.health.lastSeenUtc))}</td><td>${t.enabled ? i(t.statuses.join(", ")) : "Disabled"}<small>${i(t.policy)} · ${t.copies} ${t.copies === 1 ? "copy" : "copies"}</small></td></tr>`).join("")}
       ${!this.loading && !this.stations.length ? '<tr><td colspan="4">No stations are available for your stores.</td></tr>' : ""}</tbody></table></div></section><dialog><button data-close>Close</button><div data-detail></div></dialog></main>`, (s = this.panel.querySelector("[data-refresh]")) == null || s.addEventListener("click", () => {
       this.search = this.panel.querySelector('[data-filter="search"]').value, this.page = 1, this.load();
     });
-    for (const t of ["state", "station"]) (o = this.panel.querySelector(`[data-filter="${t}"]`)) == null || o.addEventListener("change", (l) => {
+    for (const t of ["state", "station"]) (r = this.panel.querySelector(`[data-filter="${t}"]`)) == null || r.addEventListener("change", (l) => {
       this[t] = l.target.value, this.page = 1, this.load();
     });
     (h = this.panel.querySelector('[data-filter="search"]')) == null || h.addEventListener("keydown", (t) => {
@@ -139,22 +139,22 @@ class x extends f(HTMLElement) {
     })), (p = this.panel.querySelector("[data-close]")) == null || p.addEventListener("click", () => this.panel.querySelector("dialog").close());
   }
   async action(e, s) {
-    var o;
+    var r;
     if (!this.busy)
       try {
         if (s === "preview" || s === "history") {
           const t = this.panel.querySelector("dialog"), l = this.panel.querySelector("[data-detail]");
           if (s === "preview") {
-            const r = await this.json(`/jobs/${e}/preview`), d = document.createElement("iframe");
-            d.title = "Picking slip preview", d.setAttribute("sandbox", ""), d.referrerPolicy = "no-referrer", d.srcdoc = w(r.html), l.replaceChildren(d), l.style.height = "90%";
+            const o = await this.json(`/jobs/${e}/preview`), d = document.createElement("iframe");
+            d.title = "Picking slip preview", d.setAttribute("sandbox", ""), d.referrerPolicy = "no-referrer", d.srcdoc = w(o.html), l.replaceChildren(d), l.style.height = "90%";
           } else {
-            const r = await this.json(`/jobs/${e}/history`);
-            l.style.height = "auto", l.innerHTML = `<h3>Job history</h3>${r.delivery ? `<p>Claimed: ${i(g(r.delivery.claimedUtc))}</p><p>Reported: ${i(g(r.delivery.reportedUtc))}</p><p>Windows queue reference: ${i(r.delivery.spoolJobId || "Not reported")}</p>` : "<p>Not yet claimed by an agent.</p>"}<ul>${r.actions.map((d) => `<li>${i(g(d.createdUtc))} — ${i(d.action)} by ${i(d.actor)}</li>`).join("")}</ul>`;
+            const o = await this.json(`/jobs/${e}/history`);
+            l.style.height = "auto", l.innerHTML = `<h3>Job history</h3>${o.delivery ? `<p>Claimed: ${i(g(o.delivery.claimedUtc))}</p><p>Reported: ${i(g(o.delivery.reportedUtc))}</p><p>Windows queue reference: ${i(o.delivery.spoolJobId || "Not reported")}</p>` : "<p>Not yet claimed by an agent.</p>"}<ul>${o.actions.map((d) => `<li>${i(g(d.createdUtc))} — ${i(d.action)} by ${i(d.actor)}</li>`).join("")}</ul>`;
           }
           t.showModal();
           return;
         }
-        if (!((o = this.capabilities) != null && o.canManage) || !window.confirm(s === "reprint" ? "Create another copy of this stored picking slip?" : s === "cancel" ? "Cancel this queued picking slip?" : "Retry generating this picking slip?")) return;
+        if (!((r = this.capabilities) != null && r.canManage) || !window.confirm(s === "reprint" ? "Create another copy of this stored picking slip?" : s === "cancel" ? "Cancel this queued picking slip?" : "Retry generating this picking slip?")) return;
         const h = e + ":" + s, p = this.requests.get(h) ?? crypto.randomUUID();
         this.requests.set(h, p), this.busy = !0, this.render(), await this.json(`/jobs/${e}/actions`, { method: "POST", headers: {
           "Content-Type": "application/json",
