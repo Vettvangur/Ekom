@@ -36,6 +36,8 @@ app.MapEkomPrinter();
 
 Namespaces: `Ekom.Printer`, `Ekom.Printer.Rendering`, and `Ekom.Printer.Api`.
 
+For printing after warehouse processing through the capture API, use:
+
 ```json
 {
   "Ekom": {
@@ -52,7 +54,8 @@ Namespaces: `Ekom.Printer`, `Ekom.Printer.Rendering`, and `Ekom.Printer.Api`.
           "StoreAliases": [ "main" ],
           "PickingSlip": {
             "Enabled": true,
-            "TriggerStatuses": [ "OfflinePayment", "ReadyForDispatch" ],
+            "TriggerMode": "ExplicitCapture",
+            "TriggerStatuses": [],
             "PrintPolicy": "OncePerOrder",
             "Copies": 1
           }
@@ -63,6 +66,26 @@ Namespaces: `Ekom.Printer`, `Ekom.Printer.Rendering`, and `Ekom.Printer.Api`.
 }
 ```
 
+This station prints only when your integration calls `IPickingSlipCapture` after saving
+warehouse metadata; order-status changes do not create slips. See
+[Explicit capture after warehouse processing](#explicit-capture-after-warehouse-processing)
+for the API call, retry behavior and switching existing stations safely.
+
+For automatic printing on order-status changes instead, replace `PickingSlip` with:
+
+```json
+"PickingSlip": {
+  "Enabled": true,
+  "TriggerMode": "StatusChange",
+  "TriggerStatuses": [ "OfflinePayment", "ReadyForDispatch" ],
+  "PrintPolicy": "OncePerOrder",
+  "Copies": 1
+}
+```
+
+Choose one mode per station. `StatusChange` remains the default when `TriggerMode` is
+omitted. `ExplicitCapture` requires an empty `TriggerStatuses` list and `OncePerOrder`.
+
 Restart the website after changing settings. Printing is disabled by default;
 disabled installations do not create printer tables or register a status capture handler.
 Each station requires the SHA-256 hash (hex) of a cryptographically random bearer
@@ -71,7 +94,7 @@ protect the raw token on the agent computer. Never commit production credentials
 The placeholder above intentionally fails validation until replaced. Follow
 [Create a station token and TokenSha256](#create-a-station-token-and-tokensha256) below.
 
-`OncePerOrder` creates one automatic job per order/store/station across selected
+In `StatusChange` mode, `OncePerOrder` creates one automatic job per order/store/station across selected
 statuses. `OncePerStatus` creates one per selected status. Repeated notifications
 are deduplicated by the job primary key. Changing the policy changes that key and
 can allow another job on a later status transition. Enabling the feature does not
