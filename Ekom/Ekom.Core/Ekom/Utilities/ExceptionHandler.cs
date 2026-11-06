@@ -25,6 +25,8 @@ static class ExceptionHandler
 
         return exception switch
         {
+            CustomerInformationValidationException customerEx => new BadRequestObjectResult(new { message = customerEx.Message }),
+            InvalidCustomerEmailException emailEx => new BadRequestObjectResult(new { message = emailEx.Message }),
             OrderCustomDataException customDataEx => new BadRequestObjectResult(new { message = customDataEx.Message }),
             ArgumentNullException => new StatusCodeResult((int)HttpStatusCode.NotFound),
             CheckoutPayException => new StatusCodeResult((int)HttpStatusCode.InternalServerError),

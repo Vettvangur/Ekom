@@ -25,6 +25,98 @@ namespace Ekom.Tests.Tests;
 [Collection("Reservations")]
 public sealed class LinkedOrderLinesTests
 {
+    [Theory]
+    [InlineData("customerName")]
+    [InlineData("customerFirstName")]
+    [InlineData("customerEmail")]
+    public async Task OversizedCustomerInformation_IsRejectedBeforeOrderMutation(string field)
+    {
+        using var fixture = new Fixture();
+        fixture.Order.CustomerInformation.Customer.Properties["customerName"] = "";
+        fixture.Order.CustomerInformation.Customer.Properties["customerLastName"] = new string('b', 100);
+        var before = JsonConvert.SerializeObject(fixture.Order);
+        var value = field switch
+        {
+            "customerFirstName" => new string('a', 100),
+            "customerEmail" => new string('a', 60) + "@" + new string('b', 60) + "." + new string('c', 60) + "." + new string('d', 20) + ".com",
+            _ => new string('a', 201),
+        };
+        var exception = await Assert.ThrowsAsync<Ekom.Exceptions.CustomerInformationValidationException>(() =>
+            fixture.Service.UpdateCustomerInformationAsync(new Dictionary<string, string>
+            {
+                ["storeAlias"] = "main",
+                ["customData[giftMessage]"] = "must not be applied",
+                ["customerAddress"] = "must not be applied",
+                [field] = value,
+            }, new OrderSettings { OrderInfo = fixture.Order, FireEvents = false }));
+
+        Assert.Equal(before, JsonConvert.SerializeObject(fixture.Order));
+        Assert.DoesNotContain(value, exception.Message, StringComparison.Ordinal);
+        var logger = new Mock<Microsoft.Extensions.Logging.ILogger<ApiExceptionFilter>>();
+        var context = new Microsoft.AspNetCore.Mvc.Filters.ExceptionContext(
+            new Microsoft.AspNetCore.Mvc.ActionContext(
+                new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+                new Microsoft.AspNetCore.Routing.RouteData(),
+                new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()),
+            new List<Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata>()) { Exception = exception };
+        await new ApiExceptionFilter(logger.Object).OnExceptionAsync(context);
+        Assert.True(context.ExceptionHandled);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(context.Result);
+        logger.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CustomerName_AtStorageLimit_IsAccepted(bool composed)
+    {
+        var customer = new Customer();
+        var form = composed
+            ? new Dictionary<string, string>
+            {
+                ["customerFirstName"] = new string('a', 100),
+                ["customerLastName"] = new string('b', 99),
+            }
+            : new Dictionary<string, string> { ["customerName"] = new string('a', 200) };
+        OrderService.ValidateCustomerInformation(form, customer);
+        Assert.Empty(customer.Properties);
+    }
+
+    [Theory]
+    [InlineData("not-an-email")]
+    [InlineData("${@print(md5(31337))}\\")]
+    public async Task InvalidCustomerEmail_ReturnsBadRequestWithoutErrorLogging(string email)
+    {
+        using var fixture = new Fixture();
+        var previousEmail = fixture.Order.CustomerInformation.Customer.Email;
+        var exception = await Assert.ThrowsAnyAsync<FormatException>(() =>
+            fixture.Service.UpdateCustomerInformationAsync(
+                new Dictionary<string, string> { ["storeAlias"] = "main", ["customerEmail"] = email },
+                new OrderSettings { OrderInfo = fixture.Order, FireEvents = false }));
+
+        Assert.Equal("Invalid email address.", exception.Message);
+        Assert.Equal(previousEmail, fixture.Order.CustomerInformation.Customer.Email);
+        var logger = new Mock<Microsoft.Extensions.Logging.ILogger<ApiExceptionFilter>>();
+        var filter = new ApiExceptionFilter(logger.Object);
+        var context = new Microsoft.AspNetCore.Mvc.Filters.ExceptionContext(
+            new Microsoft.AspNetCore.Mvc.ActionContext(
+                new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+                new Microsoft.AspNetCore.Routing.RouteData(),
+                new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()),
+            new List<Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata>())
+        {
+            Exception = exception,
+        };
+
+        await filter.OnExceptionAsync(context);
+
+        Assert.True(context.ExceptionHandled);
+        var result = Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(context.Result);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal("Invalid email address.", JObject.FromObject(result.Value!)["message"]?.Value<string>());
+        logger.VerifyNoOtherCalls();
+    }
+
     [Fact]
     public async Task AddLinkedOrderLinesAsync_AddsParentAndLinkedChildren()
     {

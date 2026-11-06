@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+* **order:** validate customer emails and the 200-character customer name/email storage limits before changing the order; return HTTP 400 without error logs or submitted values, including names composed from first and last name.
+
 - Improve Printing manager layout, status contrast, attention filtering, station health cards and responsive controls.
 
 - Rename the Printing status to "Submitted to printer" while retaining the print-queue explanation.
