@@ -339,7 +339,10 @@ public class CheckoutController : ControllerBase
             if (form["returnUrl"].Count > 1 ||
                 !CheckoutReturnUrl.TryNormalize(paymentRequest.ReturnUrl, Request, out var safeReturnUrl))
             {
-                return Redirect("/?errorStatus=badReturnUrl");
+                var errorUrl =
+                    await _checkoutControllerService.ResolveCheckoutErrorUrlAsync(paymentRequest, ct).ConfigureAwait(false);
+                CheckoutReturnUrl.TryNormalize(errorUrl, Request, out var errorTarget);
+                return Redirect(QueryHelpers.AddQueryString(errorTarget, "errorStatus", "badReturnUrl"));
             }
 
             paymentRequest.ReturnUrl = safeReturnUrl;
