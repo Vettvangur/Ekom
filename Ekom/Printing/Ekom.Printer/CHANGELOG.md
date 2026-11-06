@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix SQL Server first-install printer migrations by explicitly mapping required string columns, including primary keys, as NOT NULL.
+
 - Document agent SmartScreen warnings, checksum verification, company IT approval and signing limitations.
 
 - Group printer source projects under Ekom/Printing and a shared Printing solution folder.

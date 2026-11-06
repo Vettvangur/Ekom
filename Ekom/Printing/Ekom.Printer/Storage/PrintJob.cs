@@ -17,9 +17,9 @@ public enum PrintJobState
 [Table("EkomPrinterJob")]
 public sealed class PrintJob
 {
-    [PrimaryKey, Column(Length = 64)] public string Id { get; set; } = string.Empty;
+    [PrimaryKey, Column(Length = 64), NotNull] public string Id { get; set; } = string.Empty;
     [Column] public Guid OrderId { get; set; }
-    [Column(Length = 100)] public string StationAlias { get; set; } = string.Empty;
+    [Column(Length = 100), NotNull] public string StationAlias { get; set; } = string.Empty;
     [Column] public PrintJobState State { get; set; }
     [Column] public int Copies { get; set; }
     [Column] public DateTime CreatedUtc { get; set; }

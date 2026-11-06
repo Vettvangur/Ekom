@@ -313,3 +313,16 @@ migrations, deduplication, rendering and retention have automated tests.
 dotnet test Ekom/Tests/Ekom.Printer.Tests/Ekom.Printer.Tests.csproj
 dotnet pack Ekom/Printing/Ekom.Printer/Ekom.Printer.csproj
 ```
+
+### Recovering from SQL Server table-creation failure
+
+If an earlier package failed to create printer tables because SQL Server rejected a
+nullable primary-key column, upgrade to a package containing the explicit NOT NULL
+mapping fix and restart the website with printing enabled. The existing migrations
+use the corrected mappings; no separate application migration is required. Failed
+migrations roll back their table creation and schema-version updates together.
+
+This fix does not alter tables that already exist. If EkomPrinterSchema records a
+completed version but corresponding tables are missing, inspect the database and
+startup logs before attempting repair. Do not drop printer tables or manually
+advance/reset the schema version.
