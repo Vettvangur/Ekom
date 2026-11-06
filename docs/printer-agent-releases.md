@@ -77,6 +77,21 @@ Pull requests targeting `Ekom` also build and smoke-test an unsigned installer u
 
 The server package uses `.github/workflows/publish-ekom-printer.yml`, independently of the Windows installer. PRs and manual runs test both frameworks and upload a package artifact without publishing. Pushing a reviewed `Ekom.Printer-v<major.minor.patch>` tag (optionally with a prerelease suffix) publishes through `NuGet/login@v1`.
 
+Release Please creates separate component release PRs (the linked Mailchimp
+packages remain grouped) and tracks `Ekom/Printing/Ekom.Printer` independently.
+Printer package changes create a separate release PR and advance its beta version
+(for example, `0.1.0-beta.1` to `0.1.0-beta.2`). Merging that PR updates the
+package version and changelog and creates the `Ekom.Printer-v...` release tag,
+which triggers the NuGet workflow. The existing `RELEASE_PLEASE_TOKEN` must be
+a token allowed to trigger other workflows; GitHub's default `GITHUB_TOKEN`
+does not trigger a new workflow when it creates a tag.
+
+`Ekom/Printing` and `Ekom/Tests` are excluded from core release detection. Agent
+projects remain on their separate manual `printer-agent-v...` release process.
+The printer's `PackageVersion` is independent of the inherited core `Version`,
+so a printer-only fix does not require a core version bump. Core changes still
+require their own release before a printer release that depends on them.
+
 Before the first publication, a NuGet account owner must create a Trusted Publishing policy:
 
 - NuGet login user: `Vettvangur` (matching the existing repository publishing workflows).

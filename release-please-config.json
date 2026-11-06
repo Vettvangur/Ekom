@@ -1,10 +1,12 @@
 {
-  "pullRequestTitlePattern": "chore${scope}: release ${component} ${version}",
   "plugins": [
     {
       "type": "linked-versions",
       "groupName": "Ekom.Mailchimp",
-      "components": ["Ekom.Mailchimp", "Ekom.Mailchimp.U18"]
+      "components": [
+        "Ekom.Mailchimp",
+        "Ekom.Mailchimp.U18"
+      ]
     }
   ],
   "packages": {
@@ -16,7 +18,10 @@
       "release-type": "simple",
       "versioning": "always-bump-patch",
       "changelog-path": "CHANGELOG.md",
-      "exclude-paths": ["Ekom/Tests"],
+      "exclude-paths": [
+        "Ekom/Tests",
+        "Ekom/Printing"
+      ],
       "bootstrap-sha": "135a8af01a63f7a55f4a730c82b8c1005d362d41",
       "extra-files": [
         {
@@ -68,6 +73,26 @@
           "xpath": "/Project/PropertyGroup/Version"
         }
       ]
+    },
+    "Ekom/Printing/Ekom.Printer": {
+      "component": "Ekom.Printer",
+      "package-name": "Ekom.Printer",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "versioning": "prerelease",
+      "prerelease": true,
+      "prerelease-type": "beta",
+      "bump-patch-for-minor-pre-major": true,
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Ekom.Printer.csproj",
+          "xpath": "/Project/PropertyGroup/PackageVersion"
+        }
+      ]
     }
-  }
+  },
+  "pull-request-title-pattern": "chore${scope}: release ${component} ${version}",
+  "separate-pull-requests": true
 }
