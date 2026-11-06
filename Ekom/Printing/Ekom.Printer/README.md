@@ -38,7 +38,8 @@ works without registering a custom renderer.
 
 ## Configure appsettings.json
 
-For printing after warehouse processing through the capture API, use:
+This example enables printing on order-status changes, using the default
+`StatusChange` trigger mode:
 
 ```json
 {
@@ -56,8 +57,8 @@ For printing after warehouse processing through the capture API, use:
           "StoreAliases": [ "main" ],
           "PickingSlip": {
             "Enabled": true,
-            "TriggerMode": "ExplicitCapture",
-            "TriggerStatuses": [],
+            "TriggerMode": "StatusChange",
+            "TriggerStatuses": [ "OfflinePayment", "ReadyForDispatch" ],
             "PrintPolicy": "OncePerOrder",
             "Copies": 1
           }
@@ -68,22 +69,26 @@ For printing after warehouse processing through the capture API, use:
 }
 ```
 
-This station prints only when your integration calls `IPickingSlipCapture` after saving
-warehouse metadata; order-status changes do not create slips. See
-[Explicit capture after warehouse processing](#explicit-capture-after-warehouse-processing)
-for the API call, retry behavior and switching existing stations safely.
+This station prints when an order reaches `OfflinePayment` or `ReadyForDispatch`.
+With `OncePerOrder`, reaching both statuses still creates only one slip.
 
-For automatic printing on order-status changes instead, use this `PickingSlip` section instead:
+To let your integration request printing after warehouse processing instead, replace
+`PickingSlip` with:
 
 ```json
 "PickingSlip": {
   "Enabled": true,
-  "TriggerMode": "StatusChange",
-  "TriggerStatuses": [ "OfflinePayment", "ReadyForDispatch" ],
+  "TriggerMode": "ExplicitCapture",
+  "TriggerStatuses": [],
   "PrintPolicy": "OncePerOrder",
   "Copies": 1
 }
 ```
+
+In this mode, your integration calls `IPickingSlipCapture` after saving warehouse
+metadata; order-status changes do not create slips. See
+[Explicit capture after warehouse processing](#explicit-capture-after-warehouse-processing)
+for the API call, retry behavior and switching existing stations safely.
 
 Choose one mode per station. `StatusChange` remains the default when `TriggerMode` is
 omitted. `ExplicitCapture` requires an empty `TriggerStatuses` list and `OncePerOrder`.
