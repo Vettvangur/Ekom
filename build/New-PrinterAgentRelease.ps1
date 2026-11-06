@@ -22,7 +22,7 @@ if ($IsWindows) {
     if ($signature.Status -notin @('Valid', 'NotSigned')) { throw "Invalid installer signature: $($signature.Status)" }
     $signed = $signature.Status -eq 'Valid'
 }
-$signing = if ($signed) { 'Authenticode-signed installer.' } else { '**Unsigned installer.** Windows SmartScreen or company application-control policy may block installation. Follow INSTALLATION.md and your organization's approval process.' }
+$signing = if ($signed) { 'Authenticode-signed installer.' } else { '**Unsigned installer.** Windows SmartScreen or company application-control policy may block installation. Follow INSTALLATION.md and the approval process required by your organization.' }
 Copy-Item (Join-Path $repo 'Ekom/Printing/Ekom.Printer.Agent/README.md') (Join-Path $OutputDirectory 'INSTALLATION.md')
 Copy-Item (Join-Path $repo 'LICENSE') (Join-Path $OutputDirectory 'LICENSE.txt')
 @{
