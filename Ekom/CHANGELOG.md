@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+* **checkout:** validate MVC checkout return URLs before payment and on error redirects; accept only local or same-origin destinations, reject unsafe markup and duplicate inputs, and replace checkout result parameters instead of appending duplicate values.
+
 * **manager:** add space above order custom-data badges to separate them from order action buttons.
 
 * **checkout:** consolidate payment reservation release into one activity entry updated to its confirmed outcome; keep request and per-reservation details in diagnostic logs, suppress repeated no-op release entries, and retain audit-before-release safeguards and failure alerts.
