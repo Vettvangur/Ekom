@@ -116,6 +116,13 @@
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
+## [0.2.353](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.352...Ekom-v0.2.353) (2026-11-06)
+
+
+### Bug Fixes
+
+* **printer:** declare required SQL Server columns non-nullable ([#1080](https://github.com/Vettvangur/Ekom/issues/1080)) ([552c3c7](https://github.com/Vettvangur/Ekom/commit/552c3c7a9133ac3ef3e1c9123406c2c245f0e680))
+
 ## [0.2.352](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.351...Ekom-v0.2.352) (2026-11-04)
 
 
