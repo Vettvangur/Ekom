@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { webcrypto } from 'node:crypto';
 import { runInNewContext } from 'node:vm';
 import { JSDOM } from 'jsdom';
 import ts from 'typescript';
@@ -12,7 +13,7 @@ runInNewContext(ts.transpileModule(source, { compilerOptions: {
   module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022,
 } }).outputText, { exports, document: dom.window.document, DOMParser: dom.window.DOMParser,
   Node: dom.window.Node, Element: dom.window.Element, HTMLElement: dom.window.HTMLElement,
-  customElements: dom.window.customElements,
+  customElements: dom.window.customElements, window: dom.window, crypto: webcrypto,
   require: (name) => {
     assert.equal(name, '@umbraco-cms/backoffice/element-api');
     return { UmbElementMixin: (Base) => class extends Base {
@@ -37,7 +38,7 @@ test('preview removes active content and navigation while preserving print layou
   assert.match(parsed.querySelector('meta[http-equiv="Content-Security-Policy"]').content, /default-src 'none'/);
 });
 
-test('claimed and uncertain jobs cannot be cancelled or reprinted, and readers cannot mutate', () => {
+test('uncertain jobs require explicit resolution, claimed jobs and readers cannot mutate', () => {
   for (const state of ['Claimed']) {
     assert.equal(exports.availableActions({ state, hasHtml: true }, true).join(','), 'preview,history');
   }
@@ -112,4 +113,32 @@ test('station card distinguishes an incompatible agent and explains printing rul
   assert.match(card.textContent, /Offline Payment/);
   assert.match(card.textContent, /Once per order/);
   assert.match(view.shadowRoot.querySelector('.empty').textContent, /Picking slips appear here/);
+});
+
+test('review replacement requires confirmation and retries a lost response with the same request ID', async () => {
+  const view = new exports.default();
+  view.capabilities = { canManage: true, csrfHeader: 'X-CSRF', csrfToken: 'csrf' };
+  view.render = () => {};
+  view.load = async () => {};
+  const requests = [];
+  view.json = async (path, options) => {
+    requests.push({ path, ...options, body: JSON.parse(options.body) });
+    if (requests.length === 1) throw new Error('Response lost');
+    return {};
+  };
+  dom.window.confirm = message => {
+    assert.match(message, /clear any pending copy/);
+    assert.match(message, /delayed original may still print/);
+    return false;
+  };
+  await view.action('job', 'resolve-reprint');
+  assert.equal(requests.length, 0);
+  dom.window.confirm = () => true;
+  await view.action('job', 'resolve-reprint');
+  await view.action('job', 'resolve-reprint');
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].path, '/jobs/job/actions');
+  assert.equal(requests[0].body.action, 'resolve-reprint');
+  assert.equal(requests[0].body.requestId, requests[1].body.requestId);
+  assert.equal(requests[0].headers['X-CSRF'], 'csrf');
 });
