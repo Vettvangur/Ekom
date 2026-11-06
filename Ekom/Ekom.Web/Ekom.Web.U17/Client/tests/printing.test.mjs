@@ -44,7 +44,7 @@ test('claimed and uncertain jobs cannot be cancelled or reprinted, and readers c
   assert.equal(exports.availableActions({ state: 'Submitted', hasHtml: true }, false).join(','), 'preview,history');
   assert.equal(exports.availableActions({ state: 'Submitted', hasHtml: false }, true).join(','), 'history');
   assert.equal(exports.availableActions({ state: 'RenderFailed', hasHtml: false }, true).join(','), 'history,retry,cancel');
-  assert.equal(exports.stateLabel('Submitted'), 'Submitted to Windows');
+  assert.equal(exports.stateLabel('Submitted'), 'Submitted to printer');
 });
 
 // Model the context-host contract required by Umbraco's section view router.
