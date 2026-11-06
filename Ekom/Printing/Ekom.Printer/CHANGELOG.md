@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.0-beta.2](https://github.com/Vettvangur/Ekom/compare/Ekom.Printer-v0.1.0-beta.1...Ekom.Printer-v0.1.0-beta.2) (2026-11-06)
+
+
+### Bug Fixes
+
+* **printer:** declare required SQL Server columns non-nullable ([#1080](https://github.com/Vettvangur/Ekom/issues/1080)) ([552c3c7](https://github.com/Vettvangur/Ekom/commit/552c3c7a9133ac3ef3e1c9123406c2c245f0e680))
+* **printer:** release the NuGet package independently of Ekom core ([#1082](https://github.com/Vettvangur/Ekom/issues/1082)) ([169f476](https://github.com/Vettvangur/Ekom/commit/169f476ab0e42f4c0297d0da8debf6a15bb7ee53))
+
+## Changelog
+
 ## Unreleased
 
 - Fix SQL Server first-install printer migrations by explicitly mapping required string columns, including primary keys, as NOT NULL.
