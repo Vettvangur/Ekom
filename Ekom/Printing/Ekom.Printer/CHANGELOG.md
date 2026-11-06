@@ -11,6 +11,13 @@
 
 - Keep the printer minimum Ekom.Core dependency at 0.2.352 independently of core releases and reject NuGet version substitution during publication.
 
+## [1.1.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Printer-v1.0.0...Ekom.Printer-v1.1.0) (2026-11-06)
+
+
+### Features
+
+* **printer:** add durable explicit capture with exclusive trigger modes ([#1101](https://github.com/Vettvangur/Ekom/issues/1101)) ([c818651](https://github.com/Vettvangur/Ekom/commit/c818651d6d4d545b8b5f2eaeec17c3644f9cbae0))
+
 ## [1.0.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Printer-v0.1.0-beta.3...Ekom.Printer-v1.0.0) (2026-11-06)
 
 
