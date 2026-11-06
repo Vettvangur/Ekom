@@ -120,6 +120,13 @@
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
+## [0.2.355](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.354...Ekom-v0.2.355) (2026-11-06)
+
+
+### Bug Fixes
+
+* **printer:** provide Umbraco context for manager printing view ([#1088](https://github.com/Vettvangur/Ekom/issues/1088)) ([8871aa2](https://github.com/Vettvangur/Ekom/commit/8871aa2f869f9af35a9a4bd30f6e68e893535d9c))
+
 ## [0.2.354](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.353...Ekom-v0.2.354) (2026-11-06)
 
 
