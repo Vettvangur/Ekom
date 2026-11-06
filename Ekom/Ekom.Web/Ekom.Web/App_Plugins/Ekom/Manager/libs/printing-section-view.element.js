@@ -1,7 +1,12 @@
 var b = Object.defineProperty;
-var m = (a, o, e) => o in a ? b(a, o, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[o] = e;
-var c = (a, o, e) => m(a, typeof o != "symbol" ? o + "" : o, e);
-const f = "/ekom/printer/manager", i = (a) => String(a ?? "").replace(/[&<>"']/g, (o) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[o]), g = (a) => a ? new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(a) ? a : a + "Z").toLocaleString() : "Never", y = (a) => ({
+var m = (a, n, e) => n in a ? b(a, n, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[n] = e;
+var c = (a, n, e) => m(a, typeof n != "symbol" ? n + "" : n, e);
+const f = (a) => class extends a {
+  connectedCallback() {
+  }
+  disconnectedCallback() {
+  }
+}, y = "/ekom/printer/manager", i = (a) => String(a ?? "").replace(/[&<>"']/g, (n) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[n]), g = (a) => a ? new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(a) ? a : a + "Z").toLocaleString() : "Never", v = (a) => ({
   PendingRender: "Generating slip",
   Ready: "Queued",
   Claimed: "With agent",
@@ -10,31 +15,31 @@ const f = "/ekom/printer/manager", i = (a) => String(a ?? "").replace(/[&<>"']/g
   Cancelled: "Cancelled",
   RenderFailed: "Generation failed"
 })[a] ?? a;
-function v(a, o) {
+function $(a, n) {
   const e = a.hasHtml ? ["preview", "history"] : ["history"];
-  return o && (a.state === "RenderFailed" && e.push("retry"), ["PendingRender", "Ready", "RenderFailed"].includes(a.state) && e.push("cancel"), a.state === "Submitted" && a.hasHtml && e.push("reprint")), e;
+  return n && (a.state === "RenderFailed" && e.push("retry"), ["PendingRender", "Ready", "RenderFailed"].includes(a.state) && e.push("cancel"), a.state === "Submitted" && a.hasHtml && e.push("reprint")), e;
 }
-function $(a) {
-  const o = document.createElement("template");
-  o.innerHTML = a;
-  const e = document.implementation.createHTMLDocument("Picking slip"), s = new Set("div span p h1 h2 h3 h4 h5 h6 header footer main section article aside table thead tbody tfoot tr th td caption colgroup col ul ol li dl dt dd strong em b i u small br hr pre code blockquote img style".split(" ")), r = new Set("script iframe frame object embed svg math template meta link base form input button textarea select".split(" ")), h = new Set("class id style colspan rowspan scope width height alt title".split(" ")), p = (t, l) => {
+function w(a) {
+  const n = document.createElement("template");
+  n.innerHTML = a;
+  const e = document.implementation.createHTMLDocument("Picking slip"), s = new Set("div span p h1 h2 h3 h4 h5 h6 header footer main section article aside table thead tbody tfoot tr th td caption colgroup col ul ol li dl dt dd strong em b i u small br hr pre code blockquote img style".split(" ")), o = new Set("script iframe frame object embed svg math template meta link base form input button textarea select".split(" ")), h = new Set("class id style colspan rowspan scope width height alt title".split(" ")), p = (t, l) => {
     if (t.nodeType === Node.TEXT_NODE) {
       l.appendChild(e.createTextNode(t.textContent ?? ""));
       return;
     }
     if (!(t instanceof Element) || t.namespaceURI !== "http://www.w3.org/1999/xhtml") return;
-    const n = t.localName;
-    if (r.has(n)) return;
-    const d = s.has(n) ? e.createElement(n) : e.createElement("span");
+    const r = t.localName;
+    if (o.has(r)) return;
+    const d = s.has(r) ? e.createElement(r) : e.createElement("span");
     for (const u of Array.from(t.attributes))
-      h.has(u.name) && d.setAttribute(u.name, u.value), n === "img" && u.name === "src" && /^data:image\/(png|jpeg|gif|webp);base64,/i.test(u.value) && d.setAttribute("src", u.value);
+      h.has(u.name) && d.setAttribute(u.name, u.value), r === "img" && u.name === "src" && /^data:image\/(png|jpeg|gif|webp);base64,/i.test(u.value) && d.setAttribute("src", u.value);
     for (const u of Array.from(t.childNodes)) p(u, d);
     l.appendChild(d);
   };
-  for (const t of Array.from(o.content.childNodes)) p(t, e.body);
+  for (const t of Array.from(n.content.childNodes)) p(t, e.body);
   return '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:; base-uri &#39;none&#39;; form-action &#39;none&#39;; connect-src &#39;none&#39;">' + e.head.innerHTML + "</head><body>" + e.body.innerHTML + "</body></html>";
 }
-class w extends HTMLElement {
+class x extends f(HTMLElement) {
   constructor() {
     super(...arguments);
     c(this, "panel", this.attachShadow({ mode: "open" }));
@@ -52,19 +57,19 @@ class w extends HTMLElement {
     c(this, "requests", /* @__PURE__ */ new Map());
   }
   connectedCallback() {
-    this.render(), this.initialize();
+    super.connectedCallback(), this.render(), this.initialize();
   }
   disconnectedCallback() {
-    this.generation++;
+    this.generation++, super.disconnectedCallback();
   }
   async json(e, s) {
-    const r = await fetch(f + e, {
+    const o = await fetch(y + e, {
       credentials: "same-origin",
       ...s,
       headers: { Accept: "application/json", ...s == null ? void 0 : s.headers }
     });
-    if (!r.ok) throw new Error(r.status === 404 ? "Printing is unavailable or the stored slip has expired." : r.status === 403 ? "You do not have permission to perform this action." : r.status === 409 ? "The job changed or cannot be updated. Refresh the list." : "Could not contact printing. Try refreshing.");
-    return r.json();
+    if (!o.ok) throw new Error(o.status === 404 ? "Printing is unavailable or the stored slip has expired." : o.status === 403 ? "You do not have permission to perform this action." : o.status === 409 ? "The job changed or cannot be updated. Refresh the list." : "Could not contact printing. Try refreshing.");
+    return o.json();
   }
   async initialize() {
     try {
@@ -77,9 +82,9 @@ class w extends HTMLElement {
     const e = ++this.generation;
     this.loading = !0, this.error = "", this.render();
     try {
-      const s = new URLSearchParams({ page: String(this.page), state: this.state, station: this.station, search: this.search }), [r, h] = await Promise.all([this.json("/jobs?" + s), this.json("/stations")]);
+      const s = new URLSearchParams({ page: String(this.page), state: this.state, station: this.station, search: this.search }), [o, h] = await Promise.all([this.json("/jobs?" + s), this.json("/stations")]);
       if (e !== this.generation) return;
-      this.jobs = r, this.stations = h;
+      this.jobs = o, this.stations = h;
     } catch (s) {
       e === this.generation && (this.error = s.message);
     } finally {
@@ -87,7 +92,7 @@ class w extends HTMLElement {
     }
   }
   render() {
-    var s, r, h, p;
+    var s, o, h, p;
     const e = this.loading || this.busy ? "disabled" : "";
     this.panel.innerHTML = `<style>
       :host{display:block;font:inherit;color:var(--uui-color-text,#303033)} *{box-sizing:border-box}
@@ -111,8 +116,8 @@ class w extends HTMLElement {
       ${this.jobs.jobs.map((t) => {
       var l;
       return `<tr><td>${i(t.orderNumber)}<small>${i(t.storeAlias)}</small></td><td>${i(t.stationAlias)}<small>${t.copies} ${t.copies === 1 ? "copy" : "copies"}</small></td>
-      <td class="${["NeedsReview", "RenderFailed"].includes(t.state) ? "attention" : ""}">${i(y(t.state))}${t.state === "NeedsReview" ? "<small>Check the printer before arranging another copy.</small>" : ""}</td><td>${i(g(t.createdUtc))}</td>
-      <td><div class="actions">${v(t, ((l = this.capabilities) == null ? void 0 : l.canManage) === !0).map((n) => `<button data-job="${i(t.id)}" data-action="${n}" ${e}>${{ preview: "Preview", history: "History", retry: "Retry generation", cancel: "Cancel", reprint: "Reprint" }[n]}</button>`).join("")}</div></td></tr>`;
+      <td class="${["NeedsReview", "RenderFailed"].includes(t.state) ? "attention" : ""}">${i(v(t.state))}${t.state === "NeedsReview" ? "<small>Check the printer before arranging another copy.</small>" : ""}</td><td>${i(g(t.createdUtc))}</td>
+      <td><div class="actions">${$(t, ((l = this.capabilities) == null ? void 0 : l.canManage) === !0).map((r) => `<button data-job="${i(t.id)}" data-action="${r}" ${e}>${{ preview: "Preview", history: "History", retry: "Retry generation", cancel: "Cancel", reprint: "Reprint" }[r]}</button>`).join("")}</div></td></tr>`;
     }).join("")}
       ${!this.loading && this.jobs.jobs.length === 0 ? '<tr><td colspan="5">No print jobs match these filters.</td></tr>' : ""}</tbody></table></div>
       <div class="pager"><button data-page="-1" ${this.page <= 1 || this.loading ? "disabled" : ""}>Previous</button><span>Page ${this.page} of ${Math.max(1, Math.ceil(this.jobs.total / 25))}</span><button data-page="1" ${this.page * 25 >= this.jobs.total || this.loading ? "disabled" : ""}>Next</button></div>
@@ -122,7 +127,7 @@ class w extends HTMLElement {
       ${!this.loading && !this.stations.length ? '<tr><td colspan="4">No stations are available for your stores.</td></tr>' : ""}</tbody></table></div></section><dialog><button data-close>Close</button><div data-detail></div></dialog></main>`, (s = this.panel.querySelector("[data-refresh]")) == null || s.addEventListener("click", () => {
       this.search = this.panel.querySelector('[data-filter="search"]').value, this.page = 1, this.load();
     });
-    for (const t of ["state", "station"]) (r = this.panel.querySelector(`[data-filter="${t}"]`)) == null || r.addEventListener("change", (l) => {
+    for (const t of ["state", "station"]) (o = this.panel.querySelector(`[data-filter="${t}"]`)) == null || o.addEventListener("change", (l) => {
       this[t] = l.target.value, this.page = 1, this.load();
     });
     (h = this.panel.querySelector('[data-filter="search"]')) == null || h.addEventListener("keydown", (t) => {
@@ -134,22 +139,22 @@ class w extends HTMLElement {
     })), (p = this.panel.querySelector("[data-close]")) == null || p.addEventListener("click", () => this.panel.querySelector("dialog").close());
   }
   async action(e, s) {
-    var r;
+    var o;
     if (!this.busy)
       try {
         if (s === "preview" || s === "history") {
           const t = this.panel.querySelector("dialog"), l = this.panel.querySelector("[data-detail]");
           if (s === "preview") {
-            const n = await this.json(`/jobs/${e}/preview`), d = document.createElement("iframe");
-            d.title = "Picking slip preview", d.setAttribute("sandbox", ""), d.referrerPolicy = "no-referrer", d.srcdoc = $(n.html), l.replaceChildren(d), l.style.height = "90%";
+            const r = await this.json(`/jobs/${e}/preview`), d = document.createElement("iframe");
+            d.title = "Picking slip preview", d.setAttribute("sandbox", ""), d.referrerPolicy = "no-referrer", d.srcdoc = w(r.html), l.replaceChildren(d), l.style.height = "90%";
           } else {
-            const n = await this.json(`/jobs/${e}/history`);
-            l.style.height = "auto", l.innerHTML = `<h3>Job history</h3>${n.delivery ? `<p>Claimed: ${i(g(n.delivery.claimedUtc))}</p><p>Reported: ${i(g(n.delivery.reportedUtc))}</p><p>Windows queue reference: ${i(n.delivery.spoolJobId || "Not reported")}</p>` : "<p>Not yet claimed by an agent.</p>"}<ul>${n.actions.map((d) => `<li>${i(g(d.createdUtc))} — ${i(d.action)} by ${i(d.actor)}</li>`).join("")}</ul>`;
+            const r = await this.json(`/jobs/${e}/history`);
+            l.style.height = "auto", l.innerHTML = `<h3>Job history</h3>${r.delivery ? `<p>Claimed: ${i(g(r.delivery.claimedUtc))}</p><p>Reported: ${i(g(r.delivery.reportedUtc))}</p><p>Windows queue reference: ${i(r.delivery.spoolJobId || "Not reported")}</p>` : "<p>Not yet claimed by an agent.</p>"}<ul>${r.actions.map((d) => `<li>${i(g(d.createdUtc))} — ${i(d.action)} by ${i(d.actor)}</li>`).join("")}</ul>`;
           }
           t.showModal();
           return;
         }
-        if (!((r = this.capabilities) != null && r.canManage) || !window.confirm(s === "reprint" ? "Create another copy of this stored picking slip?" : s === "cancel" ? "Cancel this queued picking slip?" : "Retry generating this picking slip?")) return;
+        if (!((o = this.capabilities) != null && o.canManage) || !window.confirm(s === "reprint" ? "Create another copy of this stored picking slip?" : s === "cancel" ? "Cancel this queued picking slip?" : "Retry generating this picking slip?")) return;
         const h = e + ":" + s, p = this.requests.get(h) ?? crypto.randomUUID();
         this.requests.set(h, p), this.busy = !0, this.render(), await this.json(`/jobs/${e}/actions`, { method: "POST", headers: {
           "Content-Type": "application/json",
@@ -160,10 +165,10 @@ class w extends HTMLElement {
       }
   }
 }
-customElements.get("ekom-printing-section-view") || customElements.define("ekom-printing-section-view", w);
+customElements.get("ekom-printing-section-view") || customElements.define("ekom-printing-section-view", x);
 export {
-  v as availableActions,
-  $ as createPreviewDocument,
-  w as default,
-  y as stateLabel
+  $ as availableActions,
+  w as createPreviewDocument,
+  x as default,
+  v as stateLabel
 };
