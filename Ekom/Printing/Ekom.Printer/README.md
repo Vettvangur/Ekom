@@ -1,40 +1,45 @@
 # Ekom.Printer
 
-Optional HTML picking-slip printing for Ekom. This branch currently implements the
-server queue, rendering and authenticated delivery API; it is not yet an end-to-end printing release.
-No printer-specific code or migration is added to Ekom.Core. Core exposes a general
-`IOrderStatusPersistenceHandler` hook for transactional integrations.
+Ekom.Printer automatically prints picking slips on a warehouse printer. The website
+captures the order and prepares an HTML slip; the Windows agent sends it to the
+selected printer.
 
-## Implemented
+You can print when an order reaches a selected status, or let your integration request
+printing after warehouse processing is complete. Each station uses one of these modes.
+You can also customize the slip's content and layout.
 
-- .NET 8 and .NET 10 package with opt-in configuration.
-- Transactional status capture, store/station filtering, and multiple trigger statuses.
-- Durable order snapshots and database-enforced automatic job deduplication.
-- Replaceable scoped HTML renderer and snapshot factory.
-- Background rendering with immutable stored HTML and visible render-failure state.
-- Package-owned SQL Server / SQLite schema migration and version record.
-- Retention cleanup for completed/cancelled jobs, preserving unfinished work.
-- Versioned HTTPS station API with hashed bearer credentials, atomic claims and replay-safe acknowledgements.
-- Package-owned delivery and station-health tables, heartbeat timestamps and offline detection.
-- Agent transport and durable submission-journal library in `Ekom.Printer.Agent.Client`.
-- Separate Printing tab alongside Analytics in Ekom Manager for Umbraco 13, 17 and 18.
+## Set up the website
 
-For the first warehouse deployment, follow the [staging acceptance checklist](../../../docs/printer-staging-acceptance.md).
+Install the package in your website project:
 
-## Registration
+```sh
+dotnet add package Ekom.Printer
+```
 
-After registering Ekom's services:
+Explicit capture requires Ekom.Printer 1.1.0 or later. Use the matching Ekom web-assets
+release for your Umbraco version to display the Printing tab in Ekom Manager.
+Windows Agent 1.0.0 supports both trigger modes.
+
+In `Program.cs`, register printing after Ekom's services and map its endpoints after
+building the application:
 
 ```csharp
+using Ekom.Printer;
+using Ekom.Printer.Api;
+
 builder.Services.AddEkomPrinter(builder.Configuration);
-builder.Services.AddScoped<IPickingSlipHtmlRenderer, MyPickingSlipRenderer>();
-// Optional: capture customer addresses, shelf locations or other custom fields.
-builder.Services.AddScoped<IPickingSlipContextFactory, MyPickingSlipContextFactory>();
-// After building the application:
+
+var app = builder.Build();
 app.MapEkomPrinter();
 ```
 
-Namespaces: `Ekom.Printer`, `Ekom.Printer.Rendering`, and `Ekom.Printer.Api`.
+Keep your existing application setup and middleware. The default picking-slip template
+works without registering a custom renderer.
+
+## Configure appsettings.json
+
+This example enables printing on order-status changes, using the default
+`StatusChange` trigger mode:
 
 ```json
 {
@@ -52,6 +57,7 @@ Namespaces: `Ekom.Printer`, `Ekom.Printer.Rendering`, and `Ekom.Printer.Api`.
           "StoreAliases": [ "main" ],
           "PickingSlip": {
             "Enabled": true,
+            "TriggerMode": "StatusChange",
             "TriggerStatuses": [ "OfflinePayment", "ReadyForDispatch" ],
             "PrintPolicy": "OncePerOrder",
             "Copies": 1
@@ -63,20 +69,42 @@ Namespaces: `Ekom.Printer`, `Ekom.Printer.Rendering`, and `Ekom.Printer.Api`.
 }
 ```
 
-Restart the website after changing settings. Printing is disabled by default;
-disabled installations do not create printer tables or register a status capture handler.
-Each station requires the SHA-256 hash (hex) of a cryptographically random bearer
-token of at least 32 characters. Store only the hash in server configuration and
-protect the raw token on the agent computer. Never commit production credentials.
-The placeholder above intentionally fails validation until replaced. Follow
-[Create a station token and TokenSha256](#create-a-station-token-and-tokensha256) below.
+This station prints when an order reaches `OfflinePayment` or `ReadyForDispatch`.
+With `OncePerOrder`, reaching both statuses still creates only one slip.
 
-`OncePerOrder` creates one automatic job per order/store/station across selected
-statuses. `OncePerStatus` creates one per selected status. Repeated notifications
-are deduplicated by the job primary key. Changing the policy changes that key and
-can allow another job on a later status transition. Enabling the feature does not
-backfill old orders. Saves with unchanged status are ignored. New orders initially
-inserted in a configured status are eligible as well.
+To let your integration request printing after warehouse processing instead, replace
+`PickingSlip` with:
+
+```json
+"PickingSlip": {
+  "Enabled": true,
+  "TriggerMode": "ExplicitCapture",
+  "TriggerStatuses": [],
+  "PrintPolicy": "OncePerOrder",
+  "Copies": 1
+}
+```
+
+In this mode, your integration calls `IPickingSlipCapture` after saving warehouse
+metadata; order-status changes do not create slips. See
+[Explicit capture after warehouse processing](#explicit-capture-after-warehouse-processing)
+for the API call, retry behavior and switching existing stations safely.
+
+Choose one mode per station. `StatusChange` remains the default when `TriggerMode` is
+omitted. `ExplicitCapture` requires an empty `TriggerStatuses` list and `OncePerOrder`.
+
+Replace `main` with your store alias and `main-warehouse` with the station name you
+will enter in the Windows agent. Generate a token using the instructions below and
+replace `REPLACE_WITH_64_CHARACTER_SHA256_HASH` with its hash.
+
+Restart the website after changing configuration. Printing is disabled unless
+`Ekom:Printing:Enabled` is `true`. All instances of the website must use the same settings.
+
+In status-change mode, `OncePerOrder` prints once across the selected statuses;
+`OncePerStatus` allows one slip for each selected status. Repeated notifications do not
+create extra jobs. Existing orders are not printed automatically when you enable the
+feature; a subsequent qualifying status change is needed. New orders created in a
+selected status are eligible too.
 
 ## Create a station token and TokenSha256
 
@@ -124,154 +152,33 @@ Write-Host "Website TokenSha256:     $tokenSha256"
 | Agent station credential | Windows **Ekom Printer Agent Setup > Station credential**. Use the original token, not its hash. |
 | Website TokenSha256 | The matching station's `TokenSha256` under `Ekom:Printing:Stations` in website configuration. This is a 64-character hexadecimal hash. |
 
-For example, replace the hash placeholder in your existing station configuration:
+Keep the original token in a password manager and share it securely with the person
+setting up the agent. These commands display it in your terminal. The hash cannot be
+used to recover the token.
 
-```json
-"Stations": [
-  {
-    "Alias": "main-warehouse",
-    "TokenSha256": "PASTE_THE_WEBSITE_HASH_HERE",
-    "StoreAliases": [ "main" ],
-    "PickingSlip": {
-      "Enabled": true,
-      "TriggerStatuses": [ "ReadyForDispatch" ],
-      "PrintPolicy": "OncePerOrder",
-      "Copies": 1
-    }
-  }
-]
-```
+To rotate a credential, generate a new token, replace the website hash and the agent's
+saved credential, restart the website, and test the connection again.
 
-Use the actual store and status aliases from your website. Keep the other printing
-settings from the full configuration example above, including `Enabled: true`.
-Restart the website after changing its configuration. On the Windows PC, enter the
-website URL and matching station alias, save the original token with automatic
-printing paused, and run **Test connection**, followed by **Test print**.
+## Connect the Windows agent
 
-These commands print the secret token in your terminal. Save it in a password manager
-and transfer it securely to the warehouse administrator; do not paste it into chat,
-logs, screenshots, source control or support tickets. The hash cannot recover the
-original token. Running the command again creates a different token: to replace an
-existing credential, update both the website hash and the agent credential, restart
-the website, and test the connection again.
+Install the [Windows Printer Agent](https://github.com/Vettvangur/Ekom/releases?q=printer-agent-v)
+on the warehouse computer. The printer driver must already be installed.
 
-## HTML customization contract
+1. Open **Ekom Printer Agent Setup** as administrator.
+2. Enter the website's HTTPS URL, the matching station alias and the original token.
+3. Select the printer and save with automatic printing paused.
+4. Run **Test connection**, then **Test print**, and check the printed page.
+5. Enable automatic printing and save again.
 
-Implement `IPickingSlipHtmlRenderer.RenderAsync` to return a complete HTML document.
-Use print CSS (`@page`, margins, page breaks), inline CSS, embedded data-URI images
-and fonts. Encode customer-provided values with `HtmlEncoder.Default.Encode`.
-The default template does this. Custom renderers are trusted application code.
-
-The agent contract prohibits JavaScript, external network requests and local-file
-access. The Windows agent enforces these restrictions. The server stores HTML; it does
-not sanitize or execute it. The agent uses an in-memory PDF solely for pagination
-and rasterization before submitting pages to the Windows print spooler.
-
-Use `IPickingSlipContextFactory` to add additional order/line data into the
-snapshot's `Data` dictionaries. It receives an order reconstructed from the stored
-status-transition snapshot, not a mutable current order. This factory runs in the
-background; failures retain the capture and retry after one minute. Renderers
-should use this persisted snapshot instead of fetching mutable current order data.
-Renderers may execute more than once after restarts or on multiple web instances;
-keep them free of side effects. The first successful HTML result wins.
-
-## Database ownership and retention
-
-`Migrations/PrinterMigration.cs` owns `EkomPrinterSchema`, `EkomPrinterJob`,
-`EkomPrinterDelivery`, `EkomPrinterStation` and `EkomPrinterCapturedStatus` in
-the Ekom database. It runs during host startup before serving requests. Schema changes are
-transactional, with a SQL Server application lock; SQLite uses database write
-locking with bounded retries for busy/locked schema startup. Migration version 2
-adds delivery and health tables; version 3 adds transactional status capture.
-Neither migration removes existing jobs. Newer unknown
-schemas fail startup rather than accepting a downgrade.
-Disabling/removing the package does not drop its tables.
-
-HTML and snapshots are cleared after `HtmlRetentionDays`, measured from terminal
-completion. After `HistoryRetentionDays`, identifying order/station details are
-cleared. A minimal hash tombstone remains to prevent reprinting old orders.
-Pending, ready, claimed, failed and needs-review jobs are retained. Manual reprints
-after document expiration will require regeneration, to be explicitly confirmed.
-Delivery records are removed after history retention for terminal jobs; stale
-station health records are also removed. Unresolved delivery records are preserved.
-Raw captured order data is deleted once its print-job snapshot has been created.
-Failed/unprocessed captures remain available for recovery rather than being expired.
-
-## Durable order-status capture
-
-When enabled, the package registers `IOrderStatusPersistenceHandler`. Ekom invokes
-this general hook inside the order-write transaction, including the direct payment
-release/reset path. The package writes only a small local capture record there;
-custom factories, HTML rendering and network calls never run inside that transaction.
-Suppressing the older notification events does not suppress durable capture.
-
-The order change and capture either both commit or both roll back. A capture database
-failure therefore fails the order save rather than silently losing the slip. Printer
-availability and rendering failures cannot fail the order save. After a restart,
-the worker builds jobs from pending captures using the original order and configured
-station/policy/copy values. Enqueue is idempotent even if the process stops before
-deleting the capture record. Templates may run again and must have no side effects.
-
-Only writes made through Ekom's supported persistence paths are covered. Direct SQL
-updates by client integrations bypass this hook. Installations must restart after
-changing printing configuration, and all website instances must use matching settings.
-Disabling printing pauses existing pending work; it does not delete it.
-
-## Station API, version 1
-
-Call `app.MapEkomPrinter()` explicitly. All requests require HTTPS,
-`Authorization: Bearer <station-token>` and `X-Ekom-Printer-Protocol: 1`.
-Configure trusted forwarded headers in the host when a reverse proxy terminates
-TLS; this package does not trust arbitrary forwarding headers itself. CMS login
-cookies do not grant access. Responses use `Cache-Control: no-store`.
-
-Base path: `/ekom/printer/v1/stations/{stationAlias}`.
-
-| Method | Path | Result |
-| --- | --- | --- |
-| POST | `/claim` | A claimed job with HTML, copies, claim token and expiry; 204 when empty |
-| POST | `/jobs/{jobId}/acknowledge` | Submit `claimToken`, `submitted`, `spoolJobId`; 204 on success or identical replay |
-| POST | `/heartbeat` | Submit `protocolVersion`, `agentVersion`, `printerName` |
-| GET | `/health` | This station's last-seen UTC, online/compatible flags, agent version and printer name |
-
-Wrong credentials or an unknown station return 401; incompatible protocol returns
-426 before claiming a job. Invalid acknowledgements return 400; wrong claim tokens,
-cross-station jobs and conflicting replay return 409 without changing the job.
-Submitted acknowledgements require the actual Windows spool identifier.
-
-Claims are never automatically returned to the ready queue. After
-`ClaimTimeoutSeconds` they become `NeedsReview`, because the physical print outcome
-may be unknown. The original matching acknowledgement can still reconcile an
-expired claim. Reporting a failure/uncertain result also goes to `NeedsReview`.
-The timeout sweep runs in the background every five seconds.
-
-The agent health API is station-scoped; Manager displays stations for the user's allowed stores.
-Last-seen time is supplied by the server, not the agent clock.
-"Online" means a recent valid heartbeat, not confirmation that the printer has paper.
+The test page uses the Windows service account, whose printer access can differ from
+the logged-in user's. See the [agent setup guide](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer.Agent/README.md) for
+installation, upgrades and connection troubleshooting.
 
 ## Explicit capture after warehouse processing
 
-Choose one trigger mode per station. `StatusChange` is the default, preserving existing
-configurations. `ExplicitCapture` ignores order-status events and accepts captures only
-through the public .NET service `Ekom.Printer.Services.IPickingSlipCapture`. This is a
-server-side integration API, not a new HTTP endpoint exposed to warehouse agents.
-
-For an explicitly triggered station, replace its `PickingSlip` settings with:
-
-```json
-"PickingSlip": {
-  "Enabled": true,
-  "TriggerMode": "ExplicitCapture",
-  "TriggerStatuses": [],
-  "PrintPolicy": "OncePerOrder",
-  "Copies": 1
-}
-```
-
-Startup validation rejects explicit capture combined with status triggers or
-`OncePerStatus`. Other stations can continue using status-based printing.
-
-`AddEkomPrinter` registers `IPickingSlipCapture` for dependency injection:
+Use `ExplicitCapture` when your integration decides when the order is ready to print.
+Order-status changes do not create slips for that station. `AddEkomPrinter` registers
+`IPickingSlipCapture` for dependency injection:
 
 ```csharp
 using Ekom.Models;
@@ -281,131 +188,122 @@ public sealed class WarehousePrinting(IPickingSlipCapture capture)
 {
     public Task<PickingSlipCaptureResult> CaptureSavedOrderAsync(
         OrderData savedOrder, CancellationToken cancellationToken = default)
-        => capture.CaptureAsync(savedOrder, "warehouse", cancellationToken);
+        => capture.CaptureAsync(savedOrder, "main-warehouse", cancellationToken);
 }
 ```
 
-Call this after DK completion and after committing the warehouse metadata to the order,
-before marking your durable dispatch work completed. Supply the committed `OrderData`
-including its updated `OrderInfo` JSON; do not pass an earlier checkout object or client
-request data. Warehouse values in other tables must first be copied into the saved order
-snapshot (for example `CustomData`). Your `IPickingSlipContextFactory` can copy these saved
-values to `PickingSlipContext.Data`, which the HTML renderer reads without loading the
-latest order or calling DK again.
+Call it after saving and committing the warehouse metadata, before marking your
+integration's dispatch work complete. Pass the saved `OrderData`, including its updated
+`OrderInfo` JSON. Values stored elsewhere must first be copied into the saved order,
+for example into `CustomData`.
 
-The capture owns a database transaction and returns only after it commits. It does not
-join the metadata save or dispatch transaction. Your integration must retain retryable
-dispatch work until capture succeeds. If saving metadata succeeds but capture fails,
-retry capture; if capture succeeds but marking dispatch complete fails, retry the same
-order and station. Database errors, deadlocks and cancellation propagate to the caller;
-never mark dispatch complete on those failures.
+A successful call means the order has been saved for printing. It does not mean the
+slip has finished rendering or physically printed. The result contains `JobId` and
+`Created`; `Created` is `false` when a capture or job already exists for that order,
+store and station.
 
-Order ID + store alias + station alias form the idempotency key, using the existing
-`OncePerOrder` identity. No caller-generated request key is needed. `JobId` identifies the
-durable capture/job; `Created = false` means one already exists, including retained
-history tombstones. Changing status or retrying cannot create another slip. The first
-snapshot wins: a retry never replaces its metadata. Success means durable acceptance,
-not completed rendering or physical printing. Disabled printing, the wrong trigger mode,
-unknown stations and stores outside the station configuration fail without accepting work.
+Keep dispatch work available for retry until capture succeeds. If capture fails, retry
+it. If capture succeeds but completing dispatch work fails, retry with the same order
+and station. These retries do not create another slip. The first saved snapshot is
+kept, so retrying does not replace it with newer metadata.
+
+Capture fails if printing is disabled, the station uses status-change mode, or the
+order's store is not assigned to that station. Database errors and cancellation also
+reach the caller; do not mark dispatch complete after a failed capture.
 
 ### Switching an existing station
 
-Pause the integration while switching modes, remove its `TriggerStatuses`, and review
-existing captures and jobs before resuming. Changing configuration does not cancel work
-already captured. An earlier `OncePerOrder` capture is returned as existing and will not
-be upgraded with new warehouse metadata. Earlier `OncePerStatus` jobs have different keys
-and can still print alongside a new explicit capture. Reconcile those orders before
-rollout; do not change aliases or delete deduplication records to force printing.
+Pause the integration, set `TriggerMode` to `ExplicitCapture`, clear `TriggerStatuses`,
+and use `OncePerOrder`. Review existing captures and jobs before resuming: changing
+settings does not cancel work already queued.
 
-Use Manager's reviewed resolution/reprint actions when an operator actually needs another
-copy. The capture API is for initial durable acceptance, not manual reprinting. This feature
-uses the package's existing capture tables and migration; no new schema or agent protocol
-is required. Agent 1.0.0 remains compatible. Update Manager web assets with this change to
-show the station's **Explicit capture API** trigger label.
+An earlier `OncePerOrder` slip prevents a new capture for the same order and station,
+and its metadata is not replaced. Earlier `OncePerStatus` slips can still print alongside
+an explicit capture. Resolve those orders before switching. Use the Manager's review
+and reprint actions when another copy is needed.
 
-## Ekom Manager
+## Customize the picking slip
 
-The optional **Printing** tab appears when the package is installed, mapped and enabled.
-Deploy the matching Ekom web assets. It lists jobs with state, station and order-number
-filters, sandboxed HTML previews, delivery/action history, and station health with last-seen
-time. It respects existing Manager access and store restrictions. Configuration is read-only;
-continue editing appsettings and selecting the printer through the Windows agent setup.
+Implement `IPickingSlipHtmlRenderer` to return a complete HTML document, then register
+it after `AddEkomPrinter`:
 
-Administrators can retry failed HTML generation, cancel unclaimed jobs, and reprint
-submitted jobs while their HTML is retained. To grant these actions to other backoffice
-groups, configure `Ekom:Printing:ManagerGroups` with their group aliases. The default
-empty list grants no additional groups. Other permitted Manager users can view jobs.
-Actions require the host's backoffice authorization policy and an anti-forgery token.
+```csharp
+using Ekom.Printer.Rendering;
 
-Reprint creates a new job containing the exact stored HTML and copies setting. Each action
-records the operator, time and request ID in the package-owned audit table (schema v4).
-Retrying the same request ID returns the same outcome. Audit records follow
-`HistoryRetentionDays`; expired HTML is unavailable for preview or reprint.
-Claimed jobs cannot be changed. For **Needs review** jobs, check the physical output and
-Windows print queue before choosing **Mark as printed** or **Print again after checking**.
-Mark as printed records **Confirmed printed** without submitting another copy. Printing again
-closes the uncertain original and creates one replacement job using its stored HTML and copy
-count; clear any pending original from the Windows queue first to avoid delayed duplicates.
-Both actions are audited and idempotent. Late agent reports are recorded without undoing the
-operator's resolution. Resolved jobs follow the configured HTML and history retention.
-
-Use Ekom.Printer 1.0.0 with Printer Agent 1.0.0 (protocol 1), and Ekom web assets 0.2.358
-or later for these resolution actions. The package owns its migrations; these actions use
-the existing schema and require no manual database changes.
-
-"Submitted to printer" records acceptance by the spooler, not physical printing.
-Browser previews disable scripts and external resources and remove active HTML and
-navigation. The Windows renderer must independently enforce the same security contract.
-
-## Agent library
-
-`Ekom.Printer.Agent.Client` contains the HTTPS client and submission processor. It
-shares the protocol source without referencing Ekom.Core or database libraries.
-Use `PrinterAgentClient.CreateHttpClient()` to disable redirects; injected HTTP
-clients must also disable redirects. The caller owns/disposes the HTTP client.
-
-The processor journals intent before invoking `IHtmlPrinter`, persists the spool
-result before acknowledging, and only removes its journal entry after an accepted
-acknowledgement. Lost responses retry reporting, never physical printing. After an
-uncertain restart it reports `NeedsReview`. Corrupt journals stop processing.
-Consumers sharing a journal directory are serialized using an exclusive file lock.
-Protect this directory with service-account-only permissions; it contains claim
-tokens but never HTML. The Windows host must use a stable directory per station.
-
-The library is now used by the Windows service and administrator setup projects in
-`Ekom.Printer.Agent` and `Ekom.Printer.Agent.Setup`. The implementation uses restricted
-Chromium rendering and Windows GDI submission with real spool IDs. Setup lists printers
-and sends test prints through the service account. See [agent instructions](../Ekom.Printer.Agent/README.md).
-NSIS installer packaging is implemented. Windows installation and hardware acceptance
-remain pending; this is not yet a production-tested installer release.
-
-## Remaining work before production
-
-See [IMPLEMENTATION.md](IMPLEMENTATION.md) for the agreed implementation plan.
-This package requires the core version containing `IOrderStatusPersistenceHandler`.
-During development, build against the core project in this branch. Publish a new
-matching core/package release together with an updated minimum core dependency;
-do not deploy this build with an older published core package.
-
-SQL Server migrations need integration testing against a real server. SQLite
-migrations, deduplication, rendering and retention have automated tests.
-
-## Development
-
-```sh
-dotnet test Ekom/Tests/Ekom.Printer.Tests/Ekom.Printer.Tests.csproj
-dotnet pack Ekom/Printing/Ekom.Printer/Ekom.Printer.csproj
+builder.Services.AddScoped<IPickingSlipHtmlRenderer, MyPickingSlipRenderer>();
 ```
 
-### Recovering from SQL Server table-creation failure
+Use print CSS for page size, margins and page breaks. Embed images and fonts in the
+HTML using data URIs. Encode customer-provided text with `HtmlEncoder.Default.Encode`.
+The agent blocks JavaScript, external network requests and local-file access.
 
-If an earlier package failed to create printer tables because SQL Server rejected a
-nullable primary-key column, upgrade to a package containing the explicit NOT NULL
-mapping fix and restart the website with printing enabled. The existing migrations
-use the corrected mappings; no separate application migration is required. Failed
-migrations roll back their table creation and schema-version updates together.
+To include addresses, shelf locations or warehouse references, implement
+`IPickingSlipContextFactory` and register it in the same way:
 
-This fix does not alter tables that already exist. If EkomPrinterSchema records a
-completed version but corresponding tables are missing, inspect the database and
-startup logs before attempting repair. Do not drop printer tables or manually
-advance/reset the schema version.
+```csharp
+builder.Services.AddScoped<IPickingSlipContextFactory, MyPickingSlipContextFactory>();
+```
+
+The factory receives the saved order snapshot. Copy custom values into
+`PickingSlipContext.Data` or a line's `Data` dictionary, then read them in the renderer.
+Do not fetch the latest order while rendering: the slip should reflect the data captured
+when printing was requested.
+
+Factories and renderers run in the background and may run again after a restart. Keep
+them free of side effects such as updating orders or sending messages. Factory failures
+are retried; rendering failures appear in the Manager for review and retry.
+
+## Manage printing in Ekom Manager
+
+The **Printing** tab shows jobs, previews, history and station connections. You can
+filter by order, station or status. Users see only the stores they are allowed to access.
+Change station settings in appsettings and select the physical printer in the Windows
+agent.
+
+Administrators can retry failed slip generation, cancel jobs that have not been claimed,
+and reprint slips while their stored HTML is available. To grant these actions to other
+backoffice groups, add their aliases to `Ekom:Printing:ManagerGroups`.
+
+**Submitted to printer** means the Windows print queue accepted the job. It does not
+confirm that paper was printed. **Online** means the agent contacted the website recently;
+it does not confirm that the printer has paper or is working.
+
+For **Needs review** jobs, check the physical output and the Windows queue before choosing:
+
+- **Mark as printed:** record that you confirmed the output, without printing again.
+- **Print again after checking:** close the uncertain job and queue a replacement using
+  its saved HTML and copy count. Clear any pending original from the Windows queue first.
+
+Uncertain jobs are not automatically printed again. Review and reprint actions record
+who performed them and when. A normal reprint uses the saved slip, not newer order data.
+
+## Storage and retention
+
+The package creates and updates its own tables in the Ekom database when the website
+starts with printing enabled. No manual table creation is needed. Disabling or removing
+the package does not delete those tables.
+
+`HtmlRetentionDays` controls how long completed slips and their snapshots remain
+available. `HistoryRetentionDays` controls how long their identifying history is kept
+and must be at least as long as HTML retention. These periods start when a job completes
+or is cancelled. After the HTML expires, preview and reprint are unavailable.
+
+Queued, failed and unresolved work is retained for recovery. A minimal record remains
+after history cleanup to prevent an old order from printing again.
+
+## Troubleshooting
+
+- **The agent cannot connect:** check the HTTPS URL, station alias and original token.
+  Make sure printing is enabled and `app.MapEkomPrinter()` is registered. The agent's
+  **Test connection** message explains common configuration and network errors.
+- **No slip appears in explicit mode:** confirm your integration calls `CaptureAsync`
+  after saving warehouse data. Changing order status alone does not trigger this mode.
+- **No slip appears in status-change mode:** check the station's store and trigger
+  statuses. Direct SQL updates bypass Ekom's status handling.
+- **A slip has old warehouse data:** the first captured snapshot is preserved. Check
+  whether an earlier status trigger captured the order before your warehouse work finished.
+- **Printer tables are missing:** upgrade to the current package, enable printing and
+  restart the website. Check startup logs and database permissions if creation fails.
+  Do not drop printer tables or manually change migration records to force a retry.
+
+For custom agent integrations, see the [printer agent protocol reference](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/printer-agent-protocol.md).
