@@ -4,5 +4,5 @@
   "Plugins/Ekom.Algolia": "0.2.70",
   "Plugins/Ekom.Mailchimp": "1.5.3",
   "Plugins/Ekom.Mailchimp/U18": "1.5.3",
-  "Ekom/Printing/Ekom.Printer": "0.1.0-beta.3"
+  "Ekom/Printing/Ekom.Printer": "1.0.0"
 }
