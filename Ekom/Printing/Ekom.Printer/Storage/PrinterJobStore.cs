@@ -85,7 +85,7 @@ internal sealed class PrinterJobStore(DatabaseFactory databaseFactory)
         var historyCutoff = nowUtc.AddDays(-options.HistoryRetentionDays);
         await using var db = databaseFactory.GetDatabase();
         var terminal = db.GetTable<PrintJob>()
-            .Where(x => x.State == PrintJobState.Submitted || x.State == PrintJobState.Cancelled);
+            .Where(x => x.State == PrintJobState.Submitted || x.State == PrintJobState.ConfirmedPrinted || x.State == PrintJobState.Cancelled);
         await terminal.Where(x => x.CompletedUtc < htmlCutoff)
             .Set(x => x.Html, (string?)null).Set(x => x.SnapshotJson, (string?)null)
             .UpdateAsync(cancellationToken).ConfigureAwait(false);

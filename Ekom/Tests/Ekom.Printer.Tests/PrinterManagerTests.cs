@@ -134,4 +134,66 @@ public sealed class PrinterManagerTests
         await db.GetTable<PrintJob>().Where(x => x.Id == copy.Id).Set(x => x.State, PrintJobState.Claimed).UpdateAsync();
         Assert.Null(await manager.ActAsync(copy.Id, new PrinterManagerRequest("cancel", Guid.NewGuid()), "Admin"));
     }
+    [Theory]
+    [InlineData("resolve-printed", PrintJobState.ConfirmedPrinted)]
+    [InlineData("resolve-reprint", PrintJobState.Cancelled)]
+    public async Task ReviewResolutionIsAuditedIdempotentAndAcceptsLateReports(string action, PrintJobState expected)
+    {
+        using var fixture = new PrinterTests.DatabaseFixture();
+        await new PrinterMigration(fixture.Factory).ApplyAsync();
+        await using var db = fixture.Factory.GetDatabase();
+        await db.CreateTableAsync<OrderData>();
+        var order = Guid.NewGuid();
+        await db.InsertAsync(new OrderData { UniqueId = order, StoreAlias = "allowed", OrderNumber = "123",
+            OrderStatusCol = "ReadyForDispatch", OrderInfo = "{}" });
+        var id = new string('d', 64);
+        await db.InsertAsync(new PrintJob { Id = id, OrderId = order, StationAlias = "warehouse",
+            State = PrintJobState.Ready, Html = "<p>Original</p>", Copies = 2, CreatedUtc = DateTime.UtcNow });
+        var options = Options.Create(new PrinterOptions());
+        var delivery = new PrinterDeliveryStore(fixture.Factory, options, TimeProvider.System);
+        var claim = await delivery.ClaimAsync("warehouse");
+        Assert.NotNull(claim);
+        var access = new Mock<IManagerAccessService>();
+        access.Setup(x => x.GetAllowedStoreAliases()).Returns(new[] { "allowed" });
+        var security = new Mock<ISecurityService>();
+        security.Setup(x => x.GetUmbracoUserGroups()).Returns(Array.Empty<string>());
+        var manager = new PrinterManagerService(fixture.Factory, access.Object, security.Object, options, TimeProvider.System);
+        var request = new PrinterManagerRequest(action, Guid.NewGuid());
+        Assert.Null(await manager.ActAsync(id, request, "Reader"));
+        security.Setup(x => x.IsCurrentUserAdmin()).Returns(true);
+        Assert.Null(await manager.ActAsync(id, request, "Admin")); // Still claimed: do not interfere.
+        await db.GetTable<PrintJob>().Where(x => x.Id == id).Set(x => x.State, PrintJobState.NeedsReview).UpdateAsync();
+        access.Setup(x => x.GetAllowedStoreAliases()).Returns(Array.Empty<string>());
+        Assert.Null(await manager.ActAsync(id, request, "Admin"));
+        access.Setup(x => x.GetAllowedStoreAliases()).Returns(new[] { "allowed" });
+        var result = await manager.ActAsync(id, request, "Admin");
+        Assert.NotNull(result);
+        Assert.Equal(result, await manager.ActAsync(id, request, "Admin"));
+        Assert.Null(await manager.ActAsync(id, new PrinterManagerRequest(action, Guid.NewGuid()), "Admin"));
+        var audit = await db.GetTable<PrinterManagerAction>().SingleAsync();
+        Assert.Equal("Admin", audit.Actor);
+        Assert.Equal(action, audit.Action);
+        if (action == "resolve-reprint")
+        {
+            var replacement = await db.GetTable<PrintJob>().SingleAsync(x => x.Id == result);
+            Assert.Equal(PrintJobState.Ready, replacement.State);
+            Assert.Equal("<p>Original</p>", replacement.Html);
+            Assert.Equal(2, replacement.Copies);
+            Assert.Equal(2, await db.GetTable<PrintJob>().CountAsync());
+        }
+        else Assert.Equal(1, await db.GetTable<PrintJob>().CountAsync());
+        var acknowledgement = new Ekom.Printer.Protocol.PrintAcknowledgement(claim.ClaimToken, true, "123");
+        Assert.False(await delivery.AcknowledgeAsync("warehouse", id, acknowledgement with { ClaimToken = Guid.NewGuid() }));
+        Assert.True(await delivery.AcknowledgeAsync("warehouse", id, acknowledgement));
+        Assert.True(await delivery.AcknowledgeAsync("warehouse", id, acknowledgement));
+        var resolved = await db.GetTable<PrintJob>().SingleAsync(x => x.Id == id);
+        Assert.Equal(expected, resolved.State);
+        Assert.NotNull(resolved.CompletedUtc);
+        Assert.Empty((await manager.ListAsync("attention", null, null, 1)).Jobs);
+        await new PrinterJobStore(fixture.Factory).CleanupAsync(options.Value,
+            DateTime.UtcNow.AddDays(options.Value.HistoryRetentionDays + options.Value.HtmlRetentionDays + 1));
+        var retained = await db.GetTable<PrintJob>().SingleAsync(x => x.Id == id);
+        Assert.Null(retained.Html);
+        Assert.Equal(Guid.Empty, retained.OrderId);
+    }
 }

@@ -22,7 +22,7 @@ if ($IsWindows) {
     if ($signature.Status -notin @('Valid', 'NotSigned')) { throw "Invalid installer signature: $($signature.Status)" }
     $signed = $signature.Status -eq 'Valid'
 }
-$signing = if ($signed) { 'Authenticode-signed installer.' } else { '**Unsigned test installer.** Use only for controlled acceptance testing until a signed release is available.' }
+$signing = if ($signed) { 'Authenticode-signed installer.' } else { '**Unsigned installer.** Windows SmartScreen or company application-control policy may block installation. Follow INSTALLATION.md and the approval process required by your organization.' }
 Copy-Item (Join-Path $repo 'Ekom/Printing/Ekom.Printer.Agent/README.md') (Join-Path $OutputDirectory 'INSTALLATION.md')
 Copy-Item (Join-Path $repo 'LICENSE') (Join-Path $OutputDirectory 'LICENSE.txt')
 @{
@@ -41,13 +41,15 @@ clients do not need to install either separately. See INSTALLATION.md for setup 
 
 - Agent/server protocol: **$protocol**.
 - Requires the Ekom.Printer package and Manager assets from a compatible release.
-- Until a published package compatibility matrix is established, use the Ekom.Printer
-  implementation from [this source revision](https://github.com/$Repository/tree/$SourceRevision).
+- Agent 1.0.0 is compatible with Ekom.Printer 1.0.0 (protocol 1).
+- Use Ekom web assets 0.2.358 or later for Manager review-resolution actions.
 - Printer driver must be installed and available to the Windows service account.
 
 ## Changes
 
-Maintainer: replace this paragraph with the agent-specific changes and known issues before publishing.
+Connection diagnostics explain missing endpoints, rejected credentials, redirects, protocol
+incompatibility, network errors and timeouts without exposing credentials or response bodies.
+The matching package adds audited resolution of uncertain jobs and safe late-report handling.
 Source: [$SourceRevision](https://github.com/$Repository/commit/$SourceRevision).
 
 ## Upgrade

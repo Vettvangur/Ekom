@@ -12,14 +12,18 @@ const root = '/ekom/printer/manager';
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!));
 const date = (value?: string): string => value ? new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(value) ? value : value + 'Z').toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Never';
 export const stateLabel = (state: string): string => ({ PendingRender: 'Generating slip', Ready: 'Queued', Claimed: 'With agent',
-  Submitted: 'Submitted to printer', NeedsReview: 'Needs review', Cancelled: 'Cancelled', RenderFailed: 'Generation failed' }[state] ?? state);
+  ConfirmedPrinted: 'Confirmed printed', Submitted: 'Submitted to printer', NeedsReview: 'Needs review', Cancelled: 'Cancelled', RenderFailed: 'Generation failed' }[state] ?? state);
 
 export function availableActions(job: Job, canManage: boolean): string[] {
   const actions = job.hasHtml ? ['preview', 'history'] : ['history'];
   if (!canManage) return actions;
   if (job.state === 'RenderFailed') actions.push('retry');
   if (['PendingRender', 'Ready', 'RenderFailed'].includes(job.state)) actions.push('cancel');
-  if (job.state === 'Submitted' && job.hasHtml) actions.push('reprint');
+  if (['Submitted', 'ConfirmedPrinted'].includes(job.state) && job.hasHtml) actions.push('reprint');
+  if (job.state === 'NeedsReview') {
+    actions.push('resolve-printed');
+    if (job.hasHtml) actions.push('resolve-reprint');
+  }
   return actions;
 }
 
@@ -100,7 +104,7 @@ export default class EkomPrintingSectionViewElement extends UmbElementMixin(HTML
     const online = this.stations.filter(s => s.health.online && s.health.compatible).length;
     const attention = this.jobs.jobs.filter(j => ['NeedsReview', 'RenderFailed'].includes(j.state)).length;
     const totalPages = Math.max(1, Math.ceil(this.jobs.total / this.jobs.pageSize));
-    const tone = (state: string) => ({ NeedsReview: 'warning', RenderFailed: 'danger', Submitted: 'success', Ready: 'info', Claimed: 'info' }[state] ?? 'neutral');
+    const tone = (state: string) => ({ NeedsReview: 'warning', RenderFailed: 'danger', Submitted: 'success', ConfirmedPrinted: 'success', Ready: 'info', Claimed: 'info' }[state] ?? 'neutral');
     const words = (value: string) => value.replace(/([a-z])([A-Z])/g, '$1 $2');
     this.panel.innerHTML = `<style>
       :host{display:block;font:inherit;color:var(--uui-color-text,#20232b);--line:var(--uui-color-border,#e2e4e9);--surface:var(--uui-color-surface,#fff);--subtle:var(--uui-color-surface-alt,#f6f7f9);--muted:var(--uui-color-text-alt,#626773);--accent:var(--uui-color-interactive,#3544b1)}
@@ -111,7 +115,7 @@ export default class EkomPrintingSectionViewElement extends UmbElementMixin(HTML
     </style><main aria-busy="${this.loading}">
       <header class="page-heading"><div><h1>Printing</h1><p class="subtitle">Track picking slips and warehouse printer connections.</p></div><div class="heading-actions"><span class="connection"><span class="dot"></span>${this.loading ? 'Checking stations…' : `${online} of ${this.stations.length} stations online`}</span><button data-reload ${disabled}>${this.loading ? 'Refreshing…' : 'Refresh'}</button></div></header>
       <section class="card" aria-labelledby="jobs-heading"><div class="section-heading"><div class="title-group"><h2 id="jobs-heading">Print jobs</h2><span class="count" aria-live="polite">${this.loading ? 'Loading…' : `${this.jobs.total} ${this.jobs.total === 1 ? 'job' : 'jobs'}`}</span></div>${this.state || this.station || this.search ? '<button data-clear>Clear filters</button>' : ''}</div>
-      <div class="filters"><label>Status<select data-filter="state">${[['','All statuses'],['attention','Needs attention'],['PendingRender','Generating slip'],['Ready','Queued'],['Claimed','With agent'],['Submitted','Submitted to printer'],['Cancelled','Cancelled']].map(([v,l]) => `<option value="${v}" ${v === this.state ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <div class="filters"><label>Status<select data-filter="state">${[['','All statuses'],['attention','Needs attention'],['PendingRender','Generating slip'],['Ready','Queued'],['Claimed','With agent'],['Submitted','Submitted to printer'],['ConfirmedPrinted','Confirmed printed'],['Cancelled','Cancelled']].map(([v,l]) => `<option value="${v}" ${v === this.state ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       <label>Station<select data-filter="station"><option value="">All stations</option>${this.stations.map(s => `<option value="${escape(s.alias)}" ${s.alias === this.station ? 'selected' : ''}>${escape(s.alias)}</option>`).join('')}</select></label>
       <label class="search">Order number<input data-filter="search" value="${escape(this.search)}" placeholder="Search by order number" maxlength="100" type="search"></label><button class="primary" data-refresh ${disabled}>Search</button></div>
       ${this.error ? `<p class="error" role="alert">${escape(this.error)}</p>` : ''}
@@ -119,7 +123,7 @@ export default class EkomPrintingSectionViewElement extends UmbElementMixin(HTML
       <div class="table" tabindex="0" role="region" aria-label="Print jobs; scroll horizontally on small screens"><table><thead><tr><th scope="col">Order</th><th scope="col">Station</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead><tbody>
       ${this.jobs.jobs.map(job => `<tr><td><strong>${escape(job.orderNumber || 'Order unavailable')}</strong><small>${escape(job.storeAlias)}</small></td><td>${escape(job.stationAlias)}<small>${job.copies} ${job.copies === 1 ? 'copy' : 'copies'}</small></td>
       <td class="status-cell"><span class="badge ${tone(job.state)}"><span class="dot"></span>${escape(stateLabel(job.state))}</span>${job.state === 'NeedsReview' ? '<small>Printing could not be confirmed.</small>' : job.state === 'RenderFailed' ? '<small>The picking slip could not be generated.</small>' : ''}</td><td class="created">${escape(date(job.createdUtc))}</td>
-      <td><div class="actions">${availableActions(job, this.capabilities?.canManage === true).map(action => `<button aria-label="${escape(({preview:'Preview',history:'History for',retry:'Retry generation for',cancel:'Cancel',reprint:'Reprint'} as Record<string,string>)[action] + ' ' + job.orderNumber)}" data-job="${escape(job.id)}" data-action="${action}" ${disabled}>${({preview:'Preview',history:'History',retry:'Retry generation',cancel:'Cancel',reprint:'Reprint'} as Record<string,string>)[action]}</button>`).join('')}</div></td></tr>`).join('')}
+      <td><div class="actions">${availableActions(job, this.capabilities?.canManage === true).map(action => `<button aria-label="${escape(({preview:'Preview',history:'History for',retry:'Retry generation for',cancel:'Cancel',reprint:'Reprint','resolve-printed':'Mark as printed','resolve-reprint':'Print again after checking'} as Record<string,string>)[action] + ' ' + job.orderNumber)}" data-job="${escape(job.id)}" data-action="${action}" ${disabled}>${({preview:'Preview',history:'History',retry:'Retry generation',cancel:'Cancel',reprint:'Reprint','resolve-printed':'Mark as printed','resolve-reprint':'Print again after checking'} as Record<string,string>)[action]}</button>`).join('')}</div></td></tr>`).join('')}
       ${this.jobs.jobs.length === 0 ? `<tr><td colspan="5"><div class="empty"><strong>${this.loading ? 'Loading print jobs…' : 'No print jobs to show'}</strong><p>${this.loading ? 'Fetching the latest queue and station information.' : this.state || this.station || this.search ? 'Try a different order number or clear your filters.' : 'Picking slips appear here when orders reach a configured status.'}</p></div></td></tr>` : ''}</tbody></table></div>
       <div class="pager"><span>${this.jobs.total ? `${(this.page - 1) * this.jobs.pageSize + 1}–${Math.min(this.page * this.jobs.pageSize, this.jobs.total)} of ${this.jobs.total} jobs` : '0 jobs'}</span><div class="pager-controls"><button data-page="-1" ${this.page <= 1 || this.loading ? 'disabled' : ''}>Previous</button><span>Page ${this.page} of ${totalPages}</span><button data-page="1" ${this.page >= totalPages || this.loading ? 'disabled' : ''}>Next</button></div></div>
       <p class="footnote"><strong>Submitted to printer</strong> confirms delivery to the print queue. It does not confirm that paper was printed.</p></section>
@@ -153,12 +157,12 @@ export default class EkomPrintingSectionViewElement extends UmbElementMixin(HTML
         } else {
           const history = await this.json<History>(`/jobs/${id}/history`);
           detail.style.height = 'auto';
-          detail.innerHTML = `<h3>Job history</h3>${history.delivery ? `<p>Claimed: ${escape(date(history.delivery.claimedUtc))}</p><p>Reported: ${escape(date(history.delivery.reportedUtc))}</p><p>Windows queue reference: ${escape(history.delivery.spoolJobId || 'Not reported')}</p>` : '<p>Not yet claimed by an agent.</p>'}<ul>${history.actions.map(x => `<li>${escape(date(x.createdUtc))} — ${escape(x.action)} by ${escape(x.actor)}</li>`).join('')}</ul>`;
+          detail.innerHTML = `<h3>Job history</h3>${history.delivery ? `<p>Claimed: ${escape(date(history.delivery.claimedUtc))}</p><p>Reported: ${escape(date(history.delivery.reportedUtc))}</p><p>Windows queue reference: ${escape(history.delivery.spoolJobId || 'Not reported')}</p>` : '<p>Not yet claimed by an agent.</p>'}<ul>${history.actions.map(x => `<li>${escape(date(x.createdUtc))} — ${escape(({ 'resolve-printed': 'Confirmed physical printing', 'resolve-reprint': 'Closed uncertain job and queued replacement' } as Record<string,string>)[x.action] ?? x.action)} by ${escape(x.actor)}</li>`).join('')}</ul>`;
         }
         dialog.showModal(); return;
       }
       if (!this.capabilities?.canManage) return;
-      if (!window.confirm(action === 'reprint' ? 'Create another copy of this stored picking slip?' : action === 'cancel' ? 'Cancel this queued picking slip?' : 'Retry generating this picking slip?')) return;
+      if (!window.confirm(action === 'resolve-printed' ? 'Have you checked the physical output and confirmed this picking slip was printed? This records your confirmation without printing again.' : action === 'resolve-reprint' ? 'Check the physical printer and clear any pending copy from the Windows print queue first. A delayed original may still print. Continue to close this uncertain job and queue one replacement job with the original copy count?' : action === 'reprint' ? 'Create another copy of this stored picking slip?' : action === 'cancel' ? 'Cancel this queued picking slip?' : 'Retry generating this picking slip?')) return;
       const key = id + ':' + action;
       const requestId = this.requests.get(key) ?? crypto.randomUUID(); this.requests.set(key, requestId);
       this.busy = true; this.render();

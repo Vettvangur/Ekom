@@ -80,7 +80,22 @@ internal sealed class PrinterManagerService(DatabaseFactory factory, IManagerAcc
                     .UpdateAsync(cancellationToken).ConfigureAwait(false);
                 if (changed != 1) return null;
                 break;
-            case "reprint" when job.State == PrintJobState.Submitted && job.Html != null:
+            case "resolve-printed" when job.State == PrintJobState.NeedsReview:
+                changed = await db.GetTable<PrintJob>().Where(x => x.Id == id && x.State == PrintJobState.NeedsReview)
+                    .Set(x => x.State, PrintJobState.ConfirmedPrinted).Set(x => x.CompletedUtc, now)
+                    .UpdateAsync(cancellationToken).ConfigureAwait(false);
+                if (changed != 1) return null;
+                break;
+            case "reprint" when (job.State is PrintJobState.Submitted or PrintJobState.ConfirmedPrinted) && job.Html != null:
+            case "resolve-reprint" when job.State == PrintJobState.NeedsReview && job.Html != null:
+                if (request.Action == "resolve-reprint")
+                {
+                    // Close the uncertain original before queuing its replacement in the same transaction.
+                    changed = await db.GetTable<PrintJob>().Where(x => x.Id == id && x.State == PrintJobState.NeedsReview)
+                        .Set(x => x.State, PrintJobState.Cancelled).Set(x => x.CompletedUtc, now)
+                        .UpdateAsync(cancellationToken).ConfigureAwait(false);
+                    if (changed != 1) return null;
+                }
                 newId = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("reprint:" + request.RequestId.ToString("N"))));
                 await db.InsertAsync(new PrintJob
                 {

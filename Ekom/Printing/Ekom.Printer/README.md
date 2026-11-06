@@ -267,10 +267,19 @@ Reprint creates a new job containing the exact stored HTML and copies setting. E
 records the operator, time and request ID in the package-owned audit table (schema v4).
 Retrying the same request ID returns the same outcome. Audit records follow
 `HistoryRetentionDays`; expired HTML is unavailable for preview or reprint.
-Claimed or uncertain jobs cannot be cancelled or reprinted here: check the printer first.
-An explicit operator reconciliation workflow for uncertain outcomes remains future work.
+Claimed jobs cannot be changed. For **Needs review** jobs, check the physical output and
+Windows print queue before choosing **Mark as printed** or **Print again after checking**.
+Mark as printed records **Confirmed printed** without submitting another copy. Printing again
+closes the uncertain original and creates one replacement job using its stored HTML and copy
+count; clear any pending original from the Windows queue first to avoid delayed duplicates.
+Both actions are audited and idempotent. Late agent reports are recorded without undoing the
+operator's resolution. Resolved jobs follow the configured HTML and history retention.
 
-"Submitted to Windows" records acceptance by the spooler, not physical printing.
+Use Ekom.Printer 1.0.0 with Printer Agent 1.0.0 (protocol 1), and Ekom web assets 0.2.358
+or later for these resolution actions. The package owns its migrations; these actions use
+the existing schema and require no manual database changes.
+
+"Submitted to printer" records acceptance by the spooler, not physical printing.
 Browser previews disable scripts and external resources and remove active HTML and
 navigation. The Windows renderer must independently enforce the same security contract.
 

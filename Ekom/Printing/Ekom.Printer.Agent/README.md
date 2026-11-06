@@ -7,10 +7,10 @@ already be installed and available to the service account.
 
 ## Current validation status
 
-The service and setup application have been cross-compiled and published for Windows x64.
-Transport/recovery tests and real Chromium security/pagination tests run on macOS. Windows
-service startup, installer lifecycle, setup UI and physical printing still require acceptance
-on Windows. Do not treat cross-compilation as proof of hardware compatibility.
+Windows CI validates service startup, setup communication, installer lifecycle, transport
+and recovery behavior, and bundled Chromium rendering. The maintainer has confirmed agent
+operation and physical printer output during pre-release testing. Each customer installation
+should still run a test print under its service account to verify its driver and printer.
 
 ## Build
 
@@ -24,7 +24,7 @@ On a Windows x64 build machine, install the .NET 10 SDK, PowerShell 7 and
 `-MakeNsis` with its full path. Run from the repo root:
 
 ```powershell
-./build/Build-PrinterAgent.ps1 -Version 0.1.0
+./build/Build-PrinterAgent.ps1 -Version 1.0.0
 ```
 
 The script publishes the service and setup app, bundles the pinned Playwright Chromium
@@ -36,7 +36,7 @@ from the normal Ekom NuGet build; it does not use WiX or require its EULA accept
 Optional release signing uses a code-signing certificate already installed on the build machine:
 
 ```powershell
-./build/Build-PrinterAgent.ps1 -Version 0.1.0 `
+./build/Build-PrinterAgent.ps1 -Version 1.0.0 `
   -CertificateThumbprint YOUR_CERTIFICATE_THUMBPRINT `
   -TimestampUrl YOUR_RFC3161_TIMESTAMP_SERVICE
 ```
@@ -77,7 +77,7 @@ artifact. Actions artifacts may require GitHub sign-in and are not permanent pub
 release downloads. Extract the artifact ZIP, then calculate the installer EXE's hash:
 
 ```powershell
-Get-FileHash -LiteralPath '.\Ekom.Printer.Agent-0.1.0-win-x64-setup.exe' -Algorithm SHA256
+Get-FileHash -LiteralPath '.\Ekom.Printer.Agent-1.0.0-win-x64-setup.exe' -Algorithm SHA256
 ```
 
 Replace the example filename with the one downloaded. Compare the result with that
@@ -212,9 +212,9 @@ Application event-log diagnostics omit HTML, credentials and raw renderer except
 ### Silent deployment and smoke test
 
 ```powershell
-./Ekom.Printer.Agent-0.1.0-win-x64-setup.exe /S
+./Ekom.Printer.Agent-1.0.0-win-x64-setup.exe /S
 # On a clean, disposable Windows test machine only:
-./build/Test-PrinterAgentInstaller.ps1 -InstallerPath ./artifacts/installers/Ekom.Printer.Agent-0.1.0-win-x64-setup.exe
+./build/Test-PrinterAgentInstaller.ps1 -InstallerPath ./artifacts/installers/Ekom.Printer.Agent-1.0.0-win-x64-setup.exe
 ```
 
 The installer uses the fixed `%ProgramFiles%\Ekom\Printer Agent` location, registers
@@ -223,3 +223,23 @@ an Apps & Features uninstall entry and a Start menu setup shortcut, and logs to
 as command-line arguments. Close the setup window before upgrading or uninstalling.
 The smoke test verifies installation, service identity, storage permissions, setup IPC,
 same-version reinstall, data preservation and uninstall. It never submits a print job.
+
+## Connection diagnostics
+
+Save settings before using **Test connection**. The agent uses the saved configuration.
+
+- **HTTP 404:** verify the final website URL, install Ekom.Printer, enable
+  `Ekom:Printing:Enabled`, and map its endpoints on that website.
+- **HTTP 401:** check the exact station alias and original station token. The agent needs
+  the token; only the website appsettings use its SHA-256 hash.
+- **HTTP 403:** check website firewall, proxy and access rules.
+- **HTTP 3xx:** save the final HTTPS URL (including www or an application path if needed).
+  Redirects deliberately do not receive the station credential.
+- **HTTP 426 / incompatible protocol:** install compatible package and agent versions.
+- **HTTP 5xx:** check website logs, database connectivity and package migration startup.
+- **DNS, HTTPS or timeout:** check connectivity under the Windows service account,
+  certificate trust, system clock and proxy access. Do not disable certificate validation.
+
+Agent 1.0.0 and Ekom.Printer 1.0.0 use protocol 1. Update Ekom web assets to 0.2.358
+or later for the Manager review-resolution actions. A successful connection test confirms
+website access; use **Test print** separately to verify physical output.

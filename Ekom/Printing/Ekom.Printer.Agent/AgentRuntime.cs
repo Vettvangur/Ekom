@@ -30,6 +30,8 @@ internal sealed class AgentRuntime(AgentConfigurationStore store) : IDisposable
                 new WindowsHtmlPrinter(config.Settings.PrinterName), TimeProvider.System);
             _status = await processor.ProcessNextAsync(ct).ConfigureAwait(false) ? "Job submitted and reported." : "Connected. Waiting for jobs.";
         }
+        catch (HttpRequestException ex) { _status = ConnectionDiagnostics.Describe(ex); throw; }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested) { _status = ConnectionDiagnostics.Timeout; throw; }
         catch { _status = "Printing paused by an error. Check the Windows Application event log; uncertain jobs are not printed again."; throw; }
         finally { _gate.Release(); }
     }
@@ -68,12 +70,18 @@ internal sealed class AgentRuntime(AgentConfigurationStore store) : IDisposable
             }
             return new AgentSetupResponse(true, _status, store.Load()?.Settings, GetPrinters(), WindowsIdentity.GetCurrent().Name, _lastHeartbeat);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or HttpRequestException)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or HttpRequestException ||
+            ex is OperationCanceledException && !ct.IsCancellationRequested)
         {
             // Never return raw HTTP bodies, tokens or printer document content to diagnostics.
-            return new AgentSetupResponse(false, ex is HttpRequestException http
-                ? $"Website connection failed (HTTP {http.StatusCode?.ToString() ?? "unavailable"}). Check the URL and credential."
-                : ex.Message);
+            var message = ex switch
+            {
+                HttpRequestException http => ConnectionDiagnostics.Describe(http),
+                OperationCanceledException => ConnectionDiagnostics.Timeout,
+                _ => ex.Message,
+            };
+            _status = message;
+            return new AgentSetupResponse(false, message);
         }
         finally { _gate.Release(); }
     }

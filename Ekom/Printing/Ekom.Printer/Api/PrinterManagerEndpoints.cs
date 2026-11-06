@@ -63,7 +63,7 @@ internal static class PrinterManagerEndpoints
             if (!manager.CanManage) return Results.StatusCode(StatusCodes.Status403Forbidden);
             try { await antiforgery.ValidateRequestAsync(http).ConfigureAwait(false); }
             catch (AntiforgeryValidationException) { return Results.BadRequest("Invalid anti-forgery token. Reload Printing."); }
-            if (id.Length != 64 || request.RequestId == Guid.Empty || request.Action is not ("retry" or "cancel" or "reprint"))
+            if (id.Length != 64 || request.RequestId == Guid.Empty || request.Action is not ("retry" or "cancel" or "reprint" or "resolve-printed" or "resolve-reprint"))
                 return Results.BadRequest();
             var actor = http.User.Identity?.Name ?? http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Backoffice user";
             if (actor.Length > 255) actor = actor[..255];
