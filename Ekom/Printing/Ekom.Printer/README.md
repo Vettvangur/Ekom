@@ -4,8 +4,8 @@ Ekom.Printer automatically prints picking slips on a warehouse printer. The webs
 captures the order and prepares an HTML slip; the Windows agent sends it to the
 selected printer.
 
-You can print when an order reaches a selected status, or let your integration request
-printing after warehouse processing is complete. Each station uses one of these modes.
+You can print when an order reaches a selected status, or request a picking slip
+from your own code at the point you choose. Each station uses one of these modes.
 You can also customize the slip's content and layout.
 
 ## Set up the website
@@ -72,8 +72,8 @@ This example enables printing on order-status changes, using the default
 This station prints when an order reaches `OfflinePayment` or `ReadyForDispatch`.
 With `OncePerOrder`, reaching both statuses still creates only one slip.
 
-To let your integration request printing after warehouse processing instead, replace
-`PickingSlip` with:
+To control when a picking slip is requested from your own code, use
+`ExplicitCapture`. Replace `PickingSlip` with:
 
 ```json
 "PickingSlip": {
@@ -85,9 +85,10 @@ To let your integration request printing after warehouse processing instead, rep
 }
 ```
 
-In this mode, your integration calls `IPickingSlipCapture` after saving warehouse
-metadata; order-status changes do not create slips. See
-[Explicit capture after warehouse processing](#explicit-capture-after-warehouse-processing)
+In this mode, your code calls `IPickingSlipCapture` when the order is ready to print,
+for example after warehouse processing or a custom approval step. Save the order data
+you want on the slip before making the call. Order-status changes do not create slips. See
+[Control printing from your code](#control-printing-from-your-code)
 for the API call, retry behavior and switching existing stations safely.
 
 Choose one mode per station. `StatusChange` remains the default when `TriggerMode` is
@@ -174,9 +175,9 @@ The test page uses the Windows service account, whose printer access can differ 
 the logged-in user's. See the [agent setup guide](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer.Agent/README.md) for
 installation, upgrades and connection troubleshooting.
 
-## Explicit capture after warehouse processing
+## Control printing from your code
 
-Use `ExplicitCapture` when your integration decides when the order is ready to print.
+Use `ExplicitCapture` to decide when to request a picking slip from your own code.
 Order-status changes do not create slips for that station. `AddEkomPrinter` registers
 `IPickingSlipCapture` for dependency injection:
 
