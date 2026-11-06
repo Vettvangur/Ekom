@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Improve Printing manager layout, status contrast, attention filtering, station health cards and responsive controls.
+
 - Rename the Printing status to "Submitted to printer" while retaining the print-queue explanation.
 
 - Route rejected checkout return URLs to the configured local provider error page when available, before starting payment.

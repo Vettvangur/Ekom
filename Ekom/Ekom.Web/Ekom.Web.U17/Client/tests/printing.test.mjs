@@ -74,3 +74,39 @@ test('classic printing bundle loads without modern Umbraco imports', () => {
   const view = classicDom.window.document.createElement('ekom-printing-section-view');
   assert.ok(view.shadowRoot);
 });
+
+test('attention shortcut clears other filters and preserves uncertain-print action restrictions', () => {
+  const view = new exports.default();
+  view.loading = false;
+  view.capabilities = { canManage: true };
+  view.search = 'HV-1';
+  view.station = 'warehouse';
+  view.jobs = { total: 30, page: 1, pageSize: 25, jobs: [
+    { id: 'one', orderNumber: '<unsafe>', storeAlias: 'main', stationAlias: 'warehouse', state: 'NeedsReview', copies: 1, createdUtc: '2026-11-06T13:00:00Z', hasHtml: true },
+  ] };
+  let loads = 0;
+  view.load = async () => { loads++; };
+  view.render();
+  assert.match(view.shadowRoot.textContent, /1 job on this page needs attention/);
+  assert.equal(view.shadowRoot.querySelector('unsafe'), null);
+  assert.equal(view.shadowRoot.querySelector('[data-action="reprint"]'), null);
+  view.shadowRoot.querySelector('[data-attention]').click();
+  assert.equal(view.state, 'attention');
+  assert.equal(view.station, '');
+  assert.equal(view.search, '');
+  assert.equal(view.page, 1);
+  assert.equal(loads, 1);
+});
+
+test('station card distinguishes an incompatible agent and explains printing rules', () => {
+  const view = new exports.default();
+  view.loading = false;
+  view.stations = [{ alias: 'warehouse', stores: ['main'], statuses: ['OfflinePayment'], policy: 'OncePerOrder', copies: 1, enabled: true,
+    health: { online: true, compatible: false, printerName: 'Printer', agentVersion: 'old' } }];
+  view.render();
+  const card = view.shadowRoot.querySelector('.station-card');
+  assert.match(card.textContent, /Update required/);
+  assert.match(card.textContent, /Offline Payment/);
+  assert.match(card.textContent, /Once per order/);
+  assert.match(view.shadowRoot.querySelector('.empty').textContent, /Picking slips appear here/);
+});
