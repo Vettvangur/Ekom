@@ -12,6 +12,8 @@ public sealed class VariantAppOptions
 
 public sealed class ManagerOptions
 {
+    public CustomerManagerOptions Customers { get; set; } = new();
+
     public string? SectionAccessGroup { get; set; }
 
     /// <summary>

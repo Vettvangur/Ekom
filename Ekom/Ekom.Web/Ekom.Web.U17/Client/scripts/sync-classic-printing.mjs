@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 // Umbraco 13 has no modern backoffice context API. Build its standalone view
 // from the same source with plain custom-element lifecycle hooks.
-await build({
+for (const view of ['printing', 'customers']) await build({
   configFile: false,
   plugins: [{
     name: 'classic-printing-element',
@@ -24,9 +24,9 @@ await build({
     emptyOutDir: false,
     outDir: fileURLToPath(new URL('../../../Ekom.Web/App_Plugins/Ekom/Manager/libs', import.meta.url)),
     lib: {
-      entry: fileURLToPath(new URL('../src/manager/printing-section-view.element.ts', import.meta.url)),
+      entry: fileURLToPath(new URL(`../src/manager/${view}-section-view.element.ts`, import.meta.url)),
       formats: ['es'],
-      fileName: () => 'printing-section-view.element.js',
+      fileName: () => `${view}-section-view.element.js`,
     },
   },
 });

@@ -8,6 +8,7 @@ export function createViteConfig(sourceRoot: string, outDir: string) {
       lib: {
         entry: {
           manifests: `${sourceRoot}/manifests.ts`,
+          'customers-section-view.element': `${sourceRoot}/manager/customers-section-view.element.ts`,
           'cache-editor.element': `${sourceRoot}/property-editors/cache-editor.element.ts`,
           'country-picker.element': `${sourceRoot}/property-editors/country-picker.element.ts`,
           'coupon-editor.element': `${sourceRoot}/property-editors/coupon-editor.element.ts`,

@@ -151,6 +151,7 @@ test('legacy gift card input trims state and reaches search and both export quer
   const handlers = {};
   const angular = {
     module: () => ({
+      directive: (name, factory) => { registrations[name] = factory; },
       factory: (name, dependencies) => { registrations[name] = dependencies.at(-1); },
       controller: (name, dependencies) => { registrations[name] = dependencies.at(-1); },
     }),

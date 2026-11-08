@@ -2,9 +2,10 @@
 
 Ekom Manager is Ekom's Umbraco backoffice area for order operations and sales reporting. It is supplied by the Ekom packages and is not a separate application.
 
-The section is displayed as **Ekom** and uses the alias `ekommanager`. It contains two views:
+The section is displayed as **Ekom** and uses the alias `ekommanager`. It contains these views:
 
 - **Orders** for searching, exporting, reviewing, and updating orders.
+- **[Customers](customers.md)** for customer summaries and order history, sharing the Orders store and date filters.
 - **Analytics** for revenue, order count, average order value, and most-sold-product reporting.
 
 ## Supported manager implementations

@@ -162,6 +162,7 @@ export type CustomerInformationField = {
 export type OrderInfo = Record<string, any>;
 
 export type ManagerState = {
+  pendingOrderId?: string;
   filters: ManagerFilters;
   statusList: StatusItem[];
   stores: StoreItem[];
