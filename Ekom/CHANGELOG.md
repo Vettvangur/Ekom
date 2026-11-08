@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+* **manager:** format order custom-data keys as readable labels and render lazy-loaded product pictures with 56px/112px image widths while preserving image query parameters.
+
 * **manager:** serialize order details under the saved store culture so product URLs do not depend on the backoffice user culture; restore the request culture afterwards.
 
 * **manager:** preserve historical order product links when storefront visibility filters exclude a product; normal catalog filtering is unchanged.

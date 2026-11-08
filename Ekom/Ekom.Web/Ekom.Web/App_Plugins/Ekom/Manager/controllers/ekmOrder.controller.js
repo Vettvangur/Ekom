@@ -111,13 +111,32 @@
       }
     };
 
-    $scope.getOrderLineImageUrl = function (line) {
+    $scope.getOrderLineImageUrl = function (line, width) {
       var images = [].concat(line.variant && Array.isArray(line.variant.images) ? line.variant.images : [], line.product && Array.isArray(line.product.images) ? line.product.images : []);
       for (var i = 0; i < images.length; i++) {
         var url = $scope.getProductUrl(images[i]);
-        if (url) return url;
+        if (url) {
+          if (!width) return url;
+          var hashIndex = url.indexOf('#');
+          var hash = hashIndex >= 0 ? url.slice(hashIndex) : '';
+          var pathAndQuery = hashIndex >= 0 ? url.slice(0, hashIndex) : url;
+          var queryIndex = pathAndQuery.indexOf('?');
+          var path = queryIndex >= 0 ? pathAndQuery.slice(0, queryIndex) : pathAndQuery;
+          var query = new URLSearchParams(queryIndex >= 0 ? pathAndQuery.slice(queryIndex + 1) : '');
+          query.set('width', String(width));
+          return (path + '?' + query + hash).replace(/,/g, '%2C').replace(/ /g, '%20');
+        }
       }
       return null;
+    };
+
+    $scope.formatOrderCustomDataKey = function (key) {
+      return key
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/\b[a-z]/g, function (letter) { return letter.toUpperCase(); });
     };
 
     var customerFields = [

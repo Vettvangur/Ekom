@@ -569,7 +569,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     return `<dl class="ekmOrderCustomData" aria-label="Order custom data">${entries.map(([key, value]) => `
       <div class="ekmOrderCustomData__item">
-        <dt class="ekmOrderCustomData__key">${escapeHtml(key)}</dt>
+        <dt class="ekmOrderCustomData__key">${escapeHtml(formatOrderCustomDataKey(key))}</dt>
         <dd class="ekmOrderCustomData__value">${escapeHtml(value)}</dd>
       </div>`).join('')}</dl>`;
   }
@@ -1778,6 +1778,26 @@ function hasShippingInfo(shipping: Record<string, any>): boolean {
   return Boolean(shipping?.name || shipping?.email || shipping?.address || shipping?.apartment || shipping?.city || shipping?.country || shipping?.zipCode || shipping?.phone);
 }
 
+function formatOrderCustomDataKey(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/\b[a-z]/g, letter => letter.toUpperCase());
+}
+
+function resizeOrderLineImage(url: string, width: number): string {
+  const hashIndex = url.indexOf('#');
+  const hash = hashIndex >= 0 ? url.slice(hashIndex) : '';
+  const pathAndQuery = hashIndex >= 0 ? url.slice(0, hashIndex) : url;
+  const queryIndex = pathAndQuery.indexOf('?');
+  const path = queryIndex >= 0 ? pathAndQuery.slice(0, queryIndex) : pathAndQuery;
+  const query = new URLSearchParams(queryIndex >= 0 ? pathAndQuery.slice(queryIndex + 1) : '');
+  query.set('width', String(width));
+  return `${path}?${query}${hash}`.replace(/,/g, '%2C').replace(/ /g, '%20');
+}
+
 function renderOrderLineThumbnail(line: Record<string, any>): string {
   const images = [line.variant?.images, line.product?.images].flatMap(images => Array.isArray(images) ? images : []);
   const url = images.map(image => {
@@ -1789,7 +1809,7 @@ function renderOrderLineThumbnail(line: Record<string, any>): string {
       return '';
     }
   }).find(Boolean);
-  return `<span class="ekmOrderLineThumbnail" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg>${url ? `<img src="${escapeHtml(url)}" alt="" loading="lazy">` : ''}</span>`;
+  return `<span class="ekmOrderLineThumbnail" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg>${url ? `<picture><source srcset="${escapeHtml(resizeOrderLineImage(url, 56))} 1x, ${escapeHtml(resizeOrderLineImage(url, 112))} 2x"><img src="${escapeHtml(resizeOrderLineImage(url, 56))}" width="56" height="56" alt="" loading="lazy" decoding="async"></picture>` : ''}</span>`;
 }
 
 function renderOrderLineProductTitle(product: Record<string, unknown> | undefined): string {
