@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <UseProjectReferences>true</UseProjectReferences>
-    <Version>0.2.364</Version>
+    <Version>0.2.365</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MSBuildProjectName)' != 'Ekom.Tests'">
