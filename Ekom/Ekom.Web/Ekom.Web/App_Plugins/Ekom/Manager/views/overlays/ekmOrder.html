@@ -273,7 +273,10 @@
         <div class="umb-table-cell">
           <button type="button" class="btn-reset" ng-click="removeOrderLine(orderLine)" ng-disabled="removingOrderLineId === orderLine.key" aria-label="Remove {{ orderLine.product.title }}" title="Remove order line">&#128465;</button>
         </div>
-        <div class="umb-table-cell not-fixed" style="flex-direction:column;">
+        <div class="umb-table-cell not-fixed">
+          <div class="ekmOrderLineProduct">
+            <span class="ekmOrderLineThumbnail" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg><img ng-if="getOrderLineImageUrl(orderLine)" ng-src="{{ getOrderLineImageUrl(orderLine) }}" ekm-order-line-image alt="" loading="lazy"></span>
+            <div class="ekmOrderLineProduct__details">
           <div>
             <a ng-if="getProductUrl(orderLine.product)" ng-href="{{ getProductUrl(orderLine.product) }}" target="_blank" rel="noopener noreferrer">{{ orderLine.product.title }}</a><span ng-if="!getProductUrl(orderLine.product)">{{ orderLine.product.title }}</span><span ng-if="orderLine.product.sku && orderLine.product.sku.trim()"> ({{ orderLine.product.sku }})</span>
           </div>
@@ -284,6 +287,7 @@
             <strong>{{ property.key }}</strong>: {{ property.value }}
           </small>
         </div>
+        </div></div>
         <div class="umb-table-cell">{{ orderLine.quantity }}</div>
         <div class="umb-table-cell">{{orderLine.product.price.withVat.currencyString}}</div>
         <div class="umb-table-cell" style="text-align: right;">{{orderLine.amount.vat.currencyString}}</div>

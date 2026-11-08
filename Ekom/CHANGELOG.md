@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+* **manager:** show variant or product thumbnails beside linked order-line titles, with a placeholder for missing or unavailable images, in Umbraco 13/17/18.
+
 * **order:** validate customer emails and the 200-character customer name/email storage limits before changing the order; return HTTP 400 without error logs or submitted values, including names composed from first and last name.
 
 - Improve Printing manager layout, status contrast, attention filtering, station health cards and responsive controls.

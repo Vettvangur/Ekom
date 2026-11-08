@@ -708,7 +708,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       <div class="umb-table">
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
         <div class="umb-table-body">
-          ${lines.map((line: Record<string, any>) => `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${escapeHtml(line.key)}" data-product-title="${escapeHtml(line.product?.title)}" ${this.removingOrderLineId === line.key ? 'disabled' : ''} aria-label="Remove ${escapeHtml(line.product?.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><span>${renderOrderLineProductTitle(line.product)}${line.product?.sku?.trim() ? ` (${escapeHtml(line.product.sku)})` : ''}</span>${line.variant ? `<small style="display:block; margin-top:3px;">${escapeHtml(line.variant.title)} ${line.variant.sku?.trim() ? `(${escapeHtml(line.variant.sku)})` : ''}</small>` : ''}${renderOrderLineProperties(line)}</div><div class="umb-table-cell">${escapeHtml(line.quantity)}</div><div class="umb-table-cell">${escapeHtml(line.product?.price?.withVat?.currencyString)}</div><div class="umb-table-cell">${escapeHtml(line.amount?.vat?.currencyString)}</div><div class="umb-table-cell">-${escapeHtml(line.amount?.discountAmount?.currencyString)}</div><div class="umb-table-cell"><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></div></div>`).join('')}
+          ${lines.map((line: Record<string, any>) => `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${escapeHtml(line.key)}" data-product-title="${escapeHtml(line.product?.title)}" ${this.removingOrderLineId === line.key ? 'disabled' : ''} aria-label="Remove ${escapeHtml(line.product?.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><div class="ekmOrderLineProduct">${renderOrderLineThumbnail(line)}<div class="ekmOrderLineProduct__details"><span>${renderOrderLineProductTitle(line.product)}${line.product?.sku?.trim() ? ` (${escapeHtml(line.product.sku)})` : ''}</span>${line.variant ? `<small style="display:block; margin-top:3px;">${escapeHtml(line.variant.title)} ${line.variant.sku?.trim() ? `(${escapeHtml(line.variant.sku)})` : ''}</small>` : ''}${renderOrderLineProperties(line)}</div></div></div><div class="umb-table-cell">${escapeHtml(line.quantity)}</div><div class="umb-table-cell">${escapeHtml(line.product?.price?.withVat?.currencyString)}</div><div class="umb-table-cell">${escapeHtml(line.amount?.vat?.currencyString)}</div><div class="umb-table-cell">-${escapeHtml(line.amount?.discountAmount?.currencyString)}</div><div class="umb-table-cell"><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></div></div>`).join('')}
         </div>
         <div class="umb-table-footer">
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${escapeHtml(order.subTotal?.withVat?.currencyString)}</div></div>
@@ -869,6 +869,11 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private bindEvents(): void {
+    this.querySelectorAll<HTMLImageElement>('.ekmOrderLineThumbnail img').forEach(image => {
+      const showPlaceholder = () => { image.hidden = true; };
+      image.addEventListener('error', showPlaceholder, { once: true });
+      if (image.complete && image.naturalWidth === 0) showPlaceholder();
+    });
     if (this.overlay === 'order') {
       this.querySelector('.ekmOverlay')?.addEventListener('click', event => {
         if (event.target === event.currentTarget && !this.customerEditorOpen && !this.orderLineEditorOpen && !this.shippingProviderEditorOpen) {
@@ -1771,6 +1776,20 @@ function parseProperties(properties: Record<string, unknown> | undefined, prefix
 
 function hasShippingInfo(shipping: Record<string, any>): boolean {
   return Boolean(shipping?.name || shipping?.email || shipping?.address || shipping?.apartment || shipping?.city || shipping?.country || shipping?.zipCode || shipping?.phone);
+}
+
+function renderOrderLineThumbnail(line: Record<string, any>): string {
+  const images = [line.variant?.images, line.product?.images].flatMap(images => Array.isArray(images) ? images : []);
+  const url = images.map(image => {
+    if (typeof image?.url !== 'string' || !image.url.trim()) return '';
+    try {
+      const url = image.url.trim();
+      return ['http:', 'https:'].includes(new URL(url, 'https://ekom.invalid/').protocol) ? url : '';
+    } catch {
+      return '';
+    }
+  }).find(Boolean);
+  return `<span class="ekmOrderLineThumbnail" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg>${url ? `<img src="${escapeHtml(url)}" alt="" loading="lazy">` : ''}</span>`;
 }
 
 function renderOrderLineProductTitle(product: Record<string, unknown> | undefined): string {

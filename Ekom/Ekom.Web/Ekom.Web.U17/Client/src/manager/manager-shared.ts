@@ -593,6 +593,17 @@ export function downloadBlob(blob: Blob, filename: string): void {
 }
 
 export const managerStyles = `
+.ekmOrderLineProduct { display: flex; align-items: flex-start; gap: 14px; min-width: 0; width: 100%; }
+.ekmOrderLineProduct__details { min-width: 0; overflow-wrap: anywhere; }
+.ekmOrderLineProduct__details > span:first-child, .ekmOrderLineProduct__details > div:first-child { font-weight: 600; }
+.ekmOrderLineProduct__details a { color: inherit; text-decoration: none; }
+.ekmOrderLineProduct__details a:hover, .ekmOrderLineProduct__details a:focus-visible { text-decoration: underline; }
+.ekmOrderLineProduct__details a::after { content: "\\2197"; margin-left: 6px; color: #686b7d; }
+.ekmOrderLineThumbnail { position: relative; display: flex; align-items: center; justify-content: center; flex: 0 0 56px; width: 56px; height: 56px; overflow: hidden; border: 1px dashed #d8d7d9; border-radius: 9px; background: #f6f6f8; color: #686b7d; }
+.ekmOrderLineThumbnail svg { width: 24px; height: 24px; }
+.ekmOrderLineThumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f6f6f8; }
+.ekmOrderLineThumbnail img[hidden] { display: none; }
+
   ${orderCustomDataStyles}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }

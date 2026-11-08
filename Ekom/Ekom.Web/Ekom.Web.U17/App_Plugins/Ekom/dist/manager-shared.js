@@ -1,7 +1,7 @@
-const E = /* @__PURE__ */ new Date(), U = new Date(E.getFullYear(), 0, 1), J = {
+const $ = /* @__PURE__ */ new Date(), j = new Date($.getFullYear(), 0, 1), J = {
   filters: {
-    dateFrom: $(U),
-    dateTo: $(E),
+    dateFrom: z(j),
+    dateTo: z($),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
@@ -75,8 +75,8 @@ class b {
   async giftcardRecovery(e) {
     return this.getJson(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}`);
   }
-  async releaseGiftcardRecovery(e, r, t, n) {
-    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}/release`, { attemptId: r, claimId: t, token: n });
+  async releaseGiftcardRecovery(e, r, t, i) {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}/release`, { attemptId: r, claimId: t, token: i });
   }
   async reconcileGiftcardRecovery(e, r, t) {
     return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}/reconcile`, { attemptId: r, token: t });
@@ -97,8 +97,8 @@ class b {
   async updateCustomerInformation(e, r, t) {
     return this.postBody("/ekom/manager/UpdateCustomerInformation", { orderId: e, customer: r, shipping: t });
   }
-  async addOrderLine(e, r, t, n) {
-    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines`, { productId: r, variantId: t, quantity: n });
+  async addOrderLine(e, r, t, i) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines`, { productId: r, variantId: t, quantity: i });
   }
   async updateShippingProvider(e, r, t) {
     return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/ShippingProvider`, { providerId: r, customData: t });
@@ -175,24 +175,24 @@ class b {
   }
   static async createError(e, r) {
     const t = await e.text();
-    let n = t || r;
+    let i = t || r;
     try {
-      n = JSON.parse(t).message || n;
+      i = JSON.parse(t).message || i;
     } catch {
     }
-    return new Error(n || `${r} Status ${e.status}.`);
+    return new Error(i || `${r} Status ${e.status}.`);
   }
 }
 function T(a) {
   if (!a)
     return "";
   const e = new URLSearchParams();
-  for (const [t, n] of Object.entries(a))
-    e.set(t, n == null ? "" : String(n));
+  for (const [t, i] of Object.entries(a))
+    e.set(t, i == null ? "" : String(i));
   const r = e.toString();
   return r ? `?${r}` : "";
 }
-function $(a) {
+function z(a) {
   const e = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
   return `${a.getFullYear()}-${e}-${r}`;
 }
@@ -208,7 +208,7 @@ function F(a) {
     minute: "2-digit"
   }).format(e);
 }
-function j(a) {
+function U(a) {
   return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 function N(a) {
@@ -219,16 +219,16 @@ function q(a) {
   return a.enumValue || a.value || "";
 }
 function W(a, e) {
-  const t = [], n = Math.max(e || 1, 1);
+  const t = [], i = Math.max(e || 1, 1);
   let m;
-  a <= Math.floor(5 / 2) ? m = 1 : a + Math.floor(5 / 2) >= n ? m = Math.max(n - 5 + 1, 1) : m = a - Math.floor(5 / 2);
+  a <= Math.floor(5 / 2) ? m = 1 : a + Math.floor(5 / 2) >= i ? m = Math.max(i - 5 + 1, 1) : m = a - Math.floor(5 / 2);
   for (let p = 0; p < 5; p += 1) {
     const u = m + p;
-    u <= n && t.push(u);
+    u <= i && t.push(u);
   }
-  return t.length && Number(t[t.length - 1]) < n && t.push(`...${n}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
+  return t.length && Number(t[t.length - 1]) < i && t.push(`...${i}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
 }
-const G = `
+const E = `
   .ekmOrderCustomData { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; padding: 14px 16px; border: 1px solid #e1e3e8; border-radius: 12px; }
   .ekmOrderCustomData__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 7px 12px; border: 1px solid #e1e3e8; border-radius: 8px; background: #f6f7f9; line-height: 1.5; break-inside: avoid; }
   .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
@@ -242,17 +242,17 @@ async function H(a, e) {
       r.onload = () => m(), r.onerror = () => p(new Error("Unable to load the print document."));
     });
     r.srcdoc = D(a, e), document.body.append(r), await t;
-    const n = r.contentWindow;
-    if (!n) throw new Error("Print window unavailable.");
-    await n.document.fonts.ready, n.addEventListener("afterprint", () => r.remove(), { once: !0 }), n.focus(), n.print();
+    const i = r.contentWindow;
+    if (!i) throw new Error("Print window unavailable.");
+    await i.document.fonts.ready, i.addEventListener("afterprint", () => r.remove(), { once: !0 }), i.focus(), i.print();
   } catch (t) {
     throw r.remove(), t;
   }
 }
 function D(a, e) {
   const r = document.createElement("template");
-  return r.innerHTML = a, r.content.querySelectorAll("button, input, select, .ekmOrderGiftcards__actions").forEach((t) => t.remove()), r.content.querySelectorAll("details").forEach((t) => t.setAttribute("open", "")), r.content.querySelectorAll("summary").forEach((t) => t.remove()), r.content.querySelectorAll("a").forEach((t) => t.replaceWith(...Array.from(t.childNodes))), `<!doctype html><html><head><meta charset="utf-8"><title>${j(e)}</title><style>
-    ${G}
+  return r.innerHTML = a, r.content.querySelectorAll("button, input, select, .ekmOrderGiftcards__actions").forEach((t) => t.remove()), r.content.querySelectorAll("details").forEach((t) => t.setAttribute("open", "")), r.content.querySelectorAll("summary").forEach((t) => t.remove()), r.content.querySelectorAll("a").forEach((t) => t.replaceWith(...Array.from(t.childNodes))), `<!doctype html><html><head><meta charset="utf-8"><title>${U(e)}</title><style>
+    ${E}
     @page { size: auto; margin: 14mm; }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: auto; overflow: visible; }
@@ -284,10 +284,21 @@ function D(a, e) {
 }
 function V(a, e) {
   const r = URL.createObjectURL(a), t = document.createElement("a");
-  t.href = r, t.download = e, t.addEventListener("click", (n) => n.stopPropagation()), document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
+  t.href = r, t.download = e, t.addEventListener("click", (i) => i.stopPropagation()), document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
 }
 const Y = `
-  ${G}
+.ekmOrderLineProduct { display: flex; align-items: flex-start; gap: 14px; min-width: 0; width: 100%; }
+.ekmOrderLineProduct__details { min-width: 0; overflow-wrap: anywhere; }
+.ekmOrderLineProduct__details > span:first-child, .ekmOrderLineProduct__details > div:first-child { font-weight: 600; }
+.ekmOrderLineProduct__details a { color: inherit; text-decoration: none; }
+.ekmOrderLineProduct__details a:hover, .ekmOrderLineProduct__details a:focus-visible { text-decoration: underline; }
+.ekmOrderLineProduct__details a::after { content: "\\2197"; margin-left: 6px; color: #686b7d; }
+.ekmOrderLineThumbnail { position: relative; display: flex; align-items: center; justify-content: center; flex: 0 0 56px; width: 56px; height: 56px; overflow: hidden; border: 1px dashed #d8d7d9; border-radius: 9px; background: #f6f6f8; color: #686b7d; }
+.ekmOrderLineThumbnail svg { width: 24px; height: 24px; }
+.ekmOrderLineThumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f6f6f8; }
+.ekmOrderLineThumbnail img[hidden] { display: none; }
+
+  ${E}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -437,48 +448,48 @@ function B(a, e) {
   }).format(a);
 }
 function Q(a, e, r, t = {}) {
-  const n = a.getBoundingClientRect(), m = window.devicePixelRatio || 1, p = n.width || 300, u = n.height || 320;
+  const i = a.getBoundingClientRect(), m = window.devicePixelRatio || 1, p = i.width || 300, u = i.height || 320;
   a.width = p * m, a.height = u * m;
   const o = a.getContext("2d");
   if (!o) return;
   o.scale(m, m), o.font = "12px sans-serif";
-  const w = e.points || [], _ = w.map((s) => Number(s.y || 0)), O = Math.min(0, ..._), I = Math.max(1, ..._), S = t.integer ? Math.ceil(I / 4) * 4 : I, C = (s) => t.currency ? B(s, t.currency) : s.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), z = Array.from({ length: 5 }, (s, l) => S - (S - O) * l / 4), h = Math.max(48, ...z.map((s) => o.measureText(C(s)).width + 12)), y = p - 16, A = 20, v = u - 52, c = w.map((s, l) => {
+  const w = e.points || [], _ = w.map((s) => Number(s.y || 0)), O = Math.min(0, ..._), P = Math.max(1, ..._), S = t.integer ? Math.ceil(P / 4) * 4 : P, C = (s) => t.currency ? B(s, t.currency) : s.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), I = Array.from({ length: 5 }, (s, l) => S - (S - O) * l / 4), h = Math.max(48, ...I.map((s) => o.measureText(C(s)).width + 12)), y = p - 16, L = 20, v = u - 52, c = w.map((s, l) => {
     var x;
     return {
       x: w.length > 1 ? h + (y - h) * l / (w.length - 1) : (h + y) / 2,
-      y: v - (_[l] - O) / (S - O) * (v - A),
+      y: v - (_[l] - O) / (S - O) * (v - L),
       date: s.x || ((x = e.labels) == null ? void 0 : x[l]) || "",
       value: _[l]
     };
-  }), L = (s = -1) => {
-    o.clearRect(0, 0, p, u), o.font = "12px sans-serif", o.lineWidth = 1, o.textAlign = "right", z.forEach((i, d) => {
-      const f = A + (v - A) * d / 4;
-      o.fillStyle = "#555", o.fillText(C(i), h - 8, f + 4), o.strokeStyle = "#e5e5e5", o.beginPath(), o.moveTo(h, f), o.lineTo(y, f), o.stroke();
+  }), A = (s = -1) => {
+    o.clearRect(0, 0, p, u), o.font = "12px sans-serif", o.lineWidth = 1, o.textAlign = "right", I.forEach((n, d) => {
+      const f = L + (v - L) * d / 4;
+      o.fillStyle = "#555", o.fillText(C(n), h - 8, f + 4), o.strokeStyle = "#e5e5e5", o.beginPath(), o.moveTo(h, f), o.lineTo(y, f), o.stroke();
     });
-    const l = Math.max(90, ...c.map((i) => o.measureText(i.date).width + 16)), x = Math.max(2, Math.floor((y - h) / l)), R = new Set(Array.from({ length: Math.min(x, c.length) }, (i, d) => Math.round(d * (c.length - 1) / Math.max(1, Math.min(x, c.length) - 1))));
-    o.fillStyle = "#555", c.forEach((i, d) => {
-      R.has(d) && (o.textAlign = c.length === 1 ? "center" : d === 0 ? "left" : d === c.length - 1 ? "right" : "center", o.fillText(i.date, i.x, v + 24));
-    }), o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((i, d) => {
-      d === 0 ? o.moveTo(i.x, i.y) : o.lineTo(i.x, i.y);
-    }), o.stroke(), o.fillStyle = r, c.forEach((i, d) => {
-      o.beginPath(), o.arc(i.x, i.y, d === s ? 5 : 3, 0, Math.PI * 2), o.fill();
+    const l = Math.max(90, ...c.map((n) => o.measureText(n.date).width + 16)), x = Math.max(2, Math.floor((y - h) / l)), R = new Set(Array.from({ length: Math.min(x, c.length) }, (n, d) => Math.round(d * (c.length - 1) / Math.max(1, Math.min(x, c.length) - 1))));
+    o.fillStyle = "#555", c.forEach((n, d) => {
+      R.has(d) && (o.textAlign = c.length === 1 ? "center" : d === 0 ? "left" : d === c.length - 1 ? "right" : "center", o.fillText(n.date, n.x, v + 24));
+    }), o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((n, d) => {
+      d === 0 ? o.moveTo(n.x, n.y) : o.lineTo(n.x, n.y);
+    }), o.stroke(), o.fillStyle = r, c.forEach((n, d) => {
+      o.beginPath(), o.arc(n.x, n.y, d === s ? 5 : 3, 0, Math.PI * 2), o.fill();
     }), c.length || (o.textAlign = "center", o.fillText("No data for this period", (h + y) / 2, u / 2));
     const g = c[s];
     if (g) {
-      const i = [g.date, C(g.value)], d = Math.max(...i.map((M) => o.measureText(M).width)) + 20, f = Math.max(0, Math.min(p - d, g.x - d / 2)), k = g.y > 70 ? g.y - 62 : g.y + 12;
-      o.fillStyle = "#222", o.fillRect(f, k, d, 48), o.fillStyle = "#fff", o.textAlign = "left", i.forEach((M, P) => o.fillText(M, f + 10, k + 19 + P * 18));
+      const n = [g.date, C(g.value)], d = Math.max(...n.map((M) => o.measureText(M).width)) + 20, f = Math.max(0, Math.min(p - d, g.x - d / 2)), k = g.y > 70 ? g.y - 62 : g.y + 12;
+      o.fillStyle = "#222", o.fillRect(f, k, d, 48), o.fillStyle = "#fff", o.textAlign = "left", n.forEach((M, G) => o.fillText(M, f + 10, k + 19 + G * 18));
     }
   };
   a.onmousemove = (s) => {
     const l = a.getBoundingClientRect(), x = (s.clientX - l.left) * p / l.width, R = (s.clientY - l.top) * u / l.height;
-    let g = -1, i = 16;
+    let g = -1, n = 16;
     c.forEach((d, f) => {
       const k = Math.hypot(d.x - x, d.y - R);
-      k < i && (g = f, i = k);
-    }), a.style.cursor = g >= 0 ? "pointer" : "default", L(g);
+      k < n && (g = f, n = k);
+    }), a.style.cursor = g >= 0 ? "pointer" : "default", A(g);
   }, a.onmouseleave = () => {
-    a.style.cursor = "default", L();
-  }, L();
+    a.style.cursor = "default", A();
+  }, A();
 }
 export {
   b as E,
@@ -486,7 +497,7 @@ export {
   F as b,
   H as c,
   N as d,
-  j as e,
+  U as e,
   B as f,
   q as g,
   V as h,
