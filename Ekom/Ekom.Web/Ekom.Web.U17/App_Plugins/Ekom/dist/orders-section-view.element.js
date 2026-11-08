@@ -1186,7 +1186,7 @@ function ve(i) {
 }
 function E(i, d) {
   const e = i.indexOf("#"), t = e >= 0 ? i.slice(e) : "", r = e >= 0 ? i.slice(0, e) : i, a = r.indexOf("?"), o = a >= 0 ? r.slice(0, a) : r, n = new URLSearchParams(a >= 0 ? r.slice(a + 1) : "");
-  return n.set("width", String(d)), `${o}?${n}${t}`.replace(/,/g, "%2C").replace(/ /g, "%20");
+  return n.set("width", String(d)), n.set("format", "webp"), n.set("rmode", "pad"), n.set("rcolor", "ffffff"), `${o}?${n}${t}`.replace(/,/g, "%2C").replace(/ /g, "%20");
 }
 function me(i) {
   var t, r;

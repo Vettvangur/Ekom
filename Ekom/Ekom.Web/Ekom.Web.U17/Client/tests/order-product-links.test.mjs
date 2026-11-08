@@ -96,7 +96,7 @@ test('order thumbnails prefer variant images and fall back to valid product imag
     const html = new EkomOrdersSectionViewElement().renderOrderLines({ orderLines: [line] });
     assert.ok(html.includes('class="ekmOrderLineThumbnail"'));
     assert.ok(html.includes('<svg'));
-    if (expected) assert.ok(html.includes(`src="${expected}?width=56" width="56" height="56" alt="" loading="lazy"`));
+    if (expected) assert.ok(html.includes(`src="${expected}?width=56&amp;format=webp&amp;rmode=pad&amp;rcolor=ffffff" width="56" height="56" alt="" loading="lazy"`));
     else assert.ok(!html.includes('<img'));
     assert.equal(getLegacyImageUrl(line), expected);
   }
@@ -121,10 +121,10 @@ test('failed or already broken thumbnails reveal the placeholder', () => {
 test('picture thumbnails request 1x and 2x widths without losing existing query or fragments', () => {
   const line = { product: { title: 'Product', images: [{ url: '/media/photo.jpg?quality=80&width=900#image' }] } };
   const html = new EkomOrdersSectionViewElement().renderOrderLines({ orderLines: [line] });
-  assert.ok(html.includes('<picture><source srcset="/media/photo.jpg?quality=80&amp;width=56#image 1x, /media/photo.jpg?quality=80&amp;width=112#image 2x">'));
+  assert.ok(html.includes('<picture><source srcset="/media/photo.jpg?quality=80&amp;width=56&amp;format=webp&amp;rmode=pad&amp;rcolor=ffffff#image 1x, /media/photo.jpg?quality=80&amp;width=112&amp;format=webp&amp;rmode=pad&amp;rcolor=ffffff#image 2x">'));
   assert.ok(html.includes('loading="lazy" decoding="async"'));
-  assert.equal(getLegacyImageUrl(line, 56), '/media/photo.jpg?quality=80&width=56#image');
-  assert.equal(getLegacyImageUrl(line, 112), '/media/photo.jpg?quality=80&width=112#image');
+  assert.equal(getLegacyImageUrl(line, 56), '/media/photo.jpg?quality=80&width=56&format=webp&rmode=pad&rcolor=ffffff#image');
+  assert.equal(getLegacyImageUrl(line, 112), '/media/photo.jpg?quality=80&width=112&format=webp&rmode=pad&rcolor=ffffff#image');
   assert.ok(!html.includes('width=900'));
   assert.ok(legacyTemplate.includes('<picture ng-if="getOrderLineImageUrl(orderLine)">'));
   assert.ok(legacyTemplate.includes('ng-attr-srcset="{{ getOrderLineImageUrl(orderLine, 56) }} 1x, {{ getOrderLineImageUrl(orderLine, 112) }} 2x"'));

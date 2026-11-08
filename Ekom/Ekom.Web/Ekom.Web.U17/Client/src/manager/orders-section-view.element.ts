@@ -1795,6 +1795,9 @@ function resizeOrderLineImage(url: string, width: number): string {
   const path = queryIndex >= 0 ? pathAndQuery.slice(0, queryIndex) : pathAndQuery;
   const query = new URLSearchParams(queryIndex >= 0 ? pathAndQuery.slice(queryIndex + 1) : '');
   query.set('width', String(width));
+  query.set('format', 'webp');
+  query.set('rmode', 'pad');
+  query.set('rcolor', 'ffffff');
   return `${path}?${query}${hash}`.replace(/,/g, '%2C').replace(/ /g, '%20');
 }
 
