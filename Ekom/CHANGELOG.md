@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+* **manager:** preserve historical order product links when storefront visibility filters exclude a product; normal catalog filtering is unchanged.
+
 * **manager:** show variant or product thumbnails beside linked order-line titles, with a placeholder for missing or unavailable images, in Umbraco 13/17/18.
 
 * **order:** validate customer emails and the 200-character customer name/email storage limits before changing the order; return HTTP 400 without error logs or submitted values, including names composed from first and last name.
