@@ -173,6 +173,15 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private async initialize(): Promise<void> {
+    const drill = new URLSearchParams(location.search);
+    if (drill.get('analyticsDrill') === '1') {
+      history.replaceState(history.state, '', location.pathname);
+      managerState.filters.store = drill.get('store') || '';
+      managerState.filters.dateFrom = drill.get('start') || managerState.filters.dateFrom;
+      managerState.filters.dateTo = drill.get('end') || managerState.filters.dateTo;
+      managerState.filters.orderStatus = drill.get('orderStatus') || 'CompletedOrders';
+      for (const key of ['query','paymentProvider','shippingProvider','couponCode','giftcardCode','productSku','trackingSource','trackingMedium','trackingCampaign','trackingTerm','trackingContent','trackingClickId'] as const) managerState.filters[key] = '';
+    }
     try {
       const [statuses, stores] = await Promise.all([
         this.api.statusList(),

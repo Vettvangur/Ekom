@@ -3,7 +3,7 @@ var J = (i, d, e) => d in i ? Y(i, d, { enumerable: !0, configurable: !0, writab
 var l = (i, d, e) => J(i, typeof d != "symbol" ? d + "" : d, e);
 import { UmbElementMixin as X } from "@umbraco-cms/backoffice/element-api";
 import { UMB_NOTIFICATION_CONTEXT as ee } from "@umbraco-cms/backoffice/notification";
-import { E as te, m as u, a as re, e as s, g as L, b as $, p as ie, d as S, c as se, h as ae } from "./manager-shared.js";
+import { E as te, m as c, a as re, e as s, g as L, b as $, p as ie, c as S, h as se, d as ae } from "./manager-shared.js";
 const oe = [
   { key: "customerName", label: "Name", property: "name" },
   { key: "customerEmail", label: "Email", property: "email" },
@@ -114,19 +114,24 @@ class le extends X(HTMLElement) {
     super.disconnectedCallback(), document.removeEventListener("keydown", this.handleKeyDown), window.clearTimeout(this.searchTimer);
   }
   async initialize() {
-    var e;
+    var t;
+    const e = new URLSearchParams(location.search);
+    if (e.get("analyticsDrill") === "1") {
+      history.replaceState(history.state, "", location.pathname), c.filters.store = e.get("store") || "", c.filters.dateFrom = e.get("start") || c.filters.dateFrom, c.filters.dateTo = e.get("end") || c.filters.dateTo, c.filters.orderStatus = e.get("orderStatus") || "CompletedOrders";
+      for (const r of ["query", "paymentProvider", "shippingProvider", "couponCode", "giftcardCode", "productSku", "trackingSource", "trackingMedium", "trackingCampaign", "trackingTerm", "trackingContent", "trackingClickId"]) c.filters[r] = "";
+    }
     try {
-      const [t, r] = await Promise.all([
+      const [r, a] = await Promise.all([
         this.api.statusList(),
         this.api.stores(),
         this.loadConfig()
       ]);
-      if (u.statusList = t || [], u.stores = r || [], !u.filters.store && u.stores.length && (u.filters.store = u.stores[0].alias), await this.loadFilterProviders(), await this.loadOrders(), (e = u).pendingOrderId || (e.pendingOrderId = new URLSearchParams(location.search).get("orderId") || void 0), u.pendingOrderId) {
-        const a = u.pendingOrderId;
-        u.pendingOrderId = void 0, await this.openOrder(a);
+      if (c.statusList = r || [], c.stores = a || [], !c.filters.store && c.stores.length && (c.filters.store = c.stores[0].alias), await this.loadFilterProviders(), await this.loadOrders(), (t = c).pendingOrderId || (t.pendingOrderId = new URLSearchParams(location.search).get("orderId") || void 0), c.pendingOrderId) {
+        const o = c.pendingOrderId;
+        c.pendingOrderId = void 0, await this.openOrder(o);
       }
-    } catch (t) {
-      this.error = b(t, "Error loading Ekom Manager."), this.loading = !1, this.render();
+    } catch (r) {
+      this.error = b(r, "Error loading Ekom Manager."), this.loading = !1, this.render();
     }
   }
   async loadConfig() {
@@ -143,8 +148,8 @@ class le extends X(HTMLElement) {
     return this.notifyOrderStatusOverride ?? ((e = this.config) == null ? void 0 : e.managerOrderStatusFireEventsByDefault) ?? !1;
   }
   async loadFilterProviders(e = !1) {
-    const t = ++this.filterProvidersRequestId, r = u.filters.store;
-    if ((e || !r) && (u.filters.paymentProvider = "", u.filters.shippingProvider = ""), u.paymentProviders = [], u.shippingFilterProviders = [], !r) {
+    const t = ++this.filterProvidersRequestId, r = c.filters.store;
+    if ((e || !r) && (c.filters.paymentProvider = "", c.filters.shippingProvider = ""), c.paymentProviders = [], c.shippingFilterProviders = [], !r) {
       this.filterProvidersLoading = !1;
       return;
     }
@@ -153,23 +158,23 @@ class le extends X(HTMLElement) {
       this.api.paymentProviders(r),
       this.api.shippingProviders(r)
     ]);
-    if (t !== this.filterProvidersRequestId || r !== u.filters.store)
+    if (t !== this.filterProvidersRequestId || r !== c.filters.store)
       return;
-    const n = a.status === "fulfilled" ? a.value : [], c = o.status === "fulfilled" ? o.value : [];
-    u.paymentProviders = n, u.shippingFilterProviders = c, this.filterProvidersLoading = !1, (a.status === "rejected" || o.status === "rejected") && this.showNotification(
+    const n = a.status === "fulfilled" ? a.value : [], u = o.status === "fulfilled" ? o.value : [];
+    c.paymentProviders = n, c.shippingFilterProviders = u, this.filterProvidersLoading = !1, (a.status === "rejected" || o.status === "rejected") && this.showNotification(
       "warning",
       "Filter options unavailable",
       "Some provider options could not be loaded. Orders can still be searched; reload to try again."
-    ), u.filters.paymentProvider && (u.paymentProviders.some((p) => p.key === u.filters.paymentProvider) || (u.filters.paymentProvider = "")), u.filters.shippingProvider && !c.some((h) => h.key === u.filters.shippingProvider) && (u.filters.shippingProvider = ""), this.render();
+    ), c.filters.paymentProvider && (c.paymentProviders.some((p) => p.key === c.filters.paymentProvider) || (c.filters.paymentProvider = "")), c.filters.shippingProvider && !u.some((h) => h.key === c.filters.shippingProvider) && (c.filters.shippingProvider = ""), this.render();
   }
   async loadOrders() {
-    if (!u.filters.store) {
+    if (!c.filters.store) {
       this.loading = !1, this.result = { orders: [], count: 0, totalPages: 0 }, this.render();
       return;
     }
     this.loading = !0, this.error = "", this.render();
     try {
-      const e = await this.api.searchOrders(u.filters, this.page);
+      const e = await this.api.searchOrders(c.filters, this.page);
       this.result = {
         ...e,
         orders: e.orders || []
@@ -218,7 +223,7 @@ class le extends X(HTMLElement) {
     `;
   }
   renderToolbar() {
-    const e = u.filters;
+    const e = c.filters;
     return `
       <div class="umb-sub-header">
         <div class="ekmManager__filters">
@@ -226,7 +231,7 @@ class le extends X(HTMLElement) {
             <select data-field="orderStatus">
               <option value="CompletedOrders" ${e.orderStatus === "CompletedOrders" ? "selected" : ""}>Completed Orders</option>
               <option value="AllOrders" ${e.orderStatus === "AllOrders" ? "selected" : ""}>All Orders</option>
-              ${u.statusList.map((t) => {
+              ${c.statusList.map((t) => {
       const r = L(t);
       return `<option value="${s(r)}" ${e.orderStatus === r ? "selected" : ""}>${s(t.label)}</option>`;
     }).join("")}
@@ -240,7 +245,7 @@ class le extends X(HTMLElement) {
           </label>
           <label class="ekmManager__filter">Store:
             <select data-field="store">
-              ${u.stores.map((t) => `<option value="${s(t.alias)}" ${e.store === t.alias ? "selected" : ""}>${s(t.title)}</option>`).join("")}
+              ${c.stores.map((t) => `<option value="${s(t.alias)}" ${e.store === t.alias ? "selected" : ""}>${s(t.title)}</option>`).join("")}
             </select>
           </label>
           <div class="ekmManager__search">
@@ -278,7 +283,7 @@ class le extends X(HTMLElement) {
         <div class="umb-table-cell" data-label="Order Number" title="${s(e.uniqueId)}">${s(e.referenceId)}</div>
         <div class="umb-table-cell" data-label="Status">
           <select data-action="change-row-status" data-order-id="${s(e.uniqueId)}" ${this.config ? "" : "disabled"}>
-            ${u.statusList.map((t) => {
+            ${c.statusList.map((t) => {
       const r = L(t);
       return `<option value="${s(r)}" ${e.orderStatusCol === r ? "selected" : ""}>${s(t.label)}</option>`;
     }).join("")}
@@ -306,7 +311,7 @@ class le extends X(HTMLElement) {
     return this.overlay === "filter" ? this.renderFilterOverlay() : this.overlay === "export" ? this.renderExportOverlay() : this.overlay === "order" && this.selectedOrder ? this.renderOrderOverlay(this.selectedOrder) : "";
   }
   renderFilterOverlay() {
-    const e = u.filters;
+    const e = c.filters;
     return `
       <div class="ekmOverlay">
         <div class="ekmOverlay__panel ekmOverlay__panel--small">
@@ -315,14 +320,14 @@ class le extends X(HTMLElement) {
             <label class="control-group">Payment provider:
               <select data-filter-field="paymentProvider" ${this.filterProvidersLoading ? "disabled" : ""}>
                 <option value="">Select payment provider</option>
-                ${u.paymentProviders.map((t) => `<option value="${s(t.key)}" ${e.paymentProvider === t.key ? "selected" : ""}>${s(t.title)}</option>`).join("")}
+                ${c.paymentProviders.map((t) => `<option value="${s(t.key)}" ${e.paymentProvider === t.key ? "selected" : ""}>${s(t.title)}</option>`).join("")}
               </select>
             </label>
             ${this.renderFilterInput("productSku", "Product SKU:", "Exact SKU")}
             <label class="control-group">Shipping provider:
               <select data-filter-field="shippingProvider" ${this.filterProvidersLoading ? "disabled" : ""}>
                 <option value="">All shipping providers</option>
-                ${u.shippingFilterProviders.map((t) => `<option value="${s(t.key)}" ${e.shippingProvider === t.key ? "selected" : ""}>${s(t.title)}</option>`).join("")}
+                ${c.shippingFilterProviders.map((t) => `<option value="${s(t.key)}" ${e.shippingProvider === t.key ? "selected" : ""}>${s(t.title)}</option>`).join("")}
               </select>
             </label>
             ${this.renderFilterInput("couponCode", "Coupon code:", "Exact order-level coupon code")}
@@ -342,7 +347,7 @@ class le extends X(HTMLElement) {
   renderFilterInput(e, t, r) {
     return `
       <label class="control-group">${s(t)}
-        <input type="text" data-filter-field="${s(e)}" value="${s(u.filters[e])}" placeholder="${s(r)}">
+        <input type="text" data-filter-field="${s(e)}" value="${s(c.filters[e])}" placeholder="${s(r)}">
       </label>
     `;
   }
@@ -378,7 +383,7 @@ class le extends X(HTMLElement) {
     `;
   }
   renderOrderDetails(e) {
-    var o, n, c, h;
+    var o, n, u, h;
     const t = ((o = e.customerInformation) == null ? void 0 : o.customer) || {}, r = ((n = e.customerInformation) == null ? void 0 : n.shipping) || {}, a = this.getOrderStatusValue(e.orderStatus);
     return `
       <div class="ekmOrder__header">
@@ -386,7 +391,7 @@ class le extends X(HTMLElement) {
         <div class="ekmOrderStatusBar">
           <label class="ekmOrderStatusBar__status">Order Status:
             <select data-field="orderStatusOverlay" ${this.config ? "" : "disabled"}>
-              ${u.statusList.map((p) => {
+              ${c.statusList.map((p) => {
       const v = L(p);
       return `<option value="${s(v)}" ${a === v ? "selected" : ""}>${s(p.label)}</option>`;
     }).join("")}
@@ -400,7 +405,7 @@ class le extends X(HTMLElement) {
         <p>UniqueId: ${s(e.uniqueId)}</p>
         <p>Created date: ${s($(e.createDate))}</p>
         <p>Paid date: ${s($(e.paidDate))}</p>
-        <p>Store: ${s(((c = e.storeInfo) == null ? void 0 : c.alias) || e.storeAlias)}</p>
+        <p>Store: ${s(((u = e.storeInfo) == null ? void 0 : u.alias) || e.storeAlias)}</p>
         <p>Payment: <strong>${s((h = e.chargedAmount) == null ? void 0 : h.currencyString)}</strong></p>
         ${this.renderOrderLockStatus()}
         ${this.renderOrderActions()}
@@ -431,8 +436,8 @@ class le extends X(HTMLElement) {
       </div>`).join("")}</dl>` : "";
   }
   renderPrintableOrder(e) {
-    var n, c, h, p, v;
-    const t = ((n = e.customerInformation) == null ? void 0 : n.customer) || {}, r = ((c = e.customerInformation) == null ? void 0 : c.shipping) || {}, a = this.getOrderStatusValue(e.orderStatus), o = ((h = u.statusList.find((f) => L(f) === a)) == null ? void 0 : h.label) || a;
+    var n, u, h, p, v;
+    const t = ((n = e.customerInformation) == null ? void 0 : n.customer) || {}, r = ((u = e.customerInformation) == null ? void 0 : u.shipping) || {}, a = this.getOrderStatusValue(e.orderStatus), o = ((h = c.statusList.find((f) => L(f) === a)) == null ? void 0 : h.label) || a;
     return `
       <main class="ekmOrder">
         <h1>Order number: ${s(e.referenceId)}</h1>
@@ -481,8 +486,8 @@ class le extends X(HTMLElement) {
     }).join("")}</ul></div>` : "";
   }
   formatGiftcardAmount(e, t) {
-    var o, n, c, h;
-    const r = ((n = (o = t.storeInfo) == null ? void 0 : o.currency) == null ? void 0 : n.currencyValue) || "en-US", a = ((h = (c = t.storeInfo) == null ? void 0 : c.currency) == null ? void 0 : h.isoCurrencySymbol) || t.currency;
+    var o, n, u, h;
+    const r = ((n = (o = t.storeInfo) == null ? void 0 : o.currency) == null ? void 0 : n.currencyValue) || "en-US", a = ((h = (u = t.storeInfo) == null ? void 0 : u.currency) == null ? void 0 : h.isoCurrencySymbol) || t.currency;
     try {
       return new Intl.NumberFormat(r, { style: "currency", currency: a }).format(e);
     } catch {
@@ -524,7 +529,7 @@ class le extends X(HTMLElement) {
     }).join("")}</section>`;
   }
   renderOrderLines(e) {
-    var o, n, c, h, p, v, f;
+    var o, n, u, h, p, v, f;
     const t = Array.isArray(e.orderLines) ? e.orderLines : [], r = typeof e.coupon == "string" ? e.coupon.trim() : "", a = r ? `Discount (${r})` : "Discount";
     return `
       <div style="align-items:center; display:flex; gap:10px; justify-content:space-between;"><h4>Order Details</h4><button type="button" class="btn-outline" data-action="open-order-line-editor">Add order line</button></div>
@@ -532,13 +537,13 @@ class le extends X(HTMLElement) {
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
         <div class="umb-table-body">
           ${t.map((m) => {
-      var k, g, I, A, x, P, C, _, R, T, q, M, F, D;
-      return `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${s(m.key)}" data-product-title="${s((k = m.product) == null ? void 0 : k.title)}" ${this.removingOrderLineId === m.key ? "disabled" : ""} aria-label="Remove ${s((g = m.product) == null ? void 0 : g.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><div class="ekmOrderLineProduct">${me(m)}<div class="ekmOrderLineProduct__details"><span>${ge(m.product)}${(A = (I = m.product) == null ? void 0 : I.sku) != null && A.trim() ? ` (${s(m.product.sku)})` : ""}</span>${m.variant ? `<small style="display:block; margin-top:3px;">${s(m.variant.title)} ${(x = m.variant.sku) != null && x.trim() ? `(${s(m.variant.sku)})` : ""}</small>` : ""}${ye(m)}</div></div></div><div class="umb-table-cell">${s(m.quantity)}</div><div class="umb-table-cell">${s((_ = (C = (P = m.product) == null ? void 0 : P.price) == null ? void 0 : C.withVat) == null ? void 0 : _.currencyString)}</div><div class="umb-table-cell">${s((T = (R = m.amount) == null ? void 0 : R.vat) == null ? void 0 : T.currencyString)}</div><div class="umb-table-cell">-${s((M = (q = m.amount) == null ? void 0 : q.discountAmount) == null ? void 0 : M.currencyString)}</div><div class="umb-table-cell"><strong>${s((D = (F = m.amount) == null ? void 0 : F.withVat) == null ? void 0 : D.currencyString)}</strong></div></div>`;
+      var O, g, I, A, x, P, C, _, R, T, q, M, F, D;
+      return `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${s(m.key)}" data-product-title="${s((O = m.product) == null ? void 0 : O.title)}" ${this.removingOrderLineId === m.key ? "disabled" : ""} aria-label="Remove ${s((g = m.product) == null ? void 0 : g.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><div class="ekmOrderLineProduct">${me(m)}<div class="ekmOrderLineProduct__details"><span>${ge(m.product)}${(A = (I = m.product) == null ? void 0 : I.sku) != null && A.trim() ? ` (${s(m.product.sku)})` : ""}</span>${m.variant ? `<small style="display:block; margin-top:3px;">${s(m.variant.title)} ${(x = m.variant.sku) != null && x.trim() ? `(${s(m.variant.sku)})` : ""}</small>` : ""}${ye(m)}</div></div></div><div class="umb-table-cell">${s(m.quantity)}</div><div class="umb-table-cell">${s((_ = (C = (P = m.product) == null ? void 0 : P.price) == null ? void 0 : C.withVat) == null ? void 0 : _.currencyString)}</div><div class="umb-table-cell">${s((T = (R = m.amount) == null ? void 0 : R.vat) == null ? void 0 : T.currencyString)}</div><div class="umb-table-cell">-${s((M = (q = m.amount) == null ? void 0 : q.discountAmount) == null ? void 0 : M.currencyString)}</div><div class="umb-table-cell"><strong>${s((D = (F = m.amount) == null ? void 0 : F.withVat) == null ? void 0 : D.currencyString)}</strong></div></div>`;
     }).join("")}
         </div>
         <div class="umb-table-footer">
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${s((n = (o = e.subTotal) == null ? void 0 : o.withVat) == null ? void 0 : n.currencyString)}</div></div>
-          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">${s(a)}</div><div class="umb-table-cell">-${s((c = e.discountAmount) == null ? void 0 : c.currencyString)}</div></div>
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">${s(a)}</div><div class="umb-table-cell">-${s((u = e.discountAmount) == null ? void 0 : u.currencyString)}</div></div>
           ${e.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${s((p = (h = e.shippingProvider.price) == null ? void 0 : h.withVat) == null ? void 0 : p.currencyString)}</div></div>` : ""}
           ${this.renderGiftcardTotal(e)}
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${s((v = e.chargedVat) == null ? void 0 : v.currencyString)}</div></div>
@@ -557,7 +562,7 @@ class le extends X(HTMLElement) {
   }
   renderConsent(e) {
     const t = e.consent;
-    return Oe(t) ? `<div class="ekmOrderTracking"><div class="ekmOrderTracking__header"><h4>Consent</h4><button class="btn-reset" type="button" data-action="toggle-consent">${this.consentExpanded ? "Hide" : "Show"}</button></div>${this.consentExpanded ? `<p>Resolved: ${s($(t.resolvedAtUtc))}</p><p>Source: ${s(t.source)}</p><p>Analytics: ${V(t.analytics)}</p><p>Marketing: ${V(t.marketing)}</p>` : ""}</div>` : '<div class="ekmOrderTracking"><h4>Consent</h4><p>No consent data was captured for this order.</p></div>';
+    return ke(t) ? `<div class="ekmOrderTracking"><div class="ekmOrderTracking__header"><h4>Consent</h4><button class="btn-reset" type="button" data-action="toggle-consent">${this.consentExpanded ? "Hide" : "Show"}</button></div>${this.consentExpanded ? `<p>Resolved: ${s($(t.resolvedAtUtc))}</p><p>Source: ${s(t.source)}</p><p>Analytics: ${V(t.analytics)}</p><p>Marketing: ${V(t.marketing)}</p>` : ""}</div>` : '<div class="ekmOrderTracking"><h4>Consent</h4><p>No consent data was captured for this order.</p></div>';
   }
   renderActivityLogs() {
     return this.orderLogsLoading ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Loading activity...</p></div>' : this.orderLogsError ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Unable to load activity log.</p></div>' : this.orderLogs.length ? `<div class="ekmOrderActivityLog"><h4>Activity log</h4><div class="ekmOrderActivityLog__list">${this.orderLogs.map((t, r) => {
@@ -764,23 +769,23 @@ class le extends X(HTMLElement) {
       this.notifyOrderStatusOverride = t.checked;
       return;
     }
-    r === "orderStatusOverlay" || r === "query" || !r || !(r in u.filters) || (u.filters[r] = t.value, this.page = 1, r === "store" && await this.loadFilterProviders(!0), await this.loadOrders());
+    r === "orderStatusOverlay" || r === "query" || !r || !(r in c.filters) || (c.filters[r] = t.value, this.page = 1, r === "store" && await this.loadFilterProviders(!0), await this.loadOrders());
   }
   handleSearchInput(e) {
     const t = e.currentTarget;
-    u.filters.query = t.value, this.page = 1, window.clearTimeout(this.searchTimer), this.searchTimer = window.setTimeout(() => void this.loadOrders(), 700);
+    c.filters.query = t.value, this.page = 1, window.clearTimeout(this.searchTimer), this.searchTimer = window.setTimeout(() => void this.loadOrders(), 700);
   }
   applyFilterOverlay() {
     this.querySelectorAll("[data-filter-field]").forEach((e) => {
       const t = e.dataset.filterField;
-      t && t in u.filters && (u.filters[t] = t === "giftcardCode" ? e.value.trim() : e.value);
+      t && t in c.filters && (c.filters[t] = t === "giftcardCode" ? e.value.trim() : e.value);
     });
   }
   async exportOrders() {
     if (this.result.count) {
       this.exporting = !0, this.render();
       try {
-        const e = await this.api.exportOrders(u.filters, this.result.count, this.exportIncludeOrderLines);
+        const e = await this.api.exportOrders(c.filters, this.result.count, this.exportIncludeOrderLines);
         ae(e, this.exportIncludeOrderLines ? "orders-with-orderlines.csv" : "orders.csv"), this.overlay = "";
       } catch (e) {
         this.showError(b(e, "Error exporting orders."));
@@ -866,20 +871,20 @@ class le extends X(HTMLElement) {
     }
   }
   async executeGiftcardRecovery(e, t) {
-    var f, m, k;
+    var f, m, O;
     const r = (f = this.selectedOrder) == null ? void 0 : f.uniqueId, a = (m = this.recoveryAttempts) == null ? void 0 : m.find((g) => g.attemptId === e);
     if (!r || !a || this.recoveryBusy) return;
-    const o = t !== void 0, n = o ? a.claims.find((g) => g.id === t) : void 0, c = o ? n == null ? void 0 : n.releaseToken : a.reconcileToken;
-    if (!c || (o ? !(n != null && n.canRelease) || !n.claimReference : !a.canReconcile)) return;
+    const o = t !== void 0, n = o ? a.claims.find((g) => g.id === t) : void 0, u = o ? n == null ? void 0 : n.releaseToken : a.reconcileToken;
+    if (!u || (o ? !(n != null && n.canRelease) || !n.claimReference : !a.canReconcile)) return;
     const h = o ? `Release the failed-preparation hold for masked card ${n.cardReference}, claim ${n.claimReference}? This calls the provider through audited recovery. It does not refund an accepted payment or retry payment or checkout. Unknown effects may still need reconciliation.` : "Reconcile this failed gift-card preparation? The audited backend will check known claims and unknown provider effects. This does not refund an accepted payment or retry payment or checkout. Unresolved effects may remain blocked.";
     if (!window.confirm(h)) return;
     const p = this.orderRequestId, v = () => {
       var g;
       return p === this.orderRequestId && r === ((g = this.selectedOrder) == null ? void 0 : g.uniqueId);
     };
-    this.recoveryOperation = o ? `release:${e}:${t}` : `reconcile:${e}`, this.recoveryScrollTop = (k = this.querySelector(".ekmOverlay")) == null ? void 0 : k.scrollTop, this.recoveryMessage = "", this.recoveryActionError = "", this.render();
+    this.recoveryOperation = o ? `release:${e}:${t}` : `reconcile:${e}`, this.recoveryScrollTop = (O = this.querySelector(".ekmOverlay")) == null ? void 0 : O.scrollTop, this.recoveryMessage = "", this.recoveryActionError = "", this.render();
     try {
-      const g = o ? await this.api.releaseGiftcardRecovery(r, e, n.id, c) : await this.api.reconcileGiftcardRecovery(r, e, c);
+      const g = o ? await this.api.releaseGiftcardRecovery(r, e, n.id, u) : await this.api.reconcileGiftcardRecovery(r, e, u);
       if (!v()) return;
       this.recoveryMessage = `${g.message} ${g.resolved ? "Failed preparation resolved." : "Recovery remains unresolved; check the updated history."}`;
     } catch (g) {
@@ -904,21 +909,21 @@ class le extends X(HTMLElement) {
     const e = (n = this.selectedOrder) == null ? void 0 : n.uniqueId, t = this.orderLockStatus;
     if (!e || !(t != null && t.hasLock) || !t.canRelease || !t.releaseToken || this.orderLockLoading || this.orderLockError || this.releasingOrderLock || this.executingActionKey || this.recoveryOperation || !window.confirm("Release this checkout lock? Confirm that no payment is currently being processed and the previous checkout has stopped. The customer's basket will be kept, and they can try checkout again. This does not cancel or refund a payment. Any gift-card hold that cannot be released must be checked separately.")) return;
     const r = this.orderRequestId, a = () => {
-      var c;
-      return r === this.orderRequestId && e === ((c = this.selectedOrder) == null ? void 0 : c.uniqueId);
+      var u;
+      return r === this.orderRequestId && e === ((u = this.selectedOrder) == null ? void 0 : u.uniqueId);
     };
     this.releasingOrderLock = !0, this.orderLockReleaseError = "";
     let o = !1;
     this.render();
     try {
-      const c = await this.api.releaseOrderLock(e, t.releaseToken);
+      const u = await this.api.releaseOrderLock(e, t.releaseToken);
       if (!a()) return;
-      o = !0, this.orderLockWarning = c.warning || "", this.showSuccess(c.message);
+      o = !0, this.orderLockWarning = u.warning || "", this.showSuccess(u.message);
       const [h] = await Promise.all([this.api.orderInfo(e), this.loadOrderLogs(e), this.loadOrderActions(e), this.loadOrderLockStatus(e), this.loadGiftcardRecovery(e)]);
       a() && (this.selectedOrder = h);
-    } catch (c) {
+    } catch (u) {
       if (!a()) return;
-      this.orderLockReleaseError = o ? "Checkout was unlocked, but we could not refresh all order details. Reopen the order to check them." : b(c, "We could not confirm the checkout reset. Check the updated order before trying again."), await Promise.all([
+      this.orderLockReleaseError = o ? "Checkout was unlocked, but we could not refresh all order details. Reopen the order to check them." : b(u, "We could not confirm the checkout reset. Check the updated order before trying again."), await Promise.all([
         this.loadOrderLogs(e),
         this.loadOrderActions(e),
         this.loadOrderLockStatus(e),
@@ -972,7 +977,7 @@ class le extends X(HTMLElement) {
     ++this.orderRequestId, ++this.lockRequestId, ++this.recoveryRequestId, this.recoveryOperation = "", this.recoveryScrollTop = void 0, this.overlay = "", this.selectedOrder = void 0, this.customerEditorOpen = !1, this.customerEditModel = void 0, this.orderLineEditorOpen = !1, this.orderLineEditModel = void 0, this.shippingProviderEditorOpen = !1, this.render();
   }
   getOrderStatusValue(e) {
-    const t = String(e ?? ""), r = u.statusList.find((a) => String(a.value ?? "") === t || String(a.enumValue ?? "") === t);
+    const t = String(e ?? ""), r = c.statusList.find((a) => String(a.value ?? "") === t || String(a.enumValue ?? "") === t);
     return r ? L(r) : t;
   }
   async changeRowStatus(e) {
@@ -996,12 +1001,12 @@ class le extends X(HTMLElement) {
     if (!(t != null && t.confirmMessage && !window.confirm(t.confirmMessage))) {
       this.executingActionKey = e, this.render();
       try {
-        const n = await this.api.executeOrderAction(r, e), c = await n.blob(), h = n.headers.get("content-disposition") || "", p = n.headers.get("content-type") || "";
+        const n = await this.api.executeOrderAction(r, e), u = await n.blob(), h = n.headers.get("content-disposition") || "", p = n.headers.get("content-type") || "";
         if (h.toLowerCase().includes("filename=") || p.startsWith("application/pdf") || p.startsWith("application/octet-stream") || p.startsWith("image/"))
-          window.open(URL.createObjectURL(c), "_blank");
+          window.open(URL.createObjectURL(u), "_blank");
         else {
-          const f = await c.text();
-          this.showSuccess(ke(f));
+          const f = await u.text();
+          this.showSuccess(Oe(f));
         }
         if (a !== this.orderRequestId) return;
         const [v] = await Promise.all([this.api.orderInfo(r), this.loadOrderLockStatus(r), this.loadGiftcardRecovery(r)]);
@@ -1032,7 +1037,7 @@ class le extends X(HTMLElement) {
     if (!(!((e = this.selectedOrder) != null && e.uniqueId) || !this.customerEditModel || this.customerSaving)) {
       this.querySelectorAll("[data-customer-group]").forEach((t) => {
         var n;
-        const r = t.dataset.customerGroup, a = t.dataset.customerKey, o = (n = this.customerEditModel) == null ? void 0 : n[r].find((c) => c.key === a);
+        const r = t.dataset.customerGroup, a = t.dataset.customerKey, o = (n = this.customerEditModel) == null ? void 0 : n[r].find((u) => u.key === a);
         o && (o.value = t.value);
       }), this.customerSaving = !0, this.render();
       try {
@@ -1053,8 +1058,8 @@ class le extends X(HTMLElement) {
     if (!((o = this.selectedOrder) != null && o.uniqueId) || !this.orderLineEditModel || this.orderLineSaving)
       return;
     this.querySelectorAll("[data-order-line-field]").forEach((n) => {
-      const c = n.dataset.orderLineField;
-      c && (this.orderLineEditModel[c] = n.value);
+      const u = n.dataset.orderLineField;
+      u && (this.orderLineEditModel[u] = n.value);
     });
     const { productId: e, variantId: t, quantity: r } = this.orderLineEditModel, a = Number(r);
     if (!e.trim() || !Number.isFinite(a) || a <= 0) {
@@ -1092,12 +1097,12 @@ class le extends X(HTMLElement) {
     this.readShippingCustomFields();
     const t = {}, r = /* @__PURE__ */ new Set();
     for (const n of this.shippingCustomFields) {
-      const c = n.existing ? n.key : `customshipping${n.key.trim()}`;
-      if (!c.slice(14).trim() || c.length > 100 || n.value.length > 4096 || r.has(c.toLowerCase())) {
+      const u = n.existing ? n.key : `customshipping${n.key.trim()}`;
+      if (!u.slice(14).trim() || u.length > 100 || n.value.length > 4096 || r.has(u.toLowerCase())) {
         this.showError("Enter unique shipping custom data keys and valid values.");
         return;
       }
-      r.add(c.toLowerCase()), t[c] = n.value;
+      r.add(u.toLowerCase()), t[u] = n.value;
     }
     this.shippingProviderSaving = !0, this.render();
     try {
@@ -1132,7 +1137,7 @@ class le extends X(HTMLElement) {
 function b(i, d) {
   return i instanceof Error ? i.message : d;
 }
-function O(i) {
+function k(i) {
   return i != null && (typeof i != "string" || i.trim() !== "");
 }
 function z(i) {
@@ -1146,7 +1151,7 @@ function z(i) {
   return d.charAt(0).toUpperCase() + d.slice(1).toLowerCase().replace(/\bid\b/g, "ID");
 }
 function w(i) {
-  if (!O(i)) return "Not recorded";
+  if (!k(i)) return "Not recorded";
   if (typeof i == "boolean") return i ? "Yes" : "No";
   if (Array.isArray(i)) return i.length ? i.map(w).join("; ") : "Empty list";
   if (typeof i == "object") {
@@ -1160,15 +1165,15 @@ function ce(i) {
   return [...d, ...Object.keys(i).filter((e) => !d.includes(e))].map((e) => ({ label: z(e), value: w(i[e]) }));
 }
 function ue(i, d = Date.now()) {
-  const e = O(i.claimId), t = O(i.validUntil), r = t ? Date.parse(String(i.validUntil)) : NaN, a = r > d, o = i.claimed === !0 || O(i.transactionId) || O(i.claimDate) || O(i.usedDate), n = o ? "Used" : e && a ? "Reserved" : e && r <= d ? "Reservation expired" : e || t ? "Needs checking" : "Selected";
-  let c = "";
-  !o && !e && t ? c = "An expiry time is saved, but the reservation reference is missing. Check the gift-card provider if an amount is still held." : !o && e && r <= d ? c = "The saved reservation expiry has passed. This does not confirm that the provider has released the hold." : !o && e && !t && (c = "No expiry time is saved. Check the gift-card provider if an amount is still held."), t && !Number.isFinite(r) && (c += `${c ? " " : ""}The saved expiry time could not be read. Check the gift-card provider.`);
+  const e = k(i.claimId), t = k(i.validUntil), r = t ? Date.parse(String(i.validUntil)) : NaN, a = r > d, o = i.claimed === !0 || k(i.transactionId) || k(i.claimDate) || k(i.usedDate), n = o ? "Used" : e && a ? "Reserved" : e && r <= d ? "Reservation expired" : e || t ? "Needs checking" : "Selected";
+  let u = "";
+  !o && !e && t ? u = "An expiry time is saved, but the reservation reference is missing. Check the gift-card provider if an amount is still held." : !o && e && r <= d ? u = "The saved reservation expiry has passed. This does not confirm that the provider has released the hold." : !o && e && !t && (u = "No expiry time is saved. Check the gift-card provider if an amount is still held."), t && !Number.isFinite(r) && (u += `${u ? " " : ""}The saved expiry time could not be read. Check the gift-card provider.`);
   let h = "Not recorded";
   if (t && (h = Number.isFinite(r) ? new Intl.DateTimeFormat(void 0, { dateStyle: "medium", timeStyle: "long" }).format(new Date(r)) : String(i.validUntil), a)) {
     const p = Math.ceil((r - d) / 6e4), v = p < 60 ? p : p < 1440 ? Math.ceil(p / 60) : Math.ceil(p / 1440), f = p < 60 ? "minute" : p < 1440 ? "hour" : "day";
     h += ` (in about ${v} ${f}${v === 1 ? "" : "s"})`;
   }
-  return { status: n, warning: c, expiryLabel: !o && e ? "Reservation ends" : "Saved expiry", expiry: h };
+  return { status: n, warning: u, expiryLabel: !o && e ? "Reservation ends" : "Saved expiry", expiry: h };
 }
 function he(i) {
   return i === "zipCode" ? "Zipcode" : i.charAt(0).toUpperCase() + i.slice(1);
@@ -1230,9 +1235,9 @@ function be(i) {
   return !!(i && (i.source || i.medium || i.campaign || i.term || i.content || i.clickId || i.clickIdType || i.landingUrl || i.referrer || i.captureMethod || i.capturedAtUtc || i.hasCookieSupport !== null && i.hasCookieSupport !== void 0 || (d = i.ga4) != null && d.clientId || (e = i.ga4) != null && e.sessionId || (t = i.meta) != null && t.fbp || (r = i.meta) != null && r.fbc || Q(i.algolia)));
 }
 function $e(i) {
-  var o, n, c, h, p, v;
+  var o, n, u, h, p, v;
   const d = Object.entries(((o = i.ga4) == null ? void 0 : o.data) || {}), e = Object.entries(((n = i.meta) == null ? void 0 : n.data) || {}), t = i.algolia, r = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], a = Q(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${y("User token", t.userToken)}${r.length ? `<ul>${r.map((f) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${s(f.orderLineKey)}<br><strong>Query ID</strong>: ${s(f.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
-  return `<div class="ekmSplit"><div class="ekmSplit__column">${y("Captured", $(i.capturedAtUtc))}${y("Capture method", i.captureMethod)}${i.hasCookieSupport !== null && i.hasCookieSupport !== void 0 ? `<p>Cookie support: ${i.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${y("Source", i.source)}${y("Medium", i.medium)}${y("Campaign", i.campaign)}${y("Term", i.term)}${y("Content", i.content)}${y("Click ID", i.clickId)}${y("Click ID Type", i.clickIdType)}${y("Landing URL", i.landingUrl)}${y("Referrer", i.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${y("Client ID", (c = i.ga4) == null ? void 0 : c.clientId)}${y("Session ID", (h = i.ga4) == null ? void 0 : h.sessionId)}${G(d)}<h5>Meta</h5>${y("FBP", (p = i.meta) == null ? void 0 : p.fbp)}${y("FBC", (v = i.meta) == null ? void 0 : v.fbc)}${G(e)}${a}</div></div>`;
+  return `<div class="ekmSplit"><div class="ekmSplit__column">${y("Captured", $(i.capturedAtUtc))}${y("Capture method", i.captureMethod)}${i.hasCookieSupport !== null && i.hasCookieSupport !== void 0 ? `<p>Cookie support: ${i.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${y("Source", i.source)}${y("Medium", i.medium)}${y("Campaign", i.campaign)}${y("Term", i.term)}${y("Content", i.content)}${y("Click ID", i.clickId)}${y("Click ID Type", i.clickIdType)}${y("Landing URL", i.landingUrl)}${y("Referrer", i.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${y("Client ID", (u = i.ga4) == null ? void 0 : u.clientId)}${y("Session ID", (h = i.ga4) == null ? void 0 : h.sessionId)}${G(d)}<h5>Meta</h5>${y("FBP", (p = i.meta) == null ? void 0 : p.fbp)}${y("FBC", (v = i.meta) == null ? void 0 : v.fbc)}${G(e)}${a}</div></div>`;
 }
 function Q(i) {
   return !!(i && (i.userToken || Array.isArray(i.lines) && i.lines.length));
@@ -1243,7 +1248,7 @@ function y(i, d) {
 function G(i) {
   return i.length ? `<ul>${i.map(([d, e]) => `<li><strong>${s(d)}</strong>: ${s(e)}</li>`).join("")}</ul>` : "";
 }
-function Oe(i) {
+function ke(i) {
   return !!(i && (i.resolvedAtUtc || i.source || i.analytics !== null && i.analytics !== void 0 || i.marketing !== null && i.marketing !== void 0));
 }
 function V(i) {
@@ -1271,7 +1276,7 @@ function K(i, d) {
 function W(i) {
   return Object.fromEntries(i.map((d) => [d.key, d.value || ""]));
 }
-function ke(i) {
+function Oe(i) {
   try {
     return JSON.parse(i).message || i;
   } catch {

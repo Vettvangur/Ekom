@@ -11,7 +11,7 @@ function loadModule(relativePath, modules = {}, globals = {}) {
   }).outputText;
   const exports = {};
   runInNewContext(compiled, {
-    exports,
+    exports, URLSearchParams, location: { search: "" },
     require: name => {
       assert.ok(modules[name], `Unexpected module: ${name}`);
       return modules[name];

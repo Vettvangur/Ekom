@@ -121,15 +121,15 @@ class p {
       throw await p.createError(t, "Error removing order line.");
     return t.json();
   }
-  async charts(r) {
+  async charts(r, e) {
     return this.getJson("/ekom/manager/charts", {
       start: r.dateFrom,
       end: r.dateTo,
       orderStatus: r.orderStatus,
       store: r.store
-    });
+    }, e);
   }
-  async mostSoldProducts(r, e, t = 20) {
+  async mostSoldProducts(r, e, t = 20, a) {
     return this.getJson("/ekom/manager/MostSoldProducts", {
       start: r.dateFrom,
       end: r.dateTo,
@@ -137,16 +137,17 @@ class p {
       store: r.store,
       page: e,
       pageSize: t
-    });
+    }, a);
   }
-  async getJson(r, e) {
-    const t = await fetch(r + b(e), {
+  async getJson(r, e, t) {
+    const a = await fetch(r + b(e), {
       credentials: "same-origin",
+      signal: t,
       headers: { Accept: "application/json" }
     });
-    if (!t.ok)
-      throw await p.createError(t, "Request failed.");
-    return t.json();
+    if (!a.ok)
+      throw await p.createError(a, "Request failed.");
+    return a.json();
   }
   async getBlob(r, e) {
     const t = await fetch(r + b(e), {

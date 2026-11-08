@@ -840,58 +840,48 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("charts")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> GetChartsData(DateTime start, DateTime end, string store, string orderStatus)
+    public async Task<IActionResult> GetChartsData(DateTime start, DateTime end, string store, string orderStatus, CancellationToken ct = default)
     {
         if (!CanAccessStore(store))
         {
             return ForbidStore(store);
         }
 
-        var chartData = new ChartData();
+        if (start == default || end < start || end.Date >= DateTime.MaxValue.Date || (end.Date - start.Date).TotalDays > 3660)
+        {
+            return BadRequest("Select a valid date range of up to ten years.");
+        }
 
-        List<ChartAggregateRow> aggregates = await _repo.GetChartAggregatesAsync(start, end, store, orderStatus);
+        var aggregates = await _repo.GetChartAggregatesAsync(start, end, store, orderStatus, ct).ConfigureAwait(false);
+        return Ok(BuildChartData(start, end, orderStatus, aggregates));
+    }
 
-        string[] labels = aggregates
-            .Select(x => x.BucketDate.ToString("yyyy-MM-dd"))
-            .ToArray();
+    internal static ChartData BuildChartData(DateTime start, DateTime end, string orderStatus, IReadOnlyList<ChartAggregateRow> aggregates)
+    {
+        var byDate = aggregates.ToDictionary(row => row.BucketDate.Date);
+        var amounts = new List<ChartDataPoint>();
+        var orders = new List<ChartDataPoint>();
+        var averages = new List<ChartDataPoint>();
+        for (var date = start.Date; date <= end.Date; date = date.AddDays(1))
+        {
+            byDate.TryGetValue(date, out var row);
+            var label = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            amounts.Add(new ChartDataPoint { Date = date, x = label, y = row?.Revenue ?? 0 });
+            orders.Add(new ChartDataPoint { Date = date, x = label, y = row?.Orders ?? 0 });
+            averages.Add(new ChartDataPoint { Date = date, x = label, y = row?.Orders > 0 ? row.Revenue / row.Orders : null });
+        }
 
-        List<ChartDataPoint> revenueChartDataPoints = aggregates
-            .Select(x => new ChartDataPoint
-            {
-                Date = x.BucketDate,
-                x = x.BucketDate.ToString("yyyy-MM-dd"),
-                y = Math.Round(x.Revenue, 2, MidpointRounding.AwayFromZero)
-            })
-            .ToList();
-
-        List<ChartDataPoint> ordersChartDataPoints = aggregates
-            .Select(x => new ChartDataPoint
-            {
-                Date = x.BucketDate,
-                x = x.BucketDate.ToString("yyyy-MM-dd"),
-                y = x.Orders
-            })
-            .ToList();
-
-        List<ChartDataPoint> avarageChartDataPoints = aggregates
-            .Select(x => new ChartDataPoint
-            {
-                Date = x.BucketDate,
-                x = x.BucketDate.ToString("yyyy-MM-dd"),
-                y = Math.Round(x.AverageAmount, 2, MidpointRounding.AwayFromZero)
-            })
-            .ToList();
-
-        chartData.RevenueChart.Points = revenueChartDataPoints;
-        chartData.RevenueChart.Labels = labels;
-
-        chartData.OrdersChart.Points = ordersChartDataPoints;
-        chartData.OrdersChart.Labels = labels;
-
-        chartData.AvarageChart.Points = avarageChartDataPoints;
-        chartData.AvarageChart.Labels = labels;
-
-        return Ok(chartData);
+        string[] currencies = aggregates.Select(row => row.Currency ?? "").Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var labels = amounts.Select(point => point.x).ToArray();
+        return new ChartData
+        {
+            RevenueChart = new ChartGroupData { Labels = labels, Points = amounts },
+            OrdersChart = new ChartGroupData { Labels = labels, Points = orders },
+            AvarageChart = new ChartGroupData { Labels = labels, Points = averages },
+            DateBasis = orderStatus is "ReadyForDispatch" or "Dispatched" ? "PaidDate" : "CreateDate",
+            Currency = currencies.Length == 1 ? currencies[0] : null,
+            MixedCurrencies = currencies.Length > 1 || aggregates.Any(row => row.CurrencyCount > 1),
+        };
     }
 
     private bool CanAccessStore(string? storeAlias)
@@ -1062,6 +1052,9 @@ public class EkomManagerController : ControllerBase
 
     public class ChartData
     {
+        public string DateBasis { get; set; } = "CreateDate";
+        public string? Currency { get; set; }
+        public bool MixedCurrencies { get; set; }
         public ChartGroupData RevenueChart { get; set; } = new ChartGroupData();
         public ChartGroupData OrdersChart { get; set; } = new ChartGroupData();
         public ChartGroupData AvarageChart { get; set; } = new ChartGroupData();
@@ -1078,7 +1071,7 @@ public class EkomManagerController : ControllerBase
         public DateTime Date { get; set; }
 
         public string x { get; set; } = string.Empty;
-        public decimal y { get; set; }
+        public decimal? y { get; set; }
     }
 
     public sealed class OrderActionExecuteResponse
