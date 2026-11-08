@@ -162,6 +162,9 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       .analytics-table th,.analytics-table td {text-align:left;padding:12px;border-bottom:1px solid #e4e7ec;white-space:nowrap}
       .analytics-table th {position:sticky;top:0;background:var(--uui-color-surface,#fff)}
       .analytics-main {padding:22px}
+      .analytics-spinner {display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid #dfe2e8;border-top-color:#25765c;border-radius:50%;animation:analytics-spin 1s linear infinite}
+      @keyframes analytics-spin {to {transform:rotate(360deg)}}
+      @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
     </style><section class="ekmManager"><div class="ekmManager__body">
       <div class="analytics-toolbar">
         <label>Store<select data-field="store">${managerState.stores.map(s => `<option value="${escapeHtml(s.alias)}" ${s.alias === f.store ? 'selected' : ''}>${escapeHtml(s.title)}</option>`).join('')}</select></label>
@@ -176,8 +179,8 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       ${this.loading ? '<p role="status">Loading analytics…</p>' : !f.store ? '<p>No accessible stores.</p>' : ''}
       ${this.chartData ? this.renderAnalytics() : ''}
       <div class="card analytics-main"><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? 'Hide products' : 'Load product breakdown'}</button></div>
-        <p class="analytics-muted">Loads order-line details on demand. Totals include VAT and discounts, excluding shipping and payment fees.</p>
-        ${this.productsVisible ? `${this.productError ? `<p role="alert">${escapeHtml(this.productError)}</p><button data-product-retry>Retry products</button>` : ''}${this.loadingMostSoldProducts ? '<p role="status">Loading products…</p>' : this.renderMostSoldProducts()}` : ''}
+        <p class="analytics-muted">Fetch the most sold products for the selected store and dates. This may take a minute for larger date ranges. Totals include VAT and discounts, excluding shipping and payment fees.</p>
+        ${this.productsVisible ? `${this.productError ? `<p role="alert">${escapeHtml(this.productError)}</p><button data-product-retry>Retry products</button>` : ''}${this.loadingMostSoldProducts ? '<p role="status"><span class="analytics-spinner" aria-hidden="true"></span>Fetching product breakdown… This may take a minute. You can continue using Analytics.</p>' : this.renderMostSoldProducts()}` : ''}
       </div>
     </div></section>`;
     this.bindEvents();

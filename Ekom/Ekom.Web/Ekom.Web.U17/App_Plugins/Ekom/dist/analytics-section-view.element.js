@@ -1,12 +1,12 @@
-var T = Object.defineProperty;
-var w = (o, i, t) => i in o ? T(o, i, { enumerable: !0, configurable: !0, writable: !0, value: t }) : o[i] = t;
+var M = Object.defineProperty;
+var w = (o, i, t) => i in o ? M(o, i, { enumerable: !0, configurable: !0, writable: !0, value: t }) : o[i] = t;
 var c = (o, i, t) => w(o, typeof i != "symbol" ? i + "" : i, t);
 import { UmbElementMixin as E } from "@umbraco-cms/backoffice/element-api";
-import { E as O, m as h, f as D, a as q, e as u, g as A, p as L, r as F, d as U } from "./manager-shared.js";
-const P = 864e5, f = (o) => o.toISOString().slice(0, 10), S = (o) => /* @__PURE__ */ new Date(`${o}T00:00:00Z`);
+import { E as O, m as h, f as D, a as q, e as u, g as A, p as F, r as L, d as U } from "./manager-shared.js";
+const k = 864e5, f = (o) => o.toISOString().slice(0, 10), S = (o) => /* @__PURE__ */ new Date(`${o}T00:00:00Z`);
 function R(o, i) {
-  const t = S(o), e = S(i), s = Math.round((e.getTime() - t.getTime()) / P) + 1;
-  return { dateFrom: f(new Date(t.getTime() - s * P)), dateTo: f(new Date(t.getTime() - P)) };
+  const t = S(o), e = S(i), s = Math.round((e.getTime() - t.getTime()) / k) + 1;
+  return { dateFrom: f(new Date(t.getTime() - s * k)), dateTo: f(new Date(t.getTime() - k)) };
 }
 function N(o, i = /* @__PURE__ */ new Date()) {
   const t = new Date(Date.UTC(i.getFullYear(), i.getMonth(), i.getDate())), e = new Date(t);
@@ -17,14 +17,14 @@ function V(o, i, t) {
   const e = [], s = o.ordersChart.points;
   let a = 0;
   for (; a < s.length; ) {
-    const b = a, k = s[a].x, p = S(k);
+    const b = a, P = s[a].x, p = S(P);
     t === "month" ? (p.setUTCDate(1), p.setUTCMonth(p.getUTCMonth() + 1)) : t === "week" ? p.setUTCDate(p.getUTCDate() + (7 - (p.getUTCDay() + 6) % 7)) : p.setUTCDate(p.getUTCDate() + 1);
     let $ = 0, v = 0, C = 0, g = 0;
     do
       $ += Number(((n = o.revenueChart.points[a]) == null ? void 0 : n.y) || 0), v += Number(s[a].y || 0), C += Number(((d = i == null ? void 0 : i.revenueChart.points[a]) == null ? void 0 : d.y) || 0), g += Number(((r = i == null ? void 0 : i.ordersChart.points[a]) == null ? void 0 : r.y) || 0), a++;
     while (a < s.length && S(s[a].x).getTime() < p.getTime());
     e.push({
-      start: k,
+      start: P,
       end: s[a - 1].x,
       amount: $,
       orders: v,
@@ -40,7 +40,7 @@ function V(o, i, t) {
   }
   return e;
 }
-function M(o) {
+function T(o) {
   const i = o.revenueChart.points.reduce((e, s) => e + Number(s.y || 0), 0), t = o.ordersChart.points.reduce((e, s) => e + Number(s.y || 0), 0);
   return { amount: i, orders: t, average: t ? i / t : null };
 }
@@ -187,6 +187,9 @@ class z extends E(HTMLElement) {
       .analytics-table th,.analytics-table td {text-align:left;padding:12px;border-bottom:1px solid #e4e7ec;white-space:nowrap}
       .analytics-table th {position:sticky;top:0;background:var(--uui-color-surface,#fff)}
       .analytics-main {padding:22px}
+      .analytics-spinner {display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid #dfe2e8;border-top-color:#25765c;border-radius:50%;animation:analytics-spin 1s linear infinite}
+      @keyframes analytics-spin {to {transform:rotate(360deg)}}
+      @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
     </style><section class="ekmManager"><div class="ekmManager__body">
       <div class="analytics-toolbar">
         <label>Store<select data-field="store">${h.stores.map((e) => `<option value="${u(e.alias)}" ${e.alias === t.store ? "selected" : ""}>${u(e.title)}</option>`).join("")}</select></label>
@@ -201,14 +204,14 @@ class z extends E(HTMLElement) {
       ${this.loading ? '<p role="status">Loading analytics…</p>' : t.store ? "" : "<p>No accessible stores.</p>"}
       ${this.chartData ? this.renderAnalytics() : ""}
       <div class="card analytics-main"><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? "Hide products" : "Load product breakdown"}</button></div>
-        <p class="analytics-muted">Loads order-line details on demand. Totals include VAT and discounts, excluding shipping and payment fees.</p>
-        ${this.productsVisible ? `${this.productError ? `<p role="alert">${u(this.productError)}</p><button data-product-retry>Retry products</button>` : ""}${this.loadingMostSoldProducts ? '<p role="status">Loading products…</p>' : this.renderMostSoldProducts()}` : ""}
+        <p class="analytics-muted">Fetch the most sold products for the selected store and dates. This may take a minute for larger date ranges. Totals include VAT and discounts, excluding shipping and payment fees.</p>
+        ${this.productsVisible ? `${this.productError ? `<p role="alert">${u(this.productError)}</p><button data-product-retry>Retry products</button>` : ""}${this.loadingMostSoldProducts ? '<p role="status"><span class="analytics-spinner" aria-hidden="true"></span>Fetching product breakdown… This may take a minute. You can continue using Analytics.</p>' : this.renderMostSoldProducts()}` : ""}
       </div>
     </div></section>`, this.bindEvents(), this.renderCharts();
   }
   renderAnalytics() {
     var s, a, n, d;
-    const t = M(this.chartData), e = this.previousData ? M(this.previousData) : void 0;
+    const t = T(this.chartData), e = this.previousData ? T(this.previousData) : void 0;
     return `<div class="analytics-summary">${["amount", "orders", "average"].map((r) => `<div class="card"><span>${this.label(r)}</span><strong>${u(this.value(t[r], r))}</strong><span class="analytics-muted">${e && (r === "orders" || this.comparisonMoneyAvailable) ? u(j(t[r], e[r])) + " vs previous period" : this.compare ? "No monetary comparison available" : "Selected period"}</span></div>`).join("")}</div>
       <p class="analytics-muted">Order amount is the recorded charged amount, after gift cards; it is not refund-adjusted revenue. Dates use ${this.chartData.dateBasis === "PaidDate" ? "payment date" : "order creation date"}, matching Orders.</p>
       ${this.chartData.mixedCurrencies ? '<p role="status">This period contains multiple currencies. Monetary totals are hidden to avoid combining different currencies.</p>' : ""}
@@ -240,7 +243,7 @@ class z extends E(HTMLElement) {
     return `
       <div class="pagination">
         <ul>
-          ${L(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((t) => {
+          ${F(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((t) => {
       const e = Number(String(t).replace("...", ""));
       return `<li class="${e === this.pageMostSoldProducts ? "active" : ""}"><button type="button" data-action="set-most-sold-page" data-page="${e}" ${e === this.pageMostSoldProducts ? "disabled" : ""}>${u(t)}</button></li>`;
     }).join("")}
@@ -253,7 +256,7 @@ class z extends E(HTMLElement) {
     const t = this.querySelector("#analytics-chart");
     if (!t || !this.chartData || this.table) return;
     const e = this.buckets, s = this.chartData.currency || ((d = this.previousData) == null ? void 0 : d.currency), a = s && /^[A-Z]{3}$/.test(s) ? { isoCurrencySymbol: s } : this.currency, n = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: e.map((r) => ({ x: this.range(r.previousStart, r.previousEnd), y: this.previousValue(r) })) } : void 0;
-    F(t, { labels: [], points: e.map((r) => ({ x: this.range(r.start, r.end), y: r[this.metric] })) }, "#25765c", {
+    L(t, { labels: [], points: e.map((r) => ({ x: this.range(r.start, r.end), y: r[this.metric] })) }, "#25765c", {
       currency: this.metric === "orders" ? void 0 : a,
       integer: this.metric === "orders",
       comparison: n,

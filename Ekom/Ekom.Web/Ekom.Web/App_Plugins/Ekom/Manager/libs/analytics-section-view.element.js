@@ -6,7 +6,7 @@ const ae = (i) => class extends i {
   }
   disconnectedCallback() {
   }
-}, K = /* @__PURE__ */ new Date(), oe = new Date(K.getFullYear(), 0, 1), b = {
+}, K = /* @__PURE__ */ new Date(), oe = new Date(K.getFullYear(), 0, 1), f = {
   filters: {
     dateFrom: Z(oe),
     dateTo: Z(K),
@@ -399,7 +399,7 @@ function le(i, r, e, t = {}) {
   const o = i.getContext("2d");
   if (!o) return;
   o.scale(s, s), o.font = "12px sans-serif";
-  const w = r.points || [], l = w.map((c) => c.y == null ? null : Number(c.y)), v = ((W = t.comparison) == null ? void 0 : W.points) || [], U = [...l, ...v.map((c) => c.y)].filter((c) => c != null), x = Math.min(0, ...U), R = Math.max(1, ...U), O = t.integer ? Math.ceil(R / 4) * 4 : R, C = (c) => t.formatValue ? t.formatValue(c) : t.currency ? z(c, t.currency) : c.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), M = Array.from({ length: 5 }, (c, g) => O - (O - x) * g / 4), S = Math.max(48, ...M.map((c) => o.measureText(C(c)).width + 12)), A = n - 16, F = 20, $ = d - 52, f = w.map((c, g) => {
+  const w = r.points || [], l = w.map((c) => c.y == null ? null : Number(c.y)), v = ((W = t.comparison) == null ? void 0 : W.points) || [], U = [...l, ...v.map((c) => c.y)].filter((c) => c != null), x = Math.min(0, ...U), R = Math.max(1, ...U), O = t.integer ? Math.ceil(R / 4) * 4 : R, C = (c) => t.formatValue ? t.formatValue(c) : t.currency ? z(c, t.currency) : c.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), M = Array.from({ length: 5 }, (c, g) => O - (O - x) * g / 4), S = Math.max(48, ...M.map((c) => o.measureText(C(c)).width + 12)), A = n - 16, F = 20, $ = d - 52, b = w.map((c, g) => {
     var k;
     return {
       x: w.length > 1 ? S + (A - S) * g / (w.length - 1) : (S + A) / 2,
@@ -412,13 +412,13 @@ function le(i, r, e, t = {}) {
       const y = F + ($ - F) * h / 4;
       o.fillStyle = "#555", o.fillText(C(u), S - 8, y + 4), o.strokeStyle = "#e5e5e5", o.beginPath(), o.moveTo(S, y), o.lineTo(A, y), o.stroke();
     });
-    const g = Math.max(90, ...f.map((u) => o.measureText(u.date).width + 16)), k = Math.max(2, Math.floor((A - S) / g)), j = new Set(Array.from({ length: Math.min(k, f.length) }, (u, h) => Math.round(h * (f.length - 1) / Math.max(1, Math.min(k, f.length) - 1))));
-    o.fillStyle = "#555", f.forEach((u, h) => {
-      j.has(h) && (o.textAlign = f.length === 1 ? "center" : h === 0 ? "left" : h === f.length - 1 ? "right" : "center", o.fillText(u.date, u.x, $ + 24));
+    const g = Math.max(90, ...b.map((u) => o.measureText(u.date).width + 16)), k = Math.max(2, Math.floor((A - S) / g)), j = new Set(Array.from({ length: Math.min(k, b.length) }, (u, h) => Math.round(h * (b.length - 1) / Math.max(1, Math.min(k, b.length) - 1))));
+    o.fillStyle = "#555", b.forEach((u, h) => {
+      j.has(h) && (o.textAlign = b.length === 1 ? "center" : h === 0 ? "left" : h === b.length - 1 ? "right" : "center", o.fillText(u.date, u.x, $ + 24));
     });
     const q = (u, h) => {
-      var L, E;
-      o.strokeStyle = h ? "#9298a5" : e, o.lineWidth = 2, (L = o.setLineDash) == null || L.call(o, h ? [6, 4] : []), o.beginPath();
+      var T, E;
+      o.strokeStyle = h ? "#9298a5" : e, o.lineWidth = 2, (T = o.setLineDash) == null || T.call(o, h ? [6, 4] : []), o.beginPath();
       let y = !1;
       u.forEach((D) => {
         if (D.y == null) {
@@ -428,31 +428,31 @@ function le(i, r, e, t = {}) {
         y ? o.lineTo(D.x, D.y) : o.moveTo(D.x, D.y), y = !0;
       }), o.stroke(), (E = o.setLineDash) == null || E.call(o, []);
     };
-    v.length && q(f.map((u, h) => {
+    v.length && q(b.map((u, h) => {
       var y;
       return {
         x: u.x,
         y: ((y = v[h]) == null ? void 0 : y.y) == null ? null : $ - (Number(v[h].y) - x) / (O - x) * ($ - F)
       };
-    }), !0), q(f, !1), o.fillStyle = e, f.forEach((u, h) => {
+    }), !0), q(b, !1), o.fillStyle = e, b.forEach((u, h) => {
       u.y != null && (o.beginPath(), o.arc(u.x, u.y, h === c ? 5 : 3, 0, Math.PI * 2), o.fill());
-    }), f.length || (o.textAlign = "center", o.fillText("No data for this period", (S + A) / 2, d / 2));
-    const _ = f[c];
+    }), b.length || (o.textAlign = "center", o.fillText("No data for this period", (S + A) / 2, d / 2));
+    const _ = b[c];
     if (_) {
       const u = [_.date, _.value == null ? "—" : C(_.value)];
       if (v[c]) {
-        const T = v[c];
-        u.push(`Previous: ${T.x || ""}`, T.y == null ? "—" : C(T.y));
+        const L = v[c];
+        u.push(`Previous: ${L.x || ""}`, L.y == null ? "—" : C(L.y));
       }
-      const h = Math.max(...u.map((T) => o.measureText(T).width)) + 20, y = Math.max(0, Math.min(n - h, _.x - h / 2)), L = u.length * 18 + 12, E = _.y ?? $, D = Math.max(0, Math.min(d - L, E > L + 20 ? E - L - 12 : E + 12));
-      o.fillStyle = "#222", o.fillRect(y, D, h, L), o.fillStyle = "#fff", o.textAlign = "left", u.forEach((T, ee) => o.fillText(T, y + 10, D + 19 + ee * 18));
+      const h = Math.max(...u.map((L) => o.measureText(L).width)) + 20, y = Math.max(0, Math.min(n - h, _.x - h / 2)), T = u.length * 18 + 12, E = _.y ?? $, D = Math.max(0, Math.min(d - T, E > T + 20 ? E - T - 12 : E + 12));
+      o.fillStyle = "#222", o.fillRect(y, D, h, T), o.fillStyle = "#fff", o.textAlign = "left", u.forEach((L, ee) => o.fillText(L, y + 10, D + 19 + ee * 18));
     }
   }, Y = (c) => {
     const g = i.getBoundingClientRect(), k = (c.clientX - g.left) * n / g.width, j = (c.clientY - g.top) * d / g.height;
     if (t.columnHover)
-      return !f.length || k < S || k > A || j < F || j > $ ? -1 : f.length === 1 ? 0 : Math.round((k - S) / (A - S) * (f.length - 1));
+      return !b.length || k < S || k > A || j < F || j > $ ? -1 : b.length === 1 ? 0 : Math.round((k - S) / (A - S) * (b.length - 1));
     let q = -1, _ = 16;
-    return f.forEach((u, h) => {
+    return b.forEach((u, h) => {
       if (u.y == null) return;
       const y = Math.hypot(u.x - k, u.y - j);
       y < _ && (q = h, _ = y);
@@ -545,7 +545,7 @@ class he extends ae(HTMLElement) {
     if (super.connectedCallback(), this.disposed = !1, this.hasAttribute("classic"))
       for (const e of ["store", "dateFrom", "dateTo", "orderStatus"]) {
         const t = this.getAttribute(e.toLowerCase());
-        t && (b.filters[e] = t);
+        t && (f.filters[e] = t);
       }
     this.render(), this.resizeObserver = new ResizeObserver(() => this.renderCharts()), this.resizeObserver.observe(this), this.initialize();
   }
@@ -555,9 +555,9 @@ class he extends ae(HTMLElement) {
   }
   get currency() {
     var e;
-    return (e = b.stores.find((t) => {
+    return (e = f.stores.find((t) => {
       var a;
-      return t.alias === (((a = this.chartFilters) == null ? void 0 : a.store) || b.filters.store);
+      return t.alias === (((a = this.chartFilters) == null ? void 0 : a.store) || f.filters.store);
     })) == null ? void 0 : e.currency;
   }
   async initialize() {
@@ -565,7 +565,7 @@ class he extends ae(HTMLElement) {
     try {
       const [t, a] = await Promise.all([this.api.statusList(), this.api.stores()]);
       if (this.disposed) return;
-      b.statusList = t || [], b.stores = a || [], b.stores.some((s) => s.alias === b.filters.store) || (b.filters.store = ((e = b.stores[0]) == null ? void 0 : e.alias) || ""), await this.loadAnalytics();
+      f.statusList = t || [], f.stores = a || [], f.stores.some((s) => s.alias === f.filters.store) || (f.filters.store = ((e = f.stores[0]) == null ? void 0 : e.alias) || ""), await this.loadAnalytics();
     } catch (t) {
       if (this.disposed) return;
       this.error = H(t, "Unable to load Analytics."), this.loading = !1, this.render();
@@ -578,7 +578,7 @@ class he extends ae(HTMLElement) {
     var s;
     const e = ++this.chartRequest;
     (s = this.chartAbort) == null || s.abort();
-    const t = this.chartAbort = new AbortController(), a = { ...b.filters };
+    const t = this.chartAbort = new AbortController(), a = { ...f.filters };
     if (this.chartData = void 0, this.previousData = void 0, this.error = "", this.loading = !!a.store, this.render(), !!a.store)
       try {
         const n = this.compare ? { ...a, ...ce(a.dateFrom, a.dateTo) } : void 0, [d, o] = await Promise.all([
@@ -598,7 +598,7 @@ class he extends ae(HTMLElement) {
     var s;
     const e = ++this.productRequest;
     (s = this.productAbort) == null || s.abort();
-    const t = this.productAbort = new AbortController(), a = { ...b.filters };
+    const t = this.productAbort = new AbortController(), a = { ...f.filters };
     if (this.mostSoldProducts = { products: [], count: 0, totalPages: 0, page: this.pageMostSoldProducts }, this.productError = "", this.loadingMostSoldProducts = !!a.store, this.render(), !!a.store)
       try {
         const n = await this.api.mostSoldProducts(a, this.pageMostSoldProducts, 20, t.signal);
@@ -636,7 +636,7 @@ class he extends ae(HTMLElement) {
     return e === t ? e || "" : `${e || ""} – ${t || ""}`;
   }
   render() {
-    const e = b.filters;
+    const e = f.filters;
     this.innerHTML = `<style>${de}
       ekom-analytics-section-view { display:block }
       .analytics-toolbar {display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:18px}
@@ -653,10 +653,13 @@ class he extends ae(HTMLElement) {
       .analytics-table th,.analytics-table td {text-align:left;padding:12px;border-bottom:1px solid #e4e7ec;white-space:nowrap}
       .analytics-table th {position:sticky;top:0;background:var(--uui-color-surface,#fff)}
       .analytics-main {padding:22px}
+      .analytics-spinner {display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid #dfe2e8;border-top-color:#25765c;border-radius:50%;animation:analytics-spin 1s linear infinite}
+      @keyframes analytics-spin {to {transform:rotate(360deg)}}
+      @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
     </style><section class="ekmManager"><div class="ekmManager__body">
       <div class="analytics-toolbar">
-        <label>Store<select data-field="store">${b.stores.map((t) => `<option value="${m(t.alias)}" ${t.alias === e.store ? "selected" : ""}>${m(t.title)}</option>`).join("")}</select></label>
-        <label>Order status<select data-field="orderStatus"><option value="CompletedOrders" ${e.orderStatus === "CompletedOrders" ? "selected" : ""}>Completed Orders</option><option value="AllOrders" ${e.orderStatus === "AllOrders" ? "selected" : ""}>All Orders</option>${b.statusList.map((t) => `<option value="${m(Q(t))}" ${Q(t) === e.orderStatus ? "selected" : ""}>${m(t.label)}</option>`).join("")}</select></label>
+        <label>Store<select data-field="store">${f.stores.map((t) => `<option value="${m(t.alias)}" ${t.alias === e.store ? "selected" : ""}>${m(t.title)}</option>`).join("")}</select></label>
+        <label>Order status<select data-field="orderStatus"><option value="CompletedOrders" ${e.orderStatus === "CompletedOrders" ? "selected" : ""}>Completed Orders</option><option value="AllOrders" ${e.orderStatus === "AllOrders" ? "selected" : ""}>All Orders</option>${f.statusList.map((t) => `<option value="${m(Q(t))}" ${Q(t) === e.orderStatus ? "selected" : ""}>${m(t.label)}</option>`).join("")}</select></label>
         <label>Date From<input type="date" data-field="dateFrom" value="${m(e.dateFrom)}"></label>
         <label>Date To<input type="date" data-field="dateTo" value="${m(e.dateTo)}"></label>
         <label>Date preset<select data-preset><option value="">Custom range</option>${[["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["month", "This month"], ["year", "This year"]].map(([t, a]) => `<option value="${t}">${a}</option>`).join("")}</select></label>
@@ -667,8 +670,8 @@ class he extends ae(HTMLElement) {
       ${this.loading ? '<p role="status">Loading analytics…</p>' : e.store ? "" : "<p>No accessible stores.</p>"}
       ${this.chartData ? this.renderAnalytics() : ""}
       <div class="card analytics-main"><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? "Hide products" : "Load product breakdown"}</button></div>
-        <p class="analytics-muted">Loads order-line details on demand. Totals include VAT and discounts, excluding shipping and payment fees.</p>
-        ${this.productsVisible ? `${this.productError ? `<p role="alert">${m(this.productError)}</p><button data-product-retry>Retry products</button>` : ""}${this.loadingMostSoldProducts ? '<p role="status">Loading products…</p>' : this.renderMostSoldProducts()}` : ""}
+        <p class="analytics-muted">Fetch the most sold products for the selected store and dates. This may take a minute for larger date ranges. Totals include VAT and discounts, excluding shipping and payment fees.</p>
+        ${this.productsVisible ? `${this.productError ? `<p role="alert">${m(this.productError)}</p><button data-product-retry>Retry products</button>` : ""}${this.loadingMostSoldProducts ? '<p role="status"><span class="analytics-spinner" aria-hidden="true"></span>Fetching product breakdown… This may take a minute. You can continue using Analytics.</p>' : this.renderMostSoldProducts()}` : ""}
       </div>
     </div></section>`, this.bindEvents(), this.renderCharts();
   }
@@ -729,14 +732,14 @@ class he extends ae(HTMLElement) {
     });
   }
   changedFilters() {
-    this.pageMostSoldProducts = 1, this.dispatchEvent(new CustomEvent("analytics-filters-changed", { bubbles: !0, detail: { ...b.filters } })), this.loadAnalytics();
+    this.pageMostSoldProducts = 1, this.dispatchEvent(new CustomEvent("analytics-filters-changed", { bubbles: !0, detail: { ...f.filters } })), this.loadAnalytics();
   }
   openOrders(e) {
     const t = this.buckets[e];
     if (!t || !this.chartFilters) return;
     const a = { ...this.chartFilters, dateFrom: t.start, dateTo: t.end };
     for (const s of ["query", "paymentProvider", "shippingProvider", "couponCode", "giftcardCode", "productSku", "trackingSource", "trackingMedium", "trackingCampaign", "trackingTerm", "trackingContent", "trackingClickId"]) a[s] = "";
-    if (Object.assign(b.filters, a), this.hasAttribute("classic")) this.dispatchEvent(new CustomEvent("analytics-open-orders", { bubbles: !0, detail: a }));
+    if (Object.assign(f.filters, a), this.hasAttribute("classic")) this.dispatchEvent(new CustomEvent("analytics-open-orders", { bubbles: !0, detail: a }));
     else {
       const s = new URLSearchParams({ analyticsDrill: "1", store: a.store, start: a.dateFrom, end: a.dateTo, orderStatus: a.orderStatus }), n = document.createElement("a");
       n.href = location.pathname.replace(/\/analytics\/?$/, "/orders") + "?" + s, this.appendChild(n), n.click(), n.remove();
@@ -754,10 +757,10 @@ class he extends ae(HTMLElement) {
     var e, t, a, s, n, d, o, w;
     this.querySelectorAll("[data-field]").forEach((l) => l.addEventListener("change", () => {
       const v = l.dataset.field;
-      b.filters[v] = l.value, this.changedFilters();
+      f.filters[v] = l.value, this.changedFilters();
     })), (e = this.querySelector("[data-preset]")) == null || e.addEventListener("change", (l) => {
       const v = l.target.value;
-      v && (Object.assign(b.filters, ue(v)), this.changedFilters());
+      v && (Object.assign(f.filters, ue(v)), this.changedFilters());
     }), (t = this.querySelector("[data-compare]")) == null || t.addEventListener("change", () => {
       this.compare = !this.compare, this.loadCharts();
     }), (a = this.querySelector("[data-grouping]")) == null || a.addEventListener("change", (l) => {
