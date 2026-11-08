@@ -72,3 +72,21 @@ test('customer snapshot text is escaped and missing reorder interval is not disp
   assert.ok(!html.includes('<img onerror'));
   assert.ok(html.includes('Average reorder interval (days)</small><strong>—'));
 });
+
+for (const [name, elementPath, sharedPath, sharedImport] of [
+  ['source', '../src/manager/customers-section-view.element.ts', '../src/manager/manager-shared.ts', './manager-shared'],
+  ['U17 bundle', '../../App_Plugins/Ekom/dist/customers-section-view.element.js', '../../App_Plugins/Ekom/dist/manager-shared.js', './manager-shared.js'],
+  ['U18 bundle', '../../../Ekom.Web.U18/App_Plugins/Ekom/dist/customers-section-view.element.js', '../../../Ekom.Web.U18/App_Plugins/Ekom/dist/manager-shared.js', './manager-shared.js'],
+]) {
+  test(`Customers ${name} exposes the constructor required by the Umbraco extension loader`, () => {
+    const registered = new Map();
+    const exports = module(elementPath, {
+      [sharedImport]: module(sharedPath),
+      '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
+    }, { customElements: { define: (tag, constructor) => registered.set(tag, constructor) } });
+    const constructor = exports.element ?? exports.default;
+    assert.equal(typeof constructor, 'function');
+    assert.equal(constructor, registered.get('ekom-customers-section-view'));
+    assert.ok(new constructor() instanceof constructor);
+  });
+}

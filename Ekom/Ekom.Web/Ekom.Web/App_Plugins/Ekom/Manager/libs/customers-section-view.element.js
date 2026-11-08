@@ -576,5 +576,6 @@ class L extends _(HTMLElement) {
 }
 customElements.define("ekom-customers-section-view", L);
 export {
-  L as EkomCustomersSectionViewElement
+  L as EkomCustomersSectionViewElement,
+  L as default
 };

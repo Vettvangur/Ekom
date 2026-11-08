@@ -1,5 +1,5 @@
-var f = Object.defineProperty;
-var y = (u, c, e) => c in u ? f(u, c, { enumerable: !0, configurable: !0, writable: !0, value: e }) : u[c] = e;
+var b = Object.defineProperty;
+var y = (u, c, e) => c in u ? b(u, c, { enumerable: !0, configurable: !0, writable: !0, value: e }) : u[c] = e;
 var o = (u, c, e) => y(u, typeof c != "symbol" ? c + "" : c, e);
 import { UmbElementMixin as v } from "@umbraco-cms/backoffice/element-api";
 import { E as $, m as i, e as a, a as x } from "./manager-shared.js";
@@ -179,7 +179,7 @@ class w extends v(HTMLElement) {
       <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${a(e.snapshot.orderNumber)} · ${this.date(e.snapshot.date)}. Historical details, not a current customer profile.</p>${e.snapshot.unavailable ? "<p>Saved details could not be read.</p>" : ""}<dl>${Object.entries(e.snapshot.fields).map(([r, d]) => `<dt>${a(r)}</dt><dd>${a(d)}</dd>`).join("") || "<dd>No additional details recorded.</dd>"}</dl></aside></div></section></div>`;
   }
   bind() {
-    var e, t, r, d, n, h, m, b;
+    var e, t, r, d, n, h, m, f;
     this.querySelectorAll("[data-filter]").forEach((s) => s.addEventListener("change", () => {
       const l = s.dataset.filter;
       i.filters[l] = s.value, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...i.filters } })), this.page = 1, this.load();
@@ -205,7 +205,7 @@ class w extends v(HTMLElement) {
         const l = document.createElement("a");
         l.href = location.pathname.replace(/\/customers\/?$/, "/orders") + "?orderId=" + encodeURIComponent(s.dataset.order || ""), this.appendChild(l), l.click(), l.remove();
       }
-    })), (b = this.querySelector("[role=dialog]")) == null || b.addEventListener("keydown", (s) => {
+    })), (f = this.querySelector("[role=dialog]")) == null || f.addEventListener("keydown", (s) => {
       if (s.key === "Escape" && (s.preventDefault(), this.close()), s.key !== "Tab") return;
       const l = Array.from(this.querySelectorAll("[role=dialog] button:not(:disabled),[role=dialog] input")), p = l[0], g = l[l.length - 1];
       s.shiftKey && document.activeElement === p ? (s.preventDefault(), g == null || g.focus()) : !s.shiftKey && document.activeElement === g && (s.preventDefault(), p == null || p.focus());
@@ -214,5 +214,6 @@ class w extends v(HTMLElement) {
 }
 customElements.define("ekom-customers-section-view", w);
 export {
-  w as EkomCustomersSectionViewElement
+  w as EkomCustomersSectionViewElement,
+  w as default
 };
