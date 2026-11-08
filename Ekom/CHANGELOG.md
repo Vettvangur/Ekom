@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+* **manager:** add Customers between Orders and Analytics in Umbraco 13/17/18, with shared store/date filters, configurable email/username grouping, lifetime and retention metrics, missing-identifier counts, CSV export, and customer order details. List queries avoid OrderInfo; customer details expose a labelled order snapshot.
+
 ### Bug Fixes
 
 * **manager:** format order custom-data keys as readable labels and render lazy-loaded product pictures with 56px/112px image widths and WebP output with white padding, while preserving other image query parameters.

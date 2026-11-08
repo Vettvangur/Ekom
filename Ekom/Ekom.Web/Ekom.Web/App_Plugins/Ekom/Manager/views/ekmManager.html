@@ -5,6 +5,7 @@
 
       <uui-tab-group>
         <uui-tab label="Orders" ng-click="navigateTo('orders')" ng-attr-active="{{ location === 'orders' ? '' : undefined }}">Orders</uui-tab>
+        <uui-tab label="Customers" ng-click="navigateTo('customers')" ng-attr-active="{{ location === 'customers' ? '' : undefined }}">Customers</uui-tab>
         <uui-tab label="Analytics" ng-click="navigateTo('analytics')" ng-attr-active="{{ location === 'analytics' ? '' : undefined }}">Analytics</uui-tab>
         <uui-tab ng-if="printingEnabled" label="Printing" ng-click="navigateTo('printing')" ng-attr-active="{{ location === 'printing' ? '' : undefined }}">Printing</uui-tab>
       </uui-tab-group>
@@ -13,6 +14,7 @@
 
   <div class="umb-editor-container">
     <div class="umb-pane">
+      <ekom-customers-host ng-if="location == 'customers'"></ekom-customers-host>
       <div ng-if="location == 'orders'">
         <div>
           <div class="cards">
