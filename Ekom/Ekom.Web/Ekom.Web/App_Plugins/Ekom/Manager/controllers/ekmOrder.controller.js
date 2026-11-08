@@ -111,6 +111,15 @@
       }
     };
 
+    $scope.getOrderLineImageUrl = function (line) {
+      var images = [].concat(line.variant && Array.isArray(line.variant.images) ? line.variant.images : [], line.product && Array.isArray(line.product.images) ? line.product.images : []);
+      for (var i = 0; i < images.length; i++) {
+        var url = $scope.getProductUrl(images[i]);
+        if (url) return url;
+      }
+      return null;
+    };
+
     var customerFields = [
       { key: "customerName", label: "Name", property: "name" },
       { key: "customerEmail", label: "Email", property: "email" },
@@ -1068,6 +1077,24 @@
       });
     }
   }
+
+  angular.module("umbraco").directive("ekmOrderLineImage", function () {
+    return {
+      restrict: "A",
+      link: function (scope, element) {
+        function showPlaceholder() { element[0].hidden = true; }
+        element.on("error", showPlaceholder);
+        if (element[0].complete && element[0].naturalWidth === 0) showPlaceholder();
+        var unwatch = scope.$watch(function () { return element.attr("src"); }, function () {
+          element[0].hidden = element[0].complete && element[0].naturalWidth === 0;
+        });
+        scope.$on("$destroy", function () {
+          element.off("error", showPlaceholder);
+          unwatch();
+        });
+      }
+    };
+  });
 
   angular.module("umbraco").controller("Ekom.Manager.Order", [
     "$scope",

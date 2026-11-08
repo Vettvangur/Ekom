@@ -76,3 +76,42 @@ test('the legacy template uses conditional escaped bindings and keeps the SKU ou
   assert.match(legacyTemplate, /<a ng-if="getProductUrl\(orderLine\.product\)" ng-href="\{\{ getProductUrl\(orderLine\.product\) \}\}" target="_blank" rel="noopener noreferrer">\{\{ orderLine\.product\.title \}\}<\/a>/);
   assert.ok(legacyTemplate.includes('<span ng-if="!getProductUrl(orderLine.product)">{{ orderLine.product.title }}</span><span ng-if="orderLine.product.sku && orderLine.product.sku.trim()"> ({{ orderLine.product.sku }})</span>'));
 });
+
+const imageFunction = legacyController.match(/\$scope\.getOrderLineImageUrl = (function \(line\) \{[\s\S]*?\n    \});/);
+assert.ok(imageFunction);
+const getLegacyImageUrl = runInNewContext(`(${imageFunction[1]})`, { $scope: { getProductUrl: getLegacyProductUrl } });
+
+test('order thumbnails prefer variant images and fall back to valid product images', () => {
+  for (const [variantImages, productImages, expected] of [
+    [[{ url: '/variant.jpg' }], [{ url: '/product.jpg' }], '/variant.jpg'],
+    [[], [{ url: '/product.jpg' }], '/product.jpg'],
+    [[{ url: 'javascript:alert(1)' }], [{ url: '/product.jpg' }], '/product.jpg'],
+    [null, [{ url: '' }, { url: ' /second.jpg ' }], '/second.jpg'],
+    [undefined, undefined, null],
+    [{ url: '/invalid-shape.jpg' }, [], null],
+    [[null, {}], [{ url: 'data:text/html,bad' }], null],
+  ]) {
+    const line = { product: { title: 'Product', images: productImages }, variant: { images: variantImages } };
+    const html = new EkomOrdersSectionViewElement().renderOrderLines({ orderLines: [line] });
+    assert.ok(html.includes('class="ekmOrderLineThumbnail"'));
+    assert.ok(html.includes('<svg'));
+    if (expected) assert.ok(html.includes(`src="${expected}" alt="" loading="lazy"`));
+    else assert.ok(!html.includes('<img'));
+    assert.equal(getLegacyImageUrl(line), expected);
+  }
+});
+
+test('failed or already broken thumbnails reveal the placeholder', () => {
+  const image = { complete: false, naturalWidth: 0, hidden: false, addEventListener(event, handler) { this[event] = handler; } };
+  const element = new EkomOrdersSectionViewElement();
+  element.querySelector = () => null;
+  element.querySelectorAll = selector => selector === '.ekmOrderLineThumbnail img' ? [image] : [];
+  element.bindEvents();
+  assert.equal(image.hidden, false);
+  image.error();
+  assert.equal(image.hidden, true);
+  image.hidden = false;
+  image.complete = true;
+  element.bindEvents();
+  assert.equal(image.hidden, true);
+});
