@@ -96,23 +96,40 @@ public class EkomManagerController : ControllerBase
             return null;
         }
 
-        var payment = order.PaymentProvider;
-        var shipping = order.ShippingProvider;
-        var missingPaymentTitle = payment != null && string.IsNullOrWhiteSpace(payment.Title);
-        var missingShippingTitle = shipping != null && string.IsNullOrWhiteSpace(shipping.Title);
-
-        if (!missingPaymentTitle && !missingShippingTitle)
+        var previousCulture = CultureInfo.CurrentCulture;
+        var previousUICulture = CultureInfo.CurrentUICulture;
+        var storeCulture = order.StoreInfo?.Culture;
+        try
         {
-            return order;
+            if (!string.IsNullOrWhiteSpace(storeCulture))
+            {
+                try
+                {
+                    var culture = CultureInfo.GetCultureInfo(storeCulture);
+                    CultureInfo.CurrentCulture = culture;
+                    CultureInfo.CurrentUICulture = culture;
+                }
+                catch (CultureNotFoundException)
+                {
+                    // Older orders may contain a culture no longer supported by the host.
+                }
+            }
+
+            // Materialize now: product URL getters must run under the order's store culture,
+            // not later in the output formatter under the backoffice user's culture.
+            var response = JObject.FromObject(order, JsonSerializer.Create(new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            }));
+
+            ApplyProviderTitleFallbacks(response, order);
+            return response;
         }
-
-        var response = JObject.FromObject(order, JsonSerializer.Create(new JsonSerializerSettings
+        finally
         {
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
-        }));
-
-        ApplyProviderTitleFallbacks(response, order);
-        return response;
+            CultureInfo.CurrentCulture = previousCulture;
+            CultureInfo.CurrentUICulture = previousUICulture;
+        }
     }
 
     internal static void ApplyProviderTitleFallbacks(JObject response, IOrderInfo order)

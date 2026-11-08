@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+* **manager:** serialize order details under the saved store culture so product URLs do not depend on the backoffice user culture; restore the request culture afterwards.
+
 * **manager:** preserve historical order product links when storefront visibility filters exclude a product; normal catalog filtering is unchanged.
 
 * **manager:** show variant or product thumbnails beside linked order-line titles, with a placeholder for missing or unavailable images, in Umbraco 13/17/18.
