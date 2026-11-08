@@ -189,6 +189,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
       await this.loadFilterProviders();
       await this.loadOrders();
+      managerState.pendingOrderId ||= new URLSearchParams(location.search).get('orderId') || undefined;
+      if (managerState.pendingOrderId) {
+        const orderId = managerState.pendingOrderId;
+        managerState.pendingOrderId = undefined;
+        await this.openOrder(orderId);
+      }
     } catch (error) {
       this.error = getErrorMessage(error, 'Error loading Ekom Manager.');
       this.loading = false;

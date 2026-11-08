@@ -1,0 +1,74 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import test from 'node:test';
+import { runInNewContext } from 'node:vm';
+import ts from 'typescript';
+
+function module(path, modules = {}, globals = {}) {
+  const exports = {};
+  const source = readFileSync(new URL(path, import.meta.url), 'utf8');
+  runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText,
+    { exports, require: name => modules[name], HTMLElement: class {}, customElements: { define() {} }, URLSearchParams, ...globals });
+  return exports;
+}
+function fixture() {
+  const shared = module('../src/manager/manager-shared.ts');
+  const { EkomCustomersSectionViewElement } = module('../src/manager/customers-section-view.element.ts', {
+    './manager-shared': shared, '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
+  });
+  const view = new EkomCustomersSectionViewElement();
+  view.render = () => {};
+  return { view, state: shared.managerState };
+}
+const emptyResult = { customers: [], totals: { customers: 0 }, spend: [], missingIdentifiers: 0, totalPages: 0 };
+
+test('Customers uses the exact shared store, date range and status without clearing order filters', async () => {
+  const { view, state } = fixture();
+  Object.assign(state.filters, { store: 'Iceland', dateFrom: '2026-03-01', dateTo: '2026-03-31', orderStatus: 'Dispatched', query: 'order query', couponCode: 'SAVE' });
+  const calls = [];
+  view.get = async (path, params) => { calls.push(params); return emptyResult; };
+  await view.load();
+  assert.equal(calls[0].get('store'), 'Iceland');
+  assert.equal(calls[0].get('start'), '2026-03-01');
+  assert.equal(calls[0].get('end'), '2026-03-31');
+  assert.equal(calls[0].get('orderStatus'), 'Dispatched');
+  assert.equal(state.filters.query, 'order query');
+  assert.equal(state.filters.couponCode, 'SAVE');
+});
+
+test('a slower previous store response cannot overwrite the current customer list', async () => {
+  const { view, state } = fixture();
+  state.filters.store = 'old';
+  let oldResolve;
+  view.get = async () => new Promise(resolve => { oldResolve = resolve; });
+  const old = view.load();
+  state.filters.store = 'new';
+  view.get = async () => ({ ...emptyResult, missingIdentifiers: 7 });
+  await view.load();
+  oldResolve({ ...emptyResult, missingIdentifiers: 99 });
+  await old;
+  assert.equal(view.result.missingIdentifiers, 7);
+});
+
+test('changing scope invalidates an in-flight customer detail request', async () => {
+  const { view, state } = fixture();
+  state.filters.store = 'old';
+  let resolve;
+  view.get = async () => new Promise(r => { resolve = r; });
+  const detail = view.open('person');
+  state.filters.store = 'new';
+  view.get = async () => emptyResult;
+  await view.load();
+  resolve({ customer: { identity: 'person' } });
+  await detail;
+  assert.equal(view.detail, undefined);
+});
+
+test('customer snapshot text is escaped and missing reorder interval is not displayed as zero', () => {
+  const { view } = fixture();
+  const html = view.renderDetail({ customer: { name: '<script>bad</script>', identity: 'a', orders: 1, spend: [], firstOrder: '2026-01-01', daysSinceLastOrder: 1 }, orders: [], count: 0, page: 1, totalPages: 0, snapshot: { fields: { Phone: '<img onerror="bad">' }, date: '2026-01-01', orderNumber: '1' } });
+  assert.ok(!html.includes('<script>'));
+  assert.ok(html.includes('&lt;script&gt;'));
+  assert.ok(!html.includes('<img onerror'));
+  assert.ok(html.includes('Average reorder interval (days)</small><strong>—'));
+});

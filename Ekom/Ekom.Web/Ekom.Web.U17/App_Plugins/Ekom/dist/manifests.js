@@ -52,6 +52,15 @@ const e = [
   },
   {
     type: "sectionView",
+    alias: "Ekom.SectionView.Manager.Customers",
+    name: "Ekom Manager Customers Section View",
+    element: "/App_Plugins/Ekom/dist/customers-section-view.element.js",
+    weight: 150,
+    meta: { label: "Customers", pathname: "customers", icon: "icon-users" },
+    conditions: [{ alias: "Umb.Condition.SectionAlias", match: "ekommanager" }]
+  },
+  {
+    type: "sectionView",
     alias: "Ekom.SectionView.Manager.Analytics",
     name: "Ekom Manager Analytics Section View",
     element: "/App_Plugins/Ekom/dist/analytics-section-view.element.js",
