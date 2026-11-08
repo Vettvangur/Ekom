@@ -17,6 +17,7 @@ function loadModule(relativePath, modules = {}) {
       return modules[name];
     },
     URL,
+    URLSearchParams,
     HTMLElement: class {},
     customElements: { define() {} },
   });
@@ -77,9 +78,9 @@ test('the legacy template uses conditional escaped bindings and keeps the SKU ou
   assert.ok(legacyTemplate.includes('<span ng-if="!getProductUrl(orderLine.product)">{{ orderLine.product.title }}</span><span ng-if="orderLine.product.sku && orderLine.product.sku.trim()"> ({{ orderLine.product.sku }})</span>'));
 });
 
-const imageFunction = legacyController.match(/\$scope\.getOrderLineImageUrl = (function \(line\) \{[\s\S]*?\n    \});/);
+const imageFunction = legacyController.match(/\$scope\.getOrderLineImageUrl = (function \(line, width\) \{[\s\S]*?\n    \});/);
 assert.ok(imageFunction);
-const getLegacyImageUrl = runInNewContext(`(${imageFunction[1]})`, { $scope: { getProductUrl: getLegacyProductUrl } });
+const getLegacyImageUrl = runInNewContext(`(${imageFunction[1]})`, { URLSearchParams, $scope: { getProductUrl: getLegacyProductUrl } });
 
 test('order thumbnails prefer variant images and fall back to valid product images', () => {
   for (const [variantImages, productImages, expected] of [
@@ -95,7 +96,7 @@ test('order thumbnails prefer variant images and fall back to valid product imag
     const html = new EkomOrdersSectionViewElement().renderOrderLines({ orderLines: [line] });
     assert.ok(html.includes('class="ekmOrderLineThumbnail"'));
     assert.ok(html.includes('<svg'));
-    if (expected) assert.ok(html.includes(`src="${expected}" alt="" loading="lazy"`));
+    if (expected) assert.ok(html.includes(`src="${expected}?width=56&amp;format=webp&amp;rmode=pad&amp;rcolor=ffffff" width="56" height="56" alt="" loading="lazy"`));
     else assert.ok(!html.includes('<img'));
     assert.equal(getLegacyImageUrl(line), expected);
   }
@@ -114,4 +115,27 @@ test('failed or already broken thumbnails reveal the placeholder', () => {
   image.complete = true;
   element.bindEvents();
   assert.equal(image.hidden, true);
+});
+
+
+test('picture thumbnails request 1x and 2x widths without losing existing query or fragments', () => {
+  const line = { product: { title: 'Product', images: [{ url: '/media/photo.jpg?quality=80&width=900#image' }] } };
+  const html = new EkomOrdersSectionViewElement().renderOrderLines({ orderLines: [line] });
+  assert.ok(html.includes('<picture><source srcset="/media/photo.jpg?quality=80&amp;width=56&amp;format=webp&amp;rmode=pad&amp;rcolor=ffffff#image 1x, /media/photo.jpg?quality=80&amp;width=112&amp;format=webp&amp;rmode=pad&amp;rcolor=ffffff#image 2x">'));
+  assert.ok(html.includes('loading="lazy" decoding="async"'));
+  assert.equal(getLegacyImageUrl(line, 56), '/media/photo.jpg?quality=80&width=56&format=webp&rmode=pad&rcolor=ffffff#image');
+  assert.equal(getLegacyImageUrl(line, 112), '/media/photo.jpg?quality=80&width=112&format=webp&rmode=pad&rcolor=ffffff#image');
+  assert.ok(!html.includes('width=900'));
+  assert.ok(legacyTemplate.includes('<picture ng-if="getOrderLineImageUrl(orderLine)">'));
+  assert.ok(legacyTemplate.includes('ng-attr-srcset="{{ getOrderLineImageUrl(orderLine, 56) }} 1x, {{ getOrderLineImageUrl(orderLine, 112) }} 2x"'));
+});
+
+test('legacy custom-data labels match readable modern labels', () => {
+  const match = legacyController.match(/\$scope\.formatOrderCustomDataKey = (function \(key\) \{[\s\S]*?\n    \});/);
+  assert.ok(match);
+  const formatKey = runInNewContext(`(${match[1]})`);
+  for (const [key, expected] of [['newsletterOptIn', 'Newsletter Opt In'], ['giftReceipt', 'Gift Receipt'], ['dkInvoiceNumber', 'Dk Invoice Number'], ['VATNumber', 'VAT Number'], ['delivery_note', 'Delivery Note']]) {
+    assert.equal(formatKey(key), expected);
+  }
+  assert.ok(legacyTemplate.includes('ng-bind="formatOrderCustomDataKey(entry[0])"'));
 });
