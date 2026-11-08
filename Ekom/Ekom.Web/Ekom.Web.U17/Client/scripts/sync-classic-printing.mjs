@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 // Umbraco 13 has no modern backoffice context API. Build its standalone view
 // from the same source with plain custom-element lifecycle hooks.
-for (const view of ['printing', 'customers']) await build({
+for (const view of ['printing', 'customers', 'analytics']) await build({
   configFile: false,
   plugins: [{
     name: 'classic-printing-element',

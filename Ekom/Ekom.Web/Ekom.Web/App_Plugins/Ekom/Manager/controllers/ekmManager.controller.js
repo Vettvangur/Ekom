@@ -183,7 +183,7 @@
     }
 
     function refreshCurrentView() {
-      if ($scope.location === "customers") return;
+      if ($scope.location === "customers" || $scope.location === "analytics") return;
       if (!$scope.filters.store) {
         return;
       }
@@ -317,7 +317,7 @@
       $scope.location = location;
       $location.path("/ekommanager/" + location);
 
-      if (location === "printing" || location === "customers") return;
+      if (location === "printing" || location === "customers" || location === "analytics") return;
 
       if (location === "analytics") {
         $scope.analytics();
@@ -657,6 +657,43 @@
       $scope.GetStores();
     });
   }
+
+  angular.module("umbraco").directive("ekomAnalyticsHost", function () {
+    return {
+      restrict: "E",
+      link: function (scope, element) {
+        var disposed = false;
+        import("/App_Plugins/Ekom/Manager/libs/analytics-section-view.element.js").then(function () {
+          if (disposed) return;
+          var view = document.createElement("ekom-analytics-section-view");
+          view.setAttribute("classic", "");
+          ["store", "dateFrom", "dateTo", "orderStatus"].forEach(function (key) {
+            var value = scope.filters[key];
+            if (value instanceof Date) value = value.getFullYear() + "-" + String(value.getMonth() + 1).padStart(2, "0") + "-" + String(value.getDate()).padStart(2, "0");
+            if (value) view.setAttribute(key.toLowerCase(), value);
+          });
+          function applyFilters(filters) {
+            Object.keys(filters).forEach(function (key) {
+              scope.filters[key] = key === "dateFrom" || key === "dateTo" ? new Date(filters[key] + "T00:00:00") : filters[key];
+            });
+          }
+          view.addEventListener("analytics-filters-changed", function (event) {
+            scope.$evalAsync(function () {
+              ["store", "dateFrom", "dateTo", "orderStatus"].forEach(function (key) {
+                var value = event.detail[key];
+                scope.filters[key] = key === "dateFrom" || key === "dateTo" ? new Date(value + "T00:00:00") : value;
+              });
+            });
+          });
+          view.addEventListener("analytics-open-orders", function (event) {
+            scope.$evalAsync(function () { applyFilters(event.detail); scope.navigateTo("orders"); });
+          });
+          element[0].appendChild(view);
+        }).catch(function () { if (!disposed) element.text("Could not load Analytics. Please reload the manager."); });
+        scope.$on("$destroy", function () { disposed = true; });
+      }
+    };
+  });
 
   angular.module("umbraco").directive("ekomCustomersHost", function () {
     return {

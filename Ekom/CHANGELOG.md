@@ -4,9 +4,13 @@
 
 ### Features
 
+* **manager:** add Analytics summary cards, period comparisons, calendar grouping, table/CSV views and order drill-through; align plotted dates with Orders, include empty days, prevent stale responses and load product details on demand.
+
 * **manager:** add Customers between Orders and Analytics in Umbraco 13/17/18, with shared store/date filters, configurable email/username grouping, lifetime and retention metrics, missing-identifier counts, CSV export, and customer order details. List queries avoid OrderInfo; customer details expose a labelled order snapshot.
 
 ### Bug Fixes
+
+* **manager:** export the Customers view constructor required by the Umbraco 17/18 extension loader so the Customers tab opens correctly.
 
 * **manager:** format order custom-data keys as readable labels and render lazy-loaded product pictures with 56px/112px image widths and WebP output with white padding, while preserving other image query parameters.
 

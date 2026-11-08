@@ -6,4 +6,6 @@ public class ChartAggregateRow
     public decimal Revenue { get; set; }
     public int Orders { get; set; }
     public decimal AverageAmount { get; set; }
+    public string? Currency { get; set; }
+    public int CurrencyCount { get; set; }
 }

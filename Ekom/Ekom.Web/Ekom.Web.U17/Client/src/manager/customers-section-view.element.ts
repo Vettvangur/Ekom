@@ -233,3 +233,5 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
   }
 }
 customElements.define('ekom-customers-section-view', EkomCustomersSectionViewElement);
+
+export default EkomCustomersSectionViewElement;

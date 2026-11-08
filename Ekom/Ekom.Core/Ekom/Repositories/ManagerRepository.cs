@@ -200,19 +200,22 @@ public class ManagerRepository
 
     }
 
-    public async Task<List<ChartAggregateRow>> GetChartAggregatesAsync(DateTime start, DateTime end, string store, string orderStatus)
+    public async Task<List<ChartAggregateRow>> GetChartAggregatesAsync(DateTime start, DateTime end, string store, string orderStatus, CancellationToken ct = default)
     {
         string whereClause = GenerateWhereClause(orderStatus, string.Empty, store, string.Empty);
+        string dateColumn = orderStatus is "ReadyForDispatch" or "Dispatched" ? "PaidDate" : "CreateDate";
         string bucketDateExpression = _databaseFactory.IsSqlite
-            ? "date(COALESCE(PaidDate, CreateDate))"
-            : "CAST(COALESCE(PaidDate, CreateDate) AS date)";
+            ? $"date({dateColumn})"
+            : $"CAST({dateColumn} AS date)";
 
         string sql = $@"
 SELECT
     {bucketDateExpression} as BucketDate,
     SUM(TotalAmount) as Revenue,
     COUNT(ReferenceId) as Orders,
-    AVG(TotalAmount) as AverageAmount
+    AVG(TotalAmount) as AverageAmount,
+    MIN(Currency) as Currency,
+    COUNT(DISTINCT Currency) as CurrencyCount
 FROM EkomOrders
 {whereClause}
 GROUP BY {bucketDateExpression}
@@ -228,7 +231,7 @@ ORDER BY {bucketDateExpression}";
 
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        return await db.QueryToListAsync<ChartAggregateRow>(sql, param).ConfigureAwait(false);
+        return await db.QueryToListAsync<ChartAggregateRow>(sql, ct, param).ConfigureAwait(false);
     }
 
     private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider, string productSku = "", string trackingSource = "", string trackingMedium = "", string trackingCampaign = "", string trackingTerm = "", string trackingContent = "", string trackingClickId = "", string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
