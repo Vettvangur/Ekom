@@ -191,7 +191,8 @@ public class OrderedProduct
                 return "";
             }
 
-            IProduct? productNode = Catalog.Instance.GetProduct(Key, StoreInfo.Alias);
+            // Historical order links must not depend on storefront visibility filters.
+            IProduct? productNode = Catalog.Instance.GetProduct(Key, StoreInfo.Alias, raiseEvent: false);
 
             if (productNode != null)
             {
