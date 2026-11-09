@@ -36,6 +36,7 @@ class StockCache : BaseCache<StockData>
 
     public override void FillCache()
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         var stopwatch = Stopwatch.StartNew();
         _logger.LogInformation("Starting to fill stock cache...");
 

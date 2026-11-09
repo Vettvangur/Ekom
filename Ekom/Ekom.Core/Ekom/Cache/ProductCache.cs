@@ -10,8 +10,8 @@ class ProductCache : PerStoreCache<IProduct>
     public override string NodeAlias { get; } = "ekmProduct";
 
     // storeAlias -> categoryId -> (productKey -> dummy)
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>> _categoryIndex
-        = new();
+    private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>> _categoryIndex =>
+        _config.CacheRebuild.Get(this, nameof(_categoryIndex), static () => new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>>());
 
     public ProductCache(
         Configuration config,
@@ -47,6 +47,7 @@ class ProductCache : PerStoreCache<IProduct>
         string nodeAlias,
         IReadOnlyDictionary<int, IReadOnlyList<UmbracoContent>>? ancestorsByNodeId)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         var count = base.FillStoreCache(store, results, nodeAlias, ancestorsByNodeId);
 
         var idx = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
@@ -68,12 +69,14 @@ class ProductCache : PerStoreCache<IProduct>
 
     public override void ClearCache()
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         base.ClearCache();
         _categoryIndex.Clear();
     }
 
     public override void AddOrReplaceFromCache(Guid key, Store store, IProduct item)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         var alias = store.Alias;
 
         // 1) Remove stale category mappings (based on old item if present)
@@ -114,6 +117,7 @@ class ProductCache : PerStoreCache<IProduct>
 
     public IEnumerable<IProduct> GetByCategoryAndDescendants(string storeAlias, int rootCategoryId, IEnumerable<int> descendantCategoryIds)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         if (!Cache.TryGetValue(storeAlias, out var storeCache))
             return Enumerable.Empty<IProduct>();
 
@@ -150,6 +154,7 @@ class ProductCache : PerStoreCache<IProduct>
     /// </summary>
     public IEnumerable<IProduct> GetByAnyCategoryIds(string storeAlias, IEnumerable<int> categoryIds)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         if (!Cache.TryGetValue(storeAlias, out var storeCache))
             return Enumerable.Empty<IProduct>();
 

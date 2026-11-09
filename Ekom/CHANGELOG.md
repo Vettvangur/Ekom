@@ -18,6 +18,8 @@
 
 ### Bug Fixes
 
+* **cache:** build replacement caches and indexes in isolation, retaining the live cache on failure; reject empty stores and concurrent-update conflicts, and report manual rebuild failures to the backoffice.
+
 * **prices:** enlist document price edits in the content-save transaction to avoid SQLite lock waits; refresh the cache and notify subscribers only after commit.
 
 * **prices:** use scoped security services during content saving and log price-save failures as well as showing the editor notification.

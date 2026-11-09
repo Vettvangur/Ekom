@@ -46,13 +46,17 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
     // Primary cache
     // -----------------------------
 
-    public virtual ConcurrentDictionary<Guid, TItem> Cache { get; }
-        = new ConcurrentDictionary<Guid, TItem>();
+    public virtual ConcurrentDictionary<Guid, TItem> Cache =>
+        _config.CacheRebuild.Get(this, nameof(Cache), static () => new ConcurrentDictionary<Guid, TItem>());
 
     public TItem this[Guid index]
     {
         get => Cache[index];
-        set => Cache[index] = value;
+        set
+        {
+            using var cacheUpdate = _config.CacheRebuild.Update();
+            AddOrReplaceFromCache(index, value);
+        }
     }
 
     // -----------------------------
@@ -90,9 +94,10 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
     /// </summary>
     protected virtual StringComparer SkuComparer => StringComparer.OrdinalIgnoreCase;
 
-    protected virtual ConcurrentDictionary<int, Guid> IdIndex { get; } = new ConcurrentDictionary<int, Guid>();
-    protected virtual ConcurrentDictionary<string, Guid> SkuIndex { get; } =
-        new ConcurrentDictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+    protected virtual ConcurrentDictionary<int, Guid> IdIndex =>
+        _config.CacheRebuild.Get(this, nameof(IdIndex), static () => new ConcurrentDictionary<int, Guid>());
+    protected virtual ConcurrentDictionary<string, Guid> SkuIndex =>
+        _config.CacheRebuild.Get(this, nameof(SkuIndex), static () => new ConcurrentDictionary<string, Guid>(StringComparer.OrdinalIgnoreCase));
 
     // -----------------------------
     // Internal helpers (index-safe)
@@ -100,6 +105,7 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
 
     protected void AddOrReplaceFromCache(Guid key, TItem item)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         // remove stale indexes if we are replacing an existing item
         if (Cache.TryGetValue(key, out var old))
         {
@@ -129,6 +135,7 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
 
     protected void RemoveItemFromCache(Guid key)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         if (!Cache.TryRemove(key, out var item))
             return;
 
@@ -151,6 +158,7 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
 
     public bool TryGetById(int id, out TItem? item)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         item = null;
         if (!EnableIdIndex) return false;
 
@@ -159,6 +167,7 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
 
     public bool TryGetBySku(string sku, out TItem? item)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         item = null;
         if (!EnableSkuIndex || string.IsNullOrWhiteSpace(sku)) return false;
 
@@ -172,6 +181,7 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
 
     public virtual void FillCache()
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         if (string.IsNullOrWhiteSpace(NodeAlias))
         {
             _logger.LogDebug("BaseCache<{Type}> FillCache skipped (NodeAlias is empty).", typeof(TItem).Name);
@@ -201,6 +211,7 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
             }
             catch (Exception ex)
             {
+                if (_config.CacheRebuild.IsRebuilding) throw;
                 _logger.LogWarning(ex, "Failed to map item. Id: {Id}", r.Id);
             }
         }
@@ -216,6 +227,7 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
 
     public virtual void ClearCache()
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         Cache.Clear();
         IdIndex.Clear();
         SkuIndex.Clear();
@@ -227,6 +239,7 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
 
     public virtual void AddReplace(UmbracoContent content)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         using var scope = _serviceScopeFactory.CreateScope();
         var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
 
@@ -244,5 +257,6 @@ abstract class BaseCache<TItem> : ICache, IClearableCache, IBaseCache<TItem>
 
     public virtual void RemoveDescendants(int id)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
     }
 }

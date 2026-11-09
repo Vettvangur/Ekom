@@ -62,4 +62,10 @@
         <ProjectReference Include="..\..\Ekom.Core\Ekom.AspNetCore\Ekom.AspNetCore.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Ekom.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
 </Project>

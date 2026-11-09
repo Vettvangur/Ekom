@@ -17,12 +17,16 @@ class CouponCache : ICouponCache
     protected IServiceProvider _serviceProvider;
     protected IServiceScopeFactory _serviceScopeFactory;
 
-    public GlobalCouponCache Cache { get; } = new GlobalCouponCache();
+    private readonly Configuration _config;
+
+    public GlobalCouponCache Cache =>
+        _config.CacheRebuild.Get(this, nameof(Cache), static () => new GlobalCouponCache());
 
     public CouponCache(
         ILogger<CouponCache> logger,
         DatabaseFactory databaseFactory, IServiceProvider serviceProvider)
     {
+        _config = serviceProvider.GetRequiredService<Configuration>();
         _logger = logger;
         _databaseFactory = databaseFactory;
         _serviceProvider = serviceProvider;
@@ -32,6 +36,7 @@ class CouponCache : ICouponCache
     /// <inheritdoc />
     public void FillCache()
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         Stopwatch stopwatch = new Stopwatch();
         stopwatch.Start();
 
@@ -66,12 +71,14 @@ class CouponCache : ICouponCache
     /// <inheritdoc />
     public void AddReplace(CouponData coupon)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
     }
 
     /// <inheritdoc />
     public void Remove(CouponData coupon)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         Cache.TryRemove(coupon.CouponCode.ToLowerInvariant(), out _);
     }
 }

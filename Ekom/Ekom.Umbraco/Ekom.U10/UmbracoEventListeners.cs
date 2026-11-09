@@ -169,6 +169,7 @@ class UmbracoEventListeners :
 
     public async Task HandleAsync(ContentPublishedNotification args, CancellationToken cancellationToken)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
 
         foreach (var node in args.PublishedEntities)
         {
@@ -211,6 +212,7 @@ class UmbracoEventListeners :
     //TODO Needs testing
     public void Handle(ContentMovedNotification args)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var info in args.MoveInfoCollection)
         {
             var node = info.Entity;
@@ -237,6 +239,7 @@ class UmbracoEventListeners :
 
     public async Task HandleAsync(ContentUnpublishedNotification args, CancellationToken cancellationToken)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var node in args.UnpublishedEntities)
         {
             foreach (var cache in _config.CacheList.Value)
@@ -264,6 +267,7 @@ class UmbracoEventListeners :
 
     public async Task HandleAsync(ContentDeletedNotification args, CancellationToken cancellationToken)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var node in args.DeletedEntities)
         {
             foreach (var cache in _config.CacheList.Value)
@@ -289,6 +293,7 @@ class UmbracoEventListeners :
 
     public void Handle(ContentMovedToRecycleBinNotification args)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var node in args.MoveInfoCollection)
         {
             foreach (var cache in _config.CacheList.Value)
@@ -437,6 +442,7 @@ class UmbracoEventListeners :
 
     public void Handle(DomainSavedNotification saveEventArgs)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var d in saveEventArgs.SavedEntities)
         {
             _storeDomainCache.AddReplace(new Umbraco10Domain(d));
@@ -465,6 +471,7 @@ class UmbracoEventListeners :
 
     public void Handle(DomainDeletedNotification n)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var d in n.DeletedEntities)
         {
             _storeDomainCache.Remove(d.Key);
