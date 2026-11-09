@@ -4,6 +4,12 @@
 
 ### Features
 
+* **prices:** add repeatable node-to-table migration for published prices without an ERP, preserving existing overrides and supporting legacy price formats.
+
+* **imports:** write imported product and variant prices to `EkomPrice` before content change detection when database prices are enabled; exclude prices from default content hashes so price-only changes do not save or publish nodes.
+
+* **prices:** add opt-in `Ekom:UseDatabasePrices` storage in `EkomPrice`, direct ERP price updates, and database-aware price editors for Umbraco 13, 17, and 18. Node storage remains the default.
+
 * **manager:** add unique buyers, first/repeat purchase breakdowns, returning customer rate and weekday/hour charts to Analytics using ordinary EkomOrders columns.
 
 * **manager:** add Analytics summary cards, period comparisons, calendar grouping, table/CSV views and order drill-through; align plotted dates with Orders, include empty days, prevent stale responses and load product details on demand.
@@ -11,6 +17,24 @@
 * **manager:** add Customers between Orders and Analytics in Umbraco 13/17/18, with shared store/date filters, configurable email/username grouping, lifetime and retention metrics, missing-identifier counts, CSV export, and customer order details. List queries avoid OrderInfo; customer details expose a labelled order snapshot.
 
 ### Bug Fixes
+
+* **prices:** enlist document price edits in the content-save transaction to avoid SQLite lock waits; refresh the cache and notify subscribers only after commit.
+
+* **prices:** use scoped security services during content saving and log price-save failures as well as showing the editor notification.
+
+* **prices:** save datatype edits with the document, like stock, instead of writing live prices from individual fields.
+
+* **prices:** read all cache-refresh chunks in one serializable transaction to prevent mixed versions during concurrent writes.
+
+* **prices:** keep concurrent price calculations consistent, refresh caches asynchronously, and drain Algolia price backlogs without per-batch delays.
+
+* **prices:** use a startup-filled shared cache for all price reads and refresh committed changes without per-request SQL queries.
+
+* **prices:** block saves after document identity is cleared, batch catalog price reads, add scoped background snapshots, and defer/coalesce Algolia price refreshes.
+
+* **prices:** reset editor state across documents, restore draft variant access without publish permission, validate forms before live price writes, and filter variant price baselines by store access.
+
+* **prices:** enforce node/store permissions, commit validated import prices before publication, prevent stale variant edits from overwriting ERP changes, bound price caches, notify subscribers and Algolia after commit, and support removing/exporting overrides.
 
 * **customers:** show a loading indicator while fetching customers instead of briefly showing an empty result.
 

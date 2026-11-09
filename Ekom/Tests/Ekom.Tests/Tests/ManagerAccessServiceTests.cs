@@ -9,6 +9,13 @@ namespace Ekom.Tests.Tests;
 public class ManagerAccessServiceTests
 {
     [Fact]
+    public void AnonymousUserCannotAccessManagerWithDefaultPermissions()
+    {
+        var sut = CreateSubject([], null, new(), [], authenticated: false);
+        Assert.False(sut.CanAccessManager());
+    }
+
+    [Fact]
     public void CanAccessManager_Returns_True_When_User_Has_Section_Group()
     {
         var sut = CreateSubject(
@@ -99,7 +106,7 @@ public class ManagerAccessServiceTests
         string? sectionAccessGroup,
         Dictionary<string, string[]> permissions,
         IReadOnlyCollection<string> storeAliases,
-        bool isAdmin = false)
+        bool isAdmin = false, bool authenticated = true)
     {
         var options = Options.Create(new EkomOptions
         {
@@ -111,6 +118,7 @@ public class ManagerAccessServiceTests
         });
 
         var securityService = new Mock<ISecurityService>();
+        securityService.Setup(x => x.IsAuthenticated()).Returns(authenticated);
         securityService.Setup(x => x.GetUmbracoUserGroups()).Returns(userGroups);
         securityService.Setup(x => x.IsCurrentUserAdmin()).Returns(isAdmin);
 

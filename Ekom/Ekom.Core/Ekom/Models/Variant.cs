@@ -215,12 +215,21 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         }
     }
 
+    private IPrice _originalPrice = null!;
+
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual IPrice OriginalPrice { get; set; }
+    public virtual IPrice OriginalPrice
+    {
+        get => Configuration.Instance.UseDatabasePrices ? CreateOriginalPrice() : _originalPrice;
+        set => _originalPrice = value;
+    }
 
-    private string _priceValue = "";
+    private string _nodePriceValue = "";
+    private string _priceValue => Configuration.Instance.UseDatabasePrices
+        ? API.Prices.Instance.Resolve(Key, "price", Store.Alias, _nodePriceValue, Store.Currencies)
+        : _nodePriceValue;
 
     /// <summary>
     /// Get Price by current store currency
@@ -232,29 +241,34 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         get
         {
             var product = Product;
+            using var priceSnapshot = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance.BeginCalculationScope(Key, product?.Key) : null;
             string[] categories = product?.Categories.Select(x => x.Id.ToString()).ToArray()
                                     ?? Array.Empty<string>();
 
             string itemKey = Path;
 
+            var priceValue = _priceValue;
             string globalGen = PriceCache.GlobalGeneration;
             string productGen = PriceCache.GetItemGeneration(itemKey, Store.Alias);
 
             var sale = NativeDiscountPrice.Raw(this);
             var parentGen = product == null ? string.Empty : PriceCache.GetItemGeneration(product.Path, Store.Alias);
-            var parentPrice = product?.Properties.GetPropertyValue("price", Store.Alias) ?? string.Empty;
+            var parentPrice = product is Models.Product concreteProduct
+                ? concreteProduct.RawPriceValue
+                : product?.Properties.GetPropertyValue("price", Store.Alias) ?? string.Empty;
             var parentSale = NativeDiscountPrice.Raw(product);
 
             string cacheKey =
-                $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={Store.Currency.CurrencyValue}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}:sale={CacheHelpers.Sha256(sale)}:parent={parentGen}:parentPrice={CacheHelpers.Sha256(parentPrice)}:parentSale={CacheHelpers.Sha256(parentSale)}:disabled={product?.DisableDiscounts == true}";
+                $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={Store.Currency.CurrencyValue}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(priceValue)}:sale={CacheHelpers.Sha256(sale)}:parent={parentGen}:parentPrice={CacheHelpers.Sha256(parentPrice)}:parentSale={CacheHelpers.Sha256(parentSale)}:disabled={product?.DisableDiscounts == true}";
 
-            return CacheHelpers.GetOrCreateSingleFlight(
+            return CacheHelpers.GetOrCreateVersioned(
+                cacheKey.Split(":hash=", 2)[0],
                 cacheKey,
                 () =>
                 {
 
                     List<IPrice> prices = PriceBuilder.BuildPricesSync(
-                        _priceValue,
+                        priceValue,
                         Store.Currencies,
                         Vat,
                         Store.VatIncludedInPrice,
@@ -389,7 +403,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
             PriceCache.InvalidateItem(Path, Store.Alias);
         }
 
-        _priceValue = GetValue("price", Store.Alias) ?? string.Empty;
+        _nodePriceValue = GetValue("price", Store.Alias) ?? string.Empty;
         OriginalPrice = CreateOriginalPrice();
 
         SKU = string.IsNullOrEmpty(GetValue("sku")) ? Product?.SKU ?? "" : GetValue("sku");

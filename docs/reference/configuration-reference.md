@@ -186,3 +186,7 @@ Provider-specific values live beneath `Ekom:Payments`. Their shape is defined by
 - [Services and DI](services-and-dependency-injection.md)
 - [HTTP API](http-api.md)
 - [Models and behavior](models-and-behavior.md)
+
+## Database prices
+
+`Ekom:UseDatabasePrices` (boolean, default `false`) enables the `EkomPrice` table for price overrides. See [catalog prices](../guides/database-price-storage.md) for ERP updates, editor behavior, and rollout details.

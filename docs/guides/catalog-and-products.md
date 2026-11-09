@@ -185,3 +185,8 @@ Although several actions advertise both verbs, actions with `[FromBody]` are mos
 ## Razor patterns
 
 The repository samples use `await _catalog.GetCategoryAsync()` followed by `category.ProductsRecursiveAsync(new ProductQuery(Context.Request.Query) { ... })`, and `await _catalog.GetProductAsync()` followed by `product.Price`, `product.Available`, images and variant groups. Use `Html.BeginEkomForm(FormType.AddToOrderProduct, ...)` or `POST /ekom/order/add` with `productId`, optional `variantId`, `storeAlias`, and a positive `quantity`.
+
+
+## Database price storage
+
+See the [database price storage guide](database-price-storage.md) for setup, ERP updates, migration, and tradeoffs.

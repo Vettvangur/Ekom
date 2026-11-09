@@ -243,6 +243,7 @@ internal sealed class EnsureTablesExist : IAsyncComponent
             _databaseService.CreateTables();
         }
 
+        _databaseService.EnsurePriceTable();
         _databaseService.EnsureStockReservationTable();
         _logger.LogDebug("Done");
     }

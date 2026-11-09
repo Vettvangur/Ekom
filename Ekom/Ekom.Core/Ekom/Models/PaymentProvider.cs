@@ -59,6 +59,8 @@ public class PaymentProvider : PerStoreNodeEntity, IPerStoreNodeEntity, IPayment
         get
         {
             var priceJson = Properties.GetPropertyValue("price", Store.Alias) ?? string.Empty;
+            if (Configuration.Instance.UseDatabasePrices)
+                priceJson = API.Prices.Instance.Resolve(Key, "price", Store.Alias, priceJson, Store.Currencies);
 
             List<IPrice> prices = PriceBuilder.BuildPricesSync(
                 priceJson,

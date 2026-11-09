@@ -21,6 +21,7 @@ public sealed class ManagerAccessService : IManagerAccessService
 
     public bool CanAccessManager()
     {
+        if (!_securityService.IsAuthenticated()) return false;
         if (_securityService.IsCurrentUserAdmin())
         {
             return true;

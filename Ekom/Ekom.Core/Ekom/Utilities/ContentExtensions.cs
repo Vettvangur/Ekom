@@ -35,6 +35,12 @@ public static class ContentExtensions
     public static decimal GetPrice(this UmbracoContent item, string storeAlias, string? currency = null)
     {
         string fieldValue = item.GetValue("price", storeAlias);
+        if (Configuration.Instance.UseDatabasePrices)
+        {
+            var store = API.Store.Instance.GetStore(storeAlias);
+            if (store != null)
+                fieldValue = API.Prices.Instance.Resolve(item.Key, "price", storeAlias, fieldValue, store.Currencies);
+        }
 
         if (!string.IsNullOrEmpty(fieldValue))
         {

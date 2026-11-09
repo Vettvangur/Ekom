@@ -33,6 +33,7 @@ internal sealed class AlgoliaEkomEvents : IComponent
         OrderEvents.AddedOrderlineAsync += OnAddedOrderlineAsync;
         OrderEvents.RemovedOrderlineAsync += OnRemovedOrderlineAsync;
         StockEvents.StockChangedAsync += OnStockChangedAsync;
+        PriceEvents.PriceChanged += OnPriceChanged;
         OrderEvents.CustomerEmailAddedAsync += OnCustomerEmailAddedAsync;
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
 #if UMBRACO_18
@@ -50,6 +51,7 @@ internal sealed class AlgoliaEkomEvents : IComponent
         OrderEvents.AddedOrderlineAsync -= OnAddedOrderlineAsync;
         OrderEvents.RemovedOrderlineAsync -= OnRemovedOrderlineAsync;
         StockEvents.StockChangedAsync -= OnStockChangedAsync;
+        PriceEvents.PriceChanged -= OnPriceChanged;
         OrderEvents.CustomerEmailAddedAsync -= OnCustomerEmailAddedAsync;
         CheckoutEvents.CompleteCheckoutAsync -= OnCompleteCheckoutAsync;
 #if UMBRACO_18
@@ -97,6 +99,18 @@ internal sealed class AlgoliaEkomEvents : IComponent
             args.OrderInfo.Tracking?.Algolia?.RemoveLine(args.OrderLine.Key);
 
         return Task.CompletedTask;
+    }
+
+    private void OnPriceChanged(object? sender, PriceChangedEventArgs args)
+    {
+        if (AlgoliaIndexingScope.IsSuppressed || !_options.Enabled) return;
+        var configured = _options.Stores.FirstOrDefault(store => store.Alias.Equals(args.StoreAlias, StringComparison.OrdinalIgnoreCase));
+        if (configured == null || !(configured.Indexing?.Enabled ?? _options.Indexing.Enabled)
+            || !(configured.Indexing?.Products ?? _options.Indexing.Products)) return;
+        using var scope = _scopeFactory.CreateScope();
+        var queue = scope.ServiceProvider.GetRequiredService<AlgoliaPriceIndexQueue>();
+        if (!queue.TryEnqueue(args.Key, configured.Alias))
+            throw new InvalidOperationException("Algolia price update queue is full. Reconcile the affected product.");
     }
 
     private async Task OnStockChangedAsync(object sender, StockChangedEventArgs args, CancellationToken ct)

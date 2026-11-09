@@ -7,6 +7,33 @@ namespace Ekom.Utilities;
 
 public static class CacheHelpers
 {
+    public static T GetOrCreateVersioned<T>(string key, string version, Func<T> factory, TimeSpan ttl)
+    {
+        var cache = Configuration.Resolver.GetService<IMemoryCache>();
+        if (cache == null) return factory();
+        var slot = cache.GetOrCreate("versioned:" + key, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = ttl;
+            return new VersionedValue<T>();
+        })!;
+        lock (slot)
+        {
+            if (slot.Version != version)
+            {
+                var value = factory();
+                slot.Value = value;
+                slot.Version = version;
+            }
+            return slot.Value!;
+        }
+    }
+
+    private sealed class VersionedValue<T>
+    {
+        public string? Version { get; set; }
+        public T? Value { get; set; }
+    }
+
     public static string Sha256(string input)
     {
         if (string.IsNullOrEmpty(input)) return "empty";

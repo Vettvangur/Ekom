@@ -65,10 +65,21 @@ Continue with the [installation guide](https://github.com/Vettvangur/Ekom/blob/E
 - Extensible payment and shipping providers
 - Product, order, quantity, and coupon discounts
 - Primary stock, native SQL reservations, and display-only warehouse stock
+- Optional database price storage for frequent price updates
 - Headless catalog, order, provider, and checkout APIs
 - GA4 and Meta tracking with consent handling
 - Algolia, Klaviyo, and Mailchimp integrations
 - Extension points for events, search, pricing, stock policies, and manager actions
+
+## Price storage
+
+Prices are stored on Umbraco nodes by default. Set `Ekom:UseDatabasePrices` to `true` to store price overrides in a separate database table. The price editor and importer use this setting automatically. Editors change a price and save the document, just like stock.
+
+This is useful when an ERP or another integration changes prices frequently: updates go live without saving or publishing the product node. Prices are cached at startup and refreshed after changes, so normal price reads do not query the database. You can also migrate existing node prices without using an ERP.
+
+The tradeoffs are memory use and immediate updates: table prices do not follow Umbraco's draft or publishing workflow. Each application server has its own cache, so changes made on another server or directly in SQL need a cache reload. For occasional price edits that should follow content publishing, keep the default node storage.
+
+See the [price storage guide](docs/guides/database-price-storage.md) for setup, migration, and integration examples.
 
 ## Documentation
 

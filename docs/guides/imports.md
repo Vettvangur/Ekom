@@ -73,6 +73,137 @@ importService.ProductSync(
 
 `ProductSync` requires at least one category identifier that resolves in the selected catalog scope. It synchronizes the supplied `VariantGroups`; groups absent from that product payload are deleted, and variants absent from a supplied group are deleted. Use `ProductUpdateSync` for a product-only patch that must not reconcile children.
 
+## ERP price-only sync without saving or publishing
+
+For frequent ERP price changes, enable `Ekom:UseDatabasePrices` and restart Ekom so startup creates the price table:
+
+```json
+{
+  "Ekom": {
+    "UseDatabasePrices": true
+  }
+}
+```
+
+Use `Ekom.API.Prices.SetPriceAsync` directly for price-only messages. This writes to `EkomPrice` and does not load, save, or publish an Umbraco node. The direct table API throws if database prices are disabled.
+
+### One price update
+
+```csharp
+// Resolve this GUID from your ERP identifier -> existing Umbraco node key mapping.
+// Use the variant's key when the ERP price belongs to a variant.
+Guid nodeKey = existingProductOrVariantKey;
+
+await Ekom.API.Prices.Instance.SetPriceAsync(
+    nodeKey: nodeKey,
+    storeAlias: "Web",
+    currency: "en-US",
+    price: 49.95m,
+    cancellationToken: cancellationToken);
+```
+
+`Web` must be your actual Ekom store alias. `en-US` is the configured currency culture value, not the ISO code `USD`. Amounts follow the store's existing VAT-included/excluded pricing convention. The node must already exist; the table API does not look up ERP identifiers, create nodes, or validate that a supplied node/store/currency exists.
+
+### A service for an ERP change feed
+
+Inject `Ekom.API.Prices`, which Ekom already registers, into your integration service:
+
+```csharp
+using Ekom.API;
+
+public sealed record ErpPriceChange(
+    Guid NodeKey,
+    string StoreAlias,
+    string Currency,
+    decimal Amount);
+
+public sealed class ErpPriceSync
+{
+    private readonly Prices _prices;
+
+    public ErpPriceSync(Prices prices)
+    {
+        _prices = prices;
+    }
+
+    public async Task ApplyAsync(
+        IEnumerable<ErpPriceChange> changes,
+        CancellationToken cancellationToken = default)
+    {
+        foreach (var change in changes)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            await _prices.SetPriceAsync(
+                nodeKey: change.NodeKey,
+                storeAlias: change.StoreAlias,
+                currency: change.Currency,
+                price: change.Amount,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+    }
+}
+```
+
+Register `ErpPriceSync` in your site's service collection (for example, `services.AddTransient<ErpPriceSync>()`) and invoke it from your ERP job or authenticated integration handler after resolving the feed's ERP identifiers to existing node keys. Each call inserts or replaces one node/property/store/currency price; other prices remain unchanged. Each write commits separately, so a failed feed can have partially applied updates. Replaying an update replaces the same row rather than creating a duplicate. Coordinate concurrent feeds for the same price; the last committed write wins.
+
+To update the native discount price, use the same call with `propertyAlias: "ekmDiscountPrice"`:
+
+```csharp
+await Ekom.API.Prices.Instance.SetPriceAsync(
+    nodeKey, "Web", "en-US", 39.95m,
+    propertyAlias: "ekmDiscountPrice",
+    cancellationToken: cancellationToken);
+```
+
+Do not call `IContentService.Save` or `SaveAndPublish` after the direct table API. You can also keep using the built-in importer with its `Price` collection, as shown below.
+
+The importer updates the shared price cache after committing, so subsequent reads and the price editor on that application instance use the table value without a publish or manual cache refresh. The cache is filled at startup and shared across requests and background jobs. Writes from another application instance or directly in SQL require `await prices.FillCacheAsync(cancellationToken)` on each serving instance. Async price writes also await their cache refresh without blocking a thread on the refresh gate or SQL. Existing node values remain the fallback for currencies without an override. The Algolia plugin queues and coalesces committed price changes without content lookups on the ERP writer thread. Background processing resolves the affected products and performs reindexing when enabled. Other search indexes and page caches can subscribe to `Ekom.Events.PriceEvents.PriceChanged`. See [database price storage](database-price-storage.md) for fallback, precision, and switching back to node storage.
+
+### Atomic updates and concurrent editors
+
+Use `ApplyAsync` when all prices for a product must change together. Validation or a conflict rolls back the entire batch. Identical values are no-ops, including their timestamps and notifications.
+
+```csharp
+using Ekom.Models;
+
+await prices.ApplyAsync([
+    new PriceMutation(productKey, "Web", "en-US", 149.95m),
+    new PriceMutation(productKey, "Web", "en-GB", 119.95m),
+], cancellationToken);
+```
+
+ERP `SetPrice` and `SetPriceAsync` calls intentionally replace the current value. For edits based on a previously loaded override, use `CheckExpected: true, ExpectedPrice: loadedPrice` on `PriceMutation`. A null expected value means that no override should exist. A mismatch throws `PriceConflictException`; reload before retrying. The variant manager sends its original values and override baseline, writes only edited currencies, and reports a conflict if an edited override changed since loading. Older custom variant clients must supply `originalPriceValues` and `priceOverrides` in database mode.
+
+### Using the built-in Ekom importer
+
+`ImportProduct.Price` and `ImportVariant.Price` (the property name is singular) automatically use the configured storage. Existing integrations can continue passing their usual import payload:
+
+```csharp
+// Keep the normal product payload and identifier from your ERP mapping.
+importProduct.Price =
+[
+    new ImportPrice
+    {
+        StoreAlias = "Web",
+        Currency = "en-US",
+        Price = 49.95m,
+    },
+];
+
+importService.ProductUpdateSync(
+    importProduct,
+    parentKey: catalogRootKey,
+    mediaRootKey: mediaRootKey,
+    syncUser: -1);
+```
+
+With `UseDatabasePrices: true`, product and variant prices are written atomically through `Ekom.API.Prices.Apply` before the importer checks whether existing content is unchanged. The default content comparison hash excludes `Price`, so price-only changes update the table without saving or publishing the node. This applies to product/variant update methods and the product/variant steps of full synchronization. New nodes receive a stable key and validated table prices before their first save or publication. An invalid currency price aborts the entire price batch before content is saved. Content and price writes are separate transactions: if the subsequent content save fails, table rows may remain for that key. Retry with the same key or explicitly remove abandoned overrides; do not treat a failed content save as a successful import.
+
+Other content changes, media changes, or `forceUpdate: true` still use the normal save/publish behavior. When first enabling table mode, existing default comparison hashes may differ because they previously included prices; one content sync establishes the new hash. If you supply your own `Comparer`, it remains authoritative: keep prices out of that value to avoid content saves for price-only changes. Table prices are updated even when your custom comparer is unchanged. Missing prices leave existing table entries untouched.
+
+With the option disabled, prices stay on the node and remain part of normal default content change detection. Table writes and content saves are separate operations; a later content-save failure does not roll back table prices already applied to an existing node.
+
 ## Full synchronization is authoritative
 
 Treat `FullSync` as a desired-state operation:

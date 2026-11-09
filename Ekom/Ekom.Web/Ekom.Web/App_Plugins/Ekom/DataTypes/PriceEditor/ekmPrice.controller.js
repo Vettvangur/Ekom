@@ -5,7 +5,8 @@
     '$scope',
     'Ekom.Resources',
     '$routeParams',
-    function ($scope, ekmResources, $routeParams) {
+    '$http',
+    function ($scope, ekmResources, $routeParams, $http) {
 
       if ($routeParams.section !== 'content') { return; }
 
@@ -13,7 +14,7 @@
 
       $scope.fieldAlias = $scope.model.alias;
 
-      let currentPrices = angular.copy($scope.model.value);
+      let currentPrices = angular.copy($scope.model.value) || {};
 
       // Backward Compatability
       for (let key in currentPrices) {
@@ -26,6 +27,7 @@
       $scope.prices = {};
 
       var priceStructure = {};
+      var nodePrices = {};
 
 
       ekmResources.getStoresByNode($routeParams.id).then(function (stores) {
@@ -79,6 +81,8 @@
               priceObjs.forEach((obj) => {
 
                 updatePrice(priceStructure, storeAlias, obj.Currency, obj.Price);
+                var item = priceStructure[storeAlias].find(p => p.Currency === obj.Currency);
+                if (item && obj.EditId) item.EditId = obj.EditId;
 
               });
 
@@ -101,8 +105,38 @@
           }
         }
 
-        $scope.prices = priceStructure;
+        nodePrices = angular.copy(currentPrices);
+        var endpoint = Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint;
+        $scope.priceUrl = endpoint + 'PriceEditor/' + encodeURIComponent($routeParams.id) + '/' + encodeURIComponent($scope.fieldAlias);
+        $http.get(endpoint + 'Config').then(function (response) {
+          $scope.databasePrices = response.data.useDatabasePrices === true;
+          if (!$scope.databasePrices) { $scope.prices = priceStructure; return; }
+          return $http.get($scope.priceUrl).then(function (result) {
+            result.data.prices.forEach(function (row) {
+              var store = Object.keys(priceStructure).find(function (key) { return key.toLowerCase() === row.storeAlias.toLowerCase(); });
+              var price = store && priceStructure[store].find(function (item) { return item.Currency.toLowerCase() === row.currency.toLowerCase(); });
+              if (price && !price.EditId) price.Price = row.price;
+            });
+            $scope.prices = priceStructure;
+            $scope.priceStatus = '';
+          });
+        }).catch(function () { $scope.priceStatus = 'Could not load prices. Reload before editing.'; });
       });
+
+      $scope.changePrice = function (storeAlias, currency, price) {
+        if (!$scope.databasePrices) return;
+        if (price == null || !Number.isFinite(price) || price < 0) {
+          $scope.priceStatus = 'Enter a non-negative price.';
+          return;
+        }
+        var rows = nodePrices[storeAlias] || (nodePrices[storeAlias] = []);
+        var row = rows.find(item => item.Currency === currency);
+        if (!row) { row = { Currency: currency }; rows.push(row); }
+        row.Price = price;
+        row.EditId = window.crypto.randomUUID();
+        $scope.model.value = angular.copy(nodePrices);
+        $scope.priceStatus = '';
+      };
 
       function checkFormat(obj) {
         const keys = Object.keys(obj);
@@ -165,6 +199,7 @@
       }
 
       $scope.$on("formSubmitting", function () {
+        if ($scope.databasePrices) return;
         for (let storeAlias in $scope.prices) {
           $scope.prices[storeAlias].forEach(p => {
             if (p.Price == null || p.Price === '') {

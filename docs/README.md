@@ -20,6 +20,7 @@ For the product overview and ecosystem landing page, visit [ekomcommerce.com](ht
 ## Guides
 
 - [Catalog and products](guides/catalog-and-products.md)
+- [Database price storage](guides/database-price-storage.md)
 - [Stores](guides/stores.md)
 - [Orders and baskets](guides/orders-and-baskets.md)
 - [Order custom data](guides/order-custom-data.md)

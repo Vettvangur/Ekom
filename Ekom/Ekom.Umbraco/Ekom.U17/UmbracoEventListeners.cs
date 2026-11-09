@@ -16,6 +16,7 @@ using Umbraco.Cms.Core.Models.Entities;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
+using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Extensions;
 
 namespace Ekom.Umb;
@@ -45,8 +46,17 @@ internal sealed class UmbracoEventListeners :
     private readonly Ekom.Services.INodeService _nodeService;
     private readonly RevalidateService _revalidateService;
 
+    private readonly IScopeProvider _priceScopeProvider;
+    private readonly IScopeAccessor _priceScopeAccessor;
+    private readonly ISecurityService _priceSecurity;
+    private readonly IManagerAccessService _priceAccess;
+
     public UmbracoEventListeners(
         ILogger<UmbracoEventListeners> logger,
+        IScopeProvider priceScopeProvider,
+        IScopeAccessor priceScopeAccessor,
+        ISecurityService priceSecurity,
+        IManagerAccessService priceAccess,
         Configuration config,
         IBaseCache<IStore> storeCache,
         IStoreDomainCache storeDomainCache,
@@ -59,6 +69,10 @@ internal sealed class UmbracoEventListeners :
         RevalidateService revalidateService)
     {
         _logger = logger;
+        _priceScopeProvider = priceScopeProvider;
+        _priceScopeAccessor = priceScopeAccessor;
+        _priceSecurity = priceSecurity;
+        _priceAccess = priceAccess;
         _config = config;
         _storeCache = storeCache;
         _storeDomainCache = storeDomainCache;
@@ -73,6 +87,8 @@ internal sealed class UmbracoEventListeners :
 
     public async Task HandleAsync(ContentSavingNotification notification, CancellationToken cancellationToken)
     {
+        if (notification.Cancel) return;
+
         foreach (var content in notification.SavedEntities)
         {
             if (!content.ContentType.Alias.StartsWith("ekm", StringComparison.OrdinalIgnoreCase))
@@ -90,6 +106,8 @@ internal sealed class UmbracoEventListeners :
             await UpdateStockAsync(content, cancellationToken).ConfigureAwait(false);
             await UpdateWarehouseStockAsync(content, cancellationToken).ConfigureAwait(false);
         }
+        // Stock uses separate connections; finish those writes before enlisting prices.
+        await Ekom.Umb.PriceSavingNotifications.ApplyAsync(notification, _priceSecurity, _priceAccess, _logger, _priceScopeProvider, _priceScopeAccessor, cancellationToken).ConfigureAwait(false);
     }
 
     public Task HandleAsync(ContentPublishedNotification notification, CancellationToken cancellationToken)

@@ -17,6 +17,7 @@ using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Web;
+using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Extensions;
 
 namespace Ekom.App_Start;
@@ -51,8 +52,17 @@ class UmbracoEventListeners :
     /// <summary>
     /// Initializes a new instance of the <see cref="UmbracoEventListeners"/> class.
     /// </summary>
+    private readonly IScopeProvider _priceScopeProvider;
+    private readonly IScopeAccessor _priceScopeAccessor;
+    private readonly ISecurityService _priceSecurity;
+    private readonly IManagerAccessService _priceAccess;
+
     public UmbracoEventListeners(
         ILogger<UmbracoEventListeners> logger,
+        IScopeProvider priceScopeProvider,
+        IScopeAccessor priceScopeAccessor,
+        ISecurityService priceSecurity,
+        IManagerAccessService priceAccess,
         Configuration config,
         IBaseCache<IStore> storeCache,
         IStoreDomainCache storeDomainCache,
@@ -68,6 +78,10 @@ class UmbracoEventListeners :
         IEkomRichTextResolver richTextResolver)
     {
         _logger = logger;
+        _priceScopeProvider = priceScopeProvider;
+        _priceScopeAccessor = priceScopeAccessor;
+        _priceSecurity = priceSecurity;
+        _priceAccess = priceAccess;
         _config = config;
         _storeCache = storeCache;
         _storeDomainCache = storeDomainCache;
@@ -84,6 +98,8 @@ class UmbracoEventListeners :
     }
     public async Task HandleAsync(ContentSavingNotification e, CancellationToken ct)
     {
+        if (e.Cancel) return;
+
         foreach (var content in e.SavedEntities)
         {
             if (content.ContentType.Alias.StartsWith("ekm"))
@@ -147,6 +163,8 @@ class UmbracoEventListeners :
                 }
             }
         }
+        // Stock uses separate connections; finish those writes before enlisting prices.
+        await Ekom.Umb.PriceSavingNotifications.ApplyAsync(e, _priceSecurity, _priceAccess, _logger, _priceScopeProvider, _priceScopeAccessor, ct).ConfigureAwait(false);
     }
 
     public async Task HandleAsync(ContentPublishedNotification args, CancellationToken cancellationToken)

@@ -69,6 +69,8 @@ internal sealed class EkomCacheInitializer
                 using var cacheInitializationScope = CacheInitializationScope.Begin();
                 using var priceCacheScope = PriceCache.BeginBulkInvalidation();
 
+                _factory.GetRequiredService<Ekom.API.Prices>().FillCache();
+
                 foreach (var cacheEntry in _config.CacheList.Value)
                 {
                     cacheEntry.FillCache();

@@ -19,6 +19,8 @@ internal sealed class VariantAppService : IVariantAppService
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
     private readonly INodeService _nodeService;
+    private readonly ISecurityService _security;
+    private readonly IManagerAccessService _access;
 #if UMBRACO_18
     private readonly ILanguageService _languageService;
 #else
@@ -35,11 +37,13 @@ internal sealed class VariantAppService : IVariantAppService
 #else
         ILocalizationService localizationService,
 #endif
-        IOptions<EkomOptions> options)
+        IOptions<EkomOptions> options, ISecurityService security, IManagerAccessService access)
     {
         _contentService = contentService;
         _contentTypeService = contentTypeService;
         _nodeService = nodeService;
+        _security = security;
+        _access = access;
 #if UMBRACO_18
         _languageService = languageService;
 #else
@@ -94,6 +98,7 @@ internal sealed class VariantAppService : IVariantAppService
         var languages = LoadVariantLanguages(stores);
 
         ApplyVariantValues(variant, request.Title, request.Sku, request.Images, request.Price, request.Stock, stores, languages);
+        ApplyDatabasePrices(variant, new VariantManagerVariant { PriceValues = ParsePriceValues(request.Price) }, stores);
         SaveContent(variant, request.Publish);
         await ApplyStockValuesAsync(variant.Key, ParseStockValues(request.Stock)).ConfigureAwait(false);
 
@@ -109,6 +114,14 @@ internal sealed class VariantAppService : IVariantAppService
         var languages = LoadVariantLanguages(stores);
         var groupFieldDefinitions = GetVariantGroupFieldDefinitions();
         var variantFieldDefinitions = GetVariantFieldDefinitions();
+
+        // Validate the complete submitted form before any price or content writes.
+        foreach (var groupModel in request.Groups)
+        {
+            ValidateCustomFields(groupModel.CustomFields, groupFieldDefinitions);
+            foreach (var model in groupModel.Variants)
+                ValidateCustomFields(model.CustomFields, variantFieldDefinitions);
+        }
 
         foreach (var groupModel in request.Groups)
         {
@@ -135,6 +148,8 @@ internal sealed class VariantAppService : IVariantAppService
                 {
                     continue;
                 }
+
+                ApplyDatabasePrices(variant, variantModel, stores);
 
                 if (isNewVariant || HasVariantContentChanges(variant, variantModel, stores, variantFieldDefinitions, languages))
                 {
@@ -186,6 +201,9 @@ internal sealed class VariantAppService : IVariantAppService
         }
 
         var variantFieldDefinitions = GetVariantFieldDefinitions();
+        ValidateCustomFields(request.Variant.CustomFields, variantFieldDefinitions);
+        ApplyDatabasePrices(variant, request.Variant, stores);
+
         if (request.Variant.Id <= 0 || HasVariantContentChanges(variant, request.Variant, stores, variantFieldDefinitions, languages))
         {
             ApplyVariantValues(variant, request.Variant, stores, variantFieldDefinitions, languages);
@@ -244,6 +262,9 @@ internal sealed class VariantAppService : IVariantAppService
         {
             throw new Exceptions.HttpResponseException(HttpStatusCode.BadRequest);
         }
+
+        if (!_security.CanEditContent(new UmbracoContent { Id = content.Id, Key = content.Key, Path = content.Path }))
+            throw new Exceptions.HttpResponseException(HttpStatusCode.Forbidden);
 
         return content;
     }
@@ -323,6 +344,8 @@ internal sealed class VariantAppService : IVariantAppService
         IReadOnlyList<UmbracoLanguage> languages,
         IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
     {
+        if (Configuration.Instance.UseDatabasePrices)
+            stores = stores.Where(store => _access.CanAccessStore(store.Alias)).ToList();
         var titleValues = GetTitleValues(variant, "title", languages);
 
         return new VariantManagerVariant
@@ -335,6 +358,10 @@ internal sealed class VariantAppService : IVariantAppService
             Sku = GetStringValue(variant, "sku"),
             Images = GetStringValue(variant, "images"),
             PriceValues = GetPriceValues(variant, stores),
+            OriginalPriceValues = GetPriceValues(variant, stores),
+            PriceOverrides = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance.Get(variant.Key)
+                .Where(row => stores.Any(store => store.Alias.Equals(row.StoreAlias, StringComparison.OrdinalIgnoreCase))
+                    && _access.CanAccessStore(row.StoreAlias)).ToList() : null,
             StockValues = GetStockValues(variant),
             CustomFields = GetCustomFields(variant, fieldDefinitions),
             SortOrder = variant.SortOrder,
@@ -379,7 +406,7 @@ internal sealed class VariantAppService : IVariantAppService
         return _contentService.Create(title, group.Id, "ekmProductVariant");
     }
 
-    private static void ApplyVariantValues(
+    private void ApplyVariantValues(
         IContent variant,
         VariantManagerVariant variantModel,
         IReadOnlyList<VariantManagerStore> stores,
@@ -393,12 +420,41 @@ internal sealed class VariantAppService : IVariantAppService
         variant.SetValue("sku", variantModel.Sku ?? string.Empty);
         variant.SetValue("images", variantModel.Images ?? string.Empty);
         ApplyCustomFields(variant, variantModel.CustomFields, fieldDefinitions);
-        ApplyPriceValues(variant, variantModel.PriceValues, stores);
+        if (!Configuration.Instance.UseDatabasePrices)
+            ApplyPriceValues(variant, variantModel.PriceValues, stores);
+    }
+
+    private void ApplyDatabasePrices(IContent variant, VariantManagerVariant model, IReadOnlyList<VariantManagerStore> stores)
+    {
+        if (!Configuration.Instance.UseDatabasePrices) return;
+        if (variant.Key == Guid.Empty) variant.Key = Guid.NewGuid();
+        try
+        {
+            var changes = PriceEdits.Create(variant.Key, NormalizePriceValues(model.PriceValues, stores),
+                model.OriginalPriceValues, model.PriceOverrides, model.Id <= 0);
+            foreach (var change in changes)
+            {
+                if (!_access.CanAccessStore(change.StoreAlias)) throw new Exceptions.HttpResponseException(HttpStatusCode.Forbidden);
+            }
+            if (changes.Count > 0)
+            {
+                var permissionContent = variant.Id > 0 ? variant : _contentService.GetById(variant.ParentId);
+                if (permissionContent == null || !_security.CanEditPrices(new UmbracoContent
+                    { Id = permissionContent.Id, Key = permissionContent.Key, Path = permissionContent.Path }))
+                    throw new Exceptions.HttpResponseException(HttpStatusCode.Forbidden);
+            }
+            API.Prices.Instance.Apply(changes);
+        }
+        catch (Exceptions.PriceConflictException)
+        {
+            throw new Exceptions.HttpResponseException(HttpStatusCode.Conflict);
+        }
     }
 
     private static void ApplyPriceValues(IContent variant, CurrencyPriceRoot? priceValues, IReadOnlyList<VariantManagerStore> stores)
     {
-        variant.SetValue("price", JsonConvert.SerializeObject(NormalizePriceValues(GetPriceValues(variant, stores), stores)));
+        if (!Configuration.Instance.UseDatabasePrices)
+            variant.SetValue("price", JsonConvert.SerializeObject(NormalizePriceValues(GetPriceValues(variant, stores), stores)));
 
         foreach (var priceValue in NormalizePriceValues(priceValues, stores))
         {
@@ -423,7 +479,7 @@ internal sealed class VariantAppService : IVariantAppService
             || !string.Equals(GetStringValue(variant, "images"), variantModel.Images ?? string.Empty, StringComparison.Ordinal)
             || variant.SortOrder != variantModel.SortOrder
             || !CustomFieldsEqual(variant, variantModel.CustomFields, fieldDefinitions)
-            || !PriceValuesEqual(GetPriceValues(variant, stores), variantModel.PriceValues, stores);
+            || (!Configuration.Instance.UseDatabasePrices && !PriceValuesEqual(GetPriceValues(variant, stores), variantModel.PriceValues, stores));
     }
 
     private static bool DictionariesEqual(IDictionary<string, string> left, IDictionary<string, string> right)
@@ -541,6 +597,17 @@ internal sealed class VariantAppService : IVariantAppService
             })
             .ToList();
 
+    private static void ValidateCustomFields(IReadOnlyList<VariantManagerCustomField>? customFields,
+        IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
+    {
+        foreach (var field in fieldDefinitions)
+        {
+            var value = customFields?.FirstOrDefault(x => x.Alias.Equals(field.Alias, StringComparison.OrdinalIgnoreCase))?.Value;
+            if (field.Required && string.IsNullOrWhiteSpace(value))
+                throw new Exceptions.HttpResponseException(HttpStatusCode.BadRequest);
+        }
+    }
+
     private static void ApplyCustomFields(IContent content, IReadOnlyList<VariantManagerCustomField>? customFields, IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
     {
         var values = (customFields ?? Array.Empty<VariantManagerCustomField>())
@@ -573,7 +640,8 @@ internal sealed class VariantAppService : IVariantAppService
 
     private IReadOnlyList<VariantManagerStore> LoadVariantStores(IContent product)
     {
-        var enabledStores = GetEnabledStores(product).ToList();
+        var enabledStores = GetEnabledStores(product)
+            .Where(store => !Configuration.Instance.UseDatabasePrices || _access.CanAccessStore(store.Alias)).ToList();
 
         return enabledStores
             .Select(store => new VariantManagerStore
@@ -847,6 +915,10 @@ internal sealed class VariantAppService : IVariantAppService
     {
         if (publish)
         {
+            var permissionContent = content.Id > 0 ? content : _contentService.GetById(content.ParentId);
+            if (permissionContent == null || !_security.CanEditPrices(new UmbracoContent
+                { Id = permissionContent.Id, Key = permissionContent.Key, Path = permissionContent.Path }))
+                throw new Exceptions.HttpResponseException(HttpStatusCode.Forbidden);
             _contentService.Save(content);
             _contentService.Publish(content, ["*"]);
             return;
