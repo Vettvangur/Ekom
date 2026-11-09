@@ -1,7 +1,7 @@
-var re = Object.defineProperty;
-var ae = (o, r, e) => r in o ? re(o, r, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[r] = e;
-var h = (o, r, e) => ae(o, typeof r != "symbol" ? r + "" : r, e);
-const ie = (o) => class extends o {
+var ae = Object.defineProperty;
+var ie = (s, r, e) => r in s ? ae(s, r, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[r] = e;
+var g = (s, r, e) => ie(s, typeof r != "symbol" ? r + "" : r, e);
+const se = (s) => class extends s {
   connectedCallback() {
   }
   disconnectedCallback() {
@@ -30,7 +30,7 @@ const ie = (o) => class extends o {
   paymentProviders: [],
   shippingFilterProviders: []
 };
-class P {
+class M {
   async config() {
     return this.getJson("/ekom/backoffice/Config");
   }
@@ -96,7 +96,7 @@ class P {
       headers: { Accept: "application/json, application/octet-stream" }
     });
     if (!t.ok)
-      throw await P.createError(t, "Order action failed.");
+      throw await M.createError(t, "Order action failed.");
     return t;
   }
   async changeOrderStatus(r, e, t) {
@@ -118,7 +118,7 @@ class P {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await P.createError(t, "Error removing order line.");
+      throw await M.createError(t, "Error removing order line.");
     return t.json();
   }
   async charts(r, e) {
@@ -146,7 +146,7 @@ class P {
       headers: { Accept: "application/json" }
     });
     if (!a.ok)
-      throw await P.createError(a, "Request failed.");
+      throw await M.createError(a, "Request failed.");
     return a.json();
   }
   async getBlob(r, e) {
@@ -155,7 +155,7 @@ class P {
       headers: { Accept: "text/csv, application/octet-stream" }
     });
     if (!t.ok)
-      throw await P.createError(t, "Request failed.");
+      throw await M.createError(t, "Request failed.");
     return t.blob();
   }
   async postJson(r, e) {
@@ -165,7 +165,7 @@ class P {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await P.createError(t, "Request failed.");
+      throw await M.createError(t, "Request failed.");
     return t.json();
   }
   async postBody(r, e) {
@@ -179,7 +179,7 @@ class P {
       body: JSON.stringify(e)
     });
     if (!t.ok)
-      throw await P.createError(t, "Request failed.");
+      throw await M.createError(t, "Request failed.");
     return t.json();
   }
   static async createError(r, e) {
@@ -192,46 +192,46 @@ class P {
     return new Error(a || `${e} Status ${r.status}.`);
   }
 }
-function V(o) {
-  if (!o)
+function V(s) {
+  if (!s)
     return "";
   const r = new URLSearchParams();
-  for (const [t, a] of Object.entries(o))
+  for (const [t, a] of Object.entries(s))
     r.set(t, a == null ? "" : String(a));
   const e = r.toString();
   return e ? `?${e}` : "";
 }
-function Z(o) {
-  const r = String(o.getMonth() + 1).padStart(2, "0"), e = String(o.getDate()).padStart(2, "0");
-  return `${o.getFullYear()}-${r}-${e}`;
+function Z(s) {
+  const r = String(s.getMonth() + 1).padStart(2, "0"), e = String(s.getDate()).padStart(2, "0");
+  return `${s.getFullYear()}-${r}-${e}`;
 }
-function p(o) {
-  return String(o ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+function p(s) {
+  return String(s ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function Q(o) {
-  return o.enumValue || o.value || "";
+function Q(s) {
+  return s.enumValue || s.value || "";
 }
-function se(o, r) {
+function ne(s, r) {
   const t = [], a = Math.max(r || 1, 1);
-  let s;
-  o <= Math.floor(5 / 2) ? s = 1 : o + Math.floor(5 / 2) >= a ? s = Math.max(a - 5 + 1, 1) : s = o - Math.floor(5 / 2);
-  for (let d = 0; d < 5; d += 1) {
-    const n = s + d;
-    n <= a && t.push(n);
+  let o;
+  s <= Math.floor(5 / 2) ? o = 1 : s + Math.floor(5 / 2) >= a ? o = Math.max(a - 5 + 1, 1) : o = s - Math.floor(5 / 2);
+  for (let n = 0; n < 5; n += 1) {
+    const d = o + n;
+    d <= a && t.push(d);
   }
   return t.length && Number(t[t.length - 1]) < a && t.push(`...${a}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
 }
-const ne = `
+const de = `
   .ekmOrderCustomData { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; padding: 14px 16px; border: 1px solid #e1e3e8; border-radius: 12px; }
   .ekmOrderCustomData__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 7px 12px; border: 1px solid #e1e3e8; border-radius: 8px; background: #f6f7f9; line-height: 1.5; break-inside: avoid; }
   .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
   .ekmOrderCustomData__value { margin: 0; min-width: 0; color: #252830; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
 `;
-function de(o, r) {
-  const e = URL.createObjectURL(o), t = document.createElement("a");
+function le(s, r) {
+  const e = URL.createObjectURL(s), t = document.createElement("a");
   t.href = e, t.download = r, t.addEventListener("click", (a) => a.stopPropagation()), document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(e);
 }
-const le = `
+const ce = `
 .ekmOrderLineProduct { display: flex; align-items: flex-start; gap: 14px; min-width: 0; width: 100%; }
 .ekmOrderLineProduct__details { min-width: 0; overflow-wrap: anywhere; }
 .ekmOrderLineProduct__details > span:first-child, .ekmOrderLineProduct__details > div:first-child { font-weight: 600; }
@@ -243,7 +243,7 @@ const le = `
 .ekmOrderLineThumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f6f6f8; }
 .ekmOrderLineThumbnail img[hidden] { display: none; }
 
-  ${ne}
+  ${de}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -384,120 +384,128 @@ const le = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-function z(o, r) {
+function z(s, r) {
   const e = r == null ? void 0 : r.isoCurrencySymbol, t = (r == null ? void 0 : r.currencyDecimalDigits) ?? 2;
   return new Intl.NumberFormat(void 0, {
     minimumFractionDigits: t,
     maximumFractionDigits: t,
     ...e && /^[A-Z]{3}$/.test(e) ? { style: "currency", currency: e, currencyDisplay: "code" } : {}
-  }).format(o);
+  }).format(s);
 }
-function ce(o, r, e, t = {}) {
+function ue(s, r, e, t = {}) {
   var W;
-  const a = o.getBoundingClientRect(), s = window.devicePixelRatio || 1, d = a.width || 300, n = a.height || 320;
-  o.width = d * s, o.height = n * s;
-  const i = o.getContext("2d");
+  const a = s.getBoundingClientRect(), o = window.devicePixelRatio || 1, n = a.width || 300, d = a.height || 320;
+  s.width = n * o, s.height = d * o;
+  const i = s.getContext("2d");
   if (!i) return;
-  i.scale(s, s), i.font = "12px sans-serif";
-  const S = r.points || [], l = S.map((u) => u.y == null ? null : Number(u.y)), b = ((W = t.comparison) == null ? void 0 : W.points) || [], g = [...l, ...b.map((u) => u.y)].filter((u) => u != null), c = Math.min(0, ...g), v = Math.max(1, ...g), _ = t.integer ? Math.ceil(v / 4) * 4 : v, D = (u) => t.formatValue ? t.formatValue(u) : t.currency ? z(u, t.currency) : u.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), T = Array.from({ length: 5 }, (u, y) => _ - (_ - c) * y / 4), C = Math.max(48, ...T.map((u) => i.measureText(D(u)).width + 12)), L = d - 16, U = 20, A = n - 52, k = S.map((u, y) => {
+  i.scale(o, o), i.font = "12px sans-serif";
+  const S = r.points || [], l = S.map((u) => u.y == null ? null : Number(u.y)), h = ((W = t.comparison) == null ? void 0 : W.points) || [], f = [...l, ...h.map((u) => u.y)].filter((u) => u != null), c = Math.min(0, ...f), v = Math.max(1, ...f), _ = t.integer ? Math.ceil(v / 4) * 4 : v, D = (u) => t.formatValue ? t.formatValue(u) : t.currency ? z(u, t.currency) : u.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), T = Array.from({ length: 5 }, (u, y) => _ - (_ - c) * y / 4), C = Math.max(48, ...T.map((u) => i.measureText(D(u)).width + 12)), L = n - 16, U = 20, P = d - 52, k = S.map((u, y) => {
     var O;
     return {
       x: S.length > 1 ? C + (L - C) * y / (S.length - 1) : (C + L) / 2,
-      y: l[y] == null ? null : A - (l[y] - c) / (_ - c) * (A - U),
+      y: l[y] == null ? null : P - (l[y] - c) / (_ - c) * (P - U),
       date: u.x || ((O = r.labels) == null ? void 0 : O[y]) || "",
       value: l[y]
     };
   }), G = (u = -1) => {
-    i.clearRect(0, 0, d, n), i.font = "12px sans-serif", i.lineWidth = 1, i.textAlign = "right", T.forEach((m, f) => {
-      const w = U + (A - U) * f / 4;
+    i.clearRect(0, 0, n, d), i.font = "12px sans-serif", i.lineWidth = 1, i.textAlign = "right", T.forEach((m, b) => {
+      const w = U + (P - U) * b / 4;
       i.fillStyle = "#555", i.fillText(D(m), C - 8, w + 4), i.strokeStyle = "#e5e5e5", i.beginPath(), i.moveTo(C, w), i.lineTo(L, w), i.stroke();
     });
-    const y = Math.max(90, ...k.map((m) => i.measureText(m.date).width + 16)), O = Math.max(2, Math.floor((L - C) / y)), q = new Set(Array.from({ length: Math.min(O, k.length) }, (m, f) => Math.round(f * (k.length - 1) / Math.max(1, Math.min(O, k.length) - 1))));
-    i.fillStyle = "#555", k.forEach((m, f) => {
-      q.has(f) && (i.textAlign = k.length === 1 ? "center" : f === 0 ? "left" : f === k.length - 1 ? "right" : "center", i.fillText(m.date, m.x, A + 24));
+    const y = Math.max(90, ...k.map((m) => i.measureText(m.date).width + 16)), O = Math.max(2, Math.floor((L - C) / y)), q = new Set(Array.from({ length: Math.min(O, k.length) }, (m, b) => Math.round(b * (k.length - 1) / Math.max(1, Math.min(O, k.length) - 1))));
+    i.fillStyle = "#555", k.forEach((m, b) => {
+      q.has(b) && (i.textAlign = k.length === 1 ? "center" : b === 0 ? "left" : b === k.length - 1 ? "right" : "center", i.fillText(m.date, m.x, P + 24));
     });
-    const j = (m, f) => {
+    const j = (m, b) => {
       var R, F;
-      i.strokeStyle = f ? "#9298a5" : e, i.lineWidth = 2, (R = i.setLineDash) == null || R.call(i, f ? [6, 4] : []), i.beginPath();
+      i.strokeStyle = b ? "#9298a5" : e, i.lineWidth = 2, (R = i.setLineDash) == null || R.call(i, b ? [6, 4] : []), i.beginPath();
       let w = !1;
-      m.forEach((M) => {
-        if (M.y == null) {
+      m.forEach((A) => {
+        if (A.y == null) {
           w = !1;
           return;
         }
-        w ? i.lineTo(M.x, M.y) : i.moveTo(M.x, M.y), w = !0;
+        w ? i.lineTo(A.x, A.y) : i.moveTo(A.x, A.y), w = !0;
       }), i.stroke(), (F = i.setLineDash) == null || F.call(i, []);
     };
-    b.length && j(k.map((m, f) => {
+    h.length && j(k.map((m, b) => {
       var w;
       return {
         x: m.x,
-        y: ((w = b[f]) == null ? void 0 : w.y) == null ? null : A - (Number(b[f].y) - c) / (_ - c) * (A - U)
+        y: ((w = h[b]) == null ? void 0 : w.y) == null ? null : P - (Number(h[b].y) - c) / (_ - c) * (P - U)
       };
-    }), !0), j(k, !1), i.fillStyle = e, k.forEach((m, f) => {
-      m.y != null && (i.beginPath(), i.arc(m.x, m.y, f === u ? 5 : 3, 0, Math.PI * 2), i.fill());
-    }), k.length || (i.textAlign = "center", i.fillText("No data for this period", (C + L) / 2, n / 2));
+    }), !0), j(k, !1), i.fillStyle = e, k.forEach((m, b) => {
+      m.y != null && (i.beginPath(), i.arc(m.x, m.y, b === u ? 5 : 3, 0, Math.PI * 2), i.fill());
+    }), k.length || (i.textAlign = "center", i.fillText("No data for this period", (C + L) / 2, d / 2));
     const $ = k[u];
     if ($) {
       const m = [$.date, $.value == null ? "—" : D($.value)];
-      if (b[u]) {
-        const E = b[u];
+      if (h[u]) {
+        const E = h[u];
         m.push(`Previous: ${E.x || ""}`, E.y == null ? "—" : D(E.y));
       }
-      const f = Math.max(...m.map((E) => i.measureText(E).width)) + 20, w = Math.max(0, Math.min(d - f, $.x - f / 2)), R = m.length * 18 + 12, F = $.y ?? A, M = Math.max(0, Math.min(n - R, F > R + 20 ? F - R - 12 : F + 12));
-      i.fillStyle = "#222", i.fillRect(w, M, f, R), i.fillStyle = "#fff", i.textAlign = "left", m.forEach((E, te) => i.fillText(E, w + 10, M + 19 + te * 18));
+      const b = Math.max(...m.map((E) => i.measureText(E).width)) + 20, w = Math.max(0, Math.min(n - b, $.x - b / 2)), R = m.length * 18 + 12, F = $.y ?? P, A = Math.max(0, Math.min(d - R, F > R + 20 ? F - R - 12 : F + 12));
+      i.fillStyle = "#222", i.fillRect(w, A, b, R), i.fillStyle = "#fff", i.textAlign = "left", m.forEach((E, re) => i.fillText(E, w + 10, A + 19 + re * 18));
     }
   }, Y = (u) => {
-    const y = o.getBoundingClientRect(), O = (u.clientX - y.left) * d / y.width, q = (u.clientY - y.top) * n / y.height;
+    const y = s.getBoundingClientRect(), O = (u.clientX - y.left) * n / y.width, q = (u.clientY - y.top) * d / y.height;
     if (t.columnHover)
-      return !k.length || O < C || O > L || q < U || q > A ? -1 : k.length === 1 ? 0 : Math.round((O - C) / (L - C) * (k.length - 1));
+      return !k.length || O < C || O > L || q < U || q > P ? -1 : k.length === 1 ? 0 : Math.round((O - C) / (L - C) * (k.length - 1));
     let j = -1, $ = 16;
-    return k.forEach((m, f) => {
+    return k.forEach((m, b) => {
       if (m.y == null) return;
       const w = Math.hypot(m.x - O, m.y - q);
-      w < $ && (j = f, $ = w);
+      w < $ && (j = b, $ = w);
     }), j;
   };
-  o.onmousemove = (u) => {
+  s.onmousemove = (u) => {
     const y = Y(u);
-    o.style.cursor = y >= 0 ? "pointer" : "default", G(y);
-  }, o.onclick = t.onSelect ? (u) => {
+    s.style.cursor = y >= 0 ? "pointer" : "default", G(y);
+  }, s.onclick = t.onSelect ? (u) => {
     var O;
     const y = Y(u);
     y >= 0 && ((O = t.onSelect) == null || O.call(t, y));
-  } : null, o.onmouseleave = () => {
-    o.style.cursor = "default", G();
+  } : null, s.onmouseleave = () => {
+    s.style.cursor = "default", G();
   }, G();
 }
-const J = 864e5, N = (o) => o.toISOString().slice(0, 10), B = (o) => /* @__PURE__ */ new Date(`${o}T00:00:00Z`);
-function ue(o, r) {
-  const e = B(o), t = B(r), a = Math.round((t.getTime() - e.getTime()) / J) + 1;
+const J = 864e5, N = (s) => s.toISOString().slice(0, 10), B = (s) => /* @__PURE__ */ new Date(`${s}T00:00:00Z`);
+function pe(s, r) {
+  const e = B(s), t = B(r), a = Math.round((t.getTime() - e.getTime()) / J) + 1;
   return { dateFrom: N(new Date(e.getTime() - a * J)), dateTo: N(new Date(e.getTime() - J)) };
 }
-function pe(o, r = /* @__PURE__ */ new Date()) {
+function te(s, r = /* @__PURE__ */ new Date()) {
   const e = new Date(Date.UTC(r.getFullYear(), r.getMonth(), r.getDate())), t = new Date(e);
-  return o === "7" && t.setUTCDate(t.getUTCDate() - 6), o === "30" && t.setUTCDate(t.getUTCDate() - 29), o === "month" && t.setUTCDate(1), o === "year" && (t.setUTCMonth(0), t.setUTCDate(1)), { dateFrom: N(t), dateTo: N(e) };
+  return s === "7" && t.setUTCDate(t.getUTCDate() - 6), s === "30" && t.setUTCDate(t.getUTCDate() - 29), s === "month" && t.setUTCDate(1), s === "year" && (t.setUTCMonth(0), t.setUTCDate(1)), { dateFrom: N(t), dateTo: N(e) };
 }
-function me(o, r, e) {
-  var d, n, i, S, l;
-  const t = [], a = o.ordersChart.points;
-  let s = 0;
-  for (; s < a.length; ) {
-    const b = s, g = a[s].x, c = B(g);
+function me(s, r, e, t = /* @__PURE__ */ new Date()) {
+  if (e === "") return "";
+  const a = ["today", "7", "30", "month", "year"];
+  return e && a.includes(e) && a.unshift(e), a.find((o) => {
+    const n = te(o, t);
+    return n.dateFrom === s && n.dateTo === r;
+  }) || "";
+}
+function he(s, r, e) {
+  var n, d, i, S, l;
+  const t = [], a = s.ordersChart.points;
+  let o = 0;
+  for (; o < a.length; ) {
+    const h = o, f = a[o].x, c = B(f);
     e === "month" ? (c.setUTCDate(1), c.setUTCMonth(c.getUTCMonth() + 1)) : e === "week" ? c.setUTCDate(c.getUTCDate() + (7 - (c.getUTCDay() + 6) % 7)) : c.setUTCDate(c.getUTCDate() + 1);
     let v = 0, _ = 0, D = 0, T = 0;
     do
-      v += Number(((d = o.revenueChart.points[s]) == null ? void 0 : d.y) || 0), _ += Number(a[s].y || 0), D += Number(((n = r == null ? void 0 : r.revenueChart.points[s]) == null ? void 0 : n.y) || 0), T += Number(((i = r == null ? void 0 : r.ordersChart.points[s]) == null ? void 0 : i.y) || 0), s++;
-    while (s < a.length && B(a[s].x).getTime() < c.getTime());
+      v += Number(((n = s.revenueChart.points[o]) == null ? void 0 : n.y) || 0), _ += Number(a[o].y || 0), D += Number(((d = r == null ? void 0 : r.revenueChart.points[o]) == null ? void 0 : d.y) || 0), T += Number(((i = r == null ? void 0 : r.ordersChart.points[o]) == null ? void 0 : i.y) || 0), o++;
+    while (o < a.length && B(a[o].x).getTime() < c.getTime());
     t.push({
-      start: g,
-      end: a[s - 1].x,
+      start: f,
+      end: a[o - 1].x,
       amount: v,
       orders: _,
       average: _ ? v / _ : null,
       ...r ? {
-        previousStart: (S = r.ordersChart.points[b]) == null ? void 0 : S.x,
-        previousEnd: (l = r.ordersChart.points[s - 1]) == null ? void 0 : l.x,
+        previousStart: (S = r.ordersChart.points[h]) == null ? void 0 : S.x,
+        previousEnd: (l = r.ordersChart.points[o - 1]) == null ? void 0 : l.x,
         previousAmount: D,
         previousOrders: T,
         previousAverage: T ? D / T : null
@@ -506,40 +514,41 @@ function me(o, r, e) {
   }
   return t;
 }
-function X(o) {
-  const r = o.revenueChart.points.reduce((t, a) => t + Number(a.y || 0), 0), e = o.ordersChart.points.reduce((t, a) => t + Number(a.y || 0), 0);
+function X(s) {
+  const r = s.revenueChart.points.reduce((t, a) => t + Number(a.y || 0), 0), e = s.ordersChart.points.reduce((t, a) => t + Number(a.y || 0), 0);
   return { amount: r, orders: e, average: e ? r / e : null };
 }
-function K(o, r) {
-  if (o == null || r == null) return "No comparison available";
-  if (r === 0) return o === 0 ? "No change" : "No prior value";
-  const e = (o - r) / Math.abs(r) * 100;
+function K(s, r) {
+  if (s == null || r == null) return "No comparison available";
+  if (r === 0) return s === 0 ? "No change" : "No prior value";
+  const e = (s - r) / Math.abs(r) * 100;
   return `${e > 0 ? "+" : ""}${e.toLocaleString(void 0, { maximumFractionDigits: 1 })}%`;
 }
-class he extends ie(HTMLElement) {
+class ge extends se(HTMLElement) {
   constructor() {
     super(...arguments);
-    h(this, "api", new P());
-    h(this, "loading", !0);
-    h(this, "loadingMostSoldProducts", !1);
-    h(this, "error", "");
-    h(this, "productError", "");
-    h(this, "chartData");
-    h(this, "previousData");
-    h(this, "chartFilters");
-    h(this, "mostSoldProducts", { products: [], count: 0, totalPages: 0, page: 1 });
-    h(this, "pageMostSoldProducts", 1);
-    h(this, "resizeObserver");
-    h(this, "chartRequest", 0);
-    h(this, "productRequest", 0);
-    h(this, "chartAbort");
-    h(this, "productAbort");
-    h(this, "disposed", !1);
-    h(this, "productsVisible", !1);
-    h(this, "metric", "amount");
-    h(this, "grouping", "day");
-    h(this, "compare", !0);
-    h(this, "table", !1);
+    g(this, "api", new M());
+    g(this, "loading", !0);
+    g(this, "loadingMostSoldProducts", !1);
+    g(this, "error", "");
+    g(this, "productError", "");
+    g(this, "chartData");
+    g(this, "previousData");
+    g(this, "chartFilters");
+    g(this, "mostSoldProducts", { products: [], count: 0, totalPages: 0, page: 1 });
+    g(this, "pageMostSoldProducts", 1);
+    g(this, "resizeObserver");
+    g(this, "chartRequest", 0);
+    g(this, "productRequest", 0);
+    g(this, "chartAbort");
+    g(this, "productAbort");
+    g(this, "disposed", !1);
+    g(this, "productsVisible", !1);
+    g(this, "metric", "amount");
+    g(this, "grouping", "day");
+    g(this, "compare", !0);
+    g(this, "table", !1);
+    g(this, "datePreset");
   }
   connectedCallback() {
     if (super.connectedCallback(), this.disposed = !1, this.hasAttribute("classic"))
@@ -565,7 +574,7 @@ class he extends ie(HTMLElement) {
     try {
       const [t, a] = await Promise.all([this.api.statusList(), this.api.stores()]);
       if (this.disposed) return;
-      x.statusList = t || [], x.stores = a || [], x.stores.some((s) => s.alias === x.filters.store) || (x.filters.store = ((e = x.stores[0]) == null ? void 0 : e.alias) || ""), await this.loadAnalytics();
+      x.statusList = t || [], x.stores = a || [], x.stores.some((o) => o.alias === x.filters.store) || (x.filters.store = ((e = x.stores[0]) == null ? void 0 : e.alias) || ""), await this.loadAnalytics();
     } catch (t) {
       if (this.disposed) return;
       this.error = H(t, "Unable to load Analytics."), this.loading = !1, this.render();
@@ -575,53 +584,53 @@ class he extends ie(HTMLElement) {
     await Promise.all([this.loadCharts(), this.productsVisible ? this.loadMostSoldProducts() : Promise.resolve()]);
   }
   async loadCharts() {
-    var s;
+    var o;
     const e = ++this.chartRequest;
-    (s = this.chartAbort) == null || s.abort();
+    (o = this.chartAbort) == null || o.abort();
     const t = this.chartAbort = new AbortController(), a = { ...x.filters };
     if (this.chartData = void 0, this.previousData = void 0, this.error = "", this.loading = !!a.store, this.render(), !!a.store)
       try {
-        const d = this.compare ? { ...a, ...ue(a.dateFrom, a.dateTo) } : void 0, [n, i] = await Promise.all([
+        const n = this.compare ? { ...a, ...pe(a.dateFrom, a.dateTo) } : void 0, [d, i] = await Promise.all([
           this.api.charts(a, t.signal),
-          d ? this.api.charts(d, t.signal) : Promise.resolve(void 0)
+          n ? this.api.charts(n, t.signal) : Promise.resolve(void 0)
         ]);
         if (e !== this.chartRequest || this.disposed) return;
-        this.chartData = n, this.previousData = i, this.chartFilters = a, n.mixedCurrencies && (this.metric = "orders");
-      } catch (d) {
+        this.chartData = d, this.previousData = i, this.chartFilters = a, d.mixedCurrencies && (this.metric = "orders");
+      } catch (n) {
         if (e !== this.chartRequest || this.disposed) return;
-        this.error = H(d, "Unable to load charts.");
+        this.error = H(n, "Unable to load charts.");
       } finally {
         e === this.chartRequest && !this.disposed && (this.loading = !1, this.render());
       }
   }
   async loadMostSoldProducts() {
-    var s;
+    var o;
     const e = ++this.productRequest;
-    (s = this.productAbort) == null || s.abort();
+    (o = this.productAbort) == null || o.abort();
     const t = this.productAbort = new AbortController(), a = { ...x.filters };
     if (this.mostSoldProducts = { products: [], count: 0, totalPages: 0, page: this.pageMostSoldProducts }, this.productError = "", this.loadingMostSoldProducts = !!a.store, this.render(), !!a.store)
       try {
-        const d = await this.api.mostSoldProducts(a, this.pageMostSoldProducts, 20, t.signal);
+        const n = await this.api.mostSoldProducts(a, this.pageMostSoldProducts, 20, t.signal);
         if (e !== this.productRequest || this.disposed) return;
-        this.mostSoldProducts = { ...d, products: d.products || [] }, this.pageMostSoldProducts = d.page || this.pageMostSoldProducts;
-      } catch (d) {
-        e === this.productRequest && !this.disposed && (this.productError = H(d, "Unable to load products."));
+        this.mostSoldProducts = { ...n, products: n.products || [] }, this.pageMostSoldProducts = n.page || this.pageMostSoldProducts;
+      } catch (n) {
+        e === this.productRequest && !this.disposed && (this.productError = H(n, "Unable to load products."));
       } finally {
         e === this.productRequest && !this.disposed && (this.loadingMostSoldProducts = !1, this.render());
       }
   }
   get buckets() {
-    return this.chartData ? me(this.chartData, this.previousData, this.grouping) : [];
+    return this.chartData ? he(this.chartData, this.previousData, this.grouping) : [];
   }
   get comparisonMoneyAvailable() {
     var e, t;
     return !!this.previousData && !((e = this.chartData) != null && e.mixedCurrencies) && !this.previousData.mixedCurrencies && (!((t = this.chartData) != null && t.currency) || !this.previousData.currency || this.chartData.currency === this.previousData.currency);
   }
   amount(e) {
-    var a, s, d, n, i;
+    var a, o, n, d, i;
     if (e == null || (a = this.chartData) != null && a.mixedCurrencies) return "—";
-    const t = ((s = this.chartData) == null ? void 0 : s.currency) || ((d = this.previousData) == null ? void 0 : d.currency);
-    return !t || t === ((n = this.currency) == null ? void 0 : n.currencyValue) || t === ((i = this.currency) == null ? void 0 : i.isoCurrencySymbol) ? z(e, this.currency) : /^[A-Z]{3}$/.test(t) ? z(e, { isoCurrencySymbol: t }) : `${e.toLocaleString(void 0, { maximumFractionDigits: 2 })} ${t}`;
+    const t = ((o = this.chartData) == null ? void 0 : o.currency) || ((n = this.previousData) == null ? void 0 : n.currency);
+    return !t || t === ((d = this.currency) == null ? void 0 : d.currencyValue) || t === ((i = this.currency) == null ? void 0 : i.isoCurrencySymbol) ? z(e, this.currency) : /^[A-Z]{3}$/.test(t) ? z(e, { isoCurrencySymbol: t }) : `${e.toLocaleString(void 0, { maximumFractionDigits: 2 })} ${t}`;
   }
   label(e) {
     return e === "orders" ? "Orders" : e === "average" ? "Average order value" : "Order amount";
@@ -636,8 +645,8 @@ class he extends ie(HTMLElement) {
     return e === t ? e || "" : `${e || ""} – ${t || ""}`;
   }
   render() {
-    const e = x.filters;
-    this.innerHTML = `<style>${le}
+    const e = x.filters, t = me(e.dateFrom, e.dateTo, this.datePreset);
+    this.innerHTML = `<style>${ce}
       ekom-analytics-section-view { display:block;color:var(--uui-color-text,#20232e) }
       .analytics {background:var(--uui-color-background,#f3f4f7);min-height:80vh}
       .analytics .card {background:var(--uui-color-surface,#fff);border:1px solid #dfe2e8;border-radius:10px;padding:18px;text-align:left;box-shadow:none}
@@ -669,11 +678,11 @@ class he extends ie(HTMLElement) {
       @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
     </style><section class="ekmManager analytics"><div class="ekmManager__body">
       <div class="analytics-toolbar">
-        <label>Store<select data-field="store">${x.stores.map((t) => `<option value="${p(t.alias)}" ${t.alias === e.store ? "selected" : ""}>${p(t.title)}</option>`).join("")}</select></label>
-        <label>Order status<select data-field="orderStatus"><option value="CompletedOrders" ${e.orderStatus === "CompletedOrders" ? "selected" : ""}>Completed Orders</option><option value="AllOrders" ${e.orderStatus === "AllOrders" ? "selected" : ""}>All Orders</option>${x.statusList.map((t) => `<option value="${p(Q(t))}" ${Q(t) === e.orderStatus ? "selected" : ""}>${p(t.label)}</option>`).join("")}</select></label>
+        <label>Store<select data-field="store">${x.stores.map((a) => `<option value="${p(a.alias)}" ${a.alias === e.store ? "selected" : ""}>${p(a.title)}</option>`).join("")}</select></label>
+        <label>Order status<select data-field="orderStatus"><option value="CompletedOrders" ${e.orderStatus === "CompletedOrders" ? "selected" : ""}>Completed Orders</option><option value="AllOrders" ${e.orderStatus === "AllOrders" ? "selected" : ""}>All Orders</option>${x.statusList.map((a) => `<option value="${p(Q(a))}" ${Q(a) === e.orderStatus ? "selected" : ""}>${p(a.label)}</option>`).join("")}</select></label>
         <label>Date From<input type="date" data-field="dateFrom" value="${p(e.dateFrom)}"></label>
         <label>Date To<input type="date" data-field="dateTo" value="${p(e.dateTo)}"></label>
-        <label>Date preset<select data-preset><option value="">Custom range</option>${[["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["month", "This month"], ["year", "This year"]].map(([t, a]) => `<option value="${t}">${a}</option>`).join("")}</select></label>
+        <label>Date preset<select data-preset><option value="">Custom range</option>${[["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["month", "This month"], ["year", "This year"]].map(([a, o]) => `<option value="${a}" ${t === a ? "selected" : ""}>${o}</option>`).join("")}</select></label>
         <label><span>Comparison</span><span><input type="checkbox" data-compare ${this.compare ? "checked" : ""}> Previous period</span></label>
         <button data-refresh>Refresh</button>
       </div>
@@ -687,7 +696,7 @@ class he extends ie(HTMLElement) {
     </div></section>`, this.bindEvents(), this.renderCharts();
   }
   renderAnalytics() {
-    var a, s, d, n;
+    var a, o, n, d;
     const e = X(this.chartData), t = this.previousData ? X(this.previousData) : void 0;
     return `<div class="analytics-summary">${["amount", "orders", "average"].map((i) => `<div class="card"><span>${this.label(i)}</span><strong>${p(this.value(e[i], i))}</strong><span class="analytics-muted">${t && (i === "orders" || this.comparisonMoneyAvailable) ? p(K(e[i], t[i])) + " vs previous period" : this.compare ? "No monetary comparison available" : "Selected period"}</span></div>`).join("")}</div>
       <p class="analytics-muted">Order amount is the recorded charged amount, after gift cards; it is not refund-adjusted revenue. Dates use ${this.chartData.dateBasis === "PaidDate" ? "payment date" : "order creation date"}, matching Orders.</p>
@@ -698,7 +707,7 @@ class he extends ie(HTMLElement) {
         <label>Group by<select data-grouping>${[["day", "Daily"], ["week", "Weekly"], ["month", "Monthly"]].map(([i, S]) => `<option value="${i}" ${this.grouping === i ? "selected" : ""}>${S}</option>`).join("")}</select></label>
         <button data-table aria-pressed="${this.table}">${this.table ? "Show chart" : "Show data table"}</button><button data-csv>Download CSV</button>
       </div>
-      <p class="analytics-muted">${this.previousData ? `Solid: ${p(this.range((a = this.chartFilters) == null ? void 0 : a.dateFrom, (s = this.chartFilters) == null ? void 0 : s.dateTo))}. Dashed: ${p(this.range((d = this.previousData.ordersChart.points[0]) == null ? void 0 : d.x, (n = this.previousData.ordersChart.points.at(-1)) == null ? void 0 : n.x))}. Comparison buckets cover the same number of days.` : "Selected period."} Click a bucket to open its orders.</p>
+      <p class="analytics-muted">${this.previousData ? `Solid: ${p(this.range((a = this.chartFilters) == null ? void 0 : a.dateFrom, (o = this.chartFilters) == null ? void 0 : o.dateTo))}. Dashed: ${p(this.range((n = this.previousData.ordersChart.points[0]) == null ? void 0 : n.x, (d = this.previousData.ordersChart.points.at(-1)) == null ? void 0 : d.x))}. Comparison buckets cover the same number of days.` : "Selected period."} Click a bucket to open its orders.</p>
       ${this.table ? this.renderTable() : `<div style="height:360px"><canvas id="analytics-chart" style="width:100%;height:100%" role="img" aria-label="${this.label(this.metric)} over time. Use Show data table for exact values and order links."></canvas></div>`}
       </div>`;
   }
@@ -710,8 +719,8 @@ class he extends ie(HTMLElement) {
       ["Unique purchasing customers", e.uniqueCustomers, t == null ? void 0 : t.uniqueCustomers, !1],
       ["First-time buyers", e.newCustomers, t == null ? void 0 : t.newCustomers, !1],
       ["Returning customer rate", e.returningCustomerRate, t == null ? void 0 : t.returningCustomerRate, !0]
-    ], s = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], d = s.map((b, g) => e.orderTimes.filter((c) => c.weekday === g).reduce((c, v) => c + v.orders, 0)), n = Array.from({ length: 24 }, (b, g) => e.orderTimes.filter((c) => c.hour === g).reduce((c, v) => c + v.orders, 0)), i = (b, g) => b.map((c, v) => `<div class="analytics-time-row"><span>${c}</span><div class="analytics-time-track" aria-hidden="true"><span style="width:${100 * g[v] / Math.max(1, ...g)}%"></span></div><span>${g[v]}</span></div>`).join("");
-    return `<div class="analytics-summary">${a.map(([b, g, c, v]) => `<div class="card"><span>${b}</span><strong>${g == null ? "—" : p(g.toLocaleString(void 0, { maximumFractionDigits: v ? 1 : 0 })) + (v ? "%" : "")}</strong><span class="analytics-muted">${t ? v ? g == null || c == null ? "No comparison available" : `${(g - c).toLocaleString(void 0, { maximumFractionDigits: 1, signDisplay: "always" })} percentage points vs previous period` : `${K(g, c ?? null)} vs previous period` : "Selected period"}</span></div>`).join("")}</div>
+    ], o = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], n = o.map((h, f) => e.orderTimes.filter((c) => c.weekday === f).reduce((c, v) => c + v.orders, 0)), d = Array.from({ length: 24 }, (h, f) => e.orderTimes.filter((c) => c.hour === f).reduce((c, v) => c + v.orders, 0)), i = (h, f) => h.map((c, v) => `<div class="analytics-time-row"><span>${c}</span><div class="analytics-time-track" aria-hidden="true"><span style="width:${100 * f[v] / Math.max(1, ...f)}%"></span></div><span>${f[v]}</span></div>`).join("");
+    return `<div class="analytics-summary">${a.map(([h, f, c, v]) => `<div class="card"><span>${h}</span><strong>${f == null ? "—" : p(f.toLocaleString(void 0, { maximumFractionDigits: v ? 1 : 0 })) + (v ? "%" : "")}</strong><span class="analytics-muted">${t ? v ? f == null || c == null ? "No comparison available" : `${(f - c).toLocaleString(void 0, { maximumFractionDigits: 1, signDisplay: "always" })} percentage points vs previous period` : `${K(f, c ?? null)} vs previous period` : "Selected period"}</span></div>`).join("")}</div>
       <div class="card analytics-main"><h3>New and returning purchases</h3>
         <p class="analytics-muted">Based on qualifying purchase orders and ${e.identityField === "CustomerUsername" ? "username" : "email"}. A repeat purchase has an earlier qualifying order in this store, ordered by payment time (creation time when unpaid). A buyer can appear in both rows if they buy for the first time and return in this period. Returning rate is repeat buyers divided by unique identified buyers.</p>
         <div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Purchase type</th><th>Buyers</th><th>Orders</th><th>Order amount</th></tr></thead><tbody>
@@ -721,8 +730,8 @@ class he extends ie(HTMLElement) {
         <p class="analytics-muted">${e.missingIdentifiers} qualifying orders have no customer identifier and are excluded from buyer counts and this breakdown. They remain included in the time charts below. Incomplete and cancelled orders are excluded from these customer insights, even with All Orders selected.</p>
       </div>
       <div class="analytics-insight-grid">
-        <div class="card analytics-main"><h3>Orders by weekday</h3><p class="analytics-muted">Qualifying orders within the selected filters, grouped by recorded creation day.</p><div class="analytics-time-bars">${i(s, d)}</div></div>
-        <div class="card analytics-main"><h3>Orders by hour</h3><p class="analytics-muted">Recorded creation time, 00–23. No timezone conversion. Totals are counts, not averages per hour.</p><div class="analytics-time-bars analytics-hour-bars">${i(n.map((b, g) => String(g).padStart(2, "0") + ":00"), n)}</div></div>
+        <div class="card analytics-main"><h3>Orders by weekday</h3><p class="analytics-muted">Qualifying orders within the selected filters, grouped by recorded creation day.</p><div class="analytics-time-bars">${i(o, n)}</div></div>
+        <div class="card analytics-main"><h3>Orders by hour</h3><p class="analytics-muted">Recorded creation time, 00–23. No timezone conversion. Totals are counts, not averages per hour.</p><div class="analytics-time-bars analytics-hour-bars">${i(d.map((h, f) => String(f).padStart(2, "0") + ":00"), d)}</div></div>
       </div>`;
   }
   renderTable() {
@@ -743,7 +752,7 @@ class he extends ie(HTMLElement) {
     return `
       <div class="pagination">
         <ul>
-          ${se(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((e) => {
+          ${ne(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((e) => {
       const t = Number(String(e).replace("...", ""));
       return `<li class="${t === this.pageMostSoldProducts ? "active" : ""}"><button type="button" data-action="set-most-sold-page" data-page="${t}" ${t === this.pageMostSoldProducts ? "disabled" : ""}>${p(e)}</button></li>`;
     }).join("")}
@@ -752,14 +761,14 @@ class he extends ie(HTMLElement) {
     `;
   }
   renderCharts() {
-    var n;
+    var d;
     const e = this.querySelector("#analytics-chart");
     if (!e || !this.chartData || this.table) return;
-    const t = this.buckets, a = this.chartData.currency || ((n = this.previousData) == null ? void 0 : n.currency), s = a && /^[A-Z]{3}$/.test(a) ? { isoCurrencySymbol: a } : this.currency, d = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: t.map((i) => ({ x: this.range(i.previousStart, i.previousEnd), y: this.previousValue(i) })) } : void 0;
-    ce(e, { labels: [], points: t.map((i) => ({ x: this.range(i.start, i.end), y: i[this.metric] })) }, "#25765c", {
-      currency: this.metric === "orders" ? void 0 : s,
+    const t = this.buckets, a = this.chartData.currency || ((d = this.previousData) == null ? void 0 : d.currency), o = a && /^[A-Z]{3}$/.test(a) ? { isoCurrencySymbol: a } : this.currency, n = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: t.map((i) => ({ x: this.range(i.previousStart, i.previousEnd), y: this.previousValue(i) })) } : void 0;
+    ue(e, { labels: [], points: t.map((i) => ({ x: this.range(i.start, i.end), y: i[this.metric] })) }, "#25765c", {
+      currency: this.metric === "orders" ? void 0 : o,
       integer: this.metric === "orders",
-      comparison: d,
+      comparison: n,
       formatValue: (i) => this.value(i),
       columnHover: !0,
       onSelect: (i) => this.openOrders(i)
@@ -772,38 +781,38 @@ class he extends ie(HTMLElement) {
     const t = this.buckets[e];
     if (!t || !this.chartFilters) return;
     const a = { ...this.chartFilters, dateFrom: t.start, dateTo: t.end };
-    for (const s of ["query", "paymentProvider", "shippingProvider", "couponCode", "giftcardCode", "productSku", "trackingSource", "trackingMedium", "trackingCampaign", "trackingTerm", "trackingContent", "trackingClickId"]) a[s] = "";
+    for (const o of ["query", "paymentProvider", "shippingProvider", "couponCode", "giftcardCode", "productSku", "trackingSource", "trackingMedium", "trackingCampaign", "trackingTerm", "trackingContent", "trackingClickId"]) a[o] = "";
     if (Object.assign(x.filters, a), this.hasAttribute("classic")) this.dispatchEvent(new CustomEvent("analytics-open-orders", { bubbles: !0, detail: a }));
     else {
-      const s = new URLSearchParams({ analyticsDrill: "1", store: a.store, start: a.dateFrom, end: a.dateTo, orderStatus: a.orderStatus }), d = document.createElement("a");
-      d.href = location.pathname.replace(/\/analytics\/?$/, "/orders") + "?" + s, this.appendChild(d), d.click(), d.remove();
+      const o = new URLSearchParams({ analyticsDrill: "1", store: a.store, start: a.dateFrom, end: a.dateTo, orderStatus: a.orderStatus }), n = document.createElement("a");
+      n.href = location.pathname.replace(/\/analytics\/?$/, "/orders") + "?" + o, this.appendChild(n), n.click(), n.remove();
     }
   }
   exportCsv() {
-    var a, s, d;
+    var a, o, n;
     const e = [["From", "To", "Orders", "Order amount", "Average order", "Currency", "Previous from", "Previous to", "Previous orders", "Previous amount", "Previous average"]];
-    for (const n of this.buckets) e.push([n.start, n.end, String(n.orders), (a = this.chartData) != null && a.mixedCurrencies ? "" : String(n.amount), (s = this.chartData) != null && s.mixedCurrencies || n.average == null ? "" : String(n.average), ((d = this.chartData) == null ? void 0 : d.currency) || "", n.previousStart || "", n.previousEnd || "", n.previousOrders == null ? "" : String(n.previousOrders), this.comparisonMoneyAvailable ? String(n.previousAmount ?? "") : "", this.comparisonMoneyAvailable ? String(n.previousAverage ?? "") : ""]);
-    const t = e.map((n) => n.map((i) => '"' + i.replaceAll('"', '""') + '"').join(",")).join(`\r
+    for (const d of this.buckets) e.push([d.start, d.end, String(d.orders), (a = this.chartData) != null && a.mixedCurrencies ? "" : String(d.amount), (o = this.chartData) != null && o.mixedCurrencies || d.average == null ? "" : String(d.average), ((n = this.chartData) == null ? void 0 : n.currency) || "", d.previousStart || "", d.previousEnd || "", d.previousOrders == null ? "" : String(d.previousOrders), this.comparisonMoneyAvailable ? String(d.previousAmount ?? "") : "", this.comparisonMoneyAvailable ? String(d.previousAverage ?? "") : ""]);
+    const t = e.map((d) => d.map((i) => '"' + i.replaceAll('"', '""') + '"').join(",")).join(`\r
 `);
-    de(new Blob(["\uFEFF", t], { type: "text/csv;charset=utf-8" }), "analytics.csv");
+    le(new Blob(["\uFEFF", t], { type: "text/csv;charset=utf-8" }), "analytics.csv");
   }
   bindEvents() {
-    var e, t, a, s, d, n, i, S;
+    var e, t, a, o, n, d, i, S;
     this.querySelectorAll("[data-field]").forEach((l) => l.addEventListener("change", () => {
-      const b = l.dataset.field;
-      x.filters[b] = l.value, this.changedFilters();
+      const h = l.dataset.field;
+      (h === "dateFrom" || h === "dateTo") && (this.datePreset = void 0), x.filters[h] = l.value, this.changedFilters();
     })), (e = this.querySelector("[data-preset]")) == null || e.addEventListener("change", (l) => {
-      const b = l.target.value;
-      b && (Object.assign(x.filters, pe(b)), this.changedFilters());
+      const h = l.target.value;
+      this.datePreset = h, h ? (Object.assign(x.filters, te(h)), this.changedFilters()) : this.render();
     }), (t = this.querySelector("[data-compare]")) == null || t.addEventListener("change", () => {
       this.compare = !this.compare, this.loadCharts();
     }), (a = this.querySelector("[data-grouping]")) == null || a.addEventListener("change", (l) => {
       this.grouping = l.target.value, this.render();
     }), this.querySelectorAll("[data-metric]").forEach((l) => l.addEventListener("click", () => {
       this.metric = l.dataset.metric, this.render();
-    })), (s = this.querySelector("[data-table]")) == null || s.addEventListener("click", () => {
+    })), (o = this.querySelector("[data-table]")) == null || o.addEventListener("click", () => {
       this.table = !this.table, this.render();
-    }), (d = this.querySelector("[data-csv]")) == null || d.addEventListener("click", () => this.exportCsv()), (n = this.querySelector("[data-refresh]")) == null || n.addEventListener("click", () => void this.loadAnalytics()), this.querySelectorAll("[data-orders]").forEach((l) => l.addEventListener("click", () => this.openOrders(Number(l.dataset.orders)))), (i = this.querySelector("[data-products]")) == null || i.addEventListener("click", () => {
+    }), (n = this.querySelector("[data-csv]")) == null || n.addEventListener("click", () => this.exportCsv()), (d = this.querySelector("[data-refresh]")) == null || d.addEventListener("click", () => void this.loadAnalytics()), this.querySelectorAll("[data-orders]").forEach((l) => l.addEventListener("click", () => this.openOrders(Number(l.dataset.orders)))), (i = this.querySelector("[data-products]")) == null || i.addEventListener("click", () => {
       var l;
       this.productsVisible = !this.productsVisible, this.productsVisible ? this.loadMostSoldProducts() : (this.productRequest++, (l = this.productAbort) == null || l.abort(), this.render());
     }), (S = this.querySelector("[data-product-retry]")) == null || S.addEventListener("click", () => void this.loadMostSoldProducts()), this.querySelectorAll('[data-action="set-most-sold-page"]').forEach((l) => l.addEventListener("click", () => {
@@ -811,15 +820,15 @@ class he extends ie(HTMLElement) {
     }));
   }
 }
-function I(o, ...r) {
-  for (const e of r) if (o[e] != null) return o[e];
+function I(s, ...r) {
+  for (const e of r) if (s[e] != null) return s[e];
   return "";
 }
-function H(o, r) {
-  return o instanceof Error ? o.message : r;
+function H(s, r) {
+  return s instanceof Error ? s.message : r;
 }
-customElements.define("ekom-analytics-section-view", he);
+customElements.define("ekom-analytics-section-view", ge);
 export {
-  he as EkomAnalyticsSectionViewElement,
-  he as default
+  ge as EkomAnalyticsSectionViewElement,
+  ge as default
 };

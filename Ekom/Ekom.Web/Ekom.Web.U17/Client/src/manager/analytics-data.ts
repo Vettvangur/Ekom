@@ -22,6 +22,15 @@ export function presetRange(preset: string, now = new Date()): { dateFrom: strin
   if (preset === 'year') { start.setUTCMonth(0); start.setUTCDate(1); }
   return { dateFrom: dateString(start), dateTo: dateString(end) };
 }
+export function matchingPreset(dateFrom: string, dateTo: string, preferred?: string, now = new Date()): string {
+  if (preferred === '') return '';
+  const presets = ['today', '7', '30', 'month', 'year'];
+  if (preferred && presets.includes(preferred)) presets.unshift(preferred);
+  return presets.find(preset => {
+    const range = presetRange(preset, now);
+    return range.dateFrom === dateFrom && range.dateTo === dateTo;
+  }) || '';
+}
 export function groupAnalytics(data: ChartData, previous: ChartData | undefined, grouping: string): AnalyticsBucket[] {
   const result: AnalyticsBucket[] = [];
   const points = data.ordersChart.points;

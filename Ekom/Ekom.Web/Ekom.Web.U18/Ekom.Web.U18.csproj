@@ -43,10 +43,8 @@
         <Exec WorkingDirectory="Client" Command="npm run build" />
     </Target>
 
-    <Target Name="AddEkomWebU18AssetsToPackage" BeforeTargets="GenerateNuspec" DependsOnTargets="BuildEkomWebU18Assets">
-        <ItemGroup>
-            <None Include="App_Plugins/Ekom/**" Pack="true" PackagePath="contentFiles/any/any/App_Plugins/Ekom" />
-        </ItemGroup>
-    </Target>
-
+    <PropertyGroup>
+        <EkomBuildAssetsTarget>BuildEkomWebU18Assets</EkomBuildAssetsTarget>
+    </PropertyGroup>
+    <Import Project="../AssetPackaging/VersionedAssets.targets" />
 </Project>

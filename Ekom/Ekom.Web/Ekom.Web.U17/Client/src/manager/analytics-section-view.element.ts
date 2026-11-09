@@ -1,6 +1,6 @@
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
 import { ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, getStatusValue, managerState, managerStyles, pageRange, renderLineChart, downloadBlob } from './manager-shared';
-import { AnalyticsBucket, AnalyticsMetric, analyticsSummary, groupAnalytics, percentageChange, presetRange, previousPeriod } from './analytics-data';
+import { AnalyticsBucket, AnalyticsMetric, analyticsSummary, groupAnalytics, percentageChange, matchingPreset, presetRange, previousPeriod } from './analytics-data';
 
 export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement) {
   private readonly api = new EkomManagerApi();
@@ -24,6 +24,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   private grouping = 'day';
   private compare = true;
   private table = false;
+  private datePreset?: string;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -146,6 +147,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
 
   private render(): void {
     const f = managerState.filters;
+    const preset = matchingPreset(f.dateFrom, f.dateTo, this.datePreset);
     this.innerHTML = `<style>${managerStyles}
       ekom-analytics-section-view { display:block;color:var(--uui-color-text,#20232e) }
       .analytics {background:var(--uui-color-background,#f3f4f7);min-height:80vh}
@@ -182,7 +184,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
         <label>Order status<select data-field="orderStatus"><option value="CompletedOrders" ${f.orderStatus === 'CompletedOrders' ? 'selected' : ''}>Completed Orders</option><option value="AllOrders" ${f.orderStatus === 'AllOrders' ? 'selected' : ''}>All Orders</option>${managerState.statusList.map(s => `<option value="${escapeHtml(getStatusValue(s))}" ${getStatusValue(s) === f.orderStatus ? 'selected' : ''}>${escapeHtml(s.label)}</option>`).join('')}</select></label>
         <label>Date From<input type="date" data-field="dateFrom" value="${escapeHtml(f.dateFrom)}"></label>
         <label>Date To<input type="date" data-field="dateTo" value="${escapeHtml(f.dateTo)}"></label>
-        <label>Date preset<select data-preset><option value="">Custom range</option>${[['today','Today'],['7','Last 7 days'],['30','Last 30 days'],['month','This month'],['year','This year']].map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></label>
+        <label>Date preset<select data-preset><option value="">Custom range</option>${[['today','Today'],['7','Last 7 days'],['30','Last 30 days'],['month','This month'],['year','This year']].map(([v,l])=>`<option value="${v}" ${preset === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <label><span>Comparison</span><span><input type="checkbox" data-compare ${this.compare ? 'checked' : ''}> Previous period</span></label>
         <button data-refresh>Refresh</button>
       </div>
@@ -321,11 +323,14 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   private bindEvents(): void {
     this.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-field]').forEach(input => input.addEventListener('change', () => {
       const field = input.dataset.field as keyof ManagerFilters;
+      if (field === 'dateFrom' || field === 'dateTo') this.datePreset = undefined;
       managerState.filters[field] = input.value; this.changedFilters();
     }));
     this.querySelector<HTMLSelectElement>('[data-preset]')?.addEventListener('change', event => {
       const preset = (event.target as HTMLSelectElement).value;
+      this.datePreset = preset;
       if (preset) { Object.assign(managerState.filters, presetRange(preset)); this.changedFilters(); }
+      else this.render();
     });
     this.querySelector('[data-compare]')?.addEventListener('change', () => { this.compare = !this.compare; void this.loadCharts(); });
     this.querySelector<HTMLSelectElement>('[data-grouping]')?.addEventListener('change', event => { this.grouping = (event.target as HTMLSelectElement).value; this.render(); });
