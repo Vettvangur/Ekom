@@ -196,11 +196,15 @@ public sealed class Prices : IDisposable
                 {
                     var nodes = keys.Distinct().ToArray();
                     var rows = new List<PriceData>();
+                    using var db = _databaseFactory.GetDatabase();
+                    // One serializable read transaction prevents commits between refresh chunks
+                    // from combining different versions of related nodes in the published cache.
+                    using var tx = db.BeginTransaction(IsolationLevel.Serializable);
                     foreach (var batch in nodes.Chunk(400))
                     {
-                        using var db = _databaseFactory.GetDatabase();
                         rows.AddRange(db.Prices.Where(row => Enumerable.Contains(batch, row.NodeKey)).ToList());
                     }
+                    tx.Commit();
                     PublishRows(nodes, rows);
                 }
             }
@@ -223,12 +227,15 @@ public sealed class Prices : IDisposable
                 {
                     var nodes = keys.Distinct().ToArray();
                     var rows = new List<PriceData>();
+                    await using var db = _databaseFactory.GetDatabase();
+                    // Keep every chunk in the same consistent database read transaction.
+                    await using var tx = await db.BeginTransactionAsync(IsolationLevel.Serializable).ConfigureAwait(false);
                     foreach (var batch in nodes.Chunk(400))
                     {
-                        await using var db = _databaseFactory.GetDatabase();
                         rows.AddRange(await db.Prices.Where(row => Enumerable.Contains(batch, row.NodeKey))
                             .ToListAsync().ConfigureAwait(false));
                     }
+                    await tx.CommitAsync().ConfigureAwait(false);
                     PublishRows(nodes, rows);
                 }
             }

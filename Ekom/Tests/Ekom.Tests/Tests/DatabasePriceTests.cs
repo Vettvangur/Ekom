@@ -660,6 +660,81 @@ public sealed class DatabasePriceTests
         Assert.Equal(0, counter.Count);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RefreshChunksCannotMixCommitsFromAConcurrentWriter(bool asyncWrite)
+    {
+        using var fixture = new Fixture();
+        var keys = Enumerable.Range(0, 401).Select(_ => Guid.NewGuid()).OrderBy(key => key).ToArray();
+        await fixture.Prices.ApplyAsync(keys.Select(key => new PriceMutation(key, "Web", "en-US", 100)));
+        var previous = LinqToDB.Data.DataConnection.DefaultOnTraceConnection;
+        var level = LinqToDB.Data.DataConnection.TraceSwitch.Level;
+        using var continueRefresh = new ManualResetEventSlim();
+        var betweenChunks = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var selects = 0;
+        LinqToDB.Data.DataConnection.TurnTraceSwitchOn(System.Diagnostics.TraceLevel.Info);
+        LinqToDB.Data.DataConnection.DefaultOnTraceConnection = info =>
+        {
+            if (info.TraceInfoStep != LinqToDB.Data.TraceInfoStep.BeforeExecute
+                || info.DataConnection.ConnectionString?.Contains(fixture.DatabasePath, StringComparison.Ordinal) != true
+                || info.SqlText?.Contains("SELECT", StringComparison.OrdinalIgnoreCase) != true
+                || !info.SqlText.Contains("EkomPrice", StringComparison.Ordinal)) return;
+            // 401 mutation checks, then the first refresh chunk. Pause before the second chunk.
+            if (Interlocked.Increment(ref selects) != 403) return;
+            betweenChunks.TrySetResult();
+            if (!continueRefresh.Wait(TimeSpan.FromSeconds(20))) throw new TimeoutException("Refresh was not released");
+        };
+        var writer = Task.Run(async () =>
+        {
+            var changes = keys.Select(key => new PriceMutation(key, "Web", "en-US", 110));
+            if (asyncWrite) await fixture.Prices.ApplyAsync(changes);
+            else fixture.Prices.Apply(changes);
+        });
+        var concurrentCommit = false;
+        try
+        {
+            await betweenChunks.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            // A separate transaction attempts to change nodes on opposite sides of the chunk boundary.
+            // Serializable refresh reads must block this commit until both chunks have been read.
+            using var connection = new Microsoft.Data.Sqlite.SqliteConnection(
+                $"Data Source={fixture.DatabasePath};Pooling=False;Default Timeout=1");
+            connection.Open();
+            try
+            {
+                using var transaction = connection.BeginTransaction();
+                using var command = connection.CreateCommand();
+                command.Transaction = transaction;
+                command.CommandText = "UPDATE EkomPrice SET Price = CASE WHEN NodeKey = $first THEN 200 ELSE 300 END WHERE NodeKey = $first OR NodeKey = $last";
+                command.Parameters.AddWithValue("$first", keys[0].ToByteArray());
+                command.Parameters.AddWithValue("$last", keys[^1].ToByteArray());
+                Assert.Equal(2, command.ExecuteNonQuery());
+                transaction.Commit();
+                concurrentCommit = true;
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.SqliteErrorCode is 5 or 6) { }
+        }
+        finally
+        {
+            continueRefresh.Set();
+            try { await writer.WaitAsync(TimeSpan.FromSeconds(10)); }
+            finally
+            {
+                LinqToDB.Data.DataConnection.DefaultOnTraceConnection = previous;
+                LinqToDB.Data.DataConnection.TurnTraceSwitchOn(level);
+            }
+        }
+        Assert.Equal(110, Assert.Single(fixture.Prices.Get(keys[0])).Price);
+        Assert.Equal(110, Assert.Single(fixture.Prices.Get(keys[^1])).Price);
+        Assert.False(concurrentCommit);
+        Assert.Equal(403, selects); // Still two refresh SELECTs, not one query per node.
+        await fixture.Prices.ApplyAsync([new(keys[0], "Web", "en-US", 200), new(keys[^1], "Web", "en-US", 300)]);
+        using var counter = new PriceQueryCounter(fixture.DatabasePath);
+        Assert.Equal(200, Assert.Single(fixture.Prices.Get(keys[0])).Price);
+        Assert.Equal(300, Assert.Single(fixture.Prices.Get(keys[^1])).Price);
+        Assert.Equal(0, counter.Count);
+    }
+
     private sealed class CatalogPriceProduct(UmbracoContent content, IStore store) : Product(content, store)
     {
         public List<IVariant> Variants { get; } = new();

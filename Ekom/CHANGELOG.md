@@ -12,6 +12,8 @@
 
 ### Bug Fixes
 
+* **prices:** read all cache-refresh chunks in one serializable transaction to prevent mixed versions during concurrent writes.
+
 * **prices:** keep concurrent price calculations consistent, refresh caches asynchronously, and drain Algolia price backlogs without per-batch delays.
 
 * **prices:** use a startup-filled shared cache for all price reads and refresh committed changes without per-request SQL queries.
