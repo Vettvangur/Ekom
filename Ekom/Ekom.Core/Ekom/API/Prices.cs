@@ -10,6 +10,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Collections.Concurrent;
 using System.Data;
 using System.Text.Json;
 
@@ -20,17 +21,15 @@ public sealed class Prices
 {
     private readonly Configuration _configuration;
     private readonly DatabaseFactory _databaseFactory;
-    private readonly IHttpContextAccessor? _httpContext;
     private readonly ILogger<Prices> _logger;
-    private readonly object _requestKey = new();
-    private readonly AsyncLocal<ReadSnapshot?> _readScope = new();
+    private readonly object _cacheLock = new();
+    private volatile ConcurrentDictionary<Guid, PriceData[]>? _cache;
 
     public Prices(Configuration configuration, DatabaseFactory databaseFactory,
         IHttpContextAccessor? httpContext = null, ILogger<Prices>? logger = null)
     {
         _configuration = configuration;
         _databaseFactory = databaseFactory;
-        _httpContext = httpContext;
         _logger = logger ?? NullLogger<Prices>.Instance;
     }
 
@@ -41,15 +40,13 @@ public sealed class Prices
     public IReadOnlyList<PriceData> Get(Guid nodeKey, string propertyAlias = "price")
     {
         propertyAlias = Normalize(propertyAlias, 100);
-        return Read(nodeKey).Where(x => x.PropertyAlias == propertyAlias).ToList();
+        return Read(nodeKey).Where(x => x.PropertyAlias == propertyAlias).Select(Clone).ToList();
     }
 
-    public async Task<IReadOnlyList<PriceData>> GetAsync(Guid nodeKey, string propertyAlias = "price", CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<PriceData>> GetAsync(Guid nodeKey, string propertyAlias = "price", CancellationToken cancellationToken = default)
     {
-        propertyAlias = Normalize(propertyAlias, 100);
-        await using var db = _databaseFactory.GetDatabase();
-        return await db.Prices.Where(x => x.NodeKey == nodeKey && x.PropertyAlias == propertyAlias)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(Get(nodeKey, propertyAlias));
     }
 
     public void SetPrice(Guid nodeKey, string storeAlias, string currency, decimal price, string propertyAlias = "price")
@@ -118,7 +115,7 @@ public sealed class Prices
                 Thread.Sleep(25 << attempt);
             }
         }
-        Publish(events);
+        Publish(events, batch.Select(change => change.NodeKey));
     }
 
     public async Task ApplyAsync(IEnumerable<PriceMutation> changes, CancellationToken cancellationToken = default)
@@ -146,7 +143,7 @@ public sealed class Prices
             return committed;
         }, cancellationToken).ConfigureAwait(false);
         // Cancellation or a subscriber failure after commit must not replay an already committed write.
-        Publish(events);
+        Publish(events, batch.Select(change => change.NodeKey));
     }
 
     private List<PriceMutation> Prepare(IEnumerable<PriceMutation> changes)
@@ -183,13 +180,18 @@ public sealed class Prices
         PropertyAlias = change.PropertyAlias, OldValue = old?.Price, NewValue = change.Price,
     };
 
-    private void Publish(IReadOnlyList<PriceChangedEventArgs> events)
+    private void Publish(IReadOnlyList<PriceChangedEventArgs> events, IEnumerable<Guid> keys)
     {
+        // Serialize refreshes and read committed rows instead of replaying event values:
+        // a delayed notification must never overwrite a newer committed price.
+        try { Refresh(keys); }
+        catch (Exception ex)
+        {
+            lock (_cacheLock) _cache = null;
+            _logger.LogWarning(ex, "Prices committed, but cache refresh failed; the next read will reload prices");
+        }
         foreach (var change in events)
         {
-            Invalidate(_readScope.Value, change.Key);
-            var requestSnapshot = RequestSnapshot();
-            if (!ReferenceEquals(requestSnapshot, _readScope.Value)) Invalidate(requestSnapshot, change.Key);
             foreach (var handler in PriceEvents.Handlers)
             {
                 try { ((EventHandler<PriceChangedEventArgs>)handler)(this, change); }
@@ -198,91 +200,89 @@ public sealed class Prices
         }
     }
 
-    /// <summary>Reuse price reads within one background operation. Nested scopes share the snapshot.</summary>
-    public IDisposable BeginReadScope()
+    /// <summary>Load all table prices into the shared cache. Also use to reload after external SQL/server writes.</summary>
+    public void FillCache()
     {
-        var previous = _readScope.Value;
-        _readScope.Value = previous ?? RequestSnapshot() ?? new ReadSnapshot();
-        return new ReadScope(() => _readScope.Value = previous);
+        if (!Enabled) return;
+        lock (_cacheLock)
+        {
+            using var db = _databaseFactory.GetDatabase();
+            var rows = db.Prices.ToList();
+            // Publish only a complete cache; a failed reload leaves the previous cache intact.
+            _cache = new ConcurrentDictionary<Guid, PriceData[]>(rows.GroupBy(row => row.NodeKey)
+                .Select(group => new KeyValuePair<Guid, PriceData[]>(group.Key, group.ToArray())));
+        }
     }
 
-    /// <summary>Load node prices in bounded batches. Requires an HTTP request or BeginReadScope.</summary>
-    public async Task PreloadAsync(IEnumerable<Guid> nodeKeys, CancellationToken cancellationToken = default)
+    private void EnsureReady()
     {
-        if (!_configuration.UseDatabasePrices) return;
-        var snapshot = _readScope.Value ?? RequestSnapshot()
-            ?? throw new InvalidOperationException("Begin a price read scope before preloading outside HTTP.");
-        var keys = nodeKeys.Where(key => key != Guid.Empty).Distinct().ToArray();
-        await snapshot.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        if (_cache != null || !Enabled) return;
+        lock (_cacheLock)
+            if (_cache == null) FillCache();
+    }
+
+    private void Refresh(IEnumerable<Guid> keys)
+    {
+        lock (_cacheLock)
         {
-            foreach (var batch in keys.Where(key => !snapshot.Rows.ContainsKey(key)).Chunk(400))
+            if (_cache == null) { FillCache(); return; }
+            foreach (var batch in keys.Distinct().Chunk(400))
             {
-                await using var db = _databaseFactory.GetDatabase();
-                var rows = await db.Prices.Where(row => Enumerable.Contains(batch, row.NodeKey)).ToListAsync(cancellationToken).ConfigureAwait(false);
-                var grouped = rows.ToLookup(row => row.NodeKey);
-                // Cache missing rows too, so node fallbacks do not trigger another query.
-                foreach (var key in batch) snapshot.Rows[key] = grouped[key].ToList();
+                using var db = _databaseFactory.GetDatabase();
+                var rows = db.Prices.Where(row => Enumerable.Contains(batch, row.NodeKey)).ToList().ToLookup(row => row.NodeKey);
+                foreach (var key in batch)
+                {
+                    var current = rows[key].ToArray();
+                    if (current.Length == 0) _cache.TryRemove(key, out _);
+                    else _cache[key] = current;
+                }
             }
         }
-        finally { snapshot.Gate.Release(); }
+    }
+
+    private IReadOnlyList<PriceData> Read(Guid nodeKey)
+    {
+        if (!Enabled) return Array.Empty<PriceData>();
+        var cache = _cache;
+        if (cache == null)
+        {
+            lock (_cacheLock)
+            {
+                EnsureReady();
+                cache = _cache;
+            }
+        }
+        return cache != null && cache.TryGetValue(nodeKey, out var rows) ? rows : Array.Empty<PriceData>();
+    }
+
+    private static PriceData Clone(PriceData row) => new()
+    {
+        NodeKey = row.NodeKey, PropertyAlias = row.PropertyAlias, StoreAlias = row.StoreAlias,
+        Currency = row.Currency, Price = row.Price, UpdateDate = row.UpdateDate,
+    };
+
+    /// <summary>Compatibility helper. Reads now share the application cache without a scope.</summary>
+    public IDisposable BeginReadScope() => EmptyReadScope.Instance;
+
+    /// <summary>Compatibility helper. Ensures the shared cache is ready; node keys no longer require preloading.</summary>
+    public Task PreloadAsync(IEnumerable<Guid> nodeKeys, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(nodeKeys);
+        EnsureReady();
+        return Task.CompletedTask;
     }
 
     public Task PreloadProductsAsync(IEnumerable<IProduct> products, CancellationToken cancellationToken = default)
-        => PreloadAsync(products.SelectMany(product => product.AllVariants.Select(variant => variant.Key).Prepend(product.Key)), cancellationToken);
-
-    private ReadSnapshot? RequestSnapshot()
     {
-        var items = _httpContext?.HttpContext?.Items;
-        if (items == null) return null;
-        lock (items)
-        {
-            if (!items.TryGetValue(_requestKey, out var value)) items[_requestKey] = value = new ReadSnapshot();
-            return (ReadSnapshot)value!;
-        }
+        ArgumentNullException.ThrowIfNull(products);
+        return PreloadAsync(Array.Empty<Guid>(), cancellationToken);
     }
 
-    private static void Invalidate(ReadSnapshot? snapshot, Guid key)
+    private sealed class EmptyReadScope : IDisposable
     {
-        if (snapshot == null) return;
-        snapshot.Gate.Wait();
-        try { snapshot.Rows.Remove(key); }
-        finally { snapshot.Gate.Release(); }
-    }
-
-    private List<PriceData> Read(Guid nodeKey)
-    {
-        List<PriceData> Load()
-        {
-            using var db = _databaseFactory.GetDatabase();
-            return db.Prices.Where(row => row.NodeKey == nodeKey).ToList();
-        }
-        var snapshot = _readScope.Value ?? RequestSnapshot();
-        if (snapshot == null) return Load();
-        snapshot.Gate.Wait();
-        try
-        {
-            if (!snapshot.Rows.TryGetValue(nodeKey, out var rows)) snapshot.Rows[nodeKey] = rows = Load();
-            return rows;
-        }
-        finally { snapshot.Gate.Release(); }
-    }
-
-    private sealed class ReadSnapshot
-    {
-        public SemaphoreSlim Gate { get; } = new(1, 1);
-        public Dictionary<Guid, List<PriceData>> Rows { get; } = new();
-    }
-
-    private sealed class ReadScope(Action dispose) : IDisposable
-    {
-        private bool _disposed;
-        public void Dispose()
-        {
-            if (_disposed) return;
-            _disposed = true;
-            dispose();
-        }
+        public static readonly EmptyReadScope Instance = new();
+        public void Dispose() { }
     }
 
     public string Resolve(Guid nodeKey, string propertyAlias, string storeAlias, string nodeValue, IReadOnlyList<CurrencyModel> currencies)

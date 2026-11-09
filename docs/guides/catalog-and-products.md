@@ -224,7 +224,9 @@ The Ekom Price datatype loads table overrides in Umbraco 13, 17, and 18. Editing
 
 Existing node prices remain a fallback for individual currencies that have no table row. A stored zero is an explicit value; the existing variant rule that a zero base price inherits its parent remains unchanged. Enabling table storage does not migrate or modify node values. Populate the table through your ERP sync to make it the source for every price. Disabling the setting returns to the original node values, so copy current prices back first if you want to retain them when switching back.
 
-Product and variant prices, native discounts, provider prices, and variant/catalog displays resolve table values. Runtime resolution loads all price overrides once per node per HTTP request, shared across base prices, discounts, and stores. The next request on any application server sees committed updates; a local write invalidates the current request snapshot. Outside HTTP requests, each resolution reads fresh data unless it is inside `Prices.BeginReadScope()`. Nested scopes share the current snapshot; a new outer scope reads fresh data. Calculated-price caches retain only the latest price version for a given context, avoiding an entry for every ERP revision. Catalog price sorting, price-range filtering, custom predicates/filter services, and zero-price filtering preload candidate products and their variants in batches of at most 400 node keys. Ordinary title/date paging preloads only the returned page. Missing overrides are cached too, preserving node fallbacks without additional queries. Custom code reading raw Umbraco property JSON still sees the node value; use Ekom price models or `Prices.Resolve` to apply overrides.
+Product and variant prices, native discounts, provider prices, and variant/catalog displays resolve table values through the shared application cache. Like stock, database prices are loaded into a `ConcurrentDictionary` during Ekom startup (before catalog caches are built). Every HTTP request and background job uses that cache: warmed price reads, including missing overrides, perform no SQL queries. A committed price write refreshes the affected nodes from the database before notifying subscribers; removals restore node-value fallback. Refreshes and full reloads are serialized so delayed notifications cannot overwrite newer committed values. Public read results are copies, so callers cannot mutate the shared cache. Calculated-price caches retain only the latest price version for a given context. Custom code reading raw Umbraco property JSON still sees the node value; use Ekom price models or `Prices.Resolve` to apply overrides.
+
+The price cache is local to each application instance, matching stock. Use the registered `Prices` singleton for ERP imports and price edits. Direct SQL changes and writes made by another application server do not automatically update this instance. In a multi-server deployment, arrange a reload on each serving instance after external changes (`prices.FillCache()`), or route writes and reads through one instance. A new HTTP request or read scope does not reload the cache. Reloads atomically replace the full cache and remove rows deleted externally. All price rows are held in memory, so account for catalog size when sizing application instances.
 
 Updates do not emit Umbraco publish notifications. `Ekom.Events.PriceEvents.PriceChanged` fires after commit for each changed override, including removals (`NewValue == null`). Handlers should enqueue work. Subscriber failures are logged without rolling back or retrying committed prices. The Algolia plugin coalesces pending price changes by node/store without loading Umbraco content on the writer thread. A background worker resolves published products and variant parents, shares parent lookups within each batch, and queues one parent-product upsert per store/batch, including inherited variant prices. Product indexing must be enabled. Notifications and the indexing queue are best-effort, not a durable outbox: use periodic reconciliation after process failures or queue overflow. Other search indexes and page caches need their own subscriber. Prices are live data, without Umbraco draft, rollback, or scheduled-publishing semantics.
 
@@ -292,24 +294,27 @@ Variant-manager saves validate required custom fields before writing prices. Bul
 
 ### Price reads in background jobs
 
-Use one short read scope per background batch so repeated price getters share database reads. Preload when the batch's product or node keys are known:
+Read prices normally; a scope or preload is no longer needed:
 
 ```csharp
-using (prices.BeginReadScope())
+foreach (var product in products)
 {
-    await prices.PreloadProductsAsync(products, cancellationToken);
-    // Read product/variant prices here, for example while building export records.
+    var pricesForExport = product.Prices; // Shared in-memory price cache; no price SQL reads.
 }
+
+// Only after out-of-process writes, or when explicitly rebuilding the cache:
+prices.FillCache();
 ```
 
-`PreloadProductsAsync` includes each product and its variants. `PreloadAsync(nodeKeys, cancellationToken)` accepts keys directly. Preloading requires an HTTP request or an active read scope. Calls with database storage disabled are no-ops. Writes through the same `Prices` service invalidate affected entries. External writes become visible in the next outer scope or HTTP request, so do not keep a scope open for the lifetime of a worker. Algolia indexing creates a scope for each processing operation automatically.
+`BeginReadScope`, `PreloadAsync`, and `PreloadProductsAsync` remain compatible with existing callers, but no longer create snapshots or load per-node batches. The preload helpers ensure the shared cache is initialized. Startup fills it automatically; an early first read also initializes it if necessary. With database storage disabled, cache initialization does not query the price table.
 
-SQLite regression checks with cached product models verify these query counts:
+SQLite regression tests measure price-table SELECTs after startup/cache initialization:
 
-| Read workload | Before batching/scoping | With batching/scoping |
+| Operation | Previous scoped/batched implementation | Shared cache |
 | --- | ---: | ---: |
-| Sort 100 products by price and return 10 | 100 | 1 |
-| Sort 801 products by price and return 10 | 801 | 3 |
-| Read one product's prices 20 times outside HTTP | 40 | 1 |
+| Sort 100 products by price and return 10 | 1 | 0 |
+| Sort 801 products by price and return 10 | 3 | 0 |
+| Read one product's prices 20 times outside HTTP, without a scope | 40 | 0 |
+| Read all 801 seeded nodes, including async getters | Per-node or batch reads | 0 |
 
-These are query counts, not production latency measurements. SQL Server throughput and concurrent-update load should still be checked on staging.
+The initial full cache load uses one SELECT. Writes still use SQL transactions and refresh affected nodes after commit, in groups of up to 400 keys. Even an unchanged write refreshes the affected cache entries without raising a change event. Failed transactions do not publish cache changes. If a post-commit refresh fails, it is logged and the next read attempts a full reload; the committed write is not replayed. These are query counts, not production latency measurements. Check startup memory use and SQL Server throughput under your catalog size and update load on staging.

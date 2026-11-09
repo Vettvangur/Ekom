@@ -67,15 +67,15 @@ public sealed class DatabasePriceTests
     }
 
     [Fact]
-    public async Task CachedProductAndVariantObserveExternalWritesWithoutPublishing()
+    public async Task CachedProductAndVariantObserveLocalWritesWithoutPublishing()
     {
         using var fixture = new Fixture();
         var product = new Product(Content("100"), fixture.Store);
         var variant = new TestVariant(Content("0", "-1,100,200,300"), fixture.Store, product);
         Assert.Equal(100, product.Prices[0].BeforeDiscount.Value);
         Assert.Equal(100, variant.Prices[0].BeforeDiscount.Value);
-        // Another service instance represents an ERP writer or another application server.
-        var writer = new Prices(Configuration.Instance, fixture.Factory);
+        // ERP sync uses the registered singleton, just like stock.
+        var writer = fixture.Prices;
         await writer.SetPriceAsync(product.Key, "Web", "en-US", 150);
         Assert.Equal(150, product.Prices[0].BeforeDiscount.Value);
         Assert.Equal(150, variant.Prices[0].BeforeDiscount.Value);
@@ -167,7 +167,7 @@ public sealed class DatabasePriceTests
     }
 
     [Fact]
-    public async Task RequestSnapshotSurvivesExternalWritesAndRefreshesOnNextRequest()
+    public async Task ExternalWritesRequireExplicitCacheReloadAcrossRequests()
     {
         using var fixture = new Fixture();
         var context = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
@@ -180,6 +180,8 @@ public sealed class DatabasePriceTests
             await fixture.Prices.SetPriceAsync(key, "Web", "en-US", 75);
             Assert.Equal(50, Assert.Single(reader.Get(key)).Price);
             context.HttpContext = new DefaultHttpContext();
+            Assert.Equal(50, Assert.Single(reader.Get(key)).Price);
+            reader.FillCache();
             Assert.Equal(75, Assert.Single(reader.Get(key)).Price);
             await reader.SetPriceAsync(key, "Web", "en-US", 90);
             Assert.Equal(90, Assert.Single(reader.Get(key)).Price);
@@ -364,9 +366,9 @@ public sealed class DatabasePriceTests
     }
 
     [Theory]
-    [InlineData(100, 1)]
-    [InlineData(801, 3)]
-    public async Task PriceSortedCatalogUsesBatchedReadsBeforePaging(int count, int expectedQueries)
+    [InlineData(100, 0)]
+    [InlineData(801, 0)]
+    public async Task PriceSortedCatalogReadsSharedCacheWithoutQueries(int count, int expectedQueries)
     {
         using var fixture = new Fixture();
         var products = Enumerable.Range(1, count).Select(i => (IProduct)new CatalogPriceProduct(
@@ -375,6 +377,7 @@ public sealed class DatabasePriceTests
         context.HttpContext = new DefaultHttpContext { RequestServices = Configuration.Resolver };
         try
         {
+            fixture.Prices.FillCache();
             using var counter = new PriceQueryCounter(fixture.DatabasePath);
             var response = await ProductResponse.CreateAsync(products, new ProductQuery
                 { OrderBy = Ekom.Utilities.OrderBy.PriceAsc, Page = 1, PageSize = 10, RaiseEvents = false });
@@ -388,7 +391,7 @@ public sealed class DatabasePriceTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task PriceFiltersPreloadCandidatesButTitlePagingOnlyPreloadsThePage(bool priceFilter)
+    public async Task PriceFiltersAndTitlePagingReadSharedCacheWithoutQueries(bool priceFilter)
     {
         using var fixture = new Fixture();
         var products = Enumerable.Range(0, 801).Select(i => (IProduct)new CatalogPriceProduct(
@@ -400,42 +403,34 @@ public sealed class DatabasePriceTests
             .Returns((IEnumerable<IProduct> input, ProductQuery _) => input.Where(product => product.OriginalPrice.Value >= 50));
         try
         {
+            fixture.Prices.FillCache();
             using var counter = new PriceQueryCounter(fixture.DatabasePath);
             var query = new ProductQuery { OrderBy = Ekom.Utilities.OrderBy.TitleAsc, Page = 1, PageSize = 10, RaiseEvents = false };
             if (priceFilter) query.PropertyFilters = new() { ["priceFrom"] = ["50"] };
             var response = await ProductResponse.CreateAsync(products, query);
             Assert.Equal(10, response.Products.Count());
-            Assert.Equal(priceFilter ? 3 : 1, counter.Count);
+            Assert.Equal(0, counter.Count);
             _ = products[^1].Prices;
-            Assert.Equal(priceFilter ? 3 : 2, counter.Count);
+            Assert.Equal(0, counter.Count);
         }
         finally { context.HttpContext = null; }
     }
 
     [Fact]
-    public async Task BackgroundScopeReducesWarmReadsAndRetainsFreshnessBetweenOperations()
+    public async Task BackgroundReadsUseSharedCacheAndObserveChangesImmediately()
     {
         using var fixture = new Fixture();
         var product = new Product(Content("100"), fixture.Store);
-        _ = product.Prices;
+        fixture.Prices.FillCache();
         using var counter = new PriceQueryCounter(fixture.DatabasePath);
-        for (var i = 0; i < 20; i++) _ = product.Prices;
-        Assert.Equal(40, counter.Count);
-        counter.Reset();
+        for (var i = 0; i < 20; i++) Assert.Equal(100, product.Prices[0].BeforeDiscount.Value);
+        Assert.Equal(0, counter.Count);
         using (fixture.Prices.BeginReadScope())
         {
-            for (var i = 0; i < 20; i++) Assert.Equal(100, product.Prices[0].BeforeDiscount.Value);
-            Assert.Equal(1, counter.Count);
-            var writer = new Prices(Configuration.Instance, fixture.Factory);
-            await writer.SetPriceAsync(product.Key, "Web", "en-US", 150);
-            Assert.Equal(100, product.Prices[0].BeforeDiscount.Value);
-        }
-        using (fixture.Prices.BeginReadScope())
-        {
-            Assert.Equal(150, product.Prices[0].BeforeDiscount.Value);
-            using (fixture.Prices.BeginReadScope())
-                await fixture.Prices.SetPriceAsync(product.Key, "Web", "en-US", 175);
-            Assert.Equal(175, product.Prices[0].BeforeDiscount.Value);
+            await fixture.Prices.SetPriceAsync(product.Key, "Web", "en-US", 150);
+            counter.Reset();
+            for (var i = 0; i < 20; i++) Assert.Equal(150, product.Prices[0].BeforeDiscount.Value);
+            Assert.Equal(0, counter.Count);
         }
     }
 
@@ -451,9 +446,9 @@ public sealed class DatabasePriceTests
         using var counter = new PriceQueryCounter(fixture.DatabasePath);
         await fixture.Prices.PreloadProductsAsync([product]);
         for (var i = 0; i < 20; i++) Assert.Equal(150, variant.Prices[0].BeforeDiscount.Value);
-        Assert.Equal(1, counter.Count);
+        Assert.Equal(0, counter.Count);
         await fixture.Prices.PreloadProductsAsync([product]);
-        Assert.Equal(1, counter.Count);
+        Assert.Equal(0, counter.Count);
     }
 
     [Fact]
@@ -466,6 +461,91 @@ public sealed class DatabasePriceTests
         cancelled.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fixture.Prices.PreloadAsync([key], cancelled.Token));
         await fixture.Prices.PreloadAsync([key]);
+        Assert.Empty(fixture.Prices.Get(key));
+    }
+
+    [Fact]
+    public async Task StartupFillLoadsAllRowsAndPublicReadsCannotMutateCache()
+    {
+        using var fixture = new Fixture();
+        var keys = Enumerable.Range(0, 801).Select(_ => Guid.NewGuid()).ToArray();
+        using (var db = fixture.Factory.GetDatabase())
+            foreach (var key in keys)
+                db.Insert(new PriceData { NodeKey = key, PropertyAlias = "PRICE", StoreAlias = "WEB", Currency = "EN-US", Price = 123 });
+        using var counter = new PriceQueryCounter(fixture.DatabasePath);
+        fixture.Prices.FillCache();
+        Assert.Equal(1, counter.Count);
+        counter.Reset();
+        foreach (var key in keys)
+        {
+            var row = Assert.Single(await fixture.Prices.GetAsync(key));
+            row.Price = 999;
+            Assert.Equal(123, Assert.Single(fixture.Prices.Get(key)).Price);
+        }
+        for (var i = 0; i < 20; i++) Assert.Empty(fixture.Prices.Get(Guid.NewGuid()));
+        Assert.Equal(0, counter.Count);
+    }
+
+    [Fact]
+    public async Task ConcurrentFillsAndWritesLeaveCacheEqualToCommittedRows()
+    {
+        using var fixture = new Fixture();
+        var key = Guid.NewGuid();
+        fixture.Prices.FillCache();
+        await Task.WhenAll(Enumerable.Range(1, 12).Select(i => Task.Run(async () =>
+        {
+            if (i % 3 == 0) fixture.Prices.FillCache();
+            await fixture.Prices.SetPriceAsync(key, "Web", i % 2 == 0 ? "en-US" : "en-GB", i);
+        })));
+        using var db = fixture.Factory.GetDatabase();
+        var persisted = db.Prices.Where(row => row.NodeKey == key).ToList();
+        var cached = fixture.Prices.Get(key);
+        Assert.Equal(persisted.Count, cached.Count);
+        foreach (var row in persisted)
+            Assert.Equal(row.Price, cached.Single(value => value.Currency == row.Currency).Price);
+        await fixture.Prices.RemovePriceAsync(key, "Web", "en-US");
+        Assert.DoesNotContain(fixture.Prices.Get(key), row => row.Currency == "EN-US");
+        fixture.Prices.RemovePrice(key, "Web", "en-GB");
+        Assert.Empty(fixture.Prices.Get(key));
+    }
+
+    [Fact]
+    public async Task NoOpWriteRefreshesCacheWithoutEmittingChange()
+    {
+        using var fixture = new Fixture();
+        var key = Guid.NewGuid();
+        fixture.Prices.SetPrice(key, "Web", "en-US", 10);
+        using (var db = fixture.Factory.GetDatabase())
+            db.Prices.Where(row => row.NodeKey == key).Set(row => row.Price, 20).Update();
+        var observed = 0;
+        EventHandler<PriceChangedEventArgs> handler = (_, args) => { if (args.Key == key) observed++; };
+        PriceEvents.PriceChanged += handler;
+        try
+        {
+            await fixture.Prices.SetPriceAsync(key, "Web", "en-US", 20);
+            Assert.Equal(20, Assert.Single(fixture.Prices.Get(key)).Price);
+            Assert.Equal(0, observed);
+        }
+        finally { PriceEvents.PriceChanged -= handler; }
+    }
+
+    [Fact]
+    public async Task DisabledCacheDoesNotReadDatabaseAndReloadRemovesExternalDeletes()
+    {
+        using (var disabled = new Fixture(enabled: false))
+        {
+            using var counter = new PriceQueryCounter(disabled.DatabasePath);
+            disabled.Prices.FillCache();
+            await disabled.Prices.PreloadAsync([Guid.NewGuid()]);
+            Assert.Empty(await disabled.Prices.GetAsync(Guid.NewGuid()));
+            Assert.Equal(0, counter.Count);
+        }
+        using var fixture = new Fixture();
+        var key = Guid.NewGuid();
+        fixture.Prices.SetPrice(key, "Web", "en-US", 10);
+        using (var db = fixture.Factory.GetDatabase()) db.Prices.Where(row => row.NodeKey == key).Delete();
+        Assert.Single(fixture.Prices.Get(key));
+        fixture.Prices.FillCache();
         Assert.Empty(fixture.Prices.Get(key));
     }
 

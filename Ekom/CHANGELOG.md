@@ -12,6 +12,8 @@
 
 ### Bug Fixes
 
+* **prices:** use a startup-filled shared cache for all price reads and refresh committed changes without per-request SQL queries.
+
 * **prices:** block saves after document identity is cleared, batch catalog price reads, add scoped background snapshots, and defer/coalesce Algolia price refreshes.
 
 * **prices:** reset editor state across documents, restore draft variant access without publish permission, validate forms before live price writes, and filter variant price baselines by store access.
