@@ -12,7 +12,8 @@ internal sealed class AlgoliaPriceIndexWorker(
     AlgoliaPriceIndexQueue queue,
     IServiceScopeFactory scopeFactory,
     IOptions<AlgoliaOptions> options,
-    ILogger<AlgoliaPriceIndexWorker> logger) : BackgroundService
+    ILogger<AlgoliaPriceIndexWorker> logger,
+    TimeProvider? timeProvider = null) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -22,9 +23,14 @@ internal sealed class AlgoliaPriceIndexWorker(
             try
             {
                 if (!await queue.Reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false)) break;
-                await Task.Delay(TimeSpan.FromSeconds(Math.Max(1, dispatch.FlushIntervalSeconds)), stoppingToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(Math.Max(1, dispatch.FlushIntervalSeconds)), timeProvider ?? TimeProvider.System, stoppingToken).ConfigureAwait(false);
                 var changes = queue.Drain(dispatch.MaxBatchSize > 0 ? dispatch.MaxBatchSize : 100);
-                await DispatchAsync(changes, stoppingToken).ConfigureAwait(false);
+                while (changes.Count > 0)
+                {
+                    stoppingToken.ThrowIfCancellationRequested();
+                    await DispatchAsync(changes, stoppingToken).ConfigureAwait(false);
+                    changes = queue.Drain(dispatch.MaxBatchSize > 0 ? dispatch.MaxBatchSize : 100);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
             catch (Exception ex)

@@ -17,12 +17,14 @@ using System.Text.Json;
 namespace Ekom.API;
 
 /// <summary>Table-backed price overrides. Writes never save or publish Umbraco content.</summary>
-public sealed class Prices
+public sealed class Prices : IDisposable
 {
     private readonly Configuration _configuration;
     private readonly DatabaseFactory _databaseFactory;
     private readonly ILogger<Prices> _logger;
-    private readonly object _cacheLock = new();
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
+    private readonly object _publicationLock = new();
+    private readonly AsyncLocal<IReadOnlyDictionary<Guid, PriceData[]>?> _calculation = new();
     private volatile ConcurrentDictionary<Guid, PriceData[]>? _cache;
 
     public Prices(Configuration configuration, DatabaseFactory databaseFactory,
@@ -43,10 +45,12 @@ public sealed class Prices
         return Read(nodeKey).Where(x => x.PropertyAlias == propertyAlias).Select(Clone).ToList();
     }
 
-    public Task<IReadOnlyList<PriceData>> GetAsync(Guid nodeKey, string propertyAlias = "price", CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PriceData>> GetAsync(Guid nodeKey, string propertyAlias = "price", CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(Get(nodeKey, propertyAlias));
+        if (_calculation.Value?.ContainsKey(nodeKey) != true)
+            await EnsureReadyAsync(cancellationToken).ConfigureAwait(false);
+        return Get(nodeKey, propertyAlias);
     }
 
     public void SetPrice(Guid nodeKey, string storeAlias, string currency, decimal price, string propertyAlias = "price")
@@ -143,7 +147,7 @@ public sealed class Prices
             return committed;
         }, cancellationToken).ConfigureAwait(false);
         // Cancellation or a subscriber failure after commit must not replay an already committed write.
-        Publish(events, batch.Select(change => change.NodeKey));
+        await PublishAsync(events, batch.Select(change => change.NodeKey)).ConfigureAwait(false);
     }
 
     private List<PriceMutation> Prepare(IEnumerable<PriceMutation> changes)
@@ -182,78 +186,201 @@ public sealed class Prices
 
     private void Publish(IReadOnlyList<PriceChangedEventArgs> events, IEnumerable<Guid> keys)
     {
-        // Serialize refreshes and read committed rows instead of replaying event values:
-        // a delayed notification must never overwrite a newer committed price.
-        try { Refresh(keys); }
-        catch (Exception ex)
+        _refreshGate.Wait();
+        try
         {
-            lock (_cacheLock) _cache = null;
-            _logger.LogWarning(ex, "Prices committed, but cache refresh failed; the next read will reload prices");
-        }
-        foreach (var change in events)
-        {
-            foreach (var handler in PriceEvents.Handlers)
+            try
             {
-                try { ((EventHandler<PriceChangedEventArgs>)handler)(this, change); }
-                catch (Exception ex) { _logger.LogWarning(ex, "Price for {NodeKey} in {Store} committed, but notification failed", change.Key, change.StoreAlias); }
+                if (_cache == null) FillLocked();
+                else
+                {
+                    var nodes = keys.Distinct().ToArray();
+                    var rows = new List<PriceData>();
+                    foreach (var batch in nodes.Chunk(400))
+                    {
+                        using var db = _databaseFactory.GetDatabase();
+                        rows.AddRange(db.Prices.Where(row => Enumerable.Contains(batch, row.NodeKey)).ToList());
+                    }
+                    PublishRows(nodes, rows);
+                }
             }
+            catch (Exception ex) { RefreshFailed(ex); }
         }
+        finally { _refreshGate.Release(); }
+        Notify(events);
+    }
+
+    private async Task PublishAsync(IReadOnlyList<PriceChangedEventArgs> events, IEnumerable<Guid> keys)
+    {
+        // Commit already succeeded. Do not cancel or replay cache publication.
+        await _refreshGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            try
+            {
+                if (_cache == null) await FillLockedAsync(CancellationToken.None).ConfigureAwait(false);
+                else
+                {
+                    var nodes = keys.Distinct().ToArray();
+                    var rows = new List<PriceData>();
+                    foreach (var batch in nodes.Chunk(400))
+                    {
+                        await using var db = _databaseFactory.GetDatabase();
+                        rows.AddRange(await db.Prices.Where(row => Enumerable.Contains(batch, row.NodeKey))
+                            .ToListAsync().ConfigureAwait(false));
+                    }
+                    PublishRows(nodes, rows);
+                }
+            }
+            catch (Exception ex) { RefreshFailed(ex); }
+        }
+        finally { _refreshGate.Release(); }
+        Notify(events);
+    }
+
+    private void RefreshFailed(Exception ex)
+    {
+        lock (_publicationLock) _cache = null;
+        _logger.LogWarning(ex, "Prices committed, but cache refresh failed; the next read will reload prices");
+    }
+
+    private void Notify(IReadOnlyList<PriceChangedEventArgs> events)
+    {
+        var previous = _calculation.Value;
+        _calculation.Value = null;
+        try
+        {
+            foreach (var change in events)
+                foreach (var handler in PriceEvents.Handlers)
+                {
+                    try { ((EventHandler<PriceChangedEventArgs>)handler)(this, change); }
+                    catch (Exception ex) { _logger.LogWarning(ex, "Price for {NodeKey} in {Store} committed, but notification failed", change.Key, change.StoreAlias); }
+                }
+        }
+        finally { _calculation.Value = previous; }
     }
 
     /// <summary>Load all table prices into the shared cache. Also use to reload after external SQL/server writes.</summary>
     public void FillCache()
     {
         if (!Enabled) return;
-        lock (_cacheLock)
+        _refreshGate.Wait();
+        try { FillLocked(); }
+        finally { _refreshGate.Release(); }
+    }
+
+    /// <summary>Reload the shared cache without blocking a thread while waiting for SQL or another refresh.</summary>
+    public async Task FillCacheAsync(CancellationToken cancellationToken = default)
+    {
+        if (!Enabled) return;
+        await _refreshGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try { await FillLockedAsync(cancellationToken).ConfigureAwait(false); }
+        finally { _refreshGate.Release(); }
+    }
+
+    private void FillLocked()
+    {
+        using var db = _databaseFactory.GetDatabase();
+        PublishFullCache(db.Prices.ToList());
+    }
+
+    private async Task FillLockedAsync(CancellationToken ct)
+    {
+        await using var db = _databaseFactory.GetDatabase();
+        var rows = await db.Prices.ToListAsync(ct).ConfigureAwait(false);
+        PublishFullCache(rows);
+    }
+
+    private void PublishFullCache(List<PriceData> rows)
+    {
+        var next = new ConcurrentDictionary<Guid, PriceData[]>(rows.GroupBy(row => row.NodeKey)
+            .Select(group => new KeyValuePair<Guid, PriceData[]>(group.Key, group.ToArray())));
+        lock (_publicationLock) _cache = next;
+    }
+
+    private void PublishRows(Guid[] keys, List<PriceData> rows)
+    {
+        var grouped = rows.ToLookup(row => row.NodeKey);
+        var updates = keys.Select(key => (Key: key, Rows: grouped[key].ToArray())).ToArray();
+        // Only in-memory publication is locked. Capture related node snapshots atomically,
+        // including when a committed batch spans multiple SQL refresh chunks.
+        lock (_publicationLock)
         {
-            using var db = _databaseFactory.GetDatabase();
-            var rows = db.Prices.ToList();
-            // Publish only a complete cache; a failed reload leaves the previous cache intact.
-            _cache = new ConcurrentDictionary<Guid, PriceData[]>(rows.GroupBy(row => row.NodeKey)
-                .Select(group => new KeyValuePair<Guid, PriceData[]>(group.Key, group.ToArray())));
+            foreach (var update in updates)
+            {
+                if (update.Rows.Length == 0) _cache!.TryRemove(update.Key, out _);
+                else _cache![update.Key] = update.Rows;
+            }
         }
     }
 
     private void EnsureReady()
     {
         if (_cache != null || !Enabled) return;
-        lock (_cacheLock)
-            if (_cache == null) FillCache();
+        _refreshGate.Wait();
+        try { if (_cache == null) FillLocked(); }
+        finally { _refreshGate.Release(); }
     }
 
-    private void Refresh(IEnumerable<Guid> keys)
+    private async Task EnsureReadyAsync(CancellationToken ct)
     {
-        lock (_cacheLock)
+        if (_cache != null || !Enabled) return;
+        await _refreshGate.WaitAsync(ct).ConfigureAwait(false);
+        try { if (_cache == null) await FillLockedAsync(ct).ConfigureAwait(false); }
+        finally { _refreshGate.Release(); }
+    }
+
+    internal IDisposable BeginCalculationScope(Guid key, Guid? parentKey = null)
+    {
+        var previous = _calculation.Value;
+        if (previous?.ContainsKey(key) == true && (!parentKey.HasValue || previous.ContainsKey(parentKey.Value)))
+            return EmptyReadScope.Instance;
+        var snapshot = previous == null ? new Dictionary<Guid, PriceData[]>() : new Dictionary<Guid, PriceData[]>(previous);
+        while (true)
         {
-            if (_cache == null) { FillCache(); return; }
-            foreach (var batch in keys.Distinct().Chunk(400))
+            EnsureReady();
+            lock (_publicationLock)
             {
-                using var db = _databaseFactory.GetDatabase();
-                var rows = db.Prices.Where(row => Enumerable.Contains(batch, row.NodeKey)).ToList().ToLookup(row => row.NodeKey);
-                foreach (var key in batch)
-                {
-                    var current = rows[key].ToArray();
-                    if (current.Length == 0) _cache.TryRemove(key, out _);
-                    else _cache[key] = current;
-                }
+                if (Enabled && _cache == null) continue;
+                Capture(key);
+                if (parentKey.HasValue) Capture(parentKey.Value);
+                break;
             }
+        }
+        _calculation.Value = snapshot;
+        return new CalculationScope(() => _calculation.Value = previous);
+
+        void Capture(Guid nodeKey)
+        {
+            if (!snapshot.ContainsKey(nodeKey))
+                snapshot[nodeKey] = _cache != null && _cache.TryGetValue(nodeKey, out var rows) ? rows : [];
+        }
+    }
+
+    private sealed class CalculationScope(Action restore) : IDisposable
+    {
+        private bool _disposed;
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            restore();
         }
     }
 
     private IReadOnlyList<PriceData> Read(Guid nodeKey)
     {
         if (!Enabled) return Array.Empty<PriceData>();
-        var cache = _cache;
-        if (cache == null)
+        if (_calculation.Value?.TryGetValue(nodeKey, out var pinned) == true) return pinned;
+        while (true)
         {
-            lock (_cacheLock)
-            {
-                EnsureReady();
-                cache = _cache;
-            }
+            EnsureReady();
+            var cache = _cache;
+            if (cache != null) return cache.TryGetValue(nodeKey, out var rows) ? rows : Array.Empty<PriceData>();
         }
-        return cache != null && cache.TryGetValue(nodeKey, out var rows) ? rows : Array.Empty<PriceData>();
     }
+
+    public void Dispose() => _refreshGate.Dispose();
 
     private static PriceData Clone(PriceData row) => new()
     {
@@ -269,8 +396,7 @@ public sealed class Prices
     {
         cancellationToken.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(nodeKeys);
-        EnsureReady();
-        return Task.CompletedTask;
+        return EnsureReadyAsync(cancellationToken);
     }
 
     public Task PreloadProductsAsync(IEnumerable<IProduct> products, CancellationToken cancellationToken = default)

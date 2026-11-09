@@ -12,6 +12,8 @@
 
 ### Bug Fixes
 
+* **prices:** keep concurrent price calculations consistent, refresh caches asynchronously, and drain Algolia price backlogs without per-batch delays.
+
 * **prices:** use a startup-filled shared cache for all price reads and refresh committed changes without per-request SQL queries.
 
 * **prices:** block saves after document identity is cleared, batch catalog price reads, add scoped background snapshots, and defer/coalesce Algolia price refreshes.

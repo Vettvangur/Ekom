@@ -388,6 +388,7 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
+            using var priceSnapshot = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance.BeginCalculationScope(Key) : null;
             string[] categories = Categories.Select(x => x.Id.ToString()).ToArray();
             bool vatIncludedInPrice = Store.VatIncludedInPrice;
             var storeCurrency = Store.Currency;
@@ -428,6 +429,7 @@ public class Product : PerStoreNodeEntity, IProduct
     public List<IPrice> BuildPricesFromRaw(
         string[]? categories = null)
     {
+        using var priceSnapshot = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance.BeginCalculationScope(Key) : null;
         categories ??= Categories.Select(x => x.Id.ToString()).ToArray();
 
         return PriceBuilder.BuildPricesSync(

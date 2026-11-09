@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Threading.Channels;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Xunit;
@@ -61,6 +62,63 @@ public sealed class AlgoliaPriceIndexQueueTests
         Assert.Equal(4, contentService.Invocations.Count);
         contentService.Verify(x => x.GetById(2), Times.Once);
         contentService.Verify(x => x.GetById(1), Times.Once);
+    }
+
+    [Fact]
+    public async Task WorkerDrainsBacklogAfterOneCollectionDelay()
+    {
+        var options = Microsoft.Extensions.Options.Options.Create(Options(1000));
+        var queue = new AlgoliaPriceIndexQueue(options);
+        var contentService = new Mock<IContentService>();
+        contentService.Setup(x => x.GetById(It.IsAny<Guid>())).Returns((Guid key) =>
+            Mock.Of<IContent>(content => content.Key == key && content.Published
+                && content.ContentType == Mock.Of<ISimpleContentType>(type => type.Alias == "ekmProduct")));
+        var output = new AlgoliaProductIndexQueue(NullLogger<AlgoliaProductIndexQueue>.Instance, options);
+        using var provider = new ServiceCollection().AddSingleton(contentService.Object).AddSingleton(options)
+            .AddSingleton<IAlgoliaProductIndexQueue>(output).AddSingleton<AlgoliaStoreResolver>()
+            .AddSingleton<ILogger<AlgoliaStoreResolver>>(NullLogger<AlgoliaStoreResolver>.Instance).BuildServiceProvider();
+        var clock = new CollectionClock();
+        using var worker = new AlgoliaPriceIndexWorker(queue, provider.GetRequiredService<IServiceScopeFactory>(), options,
+            NullLogger<AlgoliaPriceIndexWorker>.Instance, clock);
+        for (var i = 0; i < 250; i++) Assert.True(queue.TryEnqueue(Guid.NewGuid(), "Web"));
+        await worker.StartAsync(default);
+        try
+        {
+            var firstDelay = await clock.Timers.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.False(output.Reader.TryRead(out _));
+            firstDelay.Fire();
+            var total = 0;
+            for (var i = 0; i < 3; i++)
+            {
+                var job = await output.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+                total += job.ProductKeys.Count;
+            }
+            Assert.Equal(250, total);
+            Assert.Equal(1, clock.DelayCount);
+
+        }
+        finally { await worker.StopAsync(default); }
+    }
+
+    private sealed class CollectionClock : TimeProvider
+    {
+        public Channel<CollectionTimer> Timers { get; } = Channel.CreateUnbounded<CollectionTimer>();
+        public int DelayCount;
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            Interlocked.Increment(ref DelayCount);
+            var timer = new CollectionTimer(callback, state);
+            Timers.Writer.TryWrite(timer);
+            return timer;
+        }
+    }
+
+    private sealed class CollectionTimer(TimerCallback callback, object? state) : ITimer
+    {
+        public void Fire() => callback(state);
+        public bool Change(TimeSpan dueTime, TimeSpan period) => true;
+        public void Dispose() { }
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     private static AlgoliaOptions Options(int capacity = 100) => new()

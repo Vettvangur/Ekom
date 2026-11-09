@@ -241,6 +241,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         get
         {
             var product = Product;
+            using var priceSnapshot = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance.BeginCalculationScope(Key, product?.Key) : null;
             string[] categories = product?.Categories.Select(x => x.Id.ToString()).ToArray()
                                     ?? Array.Empty<string>();
 

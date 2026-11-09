@@ -171,7 +171,7 @@ public sealed class DatabasePriceTests
     {
         using var fixture = new Fixture();
         var context = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
-        var reader = new Prices(Configuration.Instance, fixture.Factory, context);
+        using var reader = new Prices(Configuration.Instance, fixture.Factory, context);
         var key = Guid.NewGuid();
         try
         {
@@ -547,6 +547,117 @@ public sealed class DatabasePriceTests
         Assert.Single(fixture.Prices.Get(key));
         fixture.Prices.FillCache();
         Assert.Empty(fixture.Prices.Get(key));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CalculationKeepsBaseDiscountAndInheritedPricesTogetherDuringCommit(bool variantRead)
+    {
+        using var fixture = new Fixture();
+        var product = new CatalogPriceProduct(Content("100"), fixture.Store);
+        var variant = new TestVariant(Content("0", "-1,100,200,300"), fixture.Store, product);
+        await fixture.Prices.ApplyAsync([new(product.Key, "Web", "en-US", 100),
+            new(product.Key, "Web", "en-US", 80, "ekmDiscountPrice")]);
+        var changed = false;
+        decimal? subscriberValue = null;
+        EventHandler<PriceChangedEventArgs> subscriber = (_, args) =>
+        {
+            if (args.Key == product.Key) subscriberValue = fixture.Prices.Get(product.Key).Single().Price;
+        };
+        async ValueTask Interleave(PriceCache.PriceGenerationEventArgs args, CancellationToken ct)
+        {
+            if (changed) return;
+            changed = true;
+            await Task.Run(() => fixture.Prices.ApplyAsync([new(product.Key, "Web", "en-US", 200),
+                new(product.Key, "Web", "en-US", 160, "ekmDiscountPrice")]));
+        }
+        PriceCache.OnGenerationCreatedAsync += Interleave;
+        PriceEvents.PriceChanged += subscriber;
+        try
+        {
+            var overlapping = (variantRead ? variant.Prices : product.Prices)[0];
+            Assert.Equal(100, overlapping.BeforeDiscount.Value);
+            Assert.Equal(80, overlapping.AfterDiscount.Value);
+            Assert.Equal(200m, subscriberValue);
+        }
+        finally
+        {
+            PriceCache.OnGenerationCreatedAsync -= Interleave;
+            PriceEvents.PriceChanged -= subscriber;
+        }
+        using var counter = new PriceQueryCounter(fixture.DatabasePath);
+        var next = (variantRead ? variant.Prices : product.Prices)[0];
+        Assert.Equal(200, next.BeforeDiscount.Value);
+        Assert.Equal(160, next.AfterDiscount.Value);
+        Assert.Equal(0, counter.Count);
+    }
+
+    [Fact]
+    public async Task AsyncRefreshQueriesAreAsyncAndReloadWaitDoesNotBlockCallerOrWarmReads()
+    {
+        using var fixture = new Fixture();
+        fixture.Prices.FillCache();
+        var key = Guid.NewGuid();
+        var previous = LinqToDB.Data.DataConnection.DefaultOnTraceConnection;
+        var level = LinqToDB.Data.DataConnection.TraceSwitch.Level;
+        var asyncReads = new ConcurrentQueue<bool>();
+        LinqToDB.Data.DataConnection.TurnTraceSwitchOn(System.Diagnostics.TraceLevel.Info);
+        LinqToDB.Data.DataConnection.DefaultOnTraceConnection = info =>
+        {
+            if (info.TraceInfoStep == LinqToDB.Data.TraceInfoStep.BeforeExecute
+                && info.DataConnection.ConnectionString?.Contains(fixture.DatabasePath, StringComparison.Ordinal) == true
+                && info.SqlText?.Contains("SELECT", StringComparison.OrdinalIgnoreCase) == true
+                && info.SqlText.Contains("EkomPrice", StringComparison.Ordinal)) asyncReads.Enqueue(info.IsAsync);
+        };
+        try
+        {
+            await fixture.Prices.SetPriceAsync(key, "Web", "en-US", 50);
+            Assert.Equal(2, asyncReads.Count); // Mutation check plus post-commit refresh.
+            Assert.All(asyncReads, value => Assert.True(value));
+        }
+        finally
+        {
+            LinqToDB.Data.DataConnection.DefaultOnTraceConnection = previous;
+            LinqToDB.Data.DataConnection.TurnTraceSwitchOn(level);
+        }
+        var gate = (SemaphoreSlim)typeof(Prices).GetField("_refreshGate",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(fixture.Prices)!;
+        await gate.WaitAsync();
+        var returned = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var caller = Task.Run(() => { returned.SetResult(fixture.Prices.FillCacheAsync()); });
+        Task? pending = null;
+        try
+        {
+            pending = await returned.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.False(pending.IsCompleted);
+            using var counter = new PriceQueryCounter(fixture.DatabasePath);
+            Assert.Equal(50, Assert.Single(await fixture.Prices.GetAsync(key)).Price);
+            Assert.Equal(0, counter.Count);
+        }
+        finally { gate.Release(); }
+        await caller;
+        if (pending != null) await pending;
+    }
+
+    [Fact]
+    public async Task FailedCalculationReleasesPinnedRowsAndCancelledReloadKeepsWarmCache()
+    {
+        using var fixture = new Fixture();
+        var product = new CatalogPriceProduct(Content("100"), fixture.Store);
+        fixture.Prices.SetPrice(product.Key, "Web", "en-US", 100);
+        ValueTask Fail(PriceCache.PriceGenerationEventArgs args, CancellationToken ct)
+            => throw new InvalidOperationException("calculation failed");
+        PriceCache.OnGenerationCreatedAsync += Fail;
+        try { Assert.Throws<InvalidOperationException>(() => product.Prices); }
+        finally { PriceCache.OnGenerationCreatedAsync -= Fail; }
+        await fixture.Prices.SetPriceAsync(product.Key, "Web", "en-US", 200);
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fixture.Prices.FillCacheAsync(cancelled.Token));
+        using var counter = new PriceQueryCounter(fixture.DatabasePath);
+        Assert.Equal(200, product.Prices[0].BeforeDiscount.Value);
+        Assert.Equal(0, counter.Count);
     }
 
     private sealed class CatalogPriceProduct(UmbracoContent content, IStore store) : Product(content, store)
