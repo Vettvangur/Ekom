@@ -177,13 +177,13 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       ${this.busy ? '<p role="status">Loading…</p>' : ''}
       ${r ? `<div class="customer-cards">${this.card('Customers', this.number(r.totals.customers))}${this.card('Returning', this.number(r.totals.returningPercent) + '%')}${this.card('Average lifetime spend', this.amount(r.spend,'averageLifetime'))}${this.card('Average orders per customer',this.number(r.totals.averageOrders))}${this.card('Average days between orders',this.number(r.totals.averageReorderDays))}</div>
       <p class="customer-muted">${r.missingIdentifiers} qualifying orders in this period have no ${r.identityField === 'CustomerUsername' ? 'username' : 'email'} and are excluded. Spend uses recorded charged amounts, without refund adjustment.</p>` : ''}
-      <div class="customer-panel"><form class="customer-toolbar" data-search>
+      <div class="customer-panel"><div class="customer-toolbar" role="search">
         <label>Search<input name="query" value="${esc(this.query)}" placeholder="Name, email or username"></label>
-        <button type="submit">Search</button>
+        <button type="button" data-search>Search</button>
         <label>Customers<select data-segment>${['all','new','returning'].map(s => `<option value="${s}" ${s === this.segment ? 'selected' : ''}>${s[0].toUpperCase()+s.slice(1)}</option>`).join('')}</select></label>
         <label>Sort by<select data-sort>${[['newest','Newest first order'],['oldest','Oldest first order'],['lastOrder','Latest order'],['orders','Most orders'],['name','Name']].map(([v,l]) => `<option value="${v}" ${v === this.sort ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <button type="button" data-export ${this.busy || !r?.totals.customers ? 'disabled' : ''}>Export</button>
-      </form><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
+      </div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
       ${(r?.customers || []).map(c => `<tr><td><button data-customer="${esc(c.identity)}">${esc(c.name || c.email || c.username || c.identity)}<span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span><span class="customer-muted">${esc(c.email || c.username || c.identity)}</span></button></td><td>${this.date(c.firstOrder)}</td><td>${c.orders}</td><td>${this.amount(c.spend,'total')}</td><td>${this.amount(c.spend,'averageOrder')}</td><td>${this.date(c.lastOrder)}<span class="customer-muted">${esc(c.lastStatus || '')}</span></td><td>${c.daysSinceLastOrder}</td></tr>`).join('') || '<tr><td colspan="7">No customers found.</td></tr>'}
       </tbody></table></div><div class="customer-pagination"><button data-page="${this.page-1}" ${this.page <= 1 || this.busy ? 'disabled' : ''}>Previous</button><span>Page ${this.page} of ${Math.max(1,r?.totalPages || 0)}</span><button data-page="${this.page+1}" ${this.page >= (r?.totalPages || 0) || this.busy ? 'disabled' : ''}>Next</button></div></div>
       ${this.detail ? this.renderDetail(this.detail) : ''}</section>`;
@@ -205,7 +205,18 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       this.dispatchEvent(new CustomEvent('customer-filters-changed', { bubbles:true, detail: { ...managerState.filters } }));
       this.page = 1; void this.load();
     }));
-    this.querySelector('[data-search]')?.addEventListener('submit', event => { event.preventDefault(); this.query = this.querySelector<HTMLInputElement>('[name=query]')?.value || ''; this.page = 1; void this.load(); });
+    const search = () => {
+      this.query = this.querySelector<HTMLInputElement>('[name=query]')?.value.trim() || '';
+      this.page = 1;
+      void this.load();
+    };
+    this.querySelector('[data-search]')?.addEventListener('click', search);
+    this.querySelector<HTMLInputElement>('[name=query]')?.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' || event.isComposing) return;
+      event.preventDefault();
+      event.stopPropagation();
+      search();
+    });
     this.querySelector<HTMLSelectElement>('[data-segment]')?.addEventListener('change', event => { this.segment = (event.target as HTMLSelectElement).value; this.page=1; void this.load(); });
     this.querySelector<HTMLSelectElement>('[data-sort]')?.addEventListener('change', event => { this.sort = (event.target as HTMLSelectElement).value; this.page=1; void this.load(); });
     this.querySelector('[data-reload]')?.addEventListener('click', () => void this.load());

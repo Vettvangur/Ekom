@@ -384,7 +384,7 @@ const de = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-function z(i, r) {
+function I(i, r) {
   const e = r == null ? void 0 : r.isoCurrencySymbol, t = (r == null ? void 0 : r.currencyDecimalDigits) ?? 2;
   return new Intl.NumberFormat(void 0, {
     minimumFractionDigits: t,
@@ -399,7 +399,7 @@ function le(i, r, e, t = {}) {
   const o = i.getContext("2d");
   if (!o) return;
   o.scale(s, s), o.font = "12px sans-serif";
-  const w = r.points || [], l = w.map((c) => c.y == null ? null : Number(c.y)), v = ((W = t.comparison) == null ? void 0 : W.points) || [], U = [...l, ...v.map((c) => c.y)].filter((c) => c != null), x = Math.min(0, ...U), R = Math.max(1, ...U), O = t.integer ? Math.ceil(R / 4) * 4 : R, C = (c) => t.formatValue ? t.formatValue(c) : t.currency ? z(c, t.currency) : c.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), M = Array.from({ length: 5 }, (c, g) => O - (O - x) * g / 4), S = Math.max(48, ...M.map((c) => o.measureText(C(c)).width + 12)), A = n - 16, F = 20, $ = d - 52, b = w.map((c, g) => {
+  const w = r.points || [], l = w.map((c) => c.y == null ? null : Number(c.y)), v = ((W = t.comparison) == null ? void 0 : W.points) || [], U = [...l, ...v.map((c) => c.y)].filter((c) => c != null), x = Math.min(0, ...U), R = Math.max(1, ...U), O = t.integer ? Math.ceil(R / 4) * 4 : R, C = (c) => t.formatValue ? t.formatValue(c) : t.currency ? I(c, t.currency) : c.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), M = Array.from({ length: 5 }, (c, g) => O - (O - x) * g / 4), S = Math.max(48, ...M.map((c) => o.measureText(C(c)).width + 12)), A = n - 16, F = 20, $ = d - 52, b = w.map((c, g) => {
     var k;
     return {
       x: w.length > 1 ? S + (A - S) * g / (w.length - 1) : (S + A) / 2,
@@ -416,7 +416,7 @@ function le(i, r, e, t = {}) {
     o.fillStyle = "#555", b.forEach((u, h) => {
       j.has(h) && (o.textAlign = b.length === 1 ? "center" : h === 0 ? "left" : h === b.length - 1 ? "right" : "center", o.fillText(u.date, u.x, $ + 24));
     });
-    const q = (u, h) => {
+    const z = (u, h) => {
       var T, E;
       o.strokeStyle = h ? "#9298a5" : e, o.lineWidth = 2, (T = o.setLineDash) == null || T.call(o, h ? [6, 4] : []), o.beginPath();
       let y = !1;
@@ -428,13 +428,13 @@ function le(i, r, e, t = {}) {
         y ? o.lineTo(D.x, D.y) : o.moveTo(D.x, D.y), y = !0;
       }), o.stroke(), (E = o.setLineDash) == null || E.call(o, []);
     };
-    v.length && q(b.map((u, h) => {
+    v.length && z(b.map((u, h) => {
       var y;
       return {
         x: u.x,
         y: ((y = v[h]) == null ? void 0 : y.y) == null ? null : $ - (Number(v[h].y) - x) / (O - x) * ($ - F)
       };
-    }), !0), q(b, !1), o.fillStyle = e, b.forEach((u, h) => {
+    }), !0), z(b, !1), o.fillStyle = e, b.forEach((u, h) => {
       u.y != null && (o.beginPath(), o.arc(u.x, u.y, h === c ? 5 : 3, 0, Math.PI * 2), o.fill());
     }), b.length || (o.textAlign = "center", o.fillText("No data for this period", (S + A) / 2, d / 2));
     const _ = b[c];
@@ -451,12 +451,12 @@ function le(i, r, e, t = {}) {
     const g = i.getBoundingClientRect(), k = (c.clientX - g.left) * n / g.width, j = (c.clientY - g.top) * d / g.height;
     if (t.columnHover)
       return !b.length || k < S || k > A || j < F || j > $ ? -1 : b.length === 1 ? 0 : Math.round((k - S) / (A - S) * (b.length - 1));
-    let q = -1, _ = 16;
+    let z = -1, _ = 16;
     return b.forEach((u, h) => {
       if (u.y == null) return;
       const y = Math.hypot(u.x - k, u.y - j);
-      y < _ && (q = h, _ = y);
-    }), q;
+      y < _ && (z = h, _ = y);
+    }), z;
   };
   i.onmousemove = (c) => {
     const g = Y(c);
@@ -621,7 +621,7 @@ class he extends ae(HTMLElement) {
     var a, s, n, d, o;
     if (e == null || (a = this.chartData) != null && a.mixedCurrencies) return "—";
     const t = ((s = this.chartData) == null ? void 0 : s.currency) || ((n = this.previousData) == null ? void 0 : n.currency);
-    return !t || t === ((d = this.currency) == null ? void 0 : d.currencyValue) || t === ((o = this.currency) == null ? void 0 : o.isoCurrencySymbol) ? z(e, this.currency) : /^[A-Z]{3}$/.test(t) ? z(e, { isoCurrencySymbol: t }) : `${e.toLocaleString(void 0, { maximumFractionDigits: 2 })} ${t}`;
+    return !t || t === ((d = this.currency) == null ? void 0 : d.currencyValue) || t === ((o = this.currency) == null ? void 0 : o.isoCurrencySymbol) ? I(e, this.currency) : /^[A-Z]{3}$/.test(t) ? I(e, { isoCurrencySymbol: t }) : `${e.toLocaleString(void 0, { maximumFractionDigits: 2 })} ${t}`;
   }
   label(e) {
     return e === "orders" ? "Orders" : e === "average" ? "Average order value" : "Order amount";
@@ -638,25 +638,30 @@ class he extends ae(HTMLElement) {
   render() {
     const e = f.filters;
     this.innerHTML = `<style>${de}
-      ekom-analytics-section-view { display:block }
+      ekom-analytics-section-view { display:block;color:var(--uui-color-text,#20232e) }
+      .analytics {background:var(--uui-color-background,#f3f4f7);min-height:80vh}
+      .analytics .card {background:var(--uui-color-surface,#fff);border:1px solid #dfe2e8;border-radius:10px;padding:18px;text-align:left;box-shadow:none}
+      .analytics .analytics-main {margin-top:18px}
+      .analytics h3 {margin:0;font-size:16px}
+      .analytics button:disabled {opacity:.5;cursor:default}
       .analytics-toolbar {display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:18px}
-      .analytics-toolbar label {display:grid;gap:5px}
+      .analytics-toolbar label {display:grid;gap:5px;font-size:12px}
       .analytics-toolbar input,.analytics-toolbar select,.analytics-toolbar button,.analytics-table button {font:inherit;padding:8px 12px;border:1px solid #dfe2e8;border-radius:6px;background:var(--uui-color-surface,#fff);color:inherit}
       .analytics-toolbar button {cursor:pointer}
       .analytics-toolbar button[aria-pressed=true] {background:#e7f1ed;border-color:#26795c}
-      .analytics-summary {display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px}
-      .analytics-summary .card {padding:20px}
-      .analytics-summary strong {display:block;font-size:27px;margin:10px 0}
-      .analytics-muted {color:#666f80;font-size:12px}
+      .analytics-summary {display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:18px 0}
+      .analytics-summary .card > span:first-child {display:block;color:#646b7c;font-size:12px;margin-bottom:8px}
+      .analytics-summary strong {display:block;font-size:23px;margin:0 0 8px}
+      .analytics-muted {color:#70778a;font-size:12px;line-height:1.5}
       .analytics-table-wrap {overflow:auto;max-height:520px}
       .analytics-table {width:100%;border-collapse:collapse}
-      .analytics-table th,.analytics-table td {text-align:left;padding:12px;border-bottom:1px solid #e4e7ec;white-space:nowrap}
-      .analytics-table th {position:sticky;top:0;background:var(--uui-color-surface,#fff)}
+      .analytics-table th,.analytics-table td {text-align:left;padding:15px 10px;border-bottom:1px solid #e8e9ed;white-space:nowrap}
+      .analytics-table th {position:sticky;top:0;background:var(--uui-color-surface,#fff);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#70778a}
       .analytics-main {padding:22px}
       .analytics-spinner {display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid #dfe2e8;border-top-color:#25765c;border-radius:50%;animation:analytics-spin 1s linear infinite}
       @keyframes analytics-spin {to {transform:rotate(360deg)}}
       @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
-    </style><section class="ekmManager"><div class="ekmManager__body">
+    </style><section class="ekmManager analytics"><div class="ekmManager__body">
       <div class="analytics-toolbar">
         <label>Store<select data-field="store">${f.stores.map((t) => `<option value="${m(t.alias)}" ${t.alias === e.store ? "selected" : ""}>${m(t.title)}</option>`).join("")}</select></label>
         <label>Order status<select data-field="orderStatus"><option value="CompletedOrders" ${e.orderStatus === "CompletedOrders" ? "selected" : ""}>Completed Orders</option><option value="AllOrders" ${e.orderStatus === "AllOrders" ? "selected" : ""}>All Orders</option>${f.statusList.map((t) => `<option value="${m(Q(t))}" ${Q(t) === e.orderStatus ? "selected" : ""}>${m(t.label)}</option>`).join("")}</select></label>
@@ -699,7 +704,7 @@ class he extends ae(HTMLElement) {
       <div class="umb-table">
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell">Product</div><div class="umb-table-cell">Sku</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Total</div></div></div>
         <div class="umb-table-body">
-          ${this.mostSoldProducts.products.map((e) => `<div class="umb-table-row"><div class="umb-table-cell">${m(I(e, "title", "productTitle", "name"))}</div><div class="umb-table-cell">${m(I(e, "sku", "productSku"))}</div><div class="umb-table-cell">${m(I(e, "productCount", "quantity", "count"))}</div><div class="umb-table-cell">${m(z(Number(I(e, "total")), this.currency))}</div></div>`).join("")}
+          ${this.mostSoldProducts.products.map((e) => `<div class="umb-table-row"><div class="umb-table-cell">${m(q(e, "title", "productTitle", "name"))}</div><div class="umb-table-cell">${m(q(e, "sku", "productSku"))}</div><div class="umb-table-cell">${m(q(e, "productCount", "quantity", "count"))}</div><div class="umb-table-cell">${m(I(Number(q(e, "total")), this.currency))}</div></div>`).join("")}
         </div>
       </div>
       ${this.mostSoldProducts.totalPages > 1 ? this.renderMostSoldProductsPagination() : ""}
@@ -777,7 +782,7 @@ class he extends ae(HTMLElement) {
     }));
   }
 }
-function I(i, ...r) {
+function q(i, ...r) {
   for (const e of r) if (i[e] != null) return i[e];
   return "";
 }

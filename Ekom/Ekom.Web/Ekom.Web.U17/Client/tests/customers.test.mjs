@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
+import { JSDOM } from 'jsdom';
 
 function module(path, modules = {}, globals = {}) {
   const exports = {};
@@ -90,3 +91,30 @@ for (const [name, elementPath, sharedPath, sharedImport] of [
     assert.ok(new constructor() instanceof constructor);
   });
 }
+
+test('customer search works inside the backoffice form with Search and Enter', () => {
+  const dom = new JSDOM('<form id="backoffice"><ekom-customers-section-view></ekom-customers-section-view></form>');
+  const shared = module('../src/manager/manager-shared.ts');
+  const { EkomCustomersSectionViewElement } = module('../src/manager/customers-section-view.element.ts', {
+    './manager-shared': shared, '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
+  }, { HTMLElement: dom.window.HTMLElement });
+  EkomCustomersSectionViewElement.prototype.initialize = async () => {};
+  dom.window.customElements.define('ekom-customers-section-view', EkomCustomersSectionViewElement);
+  const view = dom.window.document.querySelector('ekom-customers-section-view');
+  // Registration connects the element; prevent initialization from issuing network requests.
+  view.initialize = async () => {};
+  let outerSubmits = 0;
+  dom.window.document.querySelector('form').addEventListener('submit', event => { event.preventDefault(); outerSubmits++; });
+  const queries = [];
+  view.load = async () => { queries.push({ query: view.query, page: view.page }); };
+  view.render();
+  view.page = 3;
+  view.querySelector('[name=query]').value = ' Emma ';
+  Array.from(view.querySelectorAll('button')).find(button => button.textContent === 'Search').click();
+  assert.deepEqual(queries, [{ query: 'Emma', page: 1 }]);
+  view.querySelector('[name=query]').value = '';
+  view.querySelector('[name=query]').dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  assert.deepEqual(queries[1], { query: '', page: 1 });
+  assert.equal(outerSubmits, 0);
+  dom.window.close();
+});
