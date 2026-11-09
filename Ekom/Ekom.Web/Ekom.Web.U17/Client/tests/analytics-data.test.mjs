@@ -85,3 +85,32 @@ test('customer insight cards and time charts include zero buckets and explain ov
  instance.chartData.customerInsights.uniqueCustomers=0;
  assert.ok(instance.renderCustomerInsights().includes('<strong>—</strong>'));
 });
+
+test('date presets recognize shared ranges and preserve explicit choices when ranges overlap', () => {
+ const now=new Date(2026,0,1);
+ assert.equal(data.matchingPreset('2026-01-01','2026-01-01',undefined,now),'today');
+ assert.equal(data.matchingPreset('2026-01-01','2026-01-01','year',now),'year');
+ assert.equal(data.matchingPreset('2026-01-01','2026-01-01','month',now),'month');
+ assert.equal(data.matchingPreset('2026-01-01','2026-01-01','',now),'');
+ assert.equal(data.matchingPreset('2025-12-02','2026-01-01','year',now),'');
+ const later=new Date(2026,10,9);
+ for (const preset of ['today','7','30','month','year']) {
+  const range=data.presetRange(preset,later);
+  assert.equal(data.matchingPreset(range.dateFrom,range.dateTo,undefined,later),preset);
+ }
+});
+
+test('rendered preset selection survives rerenders and follows changed shared dates', () => {
+ const {instance,shared}=view();
+ instance.bindEvents=()=>{};instance.renderCharts=()=>{};
+ const render=Object.getPrototypeOf(instance).render.bind(instance);
+ for (const preset of ['year','today','7','30','month']) {
+  Object.assign(shared.managerState.filters,data.presetRange(preset));
+  instance.datePreset=preset;
+  render();render();
+  assert.ok(instance.innerHTML.includes(`<option value="${preset}" selected>`));
+ }
+ Object.assign(shared.managerState.filters,{dateFrom:'2020-02-03',dateTo:'2020-02-05'});
+ render();
+ assert.doesNotMatch(instance.innerHTML,/<option value="(?:today|7|30|month|year)" selected>/);
+});

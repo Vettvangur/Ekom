@@ -1,37 +1,45 @@
-var M = Object.defineProperty;
-var E = (d, i, t) => i in d ? M(d, i, { enumerable: !0, configurable: !0, writable: !0, value: t }) : d[i] = t;
-var h = (d, i, t) => E(d, typeof i != "symbol" ? i + "" : i, t);
-import { UmbElementMixin as O } from "@umbraco-cms/backoffice/element-api";
-import { E as q, m, f as D, a as F, e as c, g as A, p as L, r as R, d as U } from "./manager-shared.js";
-const k = 864e5, S = (d) => d.toISOString().slice(0, 10), x = (d) => /* @__PURE__ */ new Date(`${d}T00:00:00Z`);
-function N(d, i) {
-  const t = x(d), e = x(i), a = Math.round((e.getTime() - t.getTime()) / k) + 1;
-  return { dateFrom: S(new Date(t.getTime() - a * k)), dateTo: S(new Date(t.getTime() - k)) };
+var E = Object.defineProperty;
+var O = (n, i, t) => i in n ? E(n, i, { enumerable: !0, configurable: !0, writable: !0, value: t }) : n[i] = t;
+var h = (n, i, t) => O(n, typeof i != "symbol" ? i + "" : i, t);
+import { UmbElementMixin as F } from "@umbraco-cms/backoffice/element-api";
+import { E as q, m, f as D, a as L, e as c, g as P, p as R, r as U, d as N } from "./manager-shared.js";
+const k = 864e5, S = (n) => n.toISOString().slice(0, 10), x = (n) => /* @__PURE__ */ new Date(`${n}T00:00:00Z`);
+function V(n, i) {
+  const t = x(n), e = x(i), s = Math.round((e.getTime() - t.getTime()) / k) + 1;
+  return { dateFrom: S(new Date(t.getTime() - s * k)), dateTo: S(new Date(t.getTime() - k)) };
 }
-function V(d, i = /* @__PURE__ */ new Date()) {
+function M(n, i = /* @__PURE__ */ new Date()) {
   const t = new Date(Date.UTC(i.getFullYear(), i.getMonth(), i.getDate())), e = new Date(t);
-  return d === "7" && e.setUTCDate(e.getUTCDate() - 6), d === "30" && e.setUTCDate(e.getUTCDate() - 29), d === "month" && e.setUTCDate(1), d === "year" && (e.setUTCMonth(0), e.setUTCDate(1)), { dateFrom: S(e), dateTo: S(t) };
+  return n === "7" && e.setUTCDate(e.getUTCDate() - 6), n === "30" && e.setUTCDate(e.getUTCDate() - 29), n === "month" && e.setUTCDate(1), n === "year" && (e.setUTCMonth(0), e.setUTCDate(1)), { dateFrom: S(e), dateTo: S(t) };
 }
-function j(d, i, t) {
-  var n, o, s, g, l;
-  const e = [], a = d.ordersChart.points;
-  let r = 0;
-  for (; r < a.length; ) {
-    const b = r, p = a[r].x, u = x(p);
+function j(n, i, t, e = /* @__PURE__ */ new Date()) {
+  if (t === "") return "";
+  const s = ["today", "7", "30", "month", "year"];
+  return t && s.includes(t) && s.unshift(t), s.find((a) => {
+    const o = M(a, e);
+    return o.dateFrom === n && o.dateTo === i;
+  }) || "";
+}
+function z(n, i, t) {
+  var o, d, r, g, l;
+  const e = [], s = n.ordersChart.points;
+  let a = 0;
+  for (; a < s.length; ) {
+    const y = a, p = s[a].x, u = x(p);
     t === "month" ? (u.setUTCDate(1), u.setUTCMonth(u.getUTCMonth() + 1)) : t === "week" ? u.setUTCDate(u.getUTCDate() + (7 - (u.getUTCDay() + 6) % 7)) : u.setUTCDate(u.getUTCDate() + 1);
-    let y = 0, v = 0, C = 0, f = 0;
+    let b = 0, v = 0, C = 0, f = 0;
     do
-      y += Number(((n = d.revenueChart.points[r]) == null ? void 0 : n.y) || 0), v += Number(a[r].y || 0), C += Number(((o = i == null ? void 0 : i.revenueChart.points[r]) == null ? void 0 : o.y) || 0), f += Number(((s = i == null ? void 0 : i.ordersChart.points[r]) == null ? void 0 : s.y) || 0), r++;
-    while (r < a.length && x(a[r].x).getTime() < u.getTime());
+      b += Number(((o = n.revenueChart.points[a]) == null ? void 0 : o.y) || 0), v += Number(s[a].y || 0), C += Number(((d = i == null ? void 0 : i.revenueChart.points[a]) == null ? void 0 : d.y) || 0), f += Number(((r = i == null ? void 0 : i.ordersChart.points[a]) == null ? void 0 : r.y) || 0), a++;
+    while (a < s.length && x(s[a].x).getTime() < u.getTime());
     e.push({
       start: p,
-      end: a[r - 1].x,
-      amount: y,
+      end: s[a - 1].x,
+      amount: b,
       orders: v,
-      average: v ? y / v : null,
+      average: v ? b / v : null,
       ...i ? {
-        previousStart: (g = i.ordersChart.points[b]) == null ? void 0 : g.x,
-        previousEnd: (l = i.ordersChart.points[r - 1]) == null ? void 0 : l.x,
+        previousStart: (g = i.ordersChart.points[y]) == null ? void 0 : g.x,
+        previousEnd: (l = i.ordersChart.points[a - 1]) == null ? void 0 : l.x,
         previousAmount: C,
         previousOrders: f,
         previousAverage: f ? C / f : null
@@ -40,17 +48,17 @@ function j(d, i, t) {
   }
   return e;
 }
-function P(d) {
-  const i = d.revenueChart.points.reduce((e, a) => e + Number(a.y || 0), 0), t = d.ordersChart.points.reduce((e, a) => e + Number(a.y || 0), 0);
+function A(n) {
+  const i = n.revenueChart.points.reduce((e, s) => e + Number(s.y || 0), 0), t = n.ordersChart.points.reduce((e, s) => e + Number(s.y || 0), 0);
   return { amount: i, orders: t, average: t ? i / t : null };
 }
-function T(d, i) {
-  if (d == null || i == null) return "No comparison available";
-  if (i === 0) return d === 0 ? "No change" : "No prior value";
-  const t = (d - i) / Math.abs(i) * 100;
+function T(n, i) {
+  if (n == null || i == null) return "No comparison available";
+  if (i === 0) return n === 0 ? "No change" : "No prior value";
+  const t = (n - i) / Math.abs(i) * 100;
   return `${t > 0 ? "+" : ""}${t.toLocaleString(void 0, { maximumFractionDigits: 1 })}%`;
 }
-class z extends O(HTMLElement) {
+class I extends F(HTMLElement) {
   constructor() {
     super(...arguments);
     h(this, "api", new q());
@@ -74,6 +82,7 @@ class z extends O(HTMLElement) {
     h(this, "grouping", "day");
     h(this, "compare", !0);
     h(this, "table", !1);
+    h(this, "datePreset");
   }
   connectedCallback() {
     if (super.connectedCallback(), this.disposed = !1, this.hasAttribute("classic"))
@@ -84,22 +93,22 @@ class z extends O(HTMLElement) {
     this.render(), this.resizeObserver = new ResizeObserver(() => this.renderCharts()), this.resizeObserver.observe(this), this.initialize();
   }
   disconnectedCallback() {
-    var t, e, a;
-    this.disposed = !0, this.chartRequest++, this.productRequest++, (t = this.chartAbort) == null || t.abort(), (e = this.productAbort) == null || e.abort(), (a = this.resizeObserver) == null || a.disconnect(), this.resizeObserver = void 0, super.disconnectedCallback();
+    var t, e, s;
+    this.disposed = !0, this.chartRequest++, this.productRequest++, (t = this.chartAbort) == null || t.abort(), (e = this.productAbort) == null || e.abort(), (s = this.resizeObserver) == null || s.disconnect(), this.resizeObserver = void 0, super.disconnectedCallback();
   }
   get currency() {
     var t;
     return (t = m.stores.find((e) => {
-      var a;
-      return e.alias === (((a = this.chartFilters) == null ? void 0 : a.store) || m.filters.store);
+      var s;
+      return e.alias === (((s = this.chartFilters) == null ? void 0 : s.store) || m.filters.store);
     })) == null ? void 0 : t.currency;
   }
   async initialize() {
     var t;
     try {
-      const [e, a] = await Promise.all([this.api.statusList(), this.api.stores()]);
+      const [e, s] = await Promise.all([this.api.statusList(), this.api.stores()]);
       if (this.disposed) return;
-      m.statusList = e || [], m.stores = a || [], m.stores.some((r) => r.alias === m.filters.store) || (m.filters.store = ((t = m.stores[0]) == null ? void 0 : t.alias) || ""), await this.loadAnalytics();
+      m.statusList = e || [], m.stores = s || [], m.stores.some((a) => a.alias === m.filters.store) || (m.filters.store = ((t = m.stores[0]) == null ? void 0 : t.alias) || ""), await this.loadAnalytics();
     } catch (e) {
       if (this.disposed) return;
       this.error = w(e, "Unable to load Analytics."), this.loading = !1, this.render();
@@ -109,53 +118,53 @@ class z extends O(HTMLElement) {
     await Promise.all([this.loadCharts(), this.productsVisible ? this.loadMostSoldProducts() : Promise.resolve()]);
   }
   async loadCharts() {
-    var r;
+    var a;
     const t = ++this.chartRequest;
-    (r = this.chartAbort) == null || r.abort();
-    const e = this.chartAbort = new AbortController(), a = { ...m.filters };
-    if (this.chartData = void 0, this.previousData = void 0, this.error = "", this.loading = !!a.store, this.render(), !!a.store)
+    (a = this.chartAbort) == null || a.abort();
+    const e = this.chartAbort = new AbortController(), s = { ...m.filters };
+    if (this.chartData = void 0, this.previousData = void 0, this.error = "", this.loading = !!s.store, this.render(), !!s.store)
       try {
-        const n = this.compare ? { ...a, ...N(a.dateFrom, a.dateTo) } : void 0, [o, s] = await Promise.all([
-          this.api.charts(a, e.signal),
-          n ? this.api.charts(n, e.signal) : Promise.resolve(void 0)
+        const o = this.compare ? { ...s, ...V(s.dateFrom, s.dateTo) } : void 0, [d, r] = await Promise.all([
+          this.api.charts(s, e.signal),
+          o ? this.api.charts(o, e.signal) : Promise.resolve(void 0)
         ]);
         if (t !== this.chartRequest || this.disposed) return;
-        this.chartData = o, this.previousData = s, this.chartFilters = a, o.mixedCurrencies && (this.metric = "orders");
-      } catch (n) {
+        this.chartData = d, this.previousData = r, this.chartFilters = s, d.mixedCurrencies && (this.metric = "orders");
+      } catch (o) {
         if (t !== this.chartRequest || this.disposed) return;
-        this.error = w(n, "Unable to load charts.");
+        this.error = w(o, "Unable to load charts.");
       } finally {
         t === this.chartRequest && !this.disposed && (this.loading = !1, this.render());
       }
   }
   async loadMostSoldProducts() {
-    var r;
+    var a;
     const t = ++this.productRequest;
-    (r = this.productAbort) == null || r.abort();
-    const e = this.productAbort = new AbortController(), a = { ...m.filters };
-    if (this.mostSoldProducts = { products: [], count: 0, totalPages: 0, page: this.pageMostSoldProducts }, this.productError = "", this.loadingMostSoldProducts = !!a.store, this.render(), !!a.store)
+    (a = this.productAbort) == null || a.abort();
+    const e = this.productAbort = new AbortController(), s = { ...m.filters };
+    if (this.mostSoldProducts = { products: [], count: 0, totalPages: 0, page: this.pageMostSoldProducts }, this.productError = "", this.loadingMostSoldProducts = !!s.store, this.render(), !!s.store)
       try {
-        const n = await this.api.mostSoldProducts(a, this.pageMostSoldProducts, 20, e.signal);
+        const o = await this.api.mostSoldProducts(s, this.pageMostSoldProducts, 20, e.signal);
         if (t !== this.productRequest || this.disposed) return;
-        this.mostSoldProducts = { ...n, products: n.products || [] }, this.pageMostSoldProducts = n.page || this.pageMostSoldProducts;
-      } catch (n) {
-        t === this.productRequest && !this.disposed && (this.productError = w(n, "Unable to load products."));
+        this.mostSoldProducts = { ...o, products: o.products || [] }, this.pageMostSoldProducts = o.page || this.pageMostSoldProducts;
+      } catch (o) {
+        t === this.productRequest && !this.disposed && (this.productError = w(o, "Unable to load products."));
       } finally {
         t === this.productRequest && !this.disposed && (this.loadingMostSoldProducts = !1, this.render());
       }
   }
   get buckets() {
-    return this.chartData ? j(this.chartData, this.previousData, this.grouping) : [];
+    return this.chartData ? z(this.chartData, this.previousData, this.grouping) : [];
   }
   get comparisonMoneyAvailable() {
     var t, e;
     return !!this.previousData && !((t = this.chartData) != null && t.mixedCurrencies) && !this.previousData.mixedCurrencies && (!((e = this.chartData) != null && e.currency) || !this.previousData.currency || this.chartData.currency === this.previousData.currency);
   }
   amount(t) {
-    var a, r, n, o, s;
-    if (t == null || (a = this.chartData) != null && a.mixedCurrencies) return "—";
-    const e = ((r = this.chartData) == null ? void 0 : r.currency) || ((n = this.previousData) == null ? void 0 : n.currency);
-    return !e || e === ((o = this.currency) == null ? void 0 : o.currencyValue) || e === ((s = this.currency) == null ? void 0 : s.isoCurrencySymbol) ? D(t, this.currency) : /^[A-Z]{3}$/.test(e) ? D(t, { isoCurrencySymbol: e }) : `${t.toLocaleString(void 0, { maximumFractionDigits: 2 })} ${e}`;
+    var s, a, o, d, r;
+    if (t == null || (s = this.chartData) != null && s.mixedCurrencies) return "—";
+    const e = ((a = this.chartData) == null ? void 0 : a.currency) || ((o = this.previousData) == null ? void 0 : o.currency);
+    return !e || e === ((d = this.currency) == null ? void 0 : d.currencyValue) || e === ((r = this.currency) == null ? void 0 : r.isoCurrencySymbol) ? D(t, this.currency) : /^[A-Z]{3}$/.test(e) ? D(t, { isoCurrencySymbol: e }) : `${t.toLocaleString(void 0, { maximumFractionDigits: 2 })} ${e}`;
   }
   label(t) {
     return t === "orders" ? "Orders" : t === "average" ? "Average order value" : "Order amount";
@@ -170,8 +179,8 @@ class z extends O(HTMLElement) {
     return t === e ? t || "" : `${t || ""} – ${e || ""}`;
   }
   render() {
-    const t = m.filters;
-    this.innerHTML = `<style>${F}
+    const t = m.filters, e = j(t.dateFrom, t.dateTo, this.datePreset);
+    this.innerHTML = `<style>${L}
       ekom-analytics-section-view { display:block;color:var(--uui-color-text,#20232e) }
       .analytics {background:var(--uui-color-background,#f3f4f7);min-height:80vh}
       .analytics .card {background:var(--uui-color-surface,#fff);border:1px solid #dfe2e8;border-radius:10px;padding:18px;text-align:left;box-shadow:none}
@@ -203,11 +212,11 @@ class z extends O(HTMLElement) {
       @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
     </style><section class="ekmManager analytics"><div class="ekmManager__body">
       <div class="analytics-toolbar">
-        <label>Store<select data-field="store">${m.stores.map((e) => `<option value="${c(e.alias)}" ${e.alias === t.store ? "selected" : ""}>${c(e.title)}</option>`).join("")}</select></label>
-        <label>Order status<select data-field="orderStatus"><option value="CompletedOrders" ${t.orderStatus === "CompletedOrders" ? "selected" : ""}>Completed Orders</option><option value="AllOrders" ${t.orderStatus === "AllOrders" ? "selected" : ""}>All Orders</option>${m.statusList.map((e) => `<option value="${c(A(e))}" ${A(e) === t.orderStatus ? "selected" : ""}>${c(e.label)}</option>`).join("")}</select></label>
+        <label>Store<select data-field="store">${m.stores.map((s) => `<option value="${c(s.alias)}" ${s.alias === t.store ? "selected" : ""}>${c(s.title)}</option>`).join("")}</select></label>
+        <label>Order status<select data-field="orderStatus"><option value="CompletedOrders" ${t.orderStatus === "CompletedOrders" ? "selected" : ""}>Completed Orders</option><option value="AllOrders" ${t.orderStatus === "AllOrders" ? "selected" : ""}>All Orders</option>${m.statusList.map((s) => `<option value="${c(P(s))}" ${P(s) === t.orderStatus ? "selected" : ""}>${c(s.label)}</option>`).join("")}</select></label>
         <label>Date From<input type="date" data-field="dateFrom" value="${c(t.dateFrom)}"></label>
         <label>Date To<input type="date" data-field="dateTo" value="${c(t.dateTo)}"></label>
-        <label>Date preset<select data-preset><option value="">Custom range</option>${[["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["month", "This month"], ["year", "This year"]].map(([e, a]) => `<option value="${e}">${a}</option>`).join("")}</select></label>
+        <label>Date preset<select data-preset><option value="">Custom range</option>${[["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["month", "This month"], ["year", "This year"]].map(([s, a]) => `<option value="${s}" ${e === s ? "selected" : ""}>${a}</option>`).join("")}</select></label>
         <label><span>Comparison</span><span><input type="checkbox" data-compare ${this.compare ? "checked" : ""}> Previous period</span></label>
         <button data-refresh>Refresh</button>
       </div>
@@ -221,18 +230,18 @@ class z extends O(HTMLElement) {
     </div></section>`, this.bindEvents(), this.renderCharts();
   }
   renderAnalytics() {
-    var a, r, n, o;
-    const t = P(this.chartData), e = this.previousData ? P(this.previousData) : void 0;
-    return `<div class="analytics-summary">${["amount", "orders", "average"].map((s) => `<div class="card"><span>${this.label(s)}</span><strong>${c(this.value(t[s], s))}</strong><span class="analytics-muted">${e && (s === "orders" || this.comparisonMoneyAvailable) ? c(T(t[s], e[s])) + " vs previous period" : this.compare ? "No monetary comparison available" : "Selected period"}</span></div>`).join("")}</div>
+    var s, a, o, d;
+    const t = A(this.chartData), e = this.previousData ? A(this.previousData) : void 0;
+    return `<div class="analytics-summary">${["amount", "orders", "average"].map((r) => `<div class="card"><span>${this.label(r)}</span><strong>${c(this.value(t[r], r))}</strong><span class="analytics-muted">${e && (r === "orders" || this.comparisonMoneyAvailable) ? c(T(t[r], e[r])) + " vs previous period" : this.compare ? "No monetary comparison available" : "Selected period"}</span></div>`).join("")}</div>
       <p class="analytics-muted">Order amount is the recorded charged amount, after gift cards; it is not refund-adjusted revenue. Dates use ${this.chartData.dateBasis === "PaidDate" ? "payment date" : "order creation date"}, matching Orders.</p>
       ${this.chartData.mixedCurrencies ? '<p role="status">This period contains multiple currencies. Monetary totals are hidden to avoid combining different currencies.</p>' : ""}
       ${this.previousData && !this.comparisonMoneyAvailable ? '<p class="analytics-muted">Monetary comparison is unavailable across different or mixed currencies.</p>' : ""}
       <div class="card analytics-main"><div class="analytics-toolbar">
-        ${["amount", "orders", "average"].map((s) => `<button data-metric="${s}" aria-pressed="${this.metric === s}" ${s !== "orders" && this.chartData.mixedCurrencies ? "disabled" : ""}>${this.label(s)}</button>`).join("")}
-        <label>Group by<select data-grouping>${[["day", "Daily"], ["week", "Weekly"], ["month", "Monthly"]].map(([s, g]) => `<option value="${s}" ${this.grouping === s ? "selected" : ""}>${g}</option>`).join("")}</select></label>
+        ${["amount", "orders", "average"].map((r) => `<button data-metric="${r}" aria-pressed="${this.metric === r}" ${r !== "orders" && this.chartData.mixedCurrencies ? "disabled" : ""}>${this.label(r)}</button>`).join("")}
+        <label>Group by<select data-grouping>${[["day", "Daily"], ["week", "Weekly"], ["month", "Monthly"]].map(([r, g]) => `<option value="${r}" ${this.grouping === r ? "selected" : ""}>${g}</option>`).join("")}</select></label>
         <button data-table aria-pressed="${this.table}">${this.table ? "Show chart" : "Show data table"}</button><button data-csv>Download CSV</button>
       </div>
-      <p class="analytics-muted">${this.previousData ? `Solid: ${c(this.range((a = this.chartFilters) == null ? void 0 : a.dateFrom, (r = this.chartFilters) == null ? void 0 : r.dateTo))}. Dashed: ${c(this.range((n = this.previousData.ordersChart.points[0]) == null ? void 0 : n.x, (o = this.previousData.ordersChart.points.at(-1)) == null ? void 0 : o.x))}. Comparison buckets cover the same number of days.` : "Selected period."} Click a bucket to open its orders.</p>
+      <p class="analytics-muted">${this.previousData ? `Solid: ${c(this.range((s = this.chartFilters) == null ? void 0 : s.dateFrom, (a = this.chartFilters) == null ? void 0 : a.dateTo))}. Dashed: ${c(this.range((o = this.previousData.ordersChart.points[0]) == null ? void 0 : o.x, (d = this.previousData.ordersChart.points.at(-1)) == null ? void 0 : d.x))}. Comparison buckets cover the same number of days.` : "Selected period."} Click a bucket to open its orders.</p>
       ${this.table ? this.renderTable() : `<div style="height:360px"><canvas id="analytics-chart" style="width:100%;height:100%" role="img" aria-label="${this.label(this.metric)} over time. Use Show data table for exact values and order links."></canvas></div>`}
       </div>`;
   }
@@ -240,12 +249,12 @@ class z extends O(HTMLElement) {
     var g, l;
     const t = (g = this.chartData) == null ? void 0 : g.customerInsights;
     if (!t) return "";
-    const e = (l = this.previousData) == null ? void 0 : l.customerInsights, a = [
+    const e = (l = this.previousData) == null ? void 0 : l.customerInsights, s = [
       ["Unique purchasing customers", t.uniqueCustomers, e == null ? void 0 : e.uniqueCustomers, !1],
       ["First-time buyers", t.newCustomers, e == null ? void 0 : e.newCustomers, !1],
       ["Returning customer rate", t.returningCustomerRate, e == null ? void 0 : e.returningCustomerRate, !0]
-    ], r = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], n = r.map((b, p) => t.orderTimes.filter((u) => u.weekday === p).reduce((u, y) => u + y.orders, 0)), o = Array.from({ length: 24 }, (b, p) => t.orderTimes.filter((u) => u.hour === p).reduce((u, y) => u + y.orders, 0)), s = (b, p) => b.map((u, y) => `<div class="analytics-time-row"><span>${u}</span><div class="analytics-time-track" aria-hidden="true"><span style="width:${100 * p[y] / Math.max(1, ...p)}%"></span></div><span>${p[y]}</span></div>`).join("");
-    return `<div class="analytics-summary">${a.map(([b, p, u, y]) => `<div class="card"><span>${b}</span><strong>${p == null ? "—" : c(p.toLocaleString(void 0, { maximumFractionDigits: y ? 1 : 0 })) + (y ? "%" : "")}</strong><span class="analytics-muted">${e ? y ? p == null || u == null ? "No comparison available" : `${(p - u).toLocaleString(void 0, { maximumFractionDigits: 1, signDisplay: "always" })} percentage points vs previous period` : `${T(p, u ?? null)} vs previous period` : "Selected period"}</span></div>`).join("")}</div>
+    ], a = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], o = a.map((y, p) => t.orderTimes.filter((u) => u.weekday === p).reduce((u, b) => u + b.orders, 0)), d = Array.from({ length: 24 }, (y, p) => t.orderTimes.filter((u) => u.hour === p).reduce((u, b) => u + b.orders, 0)), r = (y, p) => y.map((u, b) => `<div class="analytics-time-row"><span>${u}</span><div class="analytics-time-track" aria-hidden="true"><span style="width:${100 * p[b] / Math.max(1, ...p)}%"></span></div><span>${p[b]}</span></div>`).join("");
+    return `<div class="analytics-summary">${s.map(([y, p, u, b]) => `<div class="card"><span>${y}</span><strong>${p == null ? "—" : c(p.toLocaleString(void 0, { maximumFractionDigits: b ? 1 : 0 })) + (b ? "%" : "")}</strong><span class="analytics-muted">${e ? b ? p == null || u == null ? "No comparison available" : `${(p - u).toLocaleString(void 0, { maximumFractionDigits: 1, signDisplay: "always" })} percentage points vs previous period` : `${T(p, u ?? null)} vs previous period` : "Selected period"}</span></div>`).join("")}</div>
       <div class="card analytics-main"><h3>New and returning purchases</h3>
         <p class="analytics-muted">Based on qualifying purchase orders and ${t.identityField === "CustomerUsername" ? "username" : "email"}. A repeat purchase has an earlier qualifying order in this store, ordered by payment time (creation time when unpaid). A buyer can appear in both rows if they buy for the first time and return in this period. Returning rate is repeat buyers divided by unique identified buyers.</p>
         <div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Purchase type</th><th>Buyers</th><th>Orders</th><th>Order amount</th></tr></thead><tbody>
@@ -255,8 +264,8 @@ class z extends O(HTMLElement) {
         <p class="analytics-muted">${t.missingIdentifiers} qualifying orders have no customer identifier and are excluded from buyer counts and this breakdown. They remain included in the time charts below. Incomplete and cancelled orders are excluded from these customer insights, even with All Orders selected.</p>
       </div>
       <div class="analytics-insight-grid">
-        <div class="card analytics-main"><h3>Orders by weekday</h3><p class="analytics-muted">Qualifying orders within the selected filters, grouped by recorded creation day.</p><div class="analytics-time-bars">${s(r, n)}</div></div>
-        <div class="card analytics-main"><h3>Orders by hour</h3><p class="analytics-muted">Recorded creation time, 00–23. No timezone conversion. Totals are counts, not averages per hour.</p><div class="analytics-time-bars analytics-hour-bars">${s(o.map((b, p) => String(p).padStart(2, "0") + ":00"), o)}</div></div>
+        <div class="card analytics-main"><h3>Orders by weekday</h3><p class="analytics-muted">Qualifying orders within the selected filters, grouped by recorded creation day.</p><div class="analytics-time-bars">${r(a, o)}</div></div>
+        <div class="card analytics-main"><h3>Orders by hour</h3><p class="analytics-muted">Recorded creation time, 00–23. No timezone conversion. Totals are counts, not averages per hour.</p><div class="analytics-time-bars analytics-hour-bars">${r(d.map((y, p) => String(p).padStart(2, "0") + ":00"), d)}</div></div>
       </div>`;
   }
   renderTable() {
@@ -277,7 +286,7 @@ class z extends O(HTMLElement) {
     return `
       <div class="pagination">
         <ul>
-          ${L(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((t) => {
+          ${R(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((t) => {
       const e = Number(String(t).replace("...", ""));
       return `<li class="${e === this.pageMostSoldProducts ? "active" : ""}"><button type="button" data-action="set-most-sold-page" data-page="${e}" ${e === this.pageMostSoldProducts ? "disabled" : ""}>${c(t)}</button></li>`;
     }).join("")}
@@ -286,17 +295,17 @@ class z extends O(HTMLElement) {
     `;
   }
   renderCharts() {
-    var o;
+    var d;
     const t = this.querySelector("#analytics-chart");
     if (!t || !this.chartData || this.table) return;
-    const e = this.buckets, a = this.chartData.currency || ((o = this.previousData) == null ? void 0 : o.currency), r = a && /^[A-Z]{3}$/.test(a) ? { isoCurrencySymbol: a } : this.currency, n = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: e.map((s) => ({ x: this.range(s.previousStart, s.previousEnd), y: this.previousValue(s) })) } : void 0;
-    R(t, { labels: [], points: e.map((s) => ({ x: this.range(s.start, s.end), y: s[this.metric] })) }, "#25765c", {
-      currency: this.metric === "orders" ? void 0 : r,
+    const e = this.buckets, s = this.chartData.currency || ((d = this.previousData) == null ? void 0 : d.currency), a = s && /^[A-Z]{3}$/.test(s) ? { isoCurrencySymbol: s } : this.currency, o = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: e.map((r) => ({ x: this.range(r.previousStart, r.previousEnd), y: this.previousValue(r) })) } : void 0;
+    U(t, { labels: [], points: e.map((r) => ({ x: this.range(r.start, r.end), y: r[this.metric] })) }, "#25765c", {
+      currency: this.metric === "orders" ? void 0 : a,
       integer: this.metric === "orders",
-      comparison: n,
-      formatValue: (s) => this.value(s),
+      comparison: o,
+      formatValue: (r) => this.value(r),
       columnHover: !0,
-      onSelect: (s) => this.openOrders(s)
+      onSelect: (r) => this.openOrders(r)
     });
   }
   changedFilters() {
@@ -305,39 +314,39 @@ class z extends O(HTMLElement) {
   openOrders(t) {
     const e = this.buckets[t];
     if (!e || !this.chartFilters) return;
-    const a = { ...this.chartFilters, dateFrom: e.start, dateTo: e.end };
-    for (const r of ["query", "paymentProvider", "shippingProvider", "couponCode", "giftcardCode", "productSku", "trackingSource", "trackingMedium", "trackingCampaign", "trackingTerm", "trackingContent", "trackingClickId"]) a[r] = "";
-    if (Object.assign(m.filters, a), this.hasAttribute("classic")) this.dispatchEvent(new CustomEvent("analytics-open-orders", { bubbles: !0, detail: a }));
+    const s = { ...this.chartFilters, dateFrom: e.start, dateTo: e.end };
+    for (const a of ["query", "paymentProvider", "shippingProvider", "couponCode", "giftcardCode", "productSku", "trackingSource", "trackingMedium", "trackingCampaign", "trackingTerm", "trackingContent", "trackingClickId"]) s[a] = "";
+    if (Object.assign(m.filters, s), this.hasAttribute("classic")) this.dispatchEvent(new CustomEvent("analytics-open-orders", { bubbles: !0, detail: s }));
     else {
-      const r = new URLSearchParams({ analyticsDrill: "1", store: a.store, start: a.dateFrom, end: a.dateTo, orderStatus: a.orderStatus }), n = document.createElement("a");
-      n.href = location.pathname.replace(/\/analytics\/?$/, "/orders") + "?" + r, this.appendChild(n), n.click(), n.remove();
+      const a = new URLSearchParams({ analyticsDrill: "1", store: s.store, start: s.dateFrom, end: s.dateTo, orderStatus: s.orderStatus }), o = document.createElement("a");
+      o.href = location.pathname.replace(/\/analytics\/?$/, "/orders") + "?" + a, this.appendChild(o), o.click(), o.remove();
     }
   }
   exportCsv() {
-    var a, r, n;
+    var s, a, o;
     const t = [["From", "To", "Orders", "Order amount", "Average order", "Currency", "Previous from", "Previous to", "Previous orders", "Previous amount", "Previous average"]];
-    for (const o of this.buckets) t.push([o.start, o.end, String(o.orders), (a = this.chartData) != null && a.mixedCurrencies ? "" : String(o.amount), (r = this.chartData) != null && r.mixedCurrencies || o.average == null ? "" : String(o.average), ((n = this.chartData) == null ? void 0 : n.currency) || "", o.previousStart || "", o.previousEnd || "", o.previousOrders == null ? "" : String(o.previousOrders), this.comparisonMoneyAvailable ? String(o.previousAmount ?? "") : "", this.comparisonMoneyAvailable ? String(o.previousAverage ?? "") : ""]);
-    const e = t.map((o) => o.map((s) => '"' + s.replaceAll('"', '""') + '"').join(",")).join(`\r
+    for (const d of this.buckets) t.push([d.start, d.end, String(d.orders), (s = this.chartData) != null && s.mixedCurrencies ? "" : String(d.amount), (a = this.chartData) != null && a.mixedCurrencies || d.average == null ? "" : String(d.average), ((o = this.chartData) == null ? void 0 : o.currency) || "", d.previousStart || "", d.previousEnd || "", d.previousOrders == null ? "" : String(d.previousOrders), this.comparisonMoneyAvailable ? String(d.previousAmount ?? "") : "", this.comparisonMoneyAvailable ? String(d.previousAverage ?? "") : ""]);
+    const e = t.map((d) => d.map((r) => '"' + r.replaceAll('"', '""') + '"').join(",")).join(`\r
 `);
-    U(new Blob(["\uFEFF", e], { type: "text/csv;charset=utf-8" }), "analytics.csv");
+    N(new Blob(["\uFEFF", e], { type: "text/csv;charset=utf-8" }), "analytics.csv");
   }
   bindEvents() {
-    var t, e, a, r, n, o, s, g;
+    var t, e, s, a, o, d, r, g;
     this.querySelectorAll("[data-field]").forEach((l) => l.addEventListener("change", () => {
-      const b = l.dataset.field;
-      m.filters[b] = l.value, this.changedFilters();
+      const y = l.dataset.field;
+      (y === "dateFrom" || y === "dateTo") && (this.datePreset = void 0), m.filters[y] = l.value, this.changedFilters();
     })), (t = this.querySelector("[data-preset]")) == null || t.addEventListener("change", (l) => {
-      const b = l.target.value;
-      b && (Object.assign(m.filters, V(b)), this.changedFilters());
+      const y = l.target.value;
+      this.datePreset = y, y ? (Object.assign(m.filters, M(y)), this.changedFilters()) : this.render();
     }), (e = this.querySelector("[data-compare]")) == null || e.addEventListener("change", () => {
       this.compare = !this.compare, this.loadCharts();
-    }), (a = this.querySelector("[data-grouping]")) == null || a.addEventListener("change", (l) => {
+    }), (s = this.querySelector("[data-grouping]")) == null || s.addEventListener("change", (l) => {
       this.grouping = l.target.value, this.render();
     }), this.querySelectorAll("[data-metric]").forEach((l) => l.addEventListener("click", () => {
       this.metric = l.dataset.metric, this.render();
-    })), (r = this.querySelector("[data-table]")) == null || r.addEventListener("click", () => {
+    })), (a = this.querySelector("[data-table]")) == null || a.addEventListener("click", () => {
       this.table = !this.table, this.render();
-    }), (n = this.querySelector("[data-csv]")) == null || n.addEventListener("click", () => this.exportCsv()), (o = this.querySelector("[data-refresh]")) == null || o.addEventListener("click", () => void this.loadAnalytics()), this.querySelectorAll("[data-orders]").forEach((l) => l.addEventListener("click", () => this.openOrders(Number(l.dataset.orders)))), (s = this.querySelector("[data-products]")) == null || s.addEventListener("click", () => {
+    }), (o = this.querySelector("[data-csv]")) == null || o.addEventListener("click", () => this.exportCsv()), (d = this.querySelector("[data-refresh]")) == null || d.addEventListener("click", () => void this.loadAnalytics()), this.querySelectorAll("[data-orders]").forEach((l) => l.addEventListener("click", () => this.openOrders(Number(l.dataset.orders)))), (r = this.querySelector("[data-products]")) == null || r.addEventListener("click", () => {
       var l;
       this.productsVisible = !this.productsVisible, this.productsVisible ? this.loadMostSoldProducts() : (this.productRequest++, (l = this.productAbort) == null || l.abort(), this.render());
     }), (g = this.querySelector("[data-product-retry]")) == null || g.addEventListener("click", () => void this.loadMostSoldProducts()), this.querySelectorAll('[data-action="set-most-sold-page"]').forEach((l) => l.addEventListener("click", () => {
@@ -345,15 +354,15 @@ class z extends O(HTMLElement) {
     }));
   }
 }
-function $(d, ...i) {
-  for (const t of i) if (d[t] != null) return d[t];
+function $(n, ...i) {
+  for (const t of i) if (n[t] != null) return n[t];
   return "";
 }
-function w(d, i) {
-  return d instanceof Error ? d.message : i;
+function w(n, i) {
+  return n instanceof Error ? n.message : i;
 }
-customElements.define("ekom-analytics-section-view", z);
+customElements.define("ekom-analytics-section-view", I);
 export {
-  z as EkomAnalyticsSectionViewElement,
-  z as default
+  I as EkomAnalyticsSectionViewElement,
+  I as default
 };

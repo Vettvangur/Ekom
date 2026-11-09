@@ -12,6 +12,8 @@
 
 ### Bug Fixes
 
+* **analytics:** retain the selected date preset across redraws and recognize preset ranges shared from Orders and Customers.
+
 * **web:** version Umbraco 17/18 asset URLs by package release, including manifests and shared chunks, to prevent stale CDN registrations.
 
 * **manager:** use explicit case-insensitive customer substring searches and allow Escape/backdrop dismissal of customer details and printer previews.
