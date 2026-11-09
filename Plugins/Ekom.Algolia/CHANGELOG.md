@@ -28,6 +28,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.71](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.70...Ekom.Algolia-v0.2.71) (2026-11-09)
+
+
+### Features
+
+* add optional database price storage ([#1128](https://github.com/Vettvangur/Ekom/issues/1128)) ([98525c8](https://github.com/Vettvangur/Ekom/commit/98525c8e922bc949d4b158230a729c9439733930))
+
 ## [0.2.70](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.69...Ekom.Algolia-v0.2.70) (2026-10-26)
 
 
