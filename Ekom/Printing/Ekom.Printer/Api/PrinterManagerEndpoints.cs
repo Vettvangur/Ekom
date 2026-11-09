@@ -77,7 +77,8 @@ internal static class PrinterManagerEndpoints
     {
         public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
         {
-            context.HttpContext.Response.Headers.CacheControl = "no-store";
+            context.HttpContext.Response.Headers.CacheControl = "no-cache, no-store";
+            context.HttpContext.Response.Headers.Pragma = "no-cache";
             if (!options.Value.Enabled) return Results.NotFound();
             if (!access.CanAccessManager()) return Results.StatusCode(StatusCodes.Status403Forbidden);
             return await next(context).ConfigureAwait(false);

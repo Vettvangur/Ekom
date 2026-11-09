@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Align manager cache headers with antiforgery requirements to avoid override warnings on capabilities requests.
+
 - Add a public durable capture service and mutually exclusive station trigger modes for post-warehouse printing.
 - Reuse OncePerOrder identities, immutable snapshots and durable processing for explicit-capture retries.
 
