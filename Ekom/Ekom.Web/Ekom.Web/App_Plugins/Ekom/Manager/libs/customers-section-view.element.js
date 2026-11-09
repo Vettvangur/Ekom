@@ -1,15 +1,15 @@
-var v = Object.defineProperty;
-var w = (s, r, e) => r in s ? v(s, r, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[r] = e;
-var l = (s, r, e) => w(s, typeof r != "symbol" ? r + "" : r, e);
-const _ = (s) => class extends s {
+var _ = Object.defineProperty;
+var O = (s, r, e) => r in s ? _(s, r, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[r] = e;
+var l = (s, r, e) => O(s, typeof r != "symbol" ? r + "" : r, e);
+const $ = (s) => class extends s {
   connectedCallback() {
   }
   disconnectedCallback() {
   }
-}, k = /* @__PURE__ */ new Date(), O = new Date(k.getFullYear(), 0, 1), d = {
+}, w = /* @__PURE__ */ new Date(), S = new Date(w.getFullYear(), 0, 1), d = {
   filters: {
-    dateFrom: y(O),
-    dateTo: y(k),
+    dateFrom: v(S),
+    dateTo: v(w),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
@@ -201,19 +201,19 @@ function b(s) {
   const e = r.toString();
   return e ? `?${e}` : "";
 }
-function y(s) {
+function v(s) {
   const r = String(s.getMonth() + 1).padStart(2, "0"), e = String(s.getDate()).padStart(2, "0");
   return `${s.getFullYear()}-${r}-${e}`;
 }
 function i(s) {
   return String(s ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-const $ = `
+const L = `
   .ekmOrderCustomData { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; padding: 14px 16px; border: 1px solid #e1e3e8; border-radius: 12px; }
   .ekmOrderCustomData__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 7px 12px; border: 1px solid #e1e3e8; border-radius: 8px; background: #f6f7f9; line-height: 1.5; break-inside: avoid; }
   .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
   .ekmOrderCustomData__value { margin: 0; min-width: 0; color: #252830; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
-`, S = `
+`, C = `
 .ekmOrderLineProduct { display: flex; align-items: flex-start; gap: 14px; min-width: 0; width: 100%; }
 .ekmOrderLineProduct__details { min-width: 0; overflow-wrap: anywhere; }
 .ekmOrderLineProduct__details > span:first-child, .ekmOrderLineProduct__details > div:first-child { font-weight: 600; }
@@ -225,7 +225,7 @@ const $ = `
 .ekmOrderLineThumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f6f6f8; }
 .ekmOrderLineThumbnail img[hidden] { display: none; }
 
-  ${$}
+  ${L}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -366,7 +366,7 @@ const $ = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-class L extends _(HTMLElement) {
+class R extends $(HTMLElement) {
   constructor() {
     super(...arguments);
     l(this, "api", new p());
@@ -434,11 +434,11 @@ class L extends _(HTMLElement) {
     const a = ++this.detailRequest;
     this.opener = e, this.error = "";
     try {
-      const m = await this.get("/detail", new URLSearchParams({ store: d.filters.store, identity: e, page: String(t), other: String(this.other) }));
+      const c = await this.get("/detail", new URLSearchParams({ store: d.filters.store, identity: e, page: String(t), other: String(this.other) }));
       if (a !== this.detailRequest || !this.isConnected) return;
-      this.detail = m, this.render(), (n = this.querySelector("[data-close]")) == null || n.focus();
-    } catch (m) {
-      a === this.detailRequest && (this.error = String(m), this.render());
+      this.detail = c, this.render(), (n = this.querySelector("[data-close]")) == null || n.focus();
+    } catch (c) {
+      a === this.detailRequest && (this.error = String(c), this.render());
     }
   }
   close() {
@@ -462,10 +462,10 @@ class L extends _(HTMLElement) {
     return e.map((a) => {
       var u;
       const n = (u = d.stores.find((h) => h.alias === d.filters.store)) == null ? void 0 : u.currency;
-      let m = a.currency;
-      !/^[A-Z]{3}$/.test(m) && (n == null ? void 0 : n.currencyValue) === m && (m = n.isoCurrencySymbol || m);
+      let c = a.currency;
+      !/^[A-Z]{3}$/.test(c) && (n == null ? void 0 : n.currencyValue) === c && (c = n.isoCurrencySymbol || c);
       try {
-        return i(new Intl.NumberFormat(void 0, { style: "currency", currency: m }).format(a[t]));
+        return i(new Intl.NumberFormat(void 0, { style: "currency", currency: c }).format(a[t]));
       } catch {
         return `${i(a[t].toLocaleString(void 0, { maximumFractionDigits: 2 }))} ${i(a.currency)}`;
       }
@@ -482,7 +482,7 @@ class L extends _(HTMLElement) {
   }
   render() {
     const e = d.filters, t = this.result;
-    this.innerHTML = `<style>${S}
+    this.innerHTML = `<style>${C}
       ekom-customers-section-view { display:block; color:var(--uui-color-text,#20232e) }
       .customers { padding:24px; background:var(--uui-color-background,#f3f4f7); min-height:80vh }
       .customer-cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0 }
@@ -523,13 +523,13 @@ class L extends _(HTMLElement) {
       ${this.busy ? '<p role="status">Loading…</p>' : ""}
       ${t ? `<div class="customer-cards">${this.card("Customers", this.number(t.totals.customers))}${this.card("Returning", this.number(t.totals.returningPercent) + "%")}${this.card("Average lifetime spend", this.amount(t.spend, "averageLifetime"))}${this.card("Average orders per customer", this.number(t.totals.averageOrders))}${this.card("Average days between orders", this.number(t.totals.averageReorderDays))}</div>
       <p class="customer-muted">${t.missingIdentifiers} qualifying orders in this period have no ${t.identityField === "CustomerUsername" ? "username" : "email"} and are excluded. Spend uses recorded charged amounts, without refund adjustment.</p>` : ""}
-      <div class="customer-panel"><form class="customer-toolbar" data-search>
+      <div class="customer-panel"><div class="customer-toolbar" role="search">
         <label>Search<input name="query" value="${i(this.query)}" placeholder="Name, email or username"></label>
-        <button type="submit">Search</button>
+        <button type="button" data-search>Search</button>
         <label>Customers<select data-segment>${["all", "new", "returning"].map((a) => `<option value="${a}" ${a === this.segment ? "selected" : ""}>${a[0].toUpperCase() + a.slice(1)}</option>`).join("")}</select></label>
         <label>Sort by<select data-sort>${[["newest", "Newest first order"], ["oldest", "Oldest first order"], ["lastOrder", "Latest order"], ["orders", "Most orders"], ["name", "Name"]].map(([a, n]) => `<option value="${a}" ${a === this.sort ? "selected" : ""}>${n}</option>`).join("")}</select></label>
         <button type="button" data-export ${this.busy || !(t != null && t.totals.customers) ? "disabled" : ""}>Export</button>
-      </form><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
+      </div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
       ${((t == null ? void 0 : t.customers) || []).map((a) => `<tr><td><button data-customer="${i(a.identity)}">${i(a.name || a.email || a.username || a.identity)}<span class="customer-badge">${a.orders > 1 ? "Returning" : "New"}</span><span class="customer-muted">${i(a.email || a.username || a.identity)}</span></button></td><td>${this.date(a.firstOrder)}</td><td>${a.orders}</td><td>${this.amount(a.spend, "total")}</td><td>${this.amount(a.spend, "averageOrder")}</td><td>${this.date(a.lastOrder)}<span class="customer-muted">${i(a.lastStatus || "")}</span></td><td>${a.daysSinceLastOrder}</td></tr>`).join("") || '<tr><td colspan="7">No customers found.</td></tr>'}
       </tbody></table></div><div class="customer-pagination"><button data-page="${this.page - 1}" ${this.page <= 1 || this.busy ? "disabled" : ""}>Previous</button><span>Page ${this.page} of ${Math.max(1, (t == null ? void 0 : t.totalPages) || 0)}</span><button data-page="${this.page + 1}" ${this.page >= ((t == null ? void 0 : t.totalPages) || 0) || this.busy ? "disabled" : ""}>Next</button></div></div>
       ${this.detail ? this.renderDetail(this.detail) : ""}</section>`, this.bind();
@@ -542,18 +542,22 @@ class L extends _(HTMLElement) {
       <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${i(e.snapshot.orderNumber)} · ${this.date(e.snapshot.date)}. Historical details, not a current customer profile.</p>${e.snapshot.unavailable ? "<p>Saved details could not be read.</p>" : ""}<dl>${Object.entries(e.snapshot.fields).map(([a, n]) => `<dt>${i(a)}</dt><dd>${i(n)}</dd>`).join("") || "<dd>No additional details recorded.</dd>"}</dl></aside></div></section></div>`;
   }
   bind() {
-    var e, t, a, n, m, u, h, x;
+    var t, a, n, c, u, h, x, y, k;
     this.querySelectorAll("[data-filter]").forEach((o) => o.addEventListener("change", () => {
-      const c = o.dataset.filter;
-      d.filters[c] = o.value, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...d.filters } })), this.page = 1, this.load();
-    })), (e = this.querySelector("[data-search]")) == null || e.addEventListener("submit", (o) => {
-      var c;
-      o.preventDefault(), this.query = ((c = this.querySelector("[name=query]")) == null ? void 0 : c.value) || "", this.page = 1, this.load();
-    }), (t = this.querySelector("[data-segment]")) == null || t.addEventListener("change", (o) => {
+      const m = o.dataset.filter;
+      d.filters[m] = o.value, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...d.filters } })), this.page = 1, this.load();
+    }));
+    const e = () => {
+      var o;
+      this.query = ((o = this.querySelector("[name=query]")) == null ? void 0 : o.value.trim()) || "", this.page = 1, this.load();
+    };
+    (t = this.querySelector("[data-search]")) == null || t.addEventListener("click", e), (a = this.querySelector("[name=query]")) == null || a.addEventListener("keydown", (o) => {
+      o.key !== "Enter" || o.isComposing || (o.preventDefault(), o.stopPropagation(), e());
+    }), (n = this.querySelector("[data-segment]")) == null || n.addEventListener("change", (o) => {
       this.segment = o.target.value, this.page = 1, this.load();
-    }), (a = this.querySelector("[data-sort]")) == null || a.addEventListener("change", (o) => {
+    }), (c = this.querySelector("[data-sort]")) == null || c.addEventListener("change", (o) => {
       this.sort = o.target.value, this.page = 1, this.load();
-    }), (n = this.querySelector("[data-reload]")) == null || n.addEventListener("click", () => void this.load()), (m = this.querySelector("[data-export]")) == null || m.addEventListener("click", () => void this.export()), (u = this.querySelector("[data-close]")) == null || u.addEventListener("click", () => this.close()), (h = this.querySelector("[data-other]")) == null || h.addEventListener("change", () => {
+    }), (u = this.querySelector("[data-reload]")) == null || u.addEventListener("click", () => void this.load()), (h = this.querySelector("[data-export]")) == null || h.addEventListener("click", () => void this.export()), (x = this.querySelector("[data-close]")) == null || x.addEventListener("click", () => this.close()), (y = this.querySelector("[data-other]")) == null || y.addEventListener("change", () => {
       this.other = !this.other, this.detail && this.open(this.detail.customer.identity);
     }), this.querySelectorAll("[data-customer]").forEach((o) => o.addEventListener("click", () => {
       this.other = !1, this.open(o.dataset.customer);
@@ -565,18 +569,18 @@ class L extends _(HTMLElement) {
       if (this.classic) this.dispatchEvent(new CustomEvent("customer-open-order", { bubbles: !0, detail: { orderId: o.dataset.order } }));
       else {
         d.pendingOrderId = o.dataset.order;
-        const c = document.createElement("a");
-        c.href = location.pathname.replace(/\/customers\/?$/, "/orders") + "?orderId=" + encodeURIComponent(o.dataset.order || ""), this.appendChild(c), c.click(), c.remove();
+        const m = document.createElement("a");
+        m.href = location.pathname.replace(/\/customers\/?$/, "/orders") + "?orderId=" + encodeURIComponent(o.dataset.order || ""), this.appendChild(m), m.click(), m.remove();
       }
-    })), (x = this.querySelector("[role=dialog]")) == null || x.addEventListener("keydown", (o) => {
+    })), (k = this.querySelector("[role=dialog]")) == null || k.addEventListener("keydown", (o) => {
       if (o.key === "Escape" && (o.preventDefault(), this.close()), o.key !== "Tab") return;
-      const c = Array.from(this.querySelectorAll("[role=dialog] button:not(:disabled),[role=dialog] input")), g = c[0], f = c[c.length - 1];
+      const m = Array.from(this.querySelectorAll("[role=dialog] button:not(:disabled),[role=dialog] input")), g = m[0], f = m[m.length - 1];
       o.shiftKey && document.activeElement === g ? (o.preventDefault(), f == null || f.focus()) : !o.shiftKey && document.activeElement === f && (o.preventDefault(), g == null || g.focus());
     });
   }
 }
-customElements.define("ekom-customers-section-view", L);
+customElements.define("ekom-customers-section-view", R);
 export {
-  L as EkomCustomersSectionViewElement,
-  L as default
+  R as EkomCustomersSectionViewElement,
+  R as default
 };

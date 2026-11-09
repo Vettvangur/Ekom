@@ -147,25 +147,30 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   private render(): void {
     const f = managerState.filters;
     this.innerHTML = `<style>${managerStyles}
-      ekom-analytics-section-view { display:block }
+      ekom-analytics-section-view { display:block;color:var(--uui-color-text,#20232e) }
+      .analytics {background:var(--uui-color-background,#f3f4f7);min-height:80vh}
+      .analytics .card {background:var(--uui-color-surface,#fff);border:1px solid #dfe2e8;border-radius:10px;padding:18px;text-align:left;box-shadow:none}
+      .analytics .analytics-main {margin-top:18px}
+      .analytics h3 {margin:0;font-size:16px}
+      .analytics button:disabled {opacity:.5;cursor:default}
       .analytics-toolbar {display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:18px}
-      .analytics-toolbar label {display:grid;gap:5px}
+      .analytics-toolbar label {display:grid;gap:5px;font-size:12px}
       .analytics-toolbar input,.analytics-toolbar select,.analytics-toolbar button,.analytics-table button {font:inherit;padding:8px 12px;border:1px solid #dfe2e8;border-radius:6px;background:var(--uui-color-surface,#fff);color:inherit}
       .analytics-toolbar button {cursor:pointer}
       .analytics-toolbar button[aria-pressed=true] {background:#e7f1ed;border-color:#26795c}
-      .analytics-summary {display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px}
-      .analytics-summary .card {padding:20px}
-      .analytics-summary strong {display:block;font-size:27px;margin:10px 0}
-      .analytics-muted {color:#666f80;font-size:12px}
+      .analytics-summary {display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:18px 0}
+      .analytics-summary .card > span:first-child {display:block;color:#646b7c;font-size:12px;margin-bottom:8px}
+      .analytics-summary strong {display:block;font-size:23px;margin:0 0 8px}
+      .analytics-muted {color:#70778a;font-size:12px;line-height:1.5}
       .analytics-table-wrap {overflow:auto;max-height:520px}
       .analytics-table {width:100%;border-collapse:collapse}
-      .analytics-table th,.analytics-table td {text-align:left;padding:12px;border-bottom:1px solid #e4e7ec;white-space:nowrap}
-      .analytics-table th {position:sticky;top:0;background:var(--uui-color-surface,#fff)}
+      .analytics-table th,.analytics-table td {text-align:left;padding:15px 10px;border-bottom:1px solid #e8e9ed;white-space:nowrap}
+      .analytics-table th {position:sticky;top:0;background:var(--uui-color-surface,#fff);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#70778a}
       .analytics-main {padding:22px}
       .analytics-spinner {display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid #dfe2e8;border-top-color:#25765c;border-radius:50%;animation:analytics-spin 1s linear infinite}
       @keyframes analytics-spin {to {transform:rotate(360deg)}}
       @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
-    </style><section class="ekmManager"><div class="ekmManager__body">
+    </style><section class="ekmManager analytics"><div class="ekmManager__body">
       <div class="analytics-toolbar">
         <label>Store<select data-field="store">${managerState.stores.map(s => `<option value="${escapeHtml(s.alias)}" ${s.alias === f.store ? 'selected' : ''}>${escapeHtml(s.title)}</option>`).join('')}</select></label>
         <label>Order status<select data-field="orderStatus"><option value="CompletedOrders" ${f.orderStatus === 'CompletedOrders' ? 'selected' : ''}>Completed Orders</option><option value="AllOrders" ${f.orderStatus === 'AllOrders' ? 'selected' : ''}>All Orders</option>${managerState.statusList.map(s => `<option value="${escapeHtml(getStatusValue(s))}" ${getStatusValue(s) === f.orderStatus ? 'selected' : ''}>${escapeHtml(s.label)}</option>`).join('')}</select></label>
