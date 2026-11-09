@@ -19,14 +19,14 @@ function fixture() {
       dispatchEvent() { this.changes = (this.changes ?? 0) + 1; }
     },
     customElements: { define() {} },
-    fetch: async (url, options) => { requests.push({ url, options }); return response; },
+    fetch: async (url, options) => { requests.push({ url, options }); return await response; },
   });
   const editor = new exports.EkomPriceEditorElement();
   editor.alias = 'ekmDiscountPrice';
   editor.documentId = 'document-key';
   editor.renderPrices = () => {};
   editor.setStatus = (message, error) => { editor.message = message; editor.error = error; };
-  return { editor, requests, fail: () => { response = { ok: false, status: 500 }; } };
+  return { editor, requests, defer: () => { let resolve; response = new Promise(done => { resolve = done; }); return () => resolve({ ok: true }); }, fail: () => { response = { ok: false, status: 500 }; } };
 }
 
 test('database mode overlays prices without changing the node value or emitting an editor change', async () => {
@@ -66,4 +66,77 @@ test('node mode still emits normal property changes', () => {
   assert.equal(editor.value.Web[0].Price, 55);
   assert.equal(editor.changes, 1);
   assert.equal(requests.length, 0);
+});
+
+
+function loadFixture(editor, rows) {
+  editor.fetchJson = async url => url.endsWith('/Config') ? { useDatabasePrices: true }
+    : url.includes('/Stores/') ? [{ alias: 'Web', currencies: [{ currencyValue: 'en-US' }] }]
+    : rows();
+}
+
+test('switching documents discards overrides and accepts the new node fallback', async () => {
+  const { editor } = fixture();
+  editor.value = { Web: [{ Currency: 'en-US', Price: 100 }] };
+  loadFixture(editor, () => editor.documentId === 'document-key'
+    ? [{ storeAlias: 'Web', currency: 'en-US', price: 120 }] : []);
+  await editor.loadStores();
+  editor.updateDocumentId('second-document');
+  editor.value = { Web: [{ Currency: 'en-US', Price: 75 }] };
+  await editor.loadStores();
+  assert.equal(editor.getPrice('Web', 'en-US'), 75);
+  assert.equal(editor.changes, undefined);
+});
+
+test('reload after deleting a saved override restores the original node fallback', async () => {
+  const { editor } = fixture();
+  editor.value = { Web: [{ Currency: 'en-US', Price: 100 }] };
+  let rows = [{ storeAlias: 'Web', currency: 'en-US', price: 120 }];
+  loadFixture(editor, () => rows);
+  await editor.loadStores();
+  await editor.savePrice('Web', 'en-US', '150');
+  assert.equal(editor.rawValue.Web[0].Price, 100);
+  rows = [];
+  await editor.loadStores();
+  assert.equal(editor.getPrice('Web', 'en-US'), 100);
+});
+
+test('late node values preserve current database overrides', async () => {
+  const { editor } = fixture();
+  loadFixture(editor, () => [{ storeAlias: 'Web', currency: 'en-US', price: 120 }]);
+  await editor.loadStores();
+  editor.value = { Web: [{ Currency: 'en-US', Price: 75 }] };
+  assert.equal(editor.getPrice('Web', 'en-US'), 120);
+  assert.equal(editor.rawValue.Web[0].Price, 75);
+});
+
+test('a save finishing after navigation cannot alter the next document', async () => {
+  const { editor, defer } = fixture();
+  editor.value = { Web: [{ Currency: 'en-US', Price: 100 }] };
+  loadFixture(editor, () => []);
+  await editor.loadStores();
+  const finish = defer();
+  const saving = editor.savePrice('Web', 'en-US', '150');
+  editor.updateDocumentId('second-document');
+  editor.value = { Web: [{ Currency: 'en-US', Price: 75 }] };
+  await editor.loadStores();
+  finish();
+  await saving;
+  assert.equal(editor.getPrice('Web', 'en-US'), 75);
+  assert.equal(editor.changes, undefined);
+});
+
+
+test('reloading the same document during a save does not leave the editor disabled', async () => {
+  const { editor, defer } = fixture();
+  editor.value = { Web: [{ Currency: 'en-US', Price: 100 }] };
+  loadFixture(editor, () => []);
+  await editor.loadStores();
+  const finish = defer();
+  const saving = editor.savePrice('Web', 'en-US', '150');
+  await editor.loadStores();
+  finish();
+  await saving;
+  assert.equal(editor.saving, false);
+  assert.equal(editor.getPrice('Web', 'en-US'), 150);
 });

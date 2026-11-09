@@ -371,7 +371,7 @@ public sealed class DatabasePriceTests
         public override IProduct? Product => product;
     }
 
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         private readonly string _path = Path.Combine(Path.GetTempPath(), $"ekom-prices-{Guid.NewGuid():N}.db");
         private readonly ConfigurationScope _configuration;
@@ -400,6 +400,7 @@ public sealed class DatabasePriceTests
             store.SetupGet(x => x.Alias).Returns("Web");
             store.SetupGet(x => x.Currency).Returns(usd);
             store.SetupGet(x => x.Currencies).Returns([usd, gbp]);
+            store.SetupGet(x => x.Cultures).Returns([]);
             store.SetupGet(x => x.VatIncludedInPrice).Returns(true);
             Store = store.Object;
             var discounts = new Mock<IPerStoreCache<IProductDiscount>>();
@@ -407,11 +408,17 @@ public sealed class DatabasePriceTests
             var stores = new Mock<IStoreService>();
             stores.Setup(x => x.GetStoreByAlias("Web")).Returns(Store);
             stores.Setup(x => x.GetStoreFromCache()).Returns(Store);
+            stores.Setup(x => x.GetAllStores()).Returns([Store]);
             _configuration = new ConfigurationScope(overrides: enabled ? new Dictionary<string, string?> { ["Ekom:UseDatabasePrices"] = "true" } : null,
                 addServices: services =>
                 {
                     services.AddSingleton(Factory);
                     services.AddSingleton<Prices>();
+                    var stockCache = new Mock<IBaseCache<StockData>>();
+                    stockCache.SetupGet(x => x.Cache).Returns(new ConcurrentDictionary<Guid, StockData>());
+                    services.AddSingleton(sp => new Ekom.API.Stock(sp.GetRequiredService<Configuration>(),
+                        NullLogger<Ekom.API.Stock>.Instance, stockCache.Object, null!, null!, stores.Object,
+                        null!, null!, null!));
                     services.AddSingleton<IMemoryCache>(_memory);
                     services.AddSingleton(new ProductDiscountService(discounts.Object, new DiscountEvents()));
                     services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();

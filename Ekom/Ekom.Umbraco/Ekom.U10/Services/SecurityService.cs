@@ -29,7 +29,11 @@ class SecurityService : ISecurityService
     public bool IsAuthenticated() => _backofficeUserAccessor.BackofficeUser.IsAuthenticated
         && _userService.GetByUsername(_backofficeUserAccessor.BackofficeUser.GetUserName()) is { IsApproved: true, IsLockedOut: false };
 
-    public bool CanEditPrices(Ekom.Models.UmbracoContent content)
+    public bool CanEditContent(Ekom.Models.UmbracoContent content) => CanEdit(content, false);
+
+    public bool CanEditPrices(Ekom.Models.UmbracoContent content) => CanEdit(content, true);
+
+    private bool CanEdit(Ekom.Models.UmbracoContent content, bool requirePublish)
     {
         if (!IsAuthenticated()) return false;
         var ticket = _backofficeUserAccessor.BackofficeUser;
@@ -41,7 +45,7 @@ class SecurityService : ISecurityService
         if (!ticket.GetStartContentNodes().Any(id => id == -1 || path.Contains(id.ToString(System.Globalization.CultureInfo.InvariantCulture)))) return false;
         var permissions = _userService.GetPermissionsForPath(user, content.Path).GetAllPermissions().ToHashSet(StringComparer.Ordinal);
         return permissions.Contains(Umbraco.Cms.Core.Actions.ActionUpdate.ActionLetter.ToString())
-            && permissions.Contains(Umbraco.Cms.Core.Actions.ActionPublish.ActionLetter.ToString());
+            && (!requirePublish || permissions.Contains(Umbraco.Cms.Core.Actions.ActionPublish.ActionLetter.ToString()));
     }
 
     private IReadOnlyCollection<string> GetCurrentUserGroupAliases()

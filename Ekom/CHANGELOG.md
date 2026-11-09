@@ -12,6 +12,8 @@
 
 ### Bug Fixes
 
+* **prices:** reset editor state across documents, restore draft variant access without publish permission, validate forms before live price writes, and filter variant price baselines by store access.
+
 * **prices:** enforce node/store permissions, commit validated import prices before publication, prevent stale variant edits from overwriting ERP changes, bound price caches, notify subscribers and Algolia after commit, and support removing/exporting overrides.
 
 * **manager:** add space above order custom-data badges to separate them from order action buttons.

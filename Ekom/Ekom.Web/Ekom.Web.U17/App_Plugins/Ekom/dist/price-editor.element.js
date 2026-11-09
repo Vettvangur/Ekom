@@ -1,38 +1,38 @@
 var f = Object.defineProperty;
-var m = (d, u, e) => u in d ? f(d, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : d[u] = e;
-var o = (d, u, e) => m(d, typeof u != "symbol" ? u + "" : u, e);
-import { UMB_PROPERTY_CONTEXT as y } from "@umbraco-cms/backoffice/property";
+var p = (l, c, e) => c in l ? f(l, c, { enumerable: !0, configurable: !0, writable: !0, value: e }) : l[c] = e;
+var a = (l, c, e) => p(l, typeof c != "symbol" ? c + "" : c, e);
+import { UMB_PROPERTY_CONTEXT as m } from "@umbraco-cms/backoffice/property";
 import { UmbChangeEvent as g } from "@umbraco-cms/backoffice/event";
-import { UmbElementMixin as b } from "@umbraco-cms/backoffice/element-api";
-import { UMB_DOCUMENT_WORKSPACE_CONTEXT as v } from "@umbraco-cms/backoffice/document";
-class P extends b(HTMLElement) {
+import { UmbElementMixin as y } from "@umbraco-cms/backoffice/element-api";
+import { UMB_DOCUMENT_WORKSPACE_CONTEXT as b } from "@umbraco-cms/backoffice/document";
+class v extends y(HTMLElement) {
   constructor() {
     super(...arguments);
-    o(this, "manifest");
-    o(this, "name");
-    o(this, "dataSourceAlias");
-    o(this, "config");
-    o(this, "mandatory");
-    o(this, "mandatoryMessage");
-    o(this, "editor");
-    o(this, "status");
-    o(this, "stores", []);
-    o(this, "documentId", "");
-    o(this, "requestId", 0);
-    o(this, "databasePrices", !1);
-    o(this, "saving", !1);
-    o(this, "rawValue");
-    o(this, "internalValue", {});
-    o(this, "alias");
+    a(this, "manifest");
+    a(this, "name");
+    a(this, "dataSourceAlias");
+    a(this, "config");
+    a(this, "mandatory");
+    a(this, "mandatoryMessage");
+    a(this, "editor");
+    a(this, "status");
+    a(this, "stores", []);
+    a(this, "documentId", "");
+    a(this, "requestId", 0);
+    a(this, "documentRevision", 0);
+    a(this, "databasePrices", !1);
+    a(this, "saving", !1);
+    a(this, "loading", !1);
+    a(this, "overrides", []);
+    a(this, "rawValue");
+    a(this, "internalValue", {});
+    a(this, "alias");
   }
   get value() {
     return this.internalValue;
   }
   set value(e) {
-    if (this.databasePrices) return;
-    this.rawValue = e;
-    const t = this.normalizeValue(e);
-    this.internalValue = this.stores.length > 0 ? this.ensurePriceStructure(t) : t, this.syncInputs();
+    this.rawValue = e, this.rebuildValue();
   }
   get readonly() {
     return this.hasAttribute("readonly");
@@ -41,19 +41,18 @@ class P extends b(HTMLElement) {
     this.toggleAttribute("readonly", e), this.syncDisabledState();
   }
   connectedCallback() {
-    super.connectedCallback(), this.renderShell(), this.setStatus("Loading prices..."), this.consumeContext(y, (e) => {
+    super.connectedCallback(), this.renderShell(), this.setStatus("Loading prices..."), this.consumeContext(m, (e) => {
       e != null && this.observe(e.alias, (t) => {
-        this.alias = t, this.loadStores();
+        this.alias && this.alias !== t && this.resetDocumentState(), this.alias = t, this.loadStores();
       }, "ekomPriceAlias");
-    }), this.consumeContext(v, (e) => {
+    }), this.consumeContext(b, (e) => {
       e != null && (this.updateDocumentId(e.getUnique()), this.observe(e.unique, (t) => this.updateDocumentId(t), "ekomPriceDocumentId"));
     });
   }
   disconnectedCallback() {
-    this.requestId++, super.disconnectedCallback();
+    this.requestId++, this.documentRevision++, this.saving = !1, super.disconnectedCallback();
   }
   async loadStores() {
-    var r;
     if (!this.alias) return;
     const e = this.documentId || this.getDocumentIdFromUrl();
     if (e.length === 0) {
@@ -61,28 +60,31 @@ class P extends b(HTMLElement) {
       return;
     }
     const t = ++this.requestId;
-    this.setStatus("Loading prices...");
+    this.loading = !0, this.syncDisabledState(), this.setStatus("Loading prices...");
     try {
-      const i = await this.fetchJson("/ekom/backoffice/Config"), s = await this.fetchJson(`/ekom/backoffice/Stores/${encodeURIComponent(e)}`);
-      if (t !== this.requestId)
-        return;
-      this.databasePrices = i.useDatabasePrices === !0, this.stores = s;
-      const a = Object.keys(this.internalValue).length > 0 ? this.internalValue : this.normalizeValue(this.rawValue);
-      if (this.internalValue = this.ensurePriceStructure(a), this.databasePrices) {
-        const n = await this.fetchJson(this.priceUrl(e));
-        if (t !== this.requestId) return;
-        for (const c of n) {
-          const l = Object.keys(this.internalValue).find((p) => p.toLowerCase() === c.storeAlias.toLowerCase()), h = l == null || (r = this.internalValue[l]) == null ? void 0 : r.find((p) => p.Currency.toLowerCase() === c.currency.toLowerCase());
-          h != null && (h.Price = c.price);
-        }
-      }
-      this.renderPrices(), this.setStatus(this.databasePrices ? "Prices are stored in the database. Changes save immediately without publishing." : "");
-    } catch (i) {
-      if (t !== this.requestId)
-        return;
-      const s = i instanceof Error ? i.message : "Could not load prices.";
-      this.setStatus(s, !0);
+      const r = await this.fetchJson("/ekom/backoffice/Config"), s = await this.fetchJson(`/ekom/backoffice/Stores/${encodeURIComponent(e)}`);
+      if (t !== this.requestId) return;
+      const i = r.useDatabasePrices === !0, o = i ? await this.fetchJson(this.priceUrl(e)) : [];
+      if (t !== this.requestId) return;
+      this.databasePrices = i, this.stores = s, this.overrides = o, this.rebuildValue(), this.renderPrices(), this.setStatus(i ? "Prices are stored in the database. Changes save immediately without publishing." : "");
+    } catch (r) {
+      if (t !== this.requestId) return;
+      this.setStatus(r instanceof Error ? r.message : "Could not load prices.", !0);
+    } finally {
+      t === this.requestId && (this.loading = !1, this.syncDisabledState());
     }
+  }
+  rebuildValue() {
+    var e;
+    if (this.internalValue = this.ensurePriceStructure(this.normalizeValue(this.rawValue)), this.databasePrices)
+      for (const t of this.overrides) {
+        const r = Object.keys(this.internalValue).find((i) => i.toLowerCase() === t.storeAlias.toLowerCase()), s = r == null || (e = this.internalValue[r]) == null ? void 0 : e.find((i) => i.Currency.toLowerCase() === t.currency.toLowerCase());
+        s != null && (s.Price = t.price);
+      }
+    this.syncInputs();
+  }
+  resetDocumentState() {
+    this.requestId++, this.documentRevision++, this.rawValue = void 0, this.internalValue = {}, this.overrides = [], this.saving = !1, this.renderPrices();
   }
   renderShell() {
     this.innerHTML = `
@@ -154,27 +156,27 @@ class P extends b(HTMLElement) {
       return;
     const e = document.createDocumentFragment(), t = this.stores.length > 1;
     for (const r of this.stores) {
-      const i = r.alias;
-      if (i == null)
+      const s = r.alias;
+      if (s == null)
         continue;
-      const s = document.createElement(t ? "fieldset" : "div");
+      const i = document.createElement(t ? "fieldset" : "div");
       if (t) {
-        const a = document.createElement("legend");
-        a.textContent = i, s.append(a);
+        const o = document.createElement("legend");
+        o.textContent = s, i.append(o);
       }
-      for (const a of r.currencies ?? [])
-        a.currencyValue != null && s.append(this.createPriceInput(i, a));
-      e.append(s);
+      for (const o of r.currencies ?? [])
+        o.currencyValue != null && i.append(this.createPriceInput(s, o));
+      e.append(i);
     }
     this.editor.replaceChildren(e), this.syncDisabledState();
   }
   createPriceInput(e, t) {
-    const r = t.currencyValue ?? "", i = document.createElement("div");
-    i.className = "ekom-price-row";
-    const s = `price_${t.isoCurrencySymbol ?? r}_${this.name ?? "price"}_${e}`, a = document.createElement("label");
-    a.htmlFor = s, a.textContent = t.isoCurrencySymbol ?? r;
+    const r = t.currencyValue ?? "", s = document.createElement("div");
+    s.className = "ekom-price-row";
+    const i = `price_${t.isoCurrencySymbol ?? r}_${this.name ?? "price"}_${e}`, o = document.createElement("label");
+    o.htmlFor = i, o.textContent = t.isoCurrencySymbol ?? r;
     const n = document.createElement("input");
-    n.type = "number", n.min = "0", n.step = "any", n.id = s, n.dataset.store = e, n.dataset.currency = r, n.value = String(this.getPrice(e, r)), n.addEventListener(this.databasePrices ? "change" : "input", () => {
+    n.type = "number", n.min = "0", n.step = "any", n.id = i, n.dataset.store = e, n.dataset.currency = r, n.value = String(this.getPrice(e, r)), n.addEventListener(this.databasePrices ? "change" : "input", () => {
       if (this.databasePrices) {
         if (!n.validity.valid || n.value === "") {
           this.setStatus("Enter a non-negative price.", !0);
@@ -184,69 +186,71 @@ class P extends b(HTMLElement) {
       } else
         this.setPrice(e, r, n.value);
     });
-    const c = document.createElement("span");
-    return c.textContent = t.currencySymbol ?? "", i.append(a, n, c), i;
+    const u = document.createElement("span");
+    return u.textContent = t.currencySymbol ?? "", s.append(o, n, u), s;
   }
   setPrice(e, t, r) {
-    const i = this.parsePrice(r);
-    let s = !1;
-    const a = (this.internalValue[e] ?? []).map((n) => n.Currency !== t ? n : (s = !0, {
+    const s = this.parsePrice(r);
+    let i = !1;
+    const o = (this.internalValue[e] ?? []).map((n) => n.Currency !== t ? n : (i = !0, {
       ...n,
-      Price: i
+      Price: s
     }));
-    s || a.push({
+    i || o.push({
       Currency: t,
-      Price: i
+      Price: s
     }), this.internalValue = {
       ...this.internalValue,
-      [e]: a
-    }, this.rawValue = this.internalValue, this.databasePrices || this.emitChange();
+      [e]: o
+    }, this.databasePrices ? (this.overrides = this.overrides.filter((n) => n.storeAlias.toLowerCase() !== e.toLowerCase() || n.currency.toLowerCase() !== t.toLowerCase()), this.overrides.push({ storeAlias: e, currency: t, price: s })) : this.rawValue = this.internalValue, this.databasePrices || this.emitChange();
   }
   priceUrl(e) {
     if (!this.alias) throw new Error("The price property alias is unavailable.");
     return `/ekom/backoffice/Prices/${encodeURIComponent(e)}/${encodeURIComponent(this.alias)}`;
   }
   async savePrice(e, t, r) {
-    if (!(this.readonly || this.saving)) {
-      this.saving = !0, this.syncDisabledState(), this.setStatus("Saving price...");
-      try {
-        const i = await fetch(this.priceUrl(this.documentId || this.getDocumentIdFromUrl()), {
-          method: "PUT",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ storeAlias: e, currency: t, price: Number(r) })
-        });
-        if (!i.ok) throw new Error(`Could not save price (${i.status}).`);
-        this.setPrice(e, t, r), this.setStatus("Price saved. The change is live without publishing.");
-      } catch (i) {
-        this.syncInputs(), this.setStatus(i instanceof Error ? i.message : "Could not save price.", !0);
-      } finally {
-        this.saving = !1, this.syncDisabledState();
-      }
+    if (this.readonly || this.saving || this.loading) return;
+    const s = this.documentRevision;
+    this.saving = !0, this.syncDisabledState(), this.setStatus("Saving price...");
+    try {
+      const i = await fetch(this.priceUrl(this.documentId || this.getDocumentIdFromUrl()), {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storeAlias: e, currency: t, price: Number(r) })
+      });
+      if (s !== this.documentRevision) return;
+      if (!i.ok) throw new Error(`Could not save price (${i.status}).`);
+      this.setPrice(e, t, r), this.setStatus("Price saved. The change is live without publishing.");
+    } catch (i) {
+      if (s !== this.documentRevision) return;
+      this.syncInputs(), this.setStatus(i instanceof Error ? i.message : "Could not save price.", !0);
+    } finally {
+      s === this.documentRevision && (this.saving = !1, this.syncDisabledState());
     }
   }
   getPrice(e, t) {
-    var r, i;
-    return ((i = (r = this.internalValue[e]) == null ? void 0 : r.find((s) => s.Currency === t)) == null ? void 0 : i.Price) ?? 0;
+    var r, s;
+    return ((s = (r = this.internalValue[e]) == null ? void 0 : r.find((i) => i.Currency === t)) == null ? void 0 : s.Price) ?? 0;
   }
   ensurePriceStructure(e) {
-    const t = Object.fromEntries(Object.entries(e).map(([r, i]) => [
+    const t = Object.fromEntries(Object.entries(e).map(([r, s]) => [
       r,
-      i.map((s) => ({ ...s }))
+      s.map((i) => ({ ...i }))
     ]));
     for (const r of this.stores) {
-      const i = r.alias;
-      if (i == null)
+      const s = r.alias;
+      if (s == null)
         continue;
-      const s = t[i] ?? [];
-      for (const a of r.currencies ?? []) {
-        const n = a.currencyValue;
-        n != null && (s.some((c) => c.Currency === n) || s.push({
+      const i = t[s] ?? [];
+      for (const o of r.currencies ?? []) {
+        const n = o.currencyValue;
+        n != null && (i.some((u) => u.Currency === n) || i.push({
           Currency: n,
           Price: 0
         }));
       }
-      t[i] = s;
+      t[s] = i;
     }
     return t;
   }
@@ -260,26 +264,26 @@ class P extends b(HTMLElement) {
   }
   normalizeCurrentFormat(e) {
     const t = {};
-    for (const [r, i] of Object.entries(e))
+    for (const [r, s] of Object.entries(e))
       if (r !== "undefined") {
-        if (!Array.isArray(i))
+        if (!Array.isArray(s))
           return;
-        t[r] = i.map((s) => {
-          if (!(!this.isRecord(s) || !("Currency" in s) || !("Price" in s)))
+        t[r] = s.map((i) => {
+          if (!(!this.isRecord(i) || !("Currency" in i) || !("Price" in i)))
             return {
-              Currency: String(s.Currency),
-              Price: this.parsePrice(s.Price)
+              Currency: String(i.Currency),
+              Price: this.parsePrice(i.Price)
             };
-        }).filter((s) => s != null);
+        }).filter((i) => i != null);
       }
     return t;
   }
   transformLegacyValue(e) {
-    var i, s, a;
-    const t = {}, r = ((a = (s = (i = this.stores[0]) == null ? void 0 : i.currencies) == null ? void 0 : s[0]) == null ? void 0 : a.currencyValue) ?? "";
-    for (const [n, c] of Object.entries(e))
-      n === "undefined" || !this.isRecord(c) || (t[n] = Object.values(c).map((l) => {
-        const h = this.isRecord(l) && "Price" in l ? l.Price : l;
+    var s, i, o;
+    const t = {}, r = ((o = (i = (s = this.stores[0]) == null ? void 0 : s.currencies) == null ? void 0 : i[0]) == null ? void 0 : o.currencyValue) ?? "";
+    for (const [n, u] of Object.entries(e))
+      n === "undefined" || !this.isRecord(u) || (t[n] = Object.values(u).map((d) => {
+        const h = this.isRecord(d) && "Price" in d ? d.Price : d;
         return {
           Currency: r,
           Price: this.parsePrice(h)
@@ -296,7 +300,7 @@ class P extends b(HTMLElement) {
   }
   syncDisabledState() {
     for (const e of this.querySelectorAll("input"))
-      e.disabled = this.readonly || this.saving;
+      e.disabled = this.readonly || this.saving || this.loading;
   }
   setStatus(e, t = !1) {
     this.status != null && (this.status.textContent = e, this.status.dataset.error = String(t));
@@ -305,7 +309,7 @@ class P extends b(HTMLElement) {
     this.dispatchEvent(new g());
   }
   updateDocumentId(e) {
-    e == null || e === this.documentId || (this.documentId = e, this.loadStores());
+    e == null || e === this.documentId || (this.documentId && this.resetDocumentState(), this.documentId = e, this.loadStores());
   }
   getDocumentIdFromUrl() {
     const e = new URL(window.location.href), t = e.searchParams.get("id");
@@ -335,8 +339,8 @@ class P extends b(HTMLElement) {
     return await t.json();
   }
 }
-customElements.define("ekom-price-editor", P);
+customElements.define("ekom-price-editor", v);
 export {
-  P as EkomPriceEditorElement,
-  P as default
+  v as EkomPriceEditorElement,
+  v as default
 };

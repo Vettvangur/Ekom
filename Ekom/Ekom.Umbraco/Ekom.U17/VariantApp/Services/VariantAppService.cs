@@ -115,6 +115,14 @@ internal sealed class VariantAppService : IVariantAppService
         var groupFieldDefinitions = GetVariantGroupFieldDefinitions();
         var variantFieldDefinitions = GetVariantFieldDefinitions();
 
+        // Validate the complete submitted form before any price or content writes.
+        foreach (var groupModel in request.Groups)
+        {
+            ValidateCustomFields(groupModel.CustomFields, groupFieldDefinitions);
+            foreach (var model in groupModel.Variants)
+                ValidateCustomFields(model.CustomFields, variantFieldDefinitions);
+        }
+
         foreach (var groupModel in request.Groups)
         {
             var group = GetOrCreateVariantGroup(product, groupModel, languages);
@@ -193,6 +201,7 @@ internal sealed class VariantAppService : IVariantAppService
         }
 
         var variantFieldDefinitions = GetVariantFieldDefinitions();
+        ValidateCustomFields(request.Variant.CustomFields, variantFieldDefinitions);
         ApplyDatabasePrices(variant, request.Variant, stores);
 
         if (request.Variant.Id <= 0 || HasVariantContentChanges(variant, request.Variant, stores, variantFieldDefinitions, languages))
@@ -254,7 +263,7 @@ internal sealed class VariantAppService : IVariantAppService
             throw new Exceptions.HttpResponseException(HttpStatusCode.BadRequest);
         }
 
-        if (!_security.CanEditPrices(new UmbracoContent { Id = content.Id, Key = content.Key, Path = content.Path }))
+        if (!_security.CanEditContent(new UmbracoContent { Id = content.Id, Key = content.Key, Path = content.Path }))
             throw new Exceptions.HttpResponseException(HttpStatusCode.Forbidden);
 
         return content;
@@ -335,6 +344,8 @@ internal sealed class VariantAppService : IVariantAppService
         IReadOnlyList<UmbracoLanguage> languages,
         IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
     {
+        if (Configuration.Instance.UseDatabasePrices)
+            stores = stores.Where(store => _access.CanAccessStore(store.Alias)).ToList();
         var titleValues = GetTitleValues(variant, "title", languages);
 
         return new VariantManagerVariant
@@ -348,7 +359,9 @@ internal sealed class VariantAppService : IVariantAppService
             Images = GetStringValue(variant, "images"),
             PriceValues = GetPriceValues(variant, stores),
             OriginalPriceValues = GetPriceValues(variant, stores),
-            PriceOverrides = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance.Get(variant.Key) : null,
+            PriceOverrides = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance.Get(variant.Key)
+                .Where(row => stores.Any(store => store.Alias.Equals(row.StoreAlias, StringComparison.OrdinalIgnoreCase))
+                    && _access.CanAccessStore(row.StoreAlias)).ToList() : null,
             StockValues = GetStockValues(variant),
             CustomFields = GetCustomFields(variant, fieldDefinitions),
             SortOrder = variant.SortOrder,
@@ -422,6 +435,13 @@ internal sealed class VariantAppService : IVariantAppService
             foreach (var change in changes)
             {
                 if (!_access.CanAccessStore(change.StoreAlias)) throw new Exceptions.HttpResponseException(HttpStatusCode.Forbidden);
+            }
+            if (changes.Count > 0)
+            {
+                var permissionContent = variant.Id > 0 ? variant : _contentService.GetById(variant.ParentId);
+                if (permissionContent == null || !_security.CanEditPrices(new UmbracoContent
+                    { Id = permissionContent.Id, Key = permissionContent.Key, Path = permissionContent.Path }))
+                    throw new Exceptions.HttpResponseException(HttpStatusCode.Forbidden);
             }
             API.Prices.Instance.Apply(changes);
         }
@@ -577,6 +597,17 @@ internal sealed class VariantAppService : IVariantAppService
             })
             .ToList();
 
+    private static void ValidateCustomFields(IReadOnlyList<VariantManagerCustomField>? customFields,
+        IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
+    {
+        foreach (var field in fieldDefinitions)
+        {
+            var value = customFields?.FirstOrDefault(x => x.Alias.Equals(field.Alias, StringComparison.OrdinalIgnoreCase))?.Value;
+            if (field.Required && string.IsNullOrWhiteSpace(value))
+                throw new Exceptions.HttpResponseException(HttpStatusCode.BadRequest);
+        }
+    }
+
     private static void ApplyCustomFields(IContent content, IReadOnlyList<VariantManagerCustomField>? customFields, IReadOnlyList<VariantManagerCustomFieldDefinition> fieldDefinitions)
     {
         var values = (customFields ?? Array.Empty<VariantManagerCustomField>())
@@ -609,7 +640,8 @@ internal sealed class VariantAppService : IVariantAppService
 
     private IReadOnlyList<VariantManagerStore> LoadVariantStores(IContent product)
     {
-        var enabledStores = GetEnabledStores(product).ToList();
+        var enabledStores = GetEnabledStores(product)
+            .Where(store => !Configuration.Instance.UseDatabasePrices || _access.CanAccessStore(store.Alias)).ToList();
 
         return enabledStores
             .Select(store => new VariantManagerStore
@@ -883,6 +915,10 @@ internal sealed class VariantAppService : IVariantAppService
     {
         if (publish)
         {
+            var permissionContent = content.Id > 0 ? content : _contentService.GetById(content.ParentId);
+            if (permissionContent == null || !_security.CanEditPrices(new UmbracoContent
+                { Id = permissionContent.Id, Key = permissionContent.Key, Path = permissionContent.Path }))
+                throw new Exceptions.HttpResponseException(HttpStatusCode.Forbidden);
             _contentService.Save(content);
             _contentService.Publish(content, ["*"]);
             return;
