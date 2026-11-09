@@ -12,6 +12,8 @@
 
 ### Bug Fixes
 
+* **prices:** enlist document price edits in the content-save transaction to avoid SQLite lock waits; refresh the cache and notify subscribers only after commit.
+
 * **prices:** use scoped security services during content saving and log price-save failures as well as showing the editor notification.
 
 * **prices:** save datatype edits with the document, like stock, instead of writing live prices from individual fields.

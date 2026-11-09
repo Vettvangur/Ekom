@@ -6,13 +6,14 @@ using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Extensions;
 
 namespace Ekom.Umb;
 
 internal static class PriceSavingNotifications
 {
-    public static async Task ApplyAsync(ContentSavingNotification notification, ISecurityService security, IManagerAccessService access, ILogger logger, CancellationToken ct)
+    public static async Task ApplyAsync(ContentSavingNotification notification, ISecurityService security, IManagerAccessService access, ILogger logger, IScopeProvider scopeProvider, IScopeAccessor scopeAccessor, CancellationToken ct)
     {
         if (!Configuration.Instance.UseDatabasePrices || notification.Cancel) return;
         try
@@ -34,11 +35,28 @@ internal static class PriceSavingNotifications
                 }
             }
             Prices.Instance.Validate(changes);
-            await Prices.Instance.ApplyAsync(changes, ct).ConfigureAwait(false);
+            if (changes.Count == 0) return;
+            var scope = scopeAccessor.AmbientScope;
+            if (scope != null)
+            {
+                var context = scopeProvider.Context
+                    ?? throw new InvalidOperationException("The content save has no scope context.");
+                var transaction = scope.Database.Transaction
+                    ?? throw new InvalidOperationException("The content save has no database transaction.");
+                // Umbraco may wrap the provider transaction for profiling.
+                while (transaction is StackExchange.Profiling.Data.ProfiledDbTransaction profiled)
+                    transaction = profiled.WrappedTransaction;
+                var completed = await Prices.Instance.ApplyInTransactionAsync(changes, transaction, ct).ConfigureAwait(false);
+                context.Enlist("Ekom.Prices." + Guid.NewGuid(), completed);
+            }
+            else
+            {
+                await Prices.Instance.ApplyAsync(changes, ct).ConfigureAwait(false);
+            }
             // These values are persisted by the current content save. No extra save/publish is needed.
             foreach (var field in fields) field.Node.SetValue(field.Alias, field.Value);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.Text.Json.JsonException)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.Text.Json.JsonException or System.Data.Common.DbException)
         {
             logger.LogError(ex, "Failed to save database prices during content saving.");
             notification.CancelOperation(new EventMessage("Prices", ex.Message, EventMessageType.Error));

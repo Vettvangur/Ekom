@@ -130,24 +130,47 @@ public sealed class Prices : IDisposable
         {
             await using var db = _databaseFactory.GetDatabase();
             await using var tx = await db.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken).ConfigureAwait(false);
-            var committed = new List<PriceChangedEventArgs>();
-            foreach (var change in batch)
-            {
-                var query = db.Prices.Where(x => x.NodeKey == change.NodeKey && x.PropertyAlias == change.PropertyAlias
-                    && x.StoreAlias == change.StoreAlias && x.Currency == change.Currency);
-                var old = await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-                Check(change, old);
-                if (old?.Price == change.Price) continue;
-                if (change.Price == null) await query.DeleteAsync(cancellationToken).ConfigureAwait(false);
-                else if (old == null) await db.InsertAsync(Row(change), token: cancellationToken).ConfigureAwait(false);
-                else await query.Set(x => x.Price, change.Price.Value).Set(x => x.UpdateDate, DateTime.UtcNow).UpdateAsync(cancellationToken).ConfigureAwait(false);
-                committed.Add(Event(change, old));
-            }
+            var committed = await MutateAsync(db, batch, cancellationToken).ConfigureAwait(false);
             await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
             return committed;
         }, cancellationToken).ConfigureAwait(false);
         // Cancellation or a subscriber failure after commit must not replay an already committed write.
         await PublishAsync(events, batch.Select(change => change.NodeKey)).ConfigureAwait(false);
+    }
+
+    // Content saving already owns a database transaction. Never open a competing writer here.
+    // The caller must invoke the returned callback after that transaction exits.
+    internal async Task<Action<bool>> ApplyInTransactionAsync(IEnumerable<PriceMutation> changes,
+        System.Data.Common.DbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        var batch = Prepare(changes);
+        if (batch.Count == 0) return _ => { };
+        using var provider = _databaseFactory.GetDatabase();
+        await using var db = new LinqToDB.Data.DataConnection(provider.DataProvider, transaction);
+        var events = await MutateAsync(db, batch, cancellationToken).ConfigureAwait(false);
+        return completed =>
+        {
+            if (completed) Publish(events, batch.Select(change => change.NodeKey));
+        };
+    }
+
+    private static async Task<List<PriceChangedEventArgs>> MutateAsync(LinqToDB.Data.DataConnection db,
+        IReadOnlyList<PriceMutation> batch, CancellationToken cancellationToken)
+    {
+        var committed = new List<PriceChangedEventArgs>();
+        foreach (var change in batch)
+        {
+            var query = db.GetTable<PriceData>().Where(x => x.NodeKey == change.NodeKey && x.PropertyAlias == change.PropertyAlias
+                && x.StoreAlias == change.StoreAlias && x.Currency == change.Currency);
+            var old = await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            Check(change, old);
+            if (old?.Price == change.Price) continue;
+            if (change.Price == null) await query.DeleteAsync(cancellationToken).ConfigureAwait(false);
+            else if (old == null) await db.InsertAsync(Row(change), token: cancellationToken).ConfigureAwait(false);
+            else await query.Set(x => x.Price, change.Price.Value).Set(x => x.UpdateDate, DateTime.UtcNow).UpdateAsync(cancellationToken).ConfigureAwait(false);
+            committed.Add(Event(change, old));
+        }
+        return committed;
     }
 
     private List<PriceMutation> Prepare(IEnumerable<PriceMutation> changes)

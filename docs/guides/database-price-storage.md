@@ -43,7 +43,7 @@ The built-in importer also routes `ImportProduct.Price` and `ImportVariant.Price
 
 The Ekom Price datatype supports database prices in Umbraco 13, 17, and 18. Edit the field, then use the document's normal **Save** or **Save and Publish** action. Like stock, the `ContentSaving` event writes changed prices through the price API. There is no separate field update button or automatic write when leaving the field.
 
-**Saving makes price changes live, even if the content remains a draft.** Only explicitly edited currencies are written; saving unrelated content does not copy stale node prices over newer ERP values. Concurrent edits to the same currency use the last committed price write. Content and table prices are not one transaction: if another save handler fails after the price write, the price may already be live, matching the stock saving workflow.
+**Saving makes price changes live, even if the content remains a draft.** Only explicitly edited currencies are written; saving unrelated content does not copy stale node prices over newer ERP values. Concurrent edits to the same currency use the last committed price write. Document saves write prices in the same database transaction as the content, avoiding competing database locks. Prices become visible in the shared cache and raise change events after the save commits. If the save rolls back, its price changes roll back too.
 
 Price-save failures shown in the editor are also logged through the configured application logger (including Serilog when configured).
 
