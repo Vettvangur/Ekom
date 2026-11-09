@@ -29,13 +29,12 @@ internal sealed class EkomCacheInitializer
         lock (InitializationLock)
         {
             var readiness = _factory.GetRequiredService<StockReservationReadiness>();
+            var wasInitialized = readiness.IsInitialized;
             readiness.Initializing();
             try
             {
-                if (isRestarting)
-                {
-                    ClearCaches();
-                }
+                using var rebuild = _config.CacheRebuild.Begin();
+                ClearRebuildCaches();
 
                 using var cacheInitializationScope = CacheInitializationScope.Begin();
                 using var priceCacheScope = PriceCache.BeginBulkInvalidation();
@@ -54,18 +53,25 @@ internal sealed class EkomCacheInitializer
                 stockCache?.FillCache();
                 _factory.GetRequiredService<WarehouseStockCache>().FillCache();
                 _factory.GetService<ICouponCache>()?.FillCache();
+                rebuild.Commit();
+                PriceCache.InvalidateAll();
                 readiness.Initialized();
+                _logger.LogInformation("Ekom cache rebuild published successfully");
             }
             catch (Exception ex)
             {
+                if (wasInitialized) readiness.Initialized();
                 _logger.LogError(ex, "Ekom cache initialization failed");
+                // Startup must still allow a new installation to configure its store.
+                // A requested rebuild must report failure to the backoffice caller.
+                if (isRestarting) throw;
             }
         }
     }
 
-    private void ClearCaches()
+    // All dictionaries below resolve to the isolated rebuild context.
+    private void ClearRebuildCaches()
     {
-        PriceCache.InvalidateAll();
 
         foreach (var cacheEntry in _config.CacheList.Value.OfType<IClearableCache>())
         {

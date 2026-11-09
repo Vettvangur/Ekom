@@ -29,6 +29,7 @@ internal sealed class StockChangePublisher : IDisposable
 
     public async Task PublishAsync(Guid key, string? storeAlias, string uniqueId, decimal oldValue, decimal newValue, CancellationToken ct = default)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         StockData? current = null;
         try
         {

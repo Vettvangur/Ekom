@@ -25,6 +25,7 @@ class StoreCache : BaseCache<IStore>
 
     public override void FillCache()
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         var stopwatch = Stopwatch.StartNew();
 
         _logger.LogDebug("Starting to fill store cache...");
@@ -45,6 +46,9 @@ class StoreCache : BaseCache<IStore>
             AddOrReplaceFromCache(r.Key, item);
         }
 
+        if (count == 0)
+            throw new InvalidOperationException("No published Ekom stores were found. The cache rebuild cannot be published.");
+
         stopwatch.Stop();
         _logger.LogInformation(
             "Finished filling store cache with {Count} items. Time it took to fill: {Elapsed}",
@@ -57,6 +61,7 @@ class StoreCache : BaseCache<IStore>
     /// </summary>
     public override void AddReplace(UmbracoContent node)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         Store? item = (Store)(_objFac?.Create(node) ?? Activator.CreateInstance(typeof(Store), node));
 
         if (item == null)

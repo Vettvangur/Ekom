@@ -5,7 +5,12 @@ namespace Ekom.Umb.Services;
 
 internal sealed class Umbraco17ContentCache
 {
-    private readonly ConcurrentDictionary<int, UmbracoContent> _contentById = new();
+    private readonly Configuration _config;
+
+    public Umbraco17ContentCache(Configuration config) => _config = config;
+
+    private ConcurrentDictionary<int, UmbracoContent> _contentById =>
+        _config.CacheRebuild.Get(this, nameof(_contentById), static () => new ConcurrentDictionary<int, UmbracoContent>());
 
     public IEnumerable<UmbracoContent> Values => _contentById.Values;
 

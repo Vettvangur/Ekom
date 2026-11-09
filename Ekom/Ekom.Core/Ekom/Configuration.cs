@@ -11,6 +11,8 @@ namespace Ekom;
 /// </summary>
 public class Configuration
 {
+    internal CacheRebuildCoordinator CacheRebuild { get; } = new();
+
     readonly IConfiguration _configuration;
     private List<CharCollection> _charCollectionsCache;
     public Configuration(IConfiguration configuration)

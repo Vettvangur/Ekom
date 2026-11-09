@@ -112,6 +112,7 @@ internal sealed class UmbracoEventListeners :
 
     public Task HandleAsync(ContentPublishedNotification notification, CancellationToken cancellationToken)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var node in notification.PublishedEntities)
         {
             if (!node.ContentType.Alias.StartsWith("ekm", StringComparison.OrdinalIgnoreCase))
@@ -156,6 +157,7 @@ internal sealed class UmbracoEventListeners :
 
     public Task HandleAsync(ContentUnpublishedNotification notification, CancellationToken cancellationToken)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var node in notification.UnpublishedEntities)
         {
             RemoveDescendantsFromCaches(node.Id);
@@ -178,6 +180,7 @@ internal sealed class UmbracoEventListeners :
 
     public async Task HandleAsync(ContentDeletedNotification notification, CancellationToken cancellationToken)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var node in notification.DeletedEntities)
         {
             RemoveDescendantsFromCaches(node.Id);
@@ -201,6 +204,7 @@ internal sealed class UmbracoEventListeners :
 
     public void Handle(ContentMovedNotification notification)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var info in notification.MoveInfoCollection)
         {
             var node = info.Entity;
@@ -231,6 +235,7 @@ internal sealed class UmbracoEventListeners :
 
     public void Handle(ContentMovedToRecycleBinNotification notification)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var node in notification.MoveInfoCollection)
         {
             RemoveDescendantsFromCaches(node.Entity.Id);
@@ -247,6 +252,7 @@ internal sealed class UmbracoEventListeners :
 
     public void Handle(DomainSavedNotification notification)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var domain in notification.SavedEntities)
         {
             _storeDomainCache.AddReplace(new Umbraco17Domain(domain));
@@ -256,6 +262,7 @@ internal sealed class UmbracoEventListeners :
 
     public void Handle(DomainDeletedNotification notification)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var domain in notification.DeletedEntities)
         {
             _storeDomainCache.Remove(domain.Key);

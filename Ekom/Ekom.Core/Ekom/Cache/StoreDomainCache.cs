@@ -20,6 +20,7 @@ class StoreDomainCache : BaseCache<UmbracoDomain>, IStoreDomainCache
     }
     public override void FillCache()
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         try
         {
             using var scope = _serviceScopeFactory.CreateScope();
@@ -45,6 +46,7 @@ class StoreDomainCache : BaseCache<UmbracoDomain>, IStoreDomainCache
         }
         catch (Exception ex)
         {
+            if (_config.CacheRebuild.IsRebuilding) throw;
             _logger.LogError(ex, "StoreDomainCache: Error filling cache");
         }
     }
@@ -52,6 +54,7 @@ class StoreDomainCache : BaseCache<UmbracoDomain>, IStoreDomainCache
     /// <inheritdoc />
     public void AddReplace(UmbracoDomain domain)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         if (domain == null) return;
 
         AddOrReplaceFromCache(domain.Key, domain);
