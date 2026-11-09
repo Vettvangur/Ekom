@@ -163,6 +163,10 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       .customer-table button[data-customer] { border:0;padding:0;text-align:left;background:none;font-weight:600 }
       .customer-muted { display:block;color:#70778a;font-size:12px;margin-top:5px }
       .customer-badge { background:#edf2f0;color:#237053;border-radius:10px;padding:3px 8px;font-size:11px;margin-left:8px }
+      .customer-loading { display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 20px;text-align:center;white-space:normal }
+      .customer-spinner { width:28px;height:28px;border:3px solid #dfe2e8;border-top-color:#237053;border-radius:50%;animation:customer-spin .8s linear infinite }
+      @keyframes customer-spin { to { transform:rotate(360deg) } }
+      @media(prefers-reduced-motion:reduce) { .customer-spinner { animation:none } }
       .customer-pagination { display:flex;gap:16px;align-items:center;justify-content:flex-end;padding-top:18px }
       .customer-overlay { position:fixed;inset:0;background:#0006;z-index:10000;display:flex;justify-content:flex-end }
       .customer-dialog { background:var(--uui-color-surface,#fff);width:min(1200px,95vw);height:100%;overflow:auto;padding:28px;box-sizing:border-box }
@@ -182,7 +186,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       </div>
       <p class="customer-muted">Customers who ordered in the selected period. Lifetime metrics include all qualifying orders in this store. Status filter: ${esc(f.orderStatus.replace(/([a-z])([A-Z])/g, '$1 $2'))}.</p>
       ${this.error ? `<p role="alert">${esc(this.error)}</p>` : ''}
-      ${this.busy ? '<p role="status">Loading…</p>' : ''}
+      ${this.busy && r ? '<p role="status">Preparing export...</p>' : ''}
       ${r ? `<div class="customer-cards">${this.card('Customers', this.number(r.totals.customers))}${this.card('Returning', this.number(r.totals.returningPercent) + '%')}${this.card('Average lifetime spend', this.amount(r.spend,'averageLifetime'))}${this.card('Average orders per customer',this.number(r.totals.averageOrders))}${this.card('Average days between orders',this.number(r.totals.averageReorderDays))}</div>
       <p class="customer-muted">${r.missingIdentifiers} qualifying orders in this period have no ${r.identityField === 'CustomerUsername' ? 'username' : 'email'} and are excluded. Spend uses recorded charged amounts, without refund adjustment.</p>` : ''}
       <div class="customer-panel"><div class="customer-toolbar" role="search">
@@ -192,7 +196,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
         <label>Sort by<select data-sort>${[['newest','Newest first order'],['oldest','Oldest first order'],['lastOrder','Latest order'],['orders','Most orders'],['name','Name']].map(([v,l]) => `<option value="${v}" ${v === this.sort ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <button type="button" data-export ${this.busy || !r?.totals.customers ? 'disabled' : ''}>Export</button>
       </div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
-      ${(r?.customers || []).map(c => `<tr><td><button data-customer="${esc(c.identity)}">${esc(c.name || c.email || c.username || c.identity)}<span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span><span class="customer-muted">${esc(c.email || c.username || c.identity)}</span></button></td><td>${this.date(c.firstOrder)}</td><td>${c.orders}</td><td>${this.amount(c.spend,'total')}</td><td>${this.amount(c.spend,'averageOrder')}</td><td>${this.date(c.lastOrder)}<span class="customer-muted">${esc(c.lastStatus || '')}</span></td><td>${c.daysSinceLastOrder}</td></tr>`).join('') || '<tr><td colspan="7">No customers found.</td></tr>'}
+      ${(r?.customers || []).map(c => `<tr><td><button data-customer="${esc(c.identity)}">${esc(c.name || c.email || c.username || c.identity)}<span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span><span class="customer-muted">${esc(c.email || c.username || c.identity)}</span></button></td><td>${this.date(c.firstOrder)}</td><td>${c.orders}</td><td>${this.amount(c.spend,'total')}</td><td>${this.amount(c.spend,'averageOrder')}</td><td>${this.date(c.lastOrder)}<span class="customer-muted">${esc(c.lastStatus || '')}</span></td><td>${c.daysSinceLastOrder}</td></tr>`).join('') || `<tr><td colspan="7">${this.busy ? '<div class="customer-loading" role="status"><span class="customer-spinner" aria-hidden="true"></span><strong>Loading customers...</strong><span class="customer-muted">Large datasets may take a moment.</span></div>' : r ? 'No customers found.' : this.error ? 'Customer results could not be loaded.' : 'Select a store to see customers.'}</td></tr>`}
       </tbody></table></div><div class="customer-pagination"><button data-page="${this.page-1}" ${this.page <= 1 || this.busy ? 'disabled' : ''}>Previous</button><span>Page ${this.page} of ${Math.max(1,r?.totalPages || 0)}</span><button data-page="${this.page+1}" ${this.page >= (r?.totalPages || 0) || this.busy ? 'disabled' : ''}>Next</button></div></div>
       ${this.detail ? this.renderDetail(this.detail) : ''}</section>`;
     this.bind();
