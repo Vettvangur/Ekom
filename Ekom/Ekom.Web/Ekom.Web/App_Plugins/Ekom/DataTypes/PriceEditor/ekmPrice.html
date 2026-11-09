@@ -8,7 +8,7 @@
         <label style="display:inline-block; vertical-align:bottom; min-width:45px;" for="price_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}">
           {{ currency.isoCurrencySymbol }}
         </label>
-        <input type="number" min="0" step="any" id="price_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}" ng-model="prices[store.alias][$index].Price" ng-model-options="{ updateOn: 'blur' }" ng-change="savePrice(store.alias, currency.currencyValue, prices[store.alias][$index].Price)" ng-disabled="savingPrice || model.readonly" /> <span style="display: inline-block; vertical-align: bottom; margin-bottom:5px;">{{ currency.currencySymbol }}</span>
+        <input type="number" min="0" step="any" id="price_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}" ng-model="prices[store.alias][$index].Price" ng-change="changePrice(store.alias, currency.currencyValue, prices[store.alias][$index].Price)" ng-disabled="model.readonly" /> <span style="display: inline-block; vertical-align: bottom; margin-bottom:5px;">{{ currency.currencySymbol }}</span>
       </div>
     </div>
   </fieldset>

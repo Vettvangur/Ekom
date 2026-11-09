@@ -84,6 +84,9 @@ class UmbracoEventListeners :
     }
     public async Task HandleAsync(ContentSavingNotification e, CancellationToken ct)
     {
+        await Ekom.Umb.PriceSavingNotifications.ApplyAsync(e, ct).ConfigureAwait(false);
+        if (e.Cancel) return;
+
         foreach (var content in e.SavedEntities)
         {
             if (content.ContentType.Alias.StartsWith("ekm"))

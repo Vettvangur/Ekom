@@ -238,6 +238,24 @@ public class EkomBackofficeApiController : ControllerBase
         return Ok(prices.Where(x => access.CanAccessStore(x.StoreAlias)).ToList());
     }
 
+    [HttpGet]
+    [Route("PriceEditor/{id}/{propertyAlias}")]
+    [UmbracoUserAuthorize]
+    [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+    public async Task<IActionResult> GetPriceEditor(string id, string propertyAlias, CancellationToken cancellationToken)
+    {
+        var node = _nodeService.NodeById(id, true);
+        if (node == null) return NotFound();
+        if (!_serviceProvider.GetRequiredService<ISecurityService>().CanEditContent(node)) return StatusCode(403);
+        if (!node.Properties.ContainsKey(propertyAlias)) return BadRequest("Unknown price property.");
+        var access = _serviceProvider.GetRequiredService<IManagerAccessService>();
+        var prices = await _serviceProvider.GetRequiredService<API.Prices>().GetAsync(node.Key, propertyAlias, cancellationToken).ConfigureAwait(false);
+        return Ok(new
+        {
+            Prices = prices.Where(row => access.CanAccessStore(row.StoreAlias)).ToList(),
+        });
+    }
+
     [HttpPut]
     [Route("Prices/{id}/{propertyAlias}")]
     [UmbracoUserAuthorize]

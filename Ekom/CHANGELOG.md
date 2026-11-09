@@ -12,6 +12,8 @@
 
 ### Bug Fixes
 
+* **prices:** save datatype edits with the document, like stock, instead of writing live prices from individual fields.
+
 * **prices:** read all cache-refresh chunks in one serializable transaction to prevent mixed versions during concurrent writes.
 
 * **prices:** keep concurrent price calculations consistent, refresh caches asynchronously, and drain Algolia price backlogs without per-batch delays.

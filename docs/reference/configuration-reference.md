@@ -189,4 +189,4 @@ Provider-specific values live beneath `Ekom:Payments`. Their shape is defined by
 
 ## Database prices
 
-`Ekom:UseDatabasePrices` (boolean, default `false`) enables the `EkomPrice` table for price overrides. See [catalog prices](../guides/catalog-and-products.md#database-price-storage) for ERP updates, editor behavior, and rollout details.
+`Ekom:UseDatabasePrices` (boolean, default `false`) enables the `EkomPrice` table for price overrides. See [catalog prices](../guides/database-price-storage.md) for ERP updates, editor behavior, and rollout details.

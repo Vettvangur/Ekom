@@ -27,6 +27,7 @@
       $scope.prices = {};
 
       var priceStructure = {};
+      var nodePrices = {};
 
 
       ekmResources.getStoresByNode($routeParams.id).then(function (stores) {
@@ -80,6 +81,8 @@
               priceObjs.forEach((obj) => {
 
                 updatePrice(priceStructure, storeAlias, obj.Currency, obj.Price);
+                var item = priceStructure[storeAlias].find(p => p.Currency === obj.Currency);
+                if (item && obj.EditId) item.EditId = obj.EditId;
 
               });
 
@@ -102,35 +105,37 @@
           }
         }
 
+        nodePrices = angular.copy(currentPrices);
         var endpoint = Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint;
-        $scope.priceUrl = endpoint + 'Prices/' + encodeURIComponent($routeParams.id) + '/' + encodeURIComponent($scope.fieldAlias);
+        $scope.priceUrl = endpoint + 'PriceEditor/' + encodeURIComponent($routeParams.id) + '/' + encodeURIComponent($scope.fieldAlias);
         $http.get(endpoint + 'Config').then(function (response) {
           $scope.databasePrices = response.data.useDatabasePrices === true;
           if (!$scope.databasePrices) { $scope.prices = priceStructure; return; }
           return $http.get($scope.priceUrl).then(function (result) {
-            result.data.forEach(function (row) {
+            result.data.prices.forEach(function (row) {
               var store = Object.keys(priceStructure).find(function (key) { return key.toLowerCase() === row.storeAlias.toLowerCase(); });
               var price = store && priceStructure[store].find(function (item) { return item.Currency.toLowerCase() === row.currency.toLowerCase(); });
-              if (price) price.Price = row.price;
+              if (price && !price.EditId) price.Price = row.price;
             });
             $scope.prices = priceStructure;
-            $scope.priceStatus = 'Prices are stored in the database. Changes save immediately without publishing.';
+            $scope.priceStatus = 'Save the document to update prices. Saving makes price changes live.';
           });
         }).catch(function () { $scope.priceStatus = 'Could not load prices. Reload before editing.'; });
       });
 
-      $scope.savePrice = function (storeAlias, currency, price) {
-        if (!$scope.databasePrices || $scope.savingPrice) return;
+      $scope.changePrice = function (storeAlias, currency, price) {
+        if (!$scope.databasePrices) return;
         if (price == null || !Number.isFinite(price) || price < 0) {
           $scope.priceStatus = 'Enter a non-negative price.';
           return;
         }
-        $scope.savingPrice = true;
-        $scope.priceStatus = 'Saving price...';
-        $http.put($scope.priceUrl, { storeAlias: storeAlias, currency: currency, price: price })
-          .then(function () { $scope.priceStatus = 'Price saved. The change is live without publishing.'; })
-          .catch(function () { $scope.priceStatus = 'Price was not saved. Retry the change.'; })
-          .finally(function () { $scope.savingPrice = false; });
+        var rows = nodePrices[storeAlias] || (nodePrices[storeAlias] = []);
+        var row = rows.find(item => item.Currency === currency);
+        if (!row) { row = { Currency: currency }; rows.push(row); }
+        row.Price = price;
+        row.EditId = window.crypto.randomUUID();
+        $scope.model.value = angular.copy(nodePrices);
+        $scope.priceStatus = 'Price changed. Save the document to make it live.';
       };
 
       function checkFormat(obj) {

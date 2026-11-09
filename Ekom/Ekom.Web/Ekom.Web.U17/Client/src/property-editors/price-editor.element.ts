@@ -13,6 +13,7 @@ type PriceValue = Record<string, CurrencyPrice[]>;
 type CurrencyPrice = {
   Currency: string;
   Price: number;
+  EditId?: string;
 };
 
 type EkomStore = {
@@ -25,6 +26,10 @@ type EkomCurrency = {
   currencyValue?: string;
   currencySymbol?: string;
   isoCurrencySymbol?: string;
+};
+
+type PriceEditorData = {
+  prices: { storeAlias: string; currency: string; price: number }[];
 };
 
 type LegacyPriceValue = Record<string, unknown>;
@@ -45,19 +50,21 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
   private requestId = 0;
   private documentRevision = 0;
   private databasePrices = false;
-  private saving = false;
   private loading = false;
   private overrides: { storeAlias: string; currency: string; price: number }[] = [];
   private rawValue: unknown;
   private internalValue: PriceValue = {};
 
   get value(): PriceValue {
-    return this.internalValue;
+    return this.databasePrices ? this.normalizeValue(this.rawValue) : this.internalValue;
   }
 
   set value(value: unknown) {
+    const hadEdits = Object.values(this.normalizeValue(this.rawValue)).some(rows => rows.some(row => row.EditId));
     this.rawValue = value;
     this.rebuildValue();
+    const hasEdits = Object.values(this.normalizeValue(value)).some(rows => rows.some(row => row.EditId));
+    if (this.databasePrices && hadEdits && !hasEdits && this.documentId) void this.loadStores();
   }
 
   get readonly(): boolean {
@@ -96,7 +103,6 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
   override disconnectedCallback(): void {
     this.requestId++;
     this.documentRevision++;
-    this.saving = false;
     super.disconnectedCallback();
   }
 
@@ -118,15 +124,16 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
       const stores = await this.fetchJson<EkomStore[]>(`/ekom/backoffice/Stores/${encodeURIComponent(documentId)}`);
       if (requestId !== this.requestId) return;
       const databasePrices = config.useDatabasePrices === true;
-      const rows = databasePrices
-        ? await this.fetchJson<typeof this.overrides>(this.priceUrl(documentId)) : [];
+      const data = databasePrices
+        ? await this.fetchJson<PriceEditorData>(this.priceUrl(documentId))
+        : { prices: [] };
       if (requestId !== this.requestId) return;
       this.databasePrices = databasePrices;
       this.stores = stores;
-      this.overrides = rows;
+      this.overrides = data.prices;
       this.rebuildValue();
       this.renderPrices();
-      this.setStatus(databasePrices ? 'Prices are stored in the database. Changes save immediately without publishing.' : '');
+      this.setStatus(databasePrices ? 'Save the document to update prices. Saving makes price changes live.' : '');
     } catch (error) {
       if (requestId !== this.requestId) return;
       this.setStatus(error instanceof Error ? error.message : 'Could not load prices.', true);
@@ -144,7 +151,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
       for (const row of this.overrides) {
         const store = Object.keys(this.internalValue).find(key => key.toLowerCase() === row.storeAlias.toLowerCase());
         const price = store == null ? undefined : this.internalValue[store]?.find(item => item.Currency.toLowerCase() === row.currency.toLowerCase());
-        if (price != null) price.Price = row.price;
+        if (price != null && !price.EditId) price.Price = row.price;
       }
     }
     this.syncInputs();
@@ -156,7 +163,6 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
     this.rawValue = undefined;
     this.internalValue = {};
     this.overrides = [];
-    this.saving = false;
     this.renderPrices();
   }
 
@@ -287,16 +293,12 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
     input.dataset.store = storeAlias;
     input.dataset.currency = currencyValue;
     input.value = String(this.getPrice(storeAlias, currencyValue));
-    input.addEventListener(this.databasePrices ? 'change' : 'input', () => {
-      if (this.databasePrices) {
-        if (!input.validity.valid || input.value === '') {
-          this.setStatus('Enter a non-negative price.', true);
-          return;
-        }
-        void this.savePrice(storeAlias, currencyValue, input.value);
-      } else {
-        this.setPrice(storeAlias, currencyValue, input.value);
+    input.addEventListener('input', () => {
+      if (!input.validity.valid || input.value === '') {
+        this.setStatus('Enter a non-negative price.', true);
+        return;
       }
+      this.setPrice(storeAlias, currencyValue, input.value);
     });
 
     const symbol = document.createElement('span');
@@ -308,6 +310,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
   }
 
   private setPrice(storeAlias: string, currency: string, rawPrice: string): void {
+    if (this.readonly || this.loading || (this.hasDocumentContext && !this.documentId)) return;
     const price = this.parsePrice(rawPrice);
     let updatedExisting = false;
     const prices = (this.internalValue[storeAlias] ?? []).map(item => {
@@ -334,56 +337,26 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
       [storeAlias]: prices,
     };
     if (this.databasePrices) {
-      this.overrides = this.overrides.filter(row => row.storeAlias.toLowerCase() !== storeAlias.toLowerCase()
-        || row.currency.toLowerCase() !== currency.toLowerCase());
-      this.overrides.push({ storeAlias, currency, price });
+      const draft = this.normalizeValue(this.rawValue);
+      const rows = draft[storeAlias] ?? (draft[storeAlias] = []);
+      const row = rows.find(item => item.Currency === currency);
+      if (row) { row.Price = price; row.EditId = crypto.randomUUID(); }
+      else rows.push({ Currency: currency, Price: price, EditId: crypto.randomUUID() });
+      this.rawValue = draft;
+      this.rebuildValue();
+      this.setStatus('Price changed. Save the document to make it live.');
     } else {
       this.rawValue = this.internalValue;
     }
-
-    if (!this.databasePrices) this.emitChange();
+    this.emitChange();
   }
 
   private priceUrl(documentId: string): string {
     if (!this.alias) throw new Error('The price property alias is unavailable.');
-    return `/ekom/backoffice/Prices/${encodeURIComponent(documentId)}/${encodeURIComponent(this.alias)}`;
+    return `/ekom/backoffice/PriceEditor/${encodeURIComponent(documentId)}/${encodeURIComponent(this.alias)}`;
   }
 
   alias?: string;
-
-  private async savePrice(storeAlias: string, currency: string, rawPrice: string): Promise<void> {
-    if (this.readonly || this.saving || this.loading) return;
-    const documentId = this.activeDocumentId;
-    if (!documentId) {
-      this.setStatus('Save the document before editing prices.');
-      return;
-    }
-    const revision = this.documentRevision;
-    this.saving = true;
-    this.syncDisabledState();
-    this.setStatus('Saving price...');
-    try {
-      const response = await fetch(this.priceUrl(documentId), {
-        method: 'PUT',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storeAlias, currency, price: Number(rawPrice) }),
-      });
-      if (revision !== this.documentRevision) return;
-      if (!response.ok) throw new Error(`Could not save price (${response.status}).`);
-      this.setPrice(storeAlias, currency, rawPrice);
-      this.setStatus('Price saved. The change is live without publishing.');
-    } catch (error) {
-      if (revision !== this.documentRevision) return;
-      this.syncInputs();
-      this.setStatus(error instanceof Error ? error.message : 'Could not save price.', true);
-    } finally {
-      if (revision === this.documentRevision) {
-        this.saving = false;
-        this.syncDisabledState();
-      }
-    }
-  }
 
   private getPrice(storeAlias: string, currency: string): number {
     return this.internalValue[storeAlias]?.find(item => item.Currency === currency)?.Price ?? 0;
@@ -463,6 +436,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
         return {
           Currency: String(price.Currency),
           Price: this.parsePrice(price.Price),
+          EditId: typeof price.EditId === 'string' ? price.EditId : undefined,
         };
       }).filter(price => price != null);
     }
@@ -513,7 +487,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
 
   private syncDisabledState(): void {
     for (const input of this.querySelectorAll<HTMLInputElement>('input')) {
-      input.disabled = this.readonly || this.saving || this.loading || (this.hasDocumentContext && !this.documentId);
+      input.disabled = this.readonly || this.loading || (this.hasDocumentContext && !this.documentId);
     }
   }
 
@@ -549,7 +523,6 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
       this.requestId++;
       this.documentRevision++;
       this.overrides = [];
-      this.saving = false;
     }
     this.loading = false;
     this.documentId = nextId;

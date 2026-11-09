@@ -73,6 +73,9 @@ internal sealed class UmbracoEventListeners :
 
     public async Task HandleAsync(ContentSavingNotification notification, CancellationToken cancellationToken)
     {
+        await Ekom.Umb.PriceSavingNotifications.ApplyAsync(notification, cancellationToken).ConfigureAwait(false);
+        if (notification.Cancel) return;
+
         foreach (var content in notification.SavedEntities)
         {
             if (!content.ContentType.Alias.StartsWith("ekm", StringComparison.OrdinalIgnoreCase))
