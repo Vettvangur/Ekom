@@ -19,6 +19,71 @@ namespace Ekom.Tests.Tests;
 public sealed class ManagerCustomerTests
 {
     [Fact]
+    public async Task AnalyticsUsesPurchaseHistoryWithoutOrderInfoAndIncludesUnidentifiedOrderTimes()
+    {
+        using var f = new Fixture();
+        var day = new DateTime(2026, 1, 5);
+        f.Add("old@example.com", day.AddDays(-10), 10m);
+        f.Add(" OLD@example.com ", day.AddHours(10), 50m);
+        f.Add("new@example.com", day.AddHours(10), 100m);
+        f.Add("new@example.com", day.AddHours(11), 200m);
+        f.Add("new@example.com", day.AddDays(2), 300m);
+        f.Add("", day.AddHours(12), 500m);
+        f.Add("excluded@example.com", day, 999m, status: OrderStatus.Incomplete);
+        f.Add("other@example.com", day, 999m, store: "other");
+        using (var db = f.Factory.GetDatabase()) db.Execute("ALTER TABLE EkomOrders DROP COLUMN OrderInfo");
+        var result = await f.Repository.GetAnalyticsAsync("main", day, day, "AllOrders");
+        Assert.Equal(2, result.UniqueCustomers);
+        Assert.Equal(1, result.NewCustomers);
+        Assert.Equal(2, result.ReturningCustomers);
+        Assert.Equal(100d, result.ReturningCustomerRate);
+        Assert.Equal(1, result.FirstOrders);
+        Assert.Equal(2, result.RepeatOrders);
+        Assert.Equal(100m, result.FirstOrderAmount);
+        Assert.Equal(250m, result.RepeatOrderAmount);
+        Assert.Equal(1, result.MissingIdentifiers);
+        Assert.Equal(4, result.OrderTimes.Sum(row => row.Orders));
+        Assert.All(result.OrderTimes, row => Assert.Equal(0, row.Weekday));
+        Assert.Equal(2, Assert.Single(result.OrderTimes, row => row.Hour == 10).Orders);
+    }
+
+    [Fact]
+    public async Task AnalyticsDoesNotUseFuturePurchasesToReclassifyNewBuyers()
+    {
+        using var f = new Fixture();
+        var day = new DateTime(2026, 1, 5);
+        f.Add("new@example.com", day, 100m);
+        f.Add("new@example.com", day.AddDays(1), 100m);
+        var result = await f.Repository.GetAnalyticsAsync("main", day, day, "CompletedOrders");
+        Assert.Equal(1, result.NewCustomers);
+        Assert.Equal(0, result.ReturningCustomers);
+        Assert.Equal(0d, result.ReturningCustomerRate);
+        var empty = await f.Repository.GetAnalyticsAsync("main", day.AddDays(-1), day.AddDays(-1), "CompletedOrders");
+        Assert.Equal(0, empty.UniqueCustomers);
+        Assert.Null(empty.ReturningCustomerRate);
+        Assert.Empty(empty.OrderTimes);
+    }
+
+    [Fact]
+    public async Task AnalyticsHonorsUsernameIdentityAndPaidDateFilterButGroupsByCreationHour()
+    {
+        using var f = new Fixture("CustomerUsername");
+        var day = new DateTime(2026, 1, 5);
+        f.Add("same@example.com", day.AddDays(-5), 10m, username: "Alice", paid: day.AddDays(-4));
+        f.Add("changed@example.com", day.AddDays(-1).AddHours(23), 20m, username: " ALICE ", paid: day.AddHours(2));
+        f.Add("same@example.com", day, 30m, username: "Bob", paid: day.AddHours(3));
+        f.Add("excluded@example.com", day, 40m, paid: day.AddHours(4));
+        var result = await f.Repository.GetAnalyticsAsync("main", day, day, "Dispatched");
+        Assert.Equal("CustomerUsername", result.IdentityField);
+        Assert.Equal(2, result.UniqueCustomers);
+        Assert.Equal(1, result.NewCustomers);
+        Assert.Equal(1, result.ReturningCustomers);
+        Assert.Equal(50d, result.ReturningCustomerRate);
+        Assert.Equal(1, result.MissingIdentifiers);
+        Assert.Contains(result.OrderTimes, row => row.Weekday == 6 && row.Hour == 23 && row.Orders == 1);
+    }
+
+    [Fact]
     public async Task PeriodSelectsCustomersButKeepsLifetimeHistoryWithoutOrderInfo()
     {
         using var f = new Fixture();

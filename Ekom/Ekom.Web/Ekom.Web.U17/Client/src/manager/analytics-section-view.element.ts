@@ -167,6 +167,12 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       .analytics-table th,.analytics-table td {text-align:left;padding:15px 10px;border-bottom:1px solid #e8e9ed;white-space:nowrap}
       .analytics-table th {position:sticky;top:0;background:var(--uui-color-surface,#fff);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#70778a}
       .analytics-main {padding:22px}
+      .analytics-insight-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+      .analytics-time-bars {display:grid;gap:8px;margin-top:16px}
+      .analytics-hour-bars {grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 18px}
+      .analytics-time-row {display:grid;grid-template-columns:64px 1fr 32px;align-items:center;gap:8px;font-size:12px}
+      .analytics-time-track {height:8px;background:#edf2f0;border-radius:4px;overflow:hidden}
+      .analytics-time-track span {display:block;height:100%;background:#25765c;border-radius:4px}
       .analytics-spinner {display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid #dfe2e8;border-top-color:#25765c;border-radius:50%;animation:analytics-spin 1s linear infinite}
       @keyframes analytics-spin {to {transform:rotate(360deg)}}
       @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
@@ -182,7 +188,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       </div>
       ${this.error ? `<p role="alert">${escapeHtml(this.error)}</p>` : ''}
       ${this.loading ? '<p role="status">Loading analytics…</p>' : !f.store ? '<p>No accessible stores.</p>' : ''}
-      ${this.chartData ? this.renderAnalytics() : ''}
+      ${this.chartData ? this.renderAnalytics() + this.renderCustomerInsights() : ''}
       <div class="card analytics-main"><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? 'Hide products' : 'Load product breakdown'}</button></div>
         <p class="analytics-muted">Fetch the most sold products for the selected store and dates. This may take a minute for larger date ranges. Totals include VAT and discounts, excluding shipping and payment fees.</p>
         ${this.productsVisible ? `${this.productError ? `<p role="alert">${escapeHtml(this.productError)}</p><button data-product-retry>Retry products</button>` : ''}${this.loadingMostSoldProducts ? '<p role="status"><span class="analytics-spinner" aria-hidden="true"></span>Fetching product breakdown… This may take a minute. You can continue using Analytics.</p>' : this.renderMostSoldProducts()}` : ''}
@@ -206,6 +212,34 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       </div>
       <p class="analytics-muted">${this.previousData ? `Solid: ${escapeHtml(this.range(this.chartFilters?.dateFrom,this.chartFilters?.dateTo))}. Dashed: ${escapeHtml(this.range(this.previousData.ordersChart.points[0]?.x,this.previousData.ordersChart.points.at(-1)?.x))}. Comparison buckets cover the same number of days.` : 'Selected period.'} Click a bucket to open its orders.</p>
       ${this.table ? this.renderTable() : `<div style="height:360px"><canvas id="analytics-chart" style="width:100%;height:100%" role="img" aria-label="${this.label(this.metric)} over time. Use Show data table for exact values and order links."></canvas></div>`}
+      </div>`;
+  }
+
+  private renderCustomerInsights(): string {
+    const data = this.chartData?.customerInsights;
+    if (!data) return '';
+    const previous = this.previousData?.customerInsights;
+    const cards = [
+      ['Unique purchasing customers', data.uniqueCustomers, previous?.uniqueCustomers, false],
+      ['First-time buyers', data.newCustomers, previous?.newCustomers, false],
+      ['Returning customer rate', data.returningCustomerRate, previous?.returningCustomerRate, true],
+    ] as const;
+    const weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const days = weekdays.map((_, day) => data.orderTimes.filter(row => row.weekday === day).reduce((sum,row) => sum + row.orders,0));
+    const hours = Array.from({length:24}, (_, hour) => data.orderTimes.filter(row => row.hour === hour).reduce((sum,row) => sum + row.orders,0));
+    const bars = (labels: string[], values: number[]) => labels.map((label,index) => `<div class="analytics-time-row"><span>${label}</span><div class="analytics-time-track" aria-hidden="true"><span style="width:${100 * values[index] / Math.max(1,...values)}%"></span></div><span>${values[index]}</span></div>`).join('');
+    return `<div class="analytics-summary">${cards.map(([label,value,prior,rate]) => `<div class="card"><span>${label}</span><strong>${value == null ? '—' : escapeHtml(value.toLocaleString(undefined,{maximumFractionDigits:rate ? 1 : 0})) + (rate ? '%' : '')}</strong><span class="analytics-muted">${previous ? rate ? value == null || prior == null ? 'No comparison available' : `${(value-prior).toLocaleString(undefined,{maximumFractionDigits:1,signDisplay:'always'})} percentage points vs previous period` : `${percentageChange(value,prior ?? null)} vs previous period` : 'Selected period'}</span></div>`).join('')}</div>
+      <div class="card analytics-main"><h3>New and returning purchases</h3>
+        <p class="analytics-muted">Based on qualifying purchase orders and ${data.identityField === 'CustomerUsername' ? 'username' : 'email'}. A repeat purchase has an earlier qualifying order in this store, ordered by payment time (creation time when unpaid). A buyer can appear in both rows if they buy for the first time and return in this period. Returning rate is repeat buyers divided by unique identified buyers.</p>
+        <div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Purchase type</th><th>Buyers</th><th>Orders</th><th>Order amount</th></tr></thead><tbody>
+          <tr><td>First purchase</td><td>${data.newCustomers}</td><td>${data.firstOrders}</td><td>${escapeHtml(this.amount(data.firstOrderAmount))}</td></tr>
+          <tr><td>Repeat purchase</td><td>${data.returningCustomers}</td><td>${data.repeatOrders}</td><td>${escapeHtml(this.amount(data.repeatOrderAmount))}</td></tr>
+        </tbody></table></div>
+        <p class="analytics-muted">${data.missingIdentifiers} qualifying orders have no customer identifier and are excluded from buyer counts and this breakdown. They remain included in the time charts below. Incomplete and cancelled orders are excluded from these customer insights, even with All Orders selected.</p>
+      </div>
+      <div class="analytics-insight-grid">
+        <div class="card analytics-main"><h3>Orders by weekday</h3><p class="analytics-muted">Qualifying orders within the selected filters, grouped by recorded creation day.</p><div class="analytics-time-bars">${bars(weekdays,days)}</div></div>
+        <div class="card analytics-main"><h3>Orders by hour</h3><p class="analytics-muted">Recorded creation time, 00–23. No timezone conversion. Totals are counts, not averages per hour.</p><div class="analytics-time-bars analytics-hour-bars">${bars(hours.map((_,hour)=>String(hour).padStart(2,'0')+':00'),hours)}</div></div>
       </div>`;
   }
 

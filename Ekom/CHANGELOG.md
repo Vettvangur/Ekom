@@ -4,6 +4,8 @@
 
 ### Features
 
+* **manager:** add unique buyers, first/repeat purchase breakdowns, returning customer rate and weekday/hour charts to Analytics using ordinary EkomOrders columns.
+
 * **manager:** add Analytics summary cards, period comparisons, calendar grouping, table/CSV views and order drill-through; align plotted dates with Orders, include empty days, prevent stale responses and load product details on demand.
 
 * **manager:** add Customers between Orders and Analytics in Umbraco 13/17/18, with shared store/date filters, configurable email/username grouping, lifetime and retention metrics, missing-identifier counts, CSV export, and customer order details. List queries avoid OrderInfo; customer details expose a labelled order snapshot.

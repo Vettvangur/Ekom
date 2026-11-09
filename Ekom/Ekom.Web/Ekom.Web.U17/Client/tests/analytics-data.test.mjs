@@ -69,3 +69,19 @@ test('drill through uses the selected bucket and clears hidden order filters',()
  assert.equal(instance.event.detail.dateTo,'2026-02-02');assert.equal(instance.event.detail.store,'main');
  assert.equal(instance.event.detail.query,'');assert.equal(instance.event.detail.productSku,'');
 });
+
+test('customer insight cards and time charts include zero buckets and explain overlapping buyer counts', () => {
+ const {instance}=view();
+ instance.chartData={...chart('2026-01-05',[350],[3]),customerInsights:{uniqueCustomers:2,newCustomers:1,returningCustomers:2,returningCustomerRate:100,firstOrders:1,repeatOrders:2,firstOrderAmount:100,repeatOrderAmount:250,missingIdentifiers:1,identityField:'CustomerEmail',orderTimes:[{weekday:0,hour:10,orders:3}]}};
+ const html=instance.renderCustomerInsights();
+ assert.ok(html.includes('Unique purchasing customers'));
+ assert.ok(html.includes('100%'));
+ assert.ok(html.includes('buyer can appear in both rows'));
+ assert.ok(html.includes('1 qualifying orders have no customer identifier'));
+ assert.ok(html.includes('Monday'));assert.ok(html.includes('Sunday'));
+ assert.ok(html.includes('00:00'));assert.ok(html.includes('23:00'));
+ assert.equal((html.match(/class="analytics-time-row"/g)||[]).length,31);
+ instance.chartData.customerInsights.returningCustomerRate=null;
+ instance.chartData.customerInsights.uniqueCustomers=0;
+ assert.ok(instance.renderCustomerInsights().includes('<strong>—</strong>'));
+});

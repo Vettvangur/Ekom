@@ -76,6 +76,42 @@ public sealed class CustomerRepository(DatabaseFactory databaseFactory, IOptions
 ) ";
     }
 
+    public async Task<CustomerAnalytics> GetAnalyticsAsync(string store, DateTime start, DateTime end, string status, CancellationToken ct = default)
+    {
+        string date = status is "ReadyForDispatch" or "Dispatched" ? "PaidDate" : "CreateDate";
+        string cte = $@"WITH History AS (
+ SELECT ReferenceId, CreateDate, PaidDate, TotalAmount, OrderStatusCol, {Key} AS CustomerIdentity,
+ ROW_NUMBER() OVER (PARTITION BY {Key} ORDER BY COALESCE(PaidDate, CreateDate), ReferenceId) AS PurchaseNumber
+ FROM EkomOrders WHERE StoreAlias = @store AND {Qualified}
+), Selected AS (
+ SELECT * FROM History WHERE {date} >= @start AND {date} < @end
+ AND (@status IN ('CompletedOrders','AllOrders','') OR OrderStatusCol = @status)
+) ";
+        var args = new { store, start = start.Date, end = end.Date.AddDays(1), status };
+        await using var db = OpenDatabase();
+        var rows = await db.QueryToListAsync<CustomerAnalytics>(cte + @"
+SELECT COUNT(DISTINCT NULLIF(CustomerIdentity, '')) AS UniqueCustomers,
+ COUNT(DISTINCT CASE WHEN CustomerIdentity <> '' AND PurchaseNumber = 1 THEN CustomerIdentity END) AS NewCustomers,
+ COUNT(DISTINCT CASE WHEN CustomerIdentity <> '' AND PurchaseNumber > 1 THEN CustomerIdentity END) AS ReturningCustomers,
+ COALESCE(SUM(CASE WHEN CustomerIdentity <> '' AND PurchaseNumber = 1 THEN 1 ELSE 0 END),0) AS FirstOrders,
+ COALESCE(SUM(CASE WHEN CustomerIdentity <> '' AND PurchaseNumber > 1 THEN 1 ELSE 0 END),0) AS RepeatOrders,
+ COALESCE(SUM(CASE WHEN CustomerIdentity <> '' AND PurchaseNumber = 1 THEN TotalAmount ELSE 0 END),0) AS FirstOrderAmount,
+ COALESCE(SUM(CASE WHEN CustomerIdentity <> '' AND PurchaseNumber > 1 THEN TotalAmount ELSE 0 END),0) AS RepeatOrderAmount,
+ COALESCE(SUM(CASE WHEN CustomerIdentity = '' THEN 1 ELSE 0 END),0) AS MissingIdentifiers
+FROM Selected", ct, args).ConfigureAwait(false);
+        var result = rows[0];
+        result.IdentityField = IdentityField;
+        string weekday = databaseFactory.IsSqlite ? "(CAST(strftime('%w', CreateDate) AS INTEGER) + 6) % 7" : "((DATEDIFF(day, '19000101', CreateDate) % 7) + 7) % 7";
+        string hour = databaseFactory.IsSqlite ? "CAST(strftime('%H', CreateDate) AS INTEGER)" : "DATEPART(hour, CreateDate)";
+        // No historical ranking is needed for the time-of-order breakdown.
+        result.OrderTimes = await db.QueryToListAsync<CustomerOrderTime>($@"
+SELECT {weekday} AS Weekday, {hour} AS Hour, COUNT(*) AS Orders FROM EkomOrders
+WHERE StoreAlias = @store AND {Qualified} AND {date} >= @start AND {date} < @end
+AND (@status IN ('CompletedOrders','AllOrders','') OR OrderStatusCol = @status)
+GROUP BY {weekday}, {hour}", ct, args).ConfigureAwait(false);
+        return result;
+    }
+
     private static string Sort(string sort) => sort switch
     {
         "oldest" => "FirstOrder ASC",
