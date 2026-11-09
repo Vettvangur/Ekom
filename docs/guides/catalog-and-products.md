@@ -185,3 +185,45 @@ Although several actions advertise both verbs, actions with `[FromBody]` are mos
 ## Razor patterns
 
 The repository samples use `await _catalog.GetCategoryAsync()` followed by `category.ProductsRecursiveAsync(new ProductQuery(Context.Request.Query) { ... })`, and `await _catalog.GetProductAsync()` followed by `product.Price`, `product.Available`, images and variant groups. Use `Html.BeginEkomForm(FormType.AddToOrderProduct, ...)` or `POST /ekom/order/add` with `productId`, optional `variantId`, `storeAlias`, and a positive `quantity`.
+
+
+## Database price storage
+
+By default, Ekom stores prices on Umbraco nodes. For frequent ERP price updates, enable table storage and restart the application:
+
+```json
+{
+  "Ekom": {
+    "UseDatabasePrices": true
+  }
+}
+```
+
+Startup creates `EkomPrice` on SQLite and SQL Server. Each row identifies a node key, property alias, store alias, and currency. Identifiers are case-insensitive. Amounts use `decimal(18,4)` and must be non-negative. Base prices and `ekmDiscountPrice` use separate rows.
+
+See [ERP price-only sync](imports.md#erp-price-only-sync-without-saving-or-publishing) for a complete injectable change-feed service and identifier mapping guidance.
+
+Write ERP prices without saving or publishing content:
+
+```csharp
+await Ekom.API.Prices.Instance.SetPriceAsync(
+    productKey, "Web", "en-US", 49.95m,
+    cancellationToken: cancellationToken);
+
+await Ekom.API.Prices.Instance.SetPriceAsync(
+    productKey, "Web", "en-US", 39.95m,
+    propertyAlias: "ekmDiscountPrice",
+    cancellationToken: cancellationToken);
+```
+
+`Ekom.API.Prices` is also injectable. `GetAsync(nodeKey, propertyAlias)` returns the stored overrides. Both `IContent.SetPrice` and `SetPriceAsync` honor this setting. In node mode these helpers change the content value and the caller still saves/publishes it; in database mode they write immediately and the caller should skip saving/publishing for price-only changes. Save a new node before writing table prices.
+
+The built-in importer also routes `ImportProduct.Price` and `ImportVariant.Price` to the table when enabled. Prices are applied even when content is unchanged, and the default content hash excludes prices to avoid saves/publishes for price-only changes. See [importer behavior](imports.md#using-the-built-in-ekom-importer) for custom comparers and first-sync behavior.
+
+The Ekom Price datatype loads table overrides in Umbraco 13, 17, and 18. Editing a field in database mode saves that currency immediately when leaving the field; no publish is required. A notice explains that the change is live. Ordinary document saves do not copy old node price JSON back into the table. Each save updates only the edited currency, so it cannot overwrite unrelated currencies changed by an ERP sync. Concurrent changes to the same price use the last committed write.
+
+Existing node prices remain a fallback for individual currencies that have no table row. A stored zero is an explicit value; the existing variant rule that a zero base price inherits its parent remains unchanged. Enabling table storage does not migrate or modify node values. Populate the table through your ERP sync to make it the source for every price. Disabling the setting returns to the original node values, so copy current prices back first if you want to retain them when switching back.
+
+Product and variant prices, native discounts, provider prices, and variant/catalog displays resolve table values. Runtime resolution reads the database and includes the resolved values in calculated-price cache keys, so existing cached models and other application servers see updates without a content refresh. This adds database reads to pricing; measure catalog-page query load for your deployment. Custom code reading raw Umbraco property JSON still sees the node value; use Ekom price models or `Prices.Resolve` to apply overrides.
+
+Updates do not emit Umbraco publish notifications. Integrations that index prices on publish, and external page caches, must be refreshed by the ERP workflow separately. Prices are live data, without Umbraco draft, rollback, or scheduled-publishing semantics.

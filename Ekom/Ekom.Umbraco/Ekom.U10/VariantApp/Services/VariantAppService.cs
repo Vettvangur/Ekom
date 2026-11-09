@@ -386,7 +386,8 @@ internal sealed class VariantAppService : IVariantAppService
 
     private static void ApplyPriceValues(IContent variant, CurrencyPriceRoot? priceValues, IReadOnlyList<VariantManagerStore> stores)
     {
-        variant.SetValue("price", JsonConvert.SerializeObject(NormalizePriceValues(GetPriceValues(variant, stores), stores)));
+        if (!Configuration.Instance.UseDatabasePrices)
+            variant.SetValue("price", JsonConvert.SerializeObject(NormalizePriceValues(GetPriceValues(variant, stores), stores)));
 
         foreach (var priceValue in NormalizePriceValues(priceValues, stores))
         {

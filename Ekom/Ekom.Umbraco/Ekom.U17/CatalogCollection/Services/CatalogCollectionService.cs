@@ -1,6 +1,8 @@
 using Ekom.Models;
 using Ekom.Models.Umbraco;
 using Ekom.Umb.CatalogCollection.Models;
+using Ekom.Umb.Models;
+using Ekom.Utilities;
 using Newtonsoft.Json;
 using System.Globalization;
 using System.Net;
@@ -469,6 +471,16 @@ GROUP BY n.parentId, ct.alias",
         if (!content.HasProperty("price"))
         {
             return CatalogProductPrice.Empty;
+        }
+
+        if (Configuration.Instance.UseDatabasePrices)
+        {
+            var store = API.Store.Instance.GetStore() ?? API.Store.Instance.GetAllStores().FirstOrDefault();
+            if (store != null)
+            {
+                var item = new Umbraco17Content(content, Guid.Empty);
+                return new CatalogProductPrice(item.GetPrice(store.Alias, store.Currency.CurrencyValue), store.Currency);
+            }
         }
 
         var value = content.GetValue<string>("price");

@@ -33,6 +33,11 @@ internal class DatabaseService
                 db.CreateTable<StockData>(tableOptions: TableOptions.CreateIfNotExists);
             }
 
+            if (!dbSchema.Tables.Any(x => x.TableName == "EkomPrice"))
+            {
+                db.CreateTable<PriceData>(tableOptions: TableOptions.CreateIfNotExists);
+            }
+
             EnsureWarehouseStockTable(db, dbSchema);
             EnsureStockReservationTable();
 
@@ -69,6 +74,12 @@ internal class DatabaseService
         // Required order index failures must propagate, including during fresh installation.
         EnsureOrderIndexes();
         EnsureOrderPerformanceIndexes();
+    }
+
+    internal virtual void EnsurePriceTable()
+    {
+        using var db = _databaseFactory.GetDatabase();
+        db.CreateTable<PriceData>(tableOptions: TableOptions.CreateIfNotExists);
     }
 
     internal virtual void EnsureOrderIndexes()

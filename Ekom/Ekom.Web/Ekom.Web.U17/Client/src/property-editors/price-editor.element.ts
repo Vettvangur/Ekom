@@ -1,3 +1,4 @@
+import { UMB_PROPERTY_CONTEXT } from '@umbraco-cms/backoffice/property';
 import { UmbChangeEvent } from '@umbraco-cms/backoffice/event';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
 import { UMB_DOCUMENT_WORKSPACE_CONTEXT } from '@umbraco-cms/backoffice/document';
@@ -41,6 +42,8 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
   private stores: EkomStore[] = [];
   private documentId = '';
   private requestId = 0;
+  private databasePrices = false;
+  private saving = false;
   private rawValue: unknown;
   private internalValue: PriceValue = {};
 
@@ -49,6 +52,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
   }
 
   set value(value: unknown) {
+    if (this.databasePrices) return;
     this.rawValue = value;
     const normalizedValue = this.normalizeValue(value);
     this.internalValue = this.stores.length > 0
@@ -70,7 +74,13 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
     super.connectedCallback();
     this.renderShell();
     this.setStatus('Loading prices...');
-    void this.loadStores();
+    this.consumeContext(UMB_PROPERTY_CONTEXT, context => {
+      if (context == null) return;
+      this.observe(context.alias, alias => {
+        this.alias = alias;
+        void this.loadStores();
+      }, 'ekomPriceAlias');
+    });
 
     this.consumeContext(UMB_DOCUMENT_WORKSPACE_CONTEXT, context => {
       if (context == null) {
@@ -89,6 +99,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
   }
 
   private async loadStores(): Promise<void> {
+    if (!this.alias) return;
     const documentId = this.documentId || this.getDocumentIdFromUrl();
     if (documentId.length === 0) {
       this.setStatus('Save the document before editing prices.');
@@ -99,18 +110,29 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
     this.setStatus('Loading prices...');
 
     try {
+      const config = await this.fetchJson<{ useDatabasePrices?: boolean }>('/ekom/backoffice/Config');
       const stores = await this.fetchJson<EkomStore[]>(`/ekom/backoffice/Stores/${encodeURIComponent(documentId)}`);
       if (requestId !== this.requestId) {
         return;
       }
 
+      this.databasePrices = config.useDatabasePrices === true;
       this.stores = stores;
       const currentValue = Object.keys(this.internalValue).length > 0
         ? this.internalValue
         : this.normalizeValue(this.rawValue);
       this.internalValue = this.ensurePriceStructure(currentValue);
+      if (this.databasePrices) {
+        const rows = await this.fetchJson<{ storeAlias: string; currency: string; price: number }[]>(this.priceUrl(documentId));
+        if (requestId !== this.requestId) return;
+        for (const row of rows) {
+          const store = Object.keys(this.internalValue).find(key => key.toLowerCase() === row.storeAlias.toLowerCase());
+          const price = store == null ? undefined : this.internalValue[store]?.find(item => item.Currency.toLowerCase() === row.currency.toLowerCase());
+          if (price != null) price.Price = row.price;
+        }
+      }
       this.renderPrices();
-      this.setStatus('');
+      this.setStatus(this.databasePrices ? 'Prices are stored in the database. Changes save immediately without publishing.' : '');
     } catch (error) {
       if (requestId !== this.requestId) {
         return;
@@ -248,7 +270,17 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
     input.dataset.store = storeAlias;
     input.dataset.currency = currencyValue;
     input.value = String(this.getPrice(storeAlias, currencyValue));
-    input.addEventListener('input', () => this.setPrice(storeAlias, currencyValue, input.value));
+    input.addEventListener(this.databasePrices ? 'change' : 'input', () => {
+      if (this.databasePrices) {
+        if (!input.validity.valid || input.value === '') {
+          this.setStatus('Enter a non-negative price.', true);
+          return;
+        }
+        void this.savePrice(storeAlias, currencyValue, input.value);
+      } else {
+        this.setPrice(storeAlias, currencyValue, input.value);
+      }
+    });
 
     const symbol = document.createElement('span');
     symbol.textContent = currency.currencySymbol ?? '';
@@ -286,7 +318,38 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
     };
     this.rawValue = this.internalValue;
 
-    this.emitChange();
+    if (!this.databasePrices) this.emitChange();
+  }
+
+  private priceUrl(documentId: string): string {
+    if (!this.alias) throw new Error('The price property alias is unavailable.');
+    return `/ekom/backoffice/Prices/${encodeURIComponent(documentId)}/${encodeURIComponent(this.alias)}`;
+  }
+
+  alias?: string;
+
+  private async savePrice(storeAlias: string, currency: string, rawPrice: string): Promise<void> {
+    if (this.readonly || this.saving) return;
+    this.saving = true;
+    this.syncDisabledState();
+    this.setStatus('Saving price...');
+    try {
+      const response = await fetch(this.priceUrl(this.documentId || this.getDocumentIdFromUrl()), {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeAlias, currency, price: Number(rawPrice) }),
+      });
+      if (!response.ok) throw new Error(`Could not save price (${response.status}).`);
+      this.setPrice(storeAlias, currency, rawPrice);
+      this.setStatus('Price saved. The change is live without publishing.');
+    } catch (error) {
+      this.syncInputs();
+      this.setStatus(error instanceof Error ? error.message : 'Could not save price.', true);
+    } finally {
+      this.saving = false;
+      this.syncDisabledState();
+    }
   }
 
   private getPrice(storeAlias: string, currency: string): number {
@@ -417,7 +480,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
 
   private syncDisabledState(): void {
     for (const input of this.querySelectorAll<HTMLInputElement>('input')) {
-      input.disabled = this.readonly;
+      input.disabled = this.readonly || this.saving;
     }
   }
 

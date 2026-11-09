@@ -223,6 +223,45 @@ public class EkomBackofficeApiController : ControllerBase
     }
 
     [HttpGet]
+    [Route("Prices/{id}/{propertyAlias}")]
+    [UmbracoUserAuthorize]
+    [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+    public async Task<IActionResult> GetPrices(string id, string propertyAlias, CancellationToken cancellationToken)
+    {
+        var node = _nodeService.NodeById(id, true);
+        if (node == null) return NotFound();
+        if (!node.Properties.ContainsKey(propertyAlias)) return BadRequest("Unknown price property.");
+        var prices = await _serviceProvider.GetRequiredService<API.Prices>()
+            .GetAsync(node.Key, propertyAlias, cancellationToken).ConfigureAwait(false);
+        return Ok(prices);
+    }
+
+    [HttpPut]
+    [Route("Prices/{id}/{propertyAlias}")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> SetPrice(string id, string propertyAlias, [FromBody] TablePriceRequest request, CancellationToken cancellationToken)
+    {
+        if (!_config.UseDatabasePrices) return BadRequest("Database prices are disabled.");
+        if (!ModelState.IsValid || request?.Price == null) return BadRequest("A valid price is required.");
+        var node = _nodeService.NodeById(id, true);
+        if (node == null) return NotFound();
+        if (!node.Properties.ContainsKey(propertyAlias)) return BadRequest("Unknown price property.");
+        var store = LoadStores(id).FirstOrDefault(x => string.Equals(x.Alias, request.StoreAlias, StringComparison.OrdinalIgnoreCase));
+        if (store == null || !store.Currencies.Any(x => string.Equals(x.CurrencyValue, request.Currency, StringComparison.OrdinalIgnoreCase)))
+            return BadRequest("Unknown store or currency.");
+        try
+        {
+            await _serviceProvider.GetRequiredService<API.Prices>().SetPriceAsync(node.Key,
+                request.StoreAlias, request.Currency, request.Price.Value, propertyAlias, cancellationToken).ConfigureAwait(false);
+            return Ok();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet]
     [Route("WarehouseStock/{id:guid}")]
     [UmbracoUserAuthorize]
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]

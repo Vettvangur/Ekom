@@ -373,7 +373,10 @@ public class Product : PerStoreNodeEntity, IProduct
     /// </summary>
     public IPrice Price => CookieHelper.GetCurrencyPriceCookieValue(Prices, Store.Alias) ?? new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
 
-    private string _priceValue = "";
+    private string _nodePriceValue = "";
+    private string _priceValue => Configuration.Instance.UseDatabasePrices
+        ? API.Prices.Instance.Resolve(Key, "price", Store.Alias, _nodePriceValue, Store.Currencies)
+        : _nodePriceValue;
 
     /// <summary>
     /// 
@@ -391,16 +394,17 @@ public class Product : PerStoreNodeEntity, IProduct
 
             string productKey = Path;
 
+            var priceValue = _priceValue;
             string globalGen = PriceCache.GlobalGeneration;
             string productGen = PriceCache.GetItemGeneration(productKey, Store.Alias);
 
             var sale = NativeDiscountPrice.Raw(this);
-            var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={storeCurrency.CurrencyValue}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}:sale={CacheHelpers.Sha256(sale)}:disabled={DisableDiscounts}";
+            var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={storeCurrency.CurrencyValue}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(priceValue)}:sale={CacheHelpers.Sha256(sale)}:disabled={DisableDiscounts}";
 
             return CacheHelpers.GetOrCreateSingleFlight(
                 key,
                 () => PriceBuilder.BuildPricesSync(
-                    _priceValue,
+                    priceValue,
                     Store.Currencies,
                     Vat,
                     vatIncludedInPrice,
@@ -440,10 +444,16 @@ public class Product : PerStoreNodeEntity, IProduct
     }
 
 
+    private IPrice _originalPrice = null!;
+
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual IPrice OriginalPrice { get; set; }
+    public virtual IPrice OriginalPrice
+    {
+        get => Configuration.Instance.UseDatabasePrices ? CreateOriginalPrice() : _originalPrice;
+        set => _originalPrice = value;
+    }
 
 
     public virtual decimal Vat
@@ -606,7 +616,7 @@ public class Product : PerStoreNodeEntity, IProduct
         UrlsWithContext = urls;
         Urls = urls.Select(x => x.Url).ToList();
 
-        _priceValue = GetValue("price", Store.Alias) ?? string.Empty;
+        _nodePriceValue = GetValue("price", Store.Alias) ?? string.Empty;
         _backorderValue = GetValue("enableBackorder", Store.Alias);
 
         OriginalPrice = CreateOriginalPrice();

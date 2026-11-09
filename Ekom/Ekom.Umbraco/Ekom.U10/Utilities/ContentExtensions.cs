@@ -370,6 +370,19 @@ public static class ContentExtensions
     /// <param name="storeAlias">Store alias</param>
     /// <param name="currency">Currency (is-IS, en-US)</param>
     /// <param name="price">Price as decimal</param>
+    public static Task SetPriceAsync(this IContent content, string storeAlias, string currency, decimal price,
+        string propertyAlias = "price", CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentException.ThrowIfNullOrWhiteSpace(propertyAlias);
+        if (!content.HasProperty(propertyAlias)) return Task.CompletedTask;
+        if (Configuration.Instance.UseDatabasePrices)
+            return API.Prices.Instance.SetPriceAsync(content.Key, storeAlias, currency, price, propertyAlias, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        SetPrice(content, propertyAlias, storeAlias, currency, price);
+        return Task.CompletedTask;
+    }
+
     public static void SetPrice(this IContent content, string storeAlias, string currency, decimal price)
         => SetPrice(content, "price", storeAlias, currency, price);
 
@@ -391,6 +404,14 @@ public static class ContentExtensions
         if (string.IsNullOrEmpty(propertyAlias))
         {
             throw new ArgumentNullException(nameof(propertyAlias));
+        }
+
+        if (!content.HasProperty(propertyAlias)) return;
+
+        if (Configuration.Instance.UseDatabasePrices)
+        {
+            API.Prices.Instance.SetPrice(content.Key, storeAlias, currency, price, propertyAlias);
+            return;
         }
 
         if (content.HasProperty(propertyAlias))
@@ -466,6 +487,12 @@ public static class ContentExtensions
     public static decimal GetPrice(this IContent content, string storeAlias, string currency)
     {
         var fieldValue = content.GetProperty("price", storeAlias);
+        if (Configuration.Instance.UseDatabasePrices)
+        {
+            var store = API.Store.Instance.GetStore(storeAlias);
+            if (store != null)
+                fieldValue = API.Prices.Instance.Resolve(content.Key, "price", storeAlias, fieldValue, store.Currencies);
+        }
 
         if (!string.IsNullOrEmpty(fieldValue))
         {

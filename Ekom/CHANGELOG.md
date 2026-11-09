@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Features
+
+* **imports:** write imported product and variant prices to `EkomPrice` before content change detection when database prices are enabled; exclude prices from default content hashes so price-only changes do not save or publish nodes.
+
+* **prices:** add opt-in `Ekom:UseDatabasePrices` storage in `EkomPrice`, direct ERP price updates, and database-aware price editors for Umbraco 13, 17, and 18. Node storage remains the default.
+
 ### Bug Fixes
 
 * **manager:** add space above order custom-data badges to separate them from order action buttons.

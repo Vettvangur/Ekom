@@ -188,6 +188,19 @@ public static class ImportContentExtensions
         return string.Empty;
     }
 
+    public static Task SetPriceAsync(this IContent content, string storeAlias, string currency, decimal price,
+        string propertyAlias = "price", CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentException.ThrowIfNullOrWhiteSpace(propertyAlias);
+        if (!content.HasProperty(propertyAlias)) return Task.CompletedTask;
+        if (Configuration.Instance.UseDatabasePrices)
+            return API.Prices.Instance.SetPriceAsync(content.Key, storeAlias, currency, price, propertyAlias, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        SetPrice(content, propertyAlias, storeAlias, currency, price);
+        return Task.CompletedTask;
+    }
+
     public static void SetPrice(this IContent content, string storeAlias, string currency, decimal price)
         => SetPrice(content, "price", storeAlias, currency, price);
 
@@ -195,6 +208,14 @@ public static class ImportContentExtensions
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentException.ThrowIfNullOrEmpty(propertyAlias);
+
+        if (!content.HasProperty(propertyAlias)) return;
+
+        if (Configuration.Instance.UseDatabasePrices)
+        {
+            API.Prices.Instance.SetPrice(content.Key, storeAlias, currency, price, propertyAlias);
+            return;
+        }
 
         if (!content.HasProperty(propertyAlias))
         {

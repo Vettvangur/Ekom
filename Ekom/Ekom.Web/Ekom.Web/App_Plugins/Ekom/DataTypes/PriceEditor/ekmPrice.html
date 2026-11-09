@@ -1,5 +1,6 @@
 <div ng-controller="Ekom.Price">
 
+  <p aria-live="polite">{{ priceStatus }}</p>
   <fieldset ng-repeat="store in stores">
     <legend style="font-size: 18px; font-weight:bold;">{{ store.alias }}</legend>
     <div ng-repeat="currency in store.currencies">
@@ -7,9 +8,9 @@
         <label style="display:inline-block; vertical-align:bottom; min-width:45px;" for="price_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}">
           {{ currency.isoCurrencySymbol }}
         </label>
-        <input type="number" min="0" step="any" id="price_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}" ng-model="prices[store.alias][$index].Price" /> <span style="display: inline-block; vertical-align: bottom; margin-bottom:5px;">{{ currency.currencySymbol }}</span>
+        <input type="number" min="0" step="any" id="price_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}" ng-model="prices[store.alias][$index].Price" ng-model-options="{ updateOn: 'blur' }" ng-change="savePrice(store.alias, currency.currencyValue, prices[store.alias][$index].Price)" ng-disabled="savingPrice || model.readonly" /> <span style="display: inline-block; vertical-align: bottom; margin-bottom:5px;">{{ currency.currencySymbol }}</span>
       </div>
     </div>
-    <fieldset />
+  </fieldset>
 
 </div>

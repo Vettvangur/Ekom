@@ -28,6 +28,9 @@ public class Configuration
     /// </summary>
     public static Configuration Instance => Resolver.GetService<Configuration>();
 
+    /// <summary>Use EkomPrice overrides instead of publishing nodes for price changes. Default: false.</summary>
+    public virtual bool UseDatabasePrices => _configuration.GetValue<bool>("Ekom:UseDatabasePrices");
+
     internal const string Cookie_UmbracoDomain = "EkomUmbracoDomain";
     public static string ImportAliasIdentifier => "ekmIdentifier";
     public static string EkmRequestKey = "umbrtmche-ekmRequest";

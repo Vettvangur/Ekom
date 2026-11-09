@@ -7,7 +7,14 @@ namespace Ekom.Utilities;
 internal static class NativeDiscountPrice
 {
     internal static string Raw(INodeEntity? node)
-        => node?.Properties.TryGetValue("ekmDiscountPrice", out var value) == true ? value : string.Empty;
+    {
+        var value = node?.Properties.TryGetValue("ekmDiscountPrice", out var raw) == true ? raw : string.Empty;
+        if (Configuration.Instance.UseDatabasePrices && node is IPerStoreNodeEntity perStore)
+        {
+            return API.Prices.Instance.Resolve(node.Key, "ekmDiscountPrice", perStore.Store.Alias, value, perStore.Store.Currencies);
+        }
+        return value;
+    }
 
     internal static decimal? Read(INodeEntity node, IStore store, CurrencyModel currency)
         => Read(Raw(node), store.Alias, currency.CurrencyValue,

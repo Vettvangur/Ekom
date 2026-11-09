@@ -113,6 +113,7 @@ static class Registrations
         services.AddHostedService<StockReservationWorker>();
 
         services.AddTransient<CountriesRepository>();
+        services.AddSingleton<Ekom.API.Prices>();
         services.AddTransient<StockRepository>();
         services.AddTransient<DiscountStockRepository>();
         services.AddTransient<WarehouseStockRepository>();

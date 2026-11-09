@@ -1173,6 +1173,12 @@ public class ImportService : IImportService
 
             OnProductSaveStarting(this, args).GetAwaiter().GetResult();
 
+            var databasePrices = Configuration.Instance.UseDatabasePrices;
+            if (databasePrices && !args.IsCreateOperation)
+            {
+                SaveDatabasePrices(productContent, importProduct.Price);
+            }
+
             var perStoreStock = Configuration.Instance.PerStoreStock;
 
             // Always do stock update
@@ -1215,7 +1221,9 @@ public class ImportService : IImportService
                 }
             }
 
-            var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties", "Files", "Stock", "WarehouseStock", "UpdateSlug" });
+            var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, databasePrices
+                ? new string[] { "VariantGroups", "Images", "EventProperties", "Files", "Stock", "WarehouseStock", "UpdateSlug", "Price" }
+                : new string[] { "VariantGroups", "Images", "EventProperties", "Files", "Stock", "WarehouseStock", "UpdateSlug" });
 
             // If no changes are found and not creating then return,
             if (!forceUpdate && !HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
@@ -1248,7 +1256,7 @@ public class ImportService : IImportService
 
             productContent.SetValue(Configuration.ImportAliasIdentifier, importProduct.Identifier);
 
-            if (importProduct.Price.Any())
+            if (!databasePrices && importProduct.Price.Any())
             {
                 foreach (var price in importProduct.Price)
                 {
@@ -1315,6 +1323,11 @@ public class ImportService : IImportService
 
             SaveEvent(productContent, importProduct, importProduct.SaveEvent, importProduct.PreservePublishStatus, syncUser, args.IsCreateOperation, recycleBinNode, productProcessNode);
 
+            if (databasePrices && args.IsCreateOperation && productContent.Id > 0)
+            {
+                SaveDatabasePrices(productContent, importProduct.Price);
+            }
+
             productsSaved.Add(importProduct);
 
         }
@@ -1368,6 +1381,12 @@ public class ImportService : IImportService
 
         OnVariantSaveStarting(this, args).GetAwaiter().GetResult();
 
+        var databasePrices = Configuration.Instance.UseDatabasePrices;
+        if (databasePrices && !args.IsCreateOperation)
+        {
+            SaveDatabasePrices(variantContent, importVariant.Price);
+        }
+
         var perStoreStock = Configuration.Instance.PerStoreStock;
 
         // Always do stock update
@@ -1405,7 +1424,9 @@ public class ImportService : IImportService
             saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, mediaIndex, ImportMediaTypes.File, ImportMediaContentTypes.files, preserveExistingValues: importVariant.PreserveExistingValues);
         }
 
-        var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files", "Stock", "WarehouseStock" });
+        var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, databasePrices
+            ? new string[] { "Images", "EventProperties", "Files", "Stock", "WarehouseStock", "Price" }
+            : new string[] { "Images", "EventProperties", "Files", "Stock", "WarehouseStock" });
 
         // If no changes are found and not creating then return,
         if (!forceUpdate && !HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
@@ -1432,7 +1453,7 @@ public class ImportService : IImportService
 
         variantContent.SetValue(Configuration.ImportAliasIdentifier, importVariant.Identifier);
 
-        if (importVariant.Price.Any())
+        if (!databasePrices && importVariant.Price.Any())
         {
             foreach (var price in importVariant.Price)
             {
@@ -1459,6 +1480,11 @@ public class ImportService : IImportService
         if (!TrySaveVariant(variantContent, importVariant, syncUser, args.IsCreateOperation, recycleBinNode, productProcessNode, productContent))
         {
             return;
+        }
+
+        if (databasePrices && args.IsCreateOperation && variantContent.Id > 0)
+        {
+            SaveDatabasePrices(variantContent, importVariant.Price);
         }
 
         variantsSaved.Add(importVariant);
@@ -2227,6 +2253,14 @@ public class ImportService : IImportService
         }
 
         return content;
+    }
+
+    private static void SaveDatabasePrices(IContent content, IEnumerable<ImportPrice> prices)
+    {
+        foreach (var price in prices)
+        {
+            API.Prices.Instance.SetPrice(content.Key, price.StoreAlias, price.Currency, price.Price);
+        }
     }
 
     /// <summary>

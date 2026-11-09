@@ -73,6 +73,122 @@ importService.ProductSync(
 
 `ProductSync` requires at least one category identifier that resolves in the selected catalog scope. It synchronizes the supplied `VariantGroups`; groups absent from that product payload are deleted, and variants absent from a supplied group are deleted. Use `ProductUpdateSync` for a product-only patch that must not reconcile children.
 
+## ERP price-only sync without saving or publishing
+
+For frequent ERP price changes, enable `Ekom:UseDatabasePrices` and restart Ekom so startup creates the price table:
+
+```json
+{
+  "Ekom": {
+    "UseDatabasePrices": true
+  }
+}
+```
+
+Use `Ekom.API.Prices.SetPriceAsync` directly for price-only messages. This writes to `EkomPrice` and does not load, save, or publish an Umbraco node. The direct table API throws if database prices are disabled.
+
+### One price update
+
+```csharp
+// Resolve this GUID from your ERP identifier -> existing Umbraco node key mapping.
+// Use the variant's key when the ERP price belongs to a variant.
+Guid nodeKey = existingProductOrVariantKey;
+
+await Ekom.API.Prices.Instance.SetPriceAsync(
+    nodeKey: nodeKey,
+    storeAlias: "Web",
+    currency: "en-US",
+    price: 49.95m,
+    cancellationToken: cancellationToken);
+```
+
+`Web` must be your actual Ekom store alias. `en-US` is the configured currency culture value, not the ISO code `USD`. Amounts follow the store's existing VAT-included/excluded pricing convention. The node must already exist; the table API does not look up ERP identifiers, create nodes, or validate that a supplied node/store/currency exists.
+
+### A service for an ERP change feed
+
+Inject `Ekom.API.Prices`, which Ekom already registers, into your integration service:
+
+```csharp
+using Ekom.API;
+
+public sealed record ErpPriceChange(
+    Guid NodeKey,
+    string StoreAlias,
+    string Currency,
+    decimal Amount);
+
+public sealed class ErpPriceSync
+{
+    private readonly Prices _prices;
+
+    public ErpPriceSync(Prices prices)
+    {
+        _prices = prices;
+    }
+
+    public async Task ApplyAsync(
+        IEnumerable<ErpPriceChange> changes,
+        CancellationToken cancellationToken = default)
+    {
+        foreach (var change in changes)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            await _prices.SetPriceAsync(
+                nodeKey: change.NodeKey,
+                storeAlias: change.StoreAlias,
+                currency: change.Currency,
+                price: change.Amount,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+    }
+}
+```
+
+Register `ErpPriceSync` in your site's service collection (for example, `services.AddTransient<ErpPriceSync>()`) and invoke it from your ERP job or authenticated integration handler after resolving the feed's ERP identifiers to existing node keys. Each call inserts or replaces one node/property/store/currency price; other prices remain unchanged. Each write commits separately, so a failed feed can have partially applied updates. Replaying an update replaces the same row rather than creating a duplicate. Coordinate concurrent feeds for the same price; the last committed write wins.
+
+To update the native discount price, use the same call with `propertyAlias: "ekmDiscountPrice"`:
+
+```csharp
+await Ekom.API.Prices.Instance.SetPriceAsync(
+    nodeKey, "Web", "en-US", 39.95m,
+    propertyAlias: "ekmDiscountPrice",
+    cancellationToken: cancellationToken);
+```
+
+Do not call `IContentService.Save` or `SaveAndPublish` after the direct table API. You can also keep using the built-in importer with its `Price` collection, as shown below.
+
+The next Ekom price read and the price editor use the table value without a publish or manual Ekom cache refresh. Existing node values remain the fallback for currencies without an override. External search indexes and page caches that depend on publish notifications must be refreshed by the integration separately. See [database price storage](catalog-and-products.md#database-price-storage) for fallback, precision, and switching back to node storage.
+
+### Using the built-in Ekom importer
+
+`ImportProduct.Price` and `ImportVariant.Price` (the property name is singular) automatically use the configured storage. Existing integrations can continue passing their usual import payload:
+
+```csharp
+// Keep the normal product payload and identifier from your ERP mapping.
+importProduct.Price =
+[
+    new ImportPrice
+    {
+        StoreAlias = "Web",
+        Currency = "en-US",
+        Price = 49.95m,
+    },
+];
+
+importService.ProductUpdateSync(
+    importProduct,
+    parentKey: catalogRootKey,
+    mediaRootKey: mediaRootKey,
+    syncUser: -1);
+```
+
+With `UseDatabasePrices: true`, product and variant prices are written through `Ekom.API.Prices.SetPrice` before the importer checks whether existing content is unchanged. The default content comparison hash excludes `Price`, so price-only changes update the table without saving or publishing the node. This applies to product/variant update methods and the product/variant steps of full synchronization. New nodes are still created normally; their table prices are written after the initial content save.
+
+Other content changes, media changes, or `forceUpdate: true` still use the normal save/publish behavior. When first enabling table mode, existing default comparison hashes may differ because they previously included prices; one content sync establishes the new hash. If you supply your own `Comparer`, it remains authoritative: keep prices out of that value to avoid content saves for price-only changes. Table prices are updated even when your custom comparer is unchanged. Missing prices leave existing table entries untouched.
+
+With the option disabled, prices stay on the node and remain part of normal default content change detection. Table writes and content saves are separate operations; a later content-save failure does not roll back table prices already applied to an existing node.
+
 ## Full synchronization is authoritative
 
 Treat `FullSync` as a desired-state operation:
