@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>Ekom.Printer</PackageId>
-    <PackageVersion>1.1.0</PackageVersion>
+    <PackageVersion>1.1.1</PackageVersion>
     <Description>Optional HTML picking-slip queue and rendering for Ekom.</Description>
     <Authors>Vettvangur</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
