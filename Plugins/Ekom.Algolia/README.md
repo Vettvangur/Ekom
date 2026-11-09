@@ -1042,3 +1042,12 @@ Rebuild one store:
 ```http
 POST /umbraco/backoffice/api/EkomAlgoliaBackoffice/RebuildStoreIndexes?storeAlias=Store
 ```
+
+
+### Database price updates
+
+When Ekom database prices are enabled, committed price notifications enter a dedicated bounded queue. Currency/property updates for the same node and store share one pending entry. The ERP writer does not load Umbraco content. A background worker resolves published products and variant parents, reuses parent lookups within the batch, and coalesces sibling variant updates into one product key per store before handing them to the product indexing queue.
+
+The price queue uses `Indexing.Dispatching.MaxQueueSize`, `FlushIntervalSeconds`, and `MaxBatchSize` (defaults: 10,000 entries, a two-second delay, and 100 changed nodes; non-positive capacity/batch values use those defaults and the delay is clamped to at least one second). The product indexing queue keeps its own capacity; both queues are bounded. Updates arriving after a batch is drained can enqueue another refresh, so edits made during indexing are not suppressed. Parent-product coalescing is per batch; later batches may refresh that product again.
+
+Indexing uses short Ekom price read scopes and preloads product/variant prices in bounded batches to avoid repeated database reads across currencies and locales. Delivery remains best-effort: queue overflow and worker failures are logged, and a process restart loses queued work. Reconcile or rebuild indexes after such failures.

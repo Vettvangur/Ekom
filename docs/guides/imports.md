@@ -158,7 +158,7 @@ await Ekom.API.Prices.Instance.SetPriceAsync(
 
 Do not call `IContentService.Save` or `SaveAndPublish` after the direct table API. You can also keep using the built-in importer with its `Price` collection, as shown below.
 
-The next HTTP request and the price editor use the table value without a publish or manual Ekom cache refresh. Within one HTTP request, Ekom reuses a price snapshot per node; local writes invalidate that snapshot. Existing node values remain the fallback for currencies without an override. The Algolia plugin queues product reindexing for committed price changes when product indexing is enabled. Other search indexes and page caches can subscribe to `Ekom.Events.PriceEvents.PriceChanged`. See [database price storage](catalog-and-products.md#database-price-storage) for fallback, precision, and switching back to node storage.
+The next HTTP request and the price editor use the table value without a publish or manual Ekom cache refresh. Within one HTTP request, Ekom reuses a price snapshot per node; local writes invalidate that snapshot. Existing node values remain the fallback for currencies without an override. The Algolia plugin queues and coalesces committed price changes without content lookups on the ERP writer thread. Background processing resolves the affected products and performs reindexing when enabled. Other search indexes and page caches can subscribe to `Ekom.Events.PriceEvents.PriceChanged`. See [database price storage](catalog-and-products.md#database-price-storage) for fallback, precision, and switching back to node storage.
 
 ### Atomic updates and concurrent editors
 

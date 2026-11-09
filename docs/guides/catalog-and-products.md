@@ -220,13 +220,13 @@ await Ekom.API.Prices.Instance.SetPriceAsync(
 
 The built-in importer also routes `ImportProduct.Price` and `ImportVariant.Price` to the table when enabled. Prices are applied even when content is unchanged, and the default content hash excludes prices to avoid saves/publishes for price-only changes. See [importer behavior](imports.md#using-the-built-in-ekom-importer) for custom comparers and first-sync behavior.
 
-The Ekom Price datatype loads table overrides in Umbraco 13, 17, and 18. Editing a field in database mode saves that currency immediately when leaving the field; no publish is required. A notice explains that the change is live. Ordinary document saves do not copy old node price JSON back into the table. Each save updates only the edited currency, so it cannot overwrite unrelated currencies changed by an ERP sync. Concurrent changes to the same price use the last committed write. The U17/U18 editor rebuilds displayed prices from the current document and the latest overrides when it loads; removed overrides restore node fallback values. Navigating to another document discards the old price state and ignores outstanding save responses for the previous document.
+The Ekom Price datatype loads table overrides in Umbraco 13, 17, and 18. Editing a field in database mode saves that currency immediately when leaving the field; no publish is required. A notice explains that the change is live. Ordinary document saves do not copy old node price JSON back into the table. Each save updates only the edited currency, so it cannot overwrite unrelated currencies changed by an ERP sync. Concurrent changes to the same price use the last committed write. The U17/U18 editor rebuilds displayed prices from the current document and the latest overrides when it loads; removed overrides restore node fallback values. Navigating to another document discards the old price state and ignores outstanding save responses for the previous document. Clearing the workspace identity disables saving immediately; an old URL cannot be used to write to the previous product.
 
 Existing node prices remain a fallback for individual currencies that have no table row. A stored zero is an explicit value; the existing variant rule that a zero base price inherits its parent remains unchanged. Enabling table storage does not migrate or modify node values. Populate the table through your ERP sync to make it the source for every price. Disabling the setting returns to the original node values, so copy current prices back first if you want to retain them when switching back.
 
-Product and variant prices, native discounts, provider prices, and variant/catalog displays resolve table values. Runtime resolution loads all price overrides once per node per HTTP request, shared across base prices, discounts, and stores. The next request on any application server sees committed updates; a local write invalidates the current request snapshot. Outside HTTP requests, each resolution reads fresh data. Calculated-price caches retain only the latest price version for a given context, avoiding an entry for every ERP revision. Measure query load for large catalogs. Custom code reading raw Umbraco property JSON still sees the node value; use Ekom price models or `Prices.Resolve` to apply overrides.
+Product and variant prices, native discounts, provider prices, and variant/catalog displays resolve table values. Runtime resolution loads all price overrides once per node per HTTP request, shared across base prices, discounts, and stores. The next request on any application server sees committed updates; a local write invalidates the current request snapshot. Outside HTTP requests, each resolution reads fresh data unless it is inside `Prices.BeginReadScope()`. Nested scopes share the current snapshot; a new outer scope reads fresh data. Calculated-price caches retain only the latest price version for a given context, avoiding an entry for every ERP revision. Catalog price sorting, price-range filtering, custom predicates/filter services, and zero-price filtering preload candidate products and their variants in batches of at most 400 node keys. Ordinary title/date paging preloads only the returned page. Missing overrides are cached too, preserving node fallbacks without additional queries. Custom code reading raw Umbraco property JSON still sees the node value; use Ekom price models or `Prices.Resolve` to apply overrides.
 
-Updates do not emit Umbraco publish notifications. `Ekom.Events.PriceEvents.PriceChanged` fires after commit for each changed override, including removals (`NewValue == null`). Handlers should enqueue work. Subscriber failures are logged without rolling back or retrying committed prices. The Algolia plugin queues a product upsert for published product or variant price changes, including inherited variant prices, when product indexing is enabled. Notifications and the indexing queue are best-effort, not a durable outbox: use periodic reconciliation after process failures or queue overflow. Other search indexes and page caches need their own subscriber. Prices are live data, without Umbraco draft, rollback, or scheduled-publishing semantics.
+Updates do not emit Umbraco publish notifications. `Ekom.Events.PriceEvents.PriceChanged` fires after commit for each changed override, including removals (`NewValue == null`). Handlers should enqueue work. Subscriber failures are logged without rolling back or retrying committed prices. The Algolia plugin coalesces pending price changes by node/store without loading Umbraco content on the writer thread. A background worker resolves published products and variant parents, shares parent lookups within each batch, and queues one parent-product upsert per store/batch, including inherited variant prices. Product indexing must be enabled. Notifications and the indexing queue are best-effort, not a durable outbox: use periodic reconciliation after process failures or queue overflow. Other search indexes and page caches need their own subscriber. Prices are live data, without Umbraco draft, rollback, or scheduled-publishing semantics.
 
 
 Price endpoints require an authenticated, approved backoffice user with access to the node's content root, update and publish permissions, and access to the requested Ekom store. Administrators retain node access. Custom `ISecurityService` implementations must implement `IsAuthenticated`, `CanEditContent`, and `CanEditPrices`; their defaults deny access. `CanEditContent` checks content-root access and update permission without requiring publish permission. The variant manager uses this check for reading and draft editing, including when database storage is disabled. Publishing content or changing a live table price additionally requires publish permission. An unchanged price baseline does not prevent a non-publisher from saving metadata as a draft. In database mode, variant responses contain only the stores the user can access, including both displayed values and original override baselines.
@@ -288,3 +288,28 @@ After migration, prices can be managed entirely through the Ekom Price datatype 
 
 
 Variant-manager saves validate required custom fields before writing prices. Bulk saves validate all submitted groups and variants before processing any of them, so a missing required field cannot leave an earlier variant's price changed. This validation is not a transaction spanning Umbraco content, stock, and price storage: a later infrastructure failure may still leave completed writes in place.
+
+
+### Price reads in background jobs
+
+Use one short read scope per background batch so repeated price getters share database reads. Preload when the batch's product or node keys are known:
+
+```csharp
+using (prices.BeginReadScope())
+{
+    await prices.PreloadProductsAsync(products, cancellationToken);
+    // Read product/variant prices here, for example while building export records.
+}
+```
+
+`PreloadProductsAsync` includes each product and its variants. `PreloadAsync(nodeKeys, cancellationToken)` accepts keys directly. Preloading requires an HTTP request or an active read scope. Calls with database storage disabled are no-ops. Writes through the same `Prices` service invalidate affected entries. External writes become visible in the next outer scope or HTTP request, so do not keep a scope open for the lifetime of a worker. Algolia indexing creates a scope for each processing operation automatically.
+
+SQLite regression checks with cached product models verify these query counts:
+
+| Read workload | Before batching/scoping | With batching/scoping |
+| --- | ---: | ---: |
+| Sort 100 products by price and return 10 | 100 | 1 |
+| Sort 801 products by price and return 10 | 801 | 3 |
+| Read one product's prices 20 times outside HTTP | 40 | 1 |
+
+These are query counts, not production latency measurements. SQL Server throughput and concurrent-update load should still be checked on staging.

@@ -23,6 +23,7 @@ public sealed class Prices
     private readonly IHttpContextAccessor? _httpContext;
     private readonly ILogger<Prices> _logger;
     private readonly object _requestKey = new();
+    private readonly AsyncLocal<ReadSnapshot?> _readScope = new();
 
     public Prices(Configuration configuration, DatabaseFactory databaseFactory,
         IHttpContextAccessor? httpContext = null, ILogger<Prices>? logger = null)
@@ -32,6 +33,8 @@ public sealed class Prices
         _httpContext = httpContext;
         _logger = logger ?? NullLogger<Prices>.Instance;
     }
+
+    public bool Enabled => _configuration.UseDatabasePrices;
 
     public static Prices Instance => Configuration.Resolver.GetRequiredService<Prices>();
 
@@ -184,9 +187,9 @@ public sealed class Prices
     {
         foreach (var change in events)
         {
-            var items = _httpContext?.HttpContext?.Items;
-            if (items != null) lock (items)
-                if (items.TryGetValue(_requestKey, out var value) && value is Dictionary<Guid, List<PriceData>> snapshot) snapshot.Remove(change.Key);
+            Invalidate(_readScope.Value, change.Key);
+            var requestSnapshot = RequestSnapshot();
+            if (!ReferenceEquals(requestSnapshot, _readScope.Value)) Invalidate(requestSnapshot, change.Key);
             foreach (var handler in PriceEvents.Handlers)
             {
                 try { ((EventHandler<PriceChangedEventArgs>)handler)(this, change); }
@@ -195,23 +198,90 @@ public sealed class Prices
         }
     }
 
-    // One immutable node-price snapshot per HTTP request, shared by base and discount prices.
-    // A fresh request on any server reads committed data; writes invalidate the current request's snapshot.
+    /// <summary>Reuse price reads within one background operation. Nested scopes share the snapshot.</summary>
+    public IDisposable BeginReadScope()
+    {
+        var previous = _readScope.Value;
+        _readScope.Value = previous ?? RequestSnapshot() ?? new ReadSnapshot();
+        return new ReadScope(() => _readScope.Value = previous);
+    }
+
+    /// <summary>Load node prices in bounded batches. Requires an HTTP request or BeginReadScope.</summary>
+    public async Task PreloadAsync(IEnumerable<Guid> nodeKeys, CancellationToken cancellationToken = default)
+    {
+        if (!_configuration.UseDatabasePrices) return;
+        var snapshot = _readScope.Value ?? RequestSnapshot()
+            ?? throw new InvalidOperationException("Begin a price read scope before preloading outside HTTP.");
+        var keys = nodeKeys.Where(key => key != Guid.Empty).Distinct().ToArray();
+        await snapshot.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            foreach (var batch in keys.Where(key => !snapshot.Rows.ContainsKey(key)).Chunk(400))
+            {
+                await using var db = _databaseFactory.GetDatabase();
+                var rows = await db.Prices.Where(row => Enumerable.Contains(batch, row.NodeKey)).ToListAsync(cancellationToken).ConfigureAwait(false);
+                var grouped = rows.ToLookup(row => row.NodeKey);
+                // Cache missing rows too, so node fallbacks do not trigger another query.
+                foreach (var key in batch) snapshot.Rows[key] = grouped[key].ToList();
+            }
+        }
+        finally { snapshot.Gate.Release(); }
+    }
+
+    public Task PreloadProductsAsync(IEnumerable<IProduct> products, CancellationToken cancellationToken = default)
+        => PreloadAsync(products.SelectMany(product => product.AllVariants.Select(variant => variant.Key).Prepend(product.Key)), cancellationToken);
+
+    private ReadSnapshot? RequestSnapshot()
+    {
+        var items = _httpContext?.HttpContext?.Items;
+        if (items == null) return null;
+        lock (items)
+        {
+            if (!items.TryGetValue(_requestKey, out var value)) items[_requestKey] = value = new ReadSnapshot();
+            return (ReadSnapshot)value!;
+        }
+    }
+
+    private static void Invalidate(ReadSnapshot? snapshot, Guid key)
+    {
+        if (snapshot == null) return;
+        snapshot.Gate.Wait();
+        try { snapshot.Rows.Remove(key); }
+        finally { snapshot.Gate.Release(); }
+    }
+
     private List<PriceData> Read(Guid nodeKey)
     {
         List<PriceData> Load()
         {
             using var db = _databaseFactory.GetDatabase();
-            return db.Prices.Where(x => x.NodeKey == nodeKey).ToList();
+            return db.Prices.Where(row => row.NodeKey == nodeKey).ToList();
         }
-        var items = _httpContext?.HttpContext?.Items;
-        if (items == null) return Load();
-        lock (items)
+        var snapshot = _readScope.Value ?? RequestSnapshot();
+        if (snapshot == null) return Load();
+        snapshot.Gate.Wait();
+        try
         {
-            if (!items.TryGetValue(_requestKey, out var value)) items[_requestKey] = value = new Dictionary<Guid, List<PriceData>>();
-            var snapshot = (Dictionary<Guid, List<PriceData>>)value!;
-            if (!snapshot.TryGetValue(nodeKey, out var rows)) snapshot[nodeKey] = rows = Load();
+            if (!snapshot.Rows.TryGetValue(nodeKey, out var rows)) snapshot.Rows[nodeKey] = rows = Load();
             return rows;
+        }
+        finally { snapshot.Gate.Release(); }
+    }
+
+    private sealed class ReadSnapshot
+    {
+        public SemaphoreSlim Gate { get; } = new(1, 1);
+        public Dictionary<Guid, List<PriceData>> Rows { get; } = new();
+    }
+
+    private sealed class ReadScope(Action dispose) : IDisposable
+    {
+        private bool _disposed;
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            dispose();
         }
     }
 

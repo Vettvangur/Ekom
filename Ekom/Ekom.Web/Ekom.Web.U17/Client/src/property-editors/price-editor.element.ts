@@ -41,6 +41,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
   private status?: HTMLParagraphElement;
   private stores: EkomStore[] = [];
   private documentId = '';
+  private hasDocumentContext = false;
   private requestId = 0;
   private documentRevision = 0;
   private databasePrices = false;
@@ -101,7 +102,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
 
   private async loadStores(): Promise<void> {
     if (!this.alias) return;
-    const documentId = this.documentId || this.getDocumentIdFromUrl();
+    const documentId = this.activeDocumentId;
     if (documentId.length === 0) {
       this.setStatus('Save the document before editing prices.');
       return;
@@ -352,12 +353,17 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
 
   private async savePrice(storeAlias: string, currency: string, rawPrice: string): Promise<void> {
     if (this.readonly || this.saving || this.loading) return;
+    const documentId = this.activeDocumentId;
+    if (!documentId) {
+      this.setStatus('Save the document before editing prices.');
+      return;
+    }
     const revision = this.documentRevision;
     this.saving = true;
     this.syncDisabledState();
     this.setStatus('Saving price...');
     try {
-      const response = await fetch(this.priceUrl(this.documentId || this.getDocumentIdFromUrl()), {
+      const response = await fetch(this.priceUrl(documentId), {
         method: 'PUT',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
@@ -507,7 +513,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
 
   private syncDisabledState(): void {
     for (const input of this.querySelectorAll<HTMLInputElement>('input')) {
-      input.disabled = this.readonly || this.saving || this.loading;
+      input.disabled = this.readonly || this.saving || this.loading || (this.hasDocumentContext && !this.documentId);
     }
   }
 
@@ -524,13 +530,30 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
     this.dispatchEvent(new UmbChangeEvent());
   }
 
+  private get activeDocumentId(): string {
+    return this.hasDocumentContext ? this.documentId : this.documentId || this.getDocumentIdFromUrl();
+  }
+
   private updateDocumentId(value: string | null | undefined): void {
-    if (value == null || value === this.documentId) {
+    const nextId = value ?? '';
+    const changed = nextId !== this.documentId;
+    this.hasDocumentContext = true;
+    if (!changed) {
+      this.syncDisabledState();
       return;
     }
-
-    if (this.documentId) this.resetDocumentState();
-    this.documentId = value;
+    if (this.documentId) {
+      this.resetDocumentState();
+    } else {
+      // Initial values (or a newly saved draft) may arrive before the identity.
+      this.requestId++;
+      this.documentRevision++;
+      this.overrides = [];
+      this.saving = false;
+    }
+    this.loading = false;
+    this.documentId = nextId;
+    this.syncDisabledState();
     void this.loadStores();
   }
 

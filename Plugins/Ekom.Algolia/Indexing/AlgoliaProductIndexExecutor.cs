@@ -13,6 +13,7 @@ namespace Ekom.Algolia.Indexing;
 
 internal sealed class AlgoliaProductIndexExecutor
 {
+    private readonly Prices? _prices;
     private readonly ISearchClient _client;
     private readonly AlgoliaIndexReplacementService _indexReplacementService;
     private readonly IAlgoliaTransformationWriteService _transformationWrites;
@@ -38,8 +39,9 @@ internal sealed class AlgoliaProductIndexExecutor
         IAlgoliaProductIndexMapper mapper,
         IAlgoliaFacetAttributeSelector facetAttributeSelector,
         IEnumerable<IAlgoliaProductIndexFilter>? filters,
-        ILogger<AlgoliaProductIndexExecutor> logger)
+        ILogger<AlgoliaProductIndexExecutor> logger, Prices? prices = null)
     {
+        _prices = prices;
         _client = client;
         _indexReplacementService = indexReplacementService;
         _transformationWrites = transformationWrites;
@@ -62,6 +64,7 @@ internal sealed class AlgoliaProductIndexExecutor
         if (!_options.Enabled)
             return;
 
+        using var priceScope = _prices?.Enabled == true ? _prices.BeginReadScope() : null;
         _logger.LogDebug("Algolia executor handling {Count} queued jobs.", jobs.Count);
 
         var byStore = jobs.GroupBy(j => j.StoreAlias, StringComparer.OrdinalIgnoreCase);
@@ -245,6 +248,7 @@ internal sealed class AlgoliaProductIndexExecutor
     {
         _logger.LogDebug("Algolia upsert requested for store {Store} with {Count} product keys.", store.Alias, keys.Count);
 
+        if (_prices?.Enabled == true) await _prices.PreloadAsync(keys, ct).ConfigureAwait(false);
         var missingKeys = new List<Guid>();
         var products = new List<IProduct>(keys.Count);
 
@@ -280,6 +284,9 @@ internal sealed class AlgoliaProductIndexExecutor
 
     internal async Task UpsertProductsAsync(AlgoliaResolvedStore store, IReadOnlyCollection<IProduct> products, CancellationToken ct)
     {
+        using var priceScope = _prices?.Enabled == true ? _prices.BeginReadScope() : null;
+        if (_prices?.Enabled == true)
+            await _prices.PreloadProductsAsync(products, ct).ConfigureAwait(false);
         var batchSize = store.Indexing.BatchSize <= 0 ? 1000 : store.Indexing.BatchSize;
 
         foreach (var target in store.ExpandIndexTargets())

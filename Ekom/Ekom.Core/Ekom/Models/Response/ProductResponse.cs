@@ -138,12 +138,15 @@ public class ProductResponse
         CancellationToken ct)
     {
         IEnumerable<IProduct> working;
+        var prices = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance : null;
+        using var priceScope = prices?.BeginReadScope();
 
         // Preserve your "query == null" behavior
         if (query == null)
         {
             var baseList = products as List<IProduct> ?? products.ToList();
             working = baseList;
+            if (prices != null) await prices.PreloadProductsAsync(baseList, ct).ConfigureAwait(false);
 
             if (filterService != null)
                 working = await ApplyFilterServiceAsync(filterService, baseList, query: null, category, storeAlias, ct);
@@ -158,6 +161,11 @@ public class ProductResponse
 
         // Materialize once
         working = products as List<IProduct> ?? products.ToList();
+
+        var order = query.OrderBy ?? Configuration.Instance.DefaultProductOrderBy;
+        if (prices != null && (order is Utilities.OrderBy.PriceAsc or Utilities.OrderBy.PriceDesc
+            || query.PropertyFilters?.Keys.Any(key => key is "priceFrom" or "priceTo") == true || query.FilterOutZeroPriceProducts || query.Filter != null || filterService != null))
+            await prices.PreloadProductsAsync(working, ct).ConfigureAwait(false);
 
         // Functional-ish pipeline composition
         working = StepPropertySelectors(working, query);
@@ -185,6 +193,7 @@ public class ProductResponse
         ProductCount = finalList.Count;
 
         ApplyPaging(finalList, query);
+        if (prices != null) await prices.PreloadProductsAsync(Products, ct).ConfigureAwait(false);
     }
 
     // =========================

@@ -104,26 +104,13 @@ internal sealed class AlgoliaEkomEvents : IComponent
     private void OnPriceChanged(object? sender, PriceChangedEventArgs args)
     {
         if (AlgoliaIndexingScope.IsSuppressed || !_options.Enabled) return;
+        var configured = _options.Stores.FirstOrDefault(store => store.Alias.Equals(args.StoreAlias, StringComparison.OrdinalIgnoreCase));
+        if (configured == null || !(configured.Indexing?.Enabled ?? _options.Indexing.Enabled)
+            || !(configured.Indexing?.Products ?? _options.Indexing.Products)) return;
         using var scope = _scopeFactory.CreateScope();
-        var contentService = scope.ServiceProvider.GetRequiredService<Umbraco.Cms.Core.Services.IContentService>();
-        var content = contentService.GetById(args.Key);
-        if (content == null || !content.Published) return;
-        if (content.ContentType.Alias == "ekmProductVariant")
-        {
-            var group = contentService.GetById(content.ParentId);
-            content = group == null ? null : contentService.GetById(group.ParentId);
-        }
-        if (content == null || !content.Published || content.ContentType.Alias != "ekmProduct") return;
-        var resolver = scope.ServiceProvider.GetRequiredService<AlgoliaStoreResolver>();
-        var queue = scope.ServiceProvider.GetRequiredService<IAlgoliaProductIndexQueue>();
-        foreach (var configured in _options.Stores.Where(x => x.Alias.Equals(args.StoreAlias, StringComparison.OrdinalIgnoreCase)))
-        {
-            var store = resolver.Resolve(configured.Alias);
-            if (!store.Indexing.Enabled || !store.Indexing.Products) continue;
-            // A product upsert also rebuilds variant records and inherited price ranges.
-            if (!queue.TryEnqueue(new AlgoliaProductIndexJob(AlgoliaProductIndexJobType.Upsert, store.Alias, [content.Key])))
-                throw new InvalidOperationException("Algolia price update queue is full. Reconcile the affected product.");
-        }
+        var queue = scope.ServiceProvider.GetRequiredService<AlgoliaPriceIndexQueue>();
+        if (!queue.TryEnqueue(args.Key, configured.Alias))
+            throw new InvalidOperationException("Algolia price update queue is full. Reconcile the affected product.");
     }
 
     private async Task OnStockChangedAsync(object sender, StockChangedEventArgs args, CancellationToken ct)

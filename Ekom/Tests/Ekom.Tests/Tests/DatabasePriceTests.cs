@@ -265,7 +265,7 @@ public sealed class DatabasePriceTests
     [InlineData(false, true)]
     [InlineData(true, true)]
     [InlineData(true, false)]
-    public void CommittedPricesQueuePublishedProductOrVariantParent(bool variant, bool published)
+    public async Task CommittedPricesQueuePublishedProductOrVariantParent(bool variant, bool published)
     {
         using var fixture = new Fixture();
         var key = Guid.NewGuid();
@@ -293,14 +293,22 @@ public sealed class DatabasePriceTests
             Stores = [new AlgoliaStoreOptions { Alias = "Web" }],
         });
         var queue = new AlgoliaProductIndexQueue(NullLogger<AlgoliaProductIndexQueue>.Instance, options);
+        var priceQueue = new AlgoliaPriceIndexQueue(options);
         using var provider = new ServiceCollection().AddSingleton(service.Object).AddSingleton<IAlgoliaProductIndexQueue>(queue)
-            .AddSingleton(options).AddSingleton<ILogger<AlgoliaStoreResolver>>(NullLogger<AlgoliaStoreResolver>.Instance)
+            .AddSingleton(priceQueue).AddSingleton(options).AddSingleton<ILogger<AlgoliaStoreResolver>>(NullLogger<AlgoliaStoreResolver>.Instance)
             .AddSingleton<AlgoliaStoreResolver>().BuildServiceProvider();
         var events = new AlgoliaEkomEvents(provider.GetRequiredService<IServiceScopeFactory>(), options);
         events.Initialize();
         try
         {
             fixture.Prices.SetPrice(key, "Web", "en-US", 125);
+            fixture.Prices.SetPrice(key, "Web", "en-GB", 100);
+            Assert.Empty(service.Invocations); // No content queries on the price writer.
+            var changes = priceQueue.Drain(100);
+            Assert.Single(changes);
+            using var worker = new AlgoliaPriceIndexWorker(priceQueue, provider.GetRequiredService<IServiceScopeFactory>(),
+                options, NullLogger<AlgoliaPriceIndexWorker>.Instance);
+            await worker.DispatchAsync(changes, default);
             Assert.Equal(published, queue.Reader.TryRead(out var job));
             if (published)
             {
@@ -355,6 +363,144 @@ public sealed class DatabasePriceTests
         Assert.Empty(await fixture.Prices.GetAsync(key));
     }
 
+    [Theory]
+    [InlineData(100, 1)]
+    [InlineData(801, 3)]
+    public async Task PriceSortedCatalogUsesBatchedReadsBeforePaging(int count, int expectedQueries)
+    {
+        using var fixture = new Fixture();
+        var products = Enumerable.Range(1, count).Select(i => (IProduct)new CatalogPriceProduct(
+            Content("100", $"-1,100,{i + 200}"), fixture.Store)).ToList();
+        var context = Configuration.Resolver.GetRequiredService<IHttpContextAccessor>();
+        context.HttpContext = new DefaultHttpContext { RequestServices = Configuration.Resolver };
+        try
+        {
+            using var counter = new PriceQueryCounter(fixture.DatabasePath);
+            var response = await ProductResponse.CreateAsync(products, new ProductQuery
+                { OrderBy = Ekom.Utilities.OrderBy.PriceAsc, Page = 1, PageSize = 10, RaiseEvents = false });
+            Assert.Equal(10, response.Products.Count());
+            Assert.All(response.Products, product => Assert.Equal(100, product.Price.Value));
+            Assert.Equal(expectedQueries, counter.Count);
+        }
+        finally { context.HttpContext = null; }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task PriceFiltersPreloadCandidatesButTitlePagingOnlyPreloadsThePage(bool priceFilter)
+    {
+        using var fixture = new Fixture();
+        var products = Enumerable.Range(0, 801).Select(i => (IProduct)new CatalogPriceProduct(
+            Content("100", $"-1,100,{i + 200}"), fixture.Store)).ToList();
+        var context = Configuration.Resolver.GetRequiredService<IHttpContextAccessor>();
+        context.HttpContext = new DefaultHttpContext { RequestServices = Configuration.Resolver };
+        var metafields = Mock.Get(Configuration.Resolver.GetRequiredService<IMetafieldService>());
+        metafields.Setup(x => x.FilterProducts(It.IsAny<IEnumerable<IProduct>>(), It.IsAny<ProductQuery>()))
+            .Returns((IEnumerable<IProduct> input, ProductQuery _) => input.Where(product => product.OriginalPrice.Value >= 50));
+        try
+        {
+            using var counter = new PriceQueryCounter(fixture.DatabasePath);
+            var query = new ProductQuery { OrderBy = Ekom.Utilities.OrderBy.TitleAsc, Page = 1, PageSize = 10, RaiseEvents = false };
+            if (priceFilter) query.PropertyFilters = new() { ["priceFrom"] = ["50"] };
+            var response = await ProductResponse.CreateAsync(products, query);
+            Assert.Equal(10, response.Products.Count());
+            Assert.Equal(priceFilter ? 3 : 1, counter.Count);
+            _ = products[^1].Prices;
+            Assert.Equal(priceFilter ? 3 : 2, counter.Count);
+        }
+        finally { context.HttpContext = null; }
+    }
+
+    [Fact]
+    public async Task BackgroundScopeReducesWarmReadsAndRetainsFreshnessBetweenOperations()
+    {
+        using var fixture = new Fixture();
+        var product = new Product(Content("100"), fixture.Store);
+        _ = product.Prices;
+        using var counter = new PriceQueryCounter(fixture.DatabasePath);
+        for (var i = 0; i < 20; i++) _ = product.Prices;
+        Assert.Equal(40, counter.Count);
+        counter.Reset();
+        using (fixture.Prices.BeginReadScope())
+        {
+            for (var i = 0; i < 20; i++) Assert.Equal(100, product.Prices[0].BeforeDiscount.Value);
+            Assert.Equal(1, counter.Count);
+            var writer = new Prices(Configuration.Instance, fixture.Factory);
+            await writer.SetPriceAsync(product.Key, "Web", "en-US", 150);
+            Assert.Equal(100, product.Prices[0].BeforeDiscount.Value);
+        }
+        using (fixture.Prices.BeginReadScope())
+        {
+            Assert.Equal(150, product.Prices[0].BeforeDiscount.Value);
+            using (fixture.Prices.BeginReadScope())
+                await fixture.Prices.SetPriceAsync(product.Key, "Web", "en-US", 175);
+            Assert.Equal(175, product.Prices[0].BeforeDiscount.Value);
+        }
+    }
+
+    [Fact]
+    public async Task PreloadIncludesVariantAndParentPricesAndCachesMissingRows()
+    {
+        using var fixture = new Fixture();
+        var product = new CatalogPriceProduct(Content("100"), fixture.Store);
+        var variant = new TestVariant(Content("0", "-1,100,200,300"), fixture.Store, product);
+        product.Variants.Add(variant);
+        fixture.Prices.SetPrice(product.Key, "Web", "en-US", 150);
+        using var scope = fixture.Prices.BeginReadScope();
+        using var counter = new PriceQueryCounter(fixture.DatabasePath);
+        await fixture.Prices.PreloadProductsAsync([product]);
+        for (var i = 0; i < 20; i++) Assert.Equal(150, variant.Prices[0].BeforeDiscount.Value);
+        Assert.Equal(1, counter.Count);
+        await fixture.Prices.PreloadProductsAsync([product]);
+        Assert.Equal(1, counter.Count);
+    }
+
+    [Fact]
+    public async Task CancelledPreloadDoesNotPoisonScope()
+    {
+        using var fixture = new Fixture();
+        var key = Guid.NewGuid();
+        using var scope = fixture.Prices.BeginReadScope();
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fixture.Prices.PreloadAsync([key], cancelled.Token));
+        await fixture.Prices.PreloadAsync([key]);
+        Assert.Empty(fixture.Prices.Get(key));
+    }
+
+    private sealed class CatalogPriceProduct(UmbracoContent content, IStore store) : Product(content, store)
+    {
+        public List<IVariant> Variants { get; } = new();
+        public override IEnumerable<IVariant> AllVariants => Variants;
+        public override IVariant? PrimaryVariant => Variants.FirstOrDefault();
+    }
+
+    private sealed class PriceQueryCounter : IDisposable
+    {
+        private readonly Action<LinqToDB.Data.TraceInfo> _previous = LinqToDB.Data.DataConnection.DefaultOnTraceConnection;
+        private readonly System.Diagnostics.TraceLevel _level = LinqToDB.Data.DataConnection.TraceSwitch.Level;
+        private int _count;
+        public int Count => _count;
+        public void Reset() => _count = 0;
+        public PriceQueryCounter(string path)
+        {
+            LinqToDB.Data.DataConnection.TurnTraceSwitchOn(System.Diagnostics.TraceLevel.Info);
+            LinqToDB.Data.DataConnection.DefaultOnTraceConnection = info =>
+            {
+                if (info.TraceInfoStep == LinqToDB.Data.TraceInfoStep.BeforeExecute
+                    && info.DataConnection.ConnectionString?.Contains(path, StringComparison.Ordinal) == true
+                    && info.SqlText?.Contains("EkomPrice", StringComparison.Ordinal) == true)
+                    Interlocked.Increment(ref _count);
+            };
+        }
+        public void Dispose()
+        {
+            LinqToDB.Data.DataConnection.DefaultOnTraceConnection = _previous;
+            LinqToDB.Data.DataConnection.TurnTraceSwitchOn(_level);
+        }
+    }
+
     private static UmbracoContent Content(string price, string path = "-1,100,200")
         => new(new Dictionary<string, string>(), new Dictionary<string, string>
         {
@@ -376,6 +522,7 @@ public sealed class DatabasePriceTests
         private readonly string _path = Path.Combine(Path.GetTempPath(), $"ekom-prices-{Guid.NewGuid():N}.db");
         private readonly ConfigurationScope _configuration;
         private readonly MemoryCache _memory = new(new MemoryCacheOptions());
+        public string DatabasePath => _path;
         public int CacheCount => _memory.Count;
         public DatabaseFactory Factory { get; }
         public Prices Prices { get; }
@@ -413,6 +560,7 @@ public sealed class DatabasePriceTests
                 addServices: services =>
                 {
                     services.AddSingleton(Factory);
+                    services.AddSingleton(Mock.Of<IMetafieldService>());
                     services.AddSingleton<Prices>();
                     var stockCache = new Mock<IBaseCache<StockData>>();
                     stockCache.SetupGet(x => x.Cache).Returns(new ConcurrentDictionary<Guid, StockData>());

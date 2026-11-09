@@ -140,3 +140,46 @@ test('reloading the same document during a save does not leave the editor disabl
   assert.equal(editor.saving, false);
   assert.equal(editor.getPrice('Web', 'en-US'), 150);
 });
+
+
+test('clearing workspace identity blocks saves and ignores stale URL fallback', async () => {
+  const { editor, requests } = fixture();
+  editor.getDocumentIdFromUrl = () => 'document-key';
+  loadFixture(editor, () => []);
+  await editor.loadStores();
+  editor.updateDocumentId(null);
+  editor.value = { Web: [{ Currency: 'en-US', Price: 75 }] };
+  await editor.savePrice('Web', 'en-US', '80');
+  assert.equal(editor.documentId, '');
+  assert.equal(requests.length, 0);
+  assert.match(editor.message, /Save the document/);
+  editor.updateDocumentId('new-document');
+  await editor.loadStores();
+  await editor.savePrice('Web', 'en-US', '80');
+  assert.match(requests[0].url, /Prices\/new-document\//);
+});
+
+test('clearing identity invalidates a pending save response', async () => {
+  const { editor, defer } = fixture();
+  loadFixture(editor, () => []);
+  await editor.loadStores();
+  const finish = defer();
+  const pending = editor.savePrice('Web', 'en-US', '150');
+  editor.updateDocumentId(undefined);
+  editor.value = { Web: [{ Currency: 'en-US', Price: 75 }] };
+  finish();
+  await pending;
+  assert.equal(editor.getPrice('Web', 'en-US'), 75);
+  assert.equal(editor.documentId, '');
+});
+
+
+test('initial node fallback received before identity survives workspace initialization', async () => {
+  const { editor } = fixture();
+  editor.documentId = '';
+  editor.value = { Web: [{ Currency: 'en-US', Price: 75 }] };
+  loadFixture(editor, () => []);
+  editor.updateDocumentId('first-document');
+  await editor.loadStores();
+  assert.equal(editor.getPrice('Web', 'en-US'), 75);
+});
