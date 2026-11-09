@@ -60,8 +60,9 @@ test('most sold table renders API productCount and total, including zero values'
     HTMLElement: class {}, customElements: { define() {} },
   });
   const view = new analyticsExports.EkomAnalyticsSectionViewElement();
-  view.mostSoldProducts = { products: [{ title: 'Product', sku: 'SKU', productCount: 4, total: 37.5 }], totalPages: 1 };
+  view.mostSoldProducts = { products: [{ title: 'Product', variantTitle: 'Small <Blue>', sku: 'SKU', productCount: 4, total: 37.5 }], totalPages: 1 };
   let html = view.renderMostSoldProducts();
+  assert.ok(html.includes('Product<span class="analytics-variant-title">— Small &lt;Blue&gt;</span>'));
   assert.ok(html.includes('>4</div>'));
   assert.ok(html.includes('>37.50</div>'));
   view.mostSoldProducts.products[0] = { productCount: 0, total: 0 };

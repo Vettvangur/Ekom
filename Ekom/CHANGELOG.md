@@ -10,6 +10,8 @@
 
 ### Bug Fixes
 
+* **manager:** show variant titles and separate variant totals in Most Sold Products; improve the on-demand load panel and progress state.
+
 * **manager:** fix customer search inside backoffice forms and align Analytics with the Customers gray background, white cards, spacing and table styling.
 
 * **manager:** export the Customers view constructor required by the Umbraco 17/18 extension loader so the Customers tab opens correctly.
