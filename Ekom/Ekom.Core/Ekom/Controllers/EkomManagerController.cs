@@ -840,7 +840,7 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("charts")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> GetChartsData(DateTime start, DateTime end, string store, string orderStatus, CancellationToken ct = default)
+    public async Task<IActionResult> GetChartsData(DateTime start, DateTime end, string store, string orderStatus, [FromServices] CustomerRepository customers, CancellationToken ct = default)
     {
         if (!CanAccessStore(store))
         {
@@ -853,7 +853,9 @@ public class EkomManagerController : ControllerBase
         }
 
         var aggregates = await _repo.GetChartAggregatesAsync(start, end, store, orderStatus, ct).ConfigureAwait(false);
-        return Ok(BuildChartData(start, end, orderStatus, aggregates));
+        var chart = BuildChartData(start, end, orderStatus, aggregates);
+        chart.CustomerInsights = await customers.GetAnalyticsAsync(store, start, end, orderStatus, ct).ConfigureAwait(false);
+        return Ok(chart);
     }
 
     internal static ChartData BuildChartData(DateTime start, DateTime end, string orderStatus, IReadOnlyList<ChartAggregateRow> aggregates)
@@ -1052,6 +1054,7 @@ public class EkomManagerController : ControllerBase
 
     public class ChartData
     {
+        public CustomerAnalytics? CustomerInsights { get; set; }
         public string DateBasis { get; set; } = "CreateDate";
         public string? Currency { get; set; }
         public bool MixedCurrencies { get; set; }

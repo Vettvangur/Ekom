@@ -24,6 +24,11 @@ public sealed class CustomerRepository(DatabaseFactory databaseFactory, IOptions
         ? $"EkomCustomerKey({column})"
         : $"UPPER(LTRIM(RTRIM(COALESCE({column}, ''))) COLLATE Latin1_General_100_CI_AS) COLLATE Latin1_General_100_BIN2";
 
+    // Search display fields directly; identity normalization is only for customer grouping.
+    private string SearchColumn(string column) => databaseFactory.IsSqlite
+        ? $"instr(EkomCustomerKey(Q.{column}), @normalizedQuery) > 0"
+        : $"CHARINDEX(@query, COALESCE(Q.{column}, '') COLLATE Latin1_General_100_CI_AS) > 0";
+
     private DbContext OpenDatabase()
     {
         var db = databaseFactory.GetDatabase();
@@ -67,8 +72,44 @@ public sealed class CustomerRepository(DatabaseFactory databaseFactory, IOptions
  AND (@status IN ('CompletedOrders','AllOrders','') OR OrderStatusCol = @status))
  AND (@segment = 'all' OR (@segment = 'new' AND G.Orders = 1) OR (@segment = 'returning' AND G.Orders > 1))
  AND (@query = '' OR EXISTS (SELECT 1 FROM Q WHERE Q.[Identity] = G.[Identity] AND
- ({NormalizeColumn("CustomerName")} LIKE @pattern ESCAPE '~' OR {NormalizeColumn("CustomerEmail")} LIKE @pattern ESCAPE '~' OR {NormalizeColumn("CustomerUsername")} LIKE @pattern ESCAPE '~')))
+ ({SearchColumn("CustomerName")} OR {SearchColumn("CustomerEmail")} OR {SearchColumn("CustomerUsername")})))
 ) ";
+    }
+
+    public async Task<CustomerAnalytics> GetAnalyticsAsync(string store, DateTime start, DateTime end, string status, CancellationToken ct = default)
+    {
+        string date = status is "ReadyForDispatch" or "Dispatched" ? "PaidDate" : "CreateDate";
+        string cte = $@"WITH History AS (
+ SELECT ReferenceId, CreateDate, PaidDate, TotalAmount, OrderStatusCol, {Key} AS CustomerIdentity,
+ ROW_NUMBER() OVER (PARTITION BY {Key} ORDER BY COALESCE(PaidDate, CreateDate), ReferenceId) AS PurchaseNumber
+ FROM EkomOrders WHERE StoreAlias = @store AND {Qualified}
+), Selected AS (
+ SELECT * FROM History WHERE {date} >= @start AND {date} < @end
+ AND (@status IN ('CompletedOrders','AllOrders','') OR OrderStatusCol = @status)
+) ";
+        var args = new { store, start = start.Date, end = end.Date.AddDays(1), status };
+        await using var db = OpenDatabase();
+        var rows = await db.QueryToListAsync<CustomerAnalytics>(cte + @"
+SELECT COUNT(DISTINCT NULLIF(CustomerIdentity, '')) AS UniqueCustomers,
+ COUNT(DISTINCT CASE WHEN CustomerIdentity <> '' AND PurchaseNumber = 1 THEN CustomerIdentity END) AS NewCustomers,
+ COUNT(DISTINCT CASE WHEN CustomerIdentity <> '' AND PurchaseNumber > 1 THEN CustomerIdentity END) AS ReturningCustomers,
+ COALESCE(SUM(CASE WHEN CustomerIdentity <> '' AND PurchaseNumber = 1 THEN 1 ELSE 0 END),0) AS FirstOrders,
+ COALESCE(SUM(CASE WHEN CustomerIdentity <> '' AND PurchaseNumber > 1 THEN 1 ELSE 0 END),0) AS RepeatOrders,
+ COALESCE(SUM(CASE WHEN CustomerIdentity <> '' AND PurchaseNumber = 1 THEN TotalAmount ELSE 0 END),0) AS FirstOrderAmount,
+ COALESCE(SUM(CASE WHEN CustomerIdentity <> '' AND PurchaseNumber > 1 THEN TotalAmount ELSE 0 END),0) AS RepeatOrderAmount,
+ COALESCE(SUM(CASE WHEN CustomerIdentity = '' THEN 1 ELSE 0 END),0) AS MissingIdentifiers
+FROM Selected", ct, args).ConfigureAwait(false);
+        var result = rows[0];
+        result.IdentityField = IdentityField;
+        string weekday = databaseFactory.IsSqlite ? "(CAST(strftime('%w', CreateDate) AS INTEGER) + 6) % 7" : "((DATEDIFF(day, '19000101', CreateDate) % 7) + 7) % 7";
+        string hour = databaseFactory.IsSqlite ? "CAST(strftime('%H', CreateDate) AS INTEGER)" : "DATEPART(hour, CreateDate)";
+        // No historical ranking is needed for the time-of-order breakdown.
+        result.OrderTimes = await db.QueryToListAsync<CustomerOrderTime>($@"
+SELECT {weekday} AS Weekday, {hour} AS Hour, COUNT(*) AS Orders FROM EkomOrders
+WHERE StoreAlias = @store AND {Qualified} AND {date} >= @start AND {date} < @end
+AND (@status IN ('CompletedOrders','AllOrders','') OR OrderStatusCol = @status)
+GROUP BY {weekday}, {hour}", ct, args).ConfigureAwait(false);
+        return result;
     }
 
     private static string Sort(string sort) => sort switch
@@ -109,7 +150,7 @@ SELECT S.[Identity], S.Orders, S.FirstOrder, S.LastOrder,
     }
 
     internal static object Arguments(string store, DateTime start, DateTime end, string status, string query, string segment, int page, int pageSize)
-        => new { store, start = start.Date, end = end.Date.AddDays(1), status, query, pattern = "%" + query.ToUpperInvariant().Replace("~", "~~", StringComparison.Ordinal).Replace("%", "~%", StringComparison.Ordinal).Replace("_", "~_", StringComparison.Ordinal).Replace("[", "~[", StringComparison.Ordinal) + "%", segment, take = pageSize, skip = (page - 1) * pageSize };
+        => new { store, start = start.Date, end = end.Date.AddDays(1), status, query = query.Trim(), normalizedQuery = query.Trim().ToUpperInvariant(), segment, take = pageSize, skip = (page - 1) * pageSize };
 
     private async Task<List<CustomerSpend>> SpendAsync(DataConnection db, string store, string identity, CancellationToken ct)
         => await db.QueryToListAsync<CustomerSpend>($"SELECT Currency, SUM(TotalAmount) AS Total, COUNT(*) AS Orders FROM EkomOrders WHERE StoreAlias = @store AND {Key} = @identity AND {Qualified} GROUP BY Currency", ct, new { store, identity }).ConfigureAwait(false);

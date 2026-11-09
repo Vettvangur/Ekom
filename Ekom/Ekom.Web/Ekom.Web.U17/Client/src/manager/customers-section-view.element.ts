@@ -21,9 +21,16 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
   private other = false;
   private classic = false;
   private opener?: string;
+  private readonly dismissOnEscape = (event: KeyboardEvent): void => {
+    if (!this.detail || event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.close();
+  };
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.ownerDocument?.addEventListener('keydown', this.dismissOnEscape, true);
     this.classic = this.hasAttribute('classic');
     if (this.classic) {
       for (const field of ['store', 'dateFrom', 'dateTo', 'orderStatus'] as const) {
@@ -35,6 +42,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
   }
 
   override disconnectedCallback(): void {
+    this.ownerDocument?.removeEventListener('keydown', this.dismissOnEscape, true);
     this.request++;
     this.detailRequest++;
     super.disconnectedCallback();
@@ -222,6 +230,9 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
     this.querySelector('[data-reload]')?.addEventListener('click', () => void this.load());
     this.querySelector('[data-export]')?.addEventListener('click', () => void this.export());
     this.querySelector('[data-close]')?.addEventListener('click', () => this.close());
+    this.querySelector('.customer-overlay')?.addEventListener('click', event => {
+      if (event.target === event.currentTarget) this.close();
+    });
     this.querySelector('[data-other]')?.addEventListener('change', () => { this.other = !this.other; if (this.detail) void this.open(this.detail.customer.identity); });
     this.querySelectorAll<HTMLButtonElement>('[data-customer]').forEach(b => b.addEventListener('click', () => { this.other=false; void this.open(b.dataset.customer!); }));
     this.querySelectorAll<HTMLButtonElement>('[data-page]').forEach(b => b.addEventListener('click', () => { this.page=Number(b.dataset.page); void this.load(); }));

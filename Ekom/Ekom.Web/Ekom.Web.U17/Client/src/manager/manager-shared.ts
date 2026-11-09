@@ -72,7 +72,15 @@ export type ChartSeries = {
   points: ChartPoint[];
 };
 
+export type CustomerAnalytics = {
+  uniqueCustomers: number; newCustomers: number; returningCustomers: number;
+  returningCustomerRate: number | null; firstOrders: number; repeatOrders: number;
+  firstOrderAmount: number; repeatOrderAmount: number; missingIdentifiers: number; identityField: string;
+  orderTimes: Array<{ weekday: number; hour: number; orders: number }>;
+};
+
 export type ChartData = {
+  customerInsights?: CustomerAnalytics;
   dateBasis?: string;
   currency?: string;
   mixedCurrencies?: boolean;

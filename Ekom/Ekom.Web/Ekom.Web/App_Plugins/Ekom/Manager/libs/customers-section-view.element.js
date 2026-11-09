@@ -1,15 +1,15 @@
-var _ = Object.defineProperty;
-var O = (s, r, e) => r in s ? _(s, r, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[r] = e;
-var l = (s, r, e) => O(s, typeof r != "symbol" ? r + "" : r, e);
-const $ = (s) => class extends s {
+var O = Object.defineProperty;
+var $ = (s, a, e) => a in s ? O(s, a, { enumerable: !0, configurable: !0, writable: !0, value: e }) : s[a] = e;
+var n = (s, a, e) => $(s, typeof a != "symbol" ? a + "" : a, e);
+const S = (s) => class extends s {
   connectedCallback() {
   }
   disconnectedCallback() {
   }
-}, w = /* @__PURE__ */ new Date(), S = new Date(w.getFullYear(), 0, 1), d = {
+}, _ = /* @__PURE__ */ new Date(), L = new Date(_.getFullYear(), 0, 1), d = {
   filters: {
-    dateFrom: v(S),
-    dateTo: v(w),
+    dateFrom: w(L),
+    dateTo: w(_),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
@@ -34,20 +34,20 @@ class p {
   async config() {
     return this.getJson("/ekom/backoffice/Config");
   }
-  async searchOrders(r, e, t = 20) {
+  async searchOrders(a, e, t = 20) {
     return this.getJson("/ekom/manager/SearchOrders", {
-      ...r,
-      start: r.dateFrom,
-      end: r.dateTo,
+      ...a,
+      start: a.dateFrom,
+      end: a.dateTo,
       page: e,
       pageSize: t
     });
   }
-  async exportOrders(r, e, t) {
+  async exportOrders(a, e, t) {
     return this.getBlob("/ekom/manager/ExportOrders", {
-      ...r,
-      start: r.dateFrom,
-      end: r.dateTo,
+      ...a,
+      start: a.dateFrom,
+      end: a.dateTo,
       page: 1,
       pageSize: e,
       includeOrderLines: t
@@ -59,38 +59,38 @@ class p {
   async stores() {
     return this.getJson("/ekom/manager/stores");
   }
-  async paymentProviders(r) {
-    return this.getJson(`/ekom/manager/paymentproviders/${encodeURIComponent(r)}`);
+  async paymentProviders(a) {
+    return this.getJson(`/ekom/manager/paymentproviders/${encodeURIComponent(a)}`);
   }
-  async shippingProviders(r) {
-    return this.getJson(`/ekom/manager/shippingproviders/${encodeURIComponent(r)}`);
+  async shippingProviders(a) {
+    return this.getJson(`/ekom/manager/shippingproviders/${encodeURIComponent(a)}`);
   }
-  async orderInfo(r) {
-    return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(r)}`);
+  async orderInfo(a) {
+    return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(a)}`);
   }
-  async orderLogs(r) {
-    return this.getJson(`/ekom/manager/OrderLogs/${encodeURIComponent(r)}`);
+  async orderLogs(a) {
+    return this.getJson(`/ekom/manager/OrderLogs/${encodeURIComponent(a)}`);
   }
-  async orderActions(r) {
-    return this.getJson(`/ekom/manager/OrderActions/${encodeURIComponent(r)}`);
+  async orderActions(a) {
+    return this.getJson(`/ekom/manager/OrderActions/${encodeURIComponent(a)}`);
   }
-  async orderLockStatus(r) {
-    return this.getJson(`/ekom/manager/orderLockStatus/${encodeURIComponent(r)}`);
+  async orderLockStatus(a) {
+    return this.getJson(`/ekom/manager/orderLockStatus/${encodeURIComponent(a)}`);
   }
-  async releaseOrderLock(r, e) {
-    return this.postBody(`/ekom/manager/releaseOrderLock/${encodeURIComponent(r)}`, { releaseToken: e });
+  async releaseOrderLock(a, e) {
+    return this.postBody(`/ekom/manager/releaseOrderLock/${encodeURIComponent(a)}`, { releaseToken: e });
   }
-  async giftcardRecovery(r) {
-    return this.getJson(`/ekom/manager/giftcardRecovery/${encodeURIComponent(r)}`);
+  async giftcardRecovery(a) {
+    return this.getJson(`/ekom/manager/giftcardRecovery/${encodeURIComponent(a)}`);
   }
-  async releaseGiftcardRecovery(r, e, t, a) {
-    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(r)}/release`, { attemptId: e, claimId: t, token: a });
+  async releaseGiftcardRecovery(a, e, t, r) {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(a)}/release`, { attemptId: e, claimId: t, token: r });
   }
-  async reconcileGiftcardRecovery(r, e, t) {
-    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(r)}/reconcile`, { attemptId: e, token: t });
+  async reconcileGiftcardRecovery(a, e, t) {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(a)}/reconcile`, { attemptId: e, token: t });
   }
-  async executeOrderAction(r, e) {
-    const t = await fetch(`/ekom/manager/OrderActions/${encodeURIComponent(r)}/${encodeURIComponent(e)}`, {
+  async executeOrderAction(a, e) {
+    const t = await fetch(`/ekom/manager/OrderActions/${encodeURIComponent(a)}/${encodeURIComponent(e)}`, {
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json, application/octet-stream" }
@@ -99,20 +99,20 @@ class p {
       throw await p.createError(t, "Order action failed.");
     return t;
   }
-  async changeOrderStatus(r, e, t) {
-    return this.postJson("/ekom/manager/changeOrderStatus", { orderId: r, orderStatus: e, notify: t });
+  async changeOrderStatus(a, e, t) {
+    return this.postJson("/ekom/manager/changeOrderStatus", { orderId: a, orderStatus: e, notify: t });
   }
-  async updateCustomerInformation(r, e, t) {
-    return this.postBody("/ekom/manager/UpdateCustomerInformation", { orderId: r, customer: e, shipping: t });
+  async updateCustomerInformation(a, e, t) {
+    return this.postBody("/ekom/manager/UpdateCustomerInformation", { orderId: a, customer: e, shipping: t });
   }
-  async addOrderLine(r, e, t, a) {
-    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(r)}/OrderLines`, { productId: e, variantId: t, quantity: a });
+  async addOrderLine(a, e, t, r) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(a)}/OrderLines`, { productId: e, variantId: t, quantity: r });
   }
-  async updateShippingProvider(r, e, t) {
-    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(r)}/ShippingProvider`, { providerId: e, customData: t });
+  async updateShippingProvider(a, e, t) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(a)}/ShippingProvider`, { providerId: e, customData: t });
   }
-  async removeOrderLine(r, e) {
-    const t = await fetch(`/ekom/manager/Order/${encodeURIComponent(r)}/OrderLines/${encodeURIComponent(e)}`, {
+  async removeOrderLine(a, e) {
+    const t = await fetch(`/ekom/manager/Order/${encodeURIComponent(a)}/OrderLines/${encodeURIComponent(e)}`, {
       method: "DELETE",
       credentials: "same-origin",
       headers: { Accept: "application/json" }
@@ -121,36 +121,36 @@ class p {
       throw await p.createError(t, "Error removing order line.");
     return t.json();
   }
-  async charts(r, e) {
+  async charts(a, e) {
     return this.getJson("/ekom/manager/charts", {
-      start: r.dateFrom,
-      end: r.dateTo,
-      orderStatus: r.orderStatus,
-      store: r.store
+      start: a.dateFrom,
+      end: a.dateTo,
+      orderStatus: a.orderStatus,
+      store: a.store
     }, e);
   }
-  async mostSoldProducts(r, e, t = 20, a) {
+  async mostSoldProducts(a, e, t = 20, r) {
     return this.getJson("/ekom/manager/MostSoldProducts", {
-      start: r.dateFrom,
-      end: r.dateTo,
-      orderStatus: r.orderStatus,
-      store: r.store,
+      start: a.dateFrom,
+      end: a.dateTo,
+      orderStatus: a.orderStatus,
+      store: a.store,
       page: e,
       pageSize: t
-    }, a);
+    }, r);
   }
-  async getJson(r, e, t) {
-    const a = await fetch(r + b(e), {
+  async getJson(a, e, t) {
+    const r = await fetch(a + b(e), {
       credentials: "same-origin",
       signal: t,
       headers: { Accept: "application/json" }
     });
-    if (!a.ok)
-      throw await p.createError(a, "Request failed.");
-    return a.json();
+    if (!r.ok)
+      throw await p.createError(r, "Request failed.");
+    return r.json();
   }
-  async getBlob(r, e) {
-    const t = await fetch(r + b(e), {
+  async getBlob(a, e) {
+    const t = await fetch(a + b(e), {
       credentials: "same-origin",
       headers: { Accept: "text/csv, application/octet-stream" }
     });
@@ -158,8 +158,8 @@ class p {
       throw await p.createError(t, "Request failed.");
     return t.blob();
   }
-  async postJson(r, e) {
-    const t = await fetch(r + b(e), {
+  async postJson(a, e) {
+    const t = await fetch(a + b(e), {
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json" }
@@ -168,8 +168,8 @@ class p {
       throw await p.createError(t, "Request failed.");
     return t.json();
   }
-  async postBody(r, e) {
-    const t = await fetch(r, {
+  async postBody(a, e) {
+    const t = await fetch(a, {
       method: "POST",
       credentials: "same-origin",
       headers: {
@@ -182,38 +182,38 @@ class p {
       throw await p.createError(t, "Request failed.");
     return t.json();
   }
-  static async createError(r, e) {
-    const t = await r.text();
-    let a = t || e;
+  static async createError(a, e) {
+    const t = await a.text();
+    let r = t || e;
     try {
-      a = JSON.parse(t).message || a;
+      r = JSON.parse(t).message || r;
     } catch {
     }
-    return new Error(a || `${e} Status ${r.status}.`);
+    return new Error(r || `${e} Status ${a.status}.`);
   }
 }
 function b(s) {
   if (!s)
     return "";
-  const r = new URLSearchParams();
-  for (const [t, a] of Object.entries(s))
-    r.set(t, a == null ? "" : String(a));
-  const e = r.toString();
+  const a = new URLSearchParams();
+  for (const [t, r] of Object.entries(s))
+    a.set(t, r == null ? "" : String(r));
+  const e = a.toString();
   return e ? `?${e}` : "";
 }
-function v(s) {
-  const r = String(s.getMonth() + 1).padStart(2, "0"), e = String(s.getDate()).padStart(2, "0");
-  return `${s.getFullYear()}-${r}-${e}`;
+function w(s) {
+  const a = String(s.getMonth() + 1).padStart(2, "0"), e = String(s.getDate()).padStart(2, "0");
+  return `${s.getFullYear()}-${a}-${e}`;
 }
 function i(s) {
   return String(s ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-const L = `
+const C = `
   .ekmOrderCustomData { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; padding: 14px 16px; border: 1px solid #e1e3e8; border-radius: 12px; }
   .ekmOrderCustomData__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 7px 12px; border: 1px solid #e1e3e8; border-radius: 8px; background: #f6f7f9; line-height: 1.5; break-inside: avoid; }
   .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
   .ekmOrderCustomData__value { margin: 0; min-width: 0; color: #252830; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
-`, C = `
+`, R = `
 .ekmOrderLineProduct { display: flex; align-items: flex-start; gap: 14px; min-width: 0; width: 100%; }
 .ekmOrderLineProduct__details { min-width: 0; overflow-wrap: anywhere; }
 .ekmOrderLineProduct__details > span:first-child, .ekmOrderLineProduct__details > div:first-child { font-weight: 600; }
@@ -225,7 +225,7 @@ const L = `
 .ekmOrderLineThumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f6f6f8; }
 .ekmOrderLineThumbnail img[hidden] { display: none; }
 
-  ${L}
+  ${C}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -366,34 +366,39 @@ const L = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-class R extends $(HTMLElement) {
+class E extends S(HTMLElement) {
   constructor() {
     super(...arguments);
-    l(this, "api", new p());
-    l(this, "result");
-    l(this, "detail");
-    l(this, "query", "");
-    l(this, "segment", "all");
-    l(this, "sort", "newest");
-    l(this, "page", 1);
-    l(this, "busy", !1);
-    l(this, "error", "");
-    l(this, "request", 0);
-    l(this, "detailRequest", 0);
-    l(this, "other", !1);
-    l(this, "classic", !1);
-    l(this, "opener");
+    n(this, "api", new p());
+    n(this, "result");
+    n(this, "detail");
+    n(this, "query", "");
+    n(this, "segment", "all");
+    n(this, "sort", "newest");
+    n(this, "page", 1);
+    n(this, "busy", !1);
+    n(this, "error", "");
+    n(this, "request", 0);
+    n(this, "detailRequest", 0);
+    n(this, "other", !1);
+    n(this, "classic", !1);
+    n(this, "opener");
+    n(this, "dismissOnEscape", (e) => {
+      !this.detail || e.key !== "Escape" || (e.preventDefault(), e.stopPropagation(), this.close());
+    });
   }
   connectedCallback() {
-    if (super.connectedCallback(), this.classic = this.hasAttribute("classic"), this.classic)
-      for (const e of ["store", "dateFrom", "dateTo", "orderStatus"]) {
-        const t = this.getAttribute(e.toLowerCase());
-        t && (d.filters[e] = t);
+    var e;
+    if (super.connectedCallback(), (e = this.ownerDocument) == null || e.addEventListener("keydown", this.dismissOnEscape, !0), this.classic = this.hasAttribute("classic"), this.classic)
+      for (const t of ["store", "dateFrom", "dateTo", "orderStatus"]) {
+        const r = this.getAttribute(t.toLowerCase());
+        r && (d.filters[t] = r);
       }
     this.initialize();
   }
   disconnectedCallback() {
-    this.request++, this.detailRequest++, super.disconnectedCallback();
+    var e;
+    (e = this.ownerDocument) == null || e.removeEventListener("keydown", this.dismissOnEscape, !0), this.request++, this.detailRequest++, super.disconnectedCallback();
   }
   async initialize() {
     var e;
@@ -409,9 +414,9 @@ class R extends $(HTMLElement) {
     return new URLSearchParams({ store: e.store, start: e.dateFrom, end: e.dateTo, orderStatus: e.orderStatus, query: this.query, segment: this.segment, sort: this.sort, page: String(this.page) });
   }
   async get(e, t) {
-    const a = await fetch(`/ekom/manager/customers${e}?${t}`, { credentials: "same-origin", headers: { Accept: "application/json" } });
-    if (!a.ok) throw new Error("Unable to load customer data. Check the filters and try again.");
-    return a.json();
+    const r = await fetch(`/ekom/manager/customers${e}?${t}`, { credentials: "same-origin", headers: { Accept: "application/json" } });
+    if (!r.ok) throw new Error("Unable to load customer data. Check the filters and try again.");
+    return r.json();
   }
   async load() {
     const e = ++this.request;
@@ -430,15 +435,15 @@ class R extends $(HTMLElement) {
     }
   }
   async open(e, t = 1) {
-    var n;
-    const a = ++this.detailRequest;
+    var l;
+    const r = ++this.detailRequest;
     this.opener = e, this.error = "";
     try {
       const c = await this.get("/detail", new URLSearchParams({ store: d.filters.store, identity: e, page: String(t), other: String(this.other) }));
-      if (a !== this.detailRequest || !this.isConnected) return;
-      this.detail = c, this.render(), (n = this.querySelector("[data-close]")) == null || n.focus();
+      if (r !== this.detailRequest || !this.isConnected) return;
+      this.detail = c, this.render(), (l = this.querySelector("[data-close]")) == null || l.focus();
     } catch (c) {
-      a === this.detailRequest && (this.error = String(c), this.render());
+      r === this.detailRequest && (this.error = String(c), this.render());
     }
   }
   close() {
@@ -450,8 +455,8 @@ class R extends $(HTMLElement) {
     try {
       const e = await fetch(`/ekom/manager/customers/export?${this.params()}`, { credentials: "same-origin" });
       if (!e.ok) throw new Error("Customer export failed.");
-      const t = URL.createObjectURL(await e.blob()), a = document.createElement("a");
-      a.href = t, a.download = "customers.csv", a.click(), setTimeout(() => URL.revokeObjectURL(t), 1e3);
+      const t = URL.createObjectURL(await e.blob()), r = document.createElement("a");
+      r.href = t, r.download = "customers.csv", r.click(), setTimeout(() => URL.revokeObjectURL(t), 1e3);
     } catch (e) {
       this.error = String(e);
     } finally {
@@ -459,15 +464,15 @@ class R extends $(HTMLElement) {
     }
   }
   amount(e, t) {
-    return e.map((a) => {
+    return e.map((r) => {
       var u;
-      const n = (u = d.stores.find((h) => h.alias === d.filters.store)) == null ? void 0 : u.currency;
-      let c = a.currency;
-      !/^[A-Z]{3}$/.test(c) && (n == null ? void 0 : n.currencyValue) === c && (c = n.isoCurrencySymbol || c);
+      const l = (u = d.stores.find((h) => h.alias === d.filters.store)) == null ? void 0 : u.currency;
+      let c = r.currency;
+      !/^[A-Z]{3}$/.test(c) && (l == null ? void 0 : l.currencyValue) === c && (c = l.isoCurrencySymbol || c);
       try {
-        return i(new Intl.NumberFormat(void 0, { style: "currency", currency: c }).format(a[t]));
+        return i(new Intl.NumberFormat(void 0, { style: "currency", currency: c }).format(r[t]));
       } catch {
-        return `${i(a[t].toLocaleString(void 0, { maximumFractionDigits: 2 }))} ${i(a.currency)}`;
+        return `${i(r[t].toLocaleString(void 0, { maximumFractionDigits: 2 }))} ${i(r.currency)}`;
       }
     }).join("<br>") || "—";
   }
@@ -482,7 +487,7 @@ class R extends $(HTMLElement) {
   }
   render() {
     const e = d.filters, t = this.result;
-    this.innerHTML = `<style>${C}
+    this.innerHTML = `<style>${R}
       ekom-customers-section-view { display:block; color:var(--uui-color-text,#20232e) }
       .customers { padding:24px; background:var(--uui-color-background,#f3f4f7); min-height:80vh }
       .customer-cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0 }
@@ -513,7 +518,7 @@ class R extends $(HTMLElement) {
       @media(max-width:800px) { .customer-detail-grid { grid-template-columns:1fr } .customers { padding:12px } }
     </style><section class="customers" aria-busy="${this.busy}">
       <div class="customer-toolbar">
-        <label>Store<select data-filter="store">${d.stores.map((a) => `<option value="${i(a.alias)}" ${a.alias === e.store ? "selected" : ""}>${i(a.title)}</option>`).join("")}</select></label>
+        <label>Store<select data-filter="store">${d.stores.map((r) => `<option value="${i(r.alias)}" ${r.alias === e.store ? "selected" : ""}>${i(r.title)}</option>`).join("")}</select></label>
         <label>Date From<input type="date" data-filter="dateFrom" value="${i(e.dateFrom)}"></label>
         <label>Date To<input type="date" data-filter="dateTo" value="${i(e.dateTo)}"></label>
         <button data-reload ${this.busy ? "disabled" : ""}>Refresh</button>
@@ -526,11 +531,11 @@ class R extends $(HTMLElement) {
       <div class="customer-panel"><div class="customer-toolbar" role="search">
         <label>Search<input name="query" value="${i(this.query)}" placeholder="Name, email or username"></label>
         <button type="button" data-search>Search</button>
-        <label>Customers<select data-segment>${["all", "new", "returning"].map((a) => `<option value="${a}" ${a === this.segment ? "selected" : ""}>${a[0].toUpperCase() + a.slice(1)}</option>`).join("")}</select></label>
-        <label>Sort by<select data-sort>${[["newest", "Newest first order"], ["oldest", "Oldest first order"], ["lastOrder", "Latest order"], ["orders", "Most orders"], ["name", "Name"]].map(([a, n]) => `<option value="${a}" ${a === this.sort ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+        <label>Customers<select data-segment>${["all", "new", "returning"].map((r) => `<option value="${r}" ${r === this.segment ? "selected" : ""}>${r[0].toUpperCase() + r.slice(1)}</option>`).join("")}</select></label>
+        <label>Sort by<select data-sort>${[["newest", "Newest first order"], ["oldest", "Oldest first order"], ["lastOrder", "Latest order"], ["orders", "Most orders"], ["name", "Name"]].map(([r, l]) => `<option value="${r}" ${r === this.sort ? "selected" : ""}>${l}</option>`).join("")}</select></label>
         <button type="button" data-export ${this.busy || !(t != null && t.totals.customers) ? "disabled" : ""}>Export</button>
       </div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
-      ${((t == null ? void 0 : t.customers) || []).map((a) => `<tr><td><button data-customer="${i(a.identity)}">${i(a.name || a.email || a.username || a.identity)}<span class="customer-badge">${a.orders > 1 ? "Returning" : "New"}</span><span class="customer-muted">${i(a.email || a.username || a.identity)}</span></button></td><td>${this.date(a.firstOrder)}</td><td>${a.orders}</td><td>${this.amount(a.spend, "total")}</td><td>${this.amount(a.spend, "averageOrder")}</td><td>${this.date(a.lastOrder)}<span class="customer-muted">${i(a.lastStatus || "")}</span></td><td>${a.daysSinceLastOrder}</td></tr>`).join("") || '<tr><td colspan="7">No customers found.</td></tr>'}
+      ${((t == null ? void 0 : t.customers) || []).map((r) => `<tr><td><button data-customer="${i(r.identity)}">${i(r.name || r.email || r.username || r.identity)}<span class="customer-badge">${r.orders > 1 ? "Returning" : "New"}</span><span class="customer-muted">${i(r.email || r.username || r.identity)}</span></button></td><td>${this.date(r.firstOrder)}</td><td>${r.orders}</td><td>${this.amount(r.spend, "total")}</td><td>${this.amount(r.spend, "averageOrder")}</td><td>${this.date(r.lastOrder)}<span class="customer-muted">${i(r.lastStatus || "")}</span></td><td>${r.daysSinceLastOrder}</td></tr>`).join("") || '<tr><td colspan="7">No customers found.</td></tr>'}
       </tbody></table></div><div class="customer-pagination"><button data-page="${this.page - 1}" ${this.page <= 1 || this.busy ? "disabled" : ""}>Previous</button><span>Page ${this.page} of ${Math.max(1, (t == null ? void 0 : t.totalPages) || 0)}</span><button data-page="${this.page + 1}" ${this.page >= ((t == null ? void 0 : t.totalPages) || 0) || this.busy ? "disabled" : ""}>Next</button></div></div>
       ${this.detail ? this.renderDetail(this.detail) : ""}</section>`, this.bind();
   }
@@ -538,11 +543,11 @@ class R extends $(HTMLElement) {
     const t = e.customer;
     return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" class="customer-dialog"><header class="customer-heading"><div><h2>${i(t.name || t.identity)} <span class="customer-badge">${t.orders > 1 ? "Returning" : "New"}</span></h2><p>${i([t.email, t.username].filter(Boolean).join(" · "))}</p></div><button data-close aria-label="Close customer details">Close</button></header>
       <div class="customer-cards">${this.card("Lifetime spend", this.amount(t.spend, "total"))}${this.card("Orders", String(t.orders))}${this.card("Average order", this.amount(t.spend, "averageOrder"))}${this.card("First order", this.date(t.firstOrder))}${this.card("Days since last order", String(t.daysSinceLastOrder))}${this.card("Average reorder interval (days)", this.number(t.averageReorderDays))}</div>
-      <div class="customer-detail-grid"><div><h3>Orders <small>(${e.count})</small></h3><label><input type="checkbox" data-other ${this.other ? "checked" : ""}> Show other orders (excluded from lifetime metrics)</label><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Order</th><th>Status</th><th>Created</th><th>Paid</th><th>Total</th></tr></thead><tbody>${e.orders.map((a) => `<tr><td><button data-order="${i(a.uniqueId)}">#${i(a.orderNumber || String(a.referenceId))}</button></td><td>${i(a.orderStatusCol)}</td><td>${this.date(a.createDate)}</td><td>${this.date(a.paidDate)}</td><td>${i(a.formattedTotal)}</td></tr>`).join("") || '<tr><td colspan="5">No orders.</td></tr>'}</tbody></table></div><div class="customer-pagination"><button data-detail-page="${e.page - 1}" ${e.page <= 1 ? "disabled" : ""}>Previous</button><span>${e.page} / ${Math.max(1, e.totalPages)}</span><button data-detail-page="${e.page + 1}" ${e.page >= e.totalPages ? "disabled" : ""}>Next</button></div></div>
-      <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${i(e.snapshot.orderNumber)} · ${this.date(e.snapshot.date)}. Historical details, not a current customer profile.</p>${e.snapshot.unavailable ? "<p>Saved details could not be read.</p>" : ""}<dl>${Object.entries(e.snapshot.fields).map(([a, n]) => `<dt>${i(a)}</dt><dd>${i(n)}</dd>`).join("") || "<dd>No additional details recorded.</dd>"}</dl></aside></div></section></div>`;
+      <div class="customer-detail-grid"><div><h3>Orders <small>(${e.count})</small></h3><label><input type="checkbox" data-other ${this.other ? "checked" : ""}> Show other orders (excluded from lifetime metrics)</label><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Order</th><th>Status</th><th>Created</th><th>Paid</th><th>Total</th></tr></thead><tbody>${e.orders.map((r) => `<tr><td><button data-order="${i(r.uniqueId)}">#${i(r.orderNumber || String(r.referenceId))}</button></td><td>${i(r.orderStatusCol)}</td><td>${this.date(r.createDate)}</td><td>${this.date(r.paidDate)}</td><td>${i(r.formattedTotal)}</td></tr>`).join("") || '<tr><td colspan="5">No orders.</td></tr>'}</tbody></table></div><div class="customer-pagination"><button data-detail-page="${e.page - 1}" ${e.page <= 1 ? "disabled" : ""}>Previous</button><span>${e.page} / ${Math.max(1, e.totalPages)}</span><button data-detail-page="${e.page + 1}" ${e.page >= e.totalPages ? "disabled" : ""}>Next</button></div></div>
+      <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${i(e.snapshot.orderNumber)} · ${this.date(e.snapshot.date)}. Historical details, not a current customer profile.</p>${e.snapshot.unavailable ? "<p>Saved details could not be read.</p>" : ""}<dl>${Object.entries(e.snapshot.fields).map(([r, l]) => `<dt>${i(r)}</dt><dd>${i(l)}</dd>`).join("") || "<dd>No additional details recorded.</dd>"}</dl></aside></div></section></div>`;
   }
   bind() {
-    var t, a, n, c, u, h, x, y, k;
+    var t, r, l, c, u, h, x, y, k, v;
     this.querySelectorAll("[data-filter]").forEach((o) => o.addEventListener("change", () => {
       const m = o.dataset.filter;
       d.filters[m] = o.value, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...d.filters } })), this.page = 1, this.load();
@@ -551,13 +556,15 @@ class R extends $(HTMLElement) {
       var o;
       this.query = ((o = this.querySelector("[name=query]")) == null ? void 0 : o.value.trim()) || "", this.page = 1, this.load();
     };
-    (t = this.querySelector("[data-search]")) == null || t.addEventListener("click", e), (a = this.querySelector("[name=query]")) == null || a.addEventListener("keydown", (o) => {
+    (t = this.querySelector("[data-search]")) == null || t.addEventListener("click", e), (r = this.querySelector("[name=query]")) == null || r.addEventListener("keydown", (o) => {
       o.key !== "Enter" || o.isComposing || (o.preventDefault(), o.stopPropagation(), e());
-    }), (n = this.querySelector("[data-segment]")) == null || n.addEventListener("change", (o) => {
+    }), (l = this.querySelector("[data-segment]")) == null || l.addEventListener("change", (o) => {
       this.segment = o.target.value, this.page = 1, this.load();
     }), (c = this.querySelector("[data-sort]")) == null || c.addEventListener("change", (o) => {
       this.sort = o.target.value, this.page = 1, this.load();
-    }), (u = this.querySelector("[data-reload]")) == null || u.addEventListener("click", () => void this.load()), (h = this.querySelector("[data-export]")) == null || h.addEventListener("click", () => void this.export()), (x = this.querySelector("[data-close]")) == null || x.addEventListener("click", () => this.close()), (y = this.querySelector("[data-other]")) == null || y.addEventListener("change", () => {
+    }), (u = this.querySelector("[data-reload]")) == null || u.addEventListener("click", () => void this.load()), (h = this.querySelector("[data-export]")) == null || h.addEventListener("click", () => void this.export()), (x = this.querySelector("[data-close]")) == null || x.addEventListener("click", () => this.close()), (y = this.querySelector(".customer-overlay")) == null || y.addEventListener("click", (o) => {
+      o.target === o.currentTarget && this.close();
+    }), (k = this.querySelector("[data-other]")) == null || k.addEventListener("change", () => {
       this.other = !this.other, this.detail && this.open(this.detail.customer.identity);
     }), this.querySelectorAll("[data-customer]").forEach((o) => o.addEventListener("click", () => {
       this.other = !1, this.open(o.dataset.customer);
@@ -572,15 +579,15 @@ class R extends $(HTMLElement) {
         const m = document.createElement("a");
         m.href = location.pathname.replace(/\/customers\/?$/, "/orders") + "?orderId=" + encodeURIComponent(o.dataset.order || ""), this.appendChild(m), m.click(), m.remove();
       }
-    })), (k = this.querySelector("[role=dialog]")) == null || k.addEventListener("keydown", (o) => {
+    })), (v = this.querySelector("[role=dialog]")) == null || v.addEventListener("keydown", (o) => {
       if (o.key === "Escape" && (o.preventDefault(), this.close()), o.key !== "Tab") return;
       const m = Array.from(this.querySelectorAll("[role=dialog] button:not(:disabled),[role=dialog] input")), g = m[0], f = m[m.length - 1];
       o.shiftKey && document.activeElement === g ? (o.preventDefault(), f == null || f.focus()) : !o.shiftKey && document.activeElement === f && (o.preventDefault(), g == null || g.focus());
     });
   }
 }
-customElements.define("ekom-customers-section-view", R);
+customElements.define("ekom-customers-section-view", E);
 export {
-  R as EkomCustomersSectionViewElement,
-  R as default
+  E as EkomCustomersSectionViewElement,
+  E as default
 };
