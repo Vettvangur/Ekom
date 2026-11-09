@@ -167,6 +167,15 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       .analytics-table th,.analytics-table td {text-align:left;padding:15px 10px;border-bottom:1px solid #e8e9ed;white-space:nowrap}
       .analytics-table th {position:sticky;top:0;background:var(--uui-color-surface,#fff);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#70778a}
       .analytics-main {padding:22px}
+      .analytics-product-prompt {display:flex;flex-wrap:wrap;align-items:center;gap:20px;padding:24px;margin-top:20px;background:var(--uui-color-background,#f3f4f7);border:1px solid #e4e7ec;border-radius:8px}
+      .analytics-product-prompt > div {flex:1;min-width:200px}
+      .analytics-product-prompt h4 {margin:0 0 8px;font-size:15px}
+      .analytics-product-prompt p {margin:4px 0;line-height:1.5}
+      .analytics-products button {font:inherit;padding:10px 16px;border:1px solid #dfe2e8;border-radius:6px;background:var(--uui-color-surface,#fff);color:inherit;cursor:pointer}
+      .analytics-products .analytics-product-primary {background:#25765c;border-color:#25765c;color:#fff;font-weight:600}
+      .analytics-products button:focus-visible {outline:2px solid #25765c;outline-offset:3px}
+      .analytics-product-footer {display:flex;justify-content:flex-end;margin-top:18px}
+      .analytics-variant-title {color:#646b7c;margin-left:8px}
       .analytics-spinner {display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid #dfe2e8;border-top-color:#25765c;border-radius:50%;animation:analytics-spin 1s linear infinite}
       @keyframes analytics-spin {to {transform:rotate(360deg)}}
       @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
@@ -183,9 +192,13 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       ${this.error ? `<p role="alert">${escapeHtml(this.error)}</p>` : ''}
       ${this.loading ? '<p role="status">Loading analytics…</p>' : !f.store ? '<p>No accessible stores.</p>' : ''}
       ${this.chartData ? this.renderAnalytics() : ''}
-      <div class="card analytics-main"><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? 'Hide products' : 'Load product breakdown'}</button></div>
-        <p class="analytics-muted">Fetch the most sold products for the selected store and dates. This may take a minute for larger date ranges. Totals include VAT and discounts, excluding shipping and payment fees.</p>
-        ${this.productsVisible ? `${this.productError ? `<p role="alert">${escapeHtml(this.productError)}</p><button data-product-retry>Retry products</button>` : ''}${this.loadingMostSoldProducts ? '<p role="status"><span class="analytics-spinner" aria-hidden="true"></span>Fetching product breakdown… This may take a minute. You can continue using Analytics.</p>' : this.renderMostSoldProducts()}` : ''}
+      <div class="card analytics-main analytics-products"><h3>Most Sold Products</h3>
+        <p class="analytics-muted">Product and variant sales for the selected store and dates. Totals include VAT and discounts, excluding shipping and payment fees.</p>
+        ${!this.productsVisible ? `<div class="analytics-product-prompt"><div><h4>Explore your best sellers</h4><p>See quantities sold and order totals for each product and variant.</p><p class="analytics-muted">Larger date ranges may take a minute to load.</p></div><button type="button" class="analytics-product-primary" data-products ${!f.store ? 'disabled' : ''}>Load product breakdown</button></div>`
+          : this.loadingMostSoldProducts ? '<div class="analytics-product-prompt" role="status"><span class="analytics-spinner" aria-hidden="true"></span><div><h4>Loading product breakdown</h4><p>This may take a minute. You can continue using Analytics.</p></div></div>'
+          : this.productError ? `<div class="analytics-product-prompt"><p role="alert">${escapeHtml(this.productError)}</p><button type="button" class="analytics-product-primary" data-product-retry>Try again</button></div>`
+          : this.renderMostSoldProducts()}
+        ${this.productsVisible ? '<div class="analytics-product-footer"><button type="button" data-products>Hide product breakdown</button></div>' : ''}
       </div>
     </div></section>`;
     this.bindEvents();
@@ -222,7 +235,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       <div class="umb-table">
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell">Product</div><div class="umb-table-cell">Sku</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Total</div></div></div>
         <div class="umb-table-body">
-          ${this.mostSoldProducts.products.map(product => `<div class="umb-table-row"><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'title', 'productTitle', 'name'))}</div><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'sku', 'productSku'))}</div><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'productCount', 'quantity', 'count'))}</div><div class="umb-table-cell">${escapeHtml(formatAnalyticsAmount(Number(readProductValue(product, 'total')), this.currency))}</div></div>`).join('')}
+          ${this.mostSoldProducts.products.map(product => `<div class="umb-table-row"><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'title', 'productTitle', 'name'))}${product.variantTitle ? `<span class="analytics-variant-title">— ${escapeHtml(product.variantTitle)}</span>` : ''}</div><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'sku', 'productSku'))}</div><div class="umb-table-cell">${escapeHtml(readProductValue(product, 'productCount', 'quantity', 'count'))}</div><div class="umb-table-cell">${escapeHtml(formatAnalyticsAmount(Number(readProductValue(product, 'total')), this.currency))}</div></div>`).join('')}
         </div>
       </div>
       ${this.mostSoldProducts.totalPages > 1 ? this.renderMostSoldProductsPagination() : ''}

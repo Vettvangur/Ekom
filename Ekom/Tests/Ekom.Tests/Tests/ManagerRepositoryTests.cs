@@ -408,6 +408,25 @@ public class ManagerRepositoryTests
         Assert.Equal(2, secondPage.Page);
     }
 
+    [Fact]
+    public async Task MostSoldProducts_SeparatesVariantsAndCombinesSnapshotShapes()
+    {
+        using var database = new OrderDatabase();
+        var small = Guid.NewGuid();
+        database.Add(null, Guid.Empty, 10m, quantity: 2, variantKey: small, variantTitle: "Small");
+        database.Add(null, Guid.Empty, 15m, quantity: 3, variantKey: small, variantTitle: "Small", nestedVariant: true);
+        database.Add(null, Guid.Empty, 20m, quantity: 4, variantKey: Guid.NewGuid(), variantTitle: "Large");
+        database.Add(null, Guid.Empty, 5m, quantity: 1);
+        var result = await database.Repository.MostSoldProductsPaged(database.Date, database.Date, "main", "AllOrders", 1, 20);
+        var products = result.Products.ToArray();
+        Assert.Equal(3, result.Count);
+        Assert.Equal("Small", products[0].VariantTitle);
+        Assert.Equal(5m, products[0].ProductCount);
+        Assert.Equal(25m, products[0].Total);
+        Assert.Equal("Large", products[1].VariantTitle);
+        Assert.Null(products[2].VariantTitle);
+    }
+
     private static Task<OrderListData> SearchAsync(ManagerRepository repository, string? couponCode, string? shippingProvider,
         string pageSize = "30", string paymentProvider = "", string productSku = "", string trackingSource = "", string? giftcardCode = null)
         => repository.SearchOrdersAsync(OrderDatabase.OrderDate, OrderDatabase.OrderDate, "", "main", "AllOrders", paymentProvider,
@@ -485,7 +504,7 @@ public class ManagerRepositoryTests
         public DateTime Date => OrderDate;
 
         public Guid Add(string? coupon, Guid shippingProvider, decimal amount, string? lineCoupon = null, Guid? paymentProvider = null,
-            string[]? giftcardCodes = null, int productId = 1, decimal quantity = 2m)
+            string[]? giftcardCodes = null, int productId = 1, decimal quantity = 2m, Guid? variantKey = null, string? variantTitle = null, bool nestedVariant = false)
         {
             Guid id = Guid.NewGuid();
             using var db = _factory.GetDatabase();
@@ -504,7 +523,7 @@ public class ManagerRepositoryTests
                     ShippingProvider = new { Key = shippingProvider },
                     PaymentProvider = new { Key = paymentProvider },
                     Tracking = new { Source = "email" },
-                    OrderLines = new[] { new { Coupon = lineCoupon, Product = new { Id = productId, SKU = "SKU", Title = "Product" }, Quantity = quantity, Amount = new { Value = amount } } },
+                    OrderLines = new[] { new { Coupon = lineCoupon, Product = new { Id = productId, SKU = "SKU", Title = "Product", VariantGroups = nestedVariant ? new[] { new { Variants = new[] { new { Key = variantKey, Title = variantTitle } } } } : null }, Variant = !nestedVariant && variantKey.HasValue ? new { Key = variantKey, Title = variantTitle } : null, Quantity = quantity, Amount = new { Value = amount } } },
                 }),
             });
             return id;

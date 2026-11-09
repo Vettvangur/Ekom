@@ -420,6 +420,7 @@ ORDER BY {bucketDateExpression}";
             ? new StringBuilder(@"SELECT 
                 MAX(json_extract(OL.value, '$.Product.SKU')) as SKU,
                 MAX(json_extract(OL.value, '$.Product.Title')) as Title,
+                MAX(COALESCE(json_extract(OL.value, '$.Variant.Title'), json_extract(OL.value, '$.Product.VariantGroups[0].Variants[0].Title'))) as VariantTitle,
                 json_extract(OL.value, '$.Product.Id') as Id,
                 SUM(CAST(json_extract(OL.value, '$.Quantity') AS REAL)) AS ProductCount,
                 SUM(COALESCE(CAST(json_extract(OL.value, '$.Amount.Value') AS REAL), 0)) AS Total
@@ -431,6 +432,7 @@ ORDER BY {bucketDateExpression}";
             : new StringBuilder(@"SELECT 
                 MAX(OL.SKU) as SKU,
                 MAX(OL.Title) as Title,
+                MAX(COALESCE(OL.VariantTitle, OL.NestedVariantTitle)) as VariantTitle,
                 OL.Id,
                 SUM(OL.Quantity) AS ProductCount,
                 SUM(COALESCE(OL.Amount, 0)) AS Total
@@ -441,6 +443,10 @@ ORDER BY {bucketDateExpression}";
                 WITH (
                     SKU nvarchar(200) '$.Product.SKU',
                     Title nvarchar(200) '$.Product.Title',
+                    VariantTitle nvarchar(200) '$.Variant.Title',
+                    NestedVariantTitle nvarchar(200) '$.Product.VariantGroups[0].Variants[0].Title',
+                    VariantKey nvarchar(36) '$.Variant.Key',
+                    NestedVariantKey nvarchar(36) '$.Product.VariantGroups[0].Variants[0].Key',
                     Id int '$.Product.Id',
                     Quantity decimal(18, 4) '$.Quantity',
                     Amount decimal(18, 4) '$.Amount.Value'
@@ -452,8 +458,8 @@ ORDER BY {bucketDateExpression}";
         sqlBuilder.Append(whereClause);
 
         sqlBuilder.Append(_databaseFactory.IsSqlite
-            ? " GROUP BY json_extract(OL.value, '$.Product.Id')"
-            : " GROUP BY OL.Id");
+            ? " GROUP BY json_extract(OL.value, '$.Product.Id'), COALESCE(json_extract(OL.value, '$.Variant.Key'), json_extract(OL.value, '$.Product.VariantGroups[0].Variants[0].Key'), json_extract(OL.value, '$.Variant.Title'), json_extract(OL.value, '$.Product.VariantGroups[0].Variants[0].Title'), '')"
+            : " GROUP BY OL.Id, COALESCE(OL.VariantKey, OL.NestedVariantKey, OL.VariantTitle, OL.NestedVariantTitle, '')");
 
         string groupedSql = sqlBuilder.ToString();
 
