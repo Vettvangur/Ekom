@@ -56,6 +56,23 @@ public sealed class Prices
         string propertyAlias = "price", CancellationToken cancellationToken = default)
         => ApplyAsync([new(nodeKey, storeAlias, currency, price, propertyAlias)], cancellationToken);
 
+    /// <summary>Copy node values into missing table rows. Existing overrides are never replaced.</summary>
+    /// <remarks>Supply published raw values to avoid making drafts live. A concurrent insert raises
+    /// PriceConflictException and rolls back this node/property batch; retry after reloading.</remarks>
+    public async Task<int> MigrateNodePricesAsync(Guid nodeKey, string? nodeValue, IReadOnlyList<IStore> stores,
+        string propertyAlias = "price", CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stores);
+        var candidates = PriceHelper.ReadNodePrices(nodeKey, nodeValue, stores, propertyAlias);
+        Validate(candidates);
+        var existing = await GetAsync(nodeKey, propertyAlias, cancellationToken).ConfigureAwait(false);
+        var missing = candidates.Where(change => !existing.Any(row =>
+            row.StoreAlias.Equals(change.StoreAlias.Trim(), StringComparison.OrdinalIgnoreCase)
+            && row.Currency.Equals(change.Currency.Trim(), StringComparison.OrdinalIgnoreCase))).ToList();
+        await ApplyAsync(missing, cancellationToken).ConfigureAwait(false);
+        return missing.Count;
+    }
+
     public void RemovePrice(Guid nodeKey, string storeAlias, string currency, string propertyAlias = "price")
         => Apply([new(nodeKey, storeAlias, currency, null, propertyAlias)]);
 

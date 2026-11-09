@@ -312,6 +312,49 @@ public sealed class DatabasePriceTests
         finally { events.Terminate(); }
     }
 
+    [Theory]
+    [InlineData("100", 1)]
+    [InlineData("[{\"Currency\":\"en-US\",\"Price\":100},{\"Currency\":\"en-GB\",\"Price\":80}]", 2)]
+    [InlineData("{\"Web\":[{\"Currency\":\"en-US\",\"Price\":100}]}", 1)]
+    [InlineData("{\"values\":{\"Web\":[{\"Currency\":\"en-US\",\"Price\":100}]}}", 1)]
+    public async Task MigrationCopiesRawPricesAndCanBeRerun(string raw, int count)
+    {
+        using var fixture = new Fixture();
+        var key = Guid.NewGuid();
+        Assert.Equal(count, await fixture.Prices.MigrateNodePricesAsync(key, raw, [fixture.Store]));
+        Assert.Equal(100, (await fixture.Prices.GetAsync(key)).Single(x => x.Currency == "EN-US").Price);
+        Assert.Equal(0, await fixture.Prices.MigrateNodePricesAsync(key, raw, [fixture.Store]));
+        Assert.Equal(count, (await fixture.Prices.GetAsync(key)).Count);
+    }
+
+    [Fact]
+    public async Task MigrationPreservesExistingOverridesAndVariantZero()
+    {
+        using var fixture = new Fixture();
+        var key = Guid.NewGuid();
+        fixture.Prices.SetPrice(key, "Web", "en-US", 150);
+        const string raw = "[{\"Currency\":\"en-US\",\"Price\":100},{\"Currency\":\"en-GB\",\"Price\":0}]";
+        Assert.Equal(1, await fixture.Prices.MigrateNodePricesAsync(key, raw, [fixture.Store]));
+        var rows = await fixture.Prices.GetAsync(key);
+        Assert.Equal(150, rows.Single(x => x.Currency == "EN-US").Price);
+        Assert.Equal(0, rows.Single(x => x.Currency == "EN-GB").Price);
+        Assert.Equal(1, await fixture.Prices.MigrateNodePricesAsync(key, "90", [fixture.Store], "ekmDiscountPrice"));
+        Assert.Equal(90, Assert.Single(await fixture.Prices.GetAsync(key, "ekmDiscountPrice")).Price);
+    }
+
+    [Fact]
+    public async Task MigrationSkipsMissingValuesAndRejectsInvalidBatch()
+    {
+        using var fixture = new Fixture();
+        var key = Guid.NewGuid();
+        Assert.Equal(0, await fixture.Prices.MigrateNodePricesAsync(key, "", [fixture.Store]));
+        await Assert.ThrowsAnyAsync<System.Text.Json.JsonException>(() =>
+            fixture.Prices.MigrateNodePricesAsync(key, "{invalid", [fixture.Store]));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => fixture.Prices.MigrateNodePricesAsync(key,
+            "[{\"Currency\":\"en-US\",\"Price\":100},{\"Currency\":\"en-GB\",\"Price\":-1}]", [fixture.Store]));
+        Assert.Empty(await fixture.Prices.GetAsync(key));
+    }
+
     private static UmbracoContent Content(string price, string path = "-1,100,200")
         => new(new Dictionary<string, string>(), new Dictionary<string, string>
         {

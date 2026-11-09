@@ -246,3 +246,42 @@ To switch back to node storage without reverting to stale prices:
 3. Verify every affected node was published successfully, then disable `UseDatabasePrices` and restart all application servers. Resume writers in node mode.
 
 `Prices.Get`/`GetAsync` remain available for exporting existing rows when the flag is off. Overrides remain in the table and take effect again if database mode is re-enabled; remove obsolete overrides while database mode is enabled if this is not desired.
+
+
+### Migrating existing node prices without an ERP
+
+Database storage does not require an ERP. Enable `Ekom:UseDatabasePrices` and restart to create the table. Prices continue using node values until an override exists, so enabling the flag alone does not require migration. To populate the table, call `MigrateNodePricesAsync` for each product and variant using its **published raw property value**:
+
+```csharp
+using Ekom.API;
+using Ekom.Models;
+using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Extensions;
+
+public static async Task<int> MigratePublishedPricesAsync(
+    Prices prices,
+    IEnumerable<IPublishedContent> publishedNodes,
+    IReadOnlyList<IStore> stores,
+    CancellationToken cancellationToken = default)
+{
+    var inserted = 0;
+    foreach (var node in publishedNodes)
+    {
+        foreach (var alias in new[] { "price", "ekmDiscountPrice" })
+        {
+            if (!node.HasProperty(alias)) continue;
+            inserted += await prices.MigrateNodePricesAsync(
+                node.Key, node.Value<string>(alias), stores, alias, cancellationToken);
+        }
+    }
+    return inserted;
+}
+```
+
+Run this from a controlled migration job. Supply the published products and variants under the intended catalog root, and the Ekom stores applicable to that catalog. Process a large catalog in pages and record progress. Add any custom price property aliases to the loop. Do not pass calculated storefront prices: those may include discounts, VAT conversion, or inherited parent prices.
+
+The migration copies scalar, currency-array, store-keyed, and `values`-wrapped node formats. Scalars belong to each store's default currency. Missing values and currencies/stores outside the supplied configuration are skipped; review those mappings before migration. Zero is copied as zero, preserving variant inheritance behavior. Existing table overrides are preserved, including prices already edited in the backoffice. Re-running the job only inserts missing overrides.
+
+Each node/property batch is atomic. Validation failures leave that batch unchanged; earlier batches stay committed. A competing insertion raises `PriceConflictException` instead of overwriting the other writer; retry that node/property to skip the newly existing row. Pause price editing during the initial migration for a predictable snapshot. Use published values rather than `IContent` draft values, because table writes are immediately live. No node save or publish is performed, and source node values remain available for rollback.
+
+After migration, prices can be managed entirely through the Ekom Price datatype and variant manager. Table updates issue the normal price-change notifications, including Algolia reindex jobs when configured; allow the indexing queue to drain for large catalogs.

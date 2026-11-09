@@ -4,6 +4,8 @@
 
 ### Features
 
+* **prices:** add repeatable node-to-table migration for published prices without an ERP, preserving existing overrides and supporting legacy price formats.
+
 * **imports:** write imported product and variant prices to `EkomPrice` before content change detection when database prices are enabled; exclude prices from default content hashes so price-only changes do not save or publish nodes.
 
 * **prices:** add opt-in `Ekom:UseDatabasePrices` storage in `EkomPrice`, direct ERP price updates, and database-aware price editors for Umbraco 13, 17, and 18. Node storage remains the default.

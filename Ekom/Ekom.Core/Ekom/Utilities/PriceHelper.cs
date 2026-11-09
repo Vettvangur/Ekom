@@ -5,6 +5,32 @@ namespace Ekom.Utilities;
 
 public static class PriceHelper
 {
+    /// <summary>Read stored node prices, without resolving table overrides or inherited variant prices.</summary>
+    public static IReadOnlyList<PriceMutation> ReadNodePrices(Guid nodeKey, string? nodeValue,
+        IReadOnlyList<IStore> stores, string propertyAlias = "price")
+    {
+        ArgumentNullException.ThrowIfNull(stores);
+        if (nodeKey == Guid.Empty) throw new ArgumentException("A node key is required.", nameof(nodeKey));
+        var result = new List<PriceMutation>();
+        if (string.IsNullOrWhiteSpace(nodeValue)) return result;
+        var text = nodeValue.Trim();
+        if (text[0] is '[' or '{' or '"')
+        {
+            // Do not silently mark malformed JSON as successfully migrated.
+            using var document = System.Text.Json.JsonDocument.Parse(text);
+        }
+        foreach (var store in stores)
+        foreach (var currency in store.Currencies)
+        {
+            var price = NativeDiscountPrice.Read(nodeValue, store.Alias, currency.CurrencyValue,
+                store.Currencies.FirstOrDefault()?.CurrencyValue ?? string.Empty);
+            if (price.HasValue)
+                result.Add(new PriceMutation(nodeKey, store.Alias, currency.CurrencyValue, price.Value,
+                    propertyAlias, CheckExpected: true));
+        }
+        return result;
+    }
+
     /// <summary>Merge table overrides into node JSON, preserving legacy fallback values.</summary>
     public static string Export(string? nodeValue, IReadOnlyList<PriceData> rows, IReadOnlyList<IStore> stores)
     {
