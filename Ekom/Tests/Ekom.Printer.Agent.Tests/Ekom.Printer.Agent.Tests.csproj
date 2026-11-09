@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.64.1" />
+    <PackageReference Include="PDFtoImage" Version="5.4.0" />
+    <ProjectReference Include="..\..\Printing\Ekom.Printer.Agent.Client\Ekom.Printer.Agent.Client.csproj" />
+    <Compile Include="../../Printing/Ekom.Printer.Agent/HtmlDocumentRenderer.cs" Link="Renderer/HtmlDocumentRenderer.cs" />
+  </ItemGroup>
+</Project>

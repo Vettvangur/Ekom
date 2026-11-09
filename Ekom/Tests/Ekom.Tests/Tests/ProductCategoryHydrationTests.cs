@@ -59,9 +59,48 @@ public class ProductCategoryHydrationTests
         }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void OrderedProductUrl_BypassesVisibilityFiltersButNormalLookupStillFilters(bool exists)
+    {
+        var store = CreateStore();
+        var key = Guid.NewGuid();
+        var product = new Mock<IProduct>();
+        product.SetupGet(x => x.Url).Returns("/verslun/previously-purchased/");
+        var cache = new Mock<IPerStoreIndexedCache<IProduct>>();
+        IProduct cachedProduct = product.Object;
+        cache.Setup(x => x.TryGetByKey(store.Alias, key, out cachedProduct)).Returns(exists);
+        using var config = CreateConfigurationScope(store, CreateCategoryCache(store.Alias), cache.Object);
+        var storeInfo = new StoreInfo(Guid.NewGuid(), store.Currency, [store.Currency], "is-IS", store.Alias, true, 0.24m, true);
+        var orderedProduct = new OrderedProduct(
+            "{\"Properties\":{\"__Key\":\"" + key + "\"}}", storeInfo);
+        var filterCalls = 0;
+        ValueTask FilterProducts(ProductEventArgs args, CancellationToken _)
+        {
+            filterCalls++;
+            args.Product = null;
+            return ValueTask.CompletedTask;
+        }
+
+        CatalogEvents.BeforeReturnProductAsync += FilterProducts;
+        try
+        {
+            Assert.Equal(exists ? "/verslun/previously-purchased/" : "", orderedProduct.Url);
+            Assert.Equal(0, filterCalls);
+            Assert.Null(Catalog.Instance.GetProduct(key, store.Alias));
+            Assert.Equal(exists ? 1 : 0, filterCalls);
+        }
+        finally
+        {
+            CatalogEvents.BeforeReturnProductAsync -= FilterProducts;
+        }
+    }
+
     private static ConfigurationScope CreateConfigurationScope(
         IStore store,
-        IPerStoreIndexedCache<ICategory> categoryCache)
+        IPerStoreIndexedCache<ICategory> categoryCache,
+        IPerStoreIndexedCache<IProduct>? productCache = null)
         => new(addServices: services =>
         {
             var storeService = new Mock<IStoreService>();
@@ -73,7 +112,7 @@ public class ProductCategoryHydrationTests
             services.AddSingleton<IStoreService>(storeService.Object);
             services.AddSingleton<IUrlService>(new TestUrlService());
             services.AddSingleton(categoryCache);
-            services.AddSingleton(Mock.Of<IPerStoreIndexedCache<IProduct>>());
+            services.AddSingleton(productCache ?? Mock.Of<IPerStoreIndexedCache<IProduct>>());
             services.AddSingleton(Mock.Of<IPerStoreCache<IProductDiscount>>());
             services.AddSingleton(Mock.Of<IPerStoreIndexedCache<IVariant>>());
             services.AddSingleton(Mock.Of<IPerStoreIndexedCache<IVariantGroup>>());

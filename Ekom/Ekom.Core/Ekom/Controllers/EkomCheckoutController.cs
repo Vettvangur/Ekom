@@ -335,12 +335,17 @@ public class CheckoutController : ControllerBase
         var logContext = new CheckoutPaymentLogContext();
         try
         {
-            if (!string.IsNullOrWhiteSpace(paymentRequest.ReturnUrl) && Url.IsLocalUrl(paymentRequest.ReturnUrl))
+            var form = Request.Form;
+            if (form["returnUrl"].Count > 1 ||
+                !CheckoutReturnUrl.TryNormalize(paymentRequest.ReturnUrl, Request, out var safeReturnUrl))
             {
-                return Redirect(paymentRequest.ReturnUrl + "?errorStatus=badReturnUrl");
+                var errorUrl =
+                    await _checkoutControllerService.ResolveCheckoutErrorUrlAsync(paymentRequest, ct).ConfigureAwait(false);
+                CheckoutReturnUrl.TryNormalize(errorUrl, Request, out var errorTarget);
+                return Redirect(QueryHelpers.AddQueryString(errorTarget, "errorStatus", "badReturnUrl"));
             }
 
-            var form = Request.Form;
+            paymentRequest.ReturnUrl = safeReturnUrl;
 
             Dictionary<string, string> additionalData = OrderCustomData.FromForm(form, encodeOtherFields: false);
 
@@ -362,7 +367,7 @@ public class CheckoutController : ControllerBase
 
             logContext.LogError(_logger, ex);
 
-            var returnUrl = paymentRequest.ReturnUrl ?? "/";
+            CheckoutReturnUrl.TryNormalize(paymentRequest.ReturnUrl, HttpContext?.Request, out var returnUrl);
             var finalUrl = QueryHelpers.AddQueryString(returnUrl, "errorStatus", "serverError");
             
             return Redirect(finalUrl);
@@ -376,7 +381,7 @@ public class CheckoutController : ControllerBase
             return StatusCode(500);
         }
 
-        var returnUrl = checkoutResponse.ReturnUrl ?? "/";
+        CheckoutReturnUrl.TryNormalize(checkoutResponse.ReturnUrl, HttpContext?.Request, out var returnUrl);
 
         if (checkoutResponse.HttpStatusCode == 409 && checkoutResponse.ResponseBody is CheckoutStateError stateError)
         {

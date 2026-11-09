@@ -100,7 +100,7 @@ test('analytics observes size changes and disconnects the observer when removed'
   runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, {
     exports: module, ResizeObserver: Observer,
     require: name => name === './manager-shared' ? exports : { UmbElementMixin: Base => Base },
-    HTMLElement: class { connectedCallback() {} disconnectedCallback() {} }, customElements: { define() {} },
+    HTMLElement: class { connectedCallback() {} disconnectedCallback() {} hasAttribute() { return false; } }, customElements: { define() {} },
   });
   const view = new module.EkomAnalyticsSectionViewElement();
   view.render = () => {};
@@ -113,4 +113,17 @@ test('analytics observes size changes and disconnects the observer when removed'
   assert.equal(redraws, 1);
   view.disconnectedCallback();
   assert.equal(disconnected, true);
+});
+
+test('column hover and drill-through work on empty average days with comparison values', () => {
+  let selected = -1;
+  const { canvas, labels } = render([{ x: '2026-10-01', y: null }, { x: '2026-10-02', y: 20 }], {
+    columnHover: true, onSelect: index => { selected = index; },
+    comparison: { points: [{ x: '2026-09-29', y: 10 }, { x: '2026-09-30', y: null }] },
+  });
+  const event = { clientX: 100, clientY: 100 };
+  canvas.onmousemove(event);
+  assert.deepEqual(labels.slice(-4), ['2026-10-01', '—', 'Previous: 2026-09-29', '10']);
+  canvas.onclick(event);
+  assert.equal(selected, 0);
 });

@@ -173,6 +173,15 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private async initialize(): Promise<void> {
+    const drill = new URLSearchParams(location.search);
+    if (drill.get('analyticsDrill') === '1') {
+      history.replaceState(history.state, '', location.pathname);
+      managerState.filters.store = drill.get('store') || '';
+      managerState.filters.dateFrom = drill.get('start') || managerState.filters.dateFrom;
+      managerState.filters.dateTo = drill.get('end') || managerState.filters.dateTo;
+      managerState.filters.orderStatus = drill.get('orderStatus') || 'CompletedOrders';
+      for (const key of ['query','paymentProvider','shippingProvider','couponCode','giftcardCode','productSku','trackingSource','trackingMedium','trackingCampaign','trackingTerm','trackingContent','trackingClickId'] as const) managerState.filters[key] = '';
+    }
     try {
       const [statuses, stores] = await Promise.all([
         this.api.statusList(),
@@ -189,6 +198,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
       await this.loadFilterProviders();
       await this.loadOrders();
+      managerState.pendingOrderId ||= new URLSearchParams(location.search).get('orderId') || undefined;
+      if (managerState.pendingOrderId) {
+        const orderId = managerState.pendingOrderId;
+        managerState.pendingOrderId = undefined;
+        await this.openOrder(orderId);
+      }
     } catch (error) {
       this.error = getErrorMessage(error, 'Error loading Ekom Manager.');
       this.loading = false;
@@ -569,7 +584,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     return `<dl class="ekmOrderCustomData" aria-label="Order custom data">${entries.map(([key, value]) => `
       <div class="ekmOrderCustomData__item">
-        <dt class="ekmOrderCustomData__key">${escapeHtml(key)}</dt>
+        <dt class="ekmOrderCustomData__key">${escapeHtml(formatOrderCustomDataKey(key))}</dt>
         <dd class="ekmOrderCustomData__value">${escapeHtml(value)}</dd>
       </div>`).join('')}</dl>`;
   }
@@ -708,7 +723,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       <div class="umb-table">
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
         <div class="umb-table-body">
-          ${lines.map((line: Record<string, any>) => `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${escapeHtml(line.key)}" data-product-title="${escapeHtml(line.product?.title)}" ${this.removingOrderLineId === line.key ? 'disabled' : ''} aria-label="Remove ${escapeHtml(line.product?.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><span>${renderOrderLineProductTitle(line.product)}${line.product?.sku?.trim() ? ` (${escapeHtml(line.product.sku)})` : ''}</span>${line.variant ? `<small style="display:block; margin-top:3px;">${escapeHtml(line.variant.title)} ${line.variant.sku?.trim() ? `(${escapeHtml(line.variant.sku)})` : ''}</small>` : ''}${renderOrderLineProperties(line)}</div><div class="umb-table-cell">${escapeHtml(line.quantity)}</div><div class="umb-table-cell">${escapeHtml(line.product?.price?.withVat?.currencyString)}</div><div class="umb-table-cell">${escapeHtml(line.amount?.vat?.currencyString)}</div><div class="umb-table-cell">-${escapeHtml(line.amount?.discountAmount?.currencyString)}</div><div class="umb-table-cell"><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></div></div>`).join('')}
+          ${lines.map((line: Record<string, any>) => `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${escapeHtml(line.key)}" data-product-title="${escapeHtml(line.product?.title)}" ${this.removingOrderLineId === line.key ? 'disabled' : ''} aria-label="Remove ${escapeHtml(line.product?.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><div class="ekmOrderLineProduct">${renderOrderLineThumbnail(line)}<div class="ekmOrderLineProduct__details"><span>${renderOrderLineProductTitle(line.product)}${line.product?.sku?.trim() ? ` (${escapeHtml(line.product.sku)})` : ''}</span>${line.variant ? `<small style="display:block; margin-top:3px;">${escapeHtml(line.variant.title)} ${line.variant.sku?.trim() ? `(${escapeHtml(line.variant.sku)})` : ''}</small>` : ''}${renderOrderLineProperties(line)}</div></div></div><div class="umb-table-cell">${escapeHtml(line.quantity)}</div><div class="umb-table-cell">${escapeHtml(line.product?.price?.withVat?.currencyString)}</div><div class="umb-table-cell">${escapeHtml(line.amount?.vat?.currencyString)}</div><div class="umb-table-cell">-${escapeHtml(line.amount?.discountAmount?.currencyString)}</div><div class="umb-table-cell"><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></div></div>`).join('')}
         </div>
         <div class="umb-table-footer">
           <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${escapeHtml(order.subTotal?.withVat?.currencyString)}</div></div>
@@ -869,6 +884,11 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private bindEvents(): void {
+    this.querySelectorAll<HTMLImageElement>('.ekmOrderLineThumbnail img').forEach(image => {
+      const showPlaceholder = () => { image.hidden = true; };
+      image.addEventListener('error', showPlaceholder, { once: true });
+      if (image.complete && image.naturalWidth === 0) showPlaceholder();
+    });
     if (this.overlay === 'order') {
       this.querySelector('.ekmOverlay')?.addEventListener('click', event => {
         if (event.target === event.currentTarget && !this.customerEditorOpen && !this.orderLineEditorOpen && !this.shippingProviderEditorOpen) {
@@ -1771,6 +1791,43 @@ function parseProperties(properties: Record<string, unknown> | undefined, prefix
 
 function hasShippingInfo(shipping: Record<string, any>): boolean {
   return Boolean(shipping?.name || shipping?.email || shipping?.address || shipping?.apartment || shipping?.city || shipping?.country || shipping?.zipCode || shipping?.phone);
+}
+
+function formatOrderCustomDataKey(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/\b[a-z]/g, letter => letter.toUpperCase());
+}
+
+function resizeOrderLineImage(url: string, width: number): string {
+  const hashIndex = url.indexOf('#');
+  const hash = hashIndex >= 0 ? url.slice(hashIndex) : '';
+  const pathAndQuery = hashIndex >= 0 ? url.slice(0, hashIndex) : url;
+  const queryIndex = pathAndQuery.indexOf('?');
+  const path = queryIndex >= 0 ? pathAndQuery.slice(0, queryIndex) : pathAndQuery;
+  const query = new URLSearchParams(queryIndex >= 0 ? pathAndQuery.slice(queryIndex + 1) : '');
+  query.set('width', String(width));
+  query.set('format', 'webp');
+  query.set('rmode', 'pad');
+  query.set('rcolor', 'ffffff');
+  return `${path}?${query}${hash}`.replace(/,/g, '%2C').replace(/ /g, '%20');
+}
+
+function renderOrderLineThumbnail(line: Record<string, any>): string {
+  const images = [line.variant?.images, line.product?.images].flatMap(images => Array.isArray(images) ? images : []);
+  const url = images.map(image => {
+    if (typeof image?.url !== 'string' || !image.url.trim()) return '';
+    try {
+      const url = image.url.trim();
+      return ['http:', 'https:'].includes(new URL(url, 'https://ekom.invalid/').protocol) ? url : '';
+    } catch {
+      return '';
+    }
+  }).find(Boolean);
+  return `<span class="ekmOrderLineThumbnail" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg>${url ? `<picture><source srcset="${escapeHtml(resizeOrderLineImage(url, 56))} 1x, ${escapeHtml(resizeOrderLineImage(url, 112))} 2x"><img src="${escapeHtml(resizeOrderLineImage(url, 56))}" width="56" height="56" alt="" loading="lazy" decoding="async"></picture>` : ''}</span>`;
 }
 
 function renderOrderLineProductTitle(product: Record<string, unknown> | undefined): string {

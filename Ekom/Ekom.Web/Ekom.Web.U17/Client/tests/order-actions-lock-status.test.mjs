@@ -293,7 +293,7 @@ test('successful generic card actions refetch order, actions, logs, and lock sta
 function createLegacy(resources = {}, confirm = () => true) {
   let controller;
   runInNewContext(legacyController, {
-    angular: { module: () => ({ controller: (_name, dependencies) => { controller = dependencies.at(-1); } }) },
+    angular: { module: () => ({ directive() {}, controller: (_name, dependencies) => { controller = dependencies.at(-1); } }) },
     document: { getElementById: () => null },
     window: { confirm },
   });

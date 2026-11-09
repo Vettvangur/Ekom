@@ -16,6 +16,8 @@ Ekom is a free, open-source ecommerce platform for Umbraco. It provides a custom
 
 ## Supported platforms
 
+### Umbraco packages
+
 | Umbraco | .NET | Runtime package | Backoffice assets |
 | --- | --- | --- | --- |
 | 13 | 8 | `Ekom.U10` | `Ekom.Web` |
@@ -97,6 +99,12 @@ See the [price storage guide](docs/guides/database-price-storage.md) for setup, 
 - [Ekom.Mailchimp](https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Mailchimp)
 
 Provider packages may have their own compatibility requirements. Confirm those before upgrading Ekom or Umbraco.
+
+## Warehouse printing
+
+Ekom.Printer is an optional package for automatic picking-slip printing through a Windows agent.
+See the [website configuration guide](Ekom/Printing/Ekom.Printer/README.md) and
+[Windows agent setup guide](Ekom/Printing/Ekom.Printer.Agent/README.md) for setup and downloads.
 
 ## Development and releases
 

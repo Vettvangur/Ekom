@@ -10,6 +10,12 @@
 
 * **prices:** add opt-in `Ekom:UseDatabasePrices` storage in `EkomPrice`, direct ERP price updates, and database-aware price editors for Umbraco 13, 17, and 18. Node storage remains the default.
 
+* **manager:** add unique buyers, first/repeat purchase breakdowns, returning customer rate and weekday/hour charts to Analytics using ordinary EkomOrders columns.
+
+* **manager:** add Analytics summary cards, period comparisons, calendar grouping, table/CSV views and order drill-through; align plotted dates with Orders, include empty days, prevent stale responses and load product details on demand.
+
+* **manager:** add Customers between Orders and Analytics in Umbraco 13/17/18, with shared store/date filters, configurable email/username grouping, lifetime and retention metrics, missing-identifier counts, CSV export, and customer order details. List queries avoid OrderInfo; customer details expose a labelled order snapshot.
+
 ### Bug Fixes
 
 * **prices:** enlist document price edits in the content-save transaction to avoid SQLite lock waits; refresh the cache and notify subscribers only after commit.
@@ -30,6 +36,38 @@
 
 * **prices:** enforce node/store permissions, commit validated import prices before publication, prevent stale variant edits from overwriting ERP changes, bound price caches, notify subscribers and Algolia after commit, and support removing/exporting overrides.
 
+* **customers:** show a loading indicator while fetching customers instead of briefly showing an empty result.
+
+* **analytics:** retain the selected date preset across redraws and recognize preset ranges shared from Orders and Customers.
+
+* **web:** version Umbraco 17/18 asset URLs by package release, including manifests and shared chunks, to prevent stale CDN registrations.
+
+* **manager:** use explicit case-insensitive customer substring searches and allow Escape/backdrop dismissal of customer details and printer previews.
+
+* **manager:** fix customer search inside backoffice forms and align Analytics with the Customers gray background, white cards, spacing and table styling.
+
+* **manager:** export the Customers view constructor required by the Umbraco 17/18 extension loader so the Customers tab opens correctly.
+
+* **manager:** format order custom-data keys as readable labels and render lazy-loaded product pictures with 56px/112px image widths and WebP output with white padding, while preserving other image query parameters.
+
+* **manager:** serialize order details under the saved store culture so product URLs do not depend on the backoffice user culture; restore the request culture afterwards.
+
+* **manager:** preserve historical order product links when storefront visibility filters exclude a product; normal catalog filtering is unchanged.
+
+* **manager:** show variant or product thumbnails beside linked order-line titles, with a placeholder for missing or unavailable images, in Umbraco 13/17/18.
+
+* **order:** validate customer emails and the 200-character customer name/email storage limits before changing the order; return HTTP 400 without error logs or submitted values, including names composed from first and last name.
+
+- Improve Printing manager layout, status contrast, attention filtering, station health cards and responsive controls.
+
+- Rename the Printing status to "Submitted to printer" while retaining the print-queue explanation.
+
+- Route rejected checkout return URLs to the configured local provider error page when available, before starting payment.
+
+- Fix the Printing tab context host in Umbraco 17/18 while retaining a standalone Umbraco 13 view.
+
+* **checkout:** validate MVC checkout return URLs before payment and on error redirects; accept only local or same-origin destinations, reject unsafe markup and duplicate inputs, and replace checkout result parameters instead of appending duplicate values.
+
 * **manager:** add space above order custom-data badges to separate them from order action buttons.
 
 * **checkout:** consolidate payment reservation release into one activity entry updated to its confirmed outcome; keep request and per-reservation details in diagnostic logs, suppress repeated no-op release entries, and retain audit-before-release safeguards and failure alerts.
@@ -46,6 +84,18 @@
 * **order:** release the basket lock when an order save fails or is cancelled before its commit. Only a failed commit keeps the order locked.
 
 ### Features
+
+* **printer:** publish installer candidates from printer-agent version tags as draft GitHub pre-releases after Windows checks, with optional Authenticode signing, SHA-256 checksums, build provenance and protected published assets.
+
+* **printer:** package the Windows agent with an NSIS installer EXE, replacing WiX. Include staged upgrades with failure recovery, a setup shortcut, silent deployment, retained station data, and Windows reinstall/uninstall smoke checks.
+
+* **printer:** add a Windows agent and administrator setup prototype with encrypted station configuration, service-account printer selection/test printing, restricted HTML rendering, and journal-backed GDI spool submission. Add installer build/acceptance scripts; Windows installation and hardware validation remain pending.
+
+* **printer:** add an optional Printing tab alongside Manager Analytics for Umbraco 13/17/18, with store-scoped jobs, protected HTML previews, station health, and authorized, audited retry/cancel/reprint actions. The printing package owns the audit migration and retention.
+
+* **orders:** add an optional transactional status-persistence hook; Ekom.Printer uses package-owned capture records to recover eligible picking slips after restarts, including payment release/reset transitions.
+
+* **printer:** add the optional Ekom.Printer foundation with configurable HTML picking slips, package-owned migrations, authenticated station delivery, heartbeat health and an agent submission journal. Windows printing remains under development.
 
 * **manager:** display order custom data as neutral, wrapping key/value badges below order actions and above billing, including printed orders, in Umbraco 13, 17, and 18.
 
@@ -129,6 +179,132 @@
 * **discounts:** add a global product setting that disables product, coupon, and order discounts for the product and its variants, excluding protected lines from quantity and minimum-spend qualification.
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
+
+## [0.2.369](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.368...Ekom-v0.2.369) (2026-11-09)
+
+
+### Bug Fixes
+
+* show customer loader while fetching results ([#1126](https://github.com/Vettvangur/Ekom/issues/1126)) ([62268d2](https://github.com/Vettvangur/Ekom/commit/62268d2a79a4d8b9804ad65544309d26d3bbffd1))
+
+## [0.2.368](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.367...Ekom-v0.2.368) (2026-11-09)
+
+
+### Bug Fixes
+
+* version backoffice assets and preserve analytics date presets ([#1124](https://github.com/Vettvangur/Ekom/issues/1124)) ([2591793](https://github.com/Vettvangur/Ekom/commit/2591793e1a3cfa02f82164fd8454d4b2030f4e46))
+
+## [0.2.367](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.366...Ekom-v0.2.367) (2026-11-09)
+
+
+### Features
+
+* add customer analytics and improve modal dismissal ([#1122](https://github.com/Vettvangur/Ekom/issues/1122)) ([f5df594](https://github.com/Vettvangur/Ekom/commit/f5df5946d07b88c164b6ba211b59c43b558fd517))
+
+## [0.2.366](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.365...Ekom-v0.2.366) (2026-11-09)
+
+
+### Bug Fixes
+
+* restore customer search and align Analytics layout ([#1117](https://github.com/Vettvangur/Ekom/issues/1117)) ([d396771](https://github.com/Vettvangur/Ekom/commit/d396771691c66679c020ad6c53d1c9836230657b))
+
+## [0.2.365](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.364...Ekom-v0.2.365) (2026-11-08)
+
+
+### Features
+
+* improve Analytics and fix Customers view loading ([#1115](https://github.com/Vettvangur/Ekom/issues/1115)) ([9b9d028](https://github.com/Vettvangur/Ekom/commit/9b9d02852fec522afad61758e6d6d1f3e02e4ef1))
+
+## [0.2.364](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.363...Ekom-v0.2.364) (2026-11-08)
+
+
+### Features
+
+* release Customers manager section ([#1113](https://github.com/Vettvangur/Ekom/issues/1113)) ([8ebd5db](https://github.com/Vettvangur/Ekom/commit/8ebd5db3c39962e935927780abf83202d9d1ed8b))
+
+## [0.2.363](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.362...Ekom-v0.2.363) (2026-11-08)
+
+
+### Bug Fixes
+
+* format manager custom data labels and resize order thumbnails ([#1110](https://github.com/Vettvangur/Ekom/issues/1110)) ([17877a9](https://github.com/Vettvangur/Ekom/commit/17877a9f514d47591e0b52b3076510f8c4051a99))
+
+## [0.2.362](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.361...Ekom-v0.2.362) (2026-11-08)
+
+
+### Bug Fixes
+
+* preserve manager product links across visibility filters and cultures ([#1108](https://github.com/Vettvangur/Ekom/issues/1108)) ([3252573](https://github.com/Vettvangur/Ekom/commit/325257359b547d6a30931165f500be70a99ced40))
+
+## [0.2.361](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.360...Ekom-v0.2.361) (2026-11-08)
+
+
+### Bug Fixes
+
+* show order line product thumbnails in manager ([#1106](https://github.com/Vettvangur/Ekom/issues/1106)) ([46c437e](https://github.com/Vettvangur/Ekom/commit/46c437e54e241c7edfecf3d10bd55a765d94a46b))
+
+## [0.2.360](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.359...Ekom-v0.2.360) (2026-11-06)
+
+
+### Features
+
+* **printer:** add durable explicit capture with exclusive trigger modes ([#1101](https://github.com/Vettvangur/Ekom/issues/1101)) ([c818651](https://github.com/Vettvangur/Ekom/commit/c818651d6d4d545b8b5f2eaeec17c3644f9cbae0))
+
+## [0.2.359](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.358...Ekom-v0.2.359) (2026-11-06)
+
+
+### Bug Fixes
+
+* **order:** handle invalid customer information as validation failures ([#1099](https://github.com/Vettvangur/Ekom/issues/1099)) ([2e7cbdc](https://github.com/Vettvangur/Ekom/commit/2e7cbdc80a5fedb5a653fb95f79bf6ee98434d14))
+
+## [0.2.358](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.357...Ekom-v0.2.358) (2026-11-06)
+
+
+### Features
+
+* **printer:** resolve uncertain jobs and clarify connection diagnostics ([#1095](https://github.com/Vettvangur/Ekom/issues/1095)) ([ba8ba9a](https://github.com/Vettvangur/Ekom/commit/ba8ba9a951a51a85fff8a7c68113912ff4f87dfb))
+
+## [0.2.357](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.356...Ekom-v0.2.357) (2026-11-06)
+
+
+### Bug Fixes
+
+* **printer:** label queued submissions as submitted to printer ([#1093](https://github.com/Vettvangur/Ekom/issues/1093)) ([1633a07](https://github.com/Vettvangur/Ekom/commit/1633a07f05719c36e74715b04e9f65506a74a3ca))
+
+## [0.2.356](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.355...Ekom-v0.2.356) (2026-11-06)
+
+
+### Bug Fixes
+
+* **checkout:** rejected return URLs use the configured provider error page ([59ec96b](https://github.com/Vettvangur/Ekom/commit/59ec96b49c228a2451c40a6c94af0e156141ccbe))
+
+## [0.2.355](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.354...Ekom-v0.2.355) (2026-11-06)
+
+
+### Bug Fixes
+
+* **printer:** provide Umbraco context for manager printing view ([#1088](https://github.com/Vettvangur/Ekom/issues/1088)) ([8871aa2](https://github.com/Vettvangur/Ekom/commit/8871aa2f869f9af35a9a4bd30f6e68e893535d9c))
+
+## [0.2.354](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.353...Ekom-v0.2.354) (2026-11-06)
+
+
+### Bug Fixes
+
+* **checkout:** validate return URLs and replace result parameters ([#1086](https://github.com/Vettvangur/Ekom/issues/1086)) ([953fa8e](https://github.com/Vettvangur/Ekom/commit/953fa8ed271b898bdfd53a34ff2dcf4bea5ea9ce))
+
+## [0.2.353](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.352...Ekom-v0.2.353) (2026-11-06)
+
+
+### Bug Fixes
+
+* **printer:** declare required SQL Server columns non-nullable ([#1080](https://github.com/Vettvangur/Ekom/issues/1080)) ([552c3c7](https://github.com/Vettvangur/Ekom/commit/552c3c7a9133ac3ef3e1c9123406c2c245f0e680))
+
+## [0.2.352](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.351...Ekom-v0.2.352) (2026-11-04)
+
+
+### Features
+
+* **printer:** add picking-slip printing and Windows agent ([#1075](https://github.com/Vettvangur/Ekom/issues/1075)) ([c8b723f](https://github.com/Vettvangur/Ekom/commit/c8b723f2a626269cd4930f109107c45d9cb841d2))
 
 ## [0.2.351](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.350...Ekom-v0.2.351) (2026-11-03)
 

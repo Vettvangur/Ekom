@@ -1,7 +1,7 @@
-const E = /* @__PURE__ */ new Date(), U = new Date(E.getFullYear(), 0, 1), J = {
+const J = /* @__PURE__ */ new Date(), q = new Date(J.getFullYear(), 0, 1), Y = {
   filters: {
-    dateFrom: $(U),
-    dateTo: $(E),
+    dateFrom: B(q),
+    dateTo: B(J),
     orderStatus: "CompletedOrders",
     store: "",
     paymentProvider: "",
@@ -22,7 +22,7 @@ const E = /* @__PURE__ */ new Date(), U = new Date(E.getFullYear(), 0, 1), J = {
   paymentProviders: [],
   shippingFilterProviders: []
 };
-class b {
+class v {
   async config() {
     return this.getJson("/ekom/backoffice/Config");
   }
@@ -88,7 +88,7 @@ class b {
       headers: { Accept: "application/json, application/octet-stream" }
     });
     if (!t.ok)
-      throw await b.createError(t, "Order action failed.");
+      throw await v.createError(t, "Order action failed.");
     return t;
   }
   async changeOrderStatus(e, r, t) {
@@ -110,18 +110,18 @@ class b {
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await b.createError(t, "Error removing order line.");
+      throw await v.createError(t, "Error removing order line.");
     return t.json();
   }
-  async charts(e) {
+  async charts(e, r) {
     return this.getJson("/ekom/manager/charts", {
       start: e.dateFrom,
       end: e.dateTo,
       orderStatus: e.orderStatus,
       store: e.store
-    });
+    }, r);
   }
-  async mostSoldProducts(e, r, t = 20) {
+  async mostSoldProducts(e, r, t = 20, n) {
     return this.getJson("/ekom/manager/MostSoldProducts", {
       start: e.dateFrom,
       end: e.dateTo,
@@ -129,34 +129,35 @@ class b {
       store: e.store,
       page: r,
       pageSize: t
-    });
+    }, n);
   }
-  async getJson(e, r) {
-    const t = await fetch(e + T(r), {
+  async getJson(e, r, t) {
+    const n = await fetch(e + z(r), {
       credentials: "same-origin",
+      signal: t,
       headers: { Accept: "application/json" }
     });
-    if (!t.ok)
-      throw await b.createError(t, "Request failed.");
-    return t.json();
+    if (!n.ok)
+      throw await v.createError(n, "Request failed.");
+    return n.json();
   }
   async getBlob(e, r) {
-    const t = await fetch(e + T(r), {
+    const t = await fetch(e + z(r), {
       credentials: "same-origin",
       headers: { Accept: "text/csv, application/octet-stream" }
     });
     if (!t.ok)
-      throw await b.createError(t, "Request failed.");
+      throw await v.createError(t, "Request failed.");
     return t.blob();
   }
   async postJson(e, r) {
-    const t = await fetch(e + T(r), {
+    const t = await fetch(e + z(r), {
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json" }
     });
     if (!t.ok)
-      throw await b.createError(t, "Request failed.");
+      throw await v.createError(t, "Request failed.");
     return t.json();
   }
   async postBody(e, r) {
@@ -170,7 +171,7 @@ class b {
       body: JSON.stringify(r)
     });
     if (!t.ok)
-      throw await b.createError(t, "Request failed.");
+      throw await v.createError(t, "Request failed.");
     return t.json();
   }
   static async createError(e, r) {
@@ -183,24 +184,24 @@ class b {
     return new Error(n || `${r} Status ${e.status}.`);
   }
 }
-function T(a) {
-  if (!a)
+function z(o) {
+  if (!o)
     return "";
   const e = new URLSearchParams();
-  for (const [t, n] of Object.entries(a))
+  for (const [t, n] of Object.entries(o))
     e.set(t, n == null ? "" : String(n));
   const r = e.toString();
   return r ? `?${r}` : "";
 }
-function $(a) {
-  const e = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
-  return `${a.getFullYear()}-${e}-${r}`;
+function B(o) {
+  const e = String(o.getMonth() + 1).padStart(2, "0"), r = String(o.getDate()).padStart(2, "0");
+  return `${o.getFullYear()}-${e}-${r}`;
 }
-function F(a) {
-  if (!a)
+function Q(o) {
+  if (!o)
     return "";
-  const e = new Date(a);
-  return Number.isNaN(e.getTime()) ? a : new Intl.DateTimeFormat(void 0, {
+  const e = new Date(o);
+  return Number.isNaN(e.getTime()) ? o : new Intl.DateTimeFormat(void 0, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -208,40 +209,40 @@ function F(a) {
     minute: "2-digit"
   }).format(e);
 }
-function j(a) {
-  return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+function H(o) {
+  return String(o ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function N(a) {
+function X(o) {
   const e = document.createElement("textarea");
-  return e.innerHTML = String(a ?? ""), e.value;
+  return e.innerHTML = String(o ?? ""), e.value;
 }
-function q(a) {
-  return a.enumValue || a.value || "";
+function Z(o) {
+  return o.enumValue || o.value || "";
 }
-function W(a, e) {
+function K(o, e) {
   const t = [], n = Math.max(e || 1, 1);
-  let m;
-  a <= Math.floor(5 / 2) ? m = 1 : a + Math.floor(5 / 2) >= n ? m = Math.max(n - 5 + 1, 1) : m = a - Math.floor(5 / 2);
-  for (let p = 0; p < 5; p += 1) {
-    const u = m + p;
-    u <= n && t.push(u);
+  let g;
+  o <= Math.floor(5 / 2) ? g = 1 : o + Math.floor(5 / 2) >= n ? g = Math.max(n - 5 + 1, 1) : g = o - Math.floor(5 / 2);
+  for (let u = 0; u < 5; u += 1) {
+    const h = g + u;
+    h <= n && t.push(h);
   }
   return t.length && Number(t[t.length - 1]) < n && t.push(`...${n}`), t.length && Number(t[0]) > 1 && t.unshift("...1"), t;
 }
-const G = `
+const F = `
   .ekmOrderCustomData { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; padding: 14px 16px; border: 1px solid #e1e3e8; border-radius: 12px; }
   .ekmOrderCustomData__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 7px 12px; border: 1px solid #e1e3e8; border-radius: 8px; background: #f6f7f9; line-height: 1.5; break-inside: avoid; }
   .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
   .ekmOrderCustomData__value { margin: 0; min-width: 0; color: #252830; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
 `;
-async function H(a, e) {
+async function ee(o, e) {
   const r = document.createElement("iframe");
   r.title = e, r.setAttribute("aria-hidden", "true"), r.style.cssText = "position:fixed;left:-10000px;top:0;width:800px;height:600px;border:0;";
   try {
-    const t = new Promise((m, p) => {
-      r.onload = () => m(), r.onerror = () => p(new Error("Unable to load the print document."));
+    const t = new Promise((g, u) => {
+      r.onload = () => g(), r.onerror = () => u(new Error("Unable to load the print document."));
     });
-    r.srcdoc = D(a, e), document.body.append(r), await t;
+    r.srcdoc = V(o, e), document.body.append(r), await t;
     const n = r.contentWindow;
     if (!n) throw new Error("Print window unavailable.");
     await n.document.fonts.ready, n.addEventListener("afterprint", () => r.remove(), { once: !0 }), n.focus(), n.print();
@@ -249,10 +250,10 @@ async function H(a, e) {
     throw r.remove(), t;
   }
 }
-function D(a, e) {
+function V(o, e) {
   const r = document.createElement("template");
-  return r.innerHTML = a, r.content.querySelectorAll("button, input, select, .ekmOrderGiftcards__actions").forEach((t) => t.remove()), r.content.querySelectorAll("details").forEach((t) => t.setAttribute("open", "")), r.content.querySelectorAll("summary").forEach((t) => t.remove()), r.content.querySelectorAll("a").forEach((t) => t.replaceWith(...Array.from(t.childNodes))), `<!doctype html><html><head><meta charset="utf-8"><title>${j(e)}</title><style>
-    ${G}
+  return r.innerHTML = o, r.content.querySelectorAll("button, input, select, .ekmOrderGiftcards__actions").forEach((t) => t.remove()), r.content.querySelectorAll("details").forEach((t) => t.setAttribute("open", "")), r.content.querySelectorAll("summary").forEach((t) => t.remove()), r.content.querySelectorAll("a").forEach((t) => t.replaceWith(...Array.from(t.childNodes))), `<!doctype html><html><head><meta charset="utf-8"><title>${H(e)}</title><style>
+    ${F}
     @page { size: auto; margin: 14mm; }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: auto; overflow: visible; }
@@ -282,12 +283,23 @@ function D(a, e) {
     dd { margin: 0 0 4px; white-space: pre-wrap; }
   </style></head><body>${r.innerHTML}</body></html>`;
 }
-function V(a, e) {
-  const r = URL.createObjectURL(a), t = document.createElement("a");
+function te(o, e) {
+  const r = URL.createObjectURL(o), t = document.createElement("a");
   t.href = r, t.download = e, t.addEventListener("click", (n) => n.stopPropagation()), document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(r);
 }
-const Y = `
-  ${G}
+const re = `
+.ekmOrderLineProduct { display: flex; align-items: flex-start; gap: 14px; min-width: 0; width: 100%; }
+.ekmOrderLineProduct__details { min-width: 0; overflow-wrap: anywhere; }
+.ekmOrderLineProduct__details > span:first-child, .ekmOrderLineProduct__details > div:first-child { font-weight: 600; }
+.ekmOrderLineProduct__details a { color: inherit; text-decoration: none; }
+.ekmOrderLineProduct__details a:hover, .ekmOrderLineProduct__details a:focus-visible { text-decoration: underline; }
+.ekmOrderLineProduct__details a::after { content: "\\2197"; margin-left: 6px; color: #686b7d; }
+.ekmOrderLineThumbnail { position: relative; display: flex; align-items: center; justify-content: center; flex: 0 0 56px; width: 56px; height: 56px; overflow: hidden; border: 1px dashed #d8d7d9; border-radius: 9px; background: #f6f6f8; color: #686b7d; }
+.ekmOrderLineThumbnail svg { width: 24px; height: 24px; }
+.ekmOrderLineThumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f6f6f8; }
+.ekmOrderLineThumbnail img[hidden] { display: none; }
+
+  ${F}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -428,69 +440,102 @@ const Y = `
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
 `;
-function B(a, e) {
+function W(o, e) {
   const r = e == null ? void 0 : e.isoCurrencySymbol, t = (e == null ? void 0 : e.currencyDecimalDigits) ?? 2;
   return new Intl.NumberFormat(void 0, {
     minimumFractionDigits: t,
     maximumFractionDigits: t,
     ...r && /^[A-Z]{3}$/.test(r) ? { style: "currency", currency: r, currencyDisplay: "code" } : {}
-  }).format(a);
+  }).format(o);
 }
-function Q(a, e, r, t = {}) {
-  const n = a.getBoundingClientRect(), m = window.devicePixelRatio || 1, p = n.width || 300, u = n.height || 320;
-  a.width = p * m, a.height = u * m;
-  const o = a.getContext("2d");
-  if (!o) return;
-  o.scale(m, m), o.font = "12px sans-serif";
-  const w = e.points || [], _ = w.map((s) => Number(s.y || 0)), O = Math.min(0, ..._), I = Math.max(1, ..._), S = t.integer ? Math.ceil(I / 4) * 4 : I, C = (s) => t.currency ? B(s, t.currency) : s.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), z = Array.from({ length: 5 }, (s, l) => S - (S - O) * l / 4), h = Math.max(48, ...z.map((s) => o.measureText(C(s)).width + 12)), y = p - 16, A = 20, v = u - 52, c = w.map((s, l) => {
-    var x;
+function ae(o, e, r, t = {}) {
+  var U;
+  const n = o.getBoundingClientRect(), g = window.devicePixelRatio || 1, u = n.width || 300, h = n.height || 320;
+  o.width = u * g, o.height = h * g;
+  const a = o.getContext("2d");
+  if (!a) return;
+  a.scale(g, g), a.font = "12px sans-serif";
+  const R = e.points || [], T = R.map((i) => i.y == null ? null : Number(i.y)), O = ((U = t.comparison) == null ? void 0 : U.points) || [], E = [...T, ...O.map((i) => i.y)].filter((i) => i != null), C = Math.min(0, ...E), G = Math.max(1, ...E), P = t.integer ? Math.ceil(G / 4) * 4 : G, I = (i) => t.formatValue ? t.formatValue(i) : t.currency ? W(i, t.currency) : i.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), j = Array.from({ length: 5 }, (i, s) => P - (P - C) * s / 4), f = Math.max(48, ...j.map((i) => a.measureText(I(i)).width + 12)), k = u - 16, L = 20, b = h - 52, m = R.map((i, s) => {
+    var p;
     return {
-      x: w.length > 1 ? h + (y - h) * l / (w.length - 1) : (h + y) / 2,
-      y: v - (_[l] - O) / (S - O) * (v - A),
-      date: s.x || ((x = e.labels) == null ? void 0 : x[l]) || "",
-      value: _[l]
+      x: R.length > 1 ? f + (k - f) * s / (R.length - 1) : (f + k) / 2,
+      y: T[s] == null ? null : b - (T[s] - C) / (P - C) * (b - L),
+      date: i.x || ((p = e.labels) == null ? void 0 : p[s]) || "",
+      value: T[s]
     };
-  }), L = (s = -1) => {
-    o.clearRect(0, 0, p, u), o.font = "12px sans-serif", o.lineWidth = 1, o.textAlign = "right", z.forEach((i, d) => {
-      const f = A + (v - A) * d / 4;
-      o.fillStyle = "#555", o.fillText(C(i), h - 8, f + 4), o.strokeStyle = "#e5e5e5", o.beginPath(), o.moveTo(h, f), o.lineTo(y, f), o.stroke();
+  }), $ = (i = -1) => {
+    a.clearRect(0, 0, u, h), a.font = "12px sans-serif", a.lineWidth = 1, a.textAlign = "right", j.forEach((d, l) => {
+      const c = L + (b - L) * l / 4;
+      a.fillStyle = "#555", a.fillText(I(d), f - 8, c + 4), a.strokeStyle = "#e5e5e5", a.beginPath(), a.moveTo(f, c), a.lineTo(k, c), a.stroke();
     });
-    const l = Math.max(90, ...c.map((i) => o.measureText(i.date).width + 16)), x = Math.max(2, Math.floor((y - h) / l)), R = new Set(Array.from({ length: Math.min(x, c.length) }, (i, d) => Math.round(d * (c.length - 1) / Math.max(1, Math.min(x, c.length) - 1))));
-    o.fillStyle = "#555", c.forEach((i, d) => {
-      R.has(d) && (o.textAlign = c.length === 1 ? "center" : d === 0 ? "left" : d === c.length - 1 ? "right" : "center", o.fillText(i.date, i.x, v + 24));
-    }), o.strokeStyle = r, o.lineWidth = 2, o.beginPath(), c.forEach((i, d) => {
-      d === 0 ? o.moveTo(i.x, i.y) : o.lineTo(i.x, i.y);
-    }), o.stroke(), o.fillStyle = r, c.forEach((i, d) => {
-      o.beginPath(), o.arc(i.x, i.y, d === s ? 5 : 3, 0, Math.PI * 2), o.fill();
-    }), c.length || (o.textAlign = "center", o.fillText("No data for this period", (h + y) / 2, u / 2));
-    const g = c[s];
-    if (g) {
-      const i = [g.date, C(g.value)], d = Math.max(...i.map((M) => o.measureText(M).width)) + 20, f = Math.max(0, Math.min(p - d, g.x - d / 2)), k = g.y > 70 ? g.y - 62 : g.y + 12;
-      o.fillStyle = "#222", o.fillRect(f, k, d, 48), o.fillStyle = "#fff", o.textAlign = "left", i.forEach((M, P) => o.fillText(M, f + 10, k + 19 + P * 18));
+    const s = Math.max(90, ...m.map((d) => a.measureText(d.date).width + 16)), p = Math.max(2, Math.floor((k - f) / s)), M = new Set(Array.from({ length: Math.min(p, m.length) }, (d, l) => Math.round(l * (m.length - 1) / Math.max(1, Math.min(p, m.length) - 1))));
+    a.fillStyle = "#555", m.forEach((d, l) => {
+      M.has(l) && (a.textAlign = m.length === 1 ? "center" : l === 0 ? "left" : l === m.length - 1 ? "right" : "center", a.fillText(d.date, d.x, b + 24));
+    });
+    const A = (d, l) => {
+      var w, S;
+      a.strokeStyle = l ? "#9298a5" : r, a.lineWidth = 2, (w = a.setLineDash) == null || w.call(a, l ? [6, 4] : []), a.beginPath();
+      let c = !1;
+      d.forEach((y) => {
+        if (y.y == null) {
+          c = !1;
+          return;
+        }
+        c ? a.lineTo(y.x, y.y) : a.moveTo(y.x, y.y), c = !0;
+      }), a.stroke(), (S = a.setLineDash) == null || S.call(a, []);
+    };
+    O.length && A(m.map((d, l) => {
+      var c;
+      return {
+        x: d.x,
+        y: ((c = O[l]) == null ? void 0 : c.y) == null ? null : b - (Number(O[l].y) - C) / (P - C) * (b - L)
+      };
+    }), !0), A(m, !1), a.fillStyle = r, m.forEach((d, l) => {
+      d.y != null && (a.beginPath(), a.arc(d.x, d.y, l === i ? 5 : 3, 0, Math.PI * 2), a.fill());
+    }), m.length || (a.textAlign = "center", a.fillText("No data for this period", (f + k) / 2, h / 2));
+    const x = m[i];
+    if (x) {
+      const d = [x.date, x.value == null ? "—" : I(x.value)];
+      if (O[i]) {
+        const _ = O[i];
+        d.push(`Previous: ${_.x || ""}`, _.y == null ? "—" : I(_.y));
+      }
+      const l = Math.max(...d.map((_) => a.measureText(_).width)) + 20, c = Math.max(0, Math.min(u - l, x.x - l / 2)), w = d.length * 18 + 12, S = x.y ?? b, y = Math.max(0, Math.min(h - w, S > w + 20 ? S - w - 12 : S + 12));
+      a.fillStyle = "#222", a.fillRect(c, y, l, w), a.fillStyle = "#fff", a.textAlign = "left", d.forEach((_, N) => a.fillText(_, c + 10, y + 19 + N * 18));
     }
+  }, D = (i) => {
+    const s = o.getBoundingClientRect(), p = (i.clientX - s.left) * u / s.width, M = (i.clientY - s.top) * h / s.height;
+    if (t.columnHover)
+      return !m.length || p < f || p > k || M < L || M > b ? -1 : m.length === 1 ? 0 : Math.round((p - f) / (k - f) * (m.length - 1));
+    let A = -1, x = 16;
+    return m.forEach((d, l) => {
+      if (d.y == null) return;
+      const c = Math.hypot(d.x - p, d.y - M);
+      c < x && (A = l, x = c);
+    }), A;
   };
-  a.onmousemove = (s) => {
-    const l = a.getBoundingClientRect(), x = (s.clientX - l.left) * p / l.width, R = (s.clientY - l.top) * u / l.height;
-    let g = -1, i = 16;
-    c.forEach((d, f) => {
-      const k = Math.hypot(d.x - x, d.y - R);
-      k < i && (g = f, i = k);
-    }), a.style.cursor = g >= 0 ? "pointer" : "default", L(g);
-  }, a.onmouseleave = () => {
-    a.style.cursor = "default", L();
-  }, L();
+  o.onmousemove = (i) => {
+    const s = D(i);
+    o.style.cursor = s >= 0 ? "pointer" : "default", $(s);
+  }, o.onclick = t.onSelect ? (i) => {
+    var p;
+    const s = D(i);
+    s >= 0 && ((p = t.onSelect) == null || p.call(t, s));
+  } : null, o.onmouseleave = () => {
+    o.style.cursor = "default", $();
+  }, $();
 }
 export {
-  b as E,
-  Y as a,
-  F as b,
-  H as c,
-  N as d,
-  j as e,
-  B as f,
-  q as g,
-  V as h,
-  J as m,
-  W as p,
-  Q as r
+  v as E,
+  re as a,
+  Q as b,
+  X as c,
+  te as d,
+  H as e,
+  W as f,
+  Z as g,
+  ee as h,
+  Y as m,
+  K as p,
+  ae as r
 };

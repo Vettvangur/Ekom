@@ -11,7 +11,7 @@ function loadModule(relativePath, modules = {}, globals = {}) {
   }).outputText;
   const exports = {};
   runInNewContext(compiled, {
-    exports,
+    exports, URLSearchParams, location: { search: "" },
     require: name => {
       assert.ok(modules[name], `Unexpected module: ${name}`);
       return modules[name];
@@ -151,6 +151,7 @@ test('legacy gift card input trims state and reaches search and both export quer
   const handlers = {};
   const angular = {
     module: () => ({
+      directive: (name, factory) => { registrations[name] = factory; },
       factory: (name, dependencies) => { registrations[name] = dependencies.at(-1); },
       controller: (name, dependencies) => { registrations[name] = dependencies.at(-1); },
     }),
@@ -189,7 +190,7 @@ test('legacy gift card input trims state and reaches search and both export quer
     on: (name, callback) => { handlers[name] = callback; },
     emit: (name, args) => handlers[name](null, args),
   };
-  const dashboard = { $on() {} };
+  const dashboard = { $on() {}, $evalAsync(callback) { callback(); } };
   registrations['Ekom.Manager.Dashboard'](
     dashboard, { error: () => assert.fail('Unexpected legacy request error') }, resources,
     { path: () => '/orders' }, { on() {} }, events, state, {}, () => {}, {},
@@ -204,7 +205,7 @@ test('legacy gift card input trims state and reaches search and both export quer
   await dashboard.ExportCsv(null, true);
 
   const configCalls = calls.filter(call => call.url === '/ekom/backoffice/Config');
-  const orderCalls = calls.filter(call => call.url !== '/ekom/backoffice/Config');
+  const orderCalls = calls.filter(call => call.url !== '/ekom/backoffice/Config' && call.url !== '/ekom/printer/manager/capabilities');
   assert.equal(configCalls.length, 1);
   assert.equal(orderCalls.length, 4);
   for (const call of orderCalls) {

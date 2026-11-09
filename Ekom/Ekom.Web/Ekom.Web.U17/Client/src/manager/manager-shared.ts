@@ -64,7 +64,7 @@ export type OrderSearchResult = {
 
 export type ChartPoint = {
   x?: string;
-  y?: number;
+  y?: number | null;
 };
 
 export type ChartSeries = {
@@ -72,7 +72,18 @@ export type ChartSeries = {
   points: ChartPoint[];
 };
 
+export type CustomerAnalytics = {
+  uniqueCustomers: number; newCustomers: number; returningCustomers: number;
+  returningCustomerRate: number | null; firstOrders: number; repeatOrders: number;
+  firstOrderAmount: number; repeatOrderAmount: number; missingIdentifiers: number; identityField: string;
+  orderTimes: Array<{ weekday: number; hour: number; orders: number }>;
+};
+
 export type ChartData = {
+  customerInsights?: CustomerAnalytics;
+  dateBasis?: string;
+  currency?: string;
+  mixedCurrencies?: boolean;
   revenueChart: ChartSeries;
   ordersChart: ChartSeries;
   avarageChart: ChartSeries;
@@ -162,6 +173,7 @@ export type CustomerInformationField = {
 export type OrderInfo = Record<string, any>;
 
 export type ManagerState = {
+  pendingOrderId?: string;
   filters: ManagerFilters;
   statusList: StatusItem[];
   stores: StoreItem[];
@@ -315,16 +327,16 @@ export class EkomManagerApi {
     return response.json() as Promise<OrderInfo>;
   }
 
-  async charts(filters: ManagerFilters): Promise<ChartData> {
+  async charts(filters: ManagerFilters, signal?: AbortSignal): Promise<ChartData> {
     return this.getJson('/ekom/manager/charts', {
       start: filters.dateFrom,
       end: filters.dateTo,
       orderStatus: filters.orderStatus,
       store: filters.store,
-    });
+    }, signal);
   }
 
-  async mostSoldProducts(filters: ManagerFilters, page: number, pageSize = 20): Promise<MostSoldProductsResult> {
+  async mostSoldProducts(filters: ManagerFilters, page: number, pageSize = 20, signal?: AbortSignal): Promise<MostSoldProductsResult> {
     return this.getJson('/ekom/manager/MostSoldProducts', {
       start: filters.dateFrom,
       end: filters.dateTo,
@@ -332,12 +344,13 @@ export class EkomManagerApi {
       store: filters.store,
       page,
       pageSize,
-    });
+    }, signal);
   }
 
-  private async getJson<T>(url: string, query?: Record<string, unknown>): Promise<T> {
+  private async getJson<T>(url: string, query?: Record<string, unknown>, signal?: AbortSignal): Promise<T> {
     const response = await fetch(url + buildQueryString(query), {
       credentials: 'same-origin',
+      signal,
       headers: { Accept: 'application/json' },
     });
 
@@ -593,6 +606,17 @@ export function downloadBlob(blob: Blob, filename: string): void {
 }
 
 export const managerStyles = `
+.ekmOrderLineProduct { display: flex; align-items: flex-start; gap: 14px; min-width: 0; width: 100%; }
+.ekmOrderLineProduct__details { min-width: 0; overflow-wrap: anywhere; }
+.ekmOrderLineProduct__details > span:first-child, .ekmOrderLineProduct__details > div:first-child { font-weight: 600; }
+.ekmOrderLineProduct__details a { color: inherit; text-decoration: none; }
+.ekmOrderLineProduct__details a:hover, .ekmOrderLineProduct__details a:focus-visible { text-decoration: underline; }
+.ekmOrderLineProduct__details a::after { content: "\\2197"; margin-left: 6px; color: #686b7d; }
+.ekmOrderLineThumbnail { position: relative; display: flex; align-items: center; justify-content: center; flex: 0 0 56px; width: 56px; height: 56px; overflow: hidden; border: 1px dashed #d8d7d9; border-radius: 9px; background: #f6f6f8; color: #686b7d; }
+.ekmOrderLineThumbnail svg { width: 24px; height: 24px; }
+.ekmOrderLineThumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f6f6f8; }
+.ekmOrderLineThumbnail img[hidden] { display: none; }
+
   ${orderCustomDataStyles}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
@@ -746,7 +770,7 @@ export function formatAnalyticsAmount(value: number, currency?: StoreItem['curre
 }
 
 export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, color: string,
-  options: { currency?: StoreItem['currency']; integer?: boolean } = {}): void {
+  options: { currency?: StoreItem['currency']; integer?: boolean; formatValue?: (value: number) => string; comparison?: ChartSeries; columnHover?: boolean; onSelect?: (index: number) => void } = {}): void {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   const width = rect.width || 300;
@@ -759,11 +783,13 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
   ctx.font = '12px sans-serif';
 
   const points = series.points || [];
-  const values = points.map(point => Number(point.y || 0));
-  const min = Math.min(0, ...values);
-  const rawMax = Math.max(1, ...values);
+  const values = points.map(point => point.y == null ? null : Number(point.y));
+  const comparison = options.comparison?.points || [];
+  const allValues = [...values, ...comparison.map(point => point.y)].filter((value): value is number => value != null);
+  const min = Math.min(0, ...allValues);
+  const rawMax = Math.max(1, ...allValues);
   const max = options.integer ? Math.ceil(rawMax / 4) * 4 : rawMax;
-  const formatValue = (value: number) => options.currency
+  const formatValue = (value: number) => options.formatValue ? options.formatValue(value) : options.currency
     ? formatAnalyticsAmount(value, options.currency)
     : value.toLocaleString(undefined, { maximumFractionDigits: options.integer ? 0 : 2 });
   const ticks = Array.from({ length: 5 }, (_, i) => max - (max - min) * i / 4);
@@ -773,7 +799,7 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
   const bottom = height - 52;
   const positions = points.map((point, index) => ({
     x: points.length > 1 ? left + (right - left) * index / (points.length - 1) : (left + right) / 2,
-    y: bottom - (values[index] - min) / (max - min) * (bottom - top),
+    y: values[index] == null ? null : bottom - (values[index]! - min) / (max - min) * (bottom - top),
     date: point.x || series.labels?.[index] || '',
     value: values[index],
   }));
@@ -803,16 +829,29 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
       ctx.textAlign = positions.length === 1 ? 'center' : index === 0 ? 'left' : index === positions.length - 1 ? 'right' : 'center';
       ctx.fillText(point.date, point.x, bottom + 24);
     });
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    positions.forEach((point, index) => {
-      if (index === 0) ctx.moveTo(point.x, point.y);
-      else ctx.lineTo(point.x, point.y);
-    });
-    ctx.stroke();
+    const line = (data: Array<{ x: number; y: number | null }>, dashed: boolean) => {
+      ctx.strokeStyle = dashed ? '#9298a5' : color;
+      ctx.lineWidth = 2;
+      ctx.setLineDash?.(dashed ? [6, 4] : []);
+      ctx.beginPath();
+      let connected = false;
+      data.forEach(point => {
+        if (point.y == null) { connected = false; return; }
+        if (connected) ctx.lineTo(point.x, point.y);
+        else ctx.moveTo(point.x, point.y);
+        connected = true;
+      });
+      ctx.stroke();
+      ctx.setLineDash?.([]);
+    };
+    if (comparison.length) line(positions.map((point, index) => ({
+      x: point.x,
+      y: comparison[index]?.y == null ? null : bottom - (Number(comparison[index].y) - min) / (max - min) * (bottom - top),
+    })), true);
+    line(positions, false);
     ctx.fillStyle = color;
     positions.forEach((point, index) => {
+      if (point.y == null) return;
       ctx.beginPath();
       ctx.arc(point.x, point.y, index === active ? 5 : 3, 0, Math.PI * 2);
       ctx.fill();
@@ -823,30 +862,49 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
     }
     const point = positions[active];
     if (point) {
-      const lines = [point.date, formatValue(point.value)];
+      const lines = [point.date, point.value == null ? '—' : formatValue(point.value)];
+      if (comparison[active]) {
+        const previous = comparison[active];
+        lines.push(`Previous: ${previous.x || ''}`, previous.y == null ? '—' : formatValue(previous.y));
+      }
       const boxWidth = Math.max(...lines.map(line => ctx.measureText(line).width)) + 20;
       const x = Math.max(0, Math.min(width - boxWidth, point.x - boxWidth / 2));
-      const y = point.y > 70 ? point.y - 62 : point.y + 12;
+      const boxHeight = lines.length * 18 + 12;
+      const pointY = point.y ?? bottom;
+      const y = Math.max(0, Math.min(height - boxHeight, pointY > boxHeight + 20 ? pointY - boxHeight - 12 : pointY + 12));
       ctx.fillStyle = '#222';
-      ctx.fillRect(x, y, boxWidth, 48);
+      ctx.fillRect(x, y, boxWidth, boxHeight);
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'left';
       lines.forEach((line, index) => ctx.fillText(line, x + 10, y + 19 + index * 18));
     }
   };
-  canvas.onmousemove = event => {
+  const hit = (event: MouseEvent) => {
     const bounds = canvas.getBoundingClientRect();
     const x = (event.clientX - bounds.left) * width / bounds.width;
     const y = (event.clientY - bounds.top) * height / bounds.height;
+    if (options.columnHover) {
+      if (!positions.length || x < left || x > right || y < top || y > bottom) return -1;
+      return positions.length === 1 ? 0 : Math.round((x - left) / (right - left) * (positions.length - 1));
+    }
     let active = -1;
     let distance = 16;
     positions.forEach((point, index) => {
+      if (point.y == null) return;
       const current = Math.hypot(point.x - x, point.y - y);
       if (current < distance) { active = index; distance = current; }
     });
+    return active;
+  };
+  canvas.onmousemove = event => {
+    const active = hit(event);
     canvas.style.cursor = active >= 0 ? 'pointer' : 'default';
     draw(active);
   };
+  canvas.onclick = options.onSelect ? event => {
+    const index = hit(event);
+    if (index >= 0) options.onSelect?.(index);
+  } : null;
   canvas.onmouseleave = () => { canvas.style.cursor = 'default'; draw(); };
   draw();
 }

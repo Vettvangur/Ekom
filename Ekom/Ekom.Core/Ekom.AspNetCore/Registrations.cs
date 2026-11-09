@@ -120,6 +120,7 @@ static class Registrations
         services.AddTransient<IWarehouseStockRepository>(sp => sp.GetRequiredService<WarehouseStockRepository>());
 
         services.AddTransient<ManagerRepository>();
+        services.AddTransient<CustomerRepository>();
         services.AddTransient<OrderRepository>();
         services.AddTransient<CouponRepository>();
         services.AddTransient<ActivityLogRepository>();
@@ -250,7 +251,10 @@ static class Registrations
         services.AddHttpContextAccessor();
         services.AddMemoryCache();
 
-        services.Configure<EkomOptions>(config.GetSection("Ekom"));
+        services.AddOptions<EkomOptions>().Bind(config.GetSection("Ekom"))
+            .Validate(options => options.Manager.Customers.IdentityField is "CustomerEmail" or "CustomerUsername",
+                "Ekom:Manager:Customers:IdentityField must be CustomerEmail or CustomerUsername.")
+            .ValidateOnStart();
         services.Configure<TrackingOptions>(config.GetSection("Ekom:Tracking"));
         services.Configure<OrderDiscountCalculationOptions>(config.GetSection("Ekom:OrderDiscountCalculation"));
         services.Configure<StockReservationOptions>(config.GetSection("Ekom:Reservations"));

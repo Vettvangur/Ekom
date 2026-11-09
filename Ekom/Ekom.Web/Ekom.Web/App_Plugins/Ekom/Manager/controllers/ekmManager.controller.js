@@ -42,6 +42,16 @@
     $scope.mostSoldProductsCount = 0;
     $scope.mostSoldProductsTotalPages = 0;
     $scope.location = getLocationFromPath();
+    $scope.printingEnabled = false;
+    resources.PrintingCapabilities().then(function () {
+      return import("/App_Plugins/Ekom/Manager/libs/printing-section-view.element.js");
+    }).then(function () {
+      $scope.$evalAsync(function () { $scope.printingEnabled = true; });
+    }, function () {
+      $scope.$evalAsync(function () {
+        if ($scope.location === "printing") $scope.navigateTo("orders");
+      });
+    });
 
       eventsService.on("filter.changed", function (_, args) {
       state.setPaymentProvider(args.paymentProvider);
@@ -66,7 +76,7 @@
       var pathComponents = path.split("/");
       var lastPathComponent = pathComponents[pathComponents.length - 1];
 
-      if (lastPathComponent !== "analytics") {
+      if (lastPathComponent !== "analytics" && lastPathComponent !== "printing" && lastPathComponent !== "customers") {
         return "orders";
       }
 
@@ -173,6 +183,7 @@
     }
 
     function refreshCurrentView() {
+      if ($scope.location === "customers" || $scope.location === "analytics") return;
       if (!$scope.filters.store) {
         return;
       }
@@ -305,6 +316,8 @@
 
       $scope.location = location;
       $location.path("/ekommanager/" + location);
+
+      if (location === "printing" || location === "customers" || location === "analytics") return;
 
       if (location === "analytics") {
         $scope.analytics();
@@ -644,6 +657,78 @@
       $scope.GetStores();
     });
   }
+
+  angular.module("umbraco").directive("ekomAnalyticsHost", function () {
+    return {
+      restrict: "E",
+      link: function (scope, element) {
+        var disposed = false;
+        import("/App_Plugins/Ekom/Manager/libs/analytics-section-view.element.js").then(function () {
+          if (disposed) return;
+          var view = document.createElement("ekom-analytics-section-view");
+          view.setAttribute("classic", "");
+          ["store", "dateFrom", "dateTo", "orderStatus"].forEach(function (key) {
+            var value = scope.filters[key];
+            if (value instanceof Date) value = value.getFullYear() + "-" + String(value.getMonth() + 1).padStart(2, "0") + "-" + String(value.getDate()).padStart(2, "0");
+            if (value) view.setAttribute(key.toLowerCase(), value);
+          });
+          function applyFilters(filters) {
+            Object.keys(filters).forEach(function (key) {
+              scope.filters[key] = key === "dateFrom" || key === "dateTo" ? new Date(filters[key] + "T00:00:00") : filters[key];
+            });
+          }
+          view.addEventListener("analytics-filters-changed", function (event) {
+            scope.$evalAsync(function () {
+              ["store", "dateFrom", "dateTo", "orderStatus"].forEach(function (key) {
+                var value = event.detail[key];
+                scope.filters[key] = key === "dateFrom" || key === "dateTo" ? new Date(value + "T00:00:00") : value;
+              });
+            });
+          });
+          view.addEventListener("analytics-open-orders", function (event) {
+            scope.$evalAsync(function () { applyFilters(event.detail); scope.navigateTo("orders"); });
+          });
+          element[0].appendChild(view);
+        }).catch(function () { if (!disposed) element.text("Could not load Analytics. Please reload the manager."); });
+        scope.$on("$destroy", function () { disposed = true; });
+      }
+    };
+  });
+
+  angular.module("umbraco").directive("ekomCustomersHost", function () {
+    return {
+      restrict: "E",
+      link: function (scope, element) {
+        var disposed = false;
+        import("/App_Plugins/Ekom/Manager/libs/customers-section-view.element.js").then(function () {
+          if (disposed) return;
+          var view = document.createElement("ekom-customers-section-view");
+          view.setAttribute("classic", "");
+          ["store", "dateFrom", "dateTo", "orderStatus"].forEach(function (key) {
+            var value = scope.filters[key];
+            if (value instanceof Date) {
+              value = value.getFullYear() + "-" + String(value.getMonth() + 1).padStart(2, "0") + "-" + String(value.getDate()).padStart(2, "0");
+            }
+            if (value) view.setAttribute(key.toLowerCase(), value);
+          });
+          view.addEventListener("customer-filters-changed", function (event) {
+            scope.$evalAsync(function () {
+              scope.filters.store = event.detail.store;
+              ["dateFrom", "dateTo"].forEach(function (key) { scope.filters[key] = new Date(event.detail[key] + "T00:00:00"); });
+            });
+          });
+          view.addEventListener("customer-open-order", function (event) {
+            scope.$evalAsync(function () {
+              scope.navigateTo("orders");
+              scope.ViewOrder({ uniqueId: event.detail.orderId });
+            });
+          });
+          element[0].appendChild(view);
+        }).catch(function () { if (!disposed) element.text("Could not load Customers. Please reload the manager."); });
+        scope.$on("$destroy", function () { disposed = true; });
+      }
+    };
+  });
 
   angular.module("umbraco").controller("Ekom.Manager.Dashboard", [
     "$scope",

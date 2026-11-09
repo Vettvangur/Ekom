@@ -2016,6 +2016,27 @@ partial class OrderService
         }
     }
 
+    internal static void ValidateCustomerInformation(Dictionary<string, string> form, Customer customer)
+    {
+        // Validate the effective values before mutating the cached order or invoking providers.
+        var candidate = new Customer
+        {
+            Properties = new Dictionary<string, string>(customer.Properties, customer.Properties.Comparer),
+        };
+        foreach (var field in form)
+        {
+            if (!field.Key.StartsWith("customer", StringComparison.InvariantCulture)) continue;
+            if (field.Key == "customerEmail" && !string.IsNullOrEmpty(field.Value) && !field.Value.IsValidEmail())
+                throw new InvalidCustomerEmailException();
+            candidate.Properties[field.Key] = field.Value;
+        }
+
+        if (candidate.Name.Length > OrderData.CustomerFieldMaxLength)
+            throw new CustomerInformationValidationException($"Customer name must not exceed {OrderData.CustomerFieldMaxLength} characters.");
+        if (candidate.Email.Length > OrderData.CustomerFieldMaxLength)
+            throw new CustomerInformationValidationException($"Customer email must not exceed {OrderData.CustomerFieldMaxLength} characters.");
+    }
+
     private async Task<OrderInfo> UpdateCustomerInformationCoreAsync(
         Dictionary<string, string> form,
         OrderSettings settings,
@@ -2023,6 +2044,8 @@ partial class OrderService
         OrderInfo orderInfo,
         CancellationToken ct)
     {
+        ValidateCustomerInformation(form, orderInfo.CustomerInformation.Customer);
+
         OrderCustomData.Merge(orderInfo.CustomData, OrderCustomData.ReadFields(form));
 
         // Metadata-only edits should not invalidate an already selected provider.
@@ -2081,15 +2104,6 @@ partial class OrderService
 
             if (key.StartsWith("customer", StringComparison.InvariantCulture))
             {
-                if (string.Equals(key, "customerEmail", StringComparison.Ordinal) && !string.IsNullOrEmpty(value))
-                {
-                    if (!value.IsValidEmail())
-                    {
-                        _logger.LogError($"Invalid email address: {value}");
-                        throw new FormatException($"Invalid email address: {value}");
-                    }
-                }
-
                 orderInfo.CustomerInformation.Customer.Properties[key] = value;
                 continue;
             }

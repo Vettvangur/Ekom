@@ -20,7 +20,7 @@ test('custom data is plain text and long values are not truncated', () => {
   const html = element.renderOrderCustomData(order);
   assert.ok(!html.includes('<script>'));
   assert.ok(!html.includes('<img'));
-  assert.ok(html.includes('&lt;script&gt;'));
+  assert.ok(html.includes('&lt;Script&gt;'));
   assert.ok(html.includes('&amp;amp;'));
   assert.ok(html.includes(note));
 });
@@ -36,4 +36,18 @@ test('missing and empty custom data do not render a panel or empty badges', () =
   assert.ok(!html.includes('Empty'));
   assert.ok(html.includes('>0</dd>'));
   assert.ok(html.includes('>false</dd>'));
+});
+
+
+test('custom data labels separate camel case and separators without changing stored data', () => {
+  const { element, order } = loadPrintFixture();
+  order.customData = { newsletterOptIn: 'false', giftReceipt: 'yes', dkInvoiceNumber: '244362', delivery_note: 'Leave outside', VATNumber: '123' };
+  const before = JSON.stringify(order.customData);
+  const html = element.renderOrderCustomData(order);
+  for (const label of ['Newsletter Opt In', 'Gift Receipt', 'Dk Invoice Number', 'Delivery Note', 'VAT Number']) {
+    assert.ok(html.includes(`>${label}</dt>`));
+    assert.ok(element.renderPrintableOrder(order).includes(`>${label}</dt>`));
+  }
+  assert.ok(html.includes('>false</dd>'));
+  assert.equal(JSON.stringify(order.customData), before);
 });

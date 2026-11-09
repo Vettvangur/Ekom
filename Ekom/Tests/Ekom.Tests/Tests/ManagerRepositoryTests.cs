@@ -19,6 +19,31 @@ namespace Ekom.Tests.Tests;
 
 public class ManagerRepositoryTests
 {
+    [Theory]
+    [InlineData("AllOrders", 15)]
+    [InlineData("CompletedOrders", 15)]
+    [InlineData("ReadyForDispatch", 16)]
+    [InlineData("Dispatched", 16)]
+    public async Task ChartsUseFilterDateWithoutReadingOrderInfo(string status, int expectedDay)
+    {
+        using var fixture = new OrderDatabase();
+        fixture.AddChartOrders(status == "Dispatched" ? status : "ReadyForDispatch");
+        var date = new DateTime(2026, 1, expectedDay);
+        var rows = await fixture.Repository.GetChartAggregatesAsync(date, date, "main", status);
+        var row = Assert.Single(rows);
+        Assert.Equal(date, row.BucketDate);
+        Assert.Equal(2, row.Orders);
+        Assert.Equal(300m, row.Revenue);
+        Assert.Equal(2, row.CurrencyCount);
+        var chart = Ekom.Controllers.EkomManagerController.BuildChartData(date.AddDays(-1), date.AddDays(1), status, rows);
+        Assert.Equal(3, chart.OrdersChart.Points.Count());
+        Assert.Equal(0m, chart.OrdersChart.Points.ElementAt(0).y);
+        Assert.Null(chart.AvarageChart.Points.ElementAt(0).y);
+        Assert.Equal(150m, chart.AvarageChart.Points.ElementAt(1).y);
+        Assert.Equal(0m, chart.RevenueChart.Points.ElementAt(2).y);
+        Assert.True(chart.MixedCurrencies);
+    }
+
     [Fact]
     public void GenerateWhereClause_IncludesUniqueIdForFullGuidQuery()
     {
@@ -483,6 +508,19 @@ public class ManagerRepositoryTests
                 }),
             });
             return id;
+        }
+
+        public void AddChartOrders(string status)
+        {
+            using var db = _factory.GetDatabase();
+            foreach (var currency in new[] { "en-US", "is-IS" })
+            {
+                db.Insert(new OrderData { UniqueId = Guid.NewGuid(), StoreAlias = "main", OrderStatusCol = status,
+                    Currency = currency, CreateDate = OrderDate.AddHours(12), PaidDate = OrderDate.AddDays(1).AddHours(12), TotalAmount = 150m });
+            }
+            db.Insert(new OrderData { UniqueId = Guid.NewGuid(), StoreAlias = "other", OrderStatusCol = status,
+                Currency = "en-US", CreateDate = OrderDate, PaidDate = OrderDate.AddDays(1), TotalAmount = 999m });
+            db.Execute("ALTER TABLE EkomOrders DROP COLUMN OrderInfo");
         }
 
         public void Dispose() => _connection.Dispose();

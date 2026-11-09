@@ -44,8 +44,12 @@
         <Exec WorkingDirectory="Client" Command="npm ci" />
     </Target>
 
-    <Target Name="BuildEkomWebU17Assets" BeforeTargets="Build">
+    <Target Name="BuildEkomWebU17Assets" BeforeTargets="Build" DependsOnTargets="NpmInstallEkomWebU17">
         <Exec WorkingDirectory="Client" Command="npm run build" />
     </Target>
 
+    <PropertyGroup>
+        <EkomBuildAssetsTarget>BuildEkomWebU17Assets</EkomBuildAssetsTarget>
+    </PropertyGroup>
+    <Import Project="../AssetPackaging/VersionedAssets.targets" />
 </Project>

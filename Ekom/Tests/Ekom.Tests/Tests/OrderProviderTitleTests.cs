@@ -99,6 +99,13 @@ public class OrderProviderTitleTests
         order.SetupGet(x => x.PaymentProvider).Returns(payment.Object);
         order.SetupGet(x => x.ShippingProvider).Returns(shipping);
 
-        Assert.Same(order.Object, EkomManagerController.GetOrderInfoResponse(order.Object));
+        var response = new JObject
+        {
+            ["paymentProvider"] = new JObject { ["title"] = "Historic payment" },
+            ["shippingProvider"] = new JObject { ["title"] = "Dynamic pickup" },
+        };
+        EkomManagerController.ApplyProviderTitleFallbacks(response, order.Object);
+        Assert.Equal("Historic payment", response["paymentProvider"]?["title"]?.Value<string>());
+        Assert.Equal("Dynamic pickup", response["shippingProvider"]?["title"]?.Value<string>());
     }
 }

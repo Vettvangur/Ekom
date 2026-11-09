@@ -1,5 +1,15 @@
 export const manifests: Array<UmbExtensionManifest> = [
   {
+    type: 'condition', alias: 'Ekom.Condition.PrintingEnabled', name: 'Ekom Printing Enabled Condition',
+    api: () => import('./manager/printing-enabled.condition'),
+  },
+  {
+    type: 'sectionView', alias: 'Ekom.SectionView.Manager.Printing', name: 'Ekom Manager Printing Section View',
+    element: '/App_Plugins/Ekom/dist/printing-section-view.element.js', weight: 50,
+    meta: { label: 'Printing', pathname: 'printing', icon: 'icon-print' },
+    conditions: [{ alias: 'Umb.Condition.SectionAlias', match: 'ekommanager' }, { alias: 'Ekom.Condition.PrintingEnabled' }],
+  },
+  {
     type: 'section',
     kind: 'default',
     alias: 'ekommanager',
@@ -34,6 +44,15 @@ export const manifests: Array<UmbExtensionManifest> = [
         match: 'ekommanager',
       },
     ],
+  },
+  {
+    type: 'sectionView',
+    alias: 'Ekom.SectionView.Manager.Customers',
+    name: 'Ekom Manager Customers Section View',
+    element: '/App_Plugins/Ekom/dist/customers-section-view.element.js',
+    weight: 150,
+    meta: { label: 'Customers', pathname: 'customers', icon: 'icon-users' },
+    conditions: [{ alias: 'Umb.Condition.SectionAlias', match: 'ekommanager' }],
   },
   {
     type: 'sectionView',
