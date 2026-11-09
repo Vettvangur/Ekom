@@ -144,3 +144,24 @@ test('customer details close on backdrop and Escape outside the dialog, but not 
   assert.equal(view.detail, detail);
   dom.window.close();
 });
+
+test('customer list shows loading until a slow request completes, and distinguishes empty results from errors', async () => {
+  const { view, state } = fixture();
+  view.render = Object.getPrototypeOf(view).render.bind(view);
+  view.bind = () => {};
+  state.filters.store = 'main';
+  let resolve;
+  view.get = () => new Promise(r => { resolve = r; });
+  const request = view.load();
+  assert.match(view.innerHTML, /role="status"/);
+  assert.match(view.innerHTML, /Loading customers/);
+  assert.doesNotMatch(view.innerHTML, /No customers found/);
+  resolve(emptyResult);
+  await request;
+  assert.doesNotMatch(view.innerHTML, /Loading customers/);
+  assert.match(view.innerHTML, /No customers found/);
+  view.get = async () => { throw new Error('Request failed'); };
+  await view.load();
+  assert.doesNotMatch(view.innerHTML, /No customers found|Loading customers/);
+  assert.match(view.innerHTML, /role="alert"/);
+});

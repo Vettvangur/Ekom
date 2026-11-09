@@ -506,6 +506,10 @@ class E extends S(HTMLElement) {
       .customer-table button[data-customer] { border:0;padding:0;text-align:left;background:none;font-weight:600 }
       .customer-muted { display:block;color:#70778a;font-size:12px;margin-top:5px }
       .customer-badge { background:#edf2f0;color:#237053;border-radius:10px;padding:3px 8px;font-size:11px;margin-left:8px }
+      .customer-loading { display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 20px;text-align:center;white-space:normal }
+      .customer-spinner { width:28px;height:28px;border:3px solid #dfe2e8;border-top-color:#237053;border-radius:50%;animation:customer-spin .8s linear infinite }
+      @keyframes customer-spin { to { transform:rotate(360deg) } }
+      @media(prefers-reduced-motion:reduce) { .customer-spinner { animation:none } }
       .customer-pagination { display:flex;gap:16px;align-items:center;justify-content:flex-end;padding-top:18px }
       .customer-overlay { position:fixed;inset:0;background:#0006;z-index:10000;display:flex;justify-content:flex-end }
       .customer-dialog { background:var(--uui-color-surface,#fff);width:min(1200px,95vw);height:100%;overflow:auto;padding:28px;box-sizing:border-box }
@@ -525,7 +529,7 @@ class E extends S(HTMLElement) {
       </div>
       <p class="customer-muted">Customers who ordered in the selected period. Lifetime metrics include all qualifying orders in this store. Status filter: ${i(e.orderStatus.replace(/([a-z])([A-Z])/g, "$1 $2"))}.</p>
       ${this.error ? `<p role="alert">${i(this.error)}</p>` : ""}
-      ${this.busy ? '<p role="status">Loading…</p>' : ""}
+      ${this.busy && t ? '<p role="status">Preparing export...</p>' : ""}
       ${t ? `<div class="customer-cards">${this.card("Customers", this.number(t.totals.customers))}${this.card("Returning", this.number(t.totals.returningPercent) + "%")}${this.card("Average lifetime spend", this.amount(t.spend, "averageLifetime"))}${this.card("Average orders per customer", this.number(t.totals.averageOrders))}${this.card("Average days between orders", this.number(t.totals.averageReorderDays))}</div>
       <p class="customer-muted">${t.missingIdentifiers} qualifying orders in this period have no ${t.identityField === "CustomerUsername" ? "username" : "email"} and are excluded. Spend uses recorded charged amounts, without refund adjustment.</p>` : ""}
       <div class="customer-panel"><div class="customer-toolbar" role="search">
@@ -535,7 +539,7 @@ class E extends S(HTMLElement) {
         <label>Sort by<select data-sort>${[["newest", "Newest first order"], ["oldest", "Oldest first order"], ["lastOrder", "Latest order"], ["orders", "Most orders"], ["name", "Name"]].map(([r, l]) => `<option value="${r}" ${r === this.sort ? "selected" : ""}>${l}</option>`).join("")}</select></label>
         <button type="button" data-export ${this.busy || !(t != null && t.totals.customers) ? "disabled" : ""}>Export</button>
       </div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
-      ${((t == null ? void 0 : t.customers) || []).map((r) => `<tr><td><button data-customer="${i(r.identity)}">${i(r.name || r.email || r.username || r.identity)}<span class="customer-badge">${r.orders > 1 ? "Returning" : "New"}</span><span class="customer-muted">${i(r.email || r.username || r.identity)}</span></button></td><td>${this.date(r.firstOrder)}</td><td>${r.orders}</td><td>${this.amount(r.spend, "total")}</td><td>${this.amount(r.spend, "averageOrder")}</td><td>${this.date(r.lastOrder)}<span class="customer-muted">${i(r.lastStatus || "")}</span></td><td>${r.daysSinceLastOrder}</td></tr>`).join("") || '<tr><td colspan="7">No customers found.</td></tr>'}
+      ${((t == null ? void 0 : t.customers) || []).map((r) => `<tr><td><button data-customer="${i(r.identity)}">${i(r.name || r.email || r.username || r.identity)}<span class="customer-badge">${r.orders > 1 ? "Returning" : "New"}</span><span class="customer-muted">${i(r.email || r.username || r.identity)}</span></button></td><td>${this.date(r.firstOrder)}</td><td>${r.orders}</td><td>${this.amount(r.spend, "total")}</td><td>${this.amount(r.spend, "averageOrder")}</td><td>${this.date(r.lastOrder)}<span class="customer-muted">${i(r.lastStatus || "")}</span></td><td>${r.daysSinceLastOrder}</td></tr>`).join("") || `<tr><td colspan="7">${this.busy ? '<div class="customer-loading" role="status"><span class="customer-spinner" aria-hidden="true"></span><strong>Loading customers...</strong><span class="customer-muted">Large datasets may take a moment.</span></div>' : t ? "No customers found." : this.error ? "Customer results could not be loaded." : "Select a store to see customers."}</td></tr>`}
       </tbody></table></div><div class="customer-pagination"><button data-page="${this.page - 1}" ${this.page <= 1 || this.busy ? "disabled" : ""}>Previous</button><span>Page ${this.page} of ${Math.max(1, (t == null ? void 0 : t.totalPages) || 0)}</span><button data-page="${this.page + 1}" ${this.page >= ((t == null ? void 0 : t.totalPages) || 0) || this.busy ? "disabled" : ""}>Next</button></div></div>
       ${this.detail ? this.renderDetail(this.detail) : ""}</section>`, this.bind();
   }
