@@ -63,7 +63,7 @@ public sealed class ImportDatabasePriceTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task NewNodesWritePricesAfterTheirFirstSave(bool variant)
+    public async Task NewNodesHavePricesBeforeTheirFirstSave(bool variant)
     {
         using var fixture = new Fixture();
         fixture.Content.Object.Id = 0;
@@ -71,7 +71,7 @@ public sealed class ImportDatabasePriceTests
         fixture.ContentService.Setup(x => x.Save(fixture.Content.Object, -1, null))
             .Callback(() =>
             {
-                Assert.Equal("missing", Prices.Instance.Resolve(fixture.Key, "price", "Web", "missing", []));
+                Assert.Equal(50, Assert.Single(Prices.Instance.Get(fixture.Key)).Price);
                 fixture.Content.Object.Id = 100;
             })
             .Returns(OperationResult.Succeed(new EventMessages()));
@@ -99,6 +99,21 @@ public sealed class ImportDatabasePriceTests
         fixture.ContentService.Verify(x => x.Save(fixture.Content.Object, -1, null), Times.Once);
         Assert.Contains(fixture.Content.Invocations, x => x.Method.Name == "SetValue" && Equals(x.Arguments[0], "price"));
         Assert.Empty(await Prices.Instance.GetAsync(fixture.Key));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InvalidNewPricePreventsContentSaveAndPartialPriceWrites(bool variant)
+    {
+        using var fixture = new Fixture();
+        fixture.Content.Object.Id = 0;
+        var import = CreateImport(variant);
+        PriceList(import).Add(new ImportPrice { StoreAlias = "Web", Currency = "en-GB", Price = -1 });
+        var failure = Record.Exception(() => fixture.Save(import, create: true));
+        Assert.True(failure != null || (import is ImportProduct product && product.Exception != null));
+        Assert.Empty(Prices.Instance.Get(fixture.Key));
+        Assert.Empty(fixture.ContentService.Invocations);
     }
 
     private static ImportBase CreateImport(bool variant)

@@ -401,7 +401,8 @@ public class Product : PerStoreNodeEntity, IProduct
             var sale = NativeDiscountPrice.Raw(this);
             var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={storeCurrency.CurrencyValue}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(priceValue)}:sale={CacheHelpers.Sha256(sale)}:disabled={DisableDiscounts}";
 
-            return CacheHelpers.GetOrCreateSingleFlight(
+            return CacheHelpers.GetOrCreateVersioned(
+                key.Split(":hash=", 2)[0],
                 key,
                 () => PriceBuilder.BuildPricesSync(
                     priceValue,

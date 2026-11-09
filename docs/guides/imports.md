@@ -158,7 +158,22 @@ await Ekom.API.Prices.Instance.SetPriceAsync(
 
 Do not call `IContentService.Save` or `SaveAndPublish` after the direct table API. You can also keep using the built-in importer with its `Price` collection, as shown below.
 
-The next Ekom price read and the price editor use the table value without a publish or manual Ekom cache refresh. Existing node values remain the fallback for currencies without an override. External search indexes and page caches that depend on publish notifications must be refreshed by the integration separately. See [database price storage](catalog-and-products.md#database-price-storage) for fallback, precision, and switching back to node storage.
+The next HTTP request and the price editor use the table value without a publish or manual Ekom cache refresh. Within one HTTP request, Ekom reuses a price snapshot per node; local writes invalidate that snapshot. Existing node values remain the fallback for currencies without an override. The Algolia plugin queues product reindexing for committed price changes when product indexing is enabled. Other search indexes and page caches can subscribe to `Ekom.Events.PriceEvents.PriceChanged`. See [database price storage](catalog-and-products.md#database-price-storage) for fallback, precision, and switching back to node storage.
+
+### Atomic updates and concurrent editors
+
+Use `ApplyAsync` when all prices for a product must change together. Validation or a conflict rolls back the entire batch. Identical values are no-ops, including their timestamps and notifications.
+
+```csharp
+using Ekom.Models;
+
+await prices.ApplyAsync([
+    new PriceMutation(productKey, "Web", "en-US", 149.95m),
+    new PriceMutation(productKey, "Web", "en-GB", 119.95m),
+], cancellationToken);
+```
+
+ERP `SetPrice` and `SetPriceAsync` calls intentionally replace the current value. For edits based on a previously loaded override, use `CheckExpected: true, ExpectedPrice: loadedPrice` on `PriceMutation`. A null expected value means that no override should exist. A mismatch throws `PriceConflictException`; reload before retrying. The variant manager sends its original values and override baseline, writes only edited currencies, and reports a conflict if an edited override changed since loading. Older custom variant clients must supply `originalPriceValues` and `priceOverrides` in database mode.
 
 ### Using the built-in Ekom importer
 
@@ -183,7 +198,7 @@ importService.ProductUpdateSync(
     syncUser: -1);
 ```
 
-With `UseDatabasePrices: true`, product and variant prices are written through `Ekom.API.Prices.SetPrice` before the importer checks whether existing content is unchanged. The default content comparison hash excludes `Price`, so price-only changes update the table without saving or publishing the node. This applies to product/variant update methods and the product/variant steps of full synchronization. New nodes are still created normally; their table prices are written after the initial content save.
+With `UseDatabasePrices: true`, product and variant prices are written atomically through `Ekom.API.Prices.Apply` before the importer checks whether existing content is unchanged. The default content comparison hash excludes `Price`, so price-only changes update the table without saving or publishing the node. This applies to product/variant update methods and the product/variant steps of full synchronization. New nodes receive a stable key and validated table prices before their first save or publication. An invalid currency price aborts the entire price batch before content is saved. Content and price writes are separate transactions: if the subsequent content save fails, table rows may remain for that key. Retry with the same key or explicitly remove abandoned overrides; do not treat a failed content save as a successful import.
 
 Other content changes, media changes, or `forceUpdate: true` still use the normal save/publish behavior. When first enabling table mode, existing default comparison hashes may differ because they previously included prices; one content sync establishes the new hash. If you supply your own `Comparer`, it remains authoritative: keep prices out of that value to avoid content saves for price-only changes. Table prices are updated even when your custom comparer is unchanged. Missing prices leave existing table entries untouched.
 

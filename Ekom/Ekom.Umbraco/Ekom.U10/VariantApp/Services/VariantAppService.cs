@@ -19,6 +19,8 @@ internal sealed class VariantAppService : IVariantAppService
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
     private readonly INodeService _nodeService;
+    private readonly ISecurityService _security;
+    private readonly IManagerAccessService _access;
     private readonly ILocalizationService _localizationService;
     private readonly VariantAppOptions _variantAppOptions;
 
@@ -27,11 +29,13 @@ internal sealed class VariantAppService : IVariantAppService
         IContentTypeService contentTypeService,
         INodeService nodeService,
         ILocalizationService localizationService,
-        IOptions<EkomOptions> options)
+        IOptions<EkomOptions> options, ISecurityService security, IManagerAccessService access)
     {
         _contentService = contentService;
         _contentTypeService = contentTypeService;
         _nodeService = nodeService;
+        _security = security;
+        _access = access;
         _localizationService = localizationService;
         _variantAppOptions = options.Value.VariantApp;
     }
@@ -82,6 +86,7 @@ internal sealed class VariantAppService : IVariantAppService
         var languages = LoadVariantLanguages(stores);
 
         ApplyVariantValues(variant, request.Title, request.Sku, request.Images, request.Price, request.Stock, stores, languages);
+        ApplyDatabasePrices(variant, new VariantManagerVariant { PriceValues = ParsePriceValues(request.Price) }, stores);
         SaveContent(variant, request.Publish);
         await ApplyStockValuesAsync(variant.Key, ParseStockValues(request.Stock)).ConfigureAwait(false);
 
@@ -123,6 +128,8 @@ internal sealed class VariantAppService : IVariantAppService
                 {
                     continue;
                 }
+
+                ApplyDatabasePrices(variant, variantModel, stores);
 
                 if (isNewVariant || HasVariantContentChanges(variant, variantModel, stores, variantFieldDefinitions, languages))
                 {
@@ -174,6 +181,8 @@ internal sealed class VariantAppService : IVariantAppService
         }
 
         var variantFieldDefinitions = GetVariantFieldDefinitions();
+        ApplyDatabasePrices(variant, request.Variant, stores);
+
         if (request.Variant.Id <= 0 || HasVariantContentChanges(variant, request.Variant, stores, variantFieldDefinitions, languages))
         {
             ApplyVariantValues(variant, request.Variant, stores, variantFieldDefinitions, languages);
@@ -232,6 +241,9 @@ internal sealed class VariantAppService : IVariantAppService
         {
             throw new Exceptions.HttpResponseException(HttpStatusCode.BadRequest);
         }
+
+        if (!_security.CanEditPrices(new UmbracoContent { Id = content.Id, Key = content.Key, Path = content.Path }))
+            throw new Exceptions.HttpResponseException(HttpStatusCode.Forbidden);
 
         return content;
     }
@@ -323,6 +335,8 @@ internal sealed class VariantAppService : IVariantAppService
             Sku = GetStringValue(variant, "sku"),
             Images = GetStringValue(variant, "images"),
             PriceValues = GetPriceValues(variant, stores),
+            OriginalPriceValues = GetPriceValues(variant, stores),
+            PriceOverrides = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance.Get(variant.Key) : null,
             StockValues = GetStockValues(variant),
             CustomFields = GetCustomFields(variant, fieldDefinitions),
             SortOrder = variant.SortOrder,
@@ -367,7 +381,7 @@ internal sealed class VariantAppService : IVariantAppService
         return _contentService.Create(title, group.Id, "ekmProductVariant");
     }
 
-    private static void ApplyVariantValues(
+    private void ApplyVariantValues(
         IContent variant,
         VariantManagerVariant variantModel,
         IReadOnlyList<VariantManagerStore> stores,
@@ -381,7 +395,28 @@ internal sealed class VariantAppService : IVariantAppService
         variant.SetValue("sku", variantModel.Sku ?? string.Empty);
         variant.SetValue("images", variantModel.Images ?? string.Empty);
         ApplyCustomFields(variant, variantModel.CustomFields, fieldDefinitions);
-        ApplyPriceValues(variant, variantModel.PriceValues, stores);
+        if (!Configuration.Instance.UseDatabasePrices)
+            ApplyPriceValues(variant, variantModel.PriceValues, stores);
+    }
+
+    private void ApplyDatabasePrices(IContent variant, VariantManagerVariant model, IReadOnlyList<VariantManagerStore> stores)
+    {
+        if (!Configuration.Instance.UseDatabasePrices) return;
+        if (variant.Key == Guid.Empty) variant.Key = Guid.NewGuid();
+        try
+        {
+            var changes = PriceEdits.Create(variant.Key, NormalizePriceValues(model.PriceValues, stores),
+                model.OriginalPriceValues, model.PriceOverrides, model.Id <= 0);
+            foreach (var change in changes)
+            {
+                if (!_access.CanAccessStore(change.StoreAlias)) throw new Exceptions.HttpResponseException(HttpStatusCode.Forbidden);
+            }
+            API.Prices.Instance.Apply(changes);
+        }
+        catch (Exceptions.PriceConflictException)
+        {
+            throw new Exceptions.HttpResponseException(HttpStatusCode.Conflict);
+        }
     }
 
     private static void ApplyPriceValues(IContent variant, CurrencyPriceRoot? priceValues, IReadOnlyList<VariantManagerStore> stores)
@@ -412,7 +447,7 @@ internal sealed class VariantAppService : IVariantAppService
             || !string.Equals(GetStringValue(variant, "images"), variantModel.Images ?? string.Empty, StringComparison.Ordinal)
             || variant.SortOrder != variantModel.SortOrder
             || !CustomFieldsEqual(variant, variantModel.CustomFields, fieldDefinitions)
-            || !PriceValuesEqual(GetPriceValues(variant, stores), variantModel.PriceValues, stores);
+            || (!Configuration.Instance.UseDatabasePrices && !PriceValuesEqual(GetPriceValues(variant, stores), variantModel.PriceValues, stores));
     }
 
     private static bool DictionariesEqual(IDictionary<string, string> left, IDictionary<string, string> right)

@@ -260,7 +260,8 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
             string cacheKey =
                 $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={Store.Currency.CurrencyValue}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(priceValue)}:sale={CacheHelpers.Sha256(sale)}:parent={parentGen}:parentPrice={CacheHelpers.Sha256(parentPrice)}:parentSale={CacheHelpers.Sha256(parentSale)}:disabled={product?.DisableDiscounts == true}";
 
-            return CacheHelpers.GetOrCreateSingleFlight(
+            return CacheHelpers.GetOrCreateVersioned(
+                cacheKey.Split(":hash=", 2)[0],
                 cacheKey,
                 () =>
                 {

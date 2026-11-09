@@ -10,6 +10,8 @@
 
 ### Bug Fixes
 
+* **prices:** enforce node/store permissions, commit validated import prices before publication, prevent stale variant edits from overwriting ERP changes, bound price caches, notify subscribers and Algolia after commit, and support removing/exporting overrides.
+
 * **manager:** add space above order custom-data badges to separate them from order action buttons.
 
 * **checkout:** consolidate payment reservation release into one activity entry updated to its confirmed outcome; keep request and per-reservation details in diagnostic logs, suppress repeated no-op release entries, and retain audit-before-release safeguards and failure alerts.

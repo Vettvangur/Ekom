@@ -188,6 +188,16 @@ public static class ImportContentExtensions
         return string.Empty;
     }
 
+    /// <summary>Copy overrides to node JSON before disabling database prices. Caller saves/publishes explicitly.</summary>
+    public static void CopyDatabasePricesToNode(this IContent content, string propertyAlias = "price")
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        if (!content.HasProperty(propertyAlias)) throw new ArgumentException("Unknown price property.", nameof(propertyAlias));
+        var value = PriceHelper.Export(content.GetValue<string>(propertyAlias),
+            API.Prices.Instance.Get(content.Key, propertyAlias), API.Store.Instance.GetAllStores().ToList());
+        content.SetValue(propertyAlias, value);
+    }
+
     public static Task SetPriceAsync(this IContent content, string storeAlias, string currency, decimal price,
         string propertyAlias = "price", CancellationToken cancellationToken = default)
     {

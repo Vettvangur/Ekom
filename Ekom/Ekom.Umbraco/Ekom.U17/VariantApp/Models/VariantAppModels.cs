@@ -68,6 +68,8 @@ public sealed class VariantManagerVariant
     public string Sku { get; set; } = string.Empty;
     public string Images { get; set; } = string.Empty;
     public CurrencyPriceRoot PriceValues { get; set; } = new();
+    public CurrencyPriceRoot? OriginalPriceValues { get; set; }
+    public IReadOnlyList<PriceData>? PriceOverrides { get; set; }
     public IReadOnlyList<StockRequest> StockValues { get; set; } = Array.Empty<StockRequest>();
     public IReadOnlyList<VariantManagerCustomField> CustomFields { get; set; } = Array.Empty<VariantManagerCustomField>();
     public int SortOrder { get; set; }

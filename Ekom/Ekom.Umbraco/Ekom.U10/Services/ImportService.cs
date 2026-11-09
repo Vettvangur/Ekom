@@ -1178,8 +1178,9 @@ public class ImportService : IImportService
             OnProductSaveStarting(this, args).GetAwaiter().GetResult();
 
             var databasePrices = Configuration.Instance.UseDatabasePrices;
-            if (databasePrices && !args.IsCreateOperation)
+            if (databasePrices)
             {
+                if (args.IsCreateOperation && productContent.Key == Guid.Empty) productContent.Key = Guid.NewGuid();
                 SaveDatabasePrices(productContent, importProduct.Price);
             }
 
@@ -1325,11 +1326,6 @@ public class ImportService : IImportService
 
             SaveEvent(productContent, importProduct, importProduct.SaveEvent, importProduct.PreservePublishStatus, syncUser, args.IsCreateOperation, recycleBinNode, productProcessNode);
 
-            if (databasePrices && args.IsCreateOperation && productContent.Id > 0)
-            {
-                SaveDatabasePrices(productContent, importProduct.Price);
-            }
-
             productsSaved.Add(importProduct);
 
         }
@@ -1384,8 +1380,9 @@ public class ImportService : IImportService
         OnVariantSaveStarting(this, args).GetAwaiter().GetResult();
 
         var databasePrices = Configuration.Instance.UseDatabasePrices;
-        if (databasePrices && !args.IsCreateOperation)
+        if (databasePrices)
         {
+            if (args.IsCreateOperation && variantContent.Key == Guid.Empty) variantContent.Key = Guid.NewGuid();
             SaveDatabasePrices(variantContent, importVariant.Price);
         }
 
@@ -1478,11 +1475,6 @@ public class ImportService : IImportService
         variantContent.Name = importVariant.NodeName;
 
         SaveEvent(variantContent, importVariant, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, args.IsCreateOperation, recycleBinNode, productProcessNode, productContent);
-
-        if (databasePrices && args.IsCreateOperation && variantContent.Id > 0)
-        {
-            SaveDatabasePrices(variantContent, importVariant.Price);
-        }
 
         variantsSaved.Add(importVariant);
         
@@ -2210,10 +2202,9 @@ public class ImportService : IImportService
 
     private static void SaveDatabasePrices(IContent content, IEnumerable<ImportPrice> prices)
     {
-        foreach (var price in prices)
-        {
-            API.Prices.Instance.SetPrice(content.Key, price.StoreAlias, price.Currency, price.Price);
-        }
+        // Atomic validation/write completes before any save or publish, including new content.
+        API.Prices.Instance.Apply(prices.Select(price => new Ekom.Models.PriceMutation(
+            content.Key, price.StoreAlias, price.Currency, price.Price)));
     }
 
     /// <summary>

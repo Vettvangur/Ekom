@@ -216,7 +216,7 @@ await Ekom.API.Prices.Instance.SetPriceAsync(
     cancellationToken: cancellationToken);
 ```
 
-`Ekom.API.Prices` is also injectable. `GetAsync(nodeKey, propertyAlias)` returns the stored overrides. Both `IContent.SetPrice` and `SetPriceAsync` honor this setting. In node mode these helpers change the content value and the caller still saves/publishes it; in database mode they write immediately and the caller should skip saving/publishing for price-only changes. Save a new node before writing table prices.
+`Ekom.API.Prices` is also injectable. `GetAsync(nodeKey, propertyAlias)` returns the stored overrides. Both `IContent.SetPrice` and `SetPriceAsync` honor this setting. In node mode these helpers change the content value and the caller still saves/publishes it; in database mode they write immediately and the caller should skip saving/publishing for price-only changes. For direct ERP updates, resolve an existing node key. The built-in importer assigns keys and writes prices before first publication.
 
 The built-in importer also routes `ImportProduct.Price` and `ImportVariant.Price` to the table when enabled. Prices are applied even when content is unchanged, and the default content hash excludes prices to avoid saves/publishes for price-only changes. See [importer behavior](imports.md#using-the-built-in-ekom-importer) for custom comparers and first-sync behavior.
 
@@ -224,6 +224,25 @@ The Ekom Price datatype loads table overrides in Umbraco 13, 17, and 18. Editing
 
 Existing node prices remain a fallback for individual currencies that have no table row. A stored zero is an explicit value; the existing variant rule that a zero base price inherits its parent remains unchanged. Enabling table storage does not migrate or modify node values. Populate the table through your ERP sync to make it the source for every price. Disabling the setting returns to the original node values, so copy current prices back first if you want to retain them when switching back.
 
-Product and variant prices, native discounts, provider prices, and variant/catalog displays resolve table values. Runtime resolution reads the database and includes the resolved values in calculated-price cache keys, so existing cached models and other application servers see updates without a content refresh. This adds database reads to pricing; measure catalog-page query load for your deployment. Custom code reading raw Umbraco property JSON still sees the node value; use Ekom price models or `Prices.Resolve` to apply overrides.
+Product and variant prices, native discounts, provider prices, and variant/catalog displays resolve table values. Runtime resolution loads all price overrides once per node per HTTP request, shared across base prices, discounts, and stores. The next request on any application server sees committed updates; a local write invalidates the current request snapshot. Outside HTTP requests, each resolution reads fresh data. Calculated-price caches retain only the latest price version for a given context, avoiding an entry for every ERP revision. Measure query load for large catalogs. Custom code reading raw Umbraco property JSON still sees the node value; use Ekom price models or `Prices.Resolve` to apply overrides.
 
-Updates do not emit Umbraco publish notifications. Integrations that index prices on publish, and external page caches, must be refreshed by the ERP workflow separately. Prices are live data, without Umbraco draft, rollback, or scheduled-publishing semantics.
+Updates do not emit Umbraco publish notifications. `Ekom.Events.PriceEvents.PriceChanged` fires after commit for each changed override, including removals (`NewValue == null`). Handlers should enqueue work. Subscriber failures are logged without rolling back or retrying committed prices. The Algolia plugin queues a product upsert for published product or variant price changes, including inherited variant prices, when product indexing is enabled. Notifications and the indexing queue are best-effort, not a durable outbox: use periodic reconciliation after process failures or queue overflow. Other search indexes and page caches need their own subscriber. Prices are live data, without Umbraco draft, rollback, or scheduled-publishing semantics.
+
+
+Price endpoints require an authenticated, approved backoffice user with access to the node's content root, update and publish permissions, and access to the requested Ekom store. Administrators retain node access. Custom `ISecurityService` implementations must implement `IsAuthenticated` and `CanEditPrices`; their defaults deny access. The variant manager uses the same node checks.
+
+To remove an override and immediately restore the node fallback (zero is a real override, not removal):
+
+```csharp
+await prices.RemovePriceAsync(productKey, "Web", "en-US", cancellationToken: cancellationToken);
+```
+
+The authenticated backoffice equivalent is `DELETE /ekom/backoffice/Prices/{id}/{propertyAlias}/{storeAlias}/{currency}`. A batch `PriceMutation` with `Price: null` also removes an override and can use an expected-value check.
+
+To switch back to node storage without reverting to stale prices:
+
+1. Pause ERP writers and backoffice price editing.
+2. While database mode remains enabled, load each affected product and variant as `IContent`, call `content.CopyDatabasePricesToNode()` (namespace `Ekom.Utilities`), and explicitly save/publish it using the site's usual content workflow. Repeat with `"ekmDiscountPrice"` and any custom price properties. The helper merges overrides with node fallbacks, including legacy scalar/array formats; it does not save or publish. Unknown store/currency mappings throw before changing content.
+3. Verify every affected node was published successfully, then disable `UseDatabasePrices` and restart all application servers. Resume writers in node mode.
+
+`Prices.Get`/`GetAsync` remain available for exporting existing rows when the flag is off. Overrides remain in the table and take effect again if database mode is re-enabled; remove obsolete overrides while database mode is enabled if this is not desired.

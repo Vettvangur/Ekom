@@ -230,10 +230,12 @@ public class EkomBackofficeApiController : ControllerBase
     {
         var node = _nodeService.NodeById(id, true);
         if (node == null) return NotFound();
+        if (!_serviceProvider.GetRequiredService<ISecurityService>().CanEditPrices(node)) return StatusCode(403);
         if (!node.Properties.ContainsKey(propertyAlias)) return BadRequest("Unknown price property.");
         var prices = await _serviceProvider.GetRequiredService<API.Prices>()
             .GetAsync(node.Key, propertyAlias, cancellationToken).ConfigureAwait(false);
-        return Ok(prices);
+        var access = _serviceProvider.GetRequiredService<IManagerAccessService>();
+        return Ok(prices.Where(x => access.CanAccessStore(x.StoreAlias)).ToList());
     }
 
     [HttpPut]
@@ -245,7 +247,9 @@ public class EkomBackofficeApiController : ControllerBase
         if (!ModelState.IsValid || request?.Price == null) return BadRequest("A valid price is required.");
         var node = _nodeService.NodeById(id, true);
         if (node == null) return NotFound();
+        if (!_serviceProvider.GetRequiredService<ISecurityService>().CanEditPrices(node)) return StatusCode(403);
         if (!node.Properties.ContainsKey(propertyAlias)) return BadRequest("Unknown price property.");
+        if (!_serviceProvider.GetRequiredService<IManagerAccessService>().CanAccessStore(request.StoreAlias)) return StatusCode(403);
         var store = LoadStores(id).FirstOrDefault(x => string.Equals(x.Alias, request.StoreAlias, StringComparison.OrdinalIgnoreCase));
         if (store == null || !store.Currencies.Any(x => string.Equals(x.CurrencyValue, request.Currency, StringComparison.OrdinalIgnoreCase)))
             return BadRequest("Unknown store or currency.");
@@ -259,6 +263,21 @@ public class EkomBackofficeApiController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+    }
+
+    [HttpDelete]
+    [Route("Prices/{id}/{propertyAlias}/{storeAlias}/{currency}")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> RemovePrice(string id, string propertyAlias, string storeAlias, string currency, CancellationToken cancellationToken)
+    {
+        if (!_config.UseDatabasePrices) return BadRequest("Database prices are disabled.");
+        var node = _nodeService.NodeById(id, true);
+        if (node == null) return NotFound();
+        if (!_serviceProvider.GetRequiredService<ISecurityService>().CanEditPrices(node)
+            || !_serviceProvider.GetRequiredService<IManagerAccessService>().CanAccessStore(storeAlias)) return StatusCode(403);
+        if (!node.Properties.ContainsKey(propertyAlias)) return BadRequest("Unknown price property.");
+        await _serviceProvider.GetRequiredService<API.Prices>().RemovePriceAsync(node.Key, storeAlias, currency, propertyAlias, cancellationToken).ConfigureAwait(false);
+        return Ok();
     }
 
     [HttpGet]
