@@ -140,7 +140,17 @@ export default class EkomPrintingSectionViewElement extends UmbElementMixin(HTML
     this.panel.querySelector('[data-filter="search"]')?.addEventListener('keydown', e => { if ((e as KeyboardEvent).key === 'Enter') (this.panel.querySelector('[data-refresh]') as HTMLButtonElement).click(); });
     this.panel.querySelectorAll<HTMLButtonElement>('[data-page]').forEach(b => b.addEventListener('click', () => { this.page += Number(b.dataset.page); void this.load(); }));
     this.panel.querySelectorAll<HTMLButtonElement>('[data-action]').forEach(b => b.addEventListener('click', () => { void this.action(b.dataset.job!, b.dataset.action!); }));
-    this.panel.querySelector('[data-close]')?.addEventListener('click', () => (this.panel.querySelector('dialog') as HTMLDialogElement).close());
+    const dialog = this.panel.querySelector('dialog') as HTMLDialogElement;
+    this.panel.querySelector('[data-close]')?.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('cancel', event => { event.preventDefault(); dialog.close(); });
+    dialog.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); dialog.close(); }
+    });
+    dialog.addEventListener('click', event => {
+      if (event.target !== dialog) return;
+      const bounds = dialog.getBoundingClientRect();
+      if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
+    });
   }
 
   private async action(id: string, action: string): Promise<void> {

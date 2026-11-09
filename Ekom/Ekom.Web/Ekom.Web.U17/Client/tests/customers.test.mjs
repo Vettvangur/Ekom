@@ -118,3 +118,29 @@ test('customer search works inside the backoffice form with Search and Enter', (
   assert.equal(outerSubmits, 0);
   dom.window.close();
 });
+
+test('customer details close on backdrop and Escape outside the dialog, but not on content clicks', () => {
+  const dom = new JSDOM('<main></main>');
+  const shared = module('../src/manager/manager-shared.ts');
+  const { EkomCustomersSectionViewElement } = module('../src/manager/customers-section-view.element.ts', {
+    './manager-shared': shared,
+    '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => class extends Base { connectedCallback() {} disconnectedCallback() {} } },
+  }, { HTMLElement: dom.window.HTMLElement, document: dom.window.document });
+  EkomCustomersSectionViewElement.prototype.initialize = async () => {};
+  dom.window.customElements.define('ekom-customers-section-view', EkomCustomersSectionViewElement);
+  const view = dom.window.document.createElement('ekom-customers-section-view');
+  dom.window.document.querySelector('main').appendChild(view);
+  const detail = { customer: { identity: 'test', orders: 1, spend: [], firstOrder: '2026-01-01', daysSinceLastOrder: 1 }, orders: [], count: 0, page: 1, totalPages: 0, snapshot: { fields: {}, date: '2026-01-01', orderNumber: '1' } };
+  view.detail = detail; view.render();
+  view.querySelector('[role=dialog]').click();
+  assert.equal(view.detail, detail);
+  view.querySelector('.customer-overlay').click();
+  assert.equal(view.detail, undefined);
+  view.detail = detail; view.render();
+  dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  assert.equal(view.detail, undefined);
+  view.remove(); view.detail = detail;
+  dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert.equal(view.detail, detail);
+  dom.window.close();
+});

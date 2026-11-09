@@ -86,6 +86,22 @@ public sealed class ManagerCustomerTests
         Assert.Equal("LATE@EXAMPLE.COM", Assert.Single(result.Customers).Identity);
     }
 
+    [Theory]
+    [InlineData("dogg@kalon.is")]
+    [InlineData("dogg")]
+    [InlineData("DOGG@KALON.IS")]
+    [InlineData(" dogg@kalon.is ")]
+    public async Task SearchFindsEmailAlreadyVisibleInCustomerList(string query)
+    {
+        using var f = new Fixture();
+        var day = new DateTime(2026, 11, 9);
+        f.Add("dogg@kalon.is", day, 24245m, name: "Dögg Ívarsdóttir");
+        f.Add("other@example.com", day, 100m);
+        Assert.Equal(2, (await f.Search(day, day)).Customers.Count);
+        var result = await f.Search(day, day, query: query);
+        Assert.Equal("dogg@kalon.is", Assert.Single(result.Customers).Email);
+    }
+
     [Fact]
     public async Task PagingSearchSegmentsAndLatestNameAreDeterministic()
     {

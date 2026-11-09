@@ -153,3 +153,17 @@ test('explicit stations show the capture API instead of a missing-status warning
   assert.match(card.textContent, /Explicit capture API/);
   assert.doesNotMatch(card.textContent, /No statuses configured/);
 });
+
+test('printing dialog closes on Escape or backdrop, but not on its content or padding', () => {
+  const view = new exports.default(); view.render();
+  const dialog = view.shadowRoot.querySelector('dialog');
+  let closes = 0; dialog.close = () => { closes++; };
+  dialog.getBoundingClientRect = () => ({ left: 100, right: 500, top: 100, bottom: 500 });
+  dialog.dispatchEvent(new dom.window.MouseEvent('click', { clientX: 200, clientY: 200, bubbles: true }));
+  dialog.querySelector('[data-detail]').dispatchEvent(new dom.window.MouseEvent('click', { clientX: 0, clientY: 0, bubbles: true }));
+  assert.equal(closes, 0);
+  dialog.dispatchEvent(new dom.window.MouseEvent('click', { clientX: 50, clientY: 200, bubbles: true }));
+  dialog.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  dialog.dispatchEvent(new dom.window.Event('cancel', { cancelable: true }));
+  assert.equal(closes, 3);
+});

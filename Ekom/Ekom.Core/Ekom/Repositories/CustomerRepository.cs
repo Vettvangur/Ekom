@@ -24,6 +24,11 @@ public sealed class CustomerRepository(DatabaseFactory databaseFactory, IOptions
         ? $"EkomCustomerKey({column})"
         : $"UPPER(LTRIM(RTRIM(COALESCE({column}, ''))) COLLATE Latin1_General_100_CI_AS) COLLATE Latin1_General_100_BIN2";
 
+    // Search display fields directly; identity normalization is only for customer grouping.
+    private string SearchColumn(string column) => databaseFactory.IsSqlite
+        ? $"instr(EkomCustomerKey(Q.{column}), @normalizedQuery) > 0"
+        : $"CHARINDEX(@query, COALESCE(Q.{column}, '') COLLATE Latin1_General_100_CI_AS) > 0";
+
     private DbContext OpenDatabase()
     {
         var db = databaseFactory.GetDatabase();
@@ -67,7 +72,7 @@ public sealed class CustomerRepository(DatabaseFactory databaseFactory, IOptions
  AND (@status IN ('CompletedOrders','AllOrders','') OR OrderStatusCol = @status))
  AND (@segment = 'all' OR (@segment = 'new' AND G.Orders = 1) OR (@segment = 'returning' AND G.Orders > 1))
  AND (@query = '' OR EXISTS (SELECT 1 FROM Q WHERE Q.[Identity] = G.[Identity] AND
- ({NormalizeColumn("CustomerName")} LIKE @pattern ESCAPE '~' OR {NormalizeColumn("CustomerEmail")} LIKE @pattern ESCAPE '~' OR {NormalizeColumn("CustomerUsername")} LIKE @pattern ESCAPE '~')))
+ ({SearchColumn("CustomerName")} OR {SearchColumn("CustomerEmail")} OR {SearchColumn("CustomerUsername")})))
 ) ";
     }
 
@@ -109,7 +114,7 @@ SELECT S.[Identity], S.Orders, S.FirstOrder, S.LastOrder,
     }
 
     internal static object Arguments(string store, DateTime start, DateTime end, string status, string query, string segment, int page, int pageSize)
-        => new { store, start = start.Date, end = end.Date.AddDays(1), status, query, pattern = "%" + query.ToUpperInvariant().Replace("~", "~~", StringComparison.Ordinal).Replace("%", "~%", StringComparison.Ordinal).Replace("_", "~_", StringComparison.Ordinal).Replace("[", "~[", StringComparison.Ordinal) + "%", segment, take = pageSize, skip = (page - 1) * pageSize };
+        => new { store, start = start.Date, end = end.Date.AddDays(1), status, query = query.Trim(), normalizedQuery = query.Trim().ToUpperInvariant(), segment, take = pageSize, skip = (page - 1) * pageSize };
 
     private async Task<List<CustomerSpend>> SpendAsync(DataConnection db, string store, string identity, CancellationToken ct)
         => await db.QueryToListAsync<CustomerSpend>($"SELECT Currency, SUM(TotalAmount) AS Total, COUNT(*) AS Orders FROM EkomOrders WHERE StoreAlias = @store AND {Key} = @identity AND {Qualified} GROUP BY Currency", ct, new { store, identity }).ConfigureAwait(false);
