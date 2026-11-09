@@ -1,0 +1,22 @@
+<Project>
+  <!-- Run for normal builds/publish and also packing without a build. Enumerate only
+       after Vite and staging finish, so clean checkouts include every chunk. -->
+  <Target Name="StageEkomVersionedAssets"
+          BeforeTargets="AssignTargetPaths;_GetPackageFiles"
+          DependsOnTargets="$(EkomBuildAssetsTarget)">
+    <PropertyGroup>
+      <EkomVersionedAssetsDirectory>$(BaseIntermediateOutputPath)ekom-versioned-assets/</EkomVersionedAssetsDirectory>
+    </PropertyGroup>
+    <Exec Command="node &quot;$(MSBuildThisFileDirectory)stage-versioned-assets.mjs&quot; &quot;$(MSBuildProjectDirectory)/App_Plugins/Ekom&quot; &quot;$(EkomVersionedAssetsDirectory)&quot; &quot;$(PackageVersion)&quot;" />
+    <ItemGroup>
+      <Content Remove="App_Plugins/Ekom/**" />
+      <None Remove="App_Plugins/Ekom/**" />
+      <_EkomStagedAsset Include="$(EkomVersionedAssetsDirectory)**/*" />
+      <Content Include="@(_EkomStagedAsset)"
+               Link="App_Plugins/Ekom/%(_EkomStagedAsset.RecursiveDir)%(_EkomStagedAsset.Filename)%(_EkomStagedAsset.Extension)"
+               TargetPath="App_Plugins/Ekom/%(_EkomStagedAsset.RecursiveDir)%(_EkomStagedAsset.Filename)%(_EkomStagedAsset.Extension)"
+               Pack="true" PackagePath="App_Plugins/Ekom/%(_EkomStagedAsset.RecursiveDir)%(_EkomStagedAsset.Filename)%(_EkomStagedAsset.Extension)"
+               CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    </ItemGroup>
+  </Target>
+</Project>

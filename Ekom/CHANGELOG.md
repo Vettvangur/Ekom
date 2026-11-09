@@ -12,6 +12,8 @@
 
 ### Bug Fixes
 
+* **web:** version Umbraco 17/18 asset URLs by package release, including manifests and shared chunks, to prevent stale CDN registrations.
+
 * **manager:** use explicit case-insensitive customer substring searches and allow Escape/backdrop dismissal of customer details and printer previews.
 
 * **manager:** fix customer search inside backoffice forms and align Analytics with the Customers gray background, white cards, spacing and table styling.

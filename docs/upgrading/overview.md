@@ -12,6 +12,21 @@ Choose Ekom packages by the target Umbraco major version:
 
 The web-assets package belongs in the site project that contains `wwwroot`. Keep its Umbraco suffix aligned with the Ekom integration package.
 
+## Backoffice asset caching
+
+`Ekom.Web.U17` and `Ekom.Web.U18` package their scripts and shared chunks under
+`/App_Plugins/Ekom/releases/<PackageVersion>/`. The root `umbraco-package.json`
+points Umbraco to that release. Build, publish, and pack generate this layout
+automatically; local `npm run build` retains the unversioned development output.
+The Umbraco 13 `Ekom.Web` package keeps its existing asset layout.
+
+Deploy the root manifest and the complete release directory together, then restart
+the application so Umbraco reloads package registrations. Release paths may be
+cached long-term. Never replace published assets under the same package version;
+issue a new version for changes. Do not serve a cached management API package list.
+Existing browser sessions must reload after deployment. Retain older release
+directories during rolling deployments if old sessions must continue loading chunks.
+
 ## Before changing packages
 
 These guides document only transitions verified in this repository. An Umbraco major-version upgrade can require application, database, configuration, and custom-extension work outside Ekom. Follow the official Umbraco upgrade guidance for the host application and review every third-party Ekom integration separately.
