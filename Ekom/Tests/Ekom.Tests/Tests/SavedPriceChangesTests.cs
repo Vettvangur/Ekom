@@ -3,6 +3,7 @@ using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Tests.Objects;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Reflection;
 using Umbraco.Cms.Core.Events;
@@ -16,9 +17,10 @@ namespace Ekom.Tests.Tests;
 public sealed class SavedPriceChangesTests
 {
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task ContentSavingUpdatesLivePriceAndConsumesEditsOnlyWithStoreAccess(bool allowed)
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public async Task ContentSavingUsesScopedServicesAndLogsFailures(bool allowed, bool serviceFails)
     {
         using var fixture = new DatabasePriceTests.Fixture();
         var key = Guid.NewGuid();
@@ -34,6 +36,7 @@ public sealed class SavedPriceChangesTests
             .Callback((string alias, object value, string? culture, string? segment) => raw = value.ToString()!);
         var security = new Mock<ISecurityService>();
         security.Setup(x => x.IsAuthenticated()).Returns(true);
+        if (serviceFails) security.Setup(x => x.IsAuthenticated()).Throws(new InvalidOperationException("Security service failed."));
         var access = new Mock<IManagerAccessService>();
         access.Setup(x => x.CanAccessStore("Web")).Returns(allowed);
         var stores = new Mock<IStoreService>();
@@ -42,10 +45,17 @@ public sealed class SavedPriceChangesTests
             addServices: services =>
             {
                 services.AddSingleton(fixture.Prices);
-                services.AddSingleton(security.Object);
-                services.AddSingleton(access.Object);
                 services.AddSingleton(new Ekom.API.Store(stores.Object, Mock.Of<ICacheRefreshService>()));
             });
+        using var scopedProvider = new ServiceCollection()
+            .AddScoped<ISecurityService>(_ => security.Object)
+            .AddScoped<IManagerAccessService>(_ => access.Object)
+            .BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        Assert.Throws<InvalidOperationException>(() => scopedProvider.GetRequiredService<ISecurityService>());
+        using var scope = scopedProvider.CreateScope();
+        var scopedSecurity = scope.ServiceProvider.GetRequiredService<ISecurityService>();
+        var scopedAccess = scope.ServiceProvider.GetRequiredService<IManagerAccessService>();
+        var logger = new Mock<ILogger>();
 #if NET10_0_OR_GREATER
         var assembly = Assembly.Load("Ekom.U17");
 #else
@@ -53,9 +63,14 @@ public sealed class SavedPriceChangesTests
 #endif
         var apply = assembly.GetType("Ekom.Umb.PriceSavingNotifications")!.GetMethod("ApplyAsync", BindingFlags.Public | BindingFlags.Static)!;
         var notification = new ContentSavingNotification([node.Object], new EventMessages());
-        await (Task)apply.Invoke(null, [notification, CancellationToken.None])!;
-        Assert.Equal(!allowed, notification.Cancel);
-        if (!allowed)
+        await (Task)apply.Invoke(null, [notification, scopedSecurity, scopedAccess, logger.Object, CancellationToken.None])!;
+        var succeeds = allowed && !serviceFails;
+        Assert.Equal(!succeeds, notification.Cancel);
+        logger.Verify(x => x.Log(
+            LogLevel.Error, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            succeeds ? Times.Never() : Times.Once());
+        if (!succeeds)
         {
             Assert.Empty(fixture.Prices.Get(key));
             Assert.Contains("EditId", raw, StringComparison.Ordinal);
@@ -64,7 +79,7 @@ public sealed class SavedPriceChangesTests
         Assert.Equal(125, Assert.Single(fixture.Prices.Get(key)).Price);
         Assert.DoesNotContain("EditId", raw, StringComparison.Ordinal);
         await fixture.Prices.SetPriceAsync(key, "Web", "en-US", 150);
-        await (Task)apply.Invoke(null, [new ContentSavingNotification([node.Object], new EventMessages()), CancellationToken.None])!;
+        await (Task)apply.Invoke(null, [new ContentSavingNotification([node.Object], new EventMessages()), scopedSecurity, scopedAccess, logger.Object, CancellationToken.None])!;
         Assert.Equal(150, Assert.Single(fixture.Prices.Get(key)).Price);
         node.Verify(x => x.SetValue("price", It.IsAny<object>(), null, null), Times.Once);
     }

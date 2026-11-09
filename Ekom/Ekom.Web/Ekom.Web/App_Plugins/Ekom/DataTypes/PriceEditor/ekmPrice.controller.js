@@ -118,7 +118,7 @@
               if (price && !price.EditId) price.Price = row.price;
             });
             $scope.prices = priceStructure;
-            $scope.priceStatus = 'Save the document to update prices. Saving makes price changes live.';
+            $scope.priceStatus = '';
           });
         }).catch(function () { $scope.priceStatus = 'Could not load prices. Reload before editing.'; });
       });
@@ -135,7 +135,7 @@
         row.Price = price;
         row.EditId = window.crypto.randomUUID();
         $scope.model.value = angular.copy(nodePrices);
-        $scope.priceStatus = 'Price changed. Save the document to make it live.';
+        $scope.priceStatus = '';
       };
 
       function checkFormat(obj) {

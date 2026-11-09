@@ -45,8 +45,13 @@ internal sealed class UmbracoEventListeners :
     private readonly Ekom.Services.INodeService _nodeService;
     private readonly RevalidateService _revalidateService;
 
+    private readonly ISecurityService _priceSecurity;
+    private readonly IManagerAccessService _priceAccess;
+
     public UmbracoEventListeners(
         ILogger<UmbracoEventListeners> logger,
+        ISecurityService priceSecurity,
+        IManagerAccessService priceAccess,
         Configuration config,
         IBaseCache<IStore> storeCache,
         IStoreDomainCache storeDomainCache,
@@ -59,6 +64,8 @@ internal sealed class UmbracoEventListeners :
         RevalidateService revalidateService)
     {
         _logger = logger;
+        _priceSecurity = priceSecurity;
+        _priceAccess = priceAccess;
         _config = config;
         _storeCache = storeCache;
         _storeDomainCache = storeDomainCache;
@@ -73,7 +80,7 @@ internal sealed class UmbracoEventListeners :
 
     public async Task HandleAsync(ContentSavingNotification notification, CancellationToken cancellationToken)
     {
-        await Ekom.Umb.PriceSavingNotifications.ApplyAsync(notification, cancellationToken).ConfigureAwait(false);
+        await Ekom.Umb.PriceSavingNotifications.ApplyAsync(notification, _priceSecurity, _priceAccess, _logger, cancellationToken).ConfigureAwait(false);
         if (notification.Cancel) return;
 
         foreach (var content in notification.SavedEntities)

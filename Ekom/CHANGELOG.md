@@ -12,6 +12,8 @@
 
 ### Bug Fixes
 
+* **prices:** use scoped security services during content saving and log price-save failures as well as showing the editor notification.
+
 * **prices:** save datatype edits with the document, like stock, instead of writing live prices from individual fields.
 
 * **prices:** read all cache-refresh chunks in one serializable transaction to prevent mixed versions during concurrent writes.

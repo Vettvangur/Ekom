@@ -2,7 +2,7 @@ using Ekom.API;
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
@@ -12,7 +12,7 @@ namespace Ekom.Umb;
 
 internal static class PriceSavingNotifications
 {
-    public static async Task ApplyAsync(ContentSavingNotification notification, CancellationToken ct)
+    public static async Task ApplyAsync(ContentSavingNotification notification, ISecurityService security, IManagerAccessService access, ILogger logger, CancellationToken ct)
     {
         if (!Configuration.Instance.UseDatabasePrices || notification.Cancel) return;
         try
@@ -20,8 +20,6 @@ internal static class PriceSavingNotifications
             var stores = API.Store.Instance.GetAllStores().ToList();
             var changes = new List<PriceMutation>();
             var fields = new List<(IContent Node, string Alias, string Value)>();
-            var security = Configuration.Resolver.GetRequiredService<ISecurityService>();
-            var access = Configuration.Resolver.GetRequiredService<IManagerAccessService>();
             foreach (var node in notification.SavedEntities)
             {
                 foreach (var property in node.Properties.Where(property => property.PropertyType.PropertyEditorAlias == "Ekom.Price"))
@@ -42,6 +40,7 @@ internal static class PriceSavingNotifications
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.Text.Json.JsonException)
         {
+            logger.LogError(ex, "Failed to save database prices during content saving.");
             notification.CancelOperation(new EventMessage("Prices", ex.Message, EventMessageType.Error));
         }
     }

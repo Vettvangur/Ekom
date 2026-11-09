@@ -51,8 +51,13 @@ class UmbracoEventListeners :
     /// <summary>
     /// Initializes a new instance of the <see cref="UmbracoEventListeners"/> class.
     /// </summary>
+    private readonly ISecurityService _priceSecurity;
+    private readonly IManagerAccessService _priceAccess;
+
     public UmbracoEventListeners(
         ILogger<UmbracoEventListeners> logger,
+        ISecurityService priceSecurity,
+        IManagerAccessService priceAccess,
         Configuration config,
         IBaseCache<IStore> storeCache,
         IStoreDomainCache storeDomainCache,
@@ -68,6 +73,8 @@ class UmbracoEventListeners :
         IEkomRichTextResolver richTextResolver)
     {
         _logger = logger;
+        _priceSecurity = priceSecurity;
+        _priceAccess = priceAccess;
         _config = config;
         _storeCache = storeCache;
         _storeDomainCache = storeDomainCache;
@@ -84,7 +91,7 @@ class UmbracoEventListeners :
     }
     public async Task HandleAsync(ContentSavingNotification e, CancellationToken ct)
     {
-        await Ekom.Umb.PriceSavingNotifications.ApplyAsync(e, ct).ConfigureAwait(false);
+        await Ekom.Umb.PriceSavingNotifications.ApplyAsync(e, _priceSecurity, _priceAccess, _logger, ct).ConfigureAwait(false);
         if (e.Cancel) return;
 
         foreach (var content in e.SavedEntities)

@@ -45,6 +45,8 @@ The Ekom Price datatype supports database prices in Umbraco 13, 17, and 18. Edit
 
 **Saving makes price changes live, even if the content remains a draft.** Only explicitly edited currencies are written; saving unrelated content does not copy stale node prices over newer ERP values. Concurrent edits to the same currency use the last committed price write. Content and table prices are not one transaction: if another save handler fails after the price write, the price may already be live, matching the stock saving workflow.
 
+Price-save failures shown in the editor are also logged through the configured application logger (including Serilog when configured).
+
 Existing node prices remain a fallback for individual currencies that have no table row. A stored zero is an explicit value; the existing variant rule that a zero base price inherits its parent remains unchanged. Enabling table storage does not migrate or modify node values. Populate the table through your ERP sync or the migration helper to make it the source for every price. Disabling the setting returns to the original node values, so copy current prices back first if you want to retain them when switching back.
 
 ## Caching and multiple servers

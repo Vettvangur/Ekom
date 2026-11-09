@@ -133,7 +133,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
       this.overrides = data.prices;
       this.rebuildValue();
       this.renderPrices();
-      this.setStatus(databasePrices ? 'Save the document to update prices. Saving makes price changes live.' : '');
+      this.setStatus('');
     } catch (error) {
       if (requestId !== this.requestId) return;
       this.setStatus(error instanceof Error ? error.message : 'Could not load prices.', true);
@@ -344,7 +344,7 @@ export class EkomPriceEditorElement extends UmbElementMixin(HTMLElement) impleme
       else rows.push({ Currency: currency, Price: price, EditId: crypto.randomUUID() });
       this.rawValue = draft;
       this.rebuildValue();
-      this.setStatus('Price changed. Save the document to make it live.');
+      this.setStatus('');
     } else {
       this.rawValue = this.internalValue;
     }
