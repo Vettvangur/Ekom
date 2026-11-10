@@ -11,6 +11,7 @@ public class DbContext : LinqToDB.Data.DataConnection
     public ITable<CustomerData> CustomerData => this.GetTable<CustomerData>();
     public ITable<DiscountStockData> DiscountStockData => this.GetTable<DiscountStockData>();
     public ITable<OrderActivityLog> OrderActivityLog => this.GetTable<OrderActivityLog>();
+    public ITable<OrderReview> OrderReviews => this.GetTable<OrderReview>();
     public ITable<OrderData> OrderData => this.GetTable<OrderData>();
     public ITable<PriceData> Prices => this.GetTable<PriceData>();
     public ITable<StockData> StockData => this.GetTable<StockData>();

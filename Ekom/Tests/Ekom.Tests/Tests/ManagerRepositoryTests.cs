@@ -479,6 +479,7 @@ public class ManagerRepositoryTests
             Repository = new ManagerRepository(NullLogger<ManagerRepository>.Instance, new Configuration(configuration), _factory, stores.Object);
             using var db = _factory.GetDatabase();
             db.CreateTable<OrderData>();
+            db.CreateTable<OrderReview>();
         }
 
         public ManagerRepository Repository { get; }

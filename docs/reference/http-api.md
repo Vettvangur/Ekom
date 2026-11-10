@@ -223,3 +223,7 @@ All routes below are relative to `/ekom/manager`. Routes taking `store`, or load
 - [.NET API](dotnet-api.md)
 - [Configuration](configuration-reference.md)
 - [Models and behavior](models-and-behavior.md)
+
+## Order reviews
+
+See [Order reviews](../guides/order-reviews.md) for raising, listing and resolving issues, and the `needsReview` filter on manager order searches.

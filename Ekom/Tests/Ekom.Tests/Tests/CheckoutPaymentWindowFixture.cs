@@ -158,7 +158,7 @@ internal sealed class CheckoutPaymentWindowFixture : IDisposable
         var attempt = attemptId ?? await CurrentAttemptIdAsync();
         var checkout = new CheckoutService(NullLogger<CheckoutService>.Instance, _scope.Instance, Repository, null!,
             Configuration.Resolver.GetRequiredService<OrderService>(), null!, Mock.Of<IOrderActivityLogService>(),
-            Mock.Of<IMailService>(), Database.Service, Configuration.Resolver.GetRequiredService<CheckoutReservationService>());
+            Mock.Of<IMailService>(), Database.Service, Configuration.Resolver.GetRequiredService<CheckoutReservationService>(), Mock.Of<IOrderReviewService>());
         static void KeepStatus(object? sender, CompleteCheckoutEventArgs args) => args.UpdateOrderStatus = false;
         CheckoutEvents.CompleteCheckout += KeepStatus;
         try { return await Attempts.CompleteAsync(OrderId, attempt, () => checkout.CompleteAsync(OrderId)); }
