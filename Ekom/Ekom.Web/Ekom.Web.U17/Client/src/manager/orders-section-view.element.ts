@@ -451,7 +451,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     const scrollPositions = Array.from(this.querySelectorAll<HTMLElement>('.ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content')).map(node => node.scrollTop);
     renderManagerContent(this, `
       <style>${managerStyles}</style>
-      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261110-order-reviews-2">
+      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261110-order-tabs-1">
       <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
           ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}

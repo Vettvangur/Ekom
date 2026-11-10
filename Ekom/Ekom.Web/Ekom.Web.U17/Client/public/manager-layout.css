@@ -98,9 +98,11 @@
  .ekom-shared-filter-actions { margin-left:auto; }
  .ekom-list-toolbar { padding:0 12px; gap:2px; align-items:stretch; background:var(--ekom-surface-alt); }
  .ekom-order-views { gap:2px; }
- .ekom-order-views button { padding:13px 12px 11px; font-size:14px; line-height:1; border-bottom:2px solid transparent; border-radius:0; }
- .ekom-order-views button[aria-pressed=true] { background:transparent; color:var(--ekom-accent); border-bottom-color:var(--ekom-accent); }
- .ekom-order-views button span { font:700 11px/1.2 'Ekom Mono',monospace; border-radius:10px; padding:2px 6px; }
+ .ekom-order-views button { display:flex; align-items:center; gap:8px; padding:13px 12px 11px; font-size:14px; font-weight:400; line-height:1; border-bottom:2px solid transparent; border-radius:0; }
+ .ekom-order-views button[hidden] { display:none; }
+ .ekom-order-views button[aria-pressed=true] { background:transparent; color:var(--ekom-text); font-weight:700; border-bottom-color:var(--ekom-accent); }
+ .ekom-order-views button span { margin-left:0; font:700 11px/1.2 'Ekom Mono',monospace; border-radius:10px; padding:2px 6px; color:var(--ekom-muted); background:color-mix(in srgb,var(--ekom-muted) 10%,transparent); }
+ .ekom-order-views button[aria-pressed=true] span { color:var(--ekom-accent); background:color-mix(in srgb,var(--ekom-accent) 12%,var(--ekom-surface)); }
  .ekom-list-search { align-items:center; padding:8px 0; margin-left:auto; }
  .ekom-list-search input { width:240px; min-height:34px; }
  .ekom-inline-totals { padding:18px 20px; }
@@ -571,3 +573,6 @@ ekom-orders-section-view:not([classic]) {
  .ekom-review-panel .ekom-review-alert small { display:block; margin:6px 0 0; }
  .ekom-review-panel .ekom-review-body > label { font-weight:600; }
 }
+
+/* Order views use text emphasis and an underline, without a filled button hover. */
+ekom-orders-section-view:not([classic]) .ekom-order-views button:hover { background:transparent; color:var(--ekom-text); box-shadow:none; }
