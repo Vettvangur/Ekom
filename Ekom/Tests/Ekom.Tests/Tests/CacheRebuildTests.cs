@@ -95,7 +95,7 @@ public class CacheRebuildTests
             fixture.Cache.ClearCache();
             fixture.Cache.FillCache();
             await OutsideRebuild(() => fixture.Cache.Remove(old.Key));
-            Assert.Throws<InvalidOperationException>(() => rebuild.Commit());
+            Assert.Throws<CacheRebuildConflictException>(() => rebuild.Commit());
         }
         Assert.Empty(fixture.Cache.Cache);
         Assert.False(fixture.Cache.TryGetById(1, out _));
@@ -156,7 +156,7 @@ public class CacheRebuildTests
                     Stock()[1] = 9;
                     if (!keepUpdateOpen) update.Dispose();
                 });
-                Assert.Throws<InvalidOperationException>(() => rebuild.Commit());
+                Assert.Throws<CacheRebuildConflictException>(() => rebuild.Commit());
             }
             Assert.Equal(9, Stock()[1]);
         }

@@ -14,6 +14,7 @@ internal sealed class CacheRebuildCoordinator
     private long _revision;
     private int _updates;
     private bool _building;
+    private Rebuild? _current;
 
     public bool IsRebuilding => _rebuild.Value is { Finished: false };
 
@@ -56,6 +57,7 @@ internal sealed class CacheRebuildCoordinator
             _building = true;
             var rebuild = new Rebuild(this, _revision);
             _rebuild.Value = rebuild;
+            _current = rebuild;
             return rebuild;
         }
     }
@@ -96,12 +98,52 @@ internal sealed class CacheRebuildCoordinator
         });
     }
 
+    /// <summary>
+    /// Mark a live mutation whose source of truth is outside the caches (a committed database row).
+    /// It never invalidates a running rebuild: <paramref name="refresh"/> is run once the rebuild
+    /// is published, so the new caches end up with the committed value. Refreshes with the same
+    /// <paramref name="refreshKey"/> are collapsed into the latest one.
+    /// </summary>
+    public IDisposable UpdateRefreshable(string refreshKey, Func<Task> refresh)
+    {
+        if (IsRebuilding)
+            return Noop;
+
+        var previousRead = _read.Value;
+        _read.Value = null;
+        lock (_gate)
+        {
+            if (_building)
+                _current!.Refreshes[refreshKey] = refresh;
+        }
+        return new Scope(() => _read.Value = previousRead);
+    }
+
+    private static async Task RunRefreshesAsync(Func<Task>[] refreshes)
+    {
+        foreach (var refresh in refreshes)
+        {
+            try
+            {
+                await refresh().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Each refresh reports its own failure; one must not stop the rest.
+            }
+        }
+    }
+
     internal sealed class Rebuild : IDisposable
     {
         private readonly CacheRebuildCoordinator _owner;
         private readonly long _revision;
         internal readonly Dictionary<(object Owner, string Name), object> Values = new();
+        internal readonly Dictionary<string, Func<Task>> Refreshes = new();
         internal volatile bool Finished;
+
+        /// <summary>Completes when the refreshes registered during this rebuild have run.</summary>
+        internal Task Refreshed { get; private set; } = Task.CompletedTask;
 
         internal Rebuild(CacheRebuildCoordinator owner, long revision)
         {
@@ -111,12 +153,13 @@ internal sealed class CacheRebuildCoordinator
 
         public void Commit()
         {
+            Func<Task>[] refreshes;
             lock (_owner._gate)
             {
                 if (Finished)
                     throw new InvalidOperationException("The cache rebuild has already finished.");
                 if (_owner._updates != 0 || _owner._revision != _revision)
-                    throw new InvalidOperationException("Ekom caches changed during the rebuild. The live caches were retained; retry the rebuild.");
+                    throw new CacheRebuildConflictException("Ekom caches changed during the rebuild. The live caches were retained; retry the rebuild.");
 
                 var next = new Dictionary<(object, string), object>(_owner._live);
                 lock (Values)
@@ -125,7 +168,17 @@ internal sealed class CacheRebuildCoordinator
                         next[pair.Key] = pair.Value;
                 }
                 Volatile.Write(ref _owner._live, next);
+                refreshes = Refreshes.Values.ToArray();
                 Finish();
+            }
+
+            if (refreshes.Length == 0)
+                return;
+
+            // Run as ordinary live mutations, outside the rebuild's execution context.
+            using (ExecutionContext.SuppressFlow())
+            {
+                Refreshed = Task.Run(() => RunRefreshesAsync(refreshes));
             }
         }
 
@@ -142,6 +195,7 @@ internal sealed class CacheRebuildCoordinator
             Finished = true;
             _owner._rebuild.Value = null;
             _owner._building = false;
+            _owner._current = null;
         }
     }
 
@@ -151,3 +205,6 @@ internal sealed class CacheRebuildCoordinator
         public void Dispose() => Interlocked.Exchange(ref _dispose, null)?.Invoke();
     }
 }
+
+/// <summary>A live cache mutation overlapped the rebuild, so it was discarded and can be retried.</summary>
+internal sealed class CacheRebuildConflictException(string message) : InvalidOperationException(message);
