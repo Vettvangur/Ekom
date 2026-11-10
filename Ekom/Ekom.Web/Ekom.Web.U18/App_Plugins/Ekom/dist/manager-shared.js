@@ -59,6 +59,16 @@ class T {
       includeOrderLines: e
     });
   }
+  async orderReviews(t) {
+    const r = [];
+    for (let e = 0; ; e += 200) {
+      const o = await this.getJson(`/ekom/manager/orders/${encodeURIComponent(t)}/reviews`, { skip: e, take: 200 });
+      if (r.push(...o), o.length < 200) return r;
+    }
+  }
+  async reviewOrder(t, r, e, o) {
+    return this.postBody(`/ekom/manager/orders/${encodeURIComponent(t)}/reviews/${encodeURIComponent(r)}/review`, { comment: e, resolved: o });
+  }
   async statusList() {
     return this.getJson("/ekom/manager/StatusList");
   }
@@ -590,11 +600,11 @@ function Ce(a, t, r, e = {}) {
   const i = a.getContext("2d");
   if (!i) return;
   i.scale(n, n), i.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
-  const x = t.points || [], O = x.map((m) => m.y == null ? null : Number(m.y)), w = ((W = e.comparison) == null ? void 0 : W.points) || [], c = [...O, ...w.map((m) => m.y)].filter((m) => m != null), b = Math.min(0, ...c), $ = Math.max(1, ...c), F = 10 ** (Math.floor(Math.log10($ / 4)) - 1), q = e.integer ? Math.ceil($ / 4) * 4 : e.templateStyle ? Math.ceil($ / 4 / F) * F * 4 : $, B = (m) => e.formatValue ? e.formatValue(m) : e.currency ? ue(m, e.currency) : m.toLocaleString(void 0, { maximumFractionDigits: e.integer ? 0 : 2 }), V = e.formatAxisValue ?? B, Y = Array.from({ length: 5 }, (m, d) => q - (q - b) * d / 4), S = e.templateStyle ? 1 : Math.max(48, ...Y.map((m) => i.measureText(V(m)).width + 12)), M = s - (e.templateStyle ? 1 : 16), D = e.templateStyle ? 8 : 20, _ = u - (e.templateStyle ? 26 : 52), g = x.map((m, d) => {
+  const x = t.points || [], O = x.map((m) => m.y == null ? null : Number(m.y)), w = ((W = e.comparison) == null ? void 0 : W.points) || [], c = [...O, ...w.map((m) => m.y)].filter((m) => m != null), b = Math.min(0, ...c), $ = Math.max(1, ...c), F = 10 ** (Math.floor(Math.log10($ / 4)) - 1), U = e.integer ? Math.ceil($ / 4) * 4 : e.templateStyle ? Math.ceil($ / 4 / F) * F * 4 : $, G = (m) => e.formatValue ? e.formatValue(m) : e.currency ? ue(m, e.currency) : m.toLocaleString(void 0, { maximumFractionDigits: e.integer ? 0 : 2 }), V = e.formatAxisValue ?? G, Y = Array.from({ length: 5 }, (m, d) => U - (U - b) * d / 4), S = e.templateStyle ? 1 : Math.max(48, ...Y.map((m) => i.measureText(V(m)).width + 12)), M = s - (e.templateStyle ? 1 : 16), D = e.templateStyle ? 8 : 20, _ = u - (e.templateStyle ? 26 : 52), g = x.map((m, d) => {
     var v, C, E;
     return {
       x: x.length > 1 ? S + (M - S) * d / (x.length - 1) : (S + M) / 2,
-      y: O[d] == null ? null : _ - (O[d] - b) / (q - b) * (_ - D),
+      y: O[d] == null ? null : _ - (O[d] - b) / (U - b) * (_ - D),
       date: m.x || ((v = t.labels) == null ? void 0 : v[d]) || "",
       axisLabel: ((C = e.formatLabel) == null ? void 0 : C.call(e, d)) ?? m.x ?? ((E = t.labels) == null ? void 0 : E[d]) ?? "",
       value: O[d]
@@ -602,18 +612,18 @@ function Ce(a, t, r, e = {}) {
   }), N = (m = -1) => {
     var X;
     i.clearRect(0, 0, s, u), i.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
-    const d = typeof getComputedStyle == "function" ? getComputedStyle(a) : void 0, v = (d == null ? void 0 : d.getPropertyValue("--ekom-muted").trim()) || (d == null ? void 0 : d.getPropertyValue("--uui-color-text-alt").trim()) || "#555", C = (d == null ? void 0 : d.getPropertyValue("--ekom-border").trim()) || "#e5e5e5", E = (d == null ? void 0 : d.getPropertyValue("--uui-color-text").trim()) || "", j = (X = /^#([0-9a-f]{6})$/i.exec(E)) == null ? void 0 : X[1], I = j ? [0, 2, 4].reduce((p, l) => p + parseInt(j.slice(l, l + 2), 16), 0) > 420 : !1, U = e.templateStyle && !I ? "#10694a" : r;
+    const d = typeof getComputedStyle == "function" ? getComputedStyle(a) : void 0, v = (d == null ? void 0 : d.getPropertyValue("--ekom-muted").trim()) || (d == null ? void 0 : d.getPropertyValue("--uui-color-text-alt").trim()) || "#555", C = (d == null ? void 0 : d.getPropertyValue("--ekom-border").trim()) || "#e5e5e5", E = (d == null ? void 0 : d.getPropertyValue("--uui-color-text").trim()) || "", j = (X = /^#([0-9a-f]{6})$/i.exec(E)) == null ? void 0 : X[1], I = j ? [0, 2, 4].reduce((p, l) => p + parseInt(j.slice(l, l + 2), 16), 0) > 420 : !1, q = e.templateStyle && !I ? "#10694a" : r;
     i.lineWidth = 1, i.textAlign = e.templateStyle ? "left" : "right", Y.forEach((p, l) => {
       const k = D + (_ - D) * l / 4;
       i.fillStyle = v, i.fillText(V(p), e.templateStyle ? S : S - 8, e.templateStyle ? Math.min(_, k + 3) : k + 4), !(e.templateStyle && (l === 0 || l === 4)) && (i.globalAlpha = e.templateStyle ? 0.5 : 1, i.strokeStyle = C, i.beginPath(), i.moveTo(S, k), i.lineTo(M, k), i.stroke(), i.globalAlpha = 1);
     });
-    const G = Math.max(90, ...g.map((p) => i.measureText(p.axisLabel).width + 32)), Z = Math.max(2, Math.floor((M - S) / G)), ne = new Set(Array.from({ length: Math.min(Z, g.length) }, (p, l) => Math.round(l * (g.length - 1) / Math.max(1, Math.min(Z, g.length) - 1))));
+    const B = Math.max(90, ...g.map((p) => i.measureText(p.axisLabel).width + 32)), Z = Math.max(2, Math.floor((M - S) / B)), ne = new Set(Array.from({ length: Math.min(Z, g.length) }, (p, l) => Math.round(l * (g.length - 1) / Math.max(1, Math.min(Z, g.length) - 1))));
     i.fillStyle = v, g.forEach((p, l) => {
       ne.has(l) && (i.textAlign = g.length === 1 ? "center" : l === 0 ? "left" : l === g.length - 1 ? "right" : "center", i.fillText(p.axisLabel, p.x, _ + 24));
     });
     const Q = (p, l) => {
       var y, z;
-      i.strokeStyle = l ? "#9b9fad" : U, i.lineWidth = e.templateStyle ? l ? 1.5 : 2.5 : 2, i.lineJoin = "round", i.lineCap = "round", (y = i.setLineDash) == null || y.call(i, l ? [4, 5] : []), i.beginPath();
+      i.strokeStyle = l ? "#9b9fad" : q, i.lineWidth = e.templateStyle ? l ? 1.5 : 2.5 : 2, i.lineJoin = "round", i.lineCap = "round", (y = i.setLineDash) == null || y.call(i, l ? [4, 5] : []), i.beginPath();
       let k = !1;
       p.forEach((L) => {
         if (L.y == null) {
@@ -638,17 +648,17 @@ function Ce(a, t, r, e = {}) {
       var k;
       return {
         x: p.x,
-        y: ((k = w[l]) == null ? void 0 : k.y) == null ? null : _ - (Number(w[l].y) - b) / (q - b) * (_ - D)
+        y: ((k = w[l]) == null ? void 0 : k.y) == null ? null : _ - (Number(w[l].y) - b) / (U - b) * (_ - D)
       };
-    }), !0), Q(g, !1), i.fillStyle = U, g.forEach((p, l) => {
+    }), !0), Q(g, !1), i.fillStyle = q, g.forEach((p, l) => {
       p.y == null || e.templateStyle && g.length > 1 && l !== m || (i.beginPath(), i.arc(p.x, p.y, l === m ? 5 : 3, 0, Math.PI * 2), i.fill());
     }), g.length || (i.textAlign = "center", i.fillText("No data for this period", (S + M) / 2, u / 2));
     const R = g[m];
     if (R) {
-      const p = [R.date, R.value == null ? "—" : B(R.value)];
+      const p = [R.date, R.value == null ? "—" : G(R.value)];
       if (w[m]) {
         const P = w[m];
-        p.push(`Previous: ${P.x || ""}`, P.y == null ? "—" : B(P.y));
+        p.push(`Previous: ${P.x || ""}`, P.y == null ? "—" : G(P.y));
       }
       const l = Math.max(...p.map((P) => i.measureText(P).width)) + 20, k = Math.max(0, Math.min(s - l, R.x - l / 2)), y = p.length * 18 + 12, z = R.y ?? _, L = Math.max(0, Math.min(u - y, z > y + 20 ? z - y - 12 : z + 12));
       i.fillStyle = "#222", i.fillRect(k, L, l, y), i.fillStyle = "#fff", i.textAlign = "left", p.forEach((P, ie) => i.fillText(P, k + 10, L + 19 + ie * 18));
@@ -658,10 +668,10 @@ function Ce(a, t, r, e = {}) {
     if (e.columnHover)
       return !g.length || v < S || v > M || C < D || C > _ ? -1 : g.length === 1 ? 0 : Math.round((v - S) / (M - S) * (g.length - 1));
     let E = -1, j = 16;
-    return g.forEach((I, U) => {
+    return g.forEach((I, q) => {
       if (I.y == null) return;
-      const G = Math.hypot(I.x - v, I.y - C);
-      G < j && (E = U, j = G);
+      const B = Math.hypot(I.x - v, I.y - C);
+      B < j && (E = q, j = B);
     }), E;
   };
   a.onmousemove = (m) => {
@@ -677,6 +687,7 @@ function Ce(a, t, r, e = {}) {
 }
 const ge = [
   { key: "AllOrders", label: "All" },
+  { key: "NeedsReview", label: "Needs review" },
   { key: "states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled", label: "Unfulfilled" },
   { key: "states:Open;Pending,Authorized,PartiallyPaid,Failed;", label: "Unpaid" },
   { key: "states:Open;;", label: "Open" },

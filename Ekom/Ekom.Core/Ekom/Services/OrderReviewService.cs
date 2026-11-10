@@ -61,20 +61,43 @@ internal sealed class OrderReviewService : IOrderReviewService
             .Skip(skip).Take(take).ToListAsync(ct).ConfigureAwait(false);
     }
 
-    public async Task<OrderReview?> ResolveAsync(Guid orderId, Guid reviewId, string resolvedBy, string? comment = null, CancellationToken ct = default)
+    public Task<OrderReview?> ResolveAsync(Guid orderId, Guid reviewId, string resolvedBy, string? comment = null, CancellationToken ct = default)
+        => ReviewCoreAsync(orderId, reviewId, resolvedBy, comment, true, true, ct);
+
+    public Task<OrderReview?> ReviewAsync(Guid orderId, Guid reviewId, string reviewedBy, string? comment, bool resolved, CancellationToken ct = default)
+        => ReviewCoreAsync(orderId, reviewId, reviewedBy, comment, resolved, false, ct);
+
+    private async Task<OrderReview?> ReviewCoreAsync(Guid orderId, Guid reviewId, string reviewedBy, string? comment, bool resolved, bool allowAlreadyResolved, CancellationToken ct)
     {
         ValidateOrderId(orderId);
         if (reviewId == Guid.Empty) throw new ArgumentException("Review id cannot be empty.", nameof(reviewId));
-        resolvedBy = Required(resolvedBy, 200, nameof(resolvedBy));
+        reviewedBy = Required(reviewedBy, 200, nameof(reviewedBy));
         comment = string.IsNullOrWhiteSpace(comment) ? null : Required(comment, 4000, nameof(comment));
-
+        if (!resolved && comment == null) throw new ArgumentException("Describe what was done before saving a note.", nameof(comment));
         await using var db = _databaseFactory.GetDatabase();
-        await db.OrderReviews.Where(x => x.OrderId == orderId && x.Id == reviewId && x.ResolvedUtc == null)
-            .Set(x => x.ResolvedUtc, (DateTime?)DateTime.UtcNow)
-            .Set(x => x.ResolvedBy, resolvedBy)
-            .Set(x => x.ResolutionComment, comment)
-            .UpdateAsync(ct).ConfigureAwait(false);
-        return await db.OrderReviews.FirstOrDefaultAsync(x => x.OrderId == orderId && x.Id == reviewId, ct).ConfigureAwait(false);
+        await using var transaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+        var review = await db.OrderReviews.FirstOrDefaultAsync(x => x.OrderId == orderId && x.Id == reviewId, ct).ConfigureAwait(false);
+        if (review?.ResolvedUtc != null && !allowAlreadyResolved)
+            throw new InvalidOperationException("This alert has already been resolved. Your note was not saved. Copy your note before closing this dialog.");
+        if (review != null && review.ResolvedUtc == null)
+        {
+            var now = DateTime.UtcNow;
+            if (resolved)
+            {
+                review.ResolvedUtc = now;
+                review.ResolvedBy = reviewedBy;
+                review.ResolutionComment = comment;
+                await db.UpdateAsync(review, token: ct).ConfigureAwait(false);
+            }
+            await db.InsertAsync(new OrderActivityLog
+            {
+                UniqueID = Guid.NewGuid(), Key = orderId, Date = now, UserName = reviewedBy,
+                LogType = OrderActivityLogType.Info,
+                Log = $"Review {(resolved ? "resolved" : "note")}: {review.Title} ({review.Source}/{review.Code}). {comment}".Trim(),
+            }, token: ct).ConfigureAwait(false);
+        }
+        await transaction.CommitAsync(ct).ConfigureAwait(false);
+        return review;
     }
 
     private static void ValidateOrderId(Guid orderId)

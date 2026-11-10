@@ -340,6 +340,11 @@ ORDER BY {bucketDateExpression}";
         AppendTrackingJsonFilter(whereClause, trackingContent, "Content", "trackingContent");
         AppendTrackingJsonFilter(whereClause, trackingClickId, "ClickId", "trackingClickId");
 
+        if (orderStatus == "NeedsReview")
+        {
+            whereClause.Append(" AND EXISTS (SELECT 1 FROM EkomOrderReviews r WHERE r.OrderId = EkomOrders.UniqueId AND r.ResolvedUtc IS NULL)");
+            orderStatus = "AllOrders";
+        }
         if (Models.Orders.OrderStateQuery.Predicate(orderStatus) is string statePredicate)
         {
             whereClause.Append(" AND ").Append(statePredicate);
@@ -425,6 +430,11 @@ ORDER BY {bucketDateExpression}";
             whereClause += " AND CreateDate >= @startDate AND CreateDate <= @endDate";
         }
 
+        if (orderStatus == "NeedsReview")
+        {
+            whereClause += " AND EXISTS (SELECT 1 FROM EkomOrderReviews r WHERE r.OrderId = EkomOrders.UniqueId AND r.ResolvedUtc IS NULL)";
+            orderStatus = "AllOrders";
+        }
         if (Models.Orders.OrderStateQuery.Predicate(orderStatus) is string statePredicate)
         {
             whereClause += " AND " + statePredicate;

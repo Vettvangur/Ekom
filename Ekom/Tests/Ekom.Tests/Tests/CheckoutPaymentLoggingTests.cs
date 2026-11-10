@@ -63,7 +63,7 @@ public class CheckoutPaymentLoggingTests
 
         var result = Assert.IsType<RedirectResult>(await controller.Pay(new PaymentRequest()));
 
-        Assert.Equal("?errorStatus=serverError", result.Url);
+        Assert.Equal("/?errorStatus=serverError", result.Url);
         Assert.NotNull(logger.Exception);
         Assert.Contains(logger.Exception.Message, logger.Message, StringComparison.Ordinal);
         Assert.Null(logger.Fields["OrderNumber"]);

@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-* **orders:** add order reviews and checkout failure alerts.
+* **manager:** preserve review drafts and cursor position during background refreshes; report a conflict when a note targets an alert that another user has already resolved.
+
+* **manager:** display order-review badges, filtered orders and review dialogs with activity notes and resolution in Umbraco 17 and 18.
+
+* **orders:** add order reviews and checkout failure alerts, including exhausted-coupon alerts without decrementing coupons below zero.
 
 * **orders:** migrate legacy Cancelled orders with Pending / Unfulfilled defaults, preserve recorded status evidence, and flag conflicts for review while skipping active payments.
 

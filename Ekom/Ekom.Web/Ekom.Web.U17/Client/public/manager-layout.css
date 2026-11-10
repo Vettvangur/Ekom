@@ -541,3 +541,33 @@ ekom-orders-section-view:not([classic]) {
  .ekom-payment-detail-box .ekom-payment-copy:hover { color:var(--ekom-accent); background:var(--ekom-surface-alt); }
 }
 @media(max-width:900px) { ekom-orders-section-view:not([classic]) .ekom-payment-detail-grid { grid-template-columns:minmax(0,1fr); } }
+
+/* Operational order reviews */
+ekom-orders-section-view:not([classic]) .ekom-review-icon { display:inline-flex; align-items:center; justify-content:center; flex:0 0 20px; width:20px; height:20px; border-radius:50%; background:#dc4437; color:white; font-size:13px; font-weight:700; margin-left:6px; vertical-align:middle; }
+ekom-orders-section-view:not([classic]) .ekom-order-views [data-view="NeedsReview"] span { background:#dc4437; color:white; }
+ekom-orders-section-view:not([classic]) .ekom-review-alert { display:flex; align-items:flex-start; gap:12px; padding:16px; margin:16px 0; border:1px solid #c97468; border-radius:12px; background:light-dark(#fff0ed,#321c19); color:light-dark(#822d25,#f5aaa0); }
+ekom-orders-section-view:not([classic]) .ekom-review-alert > div { flex:1; min-width:0; }
+ekom-orders-section-view:not([classic]) .ekom-review-alert p { margin:6px 0 0; color:var(--ekom-text); white-space:pre-wrap; overflow-wrap:anywhere; }
+ekom-orders-section-view:not([classic]) .ekom-review-alert small { display:inline-block; margin-left:8px; color:var(--ekom-muted); }
+ekom-orders-section-view:not([classic]) .ekom-review-alert > button { background:#d94335; border-color:#d94335; color:#fff; }
+ekom-orders-section-view:not([classic]) .ekom-review-panel { width:min(720px,calc(100vw - 40px)); max-height:90vh; overflow:auto; border-radius:16px; }
+ekom-orders-section-view:not([classic]) .ekom-review-panel header, ekom-orders-section-view:not([classic]) .ekom-review-panel footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:20px 24px; }
+ekom-orders-section-view:not([classic]) .ekom-review-panel header h2 { margin:0; }
+ekom-orders-section-view:not([classic]) .ekom-review-panel footer { justify-content:flex-end; }
+ekom-orders-section-view:not([classic]) .ekom-review-body { padding:0 24px 24px; }
+ekom-orders-section-view:not([classic]) .ekom-review-body textarea { display:block; width:100%; box-sizing:border-box; margin-top:8px; padding:12px; resize:vertical; }
+ekom-orders-section-view:not([classic]) .ekom-review-checkbox { display:flex; align-items:center; gap:10px; margin-top:20px; }
+ekom-orders-section-view:not([classic]) .ekom-review-checkbox input { width:18px; height:18px; min-height:18px; padding:0; margin:0; flex:0 0 18px; accent-color:var(--ekom-accent); }
+ekom-orders-section-view:not([classic]) .ekom-review-checkbox small { color:var(--ekom-muted); }
+
+ekom-orders-section-view:not([classic]) .ekom-review-body textarea { background:var(--ekom-surface); color:var(--ekom-text); border:1px solid var(--ekom-border); border-radius:8px; font:inherit; }
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-order-reference { display:flex; align-items:center; gap:4px; }
+ .ekom-review-panel .btn-success { background:var(--ekom-accent); border-color:var(--ekom-accent); color:white; }
+ .ekom-review-panel header { border-bottom:1px solid var(--ekom-border); }
+ .ekom-review-panel footer { border-top:1px solid var(--ekom-border); background:var(--ekom-surface-alt); }
+ .ekom-review-panel .ekom-review-alert strong { font-size:16px; }
+ .ekom-review-panel .ekom-review-alert small { display:block; margin:6px 0 0; }
+ .ekom-review-panel .ekom-review-body > label { font-weight:600; }
+}

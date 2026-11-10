@@ -9,8 +9,8 @@ test('print contains all order lines and saved order data independently of overl
     assert.ok(html.includes(value), value);
   }
   for (let index = 1; index <= 60; index++) assert.ok(html.includes(`Product ${index} with a long descriptive name`));
-  assert.equal(element.trackingExpanded, false);
-  assert.equal(element.consentExpanded, false);
+  element.orderTab = 'tracking';
+  assert.equal(element.renderPrintableOrder(order), html, 'Printing is independent of the selected detail tab');
 });
 
 test('print excludes operational panels, tracking, consent, activity logs and backoffice shell', () => {

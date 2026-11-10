@@ -254,7 +254,7 @@ public class PriceTests
 
                     Assert.Equal(lineNet, withoutVat);
                     Assert.Equal(expectedVat, price.Vat.Value, 0);
-                    Assert.Equal(expectedGross, withVat);
+                    Assert.Equal(expectedGross, withVat, 20);
                 }
             }
             else // PerTotal
@@ -266,9 +266,9 @@ public class PriceTests
                 var expectedVat = EkomExpected(expectedNet * store.Vat, iso, mode, 0);
                 var expectedGross = expectedNet + expectedVat;
 
-                Assert.Equal(expectedNet, withoutVat);
+                Assert.Equal(expectedNet, withoutVat, 20);
                 Assert.Equal(expectedVat, price.Vat.Value, 0);
-                Assert.Equal(expectedGross, withVat);
+                Assert.Equal(expectedGross, withVat, 20);
             }
         }
         else

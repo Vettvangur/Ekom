@@ -200,6 +200,19 @@ public class CouponRepository
         RefreshCache(coupon);
     }
 
+    internal async Task<bool> TryMarkUsedAsync(string couponCode)
+    {
+        await using DbContext db = _databaseFactory.GetDatabase();
+        var changed = await db.CouponData
+            .Where(x => x.CouponCode == couponCode && x.NumberAvailable > 0)
+            .Set(x => x.NumberAvailable, x => x.NumberAvailable - 1)
+            .UpdateAsync().ConfigureAwait(false);
+        if (changed == 0) return false;
+        var coupon = await GetCouponByCodeAsync(couponCode).ConfigureAwait(false);
+        if (coupon != null) RefreshCache(coupon);
+        return true;
+    }
+
     public void RefreshCache(CouponData coupon)
     {
         _couponCache.AddReplace(coupon);

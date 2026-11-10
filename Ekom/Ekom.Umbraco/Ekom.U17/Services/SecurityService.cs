@@ -37,6 +37,8 @@ internal sealed class SecurityService : ISecurityService
     public bool IsAuthenticated() => _backofficeUserAccessor.BackofficeUser.IsAuthenticated
         && _userService.GetByUsername(_backofficeUserAccessor.BackofficeUser.GetUserName()) is { IsApproved: true, IsLockedOut: false };
 
+    public string? GetAuthenticatedUserName() => IsAuthenticated() ? _backofficeUserAccessor.BackofficeUser.GetUserName() : null;
+
     public bool CanEditContent(Ekom.Models.UmbracoContent content) => CanEdit(content, false);
 
     public bool CanEditPrices(Ekom.Models.UmbracoContent content) => CanEdit(content, true);

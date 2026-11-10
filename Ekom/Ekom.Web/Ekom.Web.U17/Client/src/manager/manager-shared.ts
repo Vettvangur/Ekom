@@ -56,7 +56,10 @@ export type OrderStatusSnapshot = {
   fulfilledQuantities?: Record<string, number>;
 };
 
+export type OrderReview = { id: string; title: string; message: string; source: string; createdUtc: string; };
+
 export type OrderListItem = {
+  needsReview?: boolean;
   status?: OrderStatusSnapshot;
   uniqueId: string;
   referenceId: string | number;
@@ -261,6 +264,19 @@ export class EkomManagerApi {
       pageSize,
       includeOrderLines,
     });
+  }
+
+  async orderReviews(orderId: string): Promise<OrderReview[]> {
+    const reviews: OrderReview[] = [];
+    for (let skip = 0; ; skip += 200) {
+      const page = await this.getJson<OrderReview[]>(`/ekom/manager/orders/${encodeURIComponent(orderId)}/reviews`, { skip, take: 200 });
+      reviews.push(...page);
+      if (page.length < 200) return reviews;
+    }
+  }
+
+  async reviewOrder(orderId: string, reviewId: string, comment: string, resolved: boolean): Promise<OrderReview> {
+    return this.postBody(`/ekom/manager/orders/${encodeURIComponent(orderId)}/reviews/${encodeURIComponent(reviewId)}/review`, { comment, resolved });
   }
 
   async statusList(): Promise<StatusItem[]> {
@@ -1096,6 +1112,7 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
 
 export const orderViews = [
   { key: 'AllOrders', label: 'All' },
+  { key: 'NeedsReview', label: 'Needs review' },
   { key: 'states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled', label: 'Unfulfilled' },
   { key: 'states:Open;Pending,Authorized,PartiallyPaid,Failed;', label: 'Unpaid' },
   { key: 'states:Open;;', label: 'Open' },

@@ -13,6 +13,9 @@ public interface IOrderReviewService
     /// <summary>Lists open reviews by default, or paginated history including resolved reviews.</summary>
     Task<IReadOnlyList<OrderReview>> GetReviewsAsync(Guid orderId, bool includeResolved = false, int skip = 0, int take = 50, CancellationToken ct = default);
 
+    /// <summary>Records an activity note and optionally resolves an open review atomically.</summary>
+    Task<OrderReview?> ReviewAsync(Guid orderId, Guid reviewId, string reviewedBy, string? comment, bool resolved, CancellationToken ct = default);
+
     /// <summary>Resolves once; subsequent calls preserve the original reviewer and comment. Null means not found.</summary>
     Task<OrderReview?> ResolveAsync(Guid orderId, Guid reviewId, string resolvedBy, string? comment = null, CancellationToken ct = default);
 }

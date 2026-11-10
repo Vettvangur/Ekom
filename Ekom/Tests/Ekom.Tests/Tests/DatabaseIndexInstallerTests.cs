@@ -92,7 +92,7 @@ public sealed class DatabaseIndexInstallerTests
         fixture.Seed();
         fixture.Ensure("EkomOrders", "CustomerLookup", "CustomerId", "StoreAlias");
 
-        fixture.Execute("INSERT INTO EkomOrders (UniqueId, OrderStatusCol, CustomerId, StoreAlias, TotalAmount, CreateDate, UpdateDate) SELECT UniqueId, OrderStatusCol, CustomerId, StoreAlias, TotalAmount, CreateDate, UpdateDate FROM EkomOrders WHERE CustomerId = 7");
+        fixture.Execute("INSERT INTO EkomOrders (UniqueId, OrderStatusCol, CustomerId, StoreAlias, TotalAmount, CreateDate, UpdateDate, StatusMappingVersion, StatusRevision, AutoCloseSuppressed) SELECT UniqueId, OrderStatusCol, CustomerId, StoreAlias, TotalAmount, CreateDate, UpdateDate, StatusMappingVersion, StatusRevision, AutoCloseSuppressed FROM EkomOrders WHERE CustomerId = 7");
 
         Assert.Equal(2, fixture.Scalar<int>("SELECT COUNT(*) FROM EkomOrders WHERE CustomerId = 7 AND StoreAlias = 'main'"));
         Assert.Equal(0, fixture.Scalar<int>("SELECT [unique] FROM pragma_index_list('EkomOrders') WHERE name = 'CustomerLookup'"));

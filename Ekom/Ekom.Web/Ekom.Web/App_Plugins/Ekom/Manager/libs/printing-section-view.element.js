@@ -59,6 +59,16 @@ class x {
       includeOrderLines: e
     });
   }
+  async orderReviews(t) {
+    const a = [];
+    for (let e = 0; ; e += 200) {
+      const r = await this.getJson(`/ekom/manager/orders/${encodeURIComponent(t)}/reviews`, { skip: e, take: 200 });
+      if (a.push(...r), r.length < 200) return a;
+    }
+  }
+  async reviewOrder(t, a, e, r) {
+    return this.postBody(`/ekom/manager/orders/${encodeURIComponent(t)}/reviews/${encodeURIComponent(a)}/review`, { comment: e, resolved: r });
+  }
   async statusList() {
     return this.getJson("/ekom/manager/StatusList");
   }
@@ -416,19 +426,19 @@ function A() {
     g.filters.currency = t.find((r) => r === e) || t[0] || "";
   }
 }
-function N(i = "data-field") {
+function I(i = "data-field") {
   const t = g.stores.find((e) => e.alias === g.filters.store), a = g.filters.currency || "";
   return `<div class="ekom-store-switch"><span>Store</span><details class="ekom-dropdown ekom-store-currency"><summary aria-label="Store and currency"><strong>${k((t == null ? void 0 : t.title) || "Select store")}</strong>${a ? `<span class="ekom-currency-code">${k(a)}</span>` : ""}<span class="ekom-store-chevron">▾</span></summary><div class="ekom-currency-popover"><div class="ekom-currency-heading"><strong>Store ·<br>Currency</strong><span>Amounts shown in the selected currency</span></div>${g.stores.map((e) => `<section class="ekom-currency-store ${e.alias === (t == null ? void 0 : t.alias) ? "is-selected" : ""}" aria-label="${k(e.title)}"><h3>${k(e.title)}</h3><div class="ekom-currency-choices">${(e.currencies || []).map((r) => `<button type="button" data-header-store="${k(e.alias)}" data-header-currency="${k(r)}" aria-label="${k(e.title)} — ${k(r)}" aria-pressed="${e.alias === (t == null ? void 0 : t.alias) && r === a}">${k(r)}${e.alias === (t == null ? void 0 : t.alias) && r === a ? '<span aria-hidden="true">✓</span>' : ""}</button>`).join("") || '<span class="ekom-currency-empty">No currencies configured or recorded</span>'}</div></section>`).join("")}</div></details><select hidden aria-label="Store" ${i}="store">${g.stores.map((e) => `<option value="${k(e.alias)}" ${e.alias === (t == null ? void 0 : t.alias) ? "selected" : ""}>${k(e.title)}</option>`).join("")}</select></div>`;
 }
-function I(i, t = "data-field", a = !0) {
+function N(i, t = "data-field", a = !0) {
   if (typeof document < "u" && !document.querySelector("link[data-ekom-fonts]")) {
     const o = document.createElement("link");
     o.rel = "stylesheet", o.href = "/App_Plugins/Ekom/dist/manager-fonts.css", o.dataset.ekomFonts = "", document.head.append(o);
   }
   const e = ["orders", "analytics", "customers", "printing"], r = typeof location > "u" ? "/umbraco/section/ekommanager" : location.pathname.replace(/\/view\/(orders|analytics|customers|printing)\/?$/, "").replace(/\/$/, "");
-  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((o) => `<a href="${k(r + "/view/" + o)}" ${o === i ? 'aria-current="page"' : ""}>${o[0].toUpperCase() + o.slice(1)}</a>`).join("")}</nav>${a ? N(t) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
+  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((o) => `<a href="${k(r + "/view/" + o)}" ${o === i ? 'aria-current="page"' : ""}>${o[0].toUpperCase() + o.slice(1)}</a>`).join("")}</nav>${a ? I(t) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
 }
-function F(i = /* @__PURE__ */ new Date()) {
+function U(i = /* @__PURE__ */ new Date()) {
   const t = (r) => `${r.getFullYear()}-${String(r.getMonth() + 1).padStart(2, "0")}-${String(r.getDate()).padStart(2, "0")}`, a = (r) => new Date(i.getFullYear(), i.getMonth(), i.getDate() + r), e = t(i);
   return [
     { label: "Today", from: e, to: e },
@@ -441,7 +451,7 @@ function F(i = /* @__PURE__ */ new Date()) {
     { label: "This year", from: t(new Date(i.getFullYear(), 0, 1)), to: e }
   ];
 }
-function U(i, t) {
+function F(i, t) {
   var a, e;
   z(), (a = i.querySelector(".ekom-store-currency")) == null || a.addEventListener("keydown", (r) => {
     var s;
@@ -513,7 +523,7 @@ function z() {
     }
     render() {
       var p, h, c, d, f;
-      const e = this.getAttribute("from") || "", r = this.getAttribute("to") || "", o = F(), s = ((p = o.find((l) => l.from === e && l.to === r)) == null ? void 0 : p.label) || "Custom";
+      const e = this.getAttribute("from") || "", r = this.getAttribute("to") || "", o = U(), s = ((p = o.find((l) => l.from === e && l.to === r)) == null ? void 0 : p.label) || "Custom";
       R(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${s}</strong><span class="dates">${this.date(e)} – ${this.date(r)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${o.map((l, b) => `<button type="button" data-preset="${b}" aria-pressed="${l.from === this.from && l.to === this.to}">${l.label}<span>${l.from === this.from && l.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (h = this.root.querySelector("link")) == null || h.addEventListener("load", this.reposition), this.reposition(), (c = this.root.querySelector("[data-toggle]")) == null || c.addEventListener("click", () => {
         var l;
         if (this.open) {
@@ -660,7 +670,7 @@ class V extends G(HTMLElement) {
   render() {
     var f, l, b, v, w, C, O;
     const a = this.loading || this.busy ? "disabled" : "", e = this.stations.filter((n) => n.health.online && n.health.compatible).length, r = this.jobs.jobs.filter((n) => ["NeedsReview", "RenderFailed"].includes(n.state)).length, o = Math.max(1, Math.ceil(this.jobs.total / this.jobs.pageSize)), s = (n) => ({ NeedsReview: "warning", RenderFailed: "danger", Submitted: "success", ConfirmedPrinted: "success", Ready: "info", Claimed: "info" })[n] ?? "neutral", p = (n) => n.replace(/([a-z])([A-Z])/g, "$1 $2");
-    R(this.panel, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/printing-layout.css"><main aria-busy="${this.loading}">${I("printing", "data-field", !this.hasAttribute("classic"))}
+    R(this.panel, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/printing-layout.css"><main aria-busy="${this.loading}">${N("printing", "data-field", !this.hasAttribute("classic"))}
       <header class="page-heading"><div><p class="subtitle">Track picking slips and warehouse printer connections.</p></div><div class="heading-actions"><span class="connection"><span class="dot"></span>${this.loading ? "Checking stations…" : `${e} of ${this.stations.length} stations online`}</span><button data-reload ${a}>${this.loading ? "Refreshing…" : "Refresh"}</button></div></header>
       <section class="card" aria-labelledby="jobs-heading"><div class="ekom-print-toolbar"><div class="section-heading"><div class="title-group"><h2 id="jobs-heading">Print jobs</h2><span class="count" aria-live="polite">${this.loading ? "Loading…" : `${this.jobs.total} ${this.jobs.total === 1 ? "job" : "jobs"}`}</span></div>${this.state || this.station || this.search ? "<button data-clear>Clear filters</button>" : ""}</div>
       <div class="filters"><label>Status<select data-filter="state">${[["", "All statuses"], ["attention", "Needs attention"], ["PendingRender", "Generating slip"], ["Ready", "Queued"], ["Claimed", "With agent"], ["Submitted", "Submitted to printer"], ["ConfirmedPrinted", "Confirmed printed"], ["Cancelled", "Cancelled"]].map(([n, y]) => `<option value="${n}" ${n === this.state ? "selected" : ""}>${y}</option>`).join("")}</select></label>
@@ -682,7 +692,7 @@ class V extends G(HTMLElement) {
       <section class="station-grid" aria-labelledby="stations-heading">${this.stations.map((n) => `<article class="station-card"><div class="station-top"><div><h3>${m(n.alias)}</h3><p class="printer-name">${m(n.health.printerName || "No printer reported")}</p></div><span class="badge ${n.health.online ? n.health.compatible ? "success" : "warning" : "neutral"}"><span class="dot"></span>${n.health.online ? n.health.compatible ? "Online" : "Update required" : "Offline"}</span></div><dl><dt>Store</dt><dd>${m(n.stores.join(", "))}</dd><dt>Print when</dt><dd><div class="chips">${n.triggerMode === "ExplicitCapture" ? '<span class="chip">Explicit capture API</span>' : n.statuses.map((y) => `<span class="chip">${m(p(y))}</span>`).join("") || "No statuses configured"}</div></dd><dt>Copies</dt><dd>${n.copies} ${n.copies === 1 ? "copy" : "copies"} · ${m(n.policy === "OncePerOrder" ? "Once per order" : n.policy === "OncePerStatus" ? "Once per status" : p(n.policy))}</dd><dt>Automation</dt><dd>${n.enabled ? "Enabled" : "Disabled"}</dd><dt>Last connected</dt><dd>${m($(n.health.lastSeenUtc))}</dd></dl><div class="station-bottom"><span>${n.health.agentVersion ? `Agent ${m(n.health.agentVersion)}` : "Agent not connected"}</span><span>Settings managed externally</span></div></article>`).join("")}
       ${!this.loading && !this.stations.length ? '<div class="station-card empty"><strong>No printer stations</strong><p>No stations are available for your stores.</p></div>' : ""}</section>
       <details class="setup-help"><summary>How do I change printer settings?</summary><p>Change status rules and copies in the website’s Ekom printing configuration. Select the physical printer in the Windows agent. Station settings are read-only here.</p></details>
-      <dialog aria-labelledby="detail-heading"><div class="dialog-heading"><h2 id="detail-heading">Print job details</h2><button data-close>Close</button></div><div data-detail></div></dialog></main>`), U(this.panel, () => {
+      <dialog aria-labelledby="detail-heading"><div class="dialog-heading"><h2 id="detail-heading">Print job details</h2><button data-close>Close</button></div><div data-detail></div></dialog></main>`), F(this.panel, () => {
       this.load();
     }), (f = this.panel.querySelector('[data-field="store"]')) == null || f.addEventListener("change", (n) => {
       g.filters.store = n.target.value, A(), this.station = "", this.page = 1, this.load();

@@ -59,6 +59,16 @@ class k {
       includeOrderLines: e
     });
   }
+  async orderReviews(a) {
+    const t = [];
+    for (let e = 0; ; e += 200) {
+      const r = await this.getJson(`/ekom/manager/orders/${encodeURIComponent(a)}/reviews`, { skip: e, take: 200 });
+      if (t.push(...r), r.length < 200) return t;
+    }
+  }
+  async reviewOrder(a, t, e, r) {
+    return this.postBody(`/ekom/manager/orders/${encodeURIComponent(a)}/reviews/${encodeURIComponent(t)}/review`, { comment: e, resolved: r });
+  }
   async statusList() {
     return this.getJson("/ekom/manager/StatusList");
   }
@@ -228,7 +238,7 @@ function n(o) {
 function P(o) {
   return o.enumValue || o.value || "";
 }
-const D = `
+const R = `
   .ekmOrderCustomData { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; padding: 14px 16px; border: 1px solid #e1e3e8; border-radius: 12px; }
   .ekmOrderCustomData__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 7px 12px; border: 1px solid #e1e3e8; border-radius: 8px; background: #f6f7f9; line-height: 1.5; break-inside: avoid; }
   .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
@@ -245,7 +255,7 @@ const D = `
 .ekmOrderLineThumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f6f6f8; }
 .ekmOrderLineThumbnail img[hidden] { display: none; }
 
-  ${D}
+  ${R}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -409,11 +419,11 @@ const D = `
   "#f0f0f0": "--ekom-border",
   "#247f45": "--ekom-positive",
   "#ad5f00": "--ekom-warning"
-}, R = C.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (o) => S[o.toLowerCase()] ? `var(${S[o.toLowerCase()]})` : o), j = `${_} {
+}, D = C.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (o) => S[o.toLowerCase()] ? `var(${S[o.toLowerCase()]})` : o), j = `${_} {
   ${C.replaceAll(":host", "&")}
 }
 ${_}:not([classic]) {
-  ${R}
+  ${D}
   --ekom-bg: var(--uui-color-background, #f0f1f4);
   --ekom-surface: var(--uui-color-surface, #fff);
   --ekom-surface-alt: var(--uui-color-surface-alt, #f6f7f9);
@@ -496,6 +506,7 @@ function w(o) {
 }
 const T = [
   { key: "AllOrders", label: "All" },
+  { key: "NeedsReview", label: "Needs review" },
   { key: "states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled", label: "Unfulfilled" },
   { key: "states:Open;Pending,Authorized,PartiallyPaid,Failed;", label: "Unpaid" },
   { key: "states:Open;;", label: "Open" },
@@ -542,9 +553,9 @@ function I(o = /* @__PURE__ */ new Date()) {
 function B() {
   return `<ekom-date-range from="${n(l.filters.dateFrom)}" to="${n(l.filters.dateTo)}"></ekom-date-range>`;
 }
-function G(o, a) {
+function N(o, a) {
   var t, e;
-  N(), (t = o.querySelector(".ekom-store-currency")) == null || t.addEventListener("keydown", (r) => {
+  G(), (t = o.querySelector(".ekom-store-currency")) == null || t.addEventListener("keydown", (r) => {
     var d;
     if (r.key !== "Escape") return;
     const s = r.currentTarget;
@@ -561,7 +572,7 @@ function G(o, a) {
     l.filters.dateFrom = s.from, l.filters.dateTo = s.to, a();
   });
 }
-function N() {
+function G() {
   if (typeof customElements > "u" || !customElements.get || customElements.get("ekom-date-range")) return;
   class o extends HTMLElement {
     constructor() {
@@ -877,7 +888,7 @@ class V extends Y(HTMLElement) {
   }
   bind() {
     var e, r, s, d, u, g, h, f, b, c;
-    this.classic || G(this, () => {
+    this.classic || N(this, () => {
       this.page = 1, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...l.filters } })), this.load();
     }), this.querySelectorAll("[data-filter]").forEach((i) => i.addEventListener("change", () => {
       const p = i.dataset.filter;

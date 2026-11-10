@@ -66,9 +66,11 @@ public sealed class OrderReviewTests
 
         var all = await f.SearchAsync(null);
         Assert.Equal(2, all.Count);
-        Assert.True(Assert.IsType<OrderListItem>(all.Orders.Single(x => x.UniqueId == f.OrderId)).NeedsReview);
-        Assert.False(Assert.IsType<OrderListItem>(all.Orders.Single(x => x.UniqueId != f.OrderId)).NeedsReview);
+        Assert.True(Assert.IsAssignableFrom<OrderListItem>(all.Orders.Single(x => x.UniqueId == f.OrderId)).NeedsReview);
+        Assert.False(Assert.IsAssignableFrom<OrderListItem>(all.Orders.Single(x => x.UniqueId != f.OrderId)).NeedsReview);
         var flagged = await f.SearchAsync(true);
+        Assert.Equal(flagged.Count, (await f.SearchAsync(null, "NeedsReview")).Count);
+        Assert.Equal(f.OrderId, Assert.Single(await f.ExportReviewsAsync()).UniqueId);
         Assert.Equal(1, flagged.Count);
         Assert.Equal(f.OrderId, Assert.Single(flagged.Orders).UniqueId);
         Assert.Equal(1, (await f.SearchAsync(false)).Count);
@@ -78,7 +80,68 @@ public sealed class OrderReviewTests
         Assert.Equal(1, (await f.SearchAsync(true)).Count);
         await f.Service.ResolveAsync(f.OrderId, second.Id, "Anna");
         Assert.Equal(0, (await f.SearchAsync(true)).Count);
-        Assert.All((await f.SearchAsync(null)).Orders, x => Assert.False(Assert.IsType<OrderListItem>(x).NeedsReview));
+        Assert.All((await f.SearchAsync(null)).Orders, x => Assert.False(Assert.IsAssignableFrom<OrderListItem>(x).NeedsReview));
+    }
+
+    [Fact]
+    public async Task NotesStayOpenAndResolutionLogsOnceWithAuthenticatedReviewer()
+    {
+        using var f = new Fixture();
+        var review = await f.RaiseAsync();
+        await Assert.ThrowsAsync<ArgumentException>(() => f.Service.ReviewAsync(f.OrderId, review.Id, "Anna", " ", false));
+        await f.Service.ReviewAsync(f.OrderId, review.Id, "Anna", "Checked provider", false);
+        Assert.Single(await f.Service.GetReviewsAsync(f.OrderId));
+        await f.Service.ResolveAsync(f.OrderId, review.Id, "Anna", "Invoice corrected");
+        await f.Service.ResolveAsync(f.OrderId, review.Id, "Other", "Duplicate");
+        using var db = f.Factory.GetDatabase();
+        var logs = await db.OrderActivityLog.ToListAsync();
+        Assert.Equal(2, logs.Count);
+        Assert.All(logs, log => Assert.Equal("Anna", log.UserName));
+        Assert.Contains(logs, log => log.Log.Contains("Checked provider"));
+        Assert.Contains(logs, log => log.Log.Contains("Invoice corrected"));
+        Assert.Empty(await f.Service.GetReviewsAsync(f.OrderId));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task StaleNoteReturnsConflictWithoutChangingResolvedReview(bool resolve)
+    {
+        using var f = new Fixture();
+        var review = await f.RaiseAsync();
+        await f.Service.ResolveAsync(f.OrderId, review.Id, "Anna", "Resolved externally");
+        var access = new Mock<IManagerAccessService>();
+        access.Setup(x => x.CanAccessManager()).Returns(true);
+        access.Setup(x => x.CanAccessStore("main")).Returns(true);
+        var security = new Mock<ISecurityService>();
+        security.Setup(x => x.GetAuthenticatedUserName()).Returns("Other user");
+        var controller = new EkomOrderReviewsController(f.Service, access.Object, f.Factory, security.Object);
+        var result = await controller.ResolveAsync(f.OrderId, review.Id,
+            new ResolveOrderReviewRequest { Comment = "Unsaved investigation", Resolved = resolve });
+        Assert.IsType<ConflictObjectResult>(result);
+        var saved = Assert.Single(await f.Service.GetReviewsAsync(f.OrderId, includeResolved: true));
+        Assert.Equal("Anna", saved.ResolvedBy);
+        Assert.Equal("Resolved externally", saved.ResolutionComment);
+        using var db = f.Factory.GetDatabase();
+        Assert.Single(await db.OrderActivityLog.ToListAsync());
+    }
+
+    [Fact]
+    public async Task BackofficeIdentityCanReviewWithoutHttpPrincipalName()
+    {
+        using var f = new Fixture();
+        var review = await f.RaiseAsync();
+        var access = new Mock<IManagerAccessService>();
+        access.Setup(x => x.CanAccessManager()).Returns(true);
+        access.Setup(x => x.CanAccessStore("main")).Returns(true);
+        var security = new Mock<ISecurityService>();
+        security.Setup(x => x.GetAuthenticatedUserName()).Returns("backoffice-user");
+        var controller = new EkomOrderReviewsController(f.Service, access.Object, f.Factory, security.Object)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+        };
+        var result = Assert.IsType<OkObjectResult>(await controller.ResolveAsync(f.OrderId, review.Id, new ResolveOrderReviewRequest { Comment = "Checked" }));
+        Assert.Equal("backoffice-user", Assert.IsType<OrderReview>(result.Value).ResolvedBy);
     }
 
     [Fact]
@@ -161,6 +224,7 @@ public sealed class OrderReviewTests
             Schema = new DatabaseService(Factory, NullLogger<DatabaseService>.Instance, new StockReservationReadiness());
             using var db = Factory.GetDatabase();
             db.CreateTable<OrderData>();
+            db.CreateTable<OrderActivityLog>();
             Schema.EnsureOrderReviewsTable();
             Service = new OrderReviewService(Factory);
             var stores = new Mock<IStoreService>();
@@ -174,8 +238,10 @@ public sealed class OrderReviewTests
         public DatabaseService Schema { get; }
         public IOrderReviewService Service { get; }
         public Task<OrderReview> RaiseAsync() => Service.RaiseAsync(OrderId, "dk", "failed", "Accounting failed", "Timeout");
-        public Task<OrderListData> SearchAsync(bool? needsReview) => _manager.SearchOrdersAsync(DateTime.UtcNow.Date, DateTime.UtcNow.Date,
-            "", "main", "AllOrders", "", "", "", "", "", "", "", "", "1", "30", needsReview: needsReview);
+        public Task<OrderListData> SearchAsync(bool? needsReview, string view = "AllOrders") => _manager.SearchOrdersAsync(DateTime.UtcNow.Date, DateTime.UtcNow.Date,
+            "", "main", view, "", "", "", "", "", "", "", "", "1", "30", needsReview: needsReview);
+        public Task<List<OrderData>> ExportReviewsAsync() => _manager.GetOrdersForExportAsync(DateTime.UtcNow.Date, DateTime.UtcNow.Date,
+            "", "main", "NeedsReview", "", "", "", "", "", "", "", "", false);
 
         public Guid AddOrder(string store, DateTime? date = null)
         {
@@ -184,7 +250,7 @@ public sealed class OrderReviewTests
             db.Insert(new OrderData
             {
                 UniqueId = id,
-                OrderStatusCol = "Incomplete",
+                OrderStatusCol = "Pending",
                 StoreAlias = store,
                 Currency = "en-US",
                 CreateDate = date ?? DateTime.UtcNow,

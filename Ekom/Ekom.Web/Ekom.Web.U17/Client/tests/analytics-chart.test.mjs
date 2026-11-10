@@ -99,7 +99,7 @@ test('analytics observes size changes and disconnects the observer when removed'
   const module = {};
   const source = readFileSync(new URL('../src/manager/analytics-section-view.element.ts', import.meta.url), 'utf8');
   runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, {
-    exports: module, ResizeObserver: Observer,
+    exports: module, ResizeObserver: Observer, window: { clearTimeout() {}, clearInterval() {} },
     require: name => name === './manager-shared' ? exports : { UmbElementMixin: Base => Base },
     HTMLElement: class { connectedCallback() {} disconnectedCallback() {} hasAttribute() { return false; } }, customElements: { define() {} },
   });

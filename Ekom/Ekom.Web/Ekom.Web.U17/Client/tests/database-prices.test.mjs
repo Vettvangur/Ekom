@@ -58,7 +58,7 @@ test('editing a database price stages one currency and never sends a live write'
   assert.equal(editor.getPrice('Web', 'en-GB'), 90);
   assert.equal(editor.changes, 1);
   assert.equal(requests.length, 0);
-  assert.match(editor.message, /Save/);
+  assert.equal(editor.message, ''); // Successful staging does not add instructional UI text.
 });
 
 test('pending edits survive a refresh of live table overrides', async () => {
@@ -145,7 +145,7 @@ test('Umbraco 13 stages field edits for document saving without a PUT request', 
   const requests = [];
   const scope = { model: { alias: 'price', value: { Web: [{ Currency: 'en-US', Price: 100 }] } },
     $on: (_, handler) => { submitted = handler; } };
-  Object.defineProperty(scope, 'priceStatus', { set: value => { if (value.startsWith('Save the document')) ready(); } });
+  Object.defineProperty(scope, 'priceStatus', { set: value => { if (value === '') ready(); } });
   runInNewContext(source, {
     angular: { module: () => ({ controller: (_, definition) => { controller = definition.at(-1); } }),
       copy: value => value == null ? value : JSON.parse(JSON.stringify(value)) },

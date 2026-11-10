@@ -3,8 +3,8 @@ var ye = (o, r, t) => r in o ? be(o, r, { enumerable: !0, configurable: !0, writ
 var h = (o, r, t) => ye(o, typeof r != "symbol" ? r + "" : r, t);
 const ue = /* @__PURE__ */ new Date(), ve = new Date(ue.getFullYear(), 0, 1), p = {
   filters: {
-    dateFrom: ie(ve),
-    dateTo: ie(ue),
+    dateFrom: se(ve),
+    dateTo: se(ue),
     orderStatus: "AllOrders",
     store: "",
     paymentProvider: "",
@@ -26,8 +26,8 @@ const ue = /* @__PURE__ */ new Date(), ve = new Date(ue.getFullYear(), 0, 1), p 
   shippingFilterProviders: []
 };
 class T {
-  async changeOrderStates(r, t, e, a, i) {
-    return this.postBody(`/ekom/manager/orderStates/${encodeURIComponent(r)}`, { expectedRevision: t, action: e, notify: a, fulfilledQuantities: i });
+  async changeOrderStates(r, t, e, a, s) {
+    return this.postBody(`/ekom/manager/orderStates/${encodeURIComponent(r)}`, { expectedRevision: t, action: e, notify: a, fulfilledQuantities: s });
   }
   async printingEnabled() {
     try {
@@ -59,6 +59,16 @@ class T {
       includeOrderLines: e
     });
   }
+  async orderReviews(r) {
+    const t = [];
+    for (let e = 0; ; e += 200) {
+      const a = await this.getJson(`/ekom/manager/orders/${encodeURIComponent(r)}/reviews`, { skip: e, take: 200 });
+      if (t.push(...a), a.length < 200) return t;
+    }
+  }
+  async reviewOrder(r, t, e, a) {
+    return this.postBody(`/ekom/manager/orders/${encodeURIComponent(r)}/reviews/${encodeURIComponent(t)}/review`, { comment: e, resolved: a });
+  }
   async statusList() {
     return this.getJson("/ekom/manager/StatusList");
   }
@@ -66,7 +76,7 @@ class T {
     const [r, t] = await Promise.all([this.getJson("/ekom/manager/stores"), this.getJson("/ekom/manager/store-currencies")]);
     return r.map((e) => {
       var a;
-      return { ...e, currencies: ((a = t.find((i) => i.alias === e.alias)) == null ? void 0 : a.currencies) || [] };
+      return { ...e, currencies: ((a = t.find((s) => s.alias === e.alias)) == null ? void 0 : a.currencies) || [] };
     });
   }
   async paymentProviders(r) {
@@ -195,10 +205,10 @@ class T {
     return e.json();
   }
   static async createError(r, t) {
-    var i, n;
+    var s, n;
     if (r.status === 401 || r.redirected && /\/Account\/Login/i.test(r.url))
       return new Error("Your session has expired. Sign in to Umbraco and reload the manager.");
-    if ((n = (i = r.headers) == null ? void 0 : i.get("content-type")) != null && n.includes("text/html"))
+    if ((n = (s = r.headers) == null ? void 0 : s.get("content-type")) != null && n.includes("text/html"))
       return new Error(`${t} Status ${r.status}. Reload the manager and try again.`);
     const e = await r.text();
     let a = e || t;
@@ -218,7 +228,7 @@ function Z(o) {
   const t = r.toString();
   return t ? `?${t}` : "";
 }
-function ie(o) {
+function se(o) {
   const r = String(o.getMonth() + 1).padStart(2, "0"), t = String(o.getDate()).padStart(2, "0");
   return `${o.getFullYear()}-${r}-${t}`;
 }
@@ -230,10 +240,10 @@ function ke(o) {
 }
 function xe(o, r) {
   const e = [], a = Math.max(r || 1, 1);
-  let i;
-  o <= Math.floor(5 / 2) ? i = 1 : o + Math.floor(5 / 2) >= a ? i = Math.max(a - 5 + 1, 1) : i = o - Math.floor(5 / 2);
+  let s;
+  o <= Math.floor(5 / 2) ? s = 1 : o + Math.floor(5 / 2) >= a ? s = Math.max(a - 5 + 1, 1) : s = o - Math.floor(5 / 2);
   for (let n = 0; n < 5; n += 1) {
-    const d = i + n;
+    const d = s + n;
     d <= a && e.push(d);
   }
   return e.length && Number(e[e.length - 1]) < a && e.push(`...${a}`), e.length && Number(e[0]) > 1 && e.unshift("...1"), e;
@@ -400,7 +410,7 @@ const me = `
     .umb-table { border-color: #bbb; overflow: visible; }
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
-`, se = ":is(ekom-orders-section-view, ekom-analytics-section-view, ekom-customers-section-view, ekom-printing-section-view)", ne = {
+`, ie = ":is(ekom-orders-section-view, ekom-analytics-section-view, ekom-customers-section-view, ekom-printing-section-view)", ne = {
   "#fff": "--ekom-surface",
   "#f6f4f4": "--ekom-bg",
   "#f6f6f8": "--ekom-surface-alt",
@@ -424,10 +434,10 @@ const me = `
   "#f0f0f0": "--ekom-border",
   "#247f45": "--ekom-positive",
   "#ad5f00": "--ekom-warning"
-}, $e = me.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (o) => ne[o.toLowerCase()] ? `var(${ne[o.toLowerCase()]})` : o), _e = `${se} {
+}, $e = me.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (o) => ne[o.toLowerCase()] ? `var(${ne[o.toLowerCase()]})` : o), Ce = `${ie} {
   ${me.replaceAll(":host", "&")}
 }
-${se}:not([classic]) {
+${ie}:not([classic]) {
   ${$e}
   --ekom-bg: var(--uui-color-background, #f0f1f4);
   --ekom-surface: var(--uui-color-surface, #fff);
@@ -513,55 +523,55 @@ function G(o, r) {
     ...t && /^[A-Z]{3}$/.test(t) ? { style: "currency", currency: t, currencyDisplay: "code" } : {}
   }).format(o);
 }
-function Ce(o, r, t, e = {}) {
+function _e(o, r, t, e = {}) {
   var te;
-  const a = o.getBoundingClientRect(), i = window.devicePixelRatio || 1, n = a.width || 300, d = a.height || 320;
-  o.width = n * i, o.height = d * i;
-  const s = o.getContext("2d");
-  if (!s) return;
-  s.scale(i, i), s.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
-  const f = r.points || [], w = f.map((v) => v.y == null ? null : Number(v.y)), u = ((te = e.comparison) == null ? void 0 : te.points) || [], l = [...w, ...u.map((v) => v.y)].filter((v) => v != null), c = Math.min(0, ...l), y = Math.max(1, ...l), x = 10 ** (Math.floor(Math.log10(y / 4)) - 1), P = e.integer ? Math.ceil(y / 4) * 4 : e.templateStyle ? Math.ceil(y / 4 / x) * x * 4 : y, D = (v) => e.formatValue ? e.formatValue(v) : e.currency ? G(v, e.currency) : v.toLocaleString(void 0, { maximumFractionDigits: e.integer ? 0 : 2 }), K = e.formatAxisValue ?? D, X = Array.from({ length: 5 }, (v, b) => P - (P - c) * b / 4), A = e.templateStyle ? 1 : Math.max(48, ...X.map((v) => s.measureText(K(v)).width + 12)), E = n - (e.templateStyle ? 1 : 16), q = e.templateStyle ? 8 : 20, O = d - (e.templateStyle ? 26 : 52), S = f.map((v, b) => {
-    var C, M, R;
+  const a = o.getBoundingClientRect(), s = window.devicePixelRatio || 1, n = a.width || 300, d = a.height || 320;
+  o.width = n * s, o.height = d * s;
+  const i = o.getContext("2d");
+  if (!i) return;
+  i.scale(s, s), i.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
+  const f = r.points || [], w = f.map((v) => v.y == null ? null : Number(v.y)), u = ((te = e.comparison) == null ? void 0 : te.points) || [], l = [...w, ...u.map((v) => v.y)].filter((v) => v != null), c = Math.min(0, ...l), y = Math.max(1, ...l), x = 10 ** (Math.floor(Math.log10(y / 4)) - 1), P = e.integer ? Math.ceil(y / 4) * 4 : e.templateStyle ? Math.ceil(y / 4 / x) * x * 4 : y, D = (v) => e.formatValue ? e.formatValue(v) : e.currency ? G(v, e.currency) : v.toLocaleString(void 0, { maximumFractionDigits: e.integer ? 0 : 2 }), K = e.formatAxisValue ?? D, X = Array.from({ length: 5 }, (v, b) => P - (P - c) * b / 4), A = e.templateStyle ? 1 : Math.max(48, ...X.map((v) => i.measureText(K(v)).width + 12)), E = n - (e.templateStyle ? 1 : 16), q = e.templateStyle ? 8 : 20, O = d - (e.templateStyle ? 26 : 52), S = f.map((v, b) => {
+    var _, M, R;
     return {
       x: f.length > 1 ? A + (E - A) * b / (f.length - 1) : (A + E) / 2,
       y: w[b] == null ? null : O - (w[b] - c) / (P - c) * (O - q),
-      date: v.x || ((C = r.labels) == null ? void 0 : C[b]) || "",
+      date: v.x || ((_ = r.labels) == null ? void 0 : _[b]) || "",
       axisLabel: ((M = e.formatLabel) == null ? void 0 : M.call(e, b)) ?? v.x ?? ((R = r.labels) == null ? void 0 : R[b]) ?? "",
       value: w[b]
     };
   }), H = (v = -1) => {
     var oe;
-    s.clearRect(0, 0, n, d), s.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
-    const b = typeof getComputedStyle == "function" ? getComputedStyle(o) : void 0, C = (b == null ? void 0 : b.getPropertyValue("--ekom-muted").trim()) || (b == null ? void 0 : b.getPropertyValue("--uui-color-text-alt").trim()) || "#555", M = (b == null ? void 0 : b.getPropertyValue("--ekom-border").trim()) || "#e5e5e5", R = (b == null ? void 0 : b.getPropertyValue("--uui-color-text").trim()) || "", U = (oe = /^#([0-9a-f]{6})$/i.exec(R)) == null ? void 0 : oe[1], I = U ? [0, 2, 4].reduce((k, g) => k + parseInt(U.slice(g, g + 2), 16), 0) > 420 : !1, N = e.templateStyle && !I ? "#10694a" : t;
-    s.lineWidth = 1, s.textAlign = e.templateStyle ? "left" : "right", X.forEach((k, g) => {
+    i.clearRect(0, 0, n, d), i.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
+    const b = typeof getComputedStyle == "function" ? getComputedStyle(o) : void 0, _ = (b == null ? void 0 : b.getPropertyValue("--ekom-muted").trim()) || (b == null ? void 0 : b.getPropertyValue("--uui-color-text-alt").trim()) || "#555", M = (b == null ? void 0 : b.getPropertyValue("--ekom-border").trim()) || "#e5e5e5", R = (b == null ? void 0 : b.getPropertyValue("--uui-color-text").trim()) || "", z = (oe = /^#([0-9a-f]{6})$/i.exec(R)) == null ? void 0 : oe[1], I = z ? [0, 2, 4].reduce((k, g) => k + parseInt(z.slice(g, g + 2), 16), 0) > 420 : !1, N = e.templateStyle && !I ? "#10694a" : t;
+    i.lineWidth = 1, i.textAlign = e.templateStyle ? "left" : "right", X.forEach((k, g) => {
       const $ = q + (O - q) * g / 4;
-      s.fillStyle = C, s.fillText(K(k), e.templateStyle ? A : A - 8, e.templateStyle ? Math.min(O, $ + 3) : $ + 4), !(e.templateStyle && (g === 0 || g === 4)) && (s.globalAlpha = e.templateStyle ? 0.5 : 1, s.strokeStyle = M, s.beginPath(), s.moveTo(A, $), s.lineTo(E, $), s.stroke(), s.globalAlpha = 1);
+      i.fillStyle = _, i.fillText(K(k), e.templateStyle ? A : A - 8, e.templateStyle ? Math.min(O, $ + 3) : $ + 4), !(e.templateStyle && (g === 0 || g === 4)) && (i.globalAlpha = e.templateStyle ? 0.5 : 1, i.strokeStyle = M, i.beginPath(), i.moveTo(A, $), i.lineTo(E, $), i.stroke(), i.globalAlpha = 1);
     });
-    const V = Math.max(90, ...S.map((k) => s.measureText(k.axisLabel).width + 32)), re = Math.max(2, Math.floor((E - A) / V)), ge = new Set(Array.from({ length: Math.min(re, S.length) }, (k, g) => Math.round(g * (S.length - 1) / Math.max(1, Math.min(re, S.length) - 1))));
-    s.fillStyle = C, S.forEach((k, g) => {
-      ge.has(g) && (s.textAlign = S.length === 1 ? "center" : g === 0 ? "left" : g === S.length - 1 ? "right" : "center", s.fillText(k.axisLabel, k.x, O + 24));
+    const V = Math.max(90, ...S.map((k) => i.measureText(k.axisLabel).width + 32)), re = Math.max(2, Math.floor((E - A) / V)), ge = new Set(Array.from({ length: Math.min(re, S.length) }, (k, g) => Math.round(g * (S.length - 1) / Math.max(1, Math.min(re, S.length) - 1))));
+    i.fillStyle = _, S.forEach((k, g) => {
+      ge.has(g) && (i.textAlign = S.length === 1 ? "center" : g === 0 ? "left" : g === S.length - 1 ? "right" : "center", i.fillText(k.axisLabel, k.x, O + 24));
     });
     const ae = (k, g) => {
-      var _, z;
-      s.strokeStyle = g ? "#9b9fad" : N, s.lineWidth = e.templateStyle ? g ? 1.5 : 2.5 : 2, s.lineJoin = "round", s.lineCap = "round", (_ = s.setLineDash) == null || _.call(s, g ? [4, 5] : []), s.beginPath();
+      var C, U;
+      i.strokeStyle = g ? "#9b9fad" : N, i.lineWidth = e.templateStyle ? g ? 1.5 : 2.5 : 2, i.lineJoin = "round", i.lineCap = "round", (C = i.setLineDash) == null || C.call(i, g ? [4, 5] : []), i.beginPath();
       let $ = !1;
       k.forEach((L) => {
         if (L.y == null) {
           $ = !1;
           return;
         }
-        $ ? s.lineTo(L.x, L.y) : s.moveTo(L.x, L.y), $ = !0;
-      }), s.stroke(), (z = s.setLineDash) == null || z.call(s, []);
+        $ ? i.lineTo(L.x, L.y) : i.moveTo(L.x, L.y), $ = !0;
+      }), i.stroke(), (U = i.setLineDash) == null || U.call(i, []);
     };
     if (e.templateStyle && S.length > 1) {
-      const k = s.createLinearGradient(0, q, 0, O);
-      k.addColorStop(0, "rgba(16,105,74,.22)"), k.addColorStop(1, "rgba(16,105,74,0)"), s.fillStyle = k;
+      const k = i.createLinearGradient(0, q, 0, O);
+      k.addColorStop(0, "rgba(16,105,74,.22)"), k.addColorStop(1, "rgba(16,105,74,0)"), i.fillStyle = k;
       let g = [];
       const $ = () => {
-        g.length > 1 && (s.beginPath(), s.moveTo(g[0].x, O), g.forEach((_) => s.lineTo(_.x, _.y)), s.lineTo(g[g.length - 1].x, O), s.closePath(), s.fill()), g = [];
+        g.length > 1 && (i.beginPath(), i.moveTo(g[0].x, O), g.forEach((C) => i.lineTo(C.x, C.y)), i.lineTo(g[g.length - 1].x, O), i.closePath(), i.fill()), g = [];
       };
-      S.forEach((_) => {
-        _.y == null ? $() : g.push({ x: _.x, y: _.y });
+      S.forEach((C) => {
+        C.y == null ? $() : g.push({ x: C.x, y: C.y });
       }), $();
     }
     u.length && ae(S.map((k, g) => {
@@ -570,9 +580,9 @@ function Ce(o, r, t, e = {}) {
         x: k.x,
         y: (($ = u[g]) == null ? void 0 : $.y) == null ? null : O - (Number(u[g].y) - c) / (P - c) * (O - q)
       };
-    }), !0), ae(S, !1), s.fillStyle = N, S.forEach((k, g) => {
-      k.y == null || e.templateStyle && S.length > 1 && g !== v || (s.beginPath(), s.arc(k.x, k.y, g === v ? 5 : 3, 0, Math.PI * 2), s.fill());
-    }), S.length || (s.textAlign = "center", s.fillText("No data for this period", (A + E) / 2, d / 2));
+    }), !0), ae(S, !1), i.fillStyle = N, S.forEach((k, g) => {
+      k.y == null || e.templateStyle && S.length > 1 && g !== v || (i.beginPath(), i.arc(k.x, k.y, g === v ? 5 : 3, 0, Math.PI * 2), i.fill());
+    }), S.length || (i.textAlign = "center", i.fillText("No data for this period", (A + E) / 2, d / 2));
     const j = S[v];
     if (j) {
       const k = [j.date, j.value == null ? "—" : D(j.value)];
@@ -580,33 +590,34 @@ function Ce(o, r, t, e = {}) {
         const F = u[v];
         k.push(`Previous: ${F.x || ""}`, F.y == null ? "—" : D(F.y));
       }
-      const g = Math.max(...k.map((F) => s.measureText(F).width)) + 20, $ = Math.max(0, Math.min(n - g, j.x - g / 2)), _ = k.length * 18 + 12, z = j.y ?? O, L = Math.max(0, Math.min(d - _, z > _ + 20 ? z - _ - 12 : z + 12));
-      s.fillStyle = "#222", s.fillRect($, L, g, _), s.fillStyle = "#fff", s.textAlign = "left", k.forEach((F, fe) => s.fillText(F, $ + 10, L + 19 + fe * 18));
+      const g = Math.max(...k.map((F) => i.measureText(F).width)) + 20, $ = Math.max(0, Math.min(n - g, j.x - g / 2)), C = k.length * 18 + 12, U = j.y ?? O, L = Math.max(0, Math.min(d - C, U > C + 20 ? U - C - 12 : U + 12));
+      i.fillStyle = "#222", i.fillRect($, L, g, C), i.fillStyle = "#fff", i.textAlign = "left", k.forEach((F, fe) => i.fillText(F, $ + 10, L + 19 + fe * 18));
     }
   }, ee = (v) => {
-    const b = o.getBoundingClientRect(), C = (v.clientX - b.left) * n / b.width, M = (v.clientY - b.top) * d / b.height;
+    const b = o.getBoundingClientRect(), _ = (v.clientX - b.left) * n / b.width, M = (v.clientY - b.top) * d / b.height;
     if (e.columnHover)
-      return !S.length || C < A || C > E || M < q || M > O ? -1 : S.length === 1 ? 0 : Math.round((C - A) / (E - A) * (S.length - 1));
-    let R = -1, U = 16;
+      return !S.length || _ < A || _ > E || M < q || M > O ? -1 : S.length === 1 ? 0 : Math.round((_ - A) / (E - A) * (S.length - 1));
+    let R = -1, z = 16;
     return S.forEach((I, N) => {
       if (I.y == null) return;
-      const V = Math.hypot(I.x - C, I.y - M);
-      V < U && (R = N, U = V);
+      const V = Math.hypot(I.x - _, I.y - M);
+      V < z && (R = N, z = V);
     }), R;
   };
   o.onmousemove = (v) => {
     const b = ee(v);
     o.style.cursor = b >= 0 ? "pointer" : "default", H(b);
   }, o.onclick = e.onSelect ? (v) => {
-    var C;
+    var _;
     const b = ee(v);
-    b >= 0 && ((C = e.onSelect) == null || C.call(e, b));
+    b >= 0 && ((_ = e.onSelect) == null || _.call(e, b));
   } : null, o.onmouseleave = () => {
     o.style.cursor = "default", H();
   }, H();
 }
 const Oe = [
   { key: "AllOrders", label: "All" },
+  { key: "NeedsReview", label: "Needs review" },
   { key: "states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled", label: "Unfulfilled" },
   { key: "states:Open;Pending,Authorized,PartiallyPaid,Failed;", label: "Unpaid" },
   { key: "states:Open;;", label: "Open" },
@@ -626,11 +637,11 @@ function Pe(o = "data-field") {
 }
 function De(o, r = "data-field", t = !0) {
   if (typeof document < "u" && !document.querySelector("link[data-ekom-fonts]")) {
-    const i = document.createElement("link");
-    i.rel = "stylesheet", i.href = "/App_Plugins/Ekom/dist/manager-fonts.css", i.dataset.ekomFonts = "", document.head.append(i);
+    const s = document.createElement("link");
+    s.rel = "stylesheet", s.href = "/App_Plugins/Ekom/dist/manager-fonts.css", s.dataset.ekomFonts = "", document.head.append(s);
   }
   const e = ["orders", "analytics", "customers", ...p.printingEnabled || o === "printing" ? ["printing"] : []], a = typeof location > "u" ? "/umbraco/section/ekommanager" : location.pathname.replace(/\/view\/(orders|analytics|customers|printing)\/?$/, "").replace(/\/$/, "");
-  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((i) => `<a href="${m(a + "/view/" + i)}" ${i === o ? 'aria-current="page"' : ""}>${i[0].toUpperCase() + i.slice(1)}</a>`).join("")}</nav>${t ? Pe(r) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
+  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((s) => `<a href="${m(a + "/view/" + s)}" ${s === o ? 'aria-current="page"' : ""}>${s[0].toUpperCase() + s.slice(1)}</a>`).join("")}</nav>${t ? Pe(r) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
 }
 function Me(o) {
   var t;
@@ -658,18 +669,18 @@ function Ee(o, r) {
   Re(), (t = o.querySelector(".ekom-store-currency")) == null || t.addEventListener("keydown", (a) => {
     var n;
     if (a.key !== "Escape") return;
-    const i = a.currentTarget;
-    i.open = !1, (n = i.querySelector("summary")) == null || n.focus(), a.stopPropagation();
+    const s = a.currentTarget;
+    s.open = !1, (n = s.querySelector("summary")) == null || n.focus(), a.stopPropagation();
   }), o.querySelectorAll("[data-header-store]").forEach((a) => a.addEventListener("click", () => {
     var n;
-    const i = o.querySelector('[data-field="store"], [data-filter="store"]');
-    i && (p.filters.currency = a.dataset.headerCurrency || "", (n = a.closest("details")) == null || n.removeAttribute("open"), i.value = a.dataset.headerStore || "", i.dispatchEvent(new Event("change", { bubbles: !0 })));
+    const s = o.querySelector('[data-field="store"], [data-filter="store"]');
+    s && (p.filters.currency = a.dataset.headerCurrency || "", (n = a.closest("details")) == null || n.removeAttribute("open"), s.value = a.dataset.headerStore || "", s.dispatchEvent(new Event("change", { bubbles: !0 })));
   })), o.querySelectorAll("[data-shared-status]").forEach((a) => a.addEventListener("change", () => {
-    const i = [0, 1, 2].map((n) => Array.from(o.querySelectorAll(`[data-shared-status="${n}"]:checked`), (d) => d.value).join(","));
-    p.filters.orderStatus = i.some(Boolean) ? "states:" + i.join(";") : "AllOrders", r();
+    const s = [0, 1, 2].map((n) => Array.from(o.querySelectorAll(`[data-shared-status="${n}"]:checked`), (d) => d.value).join(","));
+    p.filters.orderStatus = s.some(Boolean) ? "states:" + s.join(";") : "AllOrders", r();
   })), (e = o.querySelector("ekom-date-range")) == null || e.addEventListener("date-range-apply", (a) => {
-    const i = a.detail;
-    p.filters.dateFrom = i.from, p.filters.dateTo = i.to, r();
+    const s = a.detail;
+    p.filters.dateFrom = s.from, p.filters.dateTo = s.to, r();
   });
 }
 function Re() {
@@ -683,14 +694,14 @@ function Re() {
       h(this, "to", "");
       h(this, "month", 0);
       h(this, "reposition", () => {
-        const e = this.root.querySelector(".popover"), a = this.root.querySelector(".anchor"), i = this.ownerDocument.defaultView;
-        if (!e || !a || !i) return;
-        if (i.innerWidth <= 650) {
+        const e = this.root.querySelector(".popover"), a = this.root.querySelector(".anchor"), s = this.ownerDocument.defaultView;
+        if (!e || !a || !s) return;
+        if (s.innerWidth <= 650) {
           e.style.left = "";
           return;
         }
         const n = a.getBoundingClientRect().left;
-        e.style.left = `${Math.min(0, Math.max(24 - n, i.innerWidth - 24 - n - e.getBoundingClientRect().width))}px`;
+        e.style.left = `${Math.min(0, Math.max(24 - n, s.innerWidth - 24 - n - e.getBoundingClientRect().width))}px`;
       });
       h(this, "outside", (e) => {
         this.open && !e.composedPath().includes(this) && this.close(!1);
@@ -717,16 +728,16 @@ function Re() {
       return e ? `${e.slice(8, 10)}.${e.slice(5, 7)}.${e.slice(0, 4)}` : "Pick a date";
     }
     calendar(e) {
-      const a = new Date(Math.floor(e / 12), e % 12, 1), i = (a.getDay() + 6) % 7, n = new Date(a.getFullYear(), a.getMonth() + 1, 0).getDate();
-      return `<section class="month"><h3>${a.toLocaleDateString("en", { month: "long", year: "numeric" })}</h3><div class="days">${["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => `<span class="weekday">${d}</span>`).join("")}${"<span></span>".repeat(i)}${Array.from({ length: n }, (d, s) => {
-        const f = `${a.getFullYear()}-${String(a.getMonth() + 1).padStart(2, "0")}-${String(s + 1).padStart(2, "0")}`, w = f === this.from || f === this.to, u = this.from && this.to && f > this.from && f < this.to;
-        return `<button type="button" data-day="${f}" aria-label="${f}" aria-pressed="${w || !!u}" class="day ${w ? "edge" : u ? "inside" : ""} ${f === this.from ? "start" : ""} ${f === this.to ? "end" : ""} ${!this.to || this.to === this.from ? "single" : ""}">${s + 1}</button>`;
+      const a = new Date(Math.floor(e / 12), e % 12, 1), s = (a.getDay() + 6) % 7, n = new Date(a.getFullYear(), a.getMonth() + 1, 0).getDate();
+      return `<section class="month"><h3>${a.toLocaleDateString("en", { month: "long", year: "numeric" })}</h3><div class="days">${["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => `<span class="weekday">${d}</span>`).join("")}${"<span></span>".repeat(s)}${Array.from({ length: n }, (d, i) => {
+        const f = `${a.getFullYear()}-${String(a.getMonth() + 1).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`, w = f === this.from || f === this.to, u = this.from && this.to && f > this.from && f < this.to;
+        return `<button type="button" data-day="${f}" aria-label="${f}" aria-pressed="${w || !!u}" class="day ${w ? "edge" : u ? "inside" : ""} ${f === this.from ? "start" : ""} ${f === this.to ? "end" : ""} ${!this.to || this.to === this.from ? "single" : ""}">${i + 1}</button>`;
       }).join("")}</div></section>`;
     }
     render() {
-      var d, s, f, w, u;
-      const e = this.getAttribute("from") || "", a = this.getAttribute("to") || "", i = Le(), n = ((d = i.find((l) => l.from === e && l.to === a)) == null ? void 0 : d.label) || "Custom";
-      pe(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${n}</strong><span class="dates">${this.date(e)} – ${this.date(a)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${i.map((l, c) => `<button type="button" data-preset="${c}" aria-pressed="${l.from === this.from && l.to === this.to}">${l.label}<span>${l.from === this.from && l.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (s = this.root.querySelector("link")) == null || s.addEventListener("load", this.reposition), this.reposition(), (f = this.root.querySelector("[data-toggle]")) == null || f.addEventListener("click", () => {
+      var d, i, f, w, u;
+      const e = this.getAttribute("from") || "", a = this.getAttribute("to") || "", s = Le(), n = ((d = s.find((l) => l.from === e && l.to === a)) == null ? void 0 : d.label) || "Custom";
+      pe(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${n}</strong><span class="dates">${this.date(e)} – ${this.date(a)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${s.map((l, c) => `<button type="button" data-preset="${c}" aria-pressed="${l.from === this.from && l.to === this.to}">${l.label}<span>${l.from === this.from && l.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (i = this.root.querySelector("link")) == null || i.addEventListener("load", this.reposition), this.reposition(), (f = this.root.querySelector("[data-toggle]")) == null || f.addEventListener("click", () => {
         var l;
         if (this.open) {
           this.close();
@@ -737,7 +748,7 @@ function Re() {
         !this.from || !this.to || this.from > this.to || (this.setAttribute("from", this.from), this.setAttribute("to", this.to), this.close(), this.dispatchEvent(new CustomEvent("date-range-apply", { bubbles: !0, composed: !0, detail: { from: this.from, to: this.to } })));
       }), this.root.querySelectorAll("[data-preset]").forEach((l) => l.addEventListener("click", () => {
         var x;
-        const c = i[Number(l.dataset.preset)];
+        const c = s[Number(l.dataset.preset)];
         this.from = c.from, this.to = c.to;
         const y = /* @__PURE__ */ new Date(`${this.from}T12:00:00`);
         this.month = y.getFullYear() * 12 + y.getMonth(), this.render(), (x = this.root.querySelector(`[data-preset="${l.dataset.preset}"]`)) == null || x.focus();
@@ -762,21 +773,21 @@ function Fe() {
     { label: "Payment", values: ["Pending", "Authorized", "Paid", "PartiallyPaid", "Failed", "Voided"] },
     { label: "Fulfillment", values: ["Unfulfilled", "Picking", "Picked", "Packed", "PartiallyFulfilled", "Fulfilled"] }
   ].map((t, e) => {
-    const a = (o[e] || "").split(",").filter(Boolean), i = a.length === 1 ? a[0].replace(/([a-z])([A-Z])/g, "$1 $2") : a.length ? `${a.length} selected` : "Any";
-    return `<div class="ekom-status-filter"><span>${t.label}</span><details class="ekom-dropdown"><summary>${m(i)}<span>▾</span></summary><div class="ekom-dropdown-options">${t.values.map((n) => `<label><input type="checkbox" data-shared-status="${e}" value="${n}" ${a.includes(n) ? "checked" : ""}>${n.replace(/([a-z])([A-Z])/g, "$1 $2")}</label>`).join("")}</div></details></div>`;
+    const a = (o[e] || "").split(",").filter(Boolean), s = a.length === 1 ? a[0].replace(/([a-z])([A-Z])/g, "$1 $2") : a.length ? `${a.length} selected` : "Any";
+    return `<div class="ekom-status-filter"><span>${t.label}</span><details class="ekom-dropdown"><summary>${m(s)}<span>▾</span></summary><div class="ekom-dropdown-options">${t.values.map((n) => `<label><input type="checkbox" data-shared-status="${e}" value="${n}" ${a.includes(n) ? "checked" : ""}>${n.replace(/([a-z])([A-Z])/g, "$1 $2")}</label>`).join("")}</div></details></div>`;
   }).join("");
 }
 function pe(o, r) {
   const t = o.ownerDocument.createElement("template");
   t.innerHTML = r;
-  const e = Array.from(o.children).filter((i) => i.matches('style, link[rel="stylesheet"]')), a = Array.from(t.content.children).filter((i) => i.matches('style, link[rel="stylesheet"]'));
-  for (const i of a) {
-    const n = e.find((d) => d.outerHTML === i.outerHTML);
-    n ? e.splice(e.indexOf(n), 1) : o.appendChild(i.cloneNode(!0)), i.remove();
+  const e = Array.from(o.children).filter((s) => s.matches('style, link[rel="stylesheet"]')), a = Array.from(t.content.children).filter((s) => s.matches('style, link[rel="stylesheet"]'));
+  for (const s of a) {
+    const n = e.find((d) => d.outerHTML === s.outerHTML);
+    n ? e.splice(e.indexOf(n), 1) : o.appendChild(s.cloneNode(!0)), s.remove();
   }
-  for (const i of e) i.remove();
-  for (const i of Array.from(o.childNodes))
-    (i.nodeType !== 1 || !i.matches('style, link[rel="stylesheet"]')) && i.remove();
+  for (const s of e) s.remove();
+  for (const s of Array.from(o.childNodes))
+    (s.nodeType !== 1 || !s.matches('style, link[rel="stylesheet"]')) && s.remove();
   o.appendChild(t.content);
 }
 const qe = (o) => class extends o {
@@ -796,31 +807,31 @@ function he(o, r = /* @__PURE__ */ new Date()) {
 function je(o, r, t, e = /* @__PURE__ */ new Date()) {
   if (t === "") return "";
   const a = ["today", "7", "30", "month", "year"];
-  return t && a.includes(t) && a.unshift(t), a.find((i) => {
-    const n = he(i, e);
+  return t && a.includes(t) && a.unshift(t), a.find((s) => {
+    const n = he(s, e);
     return n.dateFrom === o && n.dateTo === r;
   }) || "";
 }
-function ze(o, r, t) {
-  var n, d, s, f, w;
+function Ue(o, r, t) {
+  var n, d, i, f, w;
   const e = [], a = o.ordersChart.points;
-  let i = 0;
-  for (; i < a.length; ) {
-    const u = i, l = a[i].x, c = Y(l);
+  let s = 0;
+  for (; s < a.length; ) {
+    const u = s, l = a[s].x, c = Y(l);
     t === "month" ? (c.setUTCDate(1), c.setUTCMonth(c.getUTCMonth() + 1)) : t === "week" ? c.setUTCDate(c.getUTCDate() + (7 - (c.getUTCDay() + 6) % 7)) : c.setUTCDate(c.getUTCDate() + 1);
     let y = 0, x = 0, P = 0, D = 0;
     do
-      y += Number(((n = o.revenueChart.points[i]) == null ? void 0 : n.y) || 0), x += Number(a[i].y || 0), P += Number(((d = r == null ? void 0 : r.revenueChart.points[i]) == null ? void 0 : d.y) || 0), D += Number(((s = r == null ? void 0 : r.ordersChart.points[i]) == null ? void 0 : s.y) || 0), i++;
-    while (i < a.length && Y(a[i].x).getTime() < c.getTime());
+      y += Number(((n = o.revenueChart.points[s]) == null ? void 0 : n.y) || 0), x += Number(a[s].y || 0), P += Number(((d = r == null ? void 0 : r.revenueChart.points[s]) == null ? void 0 : d.y) || 0), D += Number(((i = r == null ? void 0 : r.ordersChart.points[s]) == null ? void 0 : i.y) || 0), s++;
+    while (s < a.length && Y(a[s].x).getTime() < c.getTime());
     e.push({
       start: l,
-      end: a[i - 1].x,
+      end: a[s - 1].x,
       amount: y,
       orders: x,
       average: x ? y / x : null,
       ...r ? {
         previousStart: (f = r.ordersChart.points[u]) == null ? void 0 : f.x,
-        previousEnd: (w = r.ordersChart.points[i - 1]) == null ? void 0 : w.x,
+        previousEnd: (w = r.ordersChart.points[s - 1]) == null ? void 0 : w.x,
         previousAmount: P,
         previousOrders: D,
         previousAverage: D ? P / D : null
@@ -839,7 +850,7 @@ function ce(o, r) {
   const t = (o - r) / Math.abs(r) * 100;
   return `${t > 0 ? "+" : ""}${t.toLocaleString(void 0, { maximumFractionDigits: 1 })}%`;
 }
-class Ue extends qe(HTMLElement) {
+class ze extends qe(HTMLElement) {
   constructor() {
     super(...arguments);
     h(this, "api", new T());
@@ -877,17 +888,17 @@ class Ue extends qe(HTMLElement) {
     if (!this.pollingSeconds || this.polling || this.disposed || document.hidden || this.loading || this.loadingMostSoldProducts || this.contains(document.activeElement) || this.querySelector('details[open], dialog[open], [role="dialog"]')) return;
     const t = { ...p.filters };
     if (!t.store) return;
-    const e = this.chartRequest, a = this.productRequest, i = this.compare, n = this.productsVisible;
+    const e = this.chartRequest, a = this.productRequest, s = this.compare, n = this.productsVisible;
     this.polling = !0;
     try {
-      const [d, s, f] = await Promise.all([
+      const [d, i, f] = await Promise.all([
         this.api.charts(t),
-        i ? this.api.charts({ ...t, ...de(t.dateFrom, t.dateTo) }) : Promise.resolve(void 0),
+        s ? this.api.charts({ ...t, ...de(t.dateFrom, t.dateTo) }) : Promise.resolve(void 0),
         n ? this.api.mostSoldProducts(t, this.pageMostSoldProducts, 20) : Promise.resolve(void 0)
       ]);
-      if (this.disposed || !this.pollingSeconds || e !== this.chartRequest || a !== this.productRequest || i !== this.compare || n !== this.productsVisible || JSON.stringify(t) !== JSON.stringify(p.filters) || this.contains(document.activeElement) || this.querySelector('details[open], dialog[open], [role="dialog"]')) return;
-      const w = f ? { ...f, products: f.products || [] } : this.mostSoldProducts, u = this.error || this.productError || JSON.stringify([d, s, w]) !== JSON.stringify([this.chartData, this.previousData, this.mostSoldProducts]);
-      this.chartData = d, this.previousData = s, this.chartFilters = t, this.mostSoldProducts = w, this.error = "", this.productError = "", d.mixedCurrencies && (this.metric = "orders"), u && this.render();
+      if (this.disposed || !this.pollingSeconds || e !== this.chartRequest || a !== this.productRequest || s !== this.compare || n !== this.productsVisible || JSON.stringify(t) !== JSON.stringify(p.filters) || this.contains(document.activeElement) || this.querySelector('details[open], dialog[open], [role="dialog"]')) return;
+      const w = f ? { ...f, products: f.products || [] } : this.mostSoldProducts, u = this.error || this.productError || JSON.stringify([d, i, w]) !== JSON.stringify([this.chartData, this.previousData, this.mostSoldProducts]);
+      this.chartData = d, this.previousData = i, this.chartFilters = t, this.mostSoldProducts = w, this.error = "", this.productError = "", d.mixedCurrencies && (this.metric = "orders"), u && this.render();
       const l = this.querySelector(".ekom-polling summary");
       l == null || l.classList.add("just-refreshed"), l == null || l.addEventListener("animationend", (c) => {
         c.target === l && l.classList.remove("just-refreshed");
@@ -911,22 +922,22 @@ class Ue extends qe(HTMLElement) {
     this.render(), this.resizeObserver = new ResizeObserver(() => this.renderCharts()), this.resizeObserver.observe(this), typeof MutationObserver < "u" && (this.themeObserver = new MutationObserver(() => this.renderCharts()), this.themeObserver.observe(document.head, { childList: !0, subtree: !0, attributes: !0, attributeFilter: ["href"] }), document.head.addEventListener("load", this.themeLoaded, !0)), this.initialize();
   }
   disconnectedCallback() {
-    var t, e, a, i;
-    this.disposed = !0, window.clearInterval(this.pollingTimer), this.pollingSeconds = 0, this.chartRequest++, this.productRequest++, (t = this.chartAbort) == null || t.abort(), (e = this.productAbort) == null || e.abort(), (a = this.resizeObserver) == null || a.disconnect(), this.resizeObserver = void 0, (i = this.themeObserver) == null || i.disconnect(), typeof document < "u" && document.head.removeEventListener("load", this.themeLoaded, !0), super.disconnectedCallback();
+    var t, e, a, s;
+    this.disposed = !0, window.clearInterval(this.pollingTimer), this.pollingSeconds = 0, this.chartRequest++, this.productRequest++, (t = this.chartAbort) == null || t.abort(), (e = this.productAbort) == null || e.abort(), (a = this.resizeObserver) == null || a.disconnect(), this.resizeObserver = void 0, (s = this.themeObserver) == null || s.disconnect(), typeof document < "u" && document.head.removeEventListener("load", this.themeLoaded, !0), super.disconnectedCallback();
   }
   get currency() {
     var e, a;
     const t = ((e = this.chartFilters) == null ? void 0 : e.currency) || p.filters.currency;
-    return t ? { isoCurrencySymbol: t } : (a = p.stores.find((i) => {
+    return t ? { isoCurrencySymbol: t } : (a = p.stores.find((s) => {
       var n;
-      return i.alias === (((n = this.chartFilters) == null ? void 0 : n.store) || p.filters.store);
+      return s.alias === (((n = this.chartFilters) == null ? void 0 : n.store) || p.filters.store);
     })) == null ? void 0 : a.currency;
   }
   async initialize() {
     var t;
     try {
-      const [e, a, i] = await Promise.all([this.api.statusList(), this.api.stores(), this.hasAttribute("classic") ? Promise.resolve(!1) : this.api.printingEnabled()]);
-      if (p.printingEnabled = i, this.disposed) return;
+      const [e, a, s] = await Promise.all([this.api.statusList(), this.api.stores(), this.hasAttribute("classic") ? Promise.resolve(!1) : this.api.printingEnabled()]);
+      if (p.printingEnabled = s, this.disposed) return;
       p.statusList = e || [], p.stores = a || [], p.stores.some((n) => n.alias === p.filters.store) || (p.filters.store = ((t = p.stores[0]) == null ? void 0 : t.alias) || ""), this.hasAttribute("classic") || Ae(), await this.loadAnalytics();
     } catch (e) {
       if (this.disposed) return;
@@ -942,15 +953,15 @@ class Ue extends qe(HTMLElement) {
     (n = this.chartAbort) == null || n.abort();
     const e = this.chartAbort = new AbortController(), a = { ...p.filters };
     a.store || (this.chartData = void 0, this.previousData = void 0), this.error = "", this.loading = !!a.store;
-    const i = this.querySelector(".analytics");
-    if (i && a.store ? i.setAttribute("aria-busy", "true") : this.render(), !!a.store)
+    const s = this.querySelector(".analytics");
+    if (s && a.store ? s.setAttribute("aria-busy", "true") : this.render(), !!a.store)
       try {
-        const d = this.compare ? { ...a, ...de(a.dateFrom, a.dateTo) } : void 0, [s, f] = await Promise.all([
+        const d = this.compare ? { ...a, ...de(a.dateFrom, a.dateTo) } : void 0, [i, f] = await Promise.all([
           this.api.charts(a, e.signal),
           d ? this.api.charts(d, e.signal) : Promise.resolve(void 0)
         ]);
         if (t !== this.chartRequest || this.disposed) return;
-        this.chartData = s, this.previousData = f, this.chartFilters = a, s.mixedCurrencies && (this.metric = "orders");
+        this.chartData = i, this.previousData = f, this.chartFilters = a, i.mixedCurrencies && (this.metric = "orders");
       } catch (d) {
         if (t !== this.chartRequest || this.disposed) return;
         this.chartData = void 0, this.previousData = void 0, this.error = Q(d, "Unable to load charts.");
@@ -959,9 +970,9 @@ class Ue extends qe(HTMLElement) {
       }
   }
   async loadMostSoldProducts() {
-    var i;
+    var s;
     const t = ++this.productRequest;
-    (i = this.productAbort) == null || i.abort();
+    (s = this.productAbort) == null || s.abort();
     const e = this.productAbort = new AbortController(), a = { ...p.filters };
     if (this.mostSoldProducts = { products: [], count: 0, totalPages: 0, page: this.pageMostSoldProducts }, this.productError = "", this.loadingMostSoldProducts = !!a.store, this.render(), !!a.store)
       try {
@@ -975,17 +986,17 @@ class Ue extends qe(HTMLElement) {
       }
   }
   get buckets() {
-    return this.chartData ? ze(this.chartData, this.previousData, this.grouping) : [];
+    return this.chartData ? Ue(this.chartData, this.previousData, this.grouping) : [];
   }
   get comparisonMoneyAvailable() {
     var t, e;
     return !!this.previousData && !((t = this.chartData) != null && t.mixedCurrencies) && !this.previousData.mixedCurrencies && (!((e = this.chartData) != null && e.currency) || !this.previousData.currency || this.chartData.currency === this.previousData.currency);
   }
   amount(t) {
-    var a, i, n, d, s;
+    var a, s, n, d, i;
     if (t == null || (a = this.chartData) != null && a.mixedCurrencies) return "—";
-    const e = ((i = this.chartData) == null ? void 0 : i.currency) || ((n = this.previousData) == null ? void 0 : n.currency);
-    return !e || e === ((d = this.currency) == null ? void 0 : d.currencyValue) || e === ((s = this.currency) == null ? void 0 : s.isoCurrencySymbol) ? G(t, this.currency) : /^[A-Z]{3}$/.test(e) ? G(t, { isoCurrencySymbol: e }) : `${t.toLocaleString(void 0, { maximumFractionDigits: 2 })} ${e}`;
+    const e = ((s = this.chartData) == null ? void 0 : s.currency) || ((n = this.previousData) == null ? void 0 : n.currency);
+    return !e || e === ((d = this.currency) == null ? void 0 : d.currencyValue) || e === ((i = this.currency) == null ? void 0 : i.isoCurrencySymbol) ? G(t, this.currency) : /^[A-Z]{3}$/.test(e) ? G(t, { isoCurrencySymbol: e }) : `${t.toLocaleString(void 0, { maximumFractionDigits: 2 })} ${e}`;
   }
   label(t) {
     return t === "orders" ? "Orders" : t === "average" ? "Average order value" : "Order amount";
@@ -1001,7 +1012,7 @@ class Ue extends qe(HTMLElement) {
   }
   render() {
     const t = p.filters, e = je(t.dateFrom, t.dateTo, this.datePreset);
-    pe(this, `<style>${_e}${this.hasAttribute("classic") ? `
+    pe(this, `<style>${Ce}${this.hasAttribute("classic") ? `
       ekom-analytics-section-view { display:block;color:var(--uui-color-text,#20232e) }
       .analytics {background:var(--uui-color-background,#f3f4f7);min-height:80vh}
       .analytics .card {background:var(--uui-color-surface,#fff);border:1px solid #dfe2e8;border-radius:10px;padding:18px;text-align:left;box-shadow:none}
@@ -1037,7 +1048,7 @@ class Ue extends qe(HTMLElement) {
         ${this.hasAttribute("classic") ? `<label>Order view<select data-field="orderStatus">${Me(t.orderStatus)}</select></label>` : Fe()}
         ${this.hasAttribute("classic") ? `        <label>Date From<input type="date" data-field="dateFrom" value="${m(t.dateFrom)}"></label>
         <label>Date To<input type="date" data-field="dateTo" value="${m(t.dateTo)}"></label>
-        <label>Date preset<select data-preset><option value="">Custom range</option>${[["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["month", "This month"], ["year", "This year"]].map(([a, i]) => `<option value="${a}" ${e === a ? "selected" : ""}>${i}</option>`).join("")}</select></label>
+        <label>Date preset<select data-preset><option value="">Custom range</option>${[["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["month", "This month"], ["year", "This year"]].map(([a, s]) => `<option value="${a}" ${e === a ? "selected" : ""}>${s}</option>`).join("")}</select></label>
 ` : Te()}
         ${this.hasAttribute("classic") ? `<label><span>Comparison</span><span><input type="checkbox" data-compare ${this.compare ? "checked" : ""}> Previous period</span></label><button data-refresh>Refresh</button>` : ""}
       </div>
@@ -1058,18 +1069,18 @@ class Ue extends qe(HTMLElement) {
     return !t || !e ? "" : new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).formatRange(/* @__PURE__ */ new Date(`${t.slice(0, 10)}T00:00:00Z`), /* @__PURE__ */ new Date(`${e.slice(0, 10)}T00:00:00Z`));
   }
   renderAnalytics() {
-    var a, i, n, d;
+    var a, s, n, d;
     const t = le(this.chartData), e = this.previousData ? le(this.previousData) : void 0;
-    return `<div class="analytics-summary">${["amount", "orders", "average"].map((s) => `<div class="card"><span>${this.label(s)}</span><strong>${m(this.value(t[s], s))}</strong><span class="analytics-muted">${e && (s === "orders" || this.comparisonMoneyAvailable) ? m(ce(t[s], e[s])) + " vs previous period" : this.compare ? "No monetary comparison available" : "Selected period"}</span></div>`).join("")}</div>
+    return `<div class="analytics-summary">${["amount", "orders", "average"].map((i) => `<div class="card"><span>${this.label(i)}</span><strong>${m(this.value(t[i], i))}</strong><span class="analytics-muted">${e && (i === "orders" || this.comparisonMoneyAvailable) ? m(ce(t[i], e[i])) + " vs previous period" : this.compare ? "No monetary comparison available" : "Selected period"}</span></div>`).join("")}</div>
       <p class="analytics-muted">Order amount is the recorded charged amount, after gift cards; it is not refund-adjusted revenue. Dates use ${this.chartData.dateBasis === "PaidDate" ? "payment date" : "order creation date"}, matching Orders.</p>
       ${this.chartData.mixedCurrencies ? '<p role="status">This period contains multiple currencies. Monetary totals are hidden to avoid combining different currencies.</p>' : ""}
       ${this.previousData && !this.comparisonMoneyAvailable ? '<p class="analytics-muted">Monetary comparison is unavailable across different or mixed currencies.</p>' : ""}
       <div class="card analytics-main"><div class="analytics-toolbar">
-        <div class="analytics-metrics">${["amount", "orders", "average"].map((s) => `<button data-metric="${s}" aria-pressed="${this.metric === s}" ${s !== "orders" && this.chartData.mixedCurrencies ? "disabled" : ""}>${this.label(s)}</button>`).join("")}</div>
-        <label class="analytics-grouping">Group by<select data-grouping>${[["day", "Daily"], ["week", "Weekly"], ["month", "Monthly"]].map(([s, f]) => `<option value="${s}" ${this.grouping === s ? "selected" : ""}>${f}</option>`).join("")}</select></label>
+        <div class="analytics-metrics">${["amount", "orders", "average"].map((i) => `<button data-metric="${i}" aria-pressed="${this.metric === i}" ${i !== "orders" && this.chartData.mixedCurrencies ? "disabled" : ""}>${this.label(i)}</button>`).join("")}</div>
+        <label class="analytics-grouping">Group by<select data-grouping>${[["day", "Daily"], ["week", "Weekly"], ["month", "Monthly"]].map(([i, f]) => `<option value="${i}" ${this.grouping === i ? "selected" : ""}>${f}</option>`).join("")}</select></label>
         <button data-table aria-pressed="${this.table}">${this.table ? "Show chart" : "Show data table"}</button><button data-csv>Download CSV</button>
       </div>
-      <p class="analytics-muted">${this.previousData ? `Solid: ${m(this.displayRange((a = this.chartFilters) == null ? void 0 : a.dateFrom, (i = this.chartFilters) == null ? void 0 : i.dateTo))}. Dashed: ${m(this.displayRange((n = this.previousData.ordersChart.points[0]) == null ? void 0 : n.x, (d = this.previousData.ordersChart.points.at(-1)) == null ? void 0 : d.x))}. Comparison buckets cover the same number of days.` : "Selected period."} Grouped ${this.grouping === "month" ? "monthly" : this.grouping === "week" ? "weekly" : "daily"}.</p>
+      <p class="analytics-muted">${this.previousData ? `Solid: ${m(this.displayRange((a = this.chartFilters) == null ? void 0 : a.dateFrom, (s = this.chartFilters) == null ? void 0 : s.dateTo))}. Dashed: ${m(this.displayRange((n = this.previousData.ordersChart.points[0]) == null ? void 0 : n.x, (d = this.previousData.ordersChart.points.at(-1)) == null ? void 0 : d.x))}. Comparison buckets cover the same number of days.` : "Selected period."} Grouped ${this.grouping === "month" ? "monthly" : this.grouping === "week" ? "weekly" : "daily"}.</p>
       ${this.table ? this.renderTable() : `<div class="analytics-chart-frame" style="height:${this.hasAttribute("classic") ? 360 : 266}px"><canvas id="analytics-chart" style="width:100%;height:100%" role="img" aria-label="${this.label(this.metric)} over time. Use Show data table for exact values and order links."></canvas></div><div class="analytics-legend"><span><i></i>This period</span>${this.previousData ? '<span><i class="previous"></i>Previous period</span>' : ""}<span>Click a bucket to open its orders</span></div>`}
       </div>`;
   }
@@ -1081,7 +1092,7 @@ class Ue extends qe(HTMLElement) {
       ["Unique purchasing customers", t.uniqueCustomers, e == null ? void 0 : e.uniqueCustomers, !1],
       ["First-time buyers", t.newCustomers, e == null ? void 0 : e.newCustomers, !1],
       ["Returning customer rate", t.returningCustomerRate, e == null ? void 0 : e.returningCustomerRate, !0]
-    ], i = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], n = i.map((l, c) => t.orderTimes.filter((y) => y.weekday === c).reduce((y, x) => y + x.orders, 0)), d = Array.from({ length: 24 }, (l, c) => t.orderTimes.filter((y) => y.hour === c).reduce((y, x) => y + x.orders, 0)), s = (l, c) => l.map((y, x) => `<div class="analytics-time-row" tabindex="0" data-tooltip="${y}: ${c[x]} orders" aria-label="${y}: ${c[x]} orders"><span>${y}</span><div class="analytics-time-track" aria-hidden="true"><span style="width:${100 * c[x] / Math.max(1, ...c)}%"></span></div><span>${c[x]}</span></div>`).join("");
+    ], s = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], n = s.map((l, c) => t.orderTimes.filter((y) => y.weekday === c).reduce((y, x) => y + x.orders, 0)), d = Array.from({ length: 24 }, (l, c) => t.orderTimes.filter((y) => y.hour === c).reduce((y, x) => y + x.orders, 0)), i = (l, c) => l.map((y, x) => `<div class="analytics-time-row" tabindex="0" data-tooltip="${y}: ${c[x]} orders" aria-label="${y}: ${c[x]} orders"><span>${y}</span><div class="analytics-time-track" aria-hidden="true"><span style="width:${100 * c[x] / Math.max(1, ...c)}%"></span></div><span>${c[x]}</span></div>`).join("");
     return `<div class="analytics-summary">${a.map(([l, c, y, x]) => `<div class="card"><span>${l}</span><strong>${c == null ? "—" : m(c.toLocaleString(void 0, { maximumFractionDigits: x ? 1 : 0 })) + (x ? "%" : "")}</strong><span class="analytics-muted">${e ? x ? c == null || y == null ? "No comparison available" : `${(c - y).toLocaleString(void 0, { maximumFractionDigits: 1, signDisplay: "always" })} percentage points vs previous period` : `${ce(c, y ?? null)} vs previous period` : "Selected period"}</span></div>`).join("")}</div>
       <div class="card analytics-main analytics-purchases"><h3>New and returning purchases</h3>
         <div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Purchase type</th><th>Buyers</th><th>Orders</th><th>Order amount</th></tr></thead><tbody>
@@ -1090,8 +1101,8 @@ class Ue extends qe(HTMLElement) {
         </tbody></table></div>
       </div>
       <div class="analytics-insight-grid">
-        <div class="card analytics-main"><div class="analytics-chart-heading"><h3>Orders by weekday</h3><span>By creation day</span></div><div class="analytics-time-bars">${s(i, n)}</div></div>
-        ${(u = this.hasAttribute) != null && u.call(this, "classic") ? `<div class="card analytics-main"><h3>Orders by hour</h3><p class="analytics-muted">Recorded creation time, 00–23. No timezone conversion. Totals are counts, not averages per hour.</p><div class="analytics-time-bars analytics-hour-bars">${s(d.map((l, c) => String(c).padStart(2, "0") + ":00"), d)}</div></div>` : `<div class="card analytics-main"><div class="analytics-chart-heading"><h3>Orders by hour</h3><span>${Math.max(...d) > 0 ? `Peak ${String(d.indexOf(Math.max(...d))).padStart(2, "0")}:00` : "No orders"}</span></div><div class="analytics-hour-columns">${d.map((l, c) => `<div class="analytics-hour-column" tabindex="0" data-tooltip="${String(c).padStart(2, "0")}:00: ${l} orders" aria-label="${String(c).padStart(2, "0")}:00: ${l} orders"><span class="analytics-hour-value">${l || ""}</span><span class="analytics-hour-bar" style="height:${130 * l / Math.max(1, ...d)}px"></span><span class="analytics-hour-label">${c % 3 === 0 ? String(c).padStart(2, "0") : ""}</span></div>`).join("")}</div></div>`}
+        <div class="card analytics-main"><div class="analytics-chart-heading"><h3>Orders by weekday</h3><span>By creation day</span></div><div class="analytics-time-bars">${i(s, n)}</div></div>
+        ${(u = this.hasAttribute) != null && u.call(this, "classic") ? `<div class="card analytics-main"><h3>Orders by hour</h3><p class="analytics-muted">Recorded creation time, 00–23. No timezone conversion. Totals are counts, not averages per hour.</p><div class="analytics-time-bars analytics-hour-bars">${i(d.map((l, c) => String(c).padStart(2, "0") + ":00"), d)}</div></div>` : `<div class="card analytics-main"><div class="analytics-chart-heading"><h3>Orders by hour</h3><span>${Math.max(...d) > 0 ? `Peak ${String(d.indexOf(Math.max(...d))).padStart(2, "0")}:00` : "No orders"}</span></div><div class="analytics-hour-columns">${d.map((l, c) => `<div class="analytics-hour-column" tabindex="0" data-tooltip="${String(c).padStart(2, "0")}:00: ${l} orders" aria-label="${String(c).padStart(2, "0")}:00: ${l} orders"><span class="analytics-hour-value">${l || ""}</span><span class="analytics-hour-bar" style="height:${130 * l / Math.max(1, ...d)}px"></span><span class="analytics-hour-label">${c % 3 === 0 ? String(c).padStart(2, "0") : ""}</span></div>`).join("")}</div></div>`}
 
       </div>`;
   }
@@ -1125,17 +1136,17 @@ class Ue extends qe(HTMLElement) {
     var d;
     const t = this.querySelector("#analytics-chart");
     if (!t || !this.chartData || this.table) return;
-    const e = this.buckets, a = this.chartData.currency || ((d = this.previousData) == null ? void 0 : d.currency), i = a && /^[A-Z]{3}$/.test(a) ? { isoCurrencySymbol: a } : this.currency, n = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: e.map((s) => ({ x: this.range(s.previousStart, s.previousEnd), y: this.previousValue(s) })) } : void 0;
-    Ce(t, { labels: [], points: e.map((s) => ({ x: this.range(s.start, s.end), y: s[this.metric] })) }, getComputedStyle(t).getPropertyValue("--ekom-accent").trim() || "#10694a", {
+    const e = this.buckets, a = this.chartData.currency || ((d = this.previousData) == null ? void 0 : d.currency), s = a && /^[A-Z]{3}$/.test(a) ? { isoCurrencySymbol: a } : this.currency, n = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: e.map((i) => ({ x: this.range(i.previousStart, i.previousEnd), y: this.previousValue(i) })) } : void 0;
+    _e(t, { labels: [], points: e.map((i) => ({ x: this.range(i.start, i.end), y: i[this.metric] })) }, getComputedStyle(t).getPropertyValue("--ekom-accent").trim() || "#10694a", {
       templateStyle: !this.hasAttribute("classic"),
-      formatAxisValue: (s) => s.toLocaleString(void 0, { notation: "compact", maximumFractionDigits: 1 }).replace("K", "k"),
-      formatLabel: (s) => (/* @__PURE__ */ new Date(`${e[s].start}T00:00:00Z`)).toLocaleDateString("en-GB", { timeZone: "UTC", month: "short", ...this.grouping === "month" ? {} : { day: "numeric" } }),
-      currency: this.metric === "orders" ? void 0 : i,
+      formatAxisValue: (i) => i.toLocaleString(void 0, { notation: "compact", maximumFractionDigits: 1 }).replace("K", "k"),
+      formatLabel: (i) => (/* @__PURE__ */ new Date(`${e[i].start}T00:00:00Z`)).toLocaleDateString("en-GB", { timeZone: "UTC", month: "short", ...this.grouping === "month" ? {} : { day: "numeric" } }),
+      currency: this.metric === "orders" ? void 0 : s,
       integer: this.metric === "orders",
       comparison: n,
-      formatValue: (s) => this.value(s),
+      formatValue: (i) => this.value(i),
       columnHover: !0,
-      onSelect: (s) => this.openOrders(s)
+      onSelect: (i) => this.openOrders(i)
     });
   }
   changedFilters() {
@@ -1145,23 +1156,23 @@ class Ue extends qe(HTMLElement) {
     const e = this.buckets[t];
     if (!e || !this.chartFilters) return;
     const a = { ...this.chartFilters, dateFrom: e.start, dateTo: e.end };
-    for (const i of ["query", "paymentProvider", "shippingProvider", "couponCode", "giftcardCode", "productSku", "trackingSource", "trackingMedium", "trackingCampaign", "trackingTerm", "trackingContent", "trackingClickId"]) a[i] = "";
+    for (const s of ["query", "paymentProvider", "shippingProvider", "couponCode", "giftcardCode", "productSku", "trackingSource", "trackingMedium", "trackingCampaign", "trackingTerm", "trackingContent", "trackingClickId"]) a[s] = "";
     if (Object.assign(p.filters, a), this.hasAttribute("classic")) this.dispatchEvent(new CustomEvent("analytics-open-orders", { bubbles: !0, detail: a }));
     else {
-      const i = new URLSearchParams({ analyticsDrill: "1", store: a.store, currency: a.currency || "", start: a.dateFrom, end: a.dateTo, orderStatus: a.orderStatus }), n = document.createElement("a");
-      n.href = location.pathname.replace(/\/analytics\/?$/, "/orders") + "?" + i, this.appendChild(n), n.click(), n.remove();
+      const s = new URLSearchParams({ analyticsDrill: "1", store: a.store, currency: a.currency || "", start: a.dateFrom, end: a.dateTo, orderStatus: a.orderStatus }), n = document.createElement("a");
+      n.href = location.pathname.replace(/\/analytics\/?$/, "/orders") + "?" + s, this.appendChild(n), n.click(), n.remove();
     }
   }
   exportCsv() {
-    var a, i, n;
+    var a, s, n;
     const t = [["From", "To", "Orders", "Order amount", "Average order", "Currency", "Previous from", "Previous to", "Previous orders", "Previous amount", "Previous average"]];
-    for (const d of this.buckets) t.push([d.start, d.end, String(d.orders), (a = this.chartData) != null && a.mixedCurrencies ? "" : String(d.amount), (i = this.chartData) != null && i.mixedCurrencies || d.average == null ? "" : String(d.average), ((n = this.chartData) == null ? void 0 : n.currency) || "", d.previousStart || "", d.previousEnd || "", d.previousOrders == null ? "" : String(d.previousOrders), this.comparisonMoneyAvailable ? String(d.previousAmount ?? "") : "", this.comparisonMoneyAvailable ? String(d.previousAverage ?? "") : ""]);
-    const e = t.map((d) => d.map((s) => '"' + s.replaceAll('"', '""') + '"').join(",")).join(`\r
+    for (const d of this.buckets) t.push([d.start, d.end, String(d.orders), (a = this.chartData) != null && a.mixedCurrencies ? "" : String(d.amount), (s = this.chartData) != null && s.mixedCurrencies || d.average == null ? "" : String(d.average), ((n = this.chartData) == null ? void 0 : n.currency) || "", d.previousStart || "", d.previousEnd || "", d.previousOrders == null ? "" : String(d.previousOrders), this.comparisonMoneyAvailable ? String(d.previousAmount ?? "") : "", this.comparisonMoneyAvailable ? String(d.previousAverage ?? "") : ""]);
+    const e = t.map((d) => d.map((i) => '"' + i.replaceAll('"', '""') + '"').join(",")).join(`\r
 `);
     Se(new Blob(["\uFEFF", e], { type: "text/csv;charset=utf-8" }), "analytics.csv");
   }
   bindEvents() {
-    var t, e, a, i, n, d, s, f, w;
+    var t, e, a, s, n, d, i, f, w;
     this.hasAttribute("classic") || Ee(this, () => {
       this.datePreset = void 0, this.changedFilters();
     }), this.querySelectorAll("[data-field]").forEach((u) => u.addEventListener("change", () => {
@@ -1176,14 +1187,14 @@ class Ue extends qe(HTMLElement) {
       this.grouping = u.target.value, this.render();
     }), this.querySelectorAll("[data-metric]").forEach((u) => u.addEventListener("click", () => {
       this.metric = u.dataset.metric, this.render();
-    })), (i = this.querySelector("[data-table]")) == null || i.addEventListener("click", () => {
+    })), (s = this.querySelector("[data-table]")) == null || s.addEventListener("click", () => {
       this.table = !this.table, this.render();
     }), (n = this.querySelector("[data-csv]")) == null || n.addEventListener("click", () => this.exportCsv()), this.querySelectorAll("[data-poll-seconds]").forEach((u) => u.addEventListener("click", () => this.setPolling(Number(u.dataset.pollSeconds)))), (d = this.querySelector(".ekom-polling")) == null || d.addEventListener("keydown", (u) => {
       var c;
       if (u.key !== "Escape") return;
       const l = u.currentTarget;
       l.open = !1, (c = l.querySelector("summary")) == null || c.focus(), u.stopPropagation();
-    }), (s = this.querySelector("[data-refresh]")) == null || s.addEventListener("click", () => void this.loadAnalytics()), this.querySelectorAll("[data-orders]").forEach((u) => u.addEventListener("click", () => this.openOrders(Number(u.dataset.orders)))), (f = this.querySelector("[data-products]")) == null || f.addEventListener("click", () => {
+    }), (i = this.querySelector("[data-refresh]")) == null || i.addEventListener("click", () => void this.loadAnalytics()), this.querySelectorAll("[data-orders]").forEach((u) => u.addEventListener("click", () => this.openOrders(Number(u.dataset.orders)))), (f = this.querySelector("[data-products]")) == null || f.addEventListener("click", () => {
       var u;
       this.productsVisible = !this.productsVisible, this.productsVisible ? this.loadMostSoldProducts() : (this.productRequest++, (u = this.productAbort) == null || u.abort(), this.render());
     }), (w = this.querySelector("[data-product-retry]")) == null || w.addEventListener("click", () => void this.loadMostSoldProducts()), this.querySelectorAll('[data-action="set-most-sold-page"]').forEach((u) => u.addEventListener("click", () => {
@@ -1198,8 +1209,8 @@ function B(o, ...r) {
 function Q(o, r) {
   return o instanceof Error ? o.message : r;
 }
-customElements.define("ekom-analytics-section-view", Ue);
+customElements.define("ekom-analytics-section-view", ze);
 export {
-  Ue as EkomAnalyticsSectionViewElement,
-  Ue as default
+  ze as EkomAnalyticsSectionViewElement,
+  ze as default
 };

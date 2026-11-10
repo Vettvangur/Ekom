@@ -90,31 +90,14 @@ class CheckoutService
 
                     if (!string.IsNullOrEmpty(oi.Coupon))
                     {
-                        await _couponRepo.MarkUsedAsync(oi.Coupon)
-                            .ConfigureAwait(false);
-<<<<<<< HEAD
-=======
-
-                        if (!couponConsumed)
+                        if (!await _couponRepo.TryMarkUsedAsync(oi.Coupon).ConfigureAwait(false))
                         {
-                            // Payment is already taken, so the order still completes; staff must review it.
-                            _logger.LogWarning(
-                                "Order {OrderId} completed with a coupon that had no uses left",
-                                o.UniqueId);
-                            await TryRaiseReviewAsync(
-                                    o.UniqueId,
-                                    "coupon-exhausted",
-                                    "Coupon had no uses left",
-                                    "Coupon had no uses left when the order completed. Review the discount on this order.")
-                                .ConfigureAwait(false);
-                            await _orderActivityLogService.AddOrderLogAsync(
-                                    o.UniqueId,
-                                    "Coupon had no uses left when the order completed. Review the discount on this order.",
-                                    logType: OrderActivityLogType.Alert,
-                                    ct: ct)
-                                .ConfigureAwait(false);
+                            _logger.LogWarning("Order {OrderId} completed with a coupon that could not be claimed", o.UniqueId);
+                            const string message = "The coupon was no longer available when checkout completed. Check the discount applied to this order.";
+                            await TryRaiseReviewAsync(o.UniqueId, "coupon-exhausted", "Coupon could not be claimed", message).ConfigureAwait(false);
+                            await _orderActivityLogService.AddOrderLogAsync(o.UniqueId, message,
+                                logType: OrderActivityLogType.Alert, ct: ct).ConfigureAwait(false);
                         }
->>>>>>> 81d85371 (feat(orders): add order reviews and checkout failure alerts (#1139))
                     }
                 }
 #pragma warning disable CA1031 // Do not catch general exception types

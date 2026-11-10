@@ -10,5 +10,6 @@ public sealed class RaiseOrderReviewRequest
 
 public sealed class ResolveOrderReviewRequest
 {
+    public bool Resolved { get; set; } = true;
     public string? Comment { get; set; }
 }
