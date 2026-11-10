@@ -87,8 +87,22 @@ class CheckoutService
 
                     if (!string.IsNullOrEmpty(oi.Coupon))
                     {
-                        await _couponRepo.MarkUsedAsync(oi.Coupon)
+                        bool couponConsumed = await _couponRepo.MarkUsedAsync(oi.Coupon)
                             .ConfigureAwait(false);
+
+                        if (!couponConsumed)
+                        {
+                            // Payment is already taken, so the order still completes; staff must review it.
+                            _logger.LogWarning(
+                                "Order {OrderId} completed with a coupon that had no uses left",
+                                o.UniqueId);
+                            await _orderActivityLogService.AddOrderLogAsync(
+                                    o.UniqueId,
+                                    "Coupon had no uses left when the order completed. Review the discount on this order.",
+                                    logType: OrderActivityLogType.Alert,
+                                    ct: ct)
+                                .ConfigureAwait(false);
+                        }
                     }
                 }
 #pragma warning disable CA1031 // Do not catch general exception types

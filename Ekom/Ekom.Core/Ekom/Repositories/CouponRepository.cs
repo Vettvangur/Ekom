@@ -183,21 +183,32 @@ public class CouponRepository
         return query.Any();
     }
 
-    public async Task MarkUsedAsync(string couponCode)
+    /// <summary>
+    /// Consume one use of a coupon. The decrement is a single conditional UPDATE, so
+    /// concurrent completions can never take a coupon below zero uses.
+    /// </summary>
+    /// <returns>False when the coupon does not exist or has no uses left.</returns>
+    public async Task<bool> MarkUsedAsync(string couponCode)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
-        CouponData? coupon = await GetCouponByCodeAsync(couponCode)
+
+        int updated = await db.CouponData
+            .Where(x => x.CouponCode == couponCode && x.NumberAvailable > 0)
+            .Set(x => x.NumberAvailable, x => x.NumberAvailable - 1)
+            .UpdateAsync()
+            .ConfigureAwait(false);
+
+        CouponData? coupon = await db.CouponData
+            .Where(x => x.CouponCode == couponCode)
+            .FirstOrDefaultAsync()
             .ConfigureAwait(false);
 
         if (coupon != null)
         {
-            coupon.NumberAvailable--;
+            RefreshCache(coupon);
         }
 
-        await db.UpdateAsync(coupon)
-            .ConfigureAwait(false);
-
-        RefreshCache(coupon);
+        return updated > 0;
     }
 
     public void RefreshCache(CouponData coupon)

@@ -391,6 +391,7 @@ public class CheckoutControllerService
         if (await reservations.IsCompletedAsync(order.UniqueId, ct).ConfigureAwait(false))
             throw new CheckoutConflictException(CheckoutConflictReason.Completed,
                 "Order has already completed stock processing; do not start another payment.");
+        EnsureCouponAvailable(order);
         var original = order.ReservationIds.ToHashSet(StringComparer.Ordinal);
         var ids = original.ToList();
         var ownership = await reservations.AcquirePreparationAsync(order.UniqueId, ct).ConfigureAwait(false);
@@ -446,6 +447,27 @@ public class CheckoutControllerService
             }
             if (canUnlock)
                 await reservations.ReleasePreparationAsync(ownership, CancellationToken.None).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// A coupon's remaining uses are checked when it is applied to a basket, which may be long
+    /// before payment. Check again here so an exhausted coupon cannot be carried into a new payment.
+    /// </summary>
+    private void EnsureCouponAvailable(IOrderInfo order)
+    {
+        if (string.IsNullOrEmpty(order.Coupon))
+        {
+            return;
+        }
+
+        var couponCache = _factory.GetService<Ekom.Interfaces.ICouponCache>();
+        if (couponCache != null
+            && couponCache.Cache.TryGetValue(order.Coupon.ToLowerInvariant(), out var coupon)
+            && coupon.NumberAvailable <= 0)
+        {
+            throw new CheckoutConflictException(CheckoutConflictReason.CouponUnavailable,
+                "The coupon on this order has no uses left.");
         }
     }
 

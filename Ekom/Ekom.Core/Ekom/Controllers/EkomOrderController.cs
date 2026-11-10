@@ -1,9 +1,11 @@
+using Ekom.ActionFilters;
 using Ekom.API;
 using Ekom.Models;
+using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -39,7 +41,7 @@ public partial class EkomOrderController : ControllerBase
     [HttpPost]
     [Route("add")]
     [Consumes("application/json", "application/x-www-form-urlencoded", "multipart/form-data")]
-    [EnableRateLimiting("order-add")]
+    [EkomRateLimit(EkomRateLimitPolicies.OrderAdd)]
     public async Task<IActionResult> AddToOrder([FromBody] OrderRequest request, CancellationToken ct = default)
     {
         if (request == null) return BadRequest();
@@ -179,20 +181,52 @@ public partial class EkomOrderController : ControllerBase
 
     /// <summary>
     /// Add a giftcard to the current order.
+    /// Only the code is read from the request. The amount, validity and claim metadata
+    /// come from the application's <see cref="IGiftcardValidator"/>; without one the route is closed.
     /// </summary>
     [HttpPost]
     [Route("giftcards")]
+    [EkomRateLimit(EkomRateLimitPolicies.OrderGiftcard)]
     public async Task<IActionResult> AddGiftcard([FromBody] GiftcardRequest request, CancellationToken ct = default)
     {
-        if (request == null || request.Giftcard == null)
+        string? code = request?.Giftcard?.Code?.Trim();
+        if (string.IsNullOrEmpty(code) || code.Length > MaxGiftcardCodeLength
+            || string.IsNullOrWhiteSpace(request!.StoreAlias))
         {
             return BadRequest();
         }
 
-        IOrderInfo orderInfo = await _order.AddGiftcardAsync(request.Giftcard, request.StoreAlias, ct: ct);
+        var validator = HttpContext.RequestServices.GetService<IGiftcardValidator>();
+        if (validator == null)
+        {
+            _logger.LogWarning(
+                "Gift-card request rejected: no IGiftcardValidator is registered. Store: {StoreAlias}",
+                request.StoreAlias);
+            return StatusCode(StatusCodes.Status403Forbidden, "Gift cards are not enabled.");
+        }
+
+        IOrderInfo? currentOrder = await _order.GetOrderAsync(request.StoreAlias, ct);
+        if (currentOrder == null)
+        {
+            return NotFound();
+        }
+
+        Giftcard? giftcard = await validator.ValidateAsync(code, currentOrder, ct);
+        if (giftcard == null || giftcard.Amount <= 0 || string.IsNullOrWhiteSpace(giftcard.Code))
+        {
+            return BadRequest("Gift card is not valid.");
+        }
+
+        IOrderInfo orderInfo = await _order.AddGiftcardAsync(
+            giftcard,
+            request.StoreAlias,
+            new OrderSettings { OrderInfo = currentOrder },
+            ct);
 
         return Ok(orderInfo);
     }
+
+    private const int MaxGiftcardCodeLength = 200;
 
     /// <summary>
     /// Remove a giftcard from the current order by code.
@@ -605,7 +639,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("coupon/apply")]
-    [EnableRateLimiting("order-coupon")]
+    [EkomRateLimit(EkomRateLimitPolicies.OrderCoupon)]
     public async Task<IActionResult> ApplyCouponToOrder([FromBody] CouponRequest model, CancellationToken ct = default)
     {
         try
@@ -629,7 +663,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("coupon/remove")]
-    [EnableRateLimiting("order-coupon")]
+    [EkomRateLimit(EkomRateLimitPolicies.OrderCoupon)]
     public async Task<IActionResult> RemoveCouponFromOrder(string storeAlias, CancellationToken ct = default)
     {
         await _order.RemoveCouponFromOrderAsync(storeAlias, null, ct);

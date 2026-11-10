@@ -73,6 +73,8 @@ internal sealed class CatalogSearchService : ICatalogSearchService
         ct.ThrowIfCancellationRequested();
 
         req.SearchFields = req.SearchFields?.Any() == true ? req.SearchFields : DefaultPublicFields();
+        // Field names, boosts and fuzzy values are interpolated into the Lucene query below.
+        req.SearchFields = SearchRequestGuard.SanitizeFields(req.SearchFields);
 
         if (req.SearchFields?.Any() != true)
         {
@@ -182,6 +184,12 @@ internal sealed class CatalogSearchService : ICatalogSearchService
         req.SearchFields = req.SearchFields == null || !req.SearchFields.Any()
             ? DefaultInternalFields()
             : req.SearchFields;
+        req.SearchFields = SearchRequestGuard.SanitizeFields(req.SearchFields);
+
+        if (req.SearchFields.Count == 0)
+        {
+            return Array.Empty<SearchResultEntity>();
+        }
 
         var luceneQuery = new StringBuilder();
 

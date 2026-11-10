@@ -79,6 +79,20 @@ public class Configuration
     }
 
     /// <summary>
+    /// Ekom:Search:PublicFields
+    /// Index fields that anonymous callers of the catalog HTTP API may search.
+    /// Requests naming other fields have those fields ignored.
+    /// </summary>
+    public virtual IReadOnlyList<string> PublicSearchFields
+    {
+        get
+        {
+            return _configuration.GetSection("Ekom:Search:PublicFields").Get<string[]>()
+                ?? ["nodeName", "sku", "title", "description", "searchTags", "id"];
+        }
+    }
+
+    /// <summary>
     /// Umbraco:CMS:RequestHandler:CharCollection
     /// Gets the Umbraco CharCollection
     /// </summary>
