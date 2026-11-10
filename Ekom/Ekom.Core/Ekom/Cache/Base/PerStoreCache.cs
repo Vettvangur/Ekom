@@ -158,6 +158,12 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
     protected virtual ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>> RouteIndex =>
         _config.CacheRebuild.Get(this, nameof(RouteIndex), static () => new ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>>());
 
+    /// <summary>
+    /// Key set for secondary indexes. These exist per product, group or category, so they are
+    /// created small: a default ConcurrentDictionary costs about 1 KB before holding anything.
+    /// </summary>
+    protected static ConcurrentDictionary<Guid, byte> NewKeySet() => new(concurrencyLevel: 1, capacity: 4);
+
     private ConcurrentDictionary<Guid, TItem> GetStoreCache(string alias) =>
         Cache.GetOrAdd(alias, _ => new ConcurrentDictionary<Guid, TItem>());
 

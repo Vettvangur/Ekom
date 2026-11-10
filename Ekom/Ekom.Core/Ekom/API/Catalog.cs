@@ -560,7 +560,7 @@ public class Catalog
     /// </summary>
     private List<IProduct> GetProductsBySkusRaw(string storeAlias, ProductQuery query, CancellationToken ct)
     {
-        if (query.Keys == null)
+        if (query.Skus == null)
             return new List<IProduct>();
 
         var products = new List<IProduct>();

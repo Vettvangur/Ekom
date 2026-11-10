@@ -28,7 +28,9 @@ internal class MetafieldService : IMetafieldService
 
         IEnumerable<UmbracoContent> metafieldNodes = _nodeService.NodesByTypes("ekmMetafield");
 
-        IEnumerable<Metafield> result = metafieldNodes.Select(x => new Metafield(x));
+        // Materialize before caching. A deferred query would map every definition again on each
+        // enumeration (once per product) and keep this request's node service alive in the cache.
+        IEnumerable<Metafield> result = metafieldNodes.Select(x => new Metafield(x)).ToList();
 
         _cache.Set(cacheKey, result, TimeSpan.FromMinutes(360));
 
@@ -49,9 +51,21 @@ internal class MetafieldService : IMetafieldService
             return cachedResponse;
         }
 
-        var list = new List<Metavalue>();
+        var fields = GetMetafields() as List<Metafield> ?? GetMetafields().ToList();
 
-        var fields = GetMetafields().ToList();
+        // Plain picker output is read without building a JToken tree; anything unusual
+        // (numbers, dates, malformed or lenient JSON) is left to the JToken parser.
+        if (!TryParseMetafields(jsonValue, fields, out var list))
+            list = ParseMetafieldsWithJToken(jsonValue, fields);
+
+        _cache.Set(cacheKey, list, TimeSpan.FromMinutes(360));
+
+        return list;
+    }
+
+    internal static List<Metavalue> ParseMetafieldsWithJToken(string jsonValue, List<Metafield> fields)
+    {
+        var list = new List<Metavalue>();
 
         var jArray = JArray.Parse(jsonValue);
         jArray = (JArray)JsonHelper.ToCamelCaseKeys(jArray);
@@ -131,9 +145,153 @@ internal class MetafieldService : IMetafieldService
             }
         }
 
-        _cache.Set(cacheKey, list, TimeSpan.FromMinutes(360));
-
         return list;
+    }
+
+    internal static bool TryParseMetafields(string jsonValue, List<Metafield> fields, out List<Metavalue> list)
+    {
+        list = new List<Metavalue>();
+
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(jsonValue);
+            if (document.RootElement.ValueKind != System.Text.Json.JsonValueKind.Array)
+                return false;
+
+            foreach (var item in document.RootElement.EnumerateArray())
+            {
+                if (item.ValueKind != System.Text.Json.JsonValueKind.Object)
+                    return false;
+
+                if (!TryGetProperty(item, "key", out var keyElement))
+                    continue;
+
+                if (!TryReadText(keyElement, out var keyText))
+                    return false;
+
+                if (!Guid.TryParse(keyText, out var fieldKey))
+                    continue;
+
+                Metafield? field = null;
+                foreach (var candidate in fields)
+                {
+                    if (candidate.Key == fieldKey)
+                    {
+                        field = candidate;
+                        break;
+                    }
+                }
+
+                if (field == null)
+                    continue;
+
+                if (!TryGetProperty(item, "values", out var values))
+                    return false;
+
+                var valuesList = new List<Dictionary<string, string>>();
+                if (values.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    foreach (var arrayItem in values.EnumerateArray())
+                    {
+                        if (arrayItem.ValueKind == System.Text.Json.JsonValueKind.Object && !TryAddPickedValue(arrayItem, field, valuesList))
+                            return false;
+                    }
+                }
+                else if (values.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    if (!TryAddPickedValue(values, field, valuesList))
+                        return false;
+                }
+                else
+                {
+                    if (!TryReadText(values, out var text))
+                        return false;
+
+                    if (!string.IsNullOrEmpty(text))
+                        valuesList.Add(new Dictionary<string, string>() { { "", text } });
+                }
+
+                if (valuesList.Count > 0)
+                {
+                    list.Add(new Metavalue()
+                    {
+                        Field = field,
+                        Values = valuesList
+                    });
+                }
+            }
+
+            return true;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryAddPickedValue(System.Text.Json.JsonElement value, Metafield field, List<Dictionary<string, string>> valuesList)
+    {
+        if (!TryGetProperty(value, "id", out var idElement))
+            return true;
+
+        if (!TryReadText(idElement, out var valueId))
+            return false;
+
+        foreach (var fieldValues in field.Values)
+        {
+            if (fieldValues.Id != valueId)
+                continue;
+
+            var copy = new Dictionary<string, string>(fieldValues.Values);
+            copy.Remove("undefined");
+            valuesList.Add(copy);
+            break;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Finds a property the way the camel-cased JObject does: "Key" and "key" are the same
+    /// name and the last one wins.
+    /// </summary>
+    private static bool TryGetProperty(System.Text.Json.JsonElement element, string camelName, out System.Text.Json.JsonElement value)
+    {
+        value = default;
+        var found = false;
+        foreach (var property in element.EnumerateObject())
+        {
+            var name = property.Name;
+            if (name.Length != camelName.Length
+                || char.ToLowerInvariant(name[0]) != camelName[0]
+                || !name.AsSpan(1).SequenceEqual(camelName.AsSpan(1))
+                || (name[0] != camelName[0] && !char.IsUpper(name[0])))
+            {
+                continue;
+            }
+
+            value = property.Value;
+            found = true;
+        }
+
+        return found;
+    }
+
+    /// <summary>The text JToken.ToString() gives for a string or null. Other kinds are not handled here.</summary>
+    private static bool TryReadText(System.Text.Json.JsonElement element, out string text)
+    {
+        text = string.Empty;
+        if (element.ValueKind == System.Text.Json.JsonValueKind.Null)
+            return true;
+
+        if (element.ValueKind != System.Text.Json.JsonValueKind.String)
+            return false;
+
+        text = element.GetString() ?? string.Empty;
+
+        // JArray.Parse turns date-like strings into dates and formats them differently.
+        return !(text.Length > 0
+            && (text[0] == '/' || (text.Length >= 19 && text.Length <= 40 && char.IsDigit(text[0]) && text[10] == 'T')));
     }
 
     public JArray SetMetafield(string json, Dictionary<string, List<MetafieldValues>> values)
@@ -357,28 +515,58 @@ internal class MetafieldService : IMetafieldService
 
     public IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true)
     {
-        var metafields = products
-         .SelectMany(x => x.Metafields)
-         .Where(x => x.Field.Filterable == filterable)
-         .ToList();
+        // One pass over the products: fields in first-seen order, each with its distinct values
+        // (by the first language value, first occurrence wins).
+        var groups = new Dictionary<Guid, FacetGroup>();
+        var ordered = new List<FacetGroup>();
 
-        var grouped = metafields.GroupBy(x => x.Field, new MetafieldComparer());
-
-        foreach (var group in grouped)
+        foreach (var product in products)
         {
-            List<Dictionary<string, string>> distinctValues = group
-                .SelectMany(x => x.Values)
-                .Where(x => !x.ContainsKey("undefined"))
-                .DistinctBy(x => x.Values.FirstOrDefault()) // Assuming DistinctBy is efficient
-                .OrderBy(x => x.Values.FirstOrDefault(), new SemiNumericComparer())
-                .ToList();
+            foreach (var metavalue in product.Metafields)
+            {
+                var field = metavalue.Field;
+                if (field.Filterable != filterable)
+                    continue;
 
+                if (!groups.TryGetValue(field.Key, out var group))
+                {
+                    group = new FacetGroup(field);
+                    groups.Add(field.Key, group);
+                    ordered.Add(group);
+                }
+
+                foreach (var value in metavalue.Values)
+                {
+                    if (!value.ContainsKey("undefined") && group.Seen.Add(FirstValue(value)))
+                        group.Values.Add(value);
+                }
+            }
+        }
+
+        var comparer = new SemiNumericComparer();
+        foreach (var group in ordered)
+        {
             yield return new MetafieldGrouped()
             {
-                Field = group.Key,
-                Values = distinctValues
+                Field = group.Field,
+                Values = group.Values.OrderBy(FirstValue, comparer).ToList()
             };
         }
+    }
+
+    private static string? FirstValue(Dictionary<string, string> value)
+    {
+        foreach (var item in value.Values)
+            return item;
+
+        return null;
+    }
+
+    private sealed class FacetGroup(MetafieldSlim field)
+    {
+        public MetafieldSlim Field { get; } = field;
+        public HashSet<string?> Seen { get; } = new();
+        public List<Dictionary<string, string>> Values { get; } = new();
     }
 
     public IEnumerable<IProduct> FilterProducts(IEnumerable<IProduct> products, ProductQuery query)
@@ -386,19 +574,30 @@ internal class MetafieldService : IMetafieldService
 
         if (query?.MetaFilters?.Any() == true)
         {
-            var filterCriteria = query.MetaFilters;
+            // Resolve each filter once, not once per product: the key is a metafield id or alias.
+            var filterCriteria = query.MetaFilters
+                .Select(filter => (
+                    Key: filter.Key,
+                    Id: int.TryParse(filter.Key, out var id) && id.ToString() == filter.Key ? id : (int?)null,
+                    Values: filter.Value,
+                    ValueSet: new HashSet<string>(filter.Value ?? [])))
+                .ToList();
 
             products = products.Where(product =>
             {
-                foreach (var (key, expectedValues) in filterCriteria)
+                foreach (var (key, fieldId, expectedValues, expectedSet) in filterCriteria)
                 {
-                    var matchingMetafields = product.Metafields
-                        .Where(metaField =>
-                            metaField.Field.Id.ToString() == key ||
+                    var matchingMetafields = new List<MetavalueSlim>();
+                    foreach (var metaField in product.Metafields)
+                    {
+                        if ((fieldId.HasValue && metaField.Field.Id == fieldId.Value) ||
                             metaField.Field.Alias.Equals(key, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
+                        {
+                            matchingMetafields.Add(metaField);
+                        }
+                    }
 
-                    if (!matchingMetafields.Any())
+                    if (matchingMetafields.Count == 0)
                         return false;
 
                     bool allConditionsMustMatch = matchingMetafields.Any(mf => mf.Field.AllConditionsMustMatch);
@@ -421,7 +620,7 @@ internal class MetafieldService : IMetafieldService
                         // OR logic: any value must match
                         bool matched = matchingMetafields.Any(metaField =>
                             metaField.Values.Any(dict =>
-                                dict.Values.Any(val => expectedValues.Contains(val))));
+                                dict.Values.Any(val => expectedSet.Contains(val))));
 
                         if (!matched)
                             return false;

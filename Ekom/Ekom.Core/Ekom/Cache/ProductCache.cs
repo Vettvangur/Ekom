@@ -59,7 +59,7 @@ class ProductCache : PerStoreCache<IProduct>
                 if (p?.Categories == null) continue;
 
                 foreach (var c in p.Categories)
-                    idx.GetOrAdd(c.Id, _ => new ConcurrentDictionary<Guid, byte>())[key] = 0;
+                    idx.GetOrAdd(c.Id, static _ => NewKeySet())[key] = 0;
             }
         }
 
@@ -98,7 +98,7 @@ class ProductCache : PerStoreCache<IProduct>
             _ => new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>());
 
         foreach (var c in product.Categories)
-            storeIdx.GetOrAdd(c.Id, _ => new ConcurrentDictionary<Guid, byte>())[productKey] = 0;
+            storeIdx.GetOrAdd(c.Id, static _ => NewKeySet())[productKey] = 0;
     }
 
     private void RemoveFromCategoryIndex(string storeAlias, Guid productKey, IProduct product)

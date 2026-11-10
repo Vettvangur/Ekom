@@ -185,7 +185,7 @@ public abstract class NodeEntity : INodeEntity
     /// <param name="content"></param>
     protected NodeEntity(UmbracoContent content)
     {
-        _properties = content.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        _properties = new Dictionary<string, string>(content.Properties);
 
         Id = (int.TryParse(GetValue("id"), out int _value)) ? _value : 0;
         Path = content.Path;

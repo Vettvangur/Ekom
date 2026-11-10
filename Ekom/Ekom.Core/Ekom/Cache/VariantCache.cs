@@ -60,11 +60,11 @@ class VariantCache : PerStoreCache<IVariant>
     protected override void OnStoreCacheItemAdded(IStore store, Guid key, IVariant item)
     {
         GetStoreGroupIndex(store.Alias)
-            .GetOrAdd(item.VariantGroupId, _ => new ConcurrentDictionary<Guid, byte>())
+            .GetOrAdd(item.VariantGroupId, static _ => NewKeySet())
             .TryAdd(key, 0);
 
         GetStoreProductIndex(store.Alias)
-            .GetOrAdd(item.ProductId, _ => new ConcurrentDictionary<Guid, byte>())
+            .GetOrAdd(item.ProductId, static _ => NewKeySet())
             .TryAdd(key, 0);
     }
 
@@ -123,11 +123,11 @@ class VariantCache : PerStoreCache<IVariant>
         base.AddOrReplaceFromCache(key, store, item);
 
         GetStoreGroupIndex(store.Alias)
-            .GetOrAdd(item.VariantGroupId, _ => new ConcurrentDictionary<Guid, byte>())
+            .GetOrAdd(item.VariantGroupId, static _ => NewKeySet())
             .TryAdd(key, 0);
 
         GetStoreProductIndex(store.Alias)
-            .GetOrAdd(item.ProductId, _ => new ConcurrentDictionary<Guid, byte>())
+            .GetOrAdd(item.ProductId, static _ => NewKeySet())
             .TryAdd(key, 0);
     }
 

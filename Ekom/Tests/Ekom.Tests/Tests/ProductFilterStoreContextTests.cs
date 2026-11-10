@@ -254,6 +254,41 @@ public class ProductFilterStoreContextTests
         Assert.Throws<ArgumentException>(() => new ProductResponse([], null, null, null, storeAlias));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProductsBySkus_DoNotDependOnKeys(bool async)
+    {
+        using var configuration = CreateConfiguration();
+        var product = Mock.Of<IProduct>();
+        var cache = new Mock<IPerStoreIndexedCache<IProduct>>();
+        cache.Setup(x => x.TryGetBySku("ActualStore", "sku-1", out product)).Returns(true);
+        var catalog = new Catalog(
+            NullLogger<Catalog>.Instance,
+            configuration.Instance,
+            Configuration.Resolver.GetRequiredService<IServiceScopeFactory>(),
+            cache.Object,
+            Mock.Of<IPerStoreIndexedCache<ICategory>>(),
+            Mock.Of<IPerStoreCache<IProductDiscount>>(),
+            Mock.Of<IPerStoreIndexedCache<IVariant>>(),
+            Mock.Of<IPerStoreIndexedCache<IVariantGroup>>(),
+            Mock.Of<IStoreService>(),
+            new HttpContextAccessor(),
+            new ProductFilterService());
+        var withoutKeys = new ProductQuery { Skus = ["sku-1", "missing"], Keys = null!, OrderBy = OrderBy.NoOrder };
+        var withoutSkus = new ProductQuery { Skus = null!, OrderBy = OrderBy.NoOrder };
+
+        var found = async
+            ? await catalog.GetProductsBySkusAsync("ActualStore", withoutKeys)
+            : catalog.GetProductsBySkus("ActualStore", withoutKeys);
+        var empty = async
+            ? await catalog.GetProductsBySkusAsync("ActualStore", withoutSkus)
+            : catalog.GetProductsBySkus("ActualStore", withoutSkus);
+
+        Assert.Same(product, Assert.Single(found.Products));
+        Assert.Empty(empty.Products);
+    }
+
     private static ProductQuery CreateQuery()
         => new() { StoreAlias = "WrongStore", OrderBy = OrderBy.NoOrder };
 

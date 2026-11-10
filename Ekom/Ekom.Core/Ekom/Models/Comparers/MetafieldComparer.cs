@@ -10,8 +10,7 @@ namespace Ekom.Models
 
         public int GetHashCode(MetafieldSlim obj)
         {
-            return obj.Key.GetHashCode() ^
-                obj.Key.GetHashCode();
+            return obj.Key.GetHashCode();
         }
     }
 }
