@@ -364,6 +364,37 @@ public partial class Stock
     }
 
 
+    private const int StockBatchSize = 200;
+
+    /// <summary>
+    /// Sets several stock balances, using one transaction and one cache refresh per batch of rows
+    /// instead of one per value. Each value replaces the stored balance, like <see cref="SetStockAsync(Guid, decimal, CancellationToken)"/>.
+    /// When the same item appears more than once, the last value wins.
+    /// </summary>
+    public async Task SetStockAsync(IEnumerable<StockSetRequest> requests, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(requests);
+
+        var latest = new Dictionary<string, (Guid Key, string? Scope, decimal Value)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var request in requests)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            var scope = ResolveStockStore(request.StoreAlias);
+            var id = scope == null ? request.Key.ToString() : $"{scope}_{request.Key}";
+            latest[id] = (request.Key, scope, request.Value);
+        }
+
+        foreach (var batch in latest.Chunk(StockBatchSize))
+        {
+            var oldValues = await _stockRepo
+                .SetManyAsync(batch.ToDictionary(x => x.Key, x => x.Value.Value, StringComparer.OrdinalIgnoreCase), ct)
+                .ConfigureAwait(false);
+            await _stockPublisher
+                .PublishManyAsync(batch.Select(x => (x.Value.Key, x.Value.Scope, x.Key, oldValues[x.Key], x.Value.Value)).ToList(), ct)
+                .ConfigureAwait(false);
+        }
+    }
+
     private string? ResolveStockStore(string? storeAlias)
     {
         if (!_config.PerStoreStock) return null;
