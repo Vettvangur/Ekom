@@ -25,7 +25,8 @@ public class Product : PerStoreNodeEntity, IProduct
     private IPerStoreIndexedCache<IVariantGroup> _variantGroupCache =>
         __variantGroupCache ?? (__variantGroupCache = Configuration.Resolver.GetService<IPerStoreIndexedCache<IVariantGroup>>());
 
-    private readonly ConcurrentDictionary<string, Lazy<object>> _cache = new();
+    // One per cached product, so keep it small: the default costs about 1 KB while empty.
+    private readonly ConcurrentDictionary<string, Lazy<object>> _cache = new(concurrencyLevel: 1, capacity: 4);
 
     public virtual IDiscount? ProductDiscount(string? price = null)
         => ProductDiscount(price, CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias) ?? Store.Currency);
@@ -389,8 +390,6 @@ public class Product : PerStoreNodeEntity, IProduct
         get
         {
             using var priceSnapshot = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance.BeginCalculationScope(Key) : null;
-            string[] categories = Categories.Select(x => x.Id.ToString()).ToArray();
-            bool vatIncludedInPrice = Store.VatIncludedInPrice;
             var storeCurrency = Store.Currency;
 
             string productKey = Path;
@@ -400,9 +399,18 @@ public class Product : PerStoreNodeEntity, IProduct
             string productGen = PriceCache.GetItemGeneration(productKey, Store.Alias);
 
             var sale = NativeDiscountPrice.Raw(this);
+            var inputs = new PriceInputs(globalGen, productGen, storeCurrency.CurrencyValue, productKey, priceValue, sale, DisableDiscounts);
+            // Categories is virtual, so read it rather than the backing list.
+            var categoryList = Categories as IReadOnlyList<ICategory> ?? Categories.ToList();
+            var memo = _priceMemo;
+            if (memo != null && memo.Matches(inputs, categoryList))
+                return memo.Prices;
+
+            string[] categories = categoryList.Select(x => x.Id.ToString()).ToArray();
+            bool vatIncludedInPrice = Store.VatIncludedInPrice;
             var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={storeCurrency.CurrencyValue}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(priceValue)}:sale={CacheHelpers.Sha256(sale)}:disabled={DisableDiscounts}";
 
-            return CacheHelpers.GetOrCreateVersioned(
+            var prices = CacheHelpers.GetOrCreateVersioned(
                 key.Split(":hash=", 2)[0],
                 key,
                 () => PriceBuilder.BuildPricesSync(
@@ -416,10 +424,15 @@ public class Product : PerStoreNodeEntity, IProduct
                     categories,
                     sale,
                     DisableDiscounts),
-                TimeSpan.FromHours(48)
+                PriceMemo.Lifetime
             );
+
+            _priceMemo = new PriceMemo(inputs, categoryList, prices);
+            return prices;
         }
     }
+
+    private volatile PriceMemo? _priceMemo;
 
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]

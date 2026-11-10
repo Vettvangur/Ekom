@@ -10,6 +10,8 @@ public static class CatalogEvents
     // =========================================================
     public static event EventHandler<CurrencyStringEventArgs>? CurrencyStringFormat;
 
+    internal static bool HasCurrencyStringFormatHandlers => CurrencyStringFormat != null;
+
     internal static void OnCurrencyStringFormat(object sender, CurrencyStringEventArgs args)
         => CurrencyStringFormat?.Invoke(sender, args);
 

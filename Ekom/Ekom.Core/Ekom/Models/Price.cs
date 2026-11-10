@@ -1,6 +1,7 @@
 using Ekom.Events;
 using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 using System.Globalization;
 
 namespace Ekom.Models;
@@ -399,12 +400,18 @@ class CalculatedPrice : ICalculatedPrice
     {
         get
         {
-            CultureInfo ci = CreateCultureInfo(_currencyCulture.CurrencyValue);
+            CultureInfo ci = GetCurrencyCulture(_currencyCulture.CurrencyValue);
             string value = FormatCurrencyValue(ci);
+
+            if (!CatalogEvents.HasCurrencyStringFormatHandlers)
+            {
+                return value;
+            }
 
             CurrencyStringEventArgs model = new CurrencyStringEventArgs()
             {
-                CultureInfo = ci,
+                // Handlers have always received their own mutable culture.
+                CultureInfo = (CultureInfo)ci.Clone(),
                 Value = Value,
                 ValueString = value
             };
@@ -415,13 +422,18 @@ class CalculatedPrice : ICalculatedPrice
         }
     }
 
-    private CultureInfo CreateCultureInfo(string cultureValue)
-    {
-        CultureInfo ci = new CultureInfo(cultureValue);
-        return ci.TwoLetterISOLanguageName.ToUpperInvariant() == "IS"
-            ? Configuration.IsCultureInfo
-            : ci;
-    }
+    // Constructing a CultureInfo loads its number format data, far too slow to repeat for every formatted price.
+    private static readonly ConcurrentDictionary<string, CultureInfo> _currencyCultures = new(StringComparer.Ordinal);
+
+    private static CultureInfo GetCurrencyCulture(string cultureValue)
+        => _currencyCultures.GetOrAdd(cultureValue, static value =>
+        {
+            CultureInfo ci = new CultureInfo(value);
+            return CultureInfo.ReadOnly(
+                ci.TwoLetterISOLanguageName.ToUpperInvariant() == "IS"
+                    ? Configuration.IsCultureInfo
+                    : ci);
+        });
 
     private string FormatCurrencyValue(CultureInfo cultureInfo)
     {
