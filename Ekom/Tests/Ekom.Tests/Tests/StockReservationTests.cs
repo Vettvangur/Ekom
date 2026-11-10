@@ -374,6 +374,43 @@ public sealed class StockReservationTests
         Assert.Equal(20, await fixture.StockAsync(key));
     }
 
+    [Fact]
+    public async Task BatchSetWritesEveryBalanceRefreshesCacheAndOnlyAnnouncesChanges()
+    {
+        using var fixture = new ReservationDatabase();
+        var changed = await fixture.SeedAsync(10);
+        var unchanged = await fixture.SeedAsync(4);
+        var created = Guid.NewGuid();
+        var announced = new List<(Guid Key, decimal Old, decimal New)>();
+        Task OnChanged(object sender, StockChangedEventArgs args, CancellationToken ct)
+        {
+            lock (announced) announced.Add((args.Key, args.OldValue, args.NewValue));
+            return Task.CompletedTask;
+        }
+        StockEvents.StockChangedAsync += OnChanged;
+        try
+        {
+            var stock = fixture.NewStockApi();
+            await stock.SetStockAsync(
+            [
+                new StockSetRequest(changed, null, 25),
+                new StockSetRequest(unchanged, null, 4),
+                new StockSetRequest(created, null, 7),
+                new StockSetRequest(created, null, 9),
+            ]);
+
+            Assert.Equal(25, await fixture.StockAsync(changed));
+            Assert.Equal(4, await fixture.StockAsync(unchanged));
+            Assert.Equal(9, await fixture.StockAsync(created));
+            Assert.Equal(25, fixture.StockCache[changed].Stock);
+            Assert.Equal(4, fixture.StockCache[unchanged].Stock);
+            Assert.Equal(9, fixture.StockCache[created].Stock);
+            var mine = announced.Where(x => x.Key == changed || x.Key == unchanged || x.Key == created).OrderBy(x => x.New).ToList();
+            Assert.Equal([(created, 0m, 9m), (changed, 10m, 25m)], mine);
+        }
+        finally { StockEvents.StockChangedAsync -= OnChanged; }
+    }
+
     [Theory]
     [InlineData(false, 10)]
     [InlineData(false, 1000)]

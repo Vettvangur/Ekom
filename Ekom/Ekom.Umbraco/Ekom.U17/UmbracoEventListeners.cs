@@ -103,7 +103,11 @@ internal sealed class UmbracoEventListeners :
                 continue;
             }
 
-            await UpdateStockAsync(content, cancellationToken).ConfigureAwait(false);
+            // Import saves never edit the stock property; re-applying its stored value would undo newer table stock.
+            if (!Services.ImportSaveScope.IsActive)
+            {
+                await UpdateStockAsync(content, cancellationToken).ConfigureAwait(false);
+            }
             await UpdateWarehouseStockAsync(content, cancellationToken).ConfigureAwait(false);
         }
         // Stock uses separate connections; finish those writes before enlisting prices.

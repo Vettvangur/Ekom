@@ -118,7 +118,8 @@ class UmbracoEventListeners :
 
                     if (alias == "ekmProduct" || alias == "ekmProductVariant")
                     {
-                        var stockValue = content.GetValue<string>("stock");
+                        // Import saves never edit the stock property; re-applying its stored value would undo newer table stock.
+                        var stockValue = ImportSaveScope.IsActive ? null : content.GetValue<string>("stock");
 
                         if (!string.IsNullOrEmpty(stockValue))
                         {

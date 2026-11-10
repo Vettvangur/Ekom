@@ -510,6 +510,55 @@ public sealed class DatabasePriceTests
     }
 
     [Fact]
+    public async Task NoOpWriteWithCurrentCacheSkipsRefreshQuery()
+    {
+        using var fixture = new Fixture();
+        var key = Guid.NewGuid();
+        var missing = Guid.NewGuid();
+        fixture.Prices.SetPrice(key, "Web", "en-US", 10);
+        using var counter = new PriceQueryCounter(fixture.DatabasePath);
+
+        fixture.Prices.SetPrice(key, "Web", "en-US", 10);
+        Assert.Equal(1, counter.Count);
+        counter.Reset();
+        await fixture.Prices.SetPriceAsync(key, "Web", "en-US", 10);
+        Assert.Equal(1, counter.Count);
+        counter.Reset();
+        fixture.Prices.RemovePrice(missing, "Web", "en-US");
+        Assert.Equal(1, counter.Count);
+        counter.Reset();
+
+        // A real change still refreshes the cache.
+        fixture.Prices.SetPrice(key, "Web", "en-US", 11);
+        Assert.True(counter.Count > 2);
+        Assert.Equal(11, Assert.Single(fixture.Prices.Get(key)).Price);
+    }
+
+    [Fact]
+    public void RefreshReloadsExternalWritesAndIsCurrentReadsOnlyTheCache()
+    {
+        using var fixture = new Fixture();
+        var key = Guid.NewGuid();
+        var other = Guid.NewGuid();
+        fixture.Prices.SetPrice(key, "Web", "en-US", 10);
+        using (var db = fixture.Factory.GetDatabase())
+            db.Prices.Where(row => row.NodeKey == key).Set(row => row.Price, 20).Update();
+        using var counter = new PriceQueryCounter(fixture.DatabasePath);
+
+        Assert.True(fixture.Prices.IsCurrent([new(key, "Web", "en-US", 10)]));
+        Assert.True(fixture.Prices.IsCurrent([new(other, "Web", "en-US", null)]));
+        Assert.False(fixture.Prices.IsCurrent([new(other, "Web", "en-US", 5)]));
+        Assert.Equal(0, counter.Count);
+
+        fixture.Prices.Refresh([key, other]);
+        Assert.Equal(1, counter.Count);
+        Assert.False(fixture.Prices.IsCurrent([new(key, "Web", "en-US", 10)]));
+        Assert.True(fixture.Prices.IsCurrent([new(key, "web", "EN-us", 20)]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => fixture.Prices.IsCurrent([new(key, "Web", "en-US", -1)]));
+        Assert.Equal(1, counter.Count);
+    }
+
+    [Fact]
     public async Task NoOpWriteRefreshesCacheWithoutEmittingChange()
     {
         using var fixture = new Fixture();

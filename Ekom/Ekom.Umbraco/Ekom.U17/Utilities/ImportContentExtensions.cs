@@ -280,8 +280,34 @@ public static class ImportContentExtensions
         content.SetValue(propertyAlias, JsonConvert.SerializeObject(currencyPriceRoot));
     }
 
+    // Umbraco 18.1 added a save-and-publish that runs in one scope. Ekom also supports 18.0 and 17,
+    // where it does not exist, so bind to it at runtime instead of raising the minimum version.
+    private static readonly Func<IContentService, IContent, string[], int, PublishResult>? NativeSaveAndPublish
+        = FindNativeSaveAndPublish();
+
+    private static Func<IContentService, IContent, string[], int, PublishResult>? FindNativeSaveAndPublish()
+    {
+        foreach (var type in typeof(IContentService).GetInterfaces().Append(typeof(IContentService)))
+        {
+            var method = type.GetMethod("SaveAndPublish", [typeof(IContent), typeof(string[]), typeof(int)]);
+            if (method != null && method.ReturnType == typeof(PublishResult))
+            {
+                return method.CreateDelegate<Func<IContentService, IContent, string[], int, PublishResult>>();
+            }
+        }
+
+        return null;
+    }
+
     public static void SaveAndPublish(this IContentService contentService, IContent content, int userId = -1)
     {
+        // The native method takes explicit cultures only, and none for invariant content.
+        if (NativeSaveAndPublish != null && !content.ContentType.VariesByCulture())
+        {
+            NativeSaveAndPublish(contentService, content, Array.Empty<string>(), userId);
+            return;
+        }
+
         contentService.Save(content, userId: userId);
         contentService.Publish(content, AllCultures, userId: userId);
     }

@@ -180,6 +180,102 @@ public class ImportMediaLookupTests
         Assert.Empty(fixture.ContentService.Invocations);
     }
 
+    [Fact]
+    public void UpdateSyncLookupHydratesOnlySqlMatchesUnderRootAndSkipsSyncDisabledContent()
+    {
+        var fixture = new Fixture();
+        var disabled = Content(10, "identity", disabled: true);
+        var target = Content(20, "identity");
+        fixture.SqlIds.AddRange([10, 20]);
+        fixture.Contents.AddRange([disabled.Object, target.Object]);
+
+        Assert.Same(target.Object, fixture.LookupUpdateContent("identity"));
+
+        var query = Assert.Single(fixture.SqlCalls);
+        Assert.Equal(new object[] { "%,1,%", 7, "ekmIdentifier", "identity" }, query.Parameters);
+        Assert.Contains("n.trashed = 0", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("n.path LIKE @0", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("c.contentTypeId = @1", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("pd.varcharValue = @3", query.Sql, StringComparison.Ordinal);
+        Assert.Equal(1, fixture.DescendantParent);
+        Assert.NotNull(fixture.DescendantFilter);
+        AssertHydrationIds(fixture.DescendantFilter, fixture.SqlIds);
+        Assert.Single(fixture.ContentService.Invocations);
+    }
+
+    [Fact]
+    public void UpdateSyncLookupUsesDescendantOrderForDuplicatesAndExactIdentifierMatch()
+    {
+        var fixture = new Fixture();
+        var wrongCase = Content(5, "SHARED");
+        var first = Content(30, "shared");
+        var second = Content(10, "shared");
+        fixture.SqlIds.AddRange([5, 10, 30]);
+        fixture.Contents.AddRange([wrongCase.Object, first.Object, second.Object]);
+
+        Assert.Same(first.Object, fixture.LookupUpdateContent("shared"));
+    }
+
+    [Fact]
+    public void UpdateSyncLookupWithoutSqlMatchDoesNotLoadContent()
+    {
+        var fixture = new Fixture();
+
+        Assert.Null(fixture.LookupUpdateContent("missing"));
+        Assert.Null(fixture.LookupUpdateContent(null));
+
+        Assert.Single(fixture.SqlCalls);
+        Assert.Empty(fixture.ContentService.Invocations);
+    }
+
+    [Fact]
+    public void UpdateSyncLookupReturnsMatchingRootWithoutQuerying()
+    {
+        var fixture = new Fixture();
+        fixture.Root.SetupGet(x => x.ContentType).Returns(Mock.Of<ISimpleContentType>(x => x.Id == 7));
+        fixture.Root.Setup(x => x.GetValue<string>("ekmIdentifier", null, null, false)).Returns("root");
+
+        Assert.Same(fixture.Root.Object, fixture.LookupUpdateContent("root"));
+
+        Assert.Empty(fixture.SqlCalls);
+        Assert.Empty(fixture.ContentService.Invocations);
+    }
+
+    [Fact]
+    public void MediaAddedBySaveHandlerIsLookedUpOnceWhenNotPreloaded()
+    {
+        var fixture = new Fixture();
+        var media = Media(30);
+        fixture.SqlIds.Add(30);
+        fixture.Descendants.Add(media.Object);
+        var index = fixture.TargetedMediaIndex();
+
+        Assert.Same(media.Object, fixture.FindByUdi(index, Udi(media)));
+        Assert.Same(media.Object, fixture.FindByUdi(index, Udi(media)));
+
+        var query = Assert.Single(fixture.SqlCalls);
+        Assert.Contains(query.Parameters, x => x is IEnumerable<Guid> keys && keys.Single() == media.Object.Key);
+        Assert.Equal(100, fixture.MediaParent);
+    }
+
+    [Fact]
+    public void MissingMediaIsOnlyQueriedOnceAndPreloadedIndexDoesNotQuery()
+    {
+        var fixture = new Fixture();
+        var missing = "umb://media/" + Guid.NewGuid().ToString("N");
+        var index = fixture.TargetedMediaIndex();
+
+        Assert.Null(fixture.FindByUdi(index, missing));
+        Assert.Null(fixture.FindByUdi(index, missing));
+        Assert.Single(fixture.SqlCalls);
+
+        var preloaded = Media(40);
+        var fullIndex = fixture.MediaIndex([preloaded.Object]);
+        Assert.Same(preloaded.Object, fixture.FindByUdi(fullIndex, Udi(preloaded)));
+        Assert.Null(fixture.FindByUdi(fullIndex, missing));
+        Assert.Single(fixture.SqlCalls);
+    }
+
     private static void AssertContentSql(Fixture fixture, string identifier)
     {
         var query = Assert.Single(fixture.SqlCalls);
@@ -259,6 +355,9 @@ public class ImportMediaLookupTests
         public Ordering? ContentOrdering { get; private set; }
         public int HydratedContentType { get; private set; }
         public int MediaParent { get; private set; }
+        public Mock<IContent> Root { get; } = new();
+        public IQuery<IContent>? DescendantFilter { get; private set; }
+        public int DescendantParent { get; private set; }
 
         public Fixture()
         {
@@ -295,6 +394,16 @@ public class ImportMediaLookupTests
                     ContentOrdering = (Ordering?)invocation.Arguments[5];
                 }))
                 .Returns(() => Contents);
+            ContentService.Setup(x => x.GetPagedDescendants(It.IsAny<int>(), 0, int.MaxValue, out It.Ref<long>.IsAny,
+                    It.IsAny<IQuery<IContent>>(), It.IsAny<Ordering>()))
+                .Callback(new InvocationAction(invocation =>
+                {
+                    DescendantParent = (int)invocation.Arguments[0];
+                    DescendantFilter = (IQuery<IContent>)invocation.Arguments[4];
+                }))
+                .Returns(() => Contents);
+            Root.SetupGet(x => x.Id).Returns(1);
+            Root.SetupGet(x => x.ContentType).Returns(Mock.Of<ISimpleContentType>(x => x.Id == 99));
             MediaService.Setup(x => x.GetPagedDescendants(It.IsAny<int>(), 0, It.IsAny<int>(), out It.Ref<long>.IsAny,
                     It.IsAny<IQuery<IMedia>>(), It.IsAny<Ordering>()))
                 .Callback(new InvocationAction(invocation =>
@@ -313,6 +422,24 @@ public class ImportMediaLookupTests
             _service = new ImportService(null!, ContentService.Object, null!, scopeProvider.Object, null!,
                 NullLogger<ImportService>.Instance, null!, null!, mediaImporter, null!);
 #endif
+        }
+
+        private static readonly Type IndexType = typeof(ImportService).GetNestedType("ImportMediaIndex", BindingFlags.NonPublic)!;
+
+        public object MediaIndex(List<IMedia> media, object? resolver = null)
+            => Activator.CreateInstance(IndexType, [media, resolver])!;
+
+        public object TargetedMediaIndex()
+            => MediaIndex([], Invoke("CreateMediaResolver", [_root]));
+
+        public IMedia? FindByUdi(object index, string udi)
+            => (IMedia?)IndexType.GetMethod("FindByUdi")!.Invoke(index, [udi]);
+
+        public IContent? LookupUpdateContent(string? identifier)
+        {
+            typeof(ImportService).GetField("umbracoRootContent", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .SetValue(_service, Root.Object);
+            return (IContent?)Invoke("GetUpdateSyncContent", [_contentType, identifier]);
         }
 
         public IContent? LookupContent(string identifier)

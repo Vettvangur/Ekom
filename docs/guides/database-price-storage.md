@@ -57,6 +57,8 @@ Refreshes read all affected rows in one transaction before publishing the cache 
 
 Each application instance has its own cache. Use the registered `Prices` service for local updates. After direct SQL changes or writes on another server, reload each serving instance with `await prices.FillCacheAsync(cancellationToken)`. A new request does not reload the cache. Allow enough memory for all price rows.
 
+Bulk writers can avoid one transaction per unchanged node. `prices.Refresh(nodeKeys)` reloads those nodes from the database into the cache in one read, and `prices.IsCurrent(changes)` then reports, from the cache alone, whether the table already holds exactly those prices. `IsCurrent` validates the batch like `Apply`. Call `Apply` for anything that is not current. A write made elsewhere after the refresh is not seen until the next refresh.
+
 Raw Umbraco property JSON still contains the node value. Use Ekom price models or `Prices.Resolve` when you need table overrides.
 
 ## Notifications and access
