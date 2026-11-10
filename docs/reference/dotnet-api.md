@@ -173,7 +173,7 @@ Use `Order` for applying coupons and `Stock` for discount/coupon inventory.
 | Read | `GetStock(Guid[, storeAlias])`, `GetStockData(Guid[, storeAlias])`; a missing entry is represented as zero-valued `StockData`. |
 | Validate | `ValidateOrderStockAsync(IOrderInfo)` skips backordered products and applies stock buffers. |
 | Increment | `IncrementStockAsync(...)` performs an atomic delta and publishes `StockChangedAsync`. |
-| Set | `SetStockAsync(...)` replaces the balance; prefer increment for concurrent deltas. |
+| Set | `SetStockAsync(...)` replaces the balance; prefer increment for concurrent deltas. The `IEnumerable<StockSetRequest>` overload writes many balances in batched transactions. |
 | Reserve | `ReserveStockAsync(...)` accepts a negative compatibility value and returns a reservation ID. |
 | Consume/release wrappers | `CancelRollback` consumes; `RollbackJobAsync` and `CompleteRollback` release. Prefer `IStockReservationService` for explicit async semantics. |
 | Discount stock | `GetDiscountStock[Data]Async`, `UpdateDiscountStockAsync`, `ReserveDiscountStockAsync`. Supplying `coupon` addresses coupon-specific stock. |

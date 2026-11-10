@@ -200,6 +200,8 @@ importService.ProductUpdateSync(
 
 With `UseDatabasePrices: true`, product and variant prices are written atomically through `Ekom.API.Prices.Apply` before the importer checks whether existing content is unchanged. The default content comparison hash excludes `Price`, so price-only changes update the table without saving or publishing the node. This applies to product/variant update methods and the product/variant steps of full synchronization. New nodes receive a stable key and validated table prices before their first save or publication. An invalid currency price aborts the entire price batch before content is saved. Content and price writes are separate transactions: if the subsequent content save fails, table rows may remain for that key. Retry with the same key or explicitly remove abandoned overrides; do not treat a failed content save as a successful import.
 
+During `FullSync` and `CategorySync`, table prices are read from the database once per chunk of 200 products (including their variants). A product or variant whose table prices already match the feed skips its own transaction; any difference is still written through `Prices.Apply` before the content save, and invalid prices are still rejected. If another server or direct SQL changes a price after its chunk was read, that row is left as it is for the current run and corrected by the next sync.
+
 Other content changes, media changes, or `forceUpdate: true` still use the normal save/publish behavior. When first enabling table mode, existing default comparison hashes may differ because they previously included prices; one content sync establishes the new hash. If you supply your own `Comparer`, it remains authoritative: keep prices out of that value to avoid content saves for price-only changes. Table prices are updated even when your custom comparer is unchanged. Missing prices leave existing table entries untouched.
 
 With the option disabled, prices stay on the node and remain part of normal default content change detection. Table writes and content saves are separate operations; a later content-save failure does not roll back table prices already applied to an existing node.
@@ -241,6 +243,8 @@ Before deployment, verify this behavior against a non-production Umbraco databas
 
 `forceUpdate: true` bypasses product/group/variant content comparison for `ProductSync` or `ProductUpdateSync`. It is useful after a schema mapping change.
 
+`VariantUpdateSync` and `CategoryUpdateSync` find their node by import identifier with a targeted query and do not load the rest of the catalog; an empty identifier matches nothing. On Umbraco 17.6+ and 18.1+, a `SavePublish` of invariant content runs as one Umbraco save-and-publish operation; older versions save and then publish.
+
 Each imported entity has:
 
 | Property | Behavior |
@@ -269,6 +273,8 @@ For `FullSync` and `CategorySync`, the supplied `ImportData.ProductProcessKey` a
 
 New media is stored under `ImportData.MediaRootKey` or the method's `mediaRootKey`. External/byte/base64 models support identifiers/comparers, sort order and `ImportMediaAction`. A zero `ImportData.MediaRootKey` makes full/category sync skip loading a media root; single product/variant media operations require the supplied root to resolve.
 
+`ProductSync`, `VariantGroupSync` and `VariantSync` load only the media the incoming item refers to. Media that a save handler adds afterwards, for example `ImportMediaFromUdi` entries set in `ProductSaveStarting`, is looked up under the media root the first time it is needed. `FullSync` and `CategorySync` load the whole media root.
+
 `SyncProductMedia` and `SyncVariantMedia` resolve the requested non-trashed content by import identifier across the content tree, including unpublished and `ekmDisableSync` content. They load only relevant media under the supplied root: incoming identifiers, comparers and UDI keys, plus existing references in the selected field so untouched media remains available for ordering. These are media-only operations; they do not reconcile product values, categories, children or stock. Changed published content follows the existing save/publish path; unpublished content is saved without publishing.
 
 Existing calls merge incoming media into the selected field. Use the overload with `replaceExisting: true` to replace that field's references with only the incoming media:
@@ -293,6 +299,8 @@ If an existing call passes an untyped `default` as its sixth argument, name it `
 ## Stock and warehouse stock
 
 `ImportProduct.Stock` and `ImportVariant.Stock` call `SetStockAsync`; values are absolute snapshots, not deltas. With `PerStoreStock`, supply the relevant `StoreAlias`. Coordinate snapshots with active reservations because an absolute set does not account for external quantities held elsewhere.
+
+Only values that differ from the cached balance are written. They are collected and written in batches of up to 200, and the import waits for them, so stock is persisted when the sync method returns. A failed batch is logged as an error and does not fail the sync. Content saves made by the import do not apply the stock value stored on the node by the backoffice stock editor; the stock table stays as the feed or an earlier ERP update left it.
 
 On Umbraco 17 and 18, warehouse entries are also desired mutations, but only listed identities change:
 
