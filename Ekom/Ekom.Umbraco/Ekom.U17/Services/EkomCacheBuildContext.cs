@@ -34,6 +34,20 @@ internal sealed class EkomCacheBuildContext
         return true;
     }
 
+    /// <summary>Content type of a node in the tree being built. False outside a build or for unknown ids.</summary>
+    public bool TryGetContentTypeAlias(int nodeId, out string contentTypeAlias)
+    {
+        var state = _state.Value;
+        if (state == null || !state.AliasById.TryGetValue(nodeId, out var alias))
+        {
+            contentTypeAlias = string.Empty;
+            return false;
+        }
+
+        contentTypeAlias = alias;
+        return true;
+    }
+
     public bool TryGetNodeInfo(
         IPublishedContent node,
         out int? parentId,
@@ -91,6 +105,7 @@ internal sealed class EkomCacheBuildContext
         {
             var allNodes = nodes.DistinctBy(x => x.Key).ToList();
             IdByKey = allNodes.ToDictionary(x => x.Key, x => x.Id);
+            AliasById = allNodes.ToDictionary(x => x.Id, x => x.ContentType.Alias);
             NodeInfoByKey = allNodes.ToDictionary(x => x.Key, x => new NodeInfo(x.Id, GetParent(x)?.Key));
             NodesByContentType = allNodes
                 .GroupBy(x => x.ContentType.Alias)
@@ -98,6 +113,8 @@ internal sealed class EkomCacheBuildContext
         }
 
         public Dictionary<Guid, int> IdByKey { get; }
+
+        public Dictionary<int, string> AliasById { get; }
 
         public Dictionary<Guid, NodeInfo> NodeInfoByKey { get; }
 

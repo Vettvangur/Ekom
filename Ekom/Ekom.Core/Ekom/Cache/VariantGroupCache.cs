@@ -47,7 +47,7 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
                 var key = kv.Key;
                 var g = kv.Value;
 
-                pi.GetOrAdd(g.ProductId, _ => new ConcurrentDictionary<Guid, byte>()).TryAdd(key, 0);
+                pi.GetOrAdd(g.ProductId, static _ => NewKeySet()).TryAdd(key, 0);
             }
         }
 
@@ -89,7 +89,7 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
         base.AddOrReplaceFromCache(key, store, item);
 
         GetStoreProductIndex(store.Alias)
-            .GetOrAdd(item.ProductId, _ => new ConcurrentDictionary<Guid, byte>())
+            .GetOrAdd(item.ProductId, static _ => NewKeySet())
             .TryAdd(key, 0);
     }
 

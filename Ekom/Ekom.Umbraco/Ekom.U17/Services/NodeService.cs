@@ -215,6 +215,11 @@ internal sealed class NodeService : INodeService
             return Array.Empty<UmbracoContent>();
         }
 
+        if (TryGetCatalogAncestorsFromCacheBuild(item, out var buildAncestors))
+        {
+            return buildAncestors;
+        }
+
         using var cref = _context.EnsureUmbracoContext();
         var node = GetNodeById(item.Id, true);
 
@@ -226,6 +231,47 @@ internal sealed class NodeService : INodeService
         ancestors.Reverse();
 
         return ancestors.Select(x => new Umbraco17Content(x)).ToList();
+    }
+
+    /// <summary>
+    /// During a cache build every published node is already loaded and the catalog nodes are
+    /// mapped, so the ancestor chain is read from there. The preview lookup below goes to the
+    /// database and maps each ancestor again, for every category in every store.
+    /// </summary>
+    private bool TryGetCatalogAncestorsFromCacheBuild(UmbracoContent item, out List<UmbracoContent> ancestors)
+    {
+        ancestors = new List<UmbracoContent>();
+        if (string.IsNullOrEmpty(item.Path))
+        {
+            return false;
+        }
+
+        foreach (var segment in item.Path.Split(','))
+        {
+            if (!int.TryParse(segment, out var id) || id < 0)
+            {
+                continue;
+            }
+
+            if (!_cacheBuildContext.TryGetContentTypeAlias(id, out var alias))
+            {
+                return false;
+            }
+
+            if (alias is not ("ekmCategory" or "ekmProduct"))
+            {
+                continue;
+            }
+
+            if (!_contentCache.TryGetById(id, out var content) || content == null)
+            {
+                return false;
+            }
+
+            ancestors.Add(content);
+        }
+
+        return ancestors.Count > 0;
     }
 
     public IPublishedContent? GetNodeById(int id, bool preview = false)
