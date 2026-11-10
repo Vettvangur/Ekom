@@ -40,6 +40,32 @@ public class EkomManagerController : ControllerBase
         _logger = logger;
     }
 
+    [HttpPost("orderStates/{orderId:guid}")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> ChangeOrderStatesAsync(Guid orderId, [FromBody] OrderStateChangeRequest request,
+        [FromServices] IOrderStateService service, CancellationToken ct = default)
+    {
+        try { return Ok(await service.ChangeAsync(orderId, request, ct).ConfigureAwait(false)); }
+        catch (CheckoutConflictException) { return Conflict(new { message = "Checkout is locked. Reload and review payment activity before changing this order." }); }
+        catch (EkomHttpException ex) { return StatusCode((int)ex.StatusCode, new { message = ex.Message }); }
+    }
+
+    [HttpGet("statusMigration")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> PreviewStatusMigrationAsync([FromServices] IOrderStateService service, int afterReferenceId = 0, CancellationToken ct = default)
+    {
+        try { return Ok(await service.PreviewAsync(afterReferenceId, ct).ConfigureAwait(false)); }
+        catch (EkomHttpException ex) { return StatusCode((int)ex.StatusCode, new { message = ex.Message }); }
+    }
+
+    [HttpPost("statusMigration")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> MigrateStatusesAsync([FromServices] IOrderStateService service, int afterReferenceId = 0, CancellationToken ct = default)
+    {
+        try { return Ok(await service.MigrateAsync(afterReferenceId, ct).ConfigureAwait(false)); }
+        catch (EkomHttpException ex) { return StatusCode((int)ex.StatusCode, new { message = ex.Message }); }
+    }
+
     [HttpGet]
     [Route("AllOrders")]
     [UmbracoUserAuthorize]
@@ -378,20 +404,20 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("SearchOrders")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
+    public async Task<IActionResult> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, string? currency = null)
     {
         if (!CanAccessStore(store))
         {
             return ForbidStore(store);
         }
 
-        return Ok(await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, page, pageSize, couponCode, shippingProvider, giftcardCode));
+        return Ok(await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, page, pageSize, couponCode, shippingProvider, giftcardCode, currency));
     }
 
     [HttpGet]
     [Route("ExportOrders")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> ExportOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderLines, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, CancellationToken ct = default)
+    public async Task<IActionResult> ExportOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderLines, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, CancellationToken ct = default, string? currency = null)
     {
         if (!CanAccessStore(store))
         {
@@ -400,7 +426,7 @@ public class EkomManagerController : ControllerBase
 
         try
         {
-            List<OrderData> orders = await _repo.GetOrdersForExportAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, includeOrderLines, couponCode, shippingProvider, giftcardCode).ConfigureAwait(false);
+            List<OrderData> orders = await _repo.GetOrdersForExportAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, includeOrderLines, couponCode, shippingProvider, giftcardCode, currency).ConfigureAwait(false);
             string csv = CreateOrderCsv(orders, includeOrderLines);
             string fileName = includeOrderLines ? "orders-with-orderlines.csv" : "orders.csv";
 
@@ -426,20 +452,20 @@ public class EkomManagerController : ControllerBase
     [Route("MostSoldProducts")]
     [UmbracoUserAuthorize]
     [ResponseCache(Duration = 60 * 60 * 24)]
-    public async Task<IActionResult> GetMostSoldProducts(DateTime start, DateTime end, string store, string orderStatus, int? page = null, int? pageSize = null)
+    public async Task<IActionResult> GetMostSoldProducts(DateTime start, DateTime end, string store, string orderStatus, int? page = null, int? pageSize = null, string? currency = null)
     {
 
         if (!CanAccessStore(store))
         {
             return ForbidStore(store);
         }
-        
+
         if (page.HasValue || pageSize.HasValue)
         {
-            return Ok(await _repo.MostSoldProductsPaged(start, end, store, orderStatus, page ?? 1, pageSize ?? 20));
+            return Ok(await _repo.MostSoldProductsPaged(start, end, store, orderStatus, page ?? 1, pageSize ?? 20, currency));
         }
 
-        return Ok(await _repo.MostSoldProducts(start, end, store, orderStatus));
+        return Ok(await _repo.MostSoldProducts(start, end, store, orderStatus, currency));
     }
 
     [HttpGet]
@@ -448,6 +474,22 @@ public class EkomManagerController : ControllerBase
     public IActionResult GetStatusList()
     {
         return Ok(_repo.GetStatusList());
+    }
+
+    [HttpGet]
+    [Route("store-currencies")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> GetStoreCurrencies()
+    {
+        var result = new List<object>();
+        foreach (var store in _managerAccessService.GetAllowedStores())
+        {
+            var recorded = await _repo.GetRecordedCurrenciesAsync(store.Alias).ConfigureAwait(false);
+            var currencies = store.Currencies.Select(c => c.CurrencyValue).Concat(recorded)
+                .Select(ManagerCurrencyScope.Code).Where(code => code != null).Distinct().ToArray();
+            result.Add(new { store.Alias, Currencies = currencies });
+        }
+        return Ok(result);
     }
 
     [HttpGet]
@@ -840,7 +882,7 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("charts")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> GetChartsData(DateTime start, DateTime end, string store, string orderStatus, [FromServices] CustomerRepository customers, CancellationToken ct = default)
+    public async Task<IActionResult> GetChartsData(DateTime start, DateTime end, string store, string orderStatus, [FromServices] CustomerRepository customers, CancellationToken ct = default, string? currency = null)
     {
         if (!CanAccessStore(store))
         {
@@ -852,9 +894,10 @@ public class EkomManagerController : ControllerBase
             return BadRequest("Select a valid date range of up to ten years.");
         }
 
-        var aggregates = await _repo.GetChartAggregatesAsync(start, end, store, orderStatus, ct).ConfigureAwait(false);
+        var aggregates = await _repo.GetChartAggregatesAsync(start, end, store, orderStatus, ct, currency).ConfigureAwait(false);
         var chart = BuildChartData(start, end, orderStatus, aggregates);
-        chart.CustomerInsights = await customers.GetAnalyticsAsync(store, start, end, orderStatus, ct).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(currency)) { chart.Currency = ManagerCurrencyScope.Code(currency); chart.MixedCurrencies = false; }
+        chart.CustomerInsights = await customers.GetAnalyticsAsync(store, start, end, orderStatus, ct, currency).ConfigureAwait(false);
         return Ok(chart);
     }
 

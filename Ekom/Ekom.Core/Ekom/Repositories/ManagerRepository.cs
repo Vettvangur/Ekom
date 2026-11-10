@@ -33,6 +33,12 @@ public class ManagerRepository
         _storeService = storeService;
     }
 
+    public async Task<List<string>> GetRecordedCurrenciesAsync(string store)
+    {
+        await using DbContext db = _databaseFactory.GetDatabase();
+        return await db.QueryToListAsync<string>("SELECT DISTINCT Currency FROM EkomOrders WHERE StoreAlias = @store AND Currency IS NOT NULL", new { store }).ConfigureAwait(false);
+    }
+
     public async Task<IEnumerable<OrderData>> GetOrdersAsync(IReadOnlyCollection<string> allowedStoreAliases)
     {
         if (allowedStoreAliases.Count == 0)
@@ -77,12 +83,29 @@ public class ManagerRepository
         return await CheckoutPaymentAttemptService.ReadManagerLockStatusAsync(db, orderId, ct).ConfigureAwait(false);
     }
 
-    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
+    private sealed class OrderListRow : OrderData
     {
-        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode);
+        [LinqToDB.Mapping.Column, System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
+        public decimal? SavedItemQuantity { get; set; }
+    }
 
-        var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
-        var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
+    // Project quantities only; do not transfer full saved order payloads to the manager list.
+    private string ItemQuantitySql => _databaseFactory.IsSqlite
+        ? @"CASE WHEN json_valid(OrderInfo) THEN CASE WHEN json_type(OrderInfo, '$.OrderLines') = 'array'
+            THEN (SELECT CASE WHEN COUNT(*) = COUNT(CASE WHEN json_type(CASE WHEN type = 'object' THEN value ELSE '{}' END, '$.Quantity') IN ('integer','real') THEN 1 END)
+                THEN COALESCE(SUM(CAST(json_extract(CASE WHEN type = 'object' THEN value ELSE '{}' END, '$.Quantity') AS REAL)), 0) END
+                FROM json_each(OrderInfo, '$.OrderLines')) END END"
+        : @"CASE WHEN ISJSON(OrderInfo) = 1 AND LEFT(LTRIM(JSON_QUERY(CASE WHEN ISJSON(OrderInfo) = 1 THEN OrderInfo ELSE '{}' END, '$.OrderLines')), 1) = '['
+            THEN (SELECT CASE WHEN COUNT(*) = COUNT(TRY_CONVERT(decimal(28,8), JSON_VALUE(CASE WHEN ISJSON(value) = 1 THEN value ELSE '{}' END, '$.Quantity')))
+                THEN COALESCE(SUM(TRY_CONVERT(decimal(28,8), JSON_VALUE(CASE WHEN ISJSON(value) = 1 THEN value ELSE '{}' END, '$.Quantity'))), 0) END
+                FROM OPENJSON(CASE WHEN ISJSON(OrderInfo) = 1 THEN OrderInfo ELSE '{}' END, '$.OrderLines')) END";
+
+    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, string? currency = null)
+    {
+        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode) + ManagerCurrencyScope.Predicate(currency);
+
+        var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,OrderStateCol,PaymentStateCol,FulfillmentStateCol,OriginalOrderStatusCol,FulfilledQuantitiesJson,StatusMappingVersion,StatusRevision,AutoCloseSuppressed,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate, {ItemQuantitySql} AS SavedItemQuantity FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
+        var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount, COUNT(DISTINCT COALESCE(NULLIF(UPPER(Currency), ''), 'UNKNOWN')) as CurrencyCount, MIN(Currency) as Currency FROM EkomOrders {whereClause}");
 
         int _page = string.IsNullOrEmpty(page) || !int.TryParse(page, out int tempPage) ? 1 : tempPage;
         int _pageSize = string.IsNullOrEmpty(pageSize) || !int.TryParse(pageSize, out int tempPageSize) ? 30 : tempPageSize;
@@ -137,9 +160,12 @@ public class ManagerRepository
 
         ConfigureCouponComparison(db, couponCode);
 
-        var orders = await db.QueryToListAsync<OrderData>(sqlQuery, param);
+        var orders = await db.QueryToListAsync<OrderListRow>(sqlQuery, param);
+        foreach (var order in orders) order.ItemQuantity = order.SavedItemQuantity;
 
         var totals = db.Execute<OrderListDataTotals>(sqlTotalQuery, param);
+
+        if (!string.IsNullOrWhiteSpace(currency)) { totals.CurrencyCount = 1; totals.Currency = ManagerCurrencyScope.Code(currency); }
 
         var orderListData = new OrderListData(orders, totals, GetStoreCurrency(store))
         {
@@ -154,12 +180,12 @@ public class ManagerRepository
     {
         return _storeService.GetStoreByAlias(storeAlias)?.Currency.CurrencyValue;
     }
-  
-    public async Task<List<OrderData>> GetOrdersForExportAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderInfo, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
+
+    public async Task<List<OrderData>> GetOrdersForExportAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderInfo, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, string? currency = null)
     {
-        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode);
+        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode) + ManagerCurrencyScope.Predicate(currency);
         string orderInfoColumn = includeOrderInfo ? ",OrderInfo" : string.Empty;
-        string sqlQuery = $"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate{orderInfoColumn} FROM EkomOrders {whereClause} ORDER BY ReferenceId desc";
+        string sqlQuery = $"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,OrderStateCol,PaymentStateCol,FulfillmentStateCol,OriginalOrderStatusCol,FulfilledQuantitiesJson,StatusMappingVersion,StatusRevision,AutoCloseSuppressed,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate{orderInfoColumn} FROM EkomOrders {whereClause} ORDER BY ReferenceId desc";
 
         string? paymentProviderValue = null;
         if (!string.IsNullOrEmpty(paymentProvider) && Guid.TryParse(paymentProvider, out Guid parsedPaymentProvider))
@@ -200,9 +226,9 @@ public class ManagerRepository
 
     }
 
-    public async Task<List<ChartAggregateRow>> GetChartAggregatesAsync(DateTime start, DateTime end, string store, string orderStatus, CancellationToken ct = default)
+    public async Task<List<ChartAggregateRow>> GetChartAggregatesAsync(DateTime start, DateTime end, string store, string orderStatus, CancellationToken ct = default, string? currency = null)
     {
-        string whereClause = GenerateWhereClause(orderStatus, string.Empty, store, string.Empty);
+        string whereClause = GenerateWhereClause(orderStatus, string.Empty, store, string.Empty) + ManagerCurrencyScope.Predicate(currency);
         string dateColumn = orderStatus is "ReadyForDispatch" or "Dispatched" ? "PaidDate" : "CreateDate";
         string bucketDateExpression = _databaseFactory.IsSqlite
             ? $"date({dateColumn})"
@@ -311,7 +337,11 @@ ORDER BY {bucketDateExpression}";
         AppendTrackingJsonFilter(whereClause, trackingContent, "Content", "trackingContent");
         AppendTrackingJsonFilter(whereClause, trackingClickId, "ClickId", "trackingClickId");
 
-        if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders" && orderStatus != "AllOrders")
+        if (Models.Orders.OrderStateQuery.Predicate(orderStatus) is string statePredicate)
+        {
+            whereClause.Append(" AND ").Append(statePredicate);
+        }
+        else if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders" && orderStatus != "AllOrders")
         {
             whereClause.Append(" AND OrderStatusCol = @orderStatus");
         }
@@ -368,16 +398,16 @@ ORDER BY {bucketDateExpression}";
         whereClause.Append($" AND LOWER(JSON_VALUE(OrderInfo, '$.Tracking.{propertyName}')) = LOWER(@{parameterName})");
     }
 
-    public async Task<List<MostSoldProduct>> MostSoldProducts(DateTime start, DateTime end, string store, string orderStatus)
+    public async Task<List<MostSoldProduct>> MostSoldProducts(DateTime start, DateTime end, string store, string orderStatus, string? currency = null)
     {
-        var result = await MostSoldProductsPaged(start, end, store, orderStatus, 1, int.MaxValue).ConfigureAwait(false);
+        var result = await MostSoldProductsPaged(start, end, store, orderStatus, 1, int.MaxValue, currency).ConfigureAwait(false);
 
         return result.Products.ToList();
     }
 
-    public async Task<MostSoldProductListData> MostSoldProductsPaged(DateTime start, DateTime end, string store, string orderStatus, int page, int pageSize)
+    public async Task<MostSoldProductListData> MostSoldProductsPaged(DateTime start, DateTime end, string store, string orderStatus, int page, int pageSize, string? currency = null)
     {
-        string whereClause = "O.OrderInfo IS NOT NULL AND LTRIM(RTRIM(O.OrderInfo)) <> ''";
+        string whereClause = "O.OrderInfo IS NOT NULL AND LTRIM(RTRIM(O.OrderInfo)) <> ''" + ManagerCurrencyScope.Predicate(currency, "O.Currency");
 
         int currentPage = page <= 0 ? 1 : page;
         int currentPageSize = pageSize <= 0 ? 20 : pageSize;
@@ -392,7 +422,11 @@ ORDER BY {bucketDateExpression}";
             whereClause += " AND CreateDate >= @startDate AND CreateDate <= @endDate";
         }
 
-        if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders" && orderStatus != "AllOrders")
+        if (Models.Orders.OrderStateQuery.Predicate(orderStatus) is string statePredicate)
+        {
+            whereClause += " AND " + statePredicate;
+        }
+        else if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders" && orderStatus != "AllOrders")
         {
             whereClause += " AND OrderStatusCol = @orderStatus";
         }
@@ -417,26 +451,26 @@ ORDER BY {bucketDateExpression}";
         };
 
         string baseSql = _databaseFactory.IsSqlite
-            ? new StringBuilder(@"SELECT 
+            ? new StringBuilder(@"SELECT
                 MAX(json_extract(OL.value, '$.Product.SKU')) as SKU,
                 MAX(json_extract(OL.value, '$.Product.Title')) as Title,
                 json_extract(OL.value, '$.Product.Id') as Id,
                 SUM(CAST(json_extract(OL.value, '$.Quantity') AS REAL)) AS ProductCount,
                 SUM(COALESCE(CAST(json_extract(OL.value, '$.Amount.Value') AS REAL), 0)) AS Total
-            FROM 
+            FROM
                 EkomOrders O
-            JOIN 
+            JOIN
                 json_each(O.OrderInfo, '$.OrderLines') AS OL
             WHERE ").ToString()
-            : new StringBuilder(@"SELECT 
+            : new StringBuilder(@"SELECT
                 MAX(OL.SKU) as SKU,
                 MAX(OL.Title) as Title,
                 OL.Id,
                 SUM(OL.Quantity) AS ProductCount,
                 SUM(COALESCE(OL.Amount, 0)) AS Total
-            FROM 
+            FROM
                 EkomOrders O
-            CROSS APPLY 
+            CROSS APPLY
                 OPENJSON (O.OrderInfo, '$.OrderLines')
                 WITH (
                     SKU nvarchar(200) '$.Product.SKU',
@@ -460,7 +494,7 @@ ORDER BY {bucketDateExpression}";
         string sqlCount = $"SELECT COUNT(*) as Count FROM ({groupedSql}) products";
 
         sqlBuilder.Append(@"
-            ORDER BY 
+            ORDER BY
                 ProductCount DESC");
 
         if (_databaseFactory.IsSqlite)

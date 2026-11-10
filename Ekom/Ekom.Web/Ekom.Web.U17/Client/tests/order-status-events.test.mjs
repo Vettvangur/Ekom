@@ -23,6 +23,7 @@ function loadModule(path, modules = {}, globals = {}) {
 }
 
 const shared = loadModule('../src/manager/manager-shared.ts');
+shared.renderManagerContent = (root, html) => { root.innerHTML = html; };
 const { EkomOrdersSectionViewElement } = loadModule('../src/manager/orders-section-view.element.ts', {
   './manager-shared': shared,
   '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
@@ -41,6 +42,7 @@ function createElement() {
   element.api.giftcardRecovery = async () => [];
   element.api.orderInfo = async uniqueId => ({ uniqueId, orderStatus: 'Pending' });
   element.querySelector = () => ({ value: 'Processed' });
+  element.querySelectorAll = () => [];
   return element;
 }
 
@@ -116,8 +118,8 @@ test('pending and failed config disable both status paths and failures remain vi
   const loading = element.loadConfig();
   await element.changeRowStatus({ dataset: { orderId: 'order-A' }, value: 'Processed' });
   await element.saveOverlayStatus();
-  assert.match(element.renderOrderRow({ uniqueId: 'order-A' }), /data-action="change-row-status"[^>]*disabled/);
-  assert.match(element.renderOrderDetails(element.selectedOrder), /data-action="save-overlay-status"[^>]*disabled/);
+  assert.doesNotMatch(element.renderOrderRow({ uniqueId: 'order-A' }), /data-action="change-row-status"/);
+  assert.match(element.renderOrderDetails(element.selectedOrder), /data-action="save-fulfillment"[^>]*disabled/);
   rejectConfig(new Error('offline'));
   await loading;
   await element.changeRowStatus({ dataset: { orderId: 'order-A' }, value: 'Processed' });
@@ -173,9 +175,9 @@ test('table 409 displays API guidance, never reports success, and reloads persis
   assert.deepEqual(errors, [conflictGuidance]);
   assert.equal(persistedOrder.orderStatusCol, 'Pending');
   assert.equal(element.result.orders[0].orderStatusCol, 'Pending');
-  assert.match(renderedRow, /value="Pending" selected/);
+  assert.match(renderedRow, /data-action="view-order"/);
   assert.doesNotMatch(renderedRow, /value="Processed" selected/);
-  assert.equal(requests.length, 2, 'Conflict reloads orders without retrying the status change');
+  assert.equal(requests.filter(request => request.options.method === 'POST').length, 1, 'Conflict must not retry the status change');
   assert.equal(requests[0].options.method, 'POST');
   assert.equal(requests[0].options.credentials, 'same-origin');
   assert.equal(requests[0].request.searchParams.get('notify'), 'false');
@@ -232,3 +234,177 @@ for (const view of ['table', 'detail']) {
     assert.equal(requests[0].request.searchParams.get('orderStatus'), 'Processed');
   });
 }
+
+
+test('status-save refreshes activity and actions without intermediate drawer renders', async () => {
+  const element = createElement();
+  element.stateSaving = true;
+  let renders = 0;
+  element.render = () => renders++;
+  element.api.orderLogs = async () => [{ message: 'Updated' }];
+  element.api.orderActions = async () => [];
+  await Promise.all([
+    EkomOrdersSectionViewElement.prototype.loadOrderLogs.call(element, 'order-A'),
+    EkomOrdersSectionViewElement.prototype.loadOrderActions.call(element, 'order-A'),
+  ]);
+  assert.equal(renders, 0);
+  assert.equal(element.orderLogs[0].message, 'Updated');
+  assert.equal(element.orderLogsLoading, false);
+  assert.equal(element.orderActionsLoading, false);
+});
+
+
+test('polling preserves unchanged rows and pauses for editing, hidden pages and active requests', async () => {
+  const page = { hidden: false, activeElement: null };
+  const timers = [];
+  const cleared = [];
+  const { EkomOrdersSectionViewElement: View } = loadModule('../src/manager/orders-section-view.element.ts', {
+    './manager-shared': shared,
+    '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
+    '@umbraco-cms/backoffice/notification': { UMB_NOTIFICATION_CONTEXT: Symbol('notification') },
+  }, { document: page, window: { setInterval: (fn, ms) => { timers.push({ fn, ms }); return timers.length; }, clearInterval: id => cleared.push(id) } });
+  const view = new View();
+  view.isConnected = true;
+  view.contains = () => false;
+  view.querySelector = () => null;
+  view.loading = false;
+  let renders = 0, requests = 0;
+  view.render = () => renders++;
+  shared.managerState.filters.store = 'Store';
+  shared.managerState.filters.currency = 'USD';
+  view.api.searchOrders = async filters => { requests++; assert.equal(filters.currency, 'USD'); return { orders: [], count: 0, totalPages: 0 }; };
+  view.setPolling(2);
+  assert.equal(timers[0].ms, 2000);
+  await view.pollOrders();
+  assert.equal(requests, 1);
+  assert.equal(renders, 1, 'unchanged results must not redraw');
+  view.overlay = 'order'; await view.pollOrders();
+  view.overlay = ''; page.hidden = true; await view.pollOrders();
+  page.hidden = false; view.loading = true; await view.pollOrders();
+  assert.equal(requests, 1);
+  view.loading = false;
+  view.api.searchOrders = async () => ({ orders: [], count: 1, totalPages: 1 });
+  await view.pollOrders();
+  assert.equal(view.result.count, 1);
+  assert.equal(renders, 2);
+  view.setPolling(0);
+  assert.ok(cleared.includes(1));
+});
+
+test('order arrow navigation respects direction, editing and unsaved status', () => {
+  const { EkomOrdersSectionViewElement: View } = loadModule('../src/manager/orders-section-view.element.ts', {
+    './manager-shared': shared,
+    '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
+    '@umbraco-cms/backoffice/notification': { UMB_NOTIFICATION_CONTEXT: Symbol('notification') },
+  });
+  const view = new View();
+  view.overlay = 'order';
+  view.selectedOrder = { status: { fulfillmentStatus: 'Picked' } };
+  const clicked = [];
+  let pending = 'Picked', editing = false;
+  view.querySelector = selector => selector === 'details[open]' ? null
+    : selector.includes('fulfillmentState') ? { value: pending }
+    : { disabled: false, click: () => clicked.push(selector.includes('Previous') ? 'previous' : 'next') };
+  const press = key => view.handleKeyDown({ key, composedPath: () => [{ closest: () => editing }], preventDefault() {} });
+  press('ArrowLeft'); press('ArrowUp'); press('ArrowRight'); press('ArrowDown');
+  assert.deepEqual(clicked, ['previous', 'previous', 'next', 'next']);
+  editing = true; press('ArrowRight'); editing = false;
+  pending = 'Packed'; press('ArrowRight'); pending = 'Picked';
+  view.customerEditorOpen = true; press('ArrowRight'); view.customerEditorOpen = false;
+  view.stateSaving = true; press('ArrowRight');
+  assert.equal(clicked.length, 4);
+});
+
+test('inline fulfillment uses revision and checkbox, refreshes after success and conflicts', async () => {
+  const view = createElement();
+  view.config = { managerOrderStatusFireEventsByDefault: true };
+  view.result = { orders: [{ uniqueId: 'order-1', status: { orderStatus: 'Open', fulfillmentStatus: 'Picked', revision: 7 } }] };
+  let checked = false, calls = [], refreshes = 0, errors = [];
+  view.loadOrders = async () => { refreshes++; };
+  view.showError = message => errors.push(message);
+  view.api.changeOrderStates = async (...args) => calls.push(args);
+  const button = { disabled: false, dataset: { orderId: 'order-1', value: 'Fulfilled' }, closest: () => ({ querySelector: () => ({ checked }), querySelectorAll: () => [] }) };
+  await view.changeRowFulfillment(button);
+  assert.deepEqual(calls[0], ['order-1', 7, 'Fulfill', false]);
+  assert.equal(refreshes, 1);
+  assert.equal(view.stateSaving, false);
+  checked = true;
+  view.api.changeOrderStates = async (...args) => { calls.push(args); throw new Error('Order changed; reload.'); };
+  await view.changeRowFulfillment(button);
+  assert.equal(calls[1][3], true);
+  assert.equal(errors.length, 1);
+  assert.equal(refreshes, 2);
+  view.result.orders[0].status.orderStatus = 'Closed';
+  await view.changeRowFulfillment(button);
+  assert.equal(calls.length, 2);
+});
+
+
+test('fulfillment menus dismiss outside, retain inside clicks, and Escape preserves the order drawer', () => {
+  const element = createElement();
+  let focused = false;
+  const menu = { open: true, querySelector: () => ({ focus: () => { focused = true; } }) };
+  element.overlay = 'order';
+  element.querySelectorAll = () => [menu];
+  element.dismissFulfillmentMenus({ composedPath: () => [{}, menu] });
+  assert.equal(menu.open, true);
+  element.dismissFulfillmentMenus({ composedPath: () => [{}] });
+  assert.equal(menu.open, false);
+  menu.open = true;
+  element.querySelector = () => menu;
+  let prevented = false;
+  let stopped = false;
+  element.handleKeyDown({ key: 'Escape', preventDefault: () => { prevented = true; }, stopPropagation: () => { stopped = true; } });
+  assert.equal(menu.open, false);
+  assert.equal(element.overlay, 'order');
+  assert.equal(focused, true);
+  assert.equal(prevented, true);
+  assert.equal(stopped, true);
+});
+
+
+test('detail fulfillment saves directly without a blocking native confirmation', async () => {
+  const element = createElement();
+  element.config = {};
+  element.selectedOrder = { uniqueId: 'order-A', status: { revision: 7, fulfillmentStatus: 'Picked' } };
+  const calls = [];
+  element.api.changeOrderStates = async (...args) => { calls.push(args); return { revision: 8, fulfillmentStatus: 'Fulfilled' }; };
+  element.api.orderInfo = async () => ({ uniqueId: 'order-A', status: { revision: 8, fulfillmentStatus: 'Fulfilled' } });
+  await element.changeState('Fulfill');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][2], 'Fulfill');
+  assert.equal(element.selectedOrder.status.fulfillmentStatus, 'Fulfilled');
+  assert.equal(element.stateSaving, false);
+});
+
+
+test('manual payment table uses revision and event choice and detail preserves unsaved fulfillment', async () => {
+  const element = createElement();
+  element.config = {};
+  const order = { uniqueId: 'order-A', referenceId: 3, status: { orderStatus: 'Open', paymentStatus: 'Pending', fulfillmentStatus: 'Picked', revision: 7 } };
+  element.result = { orders: [order] };
+  const calls = [];
+  element.api.changeOrderStates = async (...args) => { calls.push(args); };
+  let refreshes = 0;
+  element.loadOrders = async () => { refreshes++; };
+  const menu = { querySelector: () => ({ checked: false }), querySelectorAll: () => [], removeAttribute() {} };
+  const button = { dataset: { orderId: 'order-A', value: 'Paid', detail: 'false' }, closest: () => menu };
+  await element.changePayment(button);
+  assert.deepEqual(calls, [['order-A', 7, 'PaymentPaid', false]]);
+  assert.equal(refreshes, 1);
+  button.dataset.value = 'Refunded';
+  await element.changePayment(button);
+  assert.equal(calls.length, 1);
+  element.selectedOrder = order;
+  button.dataset.detail = 'true';
+  button.dataset.value = 'Paid';
+  element.querySelector = () => ({ value: 'Packed' });
+  let error = '';
+  element.showError = message => { error = message; };
+  await element.changePayment(button);
+  assert.match(error, /Save your fulfillment change/);
+  assert.equal(calls.length, 1);
+  const html = element.renderPaymentMenu(order);
+  assert.ok(html.includes('Payment') || html.includes('payment'));
+  assert.ok(!html.includes('Refunded'));
+});

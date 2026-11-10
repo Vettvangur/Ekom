@@ -1,0 +1,543 @@
+/* Design from docs/design/ekom-manager; colors inherit the active Umbraco theme. */
+:is(ekom-orders-section-view, ekom-analytics-section-view, ekom-customers-section-view):not([classic]), :host {
+ .ekom-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
+ .ekom-lines-scroll { overflow-x:auto; }
+ .ekom-design-lines { min-width:550px; }
+ .ekom-design-lines th { text-align:left; font-size:11px; color:var(--ekom-muted); font-weight:600; white-space:nowrap; }
+ .ekom-design-lines td:not(:first-child) { white-space:nowrap; }
+ .ekom-design-lines small { display:block; margin-top:5px; color:var(--ekom-muted); font-size:11px; }
+ .ekom-design-lines .ekmOrderLineProduct { min-width:200px; }
+ .ekom-panel-heading { position:sticky; top:0; z-index:2; }
+ .ekom-design .ekmManager__body { padding: 24px 28px; max-width: 1800px; margin: auto; }
+ .ekom-design-header { display:flex; align-items:center; gap:32px; margin-bottom:24px; }
+ .ekom-design-logo { width:100px; height:32px; object-fit:contain; }
+ .ekom-section-switch { display:flex; gap:4px; background:var(--ekom-surface); padding:4px; border:1px solid var(--ekom-border); border-radius:9px; }
+ .ekom-section-switch a { padding:8px 18px; text-decoration:none; color:var(--ekom-muted); border-radius:6px; font-weight:600; font-size:13px; }
+ .ekom-section-switch a[aria-current] { background:var(--ekom-surface-alt); color:var(--ekom-text); box-shadow:0 1px 3px #0001; }
+ .ekom-store-switch { margin-left:auto; display:flex; align-items:center; gap:10px; font-size:13px; line-height:1; color:var(--ekom-muted); }
+ .ekom-shared-filters { display:flex; justify-content:space-between; align-items:center; background:var(--ekom-surface); border:1px solid var(--ekom-border); border-radius:10px; padding:14px 18px; margin-bottom:20px; }
+ .ekom-shared-filters > label { display:flex; align-items:center; gap:14px; font-size:12px; color:var(--ekom-muted); }
+ .ekom-date-range, .ekom-lifecycle-menu { position:relative; }
+ .ekom-date-range summary, .ekom-lifecycle-menu summary { cursor:pointer; list-style:none; padding:8px 12px; border:1px solid var(--ekom-border); border-radius:6px; color:var(--ekom-text); background:var(--ekom-surface); }
+ .ekom-date-fields, .ekom-lifecycle-menu > div { position:absolute; top:100%; left:0; z-index:5; background:var(--ekom-surface); border:1px solid var(--ekom-border); padding:16px; box-shadow:0 8px 24px #0002; border-radius:8px; display:grid; gap:12px; min-width:210px; }
+ .ekom-date-fields label { display:grid; gap:6px; }
+ .ekom-order-list { background:var(--ekom-surface); border:1px solid var(--ekom-border); border-radius:12px; overflow:hidden; }
+ .ekom-list-toolbar { display:flex; gap:16px; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--ekom-border); }
+ .ekom-order-views { display:flex; gap:4px; }
+ .ekom-order-views button { padding:8px 10px; border:0; background:transparent; color:var(--ekom-muted); white-space:nowrap; }
+ .ekom-order-views button[aria-pressed=true] { color:var(--ekom-text); background:var(--ekom-surface-alt); }
+ .ekom-order-views button span { margin-left:7px; padding:2px 5px; border-radius:4px; font-size:11px; background:color-mix(in srgb,var(--ekom-muted) 10%,transparent); }
+ .ekom-list-search { display:flex; gap:8px; }
+ .ekom-list-search input { width:200px; }
+ .ekom-inline-totals { display:flex; gap:0; padding:20px 24px; border-bottom:1px solid var(--ekom-border); }
+ .ekom-inline-totals > div { display:grid; gap:6px; padding:0 32px; border-left:1px solid var(--ekom-border); }
+ .ekom-inline-totals > div:first-child { border:0; padding-left:0; }
+ .ekom-inline-totals span { color:var(--ekom-muted); font-size:12px; }
+ .ekom-inline-totals strong { font-size:20px; font-weight:600; }
+ .ekom-list-table { overflow-x:auto; }
+ .ekom-list-row { display:grid; grid-template-columns:100px 130px minmax(150px,1fr) 130px 130px 150px 50px 28px; align-items:center; gap:16px; padding:14px 20px; min-width:1000px; border-bottom:1px solid var(--ekom-border); font-size:13px; }
+ .ekom-list-row:not(.ekom-list-head):hover { background:var(--ekom-surface-alt); }
+ .ekom-list-head { background:var(--ekom-surface-alt); font-size:11px; color:var(--ekom-muted); font-weight:600; padding-block:10px; }
+ .ekom-align-right { text-align:right; }
+ .ekom-order-number { display:grid; gap:3px; }
+ .ekom-order-number button { text-align:left; padding:0; border:0; background:none; color:var(--ekom-text); font-family:ui-monospace,monospace; }
+ .ekom-order-number small { color:var(--ekom-muted); font-size:11px; line-height:1; font-weight:700; }
+ .ekom-row-date { color:var(--ekom-muted); font-size:13px; line-height:1; }
+ .ekom-row-customer strong { font-size:14px; line-height:1.2; font-weight:700; }
+ .ekom-row-customer span { color:var(--ekom-muted); font-size:12px; line-height:1.2; }
+ .ekom-list-row > strong.ekom-align-right { font-size:14px; line-height:1; font-weight:700; font-variant-numeric:tabular-nums; }
+ .ekom-row-customer { display:grid; gap:2px; min-width:0; }
+ .ekom-row-customer > * { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+ .ekom-row-open { background:transparent; border:0; font-size:22px; padding:2px; color:var(--ekom-muted); }
+ .ekom-badge { border-radius:20px; padding:4px 10px; font-size:12px; line-height:1.3; font-weight:700; }
+ .ekom-list-footer { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; font-size:12px; color:var(--ekom-muted); }
+ .ekom-list-footer > div { display:flex; align-items:center; gap:14px; }
+ .ekom-list-footer button { padding:4px 10px; }
+ .ekom-list-message { text-align:center; padding:48px 24px; color:var(--ekom-muted); }
+ .ekom-design-drawer .ekmOrderOverlay__panel { width:min(1320px,100vw); max-width:100vw; margin-left:auto; min-height:100%; background:var(--ekom-bg); padding:0; }
+ .ekom-panel-heading { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:22px 28px; background:var(--ekom-surface); border-bottom:1px solid var(--ekom-border); }
+ .ekom-panel-heading h2 { display:flex; align-items:center; gap:10px; margin:0 0 8px; font-size:22px; }
+ .ekom-panel-heading p { color:var(--ekom-muted); font-size:12px; margin:0; }
+ .ekom-panel-heading > button { border:0; background:none; font-size:26px; }
+ .ekom-design-drawer .ekmOverlay__content { padding:0 28px 28px; }
+ .ekom-status-controls { display:flex; align-items:center; flex-wrap:wrap; gap:16px; padding:20px 0; border-bottom:1px solid var(--ekom-border); }
+ .ekom-status-controls > label { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ekom-muted); }
+ .ekom-status-controls .ekmCheckboxLabel { margin-left:auto; }
+ .ekom-order-tabs { margin:0 0 22px; gap:24px; }
+ .ekom-order-tabs button { padding:18px 0 14px; }
+ .ekom-order-columns { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:24px; align-items:start; }
+ .ekom-order-main { display:grid; gap:20px; min-width:0; }
+ .ekom-detail-card { padding:22px; border:1px solid var(--ekom-border); border-radius:10px; background:var(--ekom-surface); overflow-wrap:anywhere; }
+ .ekom-detail-card h3 { display:flex; align-items:center; gap:10px; font-size:15px; margin:0 0 20px; }
+ .ekom-detail-card h4 { font-size:12px; margin:22px 0 10px; color:var(--ekom-muted); }
+ .ekom-detail-card p { font-size:13px; margin:6px 0; }
+ .ekom-card-heading { display:flex; justify-content:space-between; align-items:center; }
+ .ekom-customer-sidebar details, .ekom-payment-card details { margin-top:20px; padding-top:16px; border-top:1px solid var(--ekom-border); font-size:12px; }
+ .ekom-detail-card table { width:100%; border-collapse:collapse; font-size:12px; }
+ .ekom-detail-card table td, .ekom-detail-card table th { padding:12px 6px; border-bottom:1px solid var(--ekom-border); }
+ .ekom-detail-card table tfoot { display:none; }
+ .ekom-money-summary { margin:0; }
+ .ekom-money-summary > div { display:flex; justify-content:space-between; gap:16px; padding:8px 0; font-size:13px; }
+ .ekom-money-summary dt { color:var(--ekom-muted); }
+ .ekom-money-summary dd { margin:0; }
+ .ekom-money-total { margin-top:8px; border-top:1px solid var(--ekom-border); font-weight:700; }
+ .ekom-status-filter-grid { display:grid; gap:12px; }
+ @media(max-width:1100px) { .ekom-list-toolbar { flex-wrap:wrap; } .ekom-order-columns { grid-template-columns:minmax(0,1fr) 260px; } .ekom-status-controls .ekmCheckboxLabel { margin-left:0; } }
+ @media(max-width:720px) { .ekom-design .ekmManager__body { padding:16px; } .ekom-design-header { flex-wrap:wrap; gap:14px; } .ekom-section-switch { order:3; width:100%; overflow:auto; } .ekom-section-switch a { flex:1; padding:8px; text-align:center; } .ekom-order-views { overflow:auto; width:100%; } .ekom-list-search { width:100%; } .ekom-list-search input { flex:1; min-width:0; } .ekom-order-columns { grid-template-columns:1fr; } .ekom-panel-heading, .ekom-design-drawer .ekmOverlay__content { padding:16px; } .ekom-panel-heading h2 { flex-wrap:wrap; } .ekom-inline-totals > div { padding:0 14px; } .ekom-inline-totals strong { font-size:16px; } .ekom-shared-filters > label { display:block; } .ekom-list-footer { gap:12px; flex-wrap:wrap; } }
+}
+
+/* Component geometry and typography from the supplied HTML export. */
+:is(ekom-orders-section-view, ekom-analytics-section-view, ekom-customers-section-view):not([classic]), :host {
+ font-family:'Ekom Lato',Lato,sans-serif;
+ .ekom-design-logo { height:24px; width:auto; }
+ .ekom-design-header { gap:24px; margin-bottom:14px; }
+ .ekom-section-switch { background:var(--ekom-surface-alt); border-radius:10px; }
+ .ekom-section-switch a { font-size:14px; line-height:1; padding:8px 16px; border-radius:7px; }
+ .ekom-section-switch a[aria-current] { background:var(--ekom-surface); }
+ .ekom-shared-filters { padding:12px 20px 14px; align-items:flex-end; gap:14px; justify-content:flex-start; border-radius:12px; margin-bottom:14px; }
+ .ekom-shared-filter-actions { margin-left:auto; }
+ .ekom-list-toolbar { padding:0 12px; gap:2px; align-items:stretch; background:var(--ekom-surface-alt); }
+ .ekom-order-views { gap:2px; }
+ .ekom-order-views button { padding:13px 12px 11px; font-size:14px; line-height:1; border-bottom:2px solid transparent; border-radius:0; }
+ .ekom-order-views button[aria-pressed=true] { background:transparent; color:var(--ekom-accent); border-bottom-color:var(--ekom-accent); }
+ .ekom-order-views button span { font:700 11px/1.2 'Ekom Mono',monospace; border-radius:10px; padding:2px 6px; }
+ .ekom-list-search { align-items:center; padding:8px 0; margin-left:auto; }
+ .ekom-list-search input { width:240px; min-height:34px; }
+ .ekom-inline-totals { padding:18px 20px; }
+ .ekom-inline-totals > div { padding-inline:28px; }
+ .ekom-inline-totals span,.ekom-list-head { font:700 11px/1 'Ekom Mono',monospace; letter-spacing:.1em; text-transform:uppercase; }
+ .ekom-inline-totals strong { font-size:24px; font-weight:900; line-height:1.1; }
+ .ekom-list-head { background:var(--ekom-surface); padding:11px 20px; }
+ .ekom-order-number button { font:500 14px/1 'Ekom Mono',monospace; }
+ @media(max-width:720px) { .ekom-design-header { gap:14px; } .ekom-order-views { overflow:auto; } .ekom-list-search { margin-left:0; } .ekom-inline-totals > div { padding-inline:14px; } .ekom-inline-totals strong { font-size:20px; } }
+}
+
+:is(ekom-orders-section-view,ekom-analytics-section-view,ekom-customers-section-view):not([classic]) {
+ .ekom-dropdown { position:relative; }
+ .ekom-dropdown summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--ekom-border); border-radius:8px; background:var(--ekom-surface); color:var(--ekom-text); font-size:14px; line-height:1; font-weight:700; }
+ .ekom-dropdown summary::-webkit-details-marker { display:none; }
+ .ekom-dropdown summary > span { font-size:10px; color:var(--ekom-muted); }
+ .ekom-dropdown-options { position:absolute; top:calc(100% + 6px); left:0; z-index:40; width:260px; padding:6px; display:flex; flex-direction:column; background:var(--ekom-surface); border:1px solid var(--ekom-border); border-radius:8px; box-shadow:0 10px 28px #14162329; }
+ .ekom-store-switch .ekom-dropdown-options { left:auto; right:0; }
+ .ekom-dropdown-options button,.ekom-dropdown-options label { display:flex; flex-direction:row; align-items:center; gap:10px; padding:9px 10px; margin:0; border:0; border-radius:6px; background:transparent; color:var(--ekom-text); text-align:left; font-size:13px; font-weight:400; cursor:pointer; }
+ .ekom-dropdown-options button span { margin-left:auto; color:var(--ekom-accent); }
+ .ekom-dropdown-options button:hover,.ekom-dropdown-options label:hover { background:var(--ekom-surface-alt); }
+ .ekom-dropdown-options button[aria-pressed=true] { background:color-mix(in srgb,var(--ekom-accent) 12%,var(--ekom-surface)); }
+ .ekom-status-filter { display:flex; flex-direction:column; gap:6px; }
+ .ekom-status-filter > span { font-size:12px; font-weight:700; color:var(--ekom-muted); }
+ .ekom-status-filter summary { min-width:150px; }
+ .ekom-status-filter input { accent-color:var(--ekom-accent); }
+}
+
+/* Order drawer geometry from the supplied HTML; scoped to the modern manager. */
+ekom-orders-section-view:not([classic]) {
+ .ekom-design { --ekom-muted:color-mix(in srgb,var(--ekom-text) 60%,var(--ekom-surface)); }
+ .ekom-panel-heading { padding:18px 22px 16px; gap:14px; }
+ .ekom-panel-heading h2 { font-size:22px; font-weight:900; }
+ .ekom-design-drawer .ekmOverlay__content { padding:0 22px 22px; }
+ .ekom-status-controls { padding:14px 0; gap:12px; }
+ .ekom-order-tabs { margin-bottom:16px; }
+ .ekom-order-tabs button { padding:14px 0 12px; }
+ .ekom-order-columns { gap:18px; }
+ .ekom-order-main { gap:14px; }
+ .ekom-detail-card { padding:16px 18px; border-radius:10px; }
+ .ekom-detail-card h3 { margin-bottom:14px; font-weight:900; }
+ .ekom-detail-card a { color:var(--ekom-accent); text-decoration:none; }
+ .ekom-detail-card a:hover { text-decoration:underline; }
+ .ekom-detail-card h4 { font:700 11px/1.3 "Ekom Mono",monospace; letter-spacing:.1em; text-transform:uppercase; }
+ .ekom-list-row:not(.ekom-list-head) { padding-block:12px; }
+}
+
+/* Order-line table geometry from the supplied HTML. */
+ekom-orders-section-view:not([classic]) {
+ .ekom-order-main > .ekom-detail-card { min-width:0; }
+ .ekom-lines-heading { gap:10px; justify-content:flex-start; margin-bottom:14px; flex-wrap:wrap; }
+ .ekom-lines-heading h3 { margin:0; }
+ .ekom-lines-heading > span { color:var(--ekom-muted); font-size:13px; }
+ .ekom-lines-heading > button { margin-left:auto; }
+ .ekom-lines-scroll { border:1px solid var(--ekom-border); border-radius:10px; }
+ .ekom-detail-card .ekom-design-lines th { padding:10px 16px; background:var(--ekom-surface-alt); font:700 11px/1.3 "Ekom Mono",monospace; letter-spacing:.08em; text-transform:uppercase; }
+ .ekom-detail-card .ekom-design-lines td { padding:13px 16px; font-size:13px; }
+ .ekom-design-lines :is(th,td):not(:first-child) { text-align:right; }
+ .ekom-design-lines tbody tr:last-child td { border-bottom:0; }
+ .ekom-design-lines .ekmOrderLineProduct { align-items:flex-start; gap:12px; }
+ .ekom-design-lines .ekmOrderLineThumbnail { width:44px; height:44px; flex:0 0 44px; border-radius:7px; }
+ .ekom-design-lines .ekmOrderLineThumbnail svg { width:16px; height:16px; }
+ .ekom-design-lines .ekmOrderLineProduct a { font-size:14px; line-height:1.3; font-weight:700; }
+}
+
+/* Detail tabs and editing dialogs follow the exported manager components. */
+ekom-orders-section-view:not([classic]) {
+ .ekmCustomerInformationModal { padding:24px; background:#10121c6b; box-sizing:border-box; }
+ .ekmCustomerInformationModal__panel { display:flex; flex-direction:column; overflow:hidden; max-width:720px; max-height:100%; border:1px solid var(--ekom-border); border-radius:14px; box-shadow:0 24px 60px #10121c4d; background:var(--ekom-surface); color:var(--ekom-text); }
+ .ekom-editor-customer { max-width:880px; }
+ .ekom-editor-order-line { max-width:560px; }
+ .ekmCustomerInformationModal .ekmOverlay__header { padding:18px 24px 16px; border-color:var(--ekom-border); }
+ .ekmCustomerInformationModal .ekmOverlay__header h3 { margin:0; font-size:18px; font-weight:900; }
+ .ekmCustomerInformationModal .ekmOverlay__header button { font-size:19px; color:var(--ekom-muted); }
+ .ekmCustomerInformationModal .ekmOverlay__content { padding:20px 24px; min-height:0; overflow:auto; }
+ .ekmCustomerInformationModal .ekmSplit { gap:24px; }
+ .ekmCustomerInformationModal h4 { margin:0 0 16px; font:700 11px/1.3 "Ekom Mono",monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--ekom-muted); }
+ .ekmCustomerInformationModal .control-group { font-size:12px; font-weight:700; color:var(--ekom-muted); gap:6px; margin-bottom:16px; }
+ .ekmCustomerInformationModal .control-group label { display:grid; gap:6px; }
+ .ekmCustomerInformationModal input,.ekmCustomerInformationModal select { box-sizing:border-box; width:100%; min-height:38px; padding:8px 12px; border:1px solid var(--ekom-border); border-radius:8px; font:400 14px/1.4 "Ekom Lato",sans-serif; background:var(--ekom-surface); color:var(--ekom-text); }
+ .ekmCustomerInformationModal input:focus-visible,.ekmCustomerInformationModal select:focus-visible { outline:2px solid var(--ekom-accent); outline-offset:2px; }
+ .ekom-editor-footer { display:flex; justify-content:flex-end; gap:10px; margin:0; padding:16px 24px; flex-shrink:0; border-top:1px solid var(--ekom-border); }
+ .ekmCustomerInformationModal button:not(.btn-reset) { min-height:34px; border-radius:8px; padding:8px 13px; font-size:13px; font-weight:700; }
+ .ekmOrderTracking,.ekmOrderActivityLog { margin:0 0 14px; padding:14px 16px; border:1px solid var(--ekom-border); border-radius:10px; background:var(--ekom-surface); }
+ .ekmOrderTracking h4 { margin:0; font:700 11px/1.3 "Ekom Mono",monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--ekom-muted); }
+ .ekmOrderTracking p { font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
+ .ekmOrderActivityLog > h4 { margin:0 0 14px; font-size:15px; font-weight:900; }
+ .ekom-log-scroll { overflow:auto; border:1px solid var(--ekom-border); border-radius:10px; }
+ .ekom-log-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+ .ekom-log-table th { background:var(--ekom-surface-alt); color:var(--ekom-muted); font:700 11px/1.3 "Ekom Mono",monospace; letter-spacing:.08em; text-transform:uppercase; text-align:left; padding:10px 16px; }
+ .ekom-log-table th:first-child { width:150px; }
+ .ekom-log-table th:nth-child(2) { width:90px; }
+ .ekom-log-table td { padding:11px 16px; border-top:1px solid var(--ekom-border); vertical-align:top; font-size:13px; line-height:1.5; }
+ .ekom-log-type { display:inline-flex; border-radius:5px; padding:3px 8px; font-size:11px; font-weight:700; }
+ .ekom-log-type.ekmOrderActivityLog__icon--info { color:var(--ekom-text); background:var(--ekom-surface-alt); }
+ .ekom-log-type.ekmOrderActivityLog__icon--success { color:var(--ekom-accent); background:color-mix(in srgb,var(--ekom-accent) 12%,var(--ekom-surface)); }
+ .ekom-log-type.ekmOrderActivityLog__icon--alert { color:var(--ekom-text); background:color-mix(in srgb,#c99219 20%,var(--ekom-surface)); }
+ @media(max-width:700px) { .ekmCustomerInformationModal { padding:12px; } .ekmCustomerInformationModal .ekmSplit { flex-direction:column; } .ekom-log-table { min-width:560px; } }
+}
+
+ekom-orders-section-view:not([classic]) .ekom-tracking-field { display:flex; gap:8px; margin:10px 0; }
+ekom-orders-section-view:not([classic]) .ekom-tracking-field > span { flex:0 0 118px; color:var(--ekom-muted); }
+ekom-orders-section-view:not([classic]) .ekom-tracking-field > strong { min-width:0; overflow-wrap:anywhere; }
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-filter-overlay,.ekom-export-overlay { align-items:center; justify-content:center; padding:24px; box-sizing:border-box; background:#10121c6b; }
+ .ekom-filter-panel,.ekom-export-panel { width:100%; max-width:720px; max-height:92vh; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--ekom-border); border-radius:14px; box-shadow:0 24px 60px #10121c4d; }
+ .ekom-export-panel { max-width:460px; }
+ .ekom-filter-panel .ekmOverlay__header,.ekom-export-panel .ekmOverlay__header { padding:18px 24px 16px; flex-shrink:0; }
+ .ekom-filter-panel h2,.ekom-export-panel h2 { font-size:19px; font-weight:900; margin:0; }
+ .ekom-filter-panel .ekmOverlay__header p { font-size:13px; color:var(--ekom-muted); margin:6px 0 0; }
+ .ekom-filter-panel .ekmOverlay__content,.ekom-export-panel .ekmOverlay__content { padding:18px 24px 20px; min-height:0; overflow:auto; }
+ .ekom-filter-panel h3 { margin:14px 0 10px; padding-bottom:8px; border-bottom:1px solid var(--ekom-border); font:700 11px/1.3 "Ekom Mono",monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--ekom-muted); }
+ .ekom-filter-panel h3:first-child { margin-top:0; }
+ .ekom-filter-panel h3 small { font:400 12px/1.3 "Ekom Lato",sans-serif; letter-spacing:0; text-transform:none; margin-left:8px; }
+ .ekom-status-filter-grid,.ekom-filter-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+ .ekom-filter-two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .ekom-filter-panel .control-group { min-width:0; margin:0; font-size:12px; font-weight:700; gap:6px; color:var(--ekom-muted); }
+ .ekom-filter-panel input,.ekom-filter-panel select { width:100%; min-width:0; height:38px; box-sizing:border-box; padding:0 12px; font:400 14px/1.3 "Ekom Lato",sans-serif; border:1px solid var(--ekom-border); border-radius:8px; background:var(--ekom-surface); color:var(--ekom-text); }
+ .ekom-filter-footer { display:flex; justify-content:flex-end; gap:8px; padding:14px 24px; border-top:1px solid var(--ekom-border); background:var(--ekom-surface-alt); flex-shrink:0; }
+ .ekom-filter-footer button { min-height:34px; padding:8px 14px; border-radius:8px; font-size:13px; font-weight:700; }
+ .ekom-filter-panel .ekom-filter-footer .btn-success { order:2; }
+ .ekom-export-panel .ekmOverlay__header { padding:18px 22px; }
+ .ekom-export-panel .ekmOverlay__content { padding:20px 22px; display:flex; flex-direction:column; gap:16px; }
+ .ekom-export-panel p { font-size:14px; line-height:1.5; margin:0; }
+ .ekom-export-option { display:flex; align-items:flex-start; gap:10px; cursor:pointer; }
+ .ekom-export-option input { width:16px; height:16px; margin:1px 0 0; accent-color:var(--ekom-accent); flex-shrink:0; }
+ .ekom-export-option span { display:flex; flex-direction:column; gap:3px; }
+ .ekom-export-option strong { font-size:14px; }
+ .ekom-export-option small,.ekom-export-panel .ekom-export-note { font-weight:400; font-size:13px; line-height:1.4; color:var(--ekom-muted); }
+ @media(max-width:600px) { .ekom-filter-overlay,.ekom-export-overlay { padding:12px; } .ekom-status-filter-grid,.ekom-filter-fields { grid-template-columns:1fr; } }
+}
+
+/* Store/currency picker follows the supplied grouped-chip reference. */
+:is(ekom-orders-section-view,ekom-analytics-section-view,ekom-customers-section-view):not([classic]), :host {
+ .ekom-store-currency summary { min-height:36px; box-sizing:border-box; padding:8px 12px; gap:10px; border-radius:8px; font-size:13px; line-height:1; }
+ .ekom-store-currency summary strong { font-weight:700; }
+ .ekom-store-currency summary .ekom-currency-code { font:700 12px/1 "Ekom Mono",monospace; padding:3px 7px; border:1px solid var(--ekom-border); border-radius:7px; background:var(--ekom-surface-alt); color:var(--ekom-muted); }
+ .ekom-store-currency summary .ekom-store-chevron { font-size:10px; }
+ .ekom-currency-popover { position:absolute; top:calc(100% + 4px); right:0; z-index:50; box-sizing:border-box; width:314px; max-width:calc(100vw - 32px); padding:7px; border:1px solid var(--ekom-border); border-radius:10px; background:var(--ekom-surface); color:var(--ekom-text); box-shadow:0 14px 40px #14162329; }
+ .ekom-currency-heading { display:grid; grid-template-columns:104px 1fr; gap:10px; padding:10px 11px 8px; align-items:start; color:var(--ekom-muted); }
+ .ekom-currency-heading strong { font:700 11px/1.1 "Ekom Mono",monospace; text-transform:uppercase; letter-spacing:.06em; }
+ .ekom-currency-heading > span { font-size:11px; line-height:1.3; }
+ .ekom-currency-store { padding:10px 11px; border-radius:8px; }
+ .ekom-currency-store.is-selected { background:color-mix(in srgb,#168260 10%,var(--ekom-surface)); }
+ .ekom-store-currency .ekom-currency-store h3 { margin:0 0 7px; color:var(--ekom-text); font-size:13px; line-height:1.2; font-weight:400; }
+ .ekom-store-currency .ekom-currency-store.is-selected h3 { font-weight:700; }
+ .ekom-currency-choices { display:flex; flex-wrap:wrap; gap:7px; }
+ .ekom-store-currency .ekom-currency-choices button { display:inline-flex; align-items:center; gap:6px; min-height:24px; margin:0; padding:4px 9px; border:1px solid var(--ekom-border); border-radius:7px; background:var(--ekom-surface); color:var(--ekom-text); font:700 12px/1.2 "Ekom Mono",monospace; cursor:pointer; }
+ .ekom-store-currency .ekom-currency-choices button[aria-pressed=true] { background:var(--ekom-accent); color:var(--ekom-surface); border-color:var(--ekom-accent); }
+ .ekom-store-currency .ekom-currency-choices button:hover { box-shadow:0 0 0 1px var(--ekom-accent); }
+ .ekom-store-currency .ekom-currency-choices button:focus-visible,.ekom-store-currency summary:focus-visible { outline:2px solid var(--ekom-accent); outline-offset:3px; }
+ .ekom-currency-empty { font-size:12px; color:var(--ekom-muted); }
+}
+
+/* Keep single-select arrows inset in every modern manager screen. */
+:is(ekom-orders-section-view,ekom-analytics-section-view,ekom-customers-section-view):not([classic]), :host {
+ select:not([multiple]):not([size]) {
+  appearance:none;
+  padding-right:34px;
+  background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
+  background-position:right 16px center,right 12px center;
+  background-size:4px 4px;
+  background-repeat:no-repeat;
+ }
+ @media(forced-colors:active) {
+  select:not([multiple]):not([size]) { appearance:auto; background-image:none; }
+ }
+}
+
+/* Original HTML dark palette, activated by the Umbraco theme context. */
+:is(ekom-orders-section-view,ekom-analytics-section-view,ekom-customers-section-view)[data-ekom-dark]:not([classic]) {
+ --uui-color-background:#141519;
+ --uui-color-surface:#1c1e24;
+ --uui-color-surface-alt:#23252c;
+ --uui-color-text:#e9eaee;
+ --uui-color-text-alt:#a0a4b1;
+ --uui-color-border:#30333c;
+ --ekom-bg:#141519;
+ --ekom-surface:#1c1e24;
+ --ekom-surface-alt:#23252c;
+ --ekom-text:#e9eaee;
+ --ekom-muted:#a0a4b1;
+ --ekom-border:#30333c;
+ --ekom-accent:#3cb98a;
+ --ekom-positive:#7fd6b0;
+ --ekom-negative:#f0a098;
+ color-scheme:dark;
+ background:#141519;
+
+ .analytics,.customers { --ekom-muted:#a0a4b1; }
+}
+
+/* Status choices must not inherit the surrounding toolbar's stacked labels. */
+:is(ekom-orders-section-view,ekom-analytics-section-view,ekom-customers-section-view):not([classic]) {
+ .ekom-status-filter .ekom-dropdown-options > label { display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:10px; padding:9px 10px; margin:0; min-height:0; font-size:13px; line-height:1.2; font-weight:400; }
+ .ekom-status-filter .ekom-dropdown-options > label > input[type=checkbox] { appearance:auto; flex:0 0 14px; width:14px; height:14px; min-width:0; min-height:0; margin:0; padding:0; border-radius:3px; accent-color:var(--ekom-accent); }
+}
+
+/* Keep the current results in place while a replacement request is pending. */
+:is(ekom-orders-section-view,ekom-analytics-section-view,ekom-customers-section-view):not([classic]) {
+ .ekom-order-list[aria-busy=true] .ekom-list-table,
+ .analytics[aria-busy=true] .analytics-summary,
+ .analytics[aria-busy=true] .analytics-main,
+ .customers[aria-busy=true] .customer-panel,
+ .customers[aria-busy=true] .customer-cards { animation:ekom-results-pending 0s .18s forwards; pointer-events:none; }
+ .customer-detail-grid > div > label:has(> input[type=checkbox]) { display:flex; align-items:center; gap:10px; font-size:13px; line-height:1.2; margin:12px 0; }
+ .customer-detail-grid input[type=checkbox] { flex:0 0 14px; width:14px; height:14px; min-height:0; padding:0; margin:0; accent-color:var(--ekom-accent); }
+}
+
+@keyframes ekom-results-pending { to { opacity:.6; } }
+
+/* Match the reference editor fields and add quiet feedback without moving controls. */
+ekom-orders-section-view:not([classic]) {
+ .ekmCustomerInformationModal input,.ekmCustomerInformationModal select { min-height:34px; height:34px; padding:0 11px; font-size:13px; }
+ .ekmCustomerInformationModal .ekmOverlay__header h3 { line-height:1.2; }
+ .ekom-status-controls .ekmCheckboxLabel input { width:14px; height:14px; min-height:0; margin:0; padding:0; accent-color:var(--ekom-accent); }
+}
+:is(ekom-orders-section-view,ekom-analytics-section-view,ekom-customers-section-view):not([classic]) {
+ :is(button,a,summary,select,.ekom-dropdown-options label,.ekom-export-option) { transition:background-color 120ms ease,border-color 120ms ease,box-shadow 120ms ease,color 120ms ease; }
+ @media (hover:hover) {
+  :is(button:not(:disabled):not([role=tab]),a,summary):hover { box-shadow:inset 0 0 0 999px color-mix(in srgb,var(--ekom-text) 5%,transparent); }
+  :is(input:not(:disabled):not([type=checkbox]),select:not(:disabled)):hover { border-color:color-mix(in srgb,var(--ekom-accent) 45%,var(--ekom-border)); }
+  .ekom-export-option:hover { background:var(--ekom-surface-alt); }
+ }
+ :is(button,a,summary):focus-visible { outline:2px solid var(--ekom-accent); outline-offset:2px; }
+ @media (prefers-reduced-motion:reduce) { :is(button,a,summary,select,.ekom-dropdown-options label,.ekom-export-option) { transition:none; } }
+}
+
+/* Underlined detail tabs use text feedback, not the filled button hover. */
+ekom-orders-section-view:not([classic]) {
+ .ekom-order-tabs button:hover { background:transparent; box-shadow:none; color:var(--ekom-accent); }
+}
+
+/* Shared polling controls from the HTML reference. */
+ekom-orders-section-view:not([classic]), ekom-analytics-section-view:not([classic]) {
+ .ekom-shared-filter-actions { display:flex; align-items:center; gap:8px; margin-left:auto; }
+ .ekom-polling { position:relative; }
+ .ekom-polling summary { display:flex; align-items:center; gap:8px; height:34px; padding:0 14px; border:1px solid var(--ekom-border); border-radius:8px; background:var(--ekom-surface); color:var(--ekom-text); font-size:13px; font-weight:700; cursor:pointer; list-style:none; }
+ .ekom-polling summary::-webkit-details-marker { display:none; }
+ .ekom-polling summary svg,.ekom-polling summary > span:last-child { color:var(--ekom-muted); }
+ .ekom-polling summary.just-refreshed { animation:ekom-polling-complete 700ms ease-out; }
+ .ekom-polling summary:hover { border-color:var(--ekom-muted); }
+ .ekom-polling.is-active summary svg { color:var(--ekom-accent); }
+ .ekom-polling.is-active summary svg { animation:ekom-polling-spin 2s linear infinite; transform-origin:center; }
+ @media (prefers-reduced-motion:reduce) { .ekom-polling.is-active summary svg { animation:none; } }
+
+ .ekom-poll-options { position:absolute; right:0; top:calc(100% + 6px); z-index:50; width:190px; padding:6px; background:var(--ekom-surface); border:1px solid var(--ekom-border); border-radius:8px; box-shadow:0 8px 24px #0002; }
+ .ekom-poll-options button { min-height:31px; line-height:1; width:100%; display:flex; align-items:center; gap:10px; padding:9px 10px; border:0; background:transparent; color:var(--ekom-text); font-size:13px; font-weight:400; text-align:left; }
+ .ekom-poll-options button span { color:transparent; }
+ .ekom-poll-options button[aria-pressed=true] { font-weight:700; }
+ .ekom-poll-options button[aria-pressed=true] span { color:var(--ekom-accent); }
+ .ekom-poll-options button:hover { background:var(--ekom-surface-alt); }
+ .ekom-search-field { position:relative; display:flex; align-items:center; }
+ .ekom-search-field > svg { position:absolute; left:12px; color:var(--ekom-muted); pointer-events:none; }
+ .ekom-search-field input { padding-left:33px; }
+ [data-action="open-filter"] { display:inline-flex; align-items:center; gap:7px; }
+ .ekom-list-search svg { flex-shrink:0; }
+}
+
+@keyframes ekom-polling-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+
+@keyframes ekom-polling-complete {
+  0%,100% { border-color:var(--ekom-border); box-shadow:0 0 0 0 transparent; }
+  25% { border-color:var(--ekom-accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--ekom-accent) 12%,transparent); }
+}
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-order-navigation { display:flex; gap:0; flex-shrink:0; }
+ .ekom-order-navigation button { width:30px; height:30px; padding:0; font-size:18px; border-radius:7px 0 0 7px; }
+ .ekom-order-navigation button + button { border-radius:0 7px 7px 0; margin-left:-1px; }
+ .ekom-order-heading-copy { flex:1; min-width:0; }
+ .ekom-panel-heading h2 { flex-wrap:wrap; }
+ .ekom-status-controls { margin:14px 0 12px; padding:8px 10px; border:1px solid var(--ekom-border); border-radius:10px; background:var(--ekom-surface-alt); gap:10px; }
+ .ekom-status-controls > label:not(.ekmCheckboxLabel),.ekom-payment-control,.ekom-fulfillment-control { display:flex; flex-direction:column; align-items:stretch; gap:4px; font-size:11px; color:var(--ekom-muted); }
+ .ekom-fulfillment-control { flex:1; min-width:180px; }
+ .ekom-status-controls summary,.ekom-payment-value { display:flex; align-items:center; gap:7px; min-height:28px; box-sizing:border-box; padding:6px 10px; font-size:13px; font-weight:700; color:var(--ekom-text); }
+ .ekom-status-chevron,.ekom-status-check { margin-left:auto; color:var(--ekom-muted); }
+ .ekom-status-check { color:var(--ekom-accent); }
+ .ekom-status-controls .ekom-lifecycle-menu > div { top:calc(100% + 6px); padding:6px; gap:2px; width:max-content; min-width:210px; }
+ .ekom-status-controls .ekom-lifecycle-menu > div button { display:flex; align-items:center; gap:8px; border:0; background:transparent; text-align:left; padding:8px 10px; }
+ .ekom-status-controls .ekom-lifecycle-menu > div button:hover { background:var(--ekom-surface-alt); }
+ .ekom-status-controls summary[aria-disabled=true] { opacity:.6; pointer-events:none; }
+ .ekom-state-dot { display:inline-block; flex:0 0 7px; width:7px; height:7px; border-radius:50%; background:var(--ekom-muted); }
+ .ekom-state-dot[data-state=Open],.ekom-state-dot[data-state=Closed] { background:var(--ekom-accent); }
+ .ekom-state-dot[data-state=Paid] { background:#2f9e6b; }
+ .ekom-state-dot[data-state=Picking],.ekom-state-dot[data-state=Pending] { background:#d9a800; }
+ .ekom-state-dot[data-state=Picked] { background:#c98a14; }
+ .ekom-state-dot[data-state=Packed] { background:#8b63d6; }
+ .ekom-state-dot[data-state=Fulfilled],.ekom-state-dot[data-state=Authorized] { background:#3b74d4; }
+ .ekom-state-dot[data-state=PartiallyFulfilled],.ekom-state-dot[data-state=PartiallyPaid] { background:#15997f; }
+ .ekom-state-dot[data-state=Failed],.ekom-state-dot[data-state=Cancelled] { background:#d64f46; }
+ .ekom-detail-actions { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:12px 0 16px; }
+ .ekom-detail-actions > span { margin:0 !important; }
+ .ekom-print-button { display:inline-flex; align-items:center; justify-content:center; width:34px; height:33px; padding:0; border-radius:8px; }
+ .ekom-action-divider { height:22px; width:1px; background:var(--ekom-border); }
+}
+
+ekom-orders-section-view:not([classic]) .ekom-panel-heading { background:var(--ekom-bg); }
+ekom-orders-section-view:not([classic]) .ekom-status-controls [data-action="save-fulfillment"] { background:var(--ekom-accent); border-color:var(--ekom-accent); color:var(--ekom-surface); }
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-events-help { position:relative; display:inline-flex; align-items:center; }
+ .ekom-events-help-button { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; min-height:0; padding:0; border:1px solid var(--ekom-border); border-radius:50%; background:transparent; color:var(--ekom-muted); font-size:11px; font-weight:700; cursor:help; }
+ .ekom-events-tooltip { position:absolute; top:calc(100% + 8px); right:-8px; z-index:60; display:none; width:320px; max-width:calc(100vw - 64px); box-sizing:border-box; padding:16px; border-radius:10px; background:#292c35; color:#e9eaee; box-shadow:0 12px 32px #0003; font-size:13px; line-height:1.5; font-weight:400; text-align:left; }
+ .ekom-events-tooltip::before { content:""; position:absolute; bottom:100%; left:0; right:0; height:10px; }
+ .ekom-events-help:hover .ekom-events-tooltip,.ekom-events-help:focus-within .ekom-events-tooltip { display:flex; flex-direction:column; gap:10px; }
+ .ekom-events-tooltip > strong { font-size:13px; color:#fff; }
+ .ekom-events-tooltip small { display:block; padding-top:10px; border-top:1px solid #ffffff24; color:#a9adb9; font-size:12px; line-height:1.5; }
+}
+
+ekom-orders-section-view:not([classic]) .ekom-order-number button[data-action="view-order"] {
+ color:var(--ekom-accent); background:transparent; box-shadow:none; justify-self:start; min-height:0; padding:0; border-radius:0; text-decoration:underline; text-decoration-color:color-mix(in srgb,var(--ekom-accent) 40%,transparent); text-underline-offset:3px;
+}
+ekom-orders-section-view:not([classic]) .ekom-order-number button[data-action="view-order"]:hover {
+ background:transparent; box-shadow:none; color:var(--ekom-accent); text-decoration-color:var(--ekom-accent);
+}
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-row-fulfillment { position:relative; width:max-content; }
+ .ekom-row-fulfillment summary { display:flex; align-items:center; gap:4px; cursor:pointer; list-style:none; border-radius:20px; color:var(--ekom-muted); }
+ .ekom-row-fulfillment summary::-webkit-details-marker { display:none; }
+ .ekom-row-fulfillment summary > span:last-child { padding-right:8px; font-size:10px; }
+ .ekom-row-fulfillment-menu { position:absolute; top:calc(100% + 6px); right:0; z-index:50; width:300px; max-width:calc(100vw - 48px); max-height:calc(100vh - 32px); overflow:auto; padding:6px; border:1px solid var(--ekom-border); border-radius:10px; background:var(--ekom-surface); box-shadow:0 10px 28px #0002; }
+ .ekom-row-fulfillment-menu h4 { margin:0; padding:8px 10px; font:700 11px/1.3 'Ekom Mono',monospace; text-transform:uppercase; letter-spacing:.1em; color:var(--ekom-muted); }
+ .ekom-row-fulfillment-menu > button { display:flex; align-items:center; gap:8px; width:100%; padding:9px 10px; border:0; border-radius:7px; background:transparent; text-align:left; font-size:14px; font-weight:400; }
+ .ekom-row-fulfillment-menu > button[aria-pressed=true] { background:color-mix(in srgb,var(--ekom-accent) 12%,var(--ekom-surface)); }
+ .ekom-row-fulfillment-menu > label { display:flex; align-items:flex-start; gap:8px; padding:12px 10px 8px; margin-top:5px; border-top:1px solid var(--ekom-border); cursor:pointer; }
+ .ekom-row-fulfillment-menu input[type=checkbox] { flex:0 0 16px; width:16px; height:16px; min-height:0; margin:1px 0 0; padding:0; accent-color:var(--ekom-accent); }
+ .ekom-row-fulfillment-menu label span { display:grid; gap:5px; }
+ .ekom-row-fulfillment-menu label strong { font-size:12px; }
+ .ekom-row-fulfillment-menu label small { font-size:12px; color:var(--ekom-muted); }
+}
+
+@media(min-width:721px) { ekom-orders-section-view:not([classic]) .ekom-order-list,ekom-orders-section-view:not([classic]) .ekom-list-table { overflow:visible; } }
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-payment-note { margin:6px 10px 10px; font-size:12px; line-height:1.5; color:var(--ekom-muted); }
+ .ekom-payment-control .ekom-row-fulfillment-menu { right:auto; left:0; }
+ .ekom-state-dot[data-state=Voided] { background:var(--ekom-muted); }
+}
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-heading-order-id { display:inline-flex; align-items:center; gap:6px; max-width:100%; vertical-align:middle; }
+ .ekom-heading-order-id > span { overflow-wrap:anywhere; min-width:0; }
+ .ekom-order-heading-copy .ekom-copy-order-id { display:inline-flex; align-items:center; justify-content:center; flex:0 0 26px; width:26px; height:26px; min-height:0; padding:4px; border:0; border-radius:5px; background:transparent; color:var(--ekom-muted); }
+ .ekom-order-heading-copy .ekom-copy-order-id:hover { color:var(--ekom-accent); background:color-mix(in srgb,var(--ekom-accent) 10%,transparent); }
+ .ekom-copy-order-id svg { display:block; }
+}
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-shipment { display:flex; flex-direction:column; gap:16px; }
+ .ekom-shipment-grid { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:12px; align-items:start; }
+ .ekom-shipment-box { border:1px solid var(--ekom-border); border-radius:10px; padding:16px 18px; display:flex; flex-direction:column; gap:14px; min-width:0; }
+ .ekom-shipment-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+ .ekom-shipment-heading h4,.ekom-shipment-data summary > strong { margin:0; font:700 11px/1.3 'Ekom Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--ekom-muted); }
+ .ekom-shipment-box h3 { margin:0; font-size:16px; }
+ .ekom-shipment-state { display:inline-flex; align-items:center; gap:6px; border-radius:20px; padding:4px 9px; font-size:12px; font-weight:700; color:#1b8fbf; background:color-mix(in srgb,#1b8fbf 15%,var(--ekom-surface)); }
+ .ekom-shipment-state::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+ .ekom-shipment-tracking > span,.ekom-shipment-address > span { color:var(--ekom-muted); font-size:12px; }
+ .ekom-shipment-tracking > div { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:4px; }
+ .ekom-shipment-tracking strong { font:700 20px/1.3 'Ekom Mono',monospace; overflow-wrap:anywhere; }
+ .ekom-shipment-tracking a { margin-left:auto; color:var(--ekom-accent); font-size:13px; font-weight:700; }
+ .ekom-shipment .ekom-shipment-copy { display:inline-flex; align-items:center; justify-content:center; flex:0 0 22px; width:22px; height:22px; min-height:0; padding:3px; border:0; border-radius:5px; background:transparent; color:var(--ekom-muted); }
+ .ekom-shipment .ekom-shipment-copy:hover { background:var(--ekom-surface-alt); color:var(--ekom-accent); }
+ .ekom-shipment-address { display:flex; flex-direction:column; gap:3px; border-top:1px solid var(--ekom-border); padding-top:10px; font-size:13px; }
+ .ekom-shipment-data { border:1px solid var(--ekom-border); border-radius:10px; overflow:hidden; }
+ .ekom-shipment .ekom-shipment-data summary { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:10px 16px; background:var(--ekom-surface-alt); font-size:12px; color:var(--ekom-muted); cursor:pointer; list-style:none; }
+ .ekom-shipment-data summary::-webkit-details-marker { display:none; }
+ .ekom-shipment-hide,.ekom-shipment-show { margin-left:auto; color:var(--ekom-accent); font-weight:700; }
+ .ekom-shipment-data:not([open]) .ekom-shipment-hide,.ekom-shipment-data[open] .ekom-shipment-show { display:none; }
+ .ekom-shipment-data dl { margin:0; padding:4px 16px; }
+ .ekom-shipment-data dl > div { display:grid; grid-template-columns:130px minmax(0,1fr); gap:12px; padding:8px 0; border-bottom:1px solid var(--ekom-border); align-items:center; font-size:13px; }
+ .ekom-shipment-data dl > div:last-child { border:0; }
+ .ekom-shipment-data dt { color:var(--ekom-muted); }
+ .ekom-shipment-data dd { display:flex; align-items:center; gap:6px; margin:0; min-width:0; }
+ .ekom-shipment-data dd > span { overflow-wrap:anywhere; white-space:pre-wrap; }
+}
+@media(max-width:900px) { ekom-orders-section-view:not([classic]) .ekom-shipment-grid { grid-template-columns:minmax(0,1fr); } }
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-editor-shipping-provider { width:100%; max-width:720px; }
+ .ekom-provider-data-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; border-top:1px solid var(--ekom-border); padding-top:16px; margin:20px 0 12px; }
+ .ekmCustomerInformationModal .ekom-provider-data-heading h4 { margin:0; }
+ .ekom-provider-data-heading p { margin:0; font-size:12px; line-height:1.5; color:var(--ekom-muted); }
+ .ekom-provider-data-heading code { font-family:'Ekom Mono',monospace; }
+ .ekom-provider-field-labels,.ekom-provider-field-row { display:grid; grid-template-columns:minmax(0, .72fr) minmax(0, 1fr); gap:12px; }
+ .ekom-provider-field-labels { margin-bottom:8px; color:var(--ekom-muted); font-size:12px; font-weight:700; }
+ .ekom-provider-fields { display:grid; gap:10px; margin-bottom:12px; }
+ .ekom-provider-field-row input { min-width:0; }
+ .ekom-provider-field-row input[data-shipping-key] { font-family:'Ekom Mono',monospace; }
+ .ekom-provider-field-row input[readonly] { background:var(--ekom-surface-alt); color:var(--ekom-muted); }
+ .ekom-editor-shipping-provider .ekom-editor-footer { align-items:center; flex-wrap:wrap; background:var(--ekom-surface-alt); }
+ .ekom-editor-shipping-provider .ekom-editor-footer p { margin:0 auto 0 0; color:var(--ekom-muted); font-size:12px; }
+}
+@media(max-width:600px) { ekom-orders-section-view:not([classic]) .ekom-editor-shipping-provider .ekom-editor-footer p { flex-basis:100%; } }
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-payment-card > h3 { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+ .ekom-payment-card .ekom-money-summary > div { display:grid; grid-template-columns:minmax(90px,.6fr) minmax(0,1.8fr) minmax(90px,auto); gap:16px; align-items:baseline; padding:9px 0; font-size:14px; }
+ .ekom-payment-card .ekom-money-summary dt { color:var(--ekom-text); }
+ .ekom-payment-card .ekom-money-description { color:var(--ekom-muted); text-align:left; overflow-wrap:anywhere; }
+ .ekom-payment-card .ekom-money-summary dd:last-child { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+ .ekom-payment-card .ekom-money-total { border-top:1px solid var(--ekom-border); margin-top:6px; padding-top:14px; font-weight:700; }
+ .ekom-payment-card .ekom-money-total dd:last-child { font-size:20px; }
+ .ekom-payment-breakdown { margin:20px 0; padding-top:16px; border-top:1px solid var(--ekom-border); }
+ .ekom-payment-method-row { display:grid; grid-template-columns:minmax(90px,.6fr) minmax(0,1.8fr) minmax(90px,auto); gap:16px; font-size:14px; }
+ .ekom-payment-method-row strong { display:flex; align-items:center; gap:8px; font-weight:400; }
+ .ekom-payment-method-row > span { color:var(--ekom-muted); }
+ .ekom-payment-dot { width:7px; height:7px; flex:0 0 7px; border-radius:50%; background:var(--ekom-accent); }
+ .ekom-payment-card .ekmOrderGiftcards { margin-top:14px; }
+ .ekom-payment-card .ekmOrderGiftcards__list { padding:0; list-style:none; }
+ .ekom-payment-card .ekmOrderGiftcards__list > li { border:0; border-top:1px solid var(--ekom-border); border-radius:0; padding:12px 0; background:transparent; }
+ .ekom-payment-card .ekmOrderGiftcards__summary { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:baseline; }
+ .ekom-payment-card .ekmOrderGiftcards__summary > strong:nth-child(2) { margin-left:auto; order:3; }
+ .ekom-payment-card .ekmOrderGiftcards__summary > span { color:var(--ekom-muted); }
+ .ekom-payment-card .ekom-payment-details { border-top:1px solid var(--ekom-border); padding-top:14px; }
+ .ekom-payment-details > summary { color:var(--ekom-muted); font-size:13px; font-weight:700; cursor:pointer; }
+}
+@media(max-width:600px) { ekom-orders-section-view:not([classic]) .ekom-payment-card .ekom-money-summary > div { grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; } ekom-orders-section-view:not([classic]) .ekom-payment-card .ekom-money-description { grid-column:1; grid-row:2; } ekom-orders-section-view:not([classic]) .ekom-payment-card .ekom-money-summary dd:last-child { grid-column:2; grid-row:1; } }
+
+ekom-orders-section-view:not([classic]) {
+ .ekom-payment-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; align-items:start; margin-top:14px; }
+ .ekom-payment-detail-box { border:1px solid var(--ekom-border); border-radius:10px; padding:16px; min-width:0; }
+ .ekom-payment-detail-box header { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
+ .ekom-payment-detail-box header h4 { margin:0; font-size:15px; font-weight:700; text-transform:none; letter-spacing:normal; overflow-wrap:anywhere; }
+ .ekom-payment-kind { font:700 11px/1.3 'Ekom Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--ekom-muted); display:inline-flex; align-items:center; gap:8px; }
+ .ekom-payment-kind::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--ekom-accent); }
+ .ekom-payment-kind-gift::before { background:#d59c12; }
+ .ekom-payment-detail-box header > :last-child { margin-left:auto; }
+ .ekom-gift-state { padding:4px 9px; border-radius:20px; background:var(--ekom-surface-alt); font-size:12px; color:var(--ekom-muted); }
+ .ekom-payment-detail-box dl { margin:0; }
+ .ekom-payment-detail-box dl > div { display:grid; grid-template-columns:minmax(80px,.8fr) minmax(0,1.4fr); gap:12px; padding:10px 0; border-bottom:1px solid var(--ekom-border); font-size:13px; }
+ .ekom-payment-detail-box dt { color:var(--ekom-muted); }
+ .ekom-payment-detail-box dd { display:flex; align-items:center; gap:6px; margin:0; min-width:0; }
+ .ekom-payment-detail-box dd > span { overflow-wrap:anywhere; white-space:pre-wrap; }
+ .ekom-payment-detail-box .ekom-payment-copy { display:inline-flex; justify-content:center; align-items:center; flex:0 0 22px; width:22px; height:22px; min-height:0; padding:3px; border:0; border-radius:5px; background:transparent; color:var(--ekom-muted); }
+ .ekom-payment-detail-box .ekom-payment-copy:hover { color:var(--ekom-accent); background:var(--ekom-surface-alt); }
+}
+@media(max-width:900px) { ekom-orders-section-view:not([classic]) .ekom-payment-detail-grid { grid-template-columns:minmax(0,1fr); } }

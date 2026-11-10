@@ -34,6 +34,10 @@ namespace Ekom.Models
         [Column(Length = int.MaxValue)]
         public string OrderInfo { get; set; }
 
+        /// <summary>Total saved line quantities, populated for manager list queries.</summary>
+        [Column(IsColumn = false)]
+        public decimal? ItemQuantity { get; set; }
+
         [Column(Length = 100)]
         public string OrderNumber { get; set; }
 
@@ -43,6 +47,34 @@ namespace Ekom.Models
         /// </summary>
         [Column, NotNull]
         public string OrderStatusCol { get; set; }
+
+        /// <summary>Independent, read-only statuses projected from the legacy record.</summary>
+        [Column(IsColumn = false)]
+        public Orders.OrderStatusSnapshot Status => Orders.OrderStateRules.Read(this);
+
+        [Column, System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
+        public string? OrderStateCol { get; set; }
+
+        [Column, System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
+        public string? PaymentStateCol { get; set; }
+
+        [Column, System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
+        public string? FulfillmentStateCol { get; set; }
+
+        [Column, System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
+        public string? OriginalOrderStatusCol { get; set; }
+
+        [Column(Length = int.MaxValue), System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
+        public string? FulfilledQuantitiesJson { get; set; }
+
+        [Column, System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
+        public int StatusMappingVersion { get; set; }
+
+        [Column, System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
+        public int StatusRevision { get; set; }
+
+        [Column, System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
+        public bool AutoCloseSuppressed { get; set; }
 
         /// <summary>
         /// 

@@ -7,6 +7,7 @@ export type ManagerFilters = {
   dateTo: string;
   orderStatus: string;
   store: string;
+  currency?: string;
   paymentProvider: string;
   shippingProvider: string;
   couponCode: string;
@@ -30,6 +31,7 @@ export type StatusItem = {
 export type StoreItem = {
   alias: string;
   title: string;
+  currencies?: string[];
   currency?: { isoCurrencySymbol?: string; currencyValue?: string; currencyDecimalDigits?: number };
 };
 
@@ -43,11 +45,25 @@ export type ShippingProviderItem = {
   title: string;
 };
 
+export type OrderStatusSnapshot = {
+  orderStatus: 'Draft' | 'Open' | 'Closed' | 'Cancelled' | null;
+  paymentStatus: 'Pending' | 'Authorized' | 'Paid' | 'PartiallyPaid' | 'Failed' | 'PartiallyRefunded' | 'Refunded' | 'Voided' | null;
+  fulfillmentStatus: 'Unfulfilled' | 'Picking' | 'Picked' | 'Packed' | 'PartiallyFulfilled' | 'Fulfilled' | null;
+  requiresReview: boolean;
+  legacyStatus: string;
+  revision: number;
+  autoCloseSuppressed?: boolean;
+  fulfilledQuantities?: Record<string, number>;
+};
+
 export type OrderListItem = {
+  status?: OrderStatusSnapshot;
   uniqueId: string;
   referenceId: string | number;
   orderStatusCol?: string;
   customerName?: string;
+  customerEmail?: string;
+  itemQuantity?: number | null;
   storeAlias?: string;
   createDate?: string;
   formattedTotal?: string;
@@ -174,6 +190,7 @@ export type OrderInfo = Record<string, any>;
 
 export type ManagerState = {
   pendingOrderId?: string;
+  printingEnabled?: boolean;
   filters: ManagerFilters;
   statusList: StatusItem[];
   stores: StoreItem[];
@@ -188,7 +205,7 @@ export const managerState: ManagerState = {
   filters: {
     dateFrom: toDateInputValue(januaryFirstCurrentYear),
     dateTo: toDateInputValue(currentDate),
-    orderStatus: 'CompletedOrders',
+    orderStatus: 'AllOrders',
     store: '',
     paymentProvider: '',
     shippingProvider: '',
@@ -210,6 +227,17 @@ export const managerState: ManagerState = {
 };
 
 export class EkomManagerApi {
+  async changeOrderStates(orderId: string, expectedRevision: number, action: string, notify: boolean, fulfilledQuantities?: Record<string, number>): Promise<OrderStatusSnapshot> {
+    return this.postBody(`/ekom/manager/orderStates/${encodeURIComponent(orderId)}`, { expectedRevision, action, notify, fulfilledQuantities });
+  }
+
+  async printingEnabled(): Promise<boolean> {
+    try {
+      const response = await fetch('/ekom/printer/manager/capabilities', { credentials: 'same-origin' });
+      return response.ok && (await response.json()).enabled === true;
+    } catch { return false; }
+  }
+
   async config(): Promise<ManagerConfig> {
     return this.getJson('/ekom/backoffice/Config');
   }
@@ -240,7 +268,8 @@ export class EkomManagerApi {
   }
 
   async stores(): Promise<StoreItem[]> {
-    return this.getJson('/ekom/manager/stores');
+    const [stores, choices] = await Promise.all([this.getJson<StoreItem[]>('/ekom/manager/stores'), this.getJson<Array<{ alias: string; currencies: string[] }>>('/ekom/manager/store-currencies')]);
+    return stores.map(store => ({ ...store, currencies: choices.find(choice => choice.alias === store.alias)?.currencies || [] }));
   }
 
   async paymentProviders(storeAlias: string): Promise<PaymentProviderItem[]> {
@@ -333,6 +362,7 @@ export class EkomManagerApi {
       end: filters.dateTo,
       orderStatus: filters.orderStatus,
       store: filters.store,
+      currency: filters.currency,
     }, signal);
   }
 
@@ -342,6 +372,7 @@ export class EkomManagerApi {
       end: filters.dateTo,
       orderStatus: filters.orderStatus,
       store: filters.store,
+      currency: filters.currency,
       page,
       pageSize,
     }, signal);
@@ -407,6 +438,12 @@ export class EkomManagerApi {
   }
 
   private static async createError(response: Response, fallbackMessage: string): Promise<Error> {
+    if (response.status === 401 || (response.redirected && /\/Account\/Login/i.test(response.url))) {
+      return new Error('Your session has expired. Sign in to Umbraco and reload the manager.');
+    }
+    if (response.headers?.get('content-type')?.includes('text/html')) {
+      return new Error(`${fallbackMessage} Status ${response.status}. Reload the manager and try again.`);
+    }
     const text = await response.text();
     let message = text || fallbackMessage;
 
@@ -555,7 +592,7 @@ export async function printOrderDocument(content: string, title: string): Promis
 export function createOrderPrintDocument(content: string, title: string): string {
   const template = document.createElement('template');
   template.innerHTML = content;
-  template.content.querySelectorAll('button, input, select, .ekmOrderGiftcards__actions').forEach(element => element.remove());
+  template.content.querySelectorAll('button, input, select, .ekmOrderGiftcards__actions, .ekmOrderLineThumbnail').forEach(element => element.remove());
   template.content.querySelectorAll('details').forEach(element => element.setAttribute('open', ''));
   template.content.querySelectorAll('summary').forEach(element => element.remove());
   // Preserve product names without backoffice links or browser-added link URLs.
@@ -567,14 +604,16 @@ export function createOrderPrintDocument(content: string, title: string): string
     html, body { margin: 0; padding: 0; height: auto; overflow: visible; }
     body { color: #111; background: white; font: 10pt/1.4 Arial, sans-serif; overflow-wrap: anywhere; }
     h1 { font-size: 19pt; margin: 0 0 12px; }
-    h4 { font-size: 11pt; margin: 18px 0 8px; }
+    h4 { font-size: 11pt; margin: 12px 0 6px; }
     h5 { font-size: 10pt; margin: 12px 0 6px !important; }
     h1, h4, h5 { break-after: avoid; }
     p { margin: 4px 0; }
     ul { padding-left: 18px; margin: 6px 0; }
     li { margin: 3px 0; }
-    .ekmSplit { display: block; margin-bottom: 16px; }
-    .ekmSplit__column { margin-bottom: 12px; }
+    .ekmSplit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin-bottom: 12px; }
+    .ekmSplit__column { min-width: 0; break-inside: avoid; }
+    .ekmOrderLineProduct__details { min-width: 0; }
+    .ekmOrderLineProduct__details small { color: #555; }
     .umb-table { display: table; width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 9pt; }
     .umb-table-head { display: table-header-group; font-weight: bold; break-inside: avoid; }
     .umb-table-body, .umb-table-footer { display: table-row-group; }
@@ -605,7 +644,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-export const managerStyles = `
+const baseManagerStyles = `
 .ekmOrderLineProduct { display: flex; align-items: flex-start; gap: 14px; min-width: 0; width: 100%; }
 .ekmOrderLineProduct__details { min-width: 0; overflow-wrap: anywhere; }
 .ekmOrderLineProduct__details > span:first-child, .ekmOrderLineProduct__details > div:first-child { font-weight: 600; }
@@ -759,9 +798,120 @@ export const managerStyles = `
   }
 `;
 
+// Scope the legacy rules too: these elements render in light DOM, where :host is ineffective.
+// CSS nesting keeps generic input/button/table rules inside the manager boundary.
+const managerScope = ':is(ekom-orders-section-view, ekom-analytics-section-view, ekom-customers-section-view, ekom-printing-section-view)';
+const themeColorTokens: Record<string, string> = {
+  '#fff': '--ekom-surface', '#f6f4f4': '--ekom-bg',
+  '#f6f6f8': '--ekom-surface-alt', '#f8fafc': '--ekom-surface-alt', '#eef3f8': '--ekom-surface-alt',
+  '#edf8f0': '--ekom-surface-alt', '#fff4e5': '--ekom-surface-alt',
+  '#000': '--ekom-text', '#111': '--ekom-text', '#1b264f': '--ekom-text',
+  '#46607a': '--ekom-muted', '#515054': '--ekom-muted', '#666': '--ekom-muted', '#686b7d': '--ekom-muted',
+  '#d8d7d9': '--ekom-border', '#ddd': '--ekom-border', '#bbb': '--ekom-border',
+  '#e6e8ef': '--ekom-border', '#e9e9eb': '--ekom-border', '#eee': '--ekom-border', '#f0f0f0': '--ekom-border',
+  '#247f45': '--ekom-positive', '#ad5f00': '--ekom-warning',
+};
+const themedManagerStyles = baseManagerStyles.replaceAll(':host', '&')
+  .replace(/#[0-9a-f]{3,8}\b/gi, color => themeColorTokens[color.toLowerCase()] ? `var(${themeColorTokens[color.toLowerCase()]})` : color);
+
+export const managerStyles = `${managerScope} {
+  ${baseManagerStyles.replaceAll(':host', '&')}
+}
+${managerScope}:not([classic]) {
+  ${themedManagerStyles}
+  --ekom-bg: var(--uui-color-background, #f0f1f4);
+  --ekom-surface: var(--uui-color-surface, #fff);
+  --ekom-surface-alt: var(--uui-color-surface-alt, #f6f7f9);
+  --ekom-text: var(--uui-color-text, #191b24);
+  --ekom-muted: var(--uui-color-text-alt, #676b7b);
+  --ekom-border: var(--uui-color-border, #e1e3e8);
+  --ekom-accent: color-mix(in srgb, var(--uui-color-positive-standalone, #10694a) 55%, var(--uui-color-text, #191b24));
+  --ekom-positive: color-mix(in srgb, var(--uui-color-positive-standalone, #0b5238) 55%, var(--uui-color-text, #191b24));
+  --ekom-warning: color-mix(in srgb, var(--uui-color-warning-standalone, #7a4e06) 55%, var(--uui-color-text, #191b24));
+  --ekom-negative: color-mix(in srgb, var(--uui-color-danger-standalone, #8c1d18) 55%, var(--uui-color-text, #191b24));
+  display: block; height: 100%; color: var(--ekom-text); font-family: inherit;
+  &, *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  h1, h2, h3, h4, p { color: inherit; }
+  .ekmManager { background: var(--ekom-bg); color: var(--ekom-text); }
+  .ekmManager__body { padding: 28px; max-width: 1800px; margin-inline: auto; }
+  .ekom-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+  .ekom-heading h1 { font-size: 26px; font-weight: 800; margin: 0 0 6px; letter-spacing: -.02em; }
+  .ekom-heading p, .ekom-muted { margin: 0; color: var(--ekom-muted); font-size: 13px; }
+  .cards { gap: 16px; margin-bottom: 24px; }
+  .card, .ekmSummaryCard { background: var(--ekom-surface); border: 1px solid var(--ekom-border); border-radius: 12px; box-shadow: none; padding: 20px; }
+  .ekmSummaryCard__label { color: var(--ekom-muted); font-size: 11px; letter-spacing: .08em; }
+  .ekmSummaryCard__value { color: var(--ekom-text); font-size: 28px; margin: 0; }
+  .umb-sub-header, .ekmToolbar { background: var(--ekom-surface); border: 1px solid var(--ekom-border); border-radius: 12px; padding: 18px; }
+  .ekmManager__filters { gap: 14px; grid-template-columns: repeat(4, minmax(120px, 1fr)); }
+  .ekmManager__filter { color: var(--ekom-muted); font-size: 12px; }
+  .ekmManager__search { grid-column: 1 / -1; justify-content: flex-end; }
+  input:not([type='checkbox']), select, textarea { background: var(--ekom-surface); color: var(--ekom-text); border: 1px solid var(--ekom-border); border-radius: 7px; padding: 9px 12px; min-height: 38px; }
+  button, .btn { border-radius: 7px; background: var(--ekom-surface); color: var(--ekom-text); border-color: var(--ekom-border); font-weight: 600; }
+  button:hover:not(:disabled) { background: var(--ekom-surface-alt); }
+  button:disabled { cursor: not-allowed; opacity: .55; }
+  :is(button, input, select, textarea, summary, a):focus-visible { outline: 2px solid var(--uui-color-focus, var(--ekom-accent)); outline-offset: 3px; }
+  .btn-primary, .btn-success { background: var(--uui-color-positive, #10694a); border-color: var(--uui-color-positive, #10694a); color: var(--uui-color-positive-contrast, #fff); }
+  .btn-primary:hover:not(:disabled), .btn-success:hover:not(:disabled) { background: var(--uui-color-positive-emphasis, #0b5238); }
+  .btn-reset { background: transparent; border: 0; color: var(--ekom-muted); }
+  .umb-table { background: var(--ekom-surface); border: 1px solid var(--ekom-border); border-radius: 12px; width: 100%; }
+  .umb-table-head { background: var(--ekom-surface-alt); color: var(--ekom-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+  .umb-table-cell { border-color: var(--ekom-border); color: inherit; padding: 15px 12px; vertical-align: middle; }
+  .umb-table-body .umb-table-row:hover { background: var(--ekom-surface-alt); }
+  .ekom-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; padding: 5px 8px; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--ekom-muted); background: color-mix(in srgb, var(--ekom-muted) 12%, var(--ekom-surface)); }
+  .ekom-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .ekom-badge--positive { color: var(--ekom-positive); background: color-mix(in srgb, var(--ekom-positive) 12%, var(--ekom-surface)); }
+  .ekom-badge--warning { color: var(--ekom-warning); background: color-mix(in srgb, var(--ekom-warning) 12%, var(--ekom-surface)); }
+  .ekom-badge--negative { color: var(--ekom-negative); background: color-mix(in srgb, var(--ekom-negative) 12%, var(--ekom-surface)); }
+  .ekom-statuses { display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0; }
+  .ekom-statuses > div { display: grid; gap: 6px; }
+  .ekom-statuses dt { color: var(--ekom-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .ekom-statuses dd { margin: 0; }
+  .ekom-legacy-status { margin-top: 8px; font-size: 12px; }
+  .ekom-legacy-status summary { cursor: pointer; color: var(--ekom-muted); }
+  .ekom-legacy-status select { margin-top: 8px; max-width: 190px; }
+  .ekmOverlay { background: rgb(0 0 0 / .35); }
+  .ekmOverlay__panel, .ekmOverlay__header, .ekmCustomerInformationModal__panel { background: var(--ekom-surface); color: var(--ekom-text); border-color: var(--ekom-border); }
+  .ekmOverlay__header { border-bottom: 1px solid var(--ekom-border); }
+  .ekom-order-drawer { padding: 0; display: flex; justify-content: flex-end; }
+  .ekom-order-drawer .ekmOrderOverlay__panel { width: min(1060px, 94vw); max-width: none; min-height: 100%; margin: 0; border-radius: 0; box-shadow: -12px 0 40px rgb(0 0 0 / .15); }
+  .ekom-order-drawer .ekmOverlay__header { position: sticky; top: 0; z-index: 2; padding: 20px 24px; }
+  .ekmOverlay__content { padding: 24px; }
+  .ekom-order-tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--ekom-border); margin: 20px 0; }
+  .ekom-order-tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 12px; white-space: nowrap; color: var(--ekom-muted); }
+  .ekom-order-tabs button[aria-selected='true'] { color: var(--ekom-accent); border-bottom-color: var(--ekom-accent); }
+  .ekmOrderTracking, .ekmOrderGiftcards, .ekmOrderActivityLog, .ekmOrderCustomData, .ekmGiftcardRecovery__claim { color: var(--ekom-text); background: var(--ekom-surface-alt); border-color: var(--ekom-border); border-radius: 10px; }
+  .ekmOrderCustomData__key, .ekmOrderActivityLog__date, .ekmOrderLineThumbnail { color: var(--ekom-muted); }
+  .ekmOrderCustomData__value, .ekmOrderActivityLog__toggle { color: var(--ekom-text); }
+  .ekmOrderLineThumbnail, .ekmOrderLineThumbnail img { background: var(--ekom-surface-alt); border-color: var(--ekom-border); }
+  .pagination li.active button { background: var(--uui-color-interactive); color: var(--uui-color-interactive-contrast); }
+  @media (max-width: 1024px) { .ekmManager__filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 720px) {
+    .ekmManager__body { padding: 16px; }
+    .ekom-order-drawer .ekmOrderOverlay__panel { width: 100%; }
+    .umb-table-row { background: var(--ekom-surface); border-color: var(--ekom-border); box-shadow: none; }
+    .ekmManager__filters { grid-template-columns: 1fr; }
+    .ekmOverlay__content { padding: 16px; }
+  }
+  @media print { --ekom-text: #000; --ekom-muted: #444; --ekom-surface: #fff; --ekom-surface-alt: #fff; --ekom-border: #bbb; .ekom-order-tabs, .ekom-legacy-status { display: none; } }
+}`;
+
+/** Display evidence gaps without manufacturing an Unknown business enum value. */
+export function renderStatusBadge(value: string | null | undefined): string {
+  const tone = ['Paid', 'Fulfilled', 'Closed'].includes(value || '') ? 'positive'
+    : ['Failed', 'Cancelled'].includes(value || '') ? 'negative'
+    : ['Pending', 'PartiallyPaid', 'PartiallyFulfilled', 'PartiallyRefunded'].includes(value || '') ? 'warning' : 'neutral';
+  const label = value ? value.replace(/([a-z])([A-Z])/g, '$1 $2') : 'Needs review';
+  return `<span class="ekom-badge ekom-badge--${tone}">${escapeHtml(label)}</span>`;
+}
+
+export function renderOrderStatusSummary(status?: OrderStatusSnapshot): string {
+  return `<dl class="ekom-statuses"><div><dt>Order</dt><dd>${renderStatusBadge(status?.orderStatus)}</dd></div><div><dt>Payment</dt><dd>${renderStatusBadge(status?.paymentStatus)}</dd></div><div><dt>Fulfillment</dt><dd>${renderStatusBadge(status?.fulfillmentStatus)}</dd></div></dl>`;
+}
+
 export function formatAnalyticsAmount(value: number, currency?: StoreItem['currency']): string {
   const code = currency?.isoCurrencySymbol;
-  const digits = currency?.currencyDecimalDigits ?? 2;
+  const digits = currency?.currencyDecimalDigits ?? (code && /^[A-Z]{3}$/.test(code) ? new Intl.NumberFormat(undefined, { style: 'currency', currency: code }).resolvedOptions().maximumFractionDigits : 2);
   return new Intl.NumberFormat(undefined, {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
@@ -770,7 +920,7 @@ export function formatAnalyticsAmount(value: number, currency?: StoreItem['curre
 }
 
 export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, color: string,
-  options: { currency?: StoreItem['currency']; integer?: boolean; formatValue?: (value: number) => string; comparison?: ChartSeries; columnHover?: boolean; onSelect?: (index: number) => void } = {}): void {
+  options: { templateStyle?: boolean; formatAxisValue?: (value: number) => string; formatLabel?: (index: number) => string; currency?: StoreItem['currency']; integer?: boolean; formatValue?: (value: number) => string; comparison?: ChartSeries; columnHover?: boolean; onSelect?: (index: number) => void } = {}): void {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   const width = rect.width || 300;
@@ -780,7 +930,8 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   ctx.scale(dpr, dpr);
-  ctx.font = '12px sans-serif';
+  ctx.font = options.templateStyle ? '10px "Ekom Mono", monospace' : '12px sans-serif';
+
 
   const points = series.points || [];
   const values = points.map(point => point.y == null ? null : Number(point.y));
@@ -788,51 +939,67 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
   const allValues = [...values, ...comparison.map(point => point.y)].filter((value): value is number => value != null);
   const min = Math.min(0, ...allValues);
   const rawMax = Math.max(1, ...allValues);
-  const max = options.integer ? Math.ceil(rawMax / 4) * 4 : rawMax;
+  const tickUnit = 10 ** (Math.floor(Math.log10(rawMax / 4)) - 1);
+  const max = options.integer ? Math.ceil(rawMax / 4) * 4 : options.templateStyle ? Math.ceil(rawMax / 4 / tickUnit) * tickUnit * 4 : rawMax;
   const formatValue = (value: number) => options.formatValue ? options.formatValue(value) : options.currency
     ? formatAnalyticsAmount(value, options.currency)
     : value.toLocaleString(undefined, { maximumFractionDigits: options.integer ? 0 : 2 });
+  const formatAxisValue = options.formatAxisValue ?? formatValue;
   const ticks = Array.from({ length: 5 }, (_, i) => max - (max - min) * i / 4);
-  const left = Math.max(48, ...ticks.map(value => ctx.measureText(formatValue(value)).width + 12));
-  const right = width - 16;
-  const top = 20;
-  const bottom = height - 52;
+  const left = options.templateStyle ? 1 : Math.max(48, ...ticks.map(value => ctx.measureText(formatAxisValue(value)).width + 12));
+  const right = width - (options.templateStyle ? 1 : 16);
+  const top = options.templateStyle ? 8 : 20;
+  const bottom = height - (options.templateStyle ? 26 : 52);
   const positions = points.map((point, index) => ({
     x: points.length > 1 ? left + (right - left) * index / (points.length - 1) : (left + right) / 2,
     y: values[index] == null ? null : bottom - (values[index]! - min) / (max - min) * (bottom - top),
     date: point.x || series.labels?.[index] || '',
+    axisLabel: options.formatLabel?.(index) ?? point.x ?? series.labels?.[index] ?? '',
     value: values[index],
   }));
 
   const draw = (active = -1) => {
     ctx.clearRect(0, 0, width, height);
-    ctx.font = '12px sans-serif';
+    ctx.font = options.templateStyle ? '10px "Ekom Mono", monospace' : '12px sans-serif';
+    const theme = typeof getComputedStyle === 'function' ? getComputedStyle(canvas) : undefined;
+    const textColor = theme?.getPropertyValue('--ekom-muted').trim() || theme?.getPropertyValue('--uui-color-text-alt').trim() || '#555';
+    const gridColor = theme?.getPropertyValue('--ekom-border').trim() || '#e5e5e5';
+    // The screenshot's green is kept in light mode; use the themed accent on dark surfaces.
+    const foreground = theme?.getPropertyValue('--uui-color-text').trim() || '';
+    const foregroundHex = /^#([0-9a-f]{6})$/i.exec(foreground)?.[1];
+    const lightText = foregroundHex ? [0,2,4].reduce((sum, offset) => sum + parseInt(foregroundHex.slice(offset, offset + 2), 16), 0) > 420 : false;
+    const lineColor = options.templateStyle && !lightText ? '#10694a' : color;
     ctx.lineWidth = 1;
-    ctx.textAlign = 'right';
+    ctx.textAlign = options.templateStyle ? 'left' : 'right';
     ticks.forEach((value, index) => {
       const y = top + (bottom - top) * index / 4;
-      ctx.fillStyle = '#555';
-      ctx.fillText(formatValue(value), left - 8, y + 4);
-      ctx.strokeStyle = '#e5e5e5';
+      ctx.fillStyle = textColor;
+      ctx.fillText(formatAxisValue(value), options.templateStyle ? left : left - 8, options.templateStyle ? Math.min(bottom, y + 3) : y + 4);
+      if (options.templateStyle && (index === 0 || index === 4)) return;
+      ctx.globalAlpha = options.templateStyle ? .5 : 1;
+      ctx.strokeStyle = gridColor;
       ctx.beginPath();
       ctx.moveTo(left, y);
       ctx.lineTo(right, y);
       ctx.stroke();
+      ctx.globalAlpha = 1;
     });
-    const labelWidth = Math.max(90, ...positions.map(point => ctx.measureText(point.date).width + 16));
+    const labelWidth = Math.max(90, ...positions.map(point => ctx.measureText(point.axisLabel).width + 32));
     const labelCount = Math.max(2, Math.floor((right - left) / labelWidth));
     const labelIndices = new Set(Array.from({ length: Math.min(labelCount, positions.length) }, (_, i) =>
       Math.round(i * (positions.length - 1) / Math.max(1, Math.min(labelCount, positions.length) - 1))));
-    ctx.fillStyle = '#555';
+    ctx.fillStyle = textColor;
     positions.forEach((point, index) => {
       if (!labelIndices.has(index)) return;
       ctx.textAlign = positions.length === 1 ? 'center' : index === 0 ? 'left' : index === positions.length - 1 ? 'right' : 'center';
-      ctx.fillText(point.date, point.x, bottom + 24);
+      ctx.fillText(point.axisLabel, point.x, bottom + 24);
     });
     const line = (data: Array<{ x: number; y: number | null }>, dashed: boolean) => {
-      ctx.strokeStyle = dashed ? '#9298a5' : color;
-      ctx.lineWidth = 2;
-      ctx.setLineDash?.(dashed ? [6, 4] : []);
+      ctx.strokeStyle = dashed ? '#9b9fad' : lineColor;
+      ctx.lineWidth = options.templateStyle ? (dashed ? 1.5 : 2.5) : 2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.setLineDash?.(dashed ? [4, 5] : []);
       ctx.beginPath();
       let connected = false;
       data.forEach(point => {
@@ -844,14 +1011,32 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
       ctx.stroke();
       ctx.setLineDash?.([]);
     };
+    if (options.templateStyle && positions.length > 1) {
+      const gradient = ctx.createLinearGradient(0, top, 0, bottom);
+      gradient.addColorStop(0, 'rgba(16,105,74,.22)');
+      gradient.addColorStop(1, 'rgba(16,105,74,0)');
+      ctx.fillStyle = gradient;
+      // Close each contiguous run separately so missing amounts remain genuine gaps.
+      let run: Array<{ x: number; y: number }> = [];
+      const fillRun = () => {
+        if (run.length > 1) {
+          ctx.beginPath(); ctx.moveTo(run[0].x, bottom);
+          run.forEach(point => ctx.lineTo(point.x, point.y));
+          ctx.lineTo(run[run.length - 1].x, bottom); ctx.closePath(); ctx.fill();
+        }
+        run = [];
+      };
+      positions.forEach(point => { if (point.y == null) fillRun(); else run.push({ x: point.x, y: point.y }); });
+      fillRun();
+    }
     if (comparison.length) line(positions.map((point, index) => ({
       x: point.x,
       y: comparison[index]?.y == null ? null : bottom - (Number(comparison[index].y) - min) / (max - min) * (bottom - top),
     })), true);
     line(positions, false);
-    ctx.fillStyle = color;
+    ctx.fillStyle = lineColor;
     positions.forEach((point, index) => {
-      if (point.y == null) return;
+      if (point.y == null || (options.templateStyle && positions.length > 1 && index !== active)) return;
       ctx.beginPath();
       ctx.arc(point.x, point.y, index === active ? 5 : 3, 0, Math.PI * 2);
       ctx.fill();
@@ -907,4 +1092,210 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
   } : null;
   canvas.onmouseleave = () => { canvas.style.cursor = 'default'; draw(); };
   draw();
+}
+
+export const orderViews = [
+  { key: 'AllOrders', label: 'All' },
+  { key: 'states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled', label: 'Unfulfilled' },
+  { key: 'states:Open;Pending,Authorized,PartiallyPaid,Failed;', label: 'Unpaid' },
+  { key: 'states:Open;;', label: 'Open' },
+  { key: 'states:Closed;;', label: 'Closed' },
+];
+
+export function ensureManagerCurrency(): void {
+  const store = managerState.stores.find(item => item.alias === managerState.filters.store);
+  const choices = store?.currencies || [];
+  if (!choices.includes(managerState.filters.currency || '')) {
+    const preferred = store?.currency?.isoCurrencySymbol;
+    managerState.filters.currency = choices.find(code => code === preferred) || choices[0] || '';
+  }
+}
+
+export function renderStoreCurrencySelector(storeAttribute = 'data-field'): string {
+  const selected = managerState.stores.find(store => store.alias === managerState.filters.store);
+  const currency = managerState.filters.currency || '';
+  return `<div class="ekom-store-switch"><span>Store</span><details class="ekom-dropdown ekom-store-currency"><summary aria-label="Store and currency"><strong>${escapeHtml(selected?.title || 'Select store')}</strong>${currency ? `<span class="ekom-currency-code">${escapeHtml(currency)}</span>` : ''}<span class="ekom-store-chevron">▾</span></summary><div class="ekom-currency-popover"><div class="ekom-currency-heading"><strong>Store ·<br>Currency</strong><span>Amounts shown in the selected currency</span></div>${managerState.stores.map(store => `<section class="ekom-currency-store ${store.alias === selected?.alias ? 'is-selected' : ''}" aria-label="${escapeHtml(store.title)}"><h3>${escapeHtml(store.title)}</h3><div class="ekom-currency-choices">${(store.currencies || []).map(code => `<button type="button" data-header-store="${escapeHtml(store.alias)}" data-header-currency="${escapeHtml(code)}" aria-label="${escapeHtml(store.title)} — ${escapeHtml(code)}" aria-pressed="${store.alias === selected?.alias && code === currency}">${escapeHtml(code)}${store.alias === selected?.alias && code === currency ? '<span aria-hidden="true">✓</span>' : ''}</button>`).join('') || '<span class="ekom-currency-empty">No currencies configured or recorded</span>'}</div></section>`).join('')}</div></details><select hidden aria-label="Store" ${storeAttribute}="store">${managerState.stores.map(store => `<option value="${escapeHtml(store.alias)}" ${store.alias === selected?.alias ? 'selected' : ''}>${escapeHtml(store.title)}</option>`).join('')}</select></div>`;
+}
+
+export function renderManagerHeader(active: string, storeAttribute = 'data-field', showStore = true): string {
+  if (typeof document !== 'undefined' && !document.querySelector('link[data-ekom-fonts]')) {
+    const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = '/App_Plugins/Ekom/dist/manager-fonts.css'; link.dataset.ekomFonts = ''; document.head.append(link);
+  }
+  const sections = ['orders', 'analytics', 'customers', ...(managerState.printingEnabled || active === 'printing' ? ['printing'] : [])];
+  const route = typeof location === 'undefined' ? '/umbraco/section/ekommanager' : location.pathname.replace(/\/view\/(orders|analytics|customers|printing)\/?$/, '').replace(/\/$/, '');
+  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${sections.map(section => `<a href="${escapeHtml(route + '/view/' + section)}" ${section === active ? 'aria-current="page"' : ''}>${section[0].toUpperCase() + section.slice(1)}</a>`).join('')}</nav>${showStore ? renderStoreCurrencySelector(storeAttribute) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
+}
+
+/** Preserve custom status filters when changing sections instead of silently selecting another scope. */
+export function renderOrderViewOptions(value: string): string {
+  const views = [...orderViews];
+  if (!views.some(view => view.key === value)) views.push({ key: value, label: value.startsWith('states:') ? 'Custom status filters' : managerState.statusList.find(status => getStatusValue(status) === value)?.label || value });
+  return views.map(view => `<option value="${escapeHtml(view.key)}" ${view.key === value ? 'selected' : ''}>${escapeHtml(view.label)}</option>`).join('');
+}
+
+export function dateRangePresets(now = new Date()): Array<{ label: string; from: string; to: string }> {
+  const iso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const offset = (days: number) => new Date(now.getFullYear(), now.getMonth(), now.getDate() + days);
+  const today = iso(now);
+  return [
+    { label: 'Today', from: today, to: today },
+    { label: 'Yesterday', from: iso(offset(-1)), to: iso(offset(-1)) },
+    { label: 'Last 7 days', from: iso(offset(-6)), to: today },
+    { label: 'Last 30 days', from: iso(offset(-29)), to: today },
+    { label: 'This month', from: iso(new Date(now.getFullYear(), now.getMonth(), 1)), to: today },
+    { label: 'Last month', from: iso(new Date(now.getFullYear(), now.getMonth() - 1, 1)), to: iso(new Date(now.getFullYear(), now.getMonth(), 0)) },
+    { label: 'This quarter', from: iso(new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)), to: today },
+    { label: 'This year', from: iso(new Date(now.getFullYear(), 0, 1)), to: today },
+  ];
+}
+
+export function renderDateRange(): string {
+  return `<ekom-date-range from="${escapeHtml(managerState.filters.dateFrom)}" to="${escapeHtml(managerState.filters.dateTo)}"></ekom-date-range>`;
+}
+
+export function bindDateRange(host: HTMLElement | ShadowRoot, apply: () => void): void {
+  registerDateRange();
+  host.querySelector('.ekom-store-currency')?.addEventListener('keydown', event => {
+    if ((event as KeyboardEvent).key !== 'Escape') return;
+    const details = event.currentTarget as HTMLDetailsElement;
+    details.open = false;
+    details.querySelector('summary')?.focus();
+    event.stopPropagation();
+  });
+  host.querySelectorAll<HTMLButtonElement>('[data-header-store]').forEach(button => button.addEventListener('click', () => {
+    const select = host.querySelector<HTMLSelectElement>('[data-field="store"], [data-filter="store"]');
+    if (!select) return;
+    managerState.filters.currency = button.dataset.headerCurrency || '';
+    button.closest('details')?.removeAttribute('open');
+    select.value = button.dataset.headerStore || '';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  }));
+  host.querySelectorAll<HTMLInputElement>('[data-shared-status]').forEach(input => input.addEventListener('change', () => {
+    const groups = [0, 1, 2].map(index => Array.from(host.querySelectorAll<HTMLInputElement>(`[data-shared-status="${index}"]:checked`), checkbox => checkbox.value).join(','));
+    managerState.filters.orderStatus = groups.some(Boolean) ? 'states:' + groups.join(';') : 'AllOrders';
+    apply();
+  }));
+  host.querySelector('ekom-date-range')?.addEventListener('date-range-apply', event => {
+    const range = (event as CustomEvent<{ from: string; to: string }>).detail;
+    managerState.filters.dateFrom = range.from;
+    managerState.filters.dateTo = range.to;
+    apply();
+  });
+}
+
+// Lazy registration keeps shared data helpers usable by classic clients and server-side tests.
+export function registerDateRange(): void {
+  if (typeof customElements === 'undefined' || !customElements.get || customElements.get('ekom-date-range')) return;
+  class EkomDateRange extends HTMLElement {
+    private readonly root = this.attachShadow({ mode: 'open' });
+    private open = false;
+    private from = '';
+    private to = '';
+    private month = 0;
+    private readonly reposition = () => {
+      const popover = this.root.querySelector<HTMLElement>('.popover');
+      const anchor = this.root.querySelector<HTMLElement>('.anchor');
+      const view = this.ownerDocument.defaultView;
+      if (!popover || !anchor || !view) return;
+      if (view.innerWidth <= 650) { popover.style.left = ''; return; }
+      const left = anchor.getBoundingClientRect().left;
+      popover.style.left = `${Math.min(0, Math.max(24 - left, view.innerWidth - 24 - left - popover.getBoundingClientRect().width))}px`;
+    };
+    private readonly outside = (event: Event) => { if (this.open && !event.composedPath().includes(this)) this.close(false); };
+    override connectedCallback(): void {
+      this.render();
+      this.ownerDocument.addEventListener('pointerdown', this.outside);
+      this.ownerDocument.defaultView?.addEventListener('resize', this.reposition);
+    }
+    override disconnectedCallback(): void { this.ownerDocument.removeEventListener('pointerdown', this.outside); this.ownerDocument.defaultView?.removeEventListener('resize', this.reposition); }
+    private reset(): void {
+      this.from = this.getAttribute('from') || '';
+      this.to = this.getAttribute('to') || '';
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(this.from) ? new Date(`${this.from}T12:00:00`) : new Date();
+      this.month = date.getFullYear() * 12 + date.getMonth();
+    }
+    private close(focus = true): void {
+      this.open = false; this.render();
+      if (focus) this.root.querySelector<HTMLButtonElement>('[data-toggle]')?.focus();
+    }
+    private date(value: string): string { return value ? `${value.slice(8, 10)}.${value.slice(5, 7)}.${value.slice(0, 4)}` : 'Pick a date'; }
+    private calendar(index: number): string {
+      const first = new Date(Math.floor(index / 12), index % 12, 1);
+      const lead = (first.getDay() + 6) % 7;
+      const days = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+      return `<section class="month"><h3>${first.toLocaleDateString('en', { month: 'long', year: 'numeric' })}</h3><div class="days">${['Mo','Tu','We','Th','Fr','Sa','Su'].map(day => `<span class="weekday">${day}</span>`).join('')}${'<span></span>'.repeat(lead)}${Array.from({ length: days }, (_, i) => {
+        const value = `${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
+        const edge = value === this.from || value === this.to;
+        const inside = this.from && this.to && value > this.from && value < this.to;
+        return `<button type="button" data-day="${value}" aria-label="${value}" aria-pressed="${edge || !!inside}" class="day ${edge ? 'edge' : inside ? 'inside' : ''} ${value === this.from ? 'start' : ''} ${value === this.to ? 'end' : ''} ${!this.to || this.to === this.from ? 'single' : ''}">${i + 1}</button>`;
+      }).join('')}</div></section>`;
+    }
+    private render(): void {
+      const savedFrom = this.getAttribute('from') || '';
+      const savedTo = this.getAttribute('to') || '';
+      const presets = dateRangePresets();
+      const label = presets.find(p => p.from === savedFrom && p.to === savedTo)?.label || 'Custom';
+      renderManagerContent(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${label}</strong><span class="dates">${this.date(savedFrom)} – ${this.date(savedTo)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${presets.map((preset, index) => `<button type="button" data-preset="${index}" aria-pressed="${preset.from === this.from && preset.to === this.to}">${preset.label}<span>${preset.from === this.from && preset.to === this.to ? '✓' : ''}</span></button>`).join('')}</nav><div class="custom"><div class="draft"><div class="${!this.from ? 'active' : ''}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? 'active' : ''}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : 'Select an end date'}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? 'disabled' : ''}>Apply</button></footer></div></div>` : ''}</div></div>`);
+      this.root.querySelector('link')?.addEventListener('load', this.reposition);
+      this.reposition();
+      this.root.querySelector('[data-toggle]')?.addEventListener('click', () => {
+        if (this.open) { this.close(); return; }
+        this.reset(); this.open = true; this.render(); this.root.querySelector<HTMLButtonElement>('[data-preset]')?.focus();
+      });
+      this.root.querySelector('[data-cancel]')?.addEventListener('click', () => this.close());
+      this.root.querySelector('[data-apply]')?.addEventListener('click', () => {
+        if (!this.from || !this.to || this.from > this.to) return;
+        this.setAttribute('from', this.from); this.setAttribute('to', this.to); this.close();
+        this.dispatchEvent(new CustomEvent('date-range-apply', { bubbles: true, composed: true, detail: { from: this.from, to: this.to } }));
+      });
+      this.root.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach(button => button.addEventListener('click', () => {
+        const preset = presets[Number(button.dataset.preset)]; this.from = preset.from; this.to = preset.to;
+        const date = new Date(`${this.from}T12:00:00`); this.month = date.getFullYear() * 12 + date.getMonth(); this.render();
+        this.root.querySelector<HTMLButtonElement>(`[data-preset="${button.dataset.preset}"]`)?.focus();
+      }));
+      this.root.querySelectorAll<HTMLButtonElement>('[data-month]').forEach(button => button.addEventListener('click', () => {
+        this.month += Number(button.dataset.month); this.render(); this.root.querySelector<HTMLButtonElement>(`[data-month="${button.dataset.month}"]`)?.focus();
+      }));
+      this.root.querySelectorAll<HTMLButtonElement>('[data-day]').forEach(button => button.addEventListener('click', () => {
+        const value = button.dataset.day!;
+        if (!this.from || this.to || value < this.from) { this.from = value; this.to = ''; } else this.to = value;
+        this.render(); this.root.querySelector<HTMLButtonElement>(`[data-day="${value}"]`)?.focus();
+      }));
+      this.onkeydown = event => { if (event.key === 'Escape' && this.open) { event.preventDefault(); event.stopPropagation(); this.close(); } };
+    }
+  }
+  customElements.define('ekom-date-range', EkomDateRange);
+}
+
+export function renderStatusFilters(): string {
+  const values = managerState.filters.orderStatus.startsWith('states:') ? managerState.filters.orderStatus.slice(7).split(';') : ['', '', ''];
+  const groups = [
+    { label: 'Order', values: ['Draft','Open','Closed','Cancelled'] },
+    { label: 'Payment', values: ['Pending','Authorized','Paid','PartiallyPaid','Failed','Voided'] },
+    { label: 'Fulfillment', values: ['Unfulfilled','Picking','Picked','Packed','PartiallyFulfilled','Fulfilled'] },
+  ];
+  return groups.map((group,index) => {
+    const selected = (values[index] || '').split(',').filter(Boolean);
+    const label = selected.length === 1 ? selected[0].replace(/([a-z])([A-Z])/g, '$1 $2') : selected.length ? `${selected.length} selected` : 'Any';
+    return `<div class="ekom-status-filter"><span>${group.label}</span><details class="ekom-dropdown"><summary>${escapeHtml(label)}<span>▾</span></summary><div class="ekom-dropdown-options">${group.values.map(value => `<label><input type="checkbox" data-shared-status="${index}" value="${value}" ${selected.includes(value) ? 'checked' : ''}>${value.replace(/([a-z])([A-Z])/g, '$1 $2')}</label>`).join('')}</div></details></div>`;
+  }).join('');
+}
+
+/** Keep loaded styles connected so refreshing content cannot flash unstyled markup. */
+export function renderManagerContent(root: HTMLElement | ShadowRoot, html: string): void {
+  const template = root.ownerDocument.createElement('template');
+  template.innerHTML = html;
+  const styles = Array.from(root.children).filter(node => node.matches('style, link[rel="stylesheet"]'));
+  const incoming = Array.from(template.content.children).filter(node => node.matches('style, link[rel="stylesheet"]'));
+  for (const node of incoming) {
+    const existing = styles.find(style => style.outerHTML === node.outerHTML);
+    if (existing) styles.splice(styles.indexOf(existing), 1);
+    else root.appendChild(node.cloneNode(true));
+    node.remove();
+  }
+  for (const obsolete of styles) obsolete.remove();
+  for (const node of Array.from(root.childNodes)) {
+    if (node.nodeType !== 1 || !(node as Element).matches('style, link[rel="stylesheet"]')) node.remove();
+  }
+  root.appendChild(template.content);
 }

@@ -4,9 +4,9 @@ Customers appears between Orders and Analytics in Umbraco 13, 17 and 18. It is a
 
 ## Shared filters
 
-Store and date range are shared with Orders and Analytics in both directions. The inherited order-status filter selects customers with a qualifying order in the period. Dates are inclusive, using PaidDate for ReadyForDispatch and Dispatched, and CreateDate otherwise, matching the other manager views. Other Orders filters (product, coupon, provider and tracking) remain preserved in Orders but do not filter Customers.
+Store and date range are shared with Orders and Analytics in both directions. The inherited order, payment and fulfillment status filters select customers with a qualifying order in the period. Dates are inclusive, using PaidDate for ReadyForDispatch and Dispatched, and CreateDate otherwise, matching the other manager views. Other Orders filters (product, coupon, provider and tracking) remain preserved in Orders but do not filter Customers.
 
-The selected period determines which customers appear. Lifetime metrics and New/Returning classification use their full qualifying history within the selected store. The detail drawer includes all-time order history, with a separate toggle for non-qualifying orders. No customer data crosses store boundaries.
+The selected period determines which customers appear. Lifetime metrics and New/Returning classification use their full qualifying history within the selected store, currency and lifecycle scope. The detail drawer includes all-time order history, with a separate toggle for non-qualifying orders. No customer data crosses store boundaries.
 
 ## Identity configuration
 
@@ -26,7 +26,7 @@ Use CustomerEmail (default) or CustomerUsername. Other values fail startup valid
 
 ## Metrics
 
-Qualifying orders use the existing manager CompletedOrders statuses: ReadyForDispatch, OfflinePayment, ReadyForDispatchWhenStockArrives, Dispatched, Closed and ReadyForPickup. These are accepted orders, not necessarily verified payments. A new customer has one qualifying order; a returning customer has two or more.
+By default, qualifying orders have the new Open or Closed order status, including orders with Pending payment. Draft and Cancelled orders are excluded unless their lifecycle status is explicitly selected. Persisted new statuses take precedence; unmigrated orders use the shared legacy mapping. Explicit lifecycle filters also scope lifetime metrics and history, while payment and fulfillment filters select customers for the period without narrowing their lifetime history. A new customer has one qualifying order; a returning customer has two or more.
 
 - First order is the earliest qualifying CreateDate, not an account registration date.
 - Lifetime spend sums TotalAmount (the recorded ChargedAmount). It is not refund-adjusted net revenue.
@@ -44,4 +44,4 @@ List queries, summary cards, search and CSV export explicitly select EkomOrders 
 
 The snapshot is labelled with its source order and date. It is historical information, not a current profile or consent record. Click an order to open the existing manager order view for line items and other order details. Editing a customer, current gift-card balances and current marketing preferences are not part of this order-derived view.
 
-Endpoints under /ekom/manager/customers require the same backoffice and store authorization as Orders: GET for search, GET detail for a customer, and GET export for CSV.
+Endpoints under /ekom/manager/customers require the same backoffice and store authorization as Orders: GET for search, GET detail for a customer, and GET export for CSV. The optional orderStatus parameter on detail carries the same lifecycle scope used by search; omitting it uses Open and Closed orders.

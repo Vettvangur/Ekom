@@ -1,10 +1,12 @@
+import { renderManagerContent } from './manager-shared';
+import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { EkomManagerApi, escapeHtml as esc, managerState, managerStyles } from './manager-shared';
+import { EkomManagerApi, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
 
 type Spend = { currency: string; total: number; averageOrder: number; averageLifetime: number };
 type Customer = { identity: string; name?: string; email?: string; username?: string; shippingCountry?: string; firstOrder: string; lastOrder: string; lastStatus?: string; orders: number; daysSinceLastOrder: number; averageReorderDays?: number; spend: Spend[] };
 type Result = { customers: Customer[]; totals: { customers: number; returningPercent: number; averageOrders: number; averageReorderDays?: number }; spend: Spend[]; missingIdentifiers: number; identityField: string; totalPages: number };
-type Detail = { customer: Customer; orders: Array<{ uniqueId: string; orderNumber: string; referenceId: number; orderStatusCol: string; createDate: string; paidDate?: string; formattedTotal: string }>; count: number; page: number; totalPages: number; snapshot: { orderId: string; orderNumber: string; date: string; unavailable: boolean; fields: Record<string, string> } };
+type Detail = { customer: Customer; orders: Array<{ uniqueId: string; orderNumber: string; referenceId: number; orderStatusCol: string; status?: OrderStatusSnapshot; createDate: string; paidDate?: string; formattedTotal: string }>; count: number; page: number; totalPages: number; snapshot: { orderId: string; orderNumber: string; date: string; unavailable: boolean; fields: Record<string, string> } };
 
 export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private api = new EkomManagerApi();
@@ -30,6 +32,11 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
 
   override connectedCallback(): void {
     super.connectedCallback();
+    if (!this.hasAttribute('classic')) this.consumeContext?.<UmbThemeContext>('umbThemeContext', context => {
+      if (context) this.observe(context.theme, alias => {
+        this.toggleAttribute('data-ekom-dark', alias === 'umb-dark-theme');
+      }, 'ekom-manager-theme');
+    });
     this.ownerDocument?.addEventListener('keydown', this.dismissOnEscape, true);
     this.classic = this.hasAttribute('classic');
     if (this.classic) {
@@ -52,8 +59,11 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
     this.busy = true;
     this.render();
     try {
-      managerState.stores = await this.api.stores();
+      const [stores, printing] = await Promise.all([this.api.stores(), this.classic ? Promise.resolve(false) : this.api.printingEnabled()]);
+      managerState.stores = stores;
+      managerState.printingEnabled = printing;
       if (!managerState.stores.some(x => x.alias === managerState.filters.store)) managerState.filters.store = managerState.stores[0]?.alias || '';
+      if (!this.classic) ensureManagerCurrency();
       await this.load();
     } catch {
       this.error = 'Unable to load customers. Please try again.';
@@ -64,7 +74,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
 
   private params(): URLSearchParams {
     const f = managerState.filters;
-    return new URLSearchParams({ store: f.store, start: f.dateFrom, end: f.dateTo, orderStatus: f.orderStatus, query: this.query, segment: this.segment, sort: this.sort, page: String(this.page) });
+    return new URLSearchParams({ store: f.store, currency: f.currency || '', start: f.dateFrom, end: f.dateTo, orderStatus: f.orderStatus, query: this.query, segment: this.segment, sort: this.sort, page: String(this.page) });
   }
 
   private async get<T>(path: string, params: URLSearchParams): Promise<T> {
@@ -80,7 +90,9 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
     this.result = undefined;
     this.error = '';
     this.busy = true;
-    this.render();
+    const content = this.querySelector<HTMLElement>('.customers');
+    if (content && managerState.filters.store) content.setAttribute('aria-busy', 'true');
+    else this.render();
     try {
       if (!managerState.filters.store) { this.result = undefined; return; }
       const result = await this.get<Result>('', this.params());
@@ -97,7 +109,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
     this.opener = identity;
     this.error = '';
     try {
-      const detail = await this.get<Detail>('/detail', new URLSearchParams({ store: managerState.filters.store, identity, page: String(page), other: String(this.other) }));
+      const detail = await this.get<Detail>('/detail', new URLSearchParams({ store: managerState.filters.store, currency: managerState.filters.currency || '', identity, orderStatus: managerState.filters.orderStatus, page: String(page), other: String(this.other) }));
       if (request !== this.detailRequest || !this.isConnected) return;
       this.detail = detail;
       this.render();
@@ -140,11 +152,16 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
 
   private number(value?: number | null): string { return value == null ? '—' : esc(value.toLocaleString(undefined, { maximumFractionDigits: 1 })); }
   private date(value?: string): string { return value ? esc(new Date(value).toLocaleDateString()) : '—'; }
+  private avatar(name: string): string {
+    const initials = name.trim().split(/\s+/).slice(0,2).map(part => Array.from(part)[0] || '').join('').toUpperCase();
+    return this.classic ? '' : `<span class="customer-avatar" aria-hidden="true">${esc(initials)}</span>`;
+  }
+
   private card(label: string, value: string): string { return `<div class="customer-card"><small>${label}</small><strong>${value}</strong></div>`; }
 
   private render(): void {
     const f = managerState.filters, r = this.result;
-    this.innerHTML = `<style>${managerStyles}
+    renderManagerContent(this, `<style>${managerStyles}${this.classic ? `
       ekom-customers-section-view { display:block; color:var(--uui-color-text,#20232e) }
       .customers { padding:24px; background:var(--uui-color-background,#f3f4f7); min-height:80vh }
       .customer-cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0 }
@@ -177,14 +194,17 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       .customer-snapshot dt { color:#70778a;font-size:12px;margin-top:15px }
       .customer-snapshot dd { margin:4px 0;overflow-wrap:anywhere }
       @media(max-width:800px) { .customer-detail-grid { grid-template-columns:1fr } .customers { padding:12px } }
-    </style><section class="customers" aria-busy="${this.busy}">
-      <div class="customer-toolbar">
-        <label>Store<select data-filter="store">${managerState.stores.map(s => `<option value="${esc(s.alias)}" ${s.alias === f.store ? 'selected' : ''}>${esc(s.title)}</option>`).join('')}</select></label>
-        <label>Date From<input type="date" data-filter="dateFrom" value="${esc(f.dateFrom)}"></label>
+    ` : ''}</style>${this.classic ? '' : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/customers-layout.css?v=20261110-toolbar">'}<section class="customers ekom-design" aria-busy="${this.busy}">
+      ${this.classic ? '' : renderManagerHeader('customers', 'data-filter')}
+      <div class="customer-toolbar ekom-shared-filters">
+        ${this.classic ? `<label>Store<select data-filter="store">${managerState.stores.map(store => `<option value="${esc(store.alias)}" ${store.alias === f.store ? 'selected' : ''}>${esc(store.title)}</option>`).join('')}</select></label>` : ''}
+        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${renderOrderViewOptions(f.orderStatus)}</select></label>` : renderStatusFilters()}
+        ${this.classic ? `        <label>Date From<input type="date" data-filter="dateFrom" value="${esc(f.dateFrom)}"></label>
         <label>Date To<input type="date" data-filter="dateTo" value="${esc(f.dateTo)}"></label>
+` : renderDateRange()}
         <button data-reload ${this.busy ? 'disabled' : ''}>Refresh</button>
       </div>
-      <p class="customer-muted">Customers who ordered in the selected period. Lifetime metrics include all qualifying orders in this store. Status filter: ${esc(f.orderStatus.replace(/([a-z])([A-Z])/g, '$1 $2'))}.</p>
+      <p class="customer-muted">Customers who ordered in the selected period. Lifetime metrics include all qualifying orders in the selected store and currency. </p>
       ${this.error ? `<p role="alert">${esc(this.error)}</p>` : ''}
       ${this.busy && r ? '<p role="status">Preparing export...</p>' : ''}
       ${r ? `<div class="customer-cards">${this.card('Customers', this.number(r.totals.customers))}${this.card('Returning', this.number(r.totals.returningPercent) + '%')}${this.card('Average lifetime spend', this.amount(r.spend,'averageLifetime'))}${this.card('Average orders per customer',this.number(r.totals.averageOrders))}${this.card('Average days between orders',this.number(r.totals.averageReorderDays))}</div>
@@ -192,27 +212,28 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       <div class="customer-panel"><div class="customer-toolbar" role="search">
         <label>Search<input name="query" value="${esc(this.query)}" placeholder="Name, email or username"></label>
         <button type="button" data-search>Search</button>
-        <label>Customers<select data-segment>${['all','new','returning'].map(s => `<option value="${s}" ${s === this.segment ? 'selected' : ''}>${s[0].toUpperCase()+s.slice(1)}</option>`).join('')}</select></label>
+        <nav class="ekom-customer-segments" aria-label="Customer segment">${['all','new','returning'].map(segment => `<button type="button" data-segment-value="${segment}" aria-pressed="${segment === this.segment}">${segment[0].toUpperCase()+segment.slice(1)}</button>`).join('')}</nav>
         <label>Sort by<select data-sort>${[['newest','Newest first order'],['oldest','Oldest first order'],['lastOrder','Latest order'],['orders','Most orders'],['name','Name']].map(([v,l]) => `<option value="${v}" ${v === this.sort ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <button type="button" data-export ${this.busy || !r?.totals.customers ? 'disabled' : ''}>Export</button>
       </div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
-      ${(r?.customers || []).map(c => `<tr><td><button data-customer="${esc(c.identity)}">${esc(c.name || c.email || c.username || c.identity)}<span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span><span class="customer-muted">${esc(c.email || c.username || c.identity)}</span></button></td><td>${this.date(c.firstOrder)}</td><td>${c.orders}</td><td>${this.amount(c.spend,'total')}</td><td>${this.amount(c.spend,'averageOrder')}</td><td>${this.date(c.lastOrder)}<span class="customer-muted">${esc(c.lastStatus || '')}</span></td><td>${c.daysSinceLastOrder}</td></tr>`).join('') || `<tr><td colspan="7">${this.busy ? '<div class="customer-loading" role="status"><span class="customer-spinner" aria-hidden="true"></span><strong>Loading customers...</strong><span class="customer-muted">Large datasets may take a moment.</span></div>' : r ? 'No customers found.' : this.error ? 'Customer results could not be loaded.' : 'Select a store to see customers.'}</td></tr>`}
+      ${(r?.customers || []).map(c => `<tr><td><div class="customer-identity">${this.avatar(c.name || c.email || c.username || c.identity)}<button data-customer="${esc(c.identity)}">${esc(c.name || c.email || c.username || c.identity)}<span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span><span class="customer-muted">${esc(c.email || c.username || c.identity)}</span></button></div></td><td>${this.date(c.firstOrder)}</td><td>${c.orders}</td><td>${this.amount(c.spend,'total')}</td><td>${this.amount(c.spend,'averageOrder')}</td><td>${this.date(c.lastOrder)}${this.classic ? `<span class="customer-muted">${esc(c.lastStatus || '')}</span>` : ''}</td><td>${c.daysSinceLastOrder}</td></tr>`).join('') || `<tr><td colspan="7">${this.busy ? '<div class="customer-loading" role="status"><span class="customer-spinner" aria-hidden="true"></span><strong>Loading customers...</strong><span class="customer-muted">Large datasets may take a moment.</span></div>' : r ? 'No customers found.' : this.error ? 'Customer results could not be loaded.' : 'Select a store to see customers.'}</td></tr>`}
       </tbody></table></div><div class="customer-pagination"><button data-page="${this.page-1}" ${this.page <= 1 || this.busy ? 'disabled' : ''}>Previous</button><span>Page ${this.page} of ${Math.max(1,r?.totalPages || 0)}</span><button data-page="${this.page+1}" ${this.page >= (r?.totalPages || 0) || this.busy ? 'disabled' : ''}>Next</button></div></div>
-      ${this.detail ? this.renderDetail(this.detail) : ''}</section>`;
+      ${this.detail ? this.renderDetail(this.detail) : ''}</section>`);
     this.bind();
   }
 
   private renderDetail(d: Detail): string {
     const c = d.customer;
-    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" class="customer-dialog"><header class="customer-heading"><div><h2>${esc(c.name || c.identity)} <span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span></h2><p>${esc([c.email,c.username].filter(Boolean).join(' · '))}</p></div><button data-close aria-label="Close customer details">Close</button></header>
+    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" class="customer-dialog"><header class="customer-heading">${this.avatar(c.name || c.identity)}<div><h2>${esc(c.name || c.identity)} <span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span></h2><p>${esc([c.email,c.username].filter(Boolean).join(' · '))}</p></div><button data-close aria-label="Close customer details">${this.classic ? 'Close' : '×'}</button></header>
       <div class="customer-cards">${this.card('Lifetime spend',this.amount(c.spend,'total'))}${this.card('Orders',String(c.orders))}${this.card('Average order',this.amount(c.spend,'averageOrder'))}${this.card('First order',this.date(c.firstOrder))}${this.card('Days since last order',String(c.daysSinceLastOrder))}${this.card('Average reorder interval (days)',this.number(c.averageReorderDays))}</div>
-      <div class="customer-detail-grid"><div><h3>Orders <small>(${d.count})</small></h3><label><input type="checkbox" data-other ${this.other ? 'checked' : ''}> Show other orders (excluded from lifetime metrics)</label><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Order</th><th>Status</th><th>Created</th><th>Paid</th><th>Total</th></tr></thead><tbody>${d.orders.map(o => `<tr><td><button data-order="${esc(o.uniqueId)}">#${esc(o.orderNumber || String(o.referenceId))}</button></td><td>${esc(o.orderStatusCol)}</td><td>${this.date(o.createDate)}</td><td>${this.date(o.paidDate)}</td><td>${esc(o.formattedTotal)}</td></tr>`).join('') || '<tr><td colspan="5">No orders.</td></tr>'}</tbody></table></div><div class="customer-pagination"><button data-detail-page="${d.page-1}" ${d.page <= 1 ? 'disabled' : ''}>Previous</button><span>${d.page} / ${Math.max(1,d.totalPages)}</span><button data-detail-page="${d.page+1}" ${d.page >= d.totalPages ? 'disabled' : ''}>Next</button></div></div>
+      <div class="customer-detail-grid"><div><h3>Orders <small>(${d.count})</small></h3><label><input type="checkbox" data-other ${this.other ? 'checked' : ''}> Show other orders (excluded from lifetime metrics)</label><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Order</th>${this.classic ? '<th>Status</th>' : '<th>Order status</th><th>Payment</th><th>Fulfillment</th>'}<th>Created</th><th>Paid</th><th>Total</th></tr></thead><tbody>${d.orders.map(o => `<tr><td><button data-order="${esc(o.uniqueId)}">#${esc(o.orderNumber || String(o.referenceId))}</button></td>${this.classic ? `<td>${esc(o.orderStatusCol)}</td>` : `<td>${renderStatusBadge(o.status?.orderStatus)}</td><td>${renderStatusBadge(o.status?.paymentStatus)}</td><td>${renderStatusBadge(o.status?.fulfillmentStatus)}</td>`}<td>${this.date(o.createDate)}</td><td>${this.date(o.paidDate)}</td><td>${esc(o.formattedTotal)}</td></tr>`).join('') || `<tr><td colspan="${this.classic ? 5 : 7}">No orders.</td></tr>`}</tbody></table></div><div class="customer-pagination"><button data-detail-page="${d.page-1}" ${d.page <= 1 ? 'disabled' : ''}>Previous</button><span>${d.page} / ${Math.max(1,d.totalPages)}</span><button data-detail-page="${d.page+1}" ${d.page >= d.totalPages ? 'disabled' : ''}>Next</button></div></div>
       <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${esc(d.snapshot.orderNumber)} · ${this.date(d.snapshot.date)}. Historical details, not a current customer profile.</p>${d.snapshot.unavailable ? '<p>Saved details could not be read.</p>' : ''}<dl>${Object.entries(d.snapshot.fields).map(([k,v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('') || '<dd>No additional details recorded.</dd>'}</dl></aside></div></section></div>`;
   }
 
   private bind(): void {
+    if (!this.classic) bindDateRange(this, () => { this.page = 1; this.dispatchEvent(new CustomEvent('customer-filters-changed', { bubbles: true, detail: { ...managerState.filters } })); void this.load(); });
     this.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-filter]').forEach(input => input.addEventListener('change', () => {
-      const key = input.dataset.filter as 'store' | 'dateFrom' | 'dateTo';
+      const key = input.dataset.filter as 'store' | 'dateFrom' | 'dateTo' | 'orderStatus';
       managerState.filters[key] = input.value;
       this.dispatchEvent(new CustomEvent('customer-filters-changed', { bubbles:true, detail: { ...managerState.filters } }));
       this.page = 1; void this.load();
@@ -229,6 +250,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       event.stopPropagation();
       search();
     });
+    this.querySelectorAll<HTMLButtonElement>('[data-segment-value]').forEach(button => button.addEventListener('click', () => { this.segment = button.dataset.segmentValue!; this.page = 1; void this.load(); }));
     this.querySelector<HTMLSelectElement>('[data-segment]')?.addEventListener('change', event => { this.segment = (event.target as HTMLSelectElement).value; this.page=1; void this.load(); });
     this.querySelector<HTMLSelectElement>('[data-sort]')?.addEventListener('change', event => { this.sort = (event.target as HTMLSelectElement).value; this.page=1; void this.load(); });
     this.querySelector('[data-reload]')?.addEventListener('click', () => void this.load());

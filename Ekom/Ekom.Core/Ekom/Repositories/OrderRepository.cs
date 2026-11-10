@@ -1,4 +1,5 @@
 using Ekom.Models;
+using OrderStateRules = Ekom.Models.Orders.OrderStateRules;
 using Ekom.Services;
 using Ekom.Utilities;
 using LinqToDB;
@@ -10,7 +11,7 @@ using System.Data.Common;
 using System.Linq.Expressions;
 
 namespace Ekom.Repositories;
-class OrderRepository
+partial class OrderRepository
 {
     readonly ILogger _logger;
     readonly Configuration _config;
@@ -56,6 +57,7 @@ class OrderRepository
         await using var transaction = _statusPersistenceHandlers.Length == 0 ? null
             : await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
 
+        OrderStateRules.SynchronizeLegacy(orderData, null, _config.AutoClosePaidAndFulfilledOrders(orderData.StoreAlias));
         var referenceId = await db.InsertWithIdentityAsync(orderData, token: ct).ConfigureAwait(false);
 
         orderData.ReferenceId = Convert.ToInt32(referenceId, System.Globalization.CultureInfo.InvariantCulture);
@@ -72,10 +74,9 @@ class OrderRepository
 
         if (_paymentAttempts == null)
         {
-            await using var transaction = _statusPersistenceHandlers.Length == 0 ? null
-                : await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
-            var previous = _statusPersistenceHandlers.Length == 0 ? null
-                : await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderData.UniqueId, ct).ConfigureAwait(false);
+            await using var transaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+            var previous = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderData.UniqueId, ct).ConfigureAwait(false);
+            OrderStateRules.SynchronizeLegacy(orderData, previous, _config.AutoClosePaidAndFulfilledOrders(orderData.StoreAlias));
             var updated = await db.UpdateAsync(orderData, token: ct).ConfigureAwait(false);
             if (previous != null && updated == 1)
                 await PersistStatusAsync(db, orderData, previous.OrderStatusCol, ct).ConfigureAwait(false);
@@ -88,8 +89,8 @@ class OrderRepository
             try
             {
                 await _paymentAttempts.EnsureWriteAllowedAsync(db, orderData.UniqueId, ct).ConfigureAwait(false);
-                var previous = _statusPersistenceHandlers.Length == 0 ? null
-                    : await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderData.UniqueId, ct).ConfigureAwait(false);
+                var previous = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderData.UniqueId, ct).ConfigureAwait(false);
+                OrderStateRules.SynchronizeLegacy(orderData, previous, _config.AutoClosePaidAndFulfilledOrders(orderData.StoreAlias));
                 var capability = CheckoutPaymentOperationScope.Current;
                 var isManagerOverride = capability?.OrderId == orderData.UniqueId && capability.IsManagerOverride;
                 var owner = capability?.OrderId == orderData.UniqueId ? capability.Owner : null;
@@ -101,6 +102,14 @@ class OrderRepository
                         : db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == owner))
                     .Set(x => x.OrderInfo, orderData.OrderInfo)
                     .Set(x => x.OrderStatusCol, orderData.OrderStatusCol)
+                    .Set(x => x.OrderStateCol, orderData.OrderStateCol)
+                    .Set(x => x.PaymentStateCol, orderData.PaymentStateCol)
+                    .Set(x => x.FulfillmentStateCol, orderData.FulfillmentStateCol)
+                    .Set(x => x.OriginalOrderStatusCol, orderData.OriginalOrderStatusCol)
+                    .Set(x => x.FulfilledQuantitiesJson, orderData.FulfilledQuantitiesJson)
+                    .Set(x => x.StatusMappingVersion, orderData.StatusMappingVersion)
+                    .Set(x => x.StatusRevision, orderData.StatusRevision)
+                    .Set(x => x.AutoCloseSuppressed, orderData.AutoCloseSuppressed)
                     .Set(x => x.OrderNumber, orderData.OrderNumber)
                     .Set(x => x.CustomerEmail, orderData.CustomerEmail)
                     .Set(x => x.CustomerName, orderData.CustomerName)

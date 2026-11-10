@@ -8,13 +8,16 @@ import ts from 'typescript';
 
 const dom = new JSDOM('');
 const exports = {};
+const shared = {};
+runInNewContext(ts.transpileModule(readFileSync(new URL('../src/manager/manager-shared.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, { exports: shared });
 const source = readFileSync(new URL('../src/manager/printing-section-view.element.ts', import.meta.url), 'utf8');
 runInNewContext(ts.transpileModule(source, { compilerOptions: {
   module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022,
-} }).outputText, { exports, document: dom.window.document, DOMParser: dom.window.DOMParser,
+} }).outputText, { exports, URLSearchParams, document: dom.window.document, DOMParser: dom.window.DOMParser,
   Node: dom.window.Node, Element: dom.window.Element, HTMLElement: dom.window.HTMLElement,
   customElements: dom.window.customElements, window: dom.window, crypto: webcrypto,
   require: (name) => {
+    if (name === './manager-shared') return shared;
     assert.equal(name, '@umbraco-cms/backoffice/element-api');
     return { UmbElementMixin: (Base) => class extends Base {
       connectedCallback() { this.contextConnected = true; }
@@ -126,14 +129,14 @@ test('review replacement requires confirmation and retries a lost response with 
     if (requests.length === 1) throw new Error('Response lost');
     return {};
   };
-  dom.window.confirm = message => {
+  view.confirmAction = message => {
     assert.match(message, /clear any pending copy/);
     assert.match(message, /delayed original may still print/);
     return false;
   };
   await view.action('job', 'resolve-reprint');
   assert.equal(requests.length, 0);
-  dom.window.confirm = () => true;
+  view.confirmAction = () => true;
   await view.action('job', 'resolve-reprint');
   await view.action('job', 'resolve-reprint');
   assert.equal(requests.length, 2);
@@ -166,4 +169,45 @@ test('printing dialog closes on Escape or backdrop, but not on its content or pa
   dialog.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
   dialog.dispatchEvent(new dom.window.Event('cancel', { cancelable: true }));
   assert.equal(closes, 3);
+});
+
+
+test('manager confirmation dialogs cancel on dismiss and disconnect and confirm explicitly', async () => {
+  const view = new exports.default();
+  dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  dom.window.HTMLDialogElement.prototype.close = function (value = '') { this.returnValue = value; this.open = false; this.dispatchEvent(new dom.window.Event('close')); };
+  for (const action of ['dismiss', 'confirm', 'disconnect']) {
+    const answer = view.confirmAction('Create another copy?');
+    assert.match(view.shadowRoot.querySelector('dialog').textContent, /Create another copy/);
+    if (action === 'disconnect') view.disconnectedCallback();
+    else view.shadowRoot.querySelector(`[data-${action}]`).click();
+    assert.equal(await answer, action === 'confirm');
+    assert.equal(view.shadowRoot.querySelector('dialog'), null);
+  }
+});
+
+
+test('modern printing scopes jobs by store and currency and stations by store', async () => {
+  const view = new exports.default();
+  view.render = () => {};
+  shared.managerState.filters.store = 'selected';
+  shared.managerState.filters.currency = 'ISK';
+  const paths = [];
+  view.json = async path => {
+    paths.push(path);
+    return path === '/stations'
+      ? [{ alias: 'mine', stores: ['selected'] }, { alias: 'other', stores: ['other'] }]
+      : { jobs: [], total: 0, page: 1, pageSize: 25 };
+  };
+  await view.load();
+  const query = new URLSearchParams(paths.find(path => path.startsWith('/jobs?')).split('?')[1]);
+  assert.equal(query.get('store'), 'selected');
+  assert.equal(query.get('currency'), 'ISK');
+  assert.equal(view.stations.length, 1);
+  assert.equal(view.stations[0].alias, 'mine');
+  view.setAttribute('classic', '');
+  paths.length = 0;
+  await view.load();
+  assert.equal(new URLSearchParams(paths[0].split('?')[1]).has('store'), false);
+  assert.equal(view.stations.length, 2);
 });

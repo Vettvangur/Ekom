@@ -22,14 +22,23 @@ internal sealed class PrinterManagerService(DatabaseFactory factory, IManagerAcc
         security.GetUmbracoUserGroups().Intersect(options.Value.ManagerGroups, StringComparer.OrdinalIgnoreCase).Any();
 
     public async Task<PrinterManagerPage> ListAsync(string? state, string? station, string? search, int page,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, string? store = null, string? currency = null)
     {
         await using var db = factory.GetDatabase();
         var allowed = access.GetAllowedStoreAliases().ToArray();
         var query = from job in db.GetTable<PrintJob>()
                     join order in db.OrderData on job.OrderId equals order.UniqueId
                     where Enumerable.Contains(allowed, order.StoreAlias)
-                    select new { Job = job, order.OrderNumber, order.StoreAlias };
+                    select new { Job = job, order.OrderNumber, order.StoreAlias, order.Currency };
+        if (store != null) query = query.Where(x => x.StoreAlias == store);
+        if (!string.IsNullOrWhiteSpace(currency))
+        {
+            var code = currency.Trim().ToUpperInvariant();
+            var values = System.Globalization.CultureInfo.GetCultures(System.Globalization.CultureTypes.SpecificCultures)
+                .Where(c => new System.Globalization.RegionInfo(c.Name).ISOCurrencySymbol == code)
+                .Select(c => c.Name.ToUpperInvariant()).Append(code).ToArray();
+            query = query.Where(x => Enumerable.Contains(values, x.Currency.Trim().ToUpper()));
+        }
         if (!string.IsNullOrWhiteSpace(station)) query = query.Where(x => x.Job.StationAlias == station);
         if (!string.IsNullOrWhiteSpace(search)) query = query.Where(x => x.OrderNumber.Contains(search));
         if (state == "attention") query = query.Where(x => x.Job.State == PrintJobState.RenderFailed || x.Job.State == PrintJobState.NeedsReview);

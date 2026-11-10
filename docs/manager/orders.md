@@ -161,3 +161,9 @@ After a successful action, `OrderManagerEvents.ActionExecutedAsync` runs with th
 ## Access failures
 
 If a user can open the manager but receives a forbidden response for a store or order, review [Access and permissions](access-and-permissions.md). In particular, a non-empty store permission map denies every omitted store.
+
+## Manual payment status
+
+Open orders support manual Pending, Authorized, Paid, Partially Paid, Failed and Voided classification from the payment menu in the table and order details. Selecting an option saves immediately. This only changes the recorded status; it does not charge, capture, void or refund through a provider, change amounts, or set a payment date. Refund status editing is not available. Closed orders must be explicitly reopened first.
+
+Updates use the current status revision, enforce checkout locks and store permissions, and are logged. The status-events checkbox controls configured notifications. Marking an already fulfilled order Paid can close it automatically under the store's auto-close setting. Save any pending fulfillment edits before changing payment.

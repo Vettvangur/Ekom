@@ -165,6 +165,7 @@ class EnsureTablesExist : IComponent
 
         _dbService.EnsureOrderActivityLogTypeColumn();
         _dbService.EnsurePriceTable();
+        _dbService.EnsureOrderStateColumns();
         _dbService.EnsureStockReservationTable();
 
         logger.LogDebug("Done");

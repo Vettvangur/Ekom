@@ -116,3 +116,14 @@ Do not use serialized catalog/order objects as write DTOs unless an endpoint exp
 - [HTTP API](http-api.md)
 - [Events](events.md)
 - [Configuration](configuration-reference.md)
+
+
+## Independent status snapshot (initial implementation)
+
+`OrderData.Status` and concrete `OrderInfo.Status` expose an additive `Ekom.Models.Orders.OrderStatusSnapshot`. Existing `Ekom.Utilities.OrderStatus`, `IOrderInfo`, and legacy write methods are unchanged.
+
+The snapshot projects the legacy record into independent order, payment, and fulfillment dimensions. JSON uses named string enum values. Missing historical evidence is represented by nullable fields and `RequiresReview`, not an additional business enum value. For example, ReadyForDispatch reads as Open / Paid / Unfulfilled, while Closed alone does not prove payment or fulfillment.
+
+Reading or serializing Status remains side-effect free. Canonical statuses are persisted in additive columns; legacy writers preserve existing canonical state. POST /ekom/manager/orderStates/{orderId} accepts ExpectedRevision, Action, optional FulfilledQuantities, and Notify. Supported actions are Picking, Picked, Packed, Fulfill, Close, Cancel, and Reopen. GET /ekom/manager/statusMigration previews up to 100 unmigrated records; POST applies eligible mappings, with afterReferenceId for pagination. Ambiguous history and locked checkout attempts are skipped. Backfill preserves legacy values and does not replay business events.
+
+Ekom:AutoClosePaidAndFulfilledOrders defaults to true; Ekom:Stores:{storeAlias}:AutoClosePaidAndFulfilledOrders overrides it. Explicit reopening suppresses auto-close. Refund execution and its manager UI remain deferred. Validate the migration on a database copy before release.

@@ -102,7 +102,7 @@ public sealed class PrinterManagerTests
         var otherOrder = Guid.NewGuid();
         foreach (var pair in new[] { (order, "allowed"), (otherOrder, "other") })
             await db.InsertAsync(new OrderData { UniqueId = pair.Item1, StoreAlias = pair.Item2,
-                OrderNumber = "123", OrderStatusCol = "ReadyForDispatch", OrderInfo = "{}" });
+                OrderNumber = "123", Currency = "en-US", OrderStatusCol = "ReadyForDispatch", OrderInfo = "{}" });
         var job = new PrintJob { Id = new string('a', 64), OrderId = order, StationAlias = "warehouse",
             State = PrintJobState.Submitted, Html = "<p>Exact original</p>", Copies = 2, CreatedUtc = DateTime.UtcNow };
         await db.InsertAsync(job);
@@ -116,6 +116,9 @@ public sealed class PrinterManagerTests
         var manager = new PrinterManagerService(fixture.Factory, access.Object, security.Object,
             Options.Create(new PrinterOptions()), TimeProvider.System);
         Assert.Single((await manager.ListAsync(null, null, null, 1)).Jobs);
+        Assert.Single((await manager.ListAsync(null, null, null, 1, store: "allowed", currency: "USD")).Jobs);
+        Assert.Empty((await manager.ListAsync(null, null, null, 1, store: "other", currency: "USD")).Jobs);
+        Assert.Equal(0, (await manager.ListAsync(null, null, null, 1, store: "allowed", currency: "ISK")).Total);
         Assert.Null(await manager.FindAsync(new string('b', 64)));
         var request = new PrinterManagerRequest("reprint", Guid.NewGuid());
         var newId = await manager.ActAsync(job.Id, request, "Admin");

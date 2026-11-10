@@ -4,6 +4,8 @@ using Ekom.Klaviyo;
 using Ekom.Mailchimp;
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Printer;
+using Ekom.Printer.Api;
 using Ekom.Site.U17;
 using Ekom.Site.U17.EkomIntegration;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
@@ -22,6 +24,7 @@ builder.Services.AddTransient<IProductFilterService, CustomProductFilterService>
 builder.Services.AddAlgolia();
 builder.Services.AddKlaviyo();
 builder.Services.AddMailchimp();
+builder.Services.AddEkomPrinter(builder.Configuration);
 
 if (builder.Environment.IsDevelopment())
 {
@@ -32,6 +35,7 @@ if (builder.Environment.IsDevelopment())
 var app = builder.Build();
 
 await app.BootUmbracoAsync();
+app.MapEkomPrinter();
 
 app.UseUmbraco()
     .WithMiddleware(u =>

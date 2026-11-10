@@ -34,13 +34,14 @@ test('calendar groups are clipped and averages are weighted by orders',()=>{
 });
 function view() {
  const shared=module('manager-shared');
+ shared.renderManagerContent=(root,html)=>{root.innerHTML=html;};
  const exports=module('analytics-section-view.element',{
  require:name=>name==='./manager-shared'?shared:name==='./analytics-data'?data:{UmbElementMixin:Base=>Base},
  HTMLElement:class {hasAttribute(){return true;} dispatchEvent(event){this.event=event;}},
  customElements:{define(){}},AbortController,CustomEvent:class {constructor(type,options){this.type=type;this.detail=options.detail;}}
  });
  const instance=new exports.EkomAnalyticsSectionViewElement();
- instance.render=()=>{};instance.compare=false;
+ instance.querySelector=()=>null;instance.render=()=>{};instance.compare=false;
  shared.managerState.filters.store='main';
  return {instance,shared};
 }
@@ -70,17 +71,25 @@ test('drill through uses the selected bucket and clears hidden order filters',()
  assert.equal(instance.event.detail.query,'');assert.equal(instance.event.detail.productSku,'');
 });
 
-test('customer insight cards and time charts include zero buckets and explain overlapping buyer counts', () => {
+test('customer insight cards and time charts include zero buckets and accessible count tooltips', () => {
  const {instance}=view();
  instance.chartData={...chart('2026-01-05',[350],[3]),customerInsights:{uniqueCustomers:2,newCustomers:1,returningCustomers:2,returningCustomerRate:100,firstOrders:1,repeatOrders:2,firstOrderAmount:100,repeatOrderAmount:250,missingIdentifiers:1,identityField:'CustomerEmail',orderTimes:[{weekday:0,hour:10,orders:3}]}};
+ instance.hasAttribute=()=>false;
  const html=instance.renderCustomerInsights();
  assert.ok(html.includes('Unique purchasing customers'));
  assert.ok(html.includes('100%'));
- assert.ok(html.includes('buyer can appear in both rows'));
- assert.ok(html.includes('1 qualifying orders have no customer identifier'));
+ assert.ok(!html.includes('Based on qualifying purchase orders'));
+ assert.ok(!html.includes('qualifying orders have no customer identifier'));
+ assert.ok(html.includes('data-tooltip="Monday: 3 orders"'));
+ assert.ok(html.includes('data-tooltip="10:00: 3 orders"'));
  assert.ok(html.includes('Monday'));assert.ok(html.includes('Sunday'));
  assert.ok(html.includes('00:00'));assert.ok(html.includes('23:00'));
- assert.equal((html.match(/class="analytics-time-row"/g)||[]).length,31);
+ assert.equal((html.match(/class="analytics-time-row"/g)||[]).length,7);
+ assert.equal((html.match(/class="analytics-hour-column"/g)||[]).length,24);
+ assert.ok(html.includes('aria-label="10:00: 3 orders"'));
+ instance.hasAttribute=()=>true;
+ assert.equal((instance.renderCustomerInsights().match(/class="analytics-time-row"/g)||[]).length,31);
+ instance.hasAttribute=()=>false;
  instance.chartData.customerInsights.returningCustomerRate=null;
  instance.chartData.customerInsights.uniqueCustomers=0;
  assert.ok(instance.renderCustomerInsights().includes('<strong>—</strong>'));
