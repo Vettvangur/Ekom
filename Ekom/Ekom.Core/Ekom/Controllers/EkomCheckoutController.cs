@@ -105,6 +105,7 @@ public class EkomCheckoutApiController : ControllerBase
                         StringComparer.OrdinalIgnoreCase);
             }
 
+            OrderFieldLimits.ValidateRequestFields(additionalData);
             paymentRequest!.AdditionalData = additionalData;
 
             return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture, logContext, ct);
@@ -352,6 +353,7 @@ public class CheckoutController : ControllerBase
 
             Dictionary<string, string> additionalData = OrderCustomData.FromForm(form, encodeOtherFields: false);
 
+            OrderFieldLimits.ValidateRequestFields(additionalData);
             paymentRequest.AdditionalData = additionalData;
 
             string culture = string.IsNullOrEmpty(paymentRequest.Culture) ? Thread.CurrentThread.CurrentCulture.Name : paymentRequest.Culture;

@@ -2018,6 +2018,11 @@ partial class OrderService
 
     internal static void ValidateCustomerInformation(Dictionary<string, string> form, Customer customer)
     {
+        OrderFieldLimits.EnsureGroupWithinCap(
+            customer.Properties,
+            form.Keys.Where(key => key.StartsWith("customer", StringComparison.InvariantCulture)),
+            "customer");
+
         // Validate the effective values before mutating the cached order or invoking providers.
         var candidate = new Customer
         {
@@ -2045,6 +2050,11 @@ partial class OrderService
         CancellationToken ct)
     {
         ValidateCustomerInformation(form, orderInfo.CustomerInformation.Customer);
+        OrderFieldLimits.EnsureGroupWithinCap(
+            orderInfo.CustomerInformation.Shipping.Properties,
+            form.Keys.Where(key => key.StartsWith("shipping", StringComparison.InvariantCulture)),
+            "shipping");
+        OrderFieldLimits.EnsureGroupWithinCap(orderInfo.CustomData, OrderCustomData.ReadFields(form).Keys, "custom data");
 
         OrderCustomData.Merge(orderInfo.CustomData, OrderCustomData.ReadFields(form));
 

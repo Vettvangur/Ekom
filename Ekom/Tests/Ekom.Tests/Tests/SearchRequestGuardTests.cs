@@ -85,7 +85,7 @@ public sealed class SearchRequestGuardTests
     [Fact]
     public void PublicRequestWithOnlyUnlistedFieldsFallsBackToServiceDefaults()
     {
-        var query = new ProductQuery { SearchFields = [new EkomSearchField { Name = "internalCostPrice" }] };
+        var query = new SearchRequest { SearchFields = [new EkomSearchField { Name = "internalCostPrice" }] };
 
         SearchRequestGuard.RestrictToPublic(query, Allowed);
 

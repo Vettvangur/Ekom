@@ -160,7 +160,8 @@ The endpoint may return a JSON-serialized provider HTML string (`230`), a redire
 - Single catalog/order lookups generally return `404`; invalid request models return `400` or the API exception filter's problem response.
 - Product/order responses are rich Ekom models. Generate client types from observed pinned-version payloads rather than assuming every C# property serializes.
 - Keep `credentials: include` (or an equivalent cookie jar) for the complete basket flow.
-- Rate limiting exists on add, coupon, gift-card and pay routes (per remote IP), but it is not authentication.
+- Rate limiting exists on add, coupon, gift-card, pay and order-update routes (per remote IP), but it is not authentication.
+- Request bodies and order fields are size-limited; see the HTTP API reference.
 - Validate store, order, return URL, provider-specific fields, consent and customer identity at the site's trust boundary.
 - Keep payment and order-discount API secrets server-side.
 - The repository's `Bruno/` collection contains runnable examples, but controller source is authoritative when examples diverge.

@@ -8,7 +8,7 @@ The catalog, general API, provider, order, and `/ekom/checkout` controllers have
 
 Cart endpoints identify the active cart through Ekom's order cookie and store context. A `storeAlias` is a route/body/query value only where listed; there is no verified general `storeAlias` header contract.
 
-Exceptions handled by `ApiExceptionFilter` may return problem responses in addition to the explicit statuses below. Rate-limited routes return `429 Too Many Requests`. Limits are enforced by Ekom itself per remote IP address (no `UseRateLimiter()` call is needed); sites behind a proxy or load balancer must enable forwarded headers so each visitor is counted separately.
+Exceptions handled by `ApiExceptionFilter` may return problem responses in addition to the explicit statuses below. Requests to the public storefront routes larger than `Ekom:Api:MaxRequestBodySize` (128 KB by default) return `413`. Customer, shipping, provider and custom-data fields sent to the order and checkout routes are limited to 200 fields per request, 100 characters per name and 4096 characters per value (`400` otherwise), and an order holds at most 500 fields per group. Rate-limited routes return `429 Too Many Requests`. Limits are enforced by Ekom itself per remote IP address (no `UseRateLimiter()` call is needed); sites behind a proxy or load balancer must enable forwarded headers so each visitor is counted separately.
 
 ## General data
 

@@ -93,6 +93,14 @@ public class Configuration
     }
 
     /// <summary>
+    /// Ekom:Api:MaxRequestBodySize
+    /// Largest request body, in bytes, accepted by the public storefront routes
+    /// (order, checkout, catalog, provider, api and order-discounts). 0 disables the cap.
+    /// </summary>
+    public virtual long MaxPublicRequestBodySize
+        => _configuration.GetValue<long?>("Ekom:Api:MaxRequestBodySize") ?? 128_000;
+
+    /// <summary>
     /// Umbraco:CMS:RequestHandler:CharCollection
     /// Gets the Umbraco CharCollection
     /// </summary>

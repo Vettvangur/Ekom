@@ -111,6 +111,7 @@ public partial class EkomOrderController : ControllerBase
             }
         }
 
+        OrderFieldLimits.ValidateRequestFields(customData);
         customData.Remove("algoliaQueryId");
         customData.Remove("linkedProducts");
 
@@ -377,6 +378,7 @@ public partial class EkomOrderController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpPost]
+    [EkomRateLimit(EkomRateLimitPolicies.OrderUpdate)]
     [Route("updatecustomer")]
     public async Task<IActionResult> UpdateCustomerInformation(CancellationToken ct = default)
     {
@@ -413,6 +415,8 @@ public partial class EkomOrderController : ControllerBase
             return BadRequest("Unsupported content type. Only application/json or form data is supported.");
         }
 
+        OrderFieldLimits.ValidateRequestFields(customerData);
+
         var orderInfo = await _order.UpdateCustomerInformationAsync(customerData, new OrderSettings
         {
             Consent = consent,
@@ -422,6 +426,7 @@ public partial class EkomOrderController : ControllerBase
     }
 
     [HttpPost]
+    [EkomRateLimit(EkomRateLimitPolicies.OrderUpdate)]
     [Route("updatetracking")]
     [Consumes("application/json")]
     public async Task<IActionResult> UpdateTracking([FromBody] OrderTrackingUpdateRequest request, CancellationToken ct = default)
@@ -444,6 +449,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("update/shippingprovider/")]
+    [EkomRateLimit(EkomRateLimitPolicies.OrderUpdate)]
     [Route("updateshippingprovider")]
     public async Task<IActionResult> UpdateShippingProvider(CancellationToken ct = default)
     {
@@ -453,6 +459,8 @@ public partial class EkomOrderController : ControllerBase
 
         if (shippingProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest("Missing required ShippingProvider or storeAlias.");
+
+        OrderFieldLimits.ValidateRequestFields(allData);
 
         var orderInfo = await _order.UpdateShippingInformationAsync(shippingProvider, storeAlias, allData, ct: ct);
         return Ok(orderInfo);
@@ -464,6 +472,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("update/paymentprovider/")]
+    [EkomRateLimit(EkomRateLimitPolicies.OrderUpdate)]
     [Route("updatepaymentprovider")]
     public async Task<IActionResult> UpdatePaymentProvider(CancellationToken ct = default)
     {
@@ -472,6 +481,8 @@ public partial class EkomOrderController : ControllerBase
         var (paymentProvider, storeAlias, allData) = await ParseRequestAsync("PaymentProvider", ct);
         if (paymentProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest("Missing required PaymentProvider or storeAlias.");
+
+        OrderFieldLimits.ValidateRequestFields(allData);
 
         var orderInfo = await _order.UpdatePaymentInformationAsync(paymentProvider, storeAlias, allData, ct: ct);
         return Ok(orderInfo);

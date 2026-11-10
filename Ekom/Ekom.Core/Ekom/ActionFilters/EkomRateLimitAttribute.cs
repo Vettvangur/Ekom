@@ -15,6 +15,7 @@ public static class EkomRateLimitPolicies
     public const string OrderCoupon = "order-coupon";
     public const string OrderGiftcard = "order-giftcard";
     public const string CheckoutPay = "checkout-pay";
+    public const string OrderUpdate = "order-update";
 }
 
 /// <summary>
@@ -62,6 +63,7 @@ public sealed class EkomRateLimitAttribute : Attribute, IResourceFilter
         {
             EkomRateLimitPolicies.OrderAdd => FixedWindow(30),
             EkomRateLimitPolicies.CheckoutPay => FixedWindow(30),
+            EkomRateLimitPolicies.OrderUpdate => FixedWindow(60),
             EkomRateLimitPolicies.OrderCoupon => TokenBucket(),
             EkomRateLimitPolicies.OrderGiftcard => TokenBucket(),
             _ => throw new InvalidOperationException($"Unknown Ekom rate limit policy '{policy}'."),
