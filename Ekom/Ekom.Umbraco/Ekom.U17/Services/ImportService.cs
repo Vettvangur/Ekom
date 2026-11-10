@@ -92,6 +92,7 @@ public class ImportService : IImportService
 
             using var backgroundScope = new BackgroundScope(_serverMessenger);
             using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+            using var importSaveScope = ImportSaveScope.Begin();
 
             GetInitialData(parentKey);
 
@@ -184,6 +185,7 @@ public class ImportService : IImportService
 
             using var backgroundScope = new BackgroundScope(_serverMessenger);
             using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+            using var importSaveScope = ImportSaveScope.Begin();
 
             GetInitialData(parentKey);
 
@@ -259,6 +261,7 @@ public class ImportService : IImportService
 
         using var backgroundScope = new BackgroundScope(_serverMessenger);
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+        using var importSaveScope = ImportSaveScope.Begin();
 
         GetInitialData(parentKey);
 
@@ -326,6 +329,7 @@ public class ImportService : IImportService
 
         using var backgroundScope = new BackgroundScope(_serverMessenger);
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+        using var importSaveScope = ImportSaveScope.Begin();
 
         GetInitialData(parentKey);
 
@@ -361,6 +365,7 @@ public class ImportService : IImportService
 
         using var backgroundScope = new BackgroundScope(_serverMessenger);
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+        using var importSaveScope = ImportSaveScope.Begin();
 
         GetInitialData(parentKey);
 
@@ -386,6 +391,7 @@ public class ImportService : IImportService
 
         using var backgroundScope = new BackgroundScope(_serverMessenger);
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+        using var importSaveScope = ImportSaveScope.Begin();
 
         GetInitialData(parentKey);
 
@@ -410,6 +416,7 @@ public class ImportService : IImportService
         _logger.LogInformation($"Product Update Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}");
 
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+        using var importSaveScope = ImportSaveScope.Begin();
 
         GetInitialData(parentKey);
 
@@ -443,6 +450,7 @@ public class ImportService : IImportService
         _logger.LogInformation($"Variant Update Sync running. SKU: {importVariant.SKU}, SyncUser: {syncUser}");
 
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+        using var importSaveScope = ImportSaveScope.Begin();
 
         GetInitialData(parentKey);
 
@@ -469,6 +477,7 @@ public class ImportService : IImportService
         _logger.LogInformation($"Category Update Sync running. SKU: {importCategory.SKU}, SyncUser: {syncUser}");
 
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+        using var importSaveScope = ImportSaveScope.Begin();
 
         GetInitialData(parentKey);
 
@@ -497,6 +506,7 @@ public class ImportService : IImportService
         if (replaceExisting) ValidateReplacementMedia(medias);
 
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+        using var importSaveScope = ImportSaveScope.Begin();
 
         productContentType = _contentTypeService.Get("ekmProduct");
 
@@ -519,6 +529,7 @@ public class ImportService : IImportService
         if (replaceExisting) ValidateReplacementMedia(medias);
 
         using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+        using var importSaveScope = ImportSaveScope.Begin();
 
         productVariantContentType = _contentTypeService.Get("ekmProductVariant");
 
