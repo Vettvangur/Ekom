@@ -133,6 +133,7 @@ public class ImportService : IImportService
 
             stopwatch.Stop();
 
+            FlushPendingStock();
             OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.FullSync)).GetAwaiter().GetResult();
 
             stopwatchTotal.Stop();
@@ -166,6 +167,7 @@ public class ImportService : IImportService
         }
         finally
         {
+            FlushPendingStock();
             EndSync();
         }
     }
@@ -221,6 +223,7 @@ public class ImportService : IImportService
         }
         finally
         {
+            FlushPendingStock();
             EndSync();
         }
     }
@@ -235,6 +238,7 @@ public class ImportService : IImportService
         }
         finally
         {
+            FlushPendingStock();
             EndSync();
         }
     }
@@ -283,6 +287,7 @@ public class ImportService : IImportService
             IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, true, recycleBinNode, productProcessNode, progress: syncProgress);
         }
 
+        FlushPendingStock();
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.CategorySync)).GetAwaiter().GetResult();
 
         stopwatch.Stop();
@@ -341,10 +346,11 @@ public class ImportService : IImportService
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
         var allUmbracoMedia = GetProductSyncMedia(rootUmbracoMediafolder, importProduct);
-        var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
+        var mediaIndex = new ImportMediaIndex(allUmbracoMedia, CreateMediaResolver(rootUmbracoMediafolder));
 
         IterateProductTree(new List<ImportProduct> { importProduct }, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, false, forceUpdate: forceUpdate);
 
+        FlushPendingStock();
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductSync)).GetAwaiter().GetResult();
 
         _logger.LogInformation("Product Sync finished ProductKey: {SKU}", importProduct.SKU);
@@ -362,13 +368,14 @@ public class ImportService : IImportService
 
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
-        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
-        var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
+        var allUmbracoMedia = GetVariantGroupSyncMedia(rootUmbracoMediafolder, importVariantGroup);
+        var mediaIndex = new ImportMediaIndex(allUmbracoMedia, CreateMediaResolver(rootUmbracoMediafolder));
 
         var allEkomNodes = GetAllEkomNodes();
 
         IterateVariantGroups(new List<ImportVariantGroup> { importVariantGroup }, umbracoRootContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser);
 
+        FlushPendingStock();
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantGroupSync)).GetAwaiter().GetResult();
 
         _logger.LogInformation("Product Variant Group finished: {SKU}", importVariantGroup.Identifier);
@@ -386,13 +393,14 @@ public class ImportService : IImportService
 
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
-        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
-        var mediaIndex = new ImportMediaIndex(allUmbracoMedia);
+        var allUmbracoMedia = GetVariantSyncMedia(rootUmbracoMediafolder, importVariant);
+        var mediaIndex = new ImportMediaIndex(allUmbracoMedia, CreateMediaResolver(rootUmbracoMediafolder));
 
         var allEkomNodes = GetAllEkomNodes();
 
         IterateVariants(new List<ImportVariant> { importVariant }, umbracoRootContent, allEkomNodes, allUmbracoMedia, mediaIndex, syncUser, false);
 
+        FlushPendingStock();
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantSync)).GetAwaiter().GetResult();
 
         _logger.LogInformation("Product Variant finished: {SKU}", importVariant.SKU);
@@ -423,6 +431,7 @@ public class ImportService : IImportService
             SaveProduct(product, importProduct, allUmbracoCategories, null, null, false, syncUser, forceUpdate: forceUpdate);
         }
 
+        FlushPendingStock();
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductUpdateSync)).GetAwaiter().GetResult();
 
         _logger.LogInformation("Product Update Sync finished ProductKey: {SKU} ProductId: {Id}", importProduct.SKU, product.Id);
@@ -439,9 +448,7 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var allEkomNodes = GetAllEkomNodes();
-
-        var variant = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProductVariant" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importVariant.Identifier);
+        var variant = GetUpdateSyncContent(productVariantContentType, importVariant.Identifier);
 
         if (variant == null)
         {
@@ -450,6 +457,7 @@ public class ImportService : IImportService
 
         SaveVariant(variant, importVariant, null, null, false, syncUser);
 
+        FlushPendingStock();
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantUpdateSync)).GetAwaiter().GetResult();
 
         _logger.LogInformation("Variant Update Sync finished VariantSku: {SKU} ProductId: {Id}", importVariant.SKU, variant.Id);
@@ -466,9 +474,7 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var allEkomNodes = GetAllEkomNodes();
-
-        var category = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmCategory" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importCategory.Identifier);
+        var category = GetUpdateSyncContent(categoryContentType, importCategory.Identifier);
 
         if (category == null)
         {
@@ -477,6 +483,7 @@ public class ImportService : IImportService
 
         SaveCategory(category, importCategory, null, null, false, syncUser);
 
+        FlushPendingStock();
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantUpdateSync)).GetAwaiter().GetResult();
 
         _logger.LogInformation("Category Update Sync finished {SKU} CategoryId: {Id}", importCategory.SKU, category.Id);
@@ -849,8 +856,15 @@ public class ImportService : IImportService
 
             _logger.LogInformation($"Iterating {eligibleProducts.Count} products");
 
-            foreach (var importProduct in eligibleProducts)
+            var refreshPrices = Configuration.Instance.UseDatabasePrices;
+            for (var productIndex = 0; productIndex < eligibleProducts.Count; productIndex++)
             {
+                var importProduct = eligibleProducts[productIndex];
+                if (refreshPrices && productIndex % PriceRefreshChunkSize == 0)
+                {
+                    RefreshChunkPrices(eligibleProducts, productIndex, umbracoProductsByIdentifier, ekomNodesByParentId);
+                }
+
                 if (importProduct.Categories.Count > 0)
                 {
                     IContent? primaryCategoryContent = null;
@@ -928,6 +942,7 @@ public class ImportService : IImportService
 
                 LogSyncProgress(progress);
             }
+            _freshPriceKeys.Clear();
             snapshot.CompactDeleted();
         }
 
@@ -1192,14 +1207,7 @@ public class ImportService : IImportService
 
                     if (newStock != currentStock)
                     {
-                        if (perStoreStock) 
-                        {
-                            _ = _stock.SetStockAsync(productContent.Key, stock.StoreAlias, newStock); 
-                        }
-                        else
-                        {
-                            _ = _stock.SetStockAsync(productContent.Key, newStock);
-                        }
+                        QueueStock(productContent.Key, perStoreStock ? stock.StoreAlias : null, newStock);
                     }
                 }
             }
@@ -1396,16 +1404,9 @@ public class ImportService : IImportService
 
                 // Only update if we find change 
                 if (newStock != currentStock)
-                {
-                    if (perStoreStock)
                     {
-                        _ = _stock.SetStockAsync(variantContent.Key, stock.StoreAlias, newStock);
+                        QueueStock(variantContent.Key, perStoreStock ? stock.StoreAlias : null, newStock);
                     }
-                    else
-                    {
-                        _ = _stock.SetStockAsync(variantContent.Key, newStock);
-                    }
-                }
             }
         }
 
@@ -1494,6 +1495,41 @@ public class ImportService : IImportService
         {
             _logger.LogWarning(ex, "Skipping variant with non-current version. Id: {VariantId} Identifier: {Identifier} SKU: {SKU}", variantContent.Id, importVariant.Identifier, importVariant.SKU);
             return false;
+        }
+    }
+
+    private const int StockFlushSize = 200;
+
+    private readonly List<Ekom.Models.StockSetRequest> _pendingStock = new();
+
+    // Stock changes are collected and written in batches: one transaction per batch instead of one per value.
+    private void QueueStock(Guid key, string? storeAlias, decimal value)
+    {
+        _pendingStock.Add(new Ekom.Models.StockSetRequest(key, storeAlias, value));
+        if (_pendingStock.Count >= StockFlushSize)
+        {
+            FlushPendingStock();
+        }
+    }
+
+    // Stock is independent of the content save, so a failed batch is logged and never fails the sync.
+    private void FlushPendingStock()
+    {
+        if (_pendingStock.Count == 0)
+        {
+            return;
+        }
+
+        var requests = _pendingStock.ToList();
+        _pendingStock.Clear();
+
+        try
+        {
+            _stock.SetStockAsync(requests).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write {Count} stock values from the import", requests.Count);
         }
     }
 
@@ -2122,6 +2158,7 @@ public class ImportService : IImportService
         variantsSaved = new List<ImportVariant>();
         variantGroupsSaved = new List<ImportVariantGroup>();
         categoriesSaved = new List<ImportCategory>();
+        _freshPriceKeys.Clear();
 
         // Initialize content types from the content service
         categoryContentType = _contentTypeService.Get("ekmCategory");
@@ -2247,11 +2284,71 @@ public class ImportService : IImportService
         return content;
     }
 
-    private static void SaveDatabasePrices(IContent content, IEnumerable<ImportPrice> prices)
+    private const int PriceRefreshChunkSize = 200;
+
+    // Node keys whose table prices were read from the database in the current chunk of a bulk sync.
+    private readonly HashSet<Guid> _freshPriceKeys = new();
+
+    private void SaveDatabasePrices(IContent content, IEnumerable<ImportPrice> prices)
     {
+        var mutations = prices.Select(price => new Ekom.Models.PriceMutation(
+            content.Key, price.StoreAlias, price.Currency, price.Price)).ToList();
+
+        // Validation still runs here. The per-node transaction is only skipped when this chunk's
+        // bulk read already shows the table holding exactly these prices.
+        if (_freshPriceKeys.Contains(content.Key) && API.Prices.Instance.IsCurrent(mutations))
+        {
+            return;
+        }
+
         // Atomic validation/write completes before any save or publish, including new content.
-        API.Prices.Instance.Apply(prices.Select(price => new Ekom.Models.PriceMutation(
-            content.Key, price.StoreAlias, price.Currency, price.Price)));
+        API.Prices.Instance.Apply(mutations);
+    }
+
+    /// <summary>
+    /// Reads the table prices for the next chunk of products, their variant groups and variants in one query,
+    /// so unchanged prices do not each open a transaction.
+    /// </summary>
+    private void RefreshChunkPrices(
+        List<ImportProduct> products,
+        int start,
+        Dictionary<string, IContent> productsByIdentifier,
+        Dictionary<int, List<IContent>> nodesByParentId)
+    {
+        _freshPriceKeys.Clear();
+        var end = Math.Min(start + PriceRefreshChunkSize, products.Count);
+
+        for (var i = start; i < end; i++)
+        {
+            if (!productsByIdentifier.TryGetValue(products[i].Identifier, out var product) || product.Key == Guid.Empty)
+            {
+                continue;
+            }
+
+            _freshPriceKeys.Add(product.Key);
+            if (!nodesByParentId.TryGetValue(product.Id, out var variantGroups))
+            {
+                continue;
+            }
+
+            foreach (var variantGroup in variantGroups)
+            {
+                if (!nodesByParentId.TryGetValue(variantGroup.Id, out var variants))
+                {
+                    continue;
+                }
+
+                foreach (var variant in variants)
+                {
+                    if (variant.Key != Guid.Empty) _freshPriceKeys.Add(variant.Key);
+                }
+            }
+        }
+
+        if (_freshPriceKeys.Count > 0)
+        {
+            API.Prices.Instance.Refresh(_freshPriceKeys);
+        }
     }
 
     /// <summary>
@@ -2325,6 +2422,55 @@ WHERE n.trashed = 0
                 new Query<IContent>(_scopeProvider.SqlContext).Where(x => !x.Trashed && contentIds.Contains(x.Id)))
             .FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifier);
     }
+    /// <summary>
+    /// Finds the single node an update sync targets without loading the rest of the catalog.
+    /// Matches what a scan of <see cref="GetAllEkomNodes"/> would return: the first sync-enabled,
+    /// untrashed node of the type under the root, in descendant order, with this exact identifier.
+    /// </summary>
+    private IContent? GetUpdateSyncContent(IContentType? contentType, string? identifier)
+    {
+        ArgumentNullException.ThrowIfNull(contentType);
+        ArgumentNullException.ThrowIfNull(umbracoRootContent);
+
+        if (string.IsNullOrEmpty(identifier))
+        {
+            return null;
+        }
+
+        var root = umbracoRootContent;
+        if (!root.Trashed
+            && root.ContentType.Id == contentType.Id
+            && !root.GetValue<bool>("ekmDisableSync")
+            && root.GetValue<string>(Configuration.ImportAliasIdentifier) == identifier)
+        {
+            return root;
+        }
+
+        using var scope = _scopeProvider.CreateScope(autoComplete: true);
+        var contentIds = scope.Database.Fetch<int>(@"SELECT DISTINCT n.id
+FROM umbracoNode n
+INNER JOIN umbracoContent c ON c.nodeId = n.id
+INNER JOIN umbracoContentVersion cv ON cv.nodeId = n.id AND cv.[current] = 1
+INNER JOIN umbracoPropertyData pd ON pd.versionId = cv.id
+INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId
+WHERE n.trashed = 0
+  AND n.path LIKE @0
+  AND c.contentTypeId = @1
+  AND pt.alias = @2
+  AND pd.varcharValue = @3", $"%,{root.Id},%", contentType.Id, Configuration.ImportAliasIdentifier, identifier);
+
+        if (contentIds.Count == 0)
+        {
+            return null;
+        }
+
+        // Hydrate through the same descendant query as a full load so duplicates resolve in the same order.
+        return _contentService.GetPagedDescendants(root.Id, 0, int.MaxValue, out _,
+                new Query<IContent>(_scopeProvider.SqlContext).Where(x => !x.Trashed && contentIds.Contains(x.Id)))
+            .FirstOrDefault(x => !x.GetValue<bool>("ekmDisableSync")
+                && x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifier);
+    }
+
     private List<IContent> GetAllEkomNodes(int pageSize = 2_000)
     {
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
@@ -2483,16 +2629,59 @@ WHERE n.trashed = 0
 
         foreach (var variantGroup in importProduct.VariantGroups)
         {
-            AddMediaReferences(variantGroup.Images, identifiers, comparers, keys);
-
-            foreach (var variant in variantGroup.Variants)
-            {
-                AddMediaReferences(variant.Images, identifiers, comparers, keys);
-                AddMediaReferences(variant.Files, identifiers, comparers, keys);
-            }
+            AddVariantGroupMediaReferences(variantGroup, identifiers, comparers, keys);
         }
 
         return _importMediaService.GetUmbracoMediaFiles(rootMedia, identifiers, comparers, keys);
+    }
+
+    private List<IMedia> GetVariantGroupSyncMedia(IMedia rootMedia, ImportVariantGroup importVariantGroup)
+    {
+        var identifiers = new HashSet<string>(StringComparer.Ordinal);
+        var comparers = new HashSet<string>(StringComparer.Ordinal);
+        var keys = new HashSet<Guid>();
+
+        AddVariantGroupMediaReferences(importVariantGroup, identifiers, comparers, keys);
+
+        return _importMediaService.GetUmbracoMediaFiles(rootMedia, identifiers, comparers, keys);
+    }
+
+    private List<IMedia> GetVariantSyncMedia(IMedia rootMedia, ImportVariant importVariant)
+    {
+        var identifiers = new HashSet<string>(StringComparer.Ordinal);
+        var comparers = new HashSet<string>(StringComparer.Ordinal);
+        var keys = new HashSet<Guid>();
+
+        AddMediaReferences(importVariant.Images, identifiers, comparers, keys);
+        AddMediaReferences(importVariant.Files, identifiers, comparers, keys);
+
+        return _importMediaService.GetUmbracoMediaFiles(rootMedia, identifiers, comparers, keys);
+    }
+
+    /// <summary>
+    /// Single-item syncs preload only the media the incoming item names. Save handlers can add media
+    /// afterwards, so anything the index does not hold is looked up under the root on first use.
+    /// </summary>
+    private Func<string?, string?, Guid?, List<IMedia>> CreateMediaResolver(IMedia rootMedia)
+        => (identifier, comparer, key) => _importMediaService.GetUmbracoMediaFiles(
+            rootMedia,
+            identifier == null ? Array.Empty<string>() : new[] { identifier },
+            comparer == null ? Array.Empty<string>() : new[] { comparer },
+            key.HasValue ? new[] { key.Value } : Array.Empty<Guid>());
+
+    private void AddVariantGroupMediaReferences(
+        ImportVariantGroup variantGroup,
+        ISet<string> identifiers,
+        ISet<string> comparers,
+        ISet<Guid> keys)
+    {
+        AddMediaReferences(variantGroup.Images, identifiers, comparers, keys);
+
+        foreach (var variant in variantGroup.Variants)
+        {
+            AddMediaReferences(variant.Images, identifiers, comparers, keys);
+            AddMediaReferences(variant.Files, identifiers, comparers, keys);
+        }
     }
 
     private void AddMediaReferences(
@@ -2562,13 +2751,33 @@ WHERE n.trashed = 0
         private readonly Dictionary<(string MediaType, string Identifier), IMedia> _mediaByIdentifier = new();
         private readonly Dictionary<(string MediaType, string Comparer), IMedia> _mediaByComparer = new();
         private readonly Dictionary<string, IMedia> _mediaByUdi = new();
+        private readonly Func<string?, string?, Guid?, List<IMedia>>? _resolveMissing;
+        private readonly HashSet<string> _resolved = new(StringComparer.Ordinal);
 
-        public ImportMediaIndex(IEnumerable<IMedia> mediaItems)
+        public ImportMediaIndex(IEnumerable<IMedia> mediaItems, Func<string?, string?, Guid?, List<IMedia>>? resolveMissing = null)
         {
+            _resolveMissing = resolveMissing;
             foreach (var media in mediaItems)
             {
                 Add(media);
             }
+        }
+
+        // Each missing value is looked up once; a miss is remembered so it is not queried again.
+        private bool TryResolve(string kind, string value, string? identifier = null, string? comparer = null, Guid? key = null)
+        {
+            if (_resolveMissing == null || !_resolved.Add(kind + ":" + value))
+            {
+                return false;
+            }
+
+            var found = _resolveMissing(identifier, comparer, key);
+            foreach (var media in found)
+            {
+                Add(media);
+            }
+
+            return found.Count > 0;
         }
 
         public void Add(IMedia media)
@@ -2599,9 +2808,14 @@ WHERE n.trashed = 0
         {
             var mediaTypeAlias = mediaType.ToString();
 
-            if (!string.IsNullOrEmpty(identifier) && _mediaByIdentifier.TryGetValue((mediaTypeAlias, identifier), out var mediaByIdentifier))
+            if (!string.IsNullOrEmpty(identifier))
             {
-                return mediaByIdentifier;
+                if (_mediaByIdentifier.TryGetValue((mediaTypeAlias, identifier), out var mediaByIdentifier)
+                    || (TryResolve("identifier", identifier, identifier: identifier)
+                        && _mediaByIdentifier.TryGetValue((mediaTypeAlias, identifier), out mediaByIdentifier)))
+                {
+                    return mediaByIdentifier;
+                }
             }
 
             return FindByComparer(mediaType, comparer);
@@ -2609,16 +2823,36 @@ WHERE n.trashed = 0
 
         public IMedia? FindByComparer(ImportMediaTypes mediaType, string comparer)
         {
-            return _mediaByComparer.TryGetValue((mediaType.ToString(), comparer), out var media)
-                ? media
-                : null;
+            var lookup = (mediaType.ToString(), comparer);
+            if (_mediaByComparer.TryGetValue(lookup, out var media)
+                || (!string.IsNullOrEmpty(comparer)
+                    && TryResolve("comparer", comparer, comparer: comparer)
+                    && _mediaByComparer.TryGetValue(lookup, out media)))
+            {
+                return media;
+            }
+
+            return null;
         }
 
         public IMedia? FindByUdi(string udi)
         {
-            return _mediaByUdi.TryGetValue(udi, out var media)
-                ? media
-                : null;
+            const string mediaUdiPrefix = "umb://media/";
+            if (_mediaByUdi.TryGetValue(udi, out var media))
+            {
+                return media;
+            }
+
+            if (_resolveMissing != null
+                && udi.StartsWith(mediaUdiPrefix, StringComparison.OrdinalIgnoreCase)
+                && Guid.TryParse(udi[mediaUdiPrefix.Length..], out var key)
+                && TryResolve("key", key.ToString("N"), key: key)
+                && _mediaByUdi.TryGetValue(udi, out media))
+            {
+                return media;
+            }
+
+            return null;
         }
     }
 

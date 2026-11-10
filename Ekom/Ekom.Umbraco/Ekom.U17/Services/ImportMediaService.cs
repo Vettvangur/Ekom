@@ -90,7 +90,8 @@ public class ImportMediaService
 
     public List<IMedia> GetUmbracoMediaFiles(IMedia rootMedia)
     {
-        const int pageSize = 100;
+        // Loads the whole folder; larger pages mean far fewer paged queries for the same rows.
+        const int pageSize = 1000;
         var imageTypeId = GetMediaTypeId(MediaTypes.Image);
         var fileTypeId = GetMediaTypeId(MediaTypes.File);
         var filter = new Query<IMedia>(_scopeProvider.SqlContext)
