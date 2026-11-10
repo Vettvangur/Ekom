@@ -92,6 +92,7 @@ public sealed class Prices : IDisposable
         var batch = Prepare(changes);
         if (batch.Count == 0) return;
         List<PriceChangedEventArgs> events;
+        List<PriceData?> unchanged;
         for (var attempt = 0; ; attempt++)
         {
             try
@@ -99,13 +100,18 @@ public sealed class Prices : IDisposable
                 using var db = _databaseFactory.GetDatabase();
                 using var tx = db.BeginTransaction(IsolationLevel.Serializable);
                 events = new();
+                unchanged = new();
                 foreach (var change in batch)
                 {
                     var query = db.Prices.Where(x => x.NodeKey == change.NodeKey && x.PropertyAlias == change.PropertyAlias
                         && x.StoreAlias == change.StoreAlias && x.Currency == change.Currency);
                     var old = query.FirstOrDefault();
                     Check(change, old);
-                    if (old?.Price == change.Price) continue;
+                    if (old?.Price == change.Price)
+                    {
+                        unchanged.Add(old);
+                        continue;
+                    }
                     if (change.Price == null) query.Delete();
                     else if (old == null) db.Insert(Row(change));
                     else query.Set(x => x.Price, change.Price.Value).Set(x => x.UpdateDate, DateTime.UtcNow).Update();
@@ -119,6 +125,7 @@ public sealed class Prices : IDisposable
                 Thread.Sleep(25 << attempt);
             }
         }
+        if (CacheIsCurrent(batch, events, unchanged)) return;
         Publish(events, batch.Select(change => change.NodeKey));
     }
 
@@ -126,7 +133,7 @@ public sealed class Prices : IDisposable
     {
         var batch = Prepare(changes);
         if (batch.Count == 0) return;
-        var events = await StockReservationService.RetryAsync(async () =>
+        var (events, unchanged) = await StockReservationService.RetryAsync(async () =>
         {
             await using var db = _databaseFactory.GetDatabase();
             await using var tx = await db.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken).ConfigureAwait(false);
@@ -134,6 +141,7 @@ public sealed class Prices : IDisposable
             await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
             return committed;
         }, cancellationToken).ConfigureAwait(false);
+        if (CacheIsCurrent(batch, events, unchanged)) return;
         // Cancellation or a subscriber failure after commit must not replay an already committed write.
         await PublishAsync(events, batch.Select(change => change.NodeKey)).ConfigureAwait(false);
     }
@@ -147,30 +155,53 @@ public sealed class Prices : IDisposable
         if (batch.Count == 0) return _ => { };
         using var provider = _databaseFactory.GetDatabase();
         await using var db = new LinqToDB.Data.DataConnection(provider.DataProvider, transaction);
-        var events = await MutateAsync(db, batch, cancellationToken).ConfigureAwait(false);
+        var (events, unchanged) = await MutateAsync(db, batch, cancellationToken).ConfigureAwait(false);
         return completed =>
         {
-            if (completed) Publish(events, batch.Select(change => change.NodeKey));
+            if (completed && !CacheIsCurrent(batch, events, unchanged)) Publish(events, batch.Select(change => change.NodeKey));
         };
     }
 
-    private static async Task<List<PriceChangedEventArgs>> MutateAsync(LinqToDB.Data.DataConnection db,
-        IReadOnlyList<PriceMutation> batch, CancellationToken cancellationToken)
+    private static async Task<(List<PriceChangedEventArgs> Events, List<PriceData?> Unchanged)> MutateAsync(
+        LinqToDB.Data.DataConnection db, IReadOnlyList<PriceMutation> batch, CancellationToken cancellationToken)
     {
         var committed = new List<PriceChangedEventArgs>();
+        var unchanged = new List<PriceData?>();
         foreach (var change in batch)
         {
             var query = db.GetTable<PriceData>().Where(x => x.NodeKey == change.NodeKey && x.PropertyAlias == change.PropertyAlias
                 && x.StoreAlias == change.StoreAlias && x.Currency == change.Currency);
             var old = await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
             Check(change, old);
-            if (old?.Price == change.Price) continue;
+            if (old?.Price == change.Price)
+            {
+                unchanged.Add(old);
+                continue;
+            }
             if (change.Price == null) await query.DeleteAsync(cancellationToken).ConfigureAwait(false);
             else if (old == null) await db.InsertAsync(Row(change), token: cancellationToken).ConfigureAwait(false);
             else await query.Set(x => x.Price, change.Price.Value).Set(x => x.UpdateDate, DateTime.UtcNow).UpdateAsync(cancellationToken).ConfigureAwait(false);
             committed.Add(Event(change, old));
         }
-        return committed;
+        return (committed, unchanged);
+    }
+
+    /// <summary>
+    /// True when a batch wrote nothing and the cache already holds every row the transaction read,
+    /// so the refresh query can be skipped. Any difference, such as an external SQL write, still refreshes.
+    /// </summary>
+    private bool CacheIsCurrent(IReadOnlyList<PriceMutation> batch, IReadOnlyList<PriceChangedEventArgs> events,
+        IReadOnlyList<PriceData?> unchanged)
+    {
+        var cache = _cache;
+        if (cache == null || events.Count != 0 || unchanged.Count != batch.Count) return false;
+
+        for (var i = 0; i < batch.Count; i++)
+        {
+            if (FindCached(cache, batch[i])?.Price != unchanged[i]?.Price) return false;
+        }
+
+        return true;
     }
 
     private List<PriceMutation> Prepare(IEnumerable<PriceMutation> changes)
@@ -214,27 +245,85 @@ public sealed class Prices : IDisposable
         {
             try
             {
-                if (_cache == null) FillLocked();
-                else
-                {
-                    var nodes = keys.Distinct().ToArray();
-                    var rows = new List<PriceData>();
-                    using var db = _databaseFactory.GetDatabase();
-                    // One serializable read transaction prevents commits between refresh chunks
-                    // from combining different versions of related nodes in the published cache.
-                    using var tx = db.BeginTransaction(IsolationLevel.Serializable);
-                    foreach (var batch in nodes.Chunk(400))
-                    {
-                        rows.AddRange(db.Prices.Where(row => Enumerable.Contains(batch, row.NodeKey)).ToList());
-                    }
-                    tx.Commit();
-                    PublishRows(nodes, rows);
-                }
+                RefreshLocked(keys);
             }
             catch (Exception ex) { RefreshFailed(ex); }
         }
         finally { _refreshGate.Release(); }
         Notify(events);
+    }
+
+    private void RefreshLocked(IEnumerable<Guid> keys)
+    {
+        if (_cache == null)
+        {
+            FillLocked();
+            return;
+        }
+
+        var nodes = keys.Distinct().ToArray();
+        var rows = new List<PriceData>();
+        using var db = _databaseFactory.GetDatabase();
+        // One serializable read transaction prevents commits between refresh chunks
+        // from combining different versions of related nodes in the published cache.
+        using var tx = db.BeginTransaction(IsolationLevel.Serializable);
+        foreach (var batch in nodes.Chunk(400))
+        {
+            rows.AddRange(db.Prices.Where(row => Enumerable.Contains(batch, row.NodeKey)).ToList());
+        }
+        tx.Commit();
+        PublishRows(nodes, rows);
+    }
+
+    /// <summary>
+    /// Reload the given nodes' prices from the database into the shared cache in one read.
+    /// Bulk writers call this before <see cref="IsCurrent"/> so unchanged nodes need no transaction of their own.
+    /// </summary>
+    public void Refresh(IEnumerable<Guid> nodeKeys)
+    {
+        ArgumentNullException.ThrowIfNull(nodeKeys);
+        if (!Enabled) return;
+        _refreshGate.Wait();
+        try
+        {
+            try { RefreshLocked(nodeKeys); }
+            catch (Exception ex) { RefreshFailed(ex); }
+        }
+        finally { _refreshGate.Release(); }
+    }
+
+    /// <summary>
+    /// True when the shared cache already holds exactly these prices. Validates the batch like <see cref="Apply"/>.
+    /// The cache only sees writes made through this instance, so call <see cref="Refresh"/> first when another
+    /// server or direct SQL may have changed the rows.
+    /// </summary>
+    public bool IsCurrent(IEnumerable<PriceMutation> changes)
+    {
+        var batch = Prepare(changes);
+        if (batch.Count == 0) return true;
+        EnsureReady();
+        var cache = _cache;
+        if (cache == null) return false;
+
+        foreach (var change in batch)
+        {
+            if (FindCached(cache, change)?.Price != change.Price) return false;
+        }
+
+        return true;
+    }
+
+    private static PriceData? FindCached(ConcurrentDictionary<Guid, PriceData[]> cache, PriceMutation change)
+    {
+        if (!cache.TryGetValue(change.NodeKey, out var rows)) return null;
+
+        foreach (var row in rows)
+        {
+            if (row.PropertyAlias == change.PropertyAlias && row.StoreAlias == change.StoreAlias && row.Currency == change.Currency)
+                return row;
+        }
+
+        return null;
     }
 
     private async Task PublishAsync(IReadOnlyList<PriceChangedEventArgs> events, IEnumerable<Guid> keys)
