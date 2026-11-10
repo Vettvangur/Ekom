@@ -253,10 +253,12 @@ public class ProductResponse
 
     private IEnumerable<IProduct> StepFiltersVisibleAll(IEnumerable<IProduct> working, ProductQuery query)
     {
-        if (query.AllFiltersVisible)
-            Filters = working.Filters();
+        if (!query.AllFiltersVisible)
+            return working;
 
-        return working;
+        var products = working as List<IProduct> ?? working.ToList();
+        Filters = new ComputedOnce<MetafieldGrouped>(() => products.Filters());
+        return products;
     }
 
     private IEnumerable<IProduct> StepApplyMetaAndPropertyFilters(IEnumerable<IProduct> working, ProductQuery query)
@@ -291,10 +293,14 @@ public class ProductResponse
 
     private IEnumerable<IProduct> StepFiltersVisibleNotAll(IEnumerable<IProduct> working, ProductQuery query)
     {
-        if (!query.AllFiltersVisible)
-            Filters = working.Filters();
+        if (query.AllFiltersVisible)
+            return working;
 
-        return working;
+        // The facets and the result both read this set. Materialize it so the meta, property and
+        // search filters above run once instead of again when the facets are enumerated.
+        var products = working as List<IProduct> ?? working.ToList();
+        Filters = new ComputedOnce<MetafieldGrouped>(() => products.Filters());
+        return products;
     }
 
     private async Task<IEnumerable<IProduct>> StepApplyFilterServiceAndEventsAsync(
@@ -453,6 +459,19 @@ public class ProductResponse
 
         return products.OrderBy(x => x.SortOrder);
     }
+}
+
+/// <summary>
+/// Facets stay deferred, as callers that only read the products should not pay for them, but
+/// are calculated a single time however often they are enumerated.
+/// </summary>
+internal sealed class ComputedOnce<T>(Func<IEnumerable<T>> compute) : IEnumerable<T>
+{
+    private readonly Lazy<List<T>> _items = new(() => compute().ToList());
+
+    public IEnumerator<T> GetEnumerator() => _items.Value.GetEnumerator();
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
 public class PropertySelectorValue
