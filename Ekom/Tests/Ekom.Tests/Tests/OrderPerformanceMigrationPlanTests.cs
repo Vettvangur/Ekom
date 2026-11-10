@@ -175,6 +175,8 @@ public sealed class OrderPerformanceMigrationPlanTests
         public async Task InitializeAsync()
         {
             Database.Setup(x => x.EnsureStockReservationTable());
+            Database.Setup(x => x.EnsureOrderReviewsTable());
+            Database.Setup(x => x.EnsurePriceTable());
             Database.Setup(x => x.EnsureOrderActivityLogTypeColumn());
 #if NET8_0
             try

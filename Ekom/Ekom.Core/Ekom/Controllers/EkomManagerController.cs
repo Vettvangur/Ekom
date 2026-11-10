@@ -404,14 +404,14 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("SearchOrders")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, string? currency = null)
+    public async Task<IActionResult> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, string? currency = null, bool? needsReview = null)
     {
         if (!CanAccessStore(store))
         {
             return ForbidStore(store);
         }
 
-        return Ok(await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, page, pageSize, couponCode, shippingProvider, giftcardCode, currency));
+        return Ok(await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, page, pageSize, couponCode, shippingProvider, giftcardCode, currency, needsReview));
     }
 
     [HttpGet]

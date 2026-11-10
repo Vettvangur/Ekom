@@ -83,7 +83,7 @@ public class ManagerRepository
         return await CheckoutPaymentAttemptService.ReadManagerLockStatusAsync(db, orderId, ct).ConfigureAwait(false);
     }
 
-    private sealed class OrderListRow : OrderData
+    private sealed class OrderListRow : OrderListItem
     {
         [LinqToDB.Mapping.Column, System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
         public decimal? SavedItemQuantity { get; set; }
@@ -100,11 +100,14 @@ public class ManagerRepository
                 THEN COALESCE(SUM(TRY_CONVERT(decimal(28,8), JSON_VALUE(CASE WHEN ISJSON(value) = 1 THEN value ELSE '{}' END, '$.Quantity'))), 0) END
                 FROM OPENJSON(CASE WHEN ISJSON(OrderInfo) = 1 THEN OrderInfo ELSE '{}' END, '$.OrderLines')) END";
 
-    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, string? currency = null)
+    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, string? currency = null, bool? needsReview = null)
     {
         string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode) + ManagerCurrencyScope.Predicate(currency);
 
-        var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,OrderStateCol,PaymentStateCol,FulfillmentStateCol,OriginalOrderStatusCol,FulfilledQuantitiesJson,StatusMappingVersion,StatusRevision,AutoCloseSuppressed,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate, {ItemQuantitySql} AS SavedItemQuantity FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
+        const string openReviewExists = "EXISTS (SELECT 1 FROM EkomOrderReviews r WHERE r.OrderId = EkomOrders.UniqueId AND r.ResolvedUtc IS NULL)";
+        if (needsReview.HasValue) whereClause += needsReview.Value ? $" AND {openReviewExists}" : $" AND NOT {openReviewExists}";
+
+        var sqlBuilder = new StringBuilder($"SELECT CASE WHEN {openReviewExists} THEN 1 ELSE 0 END AS NeedsReview,ReferenceId,UniqueId,OrderNumber,OrderStatusCol,OrderStateCol,PaymentStateCol,FulfillmentStateCol,OriginalOrderStatusCol,FulfilledQuantitiesJson,StatusMappingVersion,StatusRevision,AutoCloseSuppressed,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate, {ItemQuantitySql} AS SavedItemQuantity FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
         var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount, COUNT(DISTINCT COALESCE(NULLIF(UPPER(Currency), ''), 'UNKNOWN')) as CurrencyCount, MIN(Currency) as Currency FROM EkomOrders {whereClause}");
 
         int _page = string.IsNullOrEmpty(page) || !int.TryParse(page, out int tempPage) ? 1 : tempPage;

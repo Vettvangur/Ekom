@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **orders:** add order reviews and checkout failure alerts.
+
 * **orders:** migrate legacy Cancelled orders with Pending / Unfulfilled defaults, preserve recorded status evidence, and flag conflicts for review while skipping active payments.
 
 * **manager:** add Orders-style polling to Analytics with interval selection, a green spinning icon and refresh pulse; keep existing data visible during background updates.

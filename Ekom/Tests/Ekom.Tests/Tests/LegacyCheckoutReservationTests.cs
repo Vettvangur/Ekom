@@ -313,6 +313,93 @@ public sealed class LegacyCheckoutReservationTests
         Assert.Equal(7, await f.StockAsync(key));
     }
 
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    public async Task CompletionFailureRaisesReviewBeforeEmailAndPreservesOriginalError(bool stockFailure, bool reviewFails)
+    {
+        using var f = new Fixture(false, false);
+        Exception failure = stockFailure ? new NotEnoughStockException("stock failure") : new InvalidOperationException("completion failure");
+        string code = stockFailure ? "completion-stock-failed" : "completion-failed";
+        if (reviewFails)
+        {
+            f.Reviews.Setup(x => x.RaiseAsync(f.Order.UniqueId, "checkout", code, It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None))
+                .ThrowsAsync(new InvalidOperationException("review database unavailable"));
+        }
+        f.Mail.Setup(x => x.SendAsync(It.IsAny<string>(), It.IsAny<string>(), null, null))
+            .Callback(() => f.Reviews.Verify(x => x.RaiseAsync(f.Order.UniqueId, "checkout", code,
+                It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None), Times.Once))
+            .Returns(Task.CompletedTask);
+        void Fail(object? sender, CompleteCheckoutEventArgs args) => throw failure;
+        CheckoutEvents.CompleteCheckout += Fail;
+        try
+        {
+            Assert.Same(failure, await Assert.ThrowsAnyAsync<Exception>(() => f.CompleteAsync()));
+        }
+        finally
+        {
+            CheckoutEvents.CompleteCheckout -= Fail;
+        }
+        f.Mail.Verify(x => x.SendAsync(It.IsAny<string>(), It.IsAny<string>(), null, null), Times.Once);
+    }
+
+    [Fact]
+    public async Task CancelledCompletionDoesNotRaiseReview()
+    {
+        using var f = new Fixture(false, false);
+        void Cancel(object? sender, CompleteCheckoutEventArgs args) => throw new OperationCanceledException();
+        CheckoutEvents.CompleteCheckout += Cancel;
+        try
+        {
+            await Assert.ThrowsAsync<OperationCanceledException>(() => f.CompleteAsync());
+        }
+        finally
+        {
+            CheckoutEvents.CompleteCheckout -= Cancel;
+        }
+        f.Reviews.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExhaustedCouponRaisesReviewAndStillCompletesEvenIfReviewFails(bool reviewFails)
+    {
+        using var f = new Fixture(false, false);
+        f.DisableDiscountCacheRefresh();
+        using (var db = f.Database.Factory.GetDatabase())
+        {
+            db.CreateTable<CouponData>();
+            db.Insert(new CouponData { CouponCode = "EXHAUSTED", NumberAvailable = 0, CouponKey = Guid.NewGuid(), DiscountId = Guid.NewGuid() });
+        }
+        if (reviewFails)
+        {
+            f.Reviews.Setup(x => x.RaiseAsync(f.Order.UniqueId, "checkout", "coupon-exhausted", It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None))
+                .ThrowsAsync(new InvalidOperationException("review database unavailable"));
+        }
+        void ApplyCoupon(object? sender, CompleteCheckoutEventArgs args)
+        {
+            var order = (OrderInfo)args.OrderInfo;
+            order.Coupon = "EXHAUSTED";
+            order.Discount = new OrderedDiscount(Guid.NewGuid(), "Discount", true, 10, default, [], [], null, false, true);
+        }
+        CheckoutEvents.CompleteCheckout += ApplyCoupon;
+        try
+        {
+            await f.CompleteAsync();
+        }
+        finally
+        {
+            CheckoutEvents.CompleteCheckout -= ApplyCoupon;
+        }
+        f.Reviews.Verify(x => x.RaiseAsync(f.Order.UniqueId, "checkout", "coupon-exhausted", It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None), Times.Once);
+        f.ActivityLog.Verify(x => x.AddOrderLogAsync(f.Order.UniqueId, It.IsAny<string>(), null, OrderActivityLogType.Alert, It.IsAny<CancellationToken>()), Times.Once);
+        f.ActivityLog.Verify(x => x.AddOrderLogAsync(f.Order.UniqueId, It.IsAny<string>(), null, OrderActivityLogType.Success, It.IsAny<CancellationToken>()), Times.Once);
+        f.Mail.VerifyNoOtherCalls();
+    }
+
     private static void AssertCheckoutStateConflict(CheckoutResponse response)
     {
         Assert.Equal(409, response.HttpStatusCode);
@@ -333,6 +420,9 @@ public sealed class LegacyCheckoutReservationTests
         public OrderInfo Order { get; }
         public CheckoutReservationService Checkout { get; }
         public OrderRepository Repository { get; }
+        public Mock<IOrderReviewService> Reviews { get; } = new();
+        public Mock<IMailService> Mail { get; } = new();
+        public Mock<IOrderActivityLogService> ActivityLog { get; } = new();
 
         public Fixture(bool enabled, bool perStore, bool customPolicy = true)
         {
@@ -415,12 +505,16 @@ public sealed class LegacyCheckoutReservationTests
             return key;
         }
 
+        // This fixture has no content caches to rebuild after a coupon update.
+        public void DisableDiscountCacheRefresh() => _scope.Instance.CacheList.Value.Clear();
+
         public Task<decimal> StockAsync(Guid key) => Database.StockAsync(key, _perStore ? "main" : null);
         public async Task CompleteAsync(bool validateInventory = true)
         {
-            var service = new CheckoutService(NullLogger<CheckoutService>.Instance, _scope.Instance, Repository, null!,
-                Configuration.Resolver.GetRequiredService<OrderService>(), null!, Mock.Of<IOrderActivityLogService>(),
-                Mock.Of<IMailService>(), Database.Service, Checkout);
+            var service = new CheckoutService(NullLogger<CheckoutService>.Instance, _scope.Instance, Repository,
+                new CouponRepository(_scope.Instance, NullLogger<CouponRepository>.Instance, Mock.Of<ICouponCache>(), Database.Factory, Mock.Of<INodeService>()),
+                Configuration.Resolver.GetRequiredService<OrderService>(), null!, ActivityLog.Object,
+                Mail.Object, Database.Service, Checkout, Reviews.Object);
             void KeepStatus(object? sender, CompleteCheckoutEventArgs args)
             {
                 args.UpdateOrderStatus = false;

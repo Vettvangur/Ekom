@@ -75,12 +75,21 @@ internal partial class DatabaseService
         EnsureOrderStateColumns();
         EnsureOrderIndexes();
         EnsureOrderPerformanceIndexes();
+        EnsureOrderReviewsTable();
     }
 
     internal virtual void EnsurePriceTable()
     {
         using var db = _databaseFactory.GetDatabase();
         db.CreateTable<PriceData>(tableOptions: TableOptions.CreateIfNotExists);
+    }
+
+    internal virtual void EnsureOrderReviewsTable()
+    {
+        using var db = _databaseFactory.GetDatabase();
+        db.CreateTable<OrderReview>(tableOptions: TableOptions.CreateIfNotExists);
+        DatabaseIndexInstaller.EnsureIndex(db, _databaseFactory.IsSqlServer, "EkomOrderReviews",
+            "IX_EkomOrderReviews_OrderId_ResolvedUtc", nameof(OrderReview.OrderId), nameof(OrderReview.ResolvedUtc));
     }
 
     internal virtual void EnsureOrderIndexes()
