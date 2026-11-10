@@ -1,3 +1,4 @@
+using Ekom.ActionFilters;
 using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Services;
@@ -39,6 +40,7 @@ public class EkomCheckoutApiController : ControllerBase
     /// </summary>
     [Route("pay")]
     [HttpPost]
+    [EkomRateLimit(EkomRateLimitPolicies.CheckoutPay)]
     public async Task<IActionResult> Pay([FromQuery] string culture, CancellationToken ct = default)
     {
         var logContext = new CheckoutPaymentLogContext();
@@ -330,6 +332,7 @@ public class CheckoutController : ControllerBase
     [Route("pay")]
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [EkomRateLimit(EkomRateLimitPolicies.CheckoutPay)]
     public async Task<ActionResult> Pay(PaymentRequest paymentRequest, CancellationToken ct = default)
     {
         var logContext = new CheckoutPaymentLogContext();

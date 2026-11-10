@@ -89,6 +89,8 @@ public class CatalogSearchService : ICatalogSearchService
 
         // Default fields if missing OR empty
         req.SearchFields = (req.SearchFields?.Any() == true) ? req.SearchFields : defaultFields;
+        // Field names, boosts and fuzzy values are interpolated into the Lucene query below.
+        req.SearchFields = SearchRequestGuard.SanitizeFields(req.SearchFields);
 
         // If still empty for some reason, bail (prevents "+ ()")
         if (req.SearchFields?.Any() != true)
@@ -222,6 +224,10 @@ public class CatalogSearchService : ICatalogSearchService
         req.SearchFields = req.SearchFields == null || !req.SearchFields.Any()
             ? defaultFields
             : req.SearchFields;
+        req.SearchFields = SearchRequestGuard.SanitizeFields(req.SearchFields);
+
+        if (req.SearchFields.Count == 0)
+            return new List<SearchResultEntity>();
 
         try
         {

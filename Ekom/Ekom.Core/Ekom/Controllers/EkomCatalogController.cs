@@ -1,3 +1,4 @@
+using Ekom.ActionFilters;
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -10,6 +11,7 @@ namespace Ekom.Controllers;
 /// </summary>
 [Route("ekom/catalog")]
 [ServiceFilter(typeof(ApiExceptionFilter))]
+[PublicSearchInput]
 public class EkomCatalogController : ControllerBase
 {
     private readonly ControllerRequestHelper _reqHelper;

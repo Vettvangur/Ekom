@@ -1,8 +1,8 @@
+using Ekom.ActionFilters;
 using Ekom.Models;
 using Ekom.Repositories;
 using Ekom.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
@@ -31,7 +31,7 @@ public class EkomOrderDiscountsController : ControllerBase
 
     [HttpPost]
     [Route("calculate")]
-    [EnableRateLimiting("order-coupon")]
+    [EkomRateLimit(EkomRateLimitPolicies.OrderCoupon)]
     public async Task<IActionResult> CalculateAsync(
         [FromBody] OrderDiscountCalculationRequest request,
         CancellationToken ct = default)
@@ -81,7 +81,7 @@ public class EkomOrderDiscountsController : ControllerBase
 
     [HttpPost]
     [Route("coupon/mark-used")]
-    [EnableRateLimiting("order-coupon")]
+    [EkomRateLimit(EkomRateLimitPolicies.OrderCoupon)]
     public async Task<IActionResult> MarkCouponUsedAsync([FromBody] CouponRequest request)
     {
         if (request == null || string.IsNullOrWhiteSpace(request.coupon))
@@ -94,10 +94,10 @@ public class EkomOrderDiscountsController : ControllerBase
             return Unauthorized();
         }
 
-        await _couponRepository.MarkUsedAsync(request.coupon)
+        bool consumed = await _couponRepository.MarkUsedAsync(request.coupon)
             .ConfigureAwait(false);
 
-        return Ok();
+        return consumed ? Ok() : Conflict("Coupon was not found or has no uses left.");
     }
 
     private bool IsAuthorized()

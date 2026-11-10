@@ -9,6 +9,7 @@ Core settings live below `Ekom` in `appsettings.json`. Options binding is case-i
 | `Ekom:PerStoreStock` | `bool`, `false` | Uses `{storeAlias}_{itemKey}` stock identities instead of global item stock. |
 | `Ekom:ExamineSearchIndex` | `string`, `ExternalIndex` | Default Examine searcher/index name. |
 | `Ekom:ExamineSearchNormalizedFields` | array | Defaults to `nodeName`, `title`, `pageTitle`, `sku`, `searchTags`, `summary`, `description`. |
+| `Ekom:Search:PublicFields` | array | Index fields that requests to the catalog HTTP API may name in `searchFields`. Defaults to `nodeName`, `sku`, `title`, `description`, `searchTags`, `id`. Other fields are ignored. Does not restrict server-side calls. |
 | `Ekom:ShareBasket` | `bool`, `false` | Allows store basket sharing; stores must have compatible currencies. |
 | `Ekom:ApplyVatOnShipping` | `bool`, `false` | Default shipping VAT behavior. |
 | `Ekom:AbsoluteUrls` | `bool`, `false` | Produces absolute backoffice URLs. |
