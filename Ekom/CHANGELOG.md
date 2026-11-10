@@ -182,6 +182,13 @@
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
+## [0.2.373](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.372...Ekom-v0.2.373) (2026-11-10)
+
+
+### Bug Fixes
+
+* **security:** harden gift cards, rate limits, search input and coupon use ([#1135](https://github.com/Vettvangur/Ekom/issues/1135)) ([5279f3e](https://github.com/Vettvangur/Ekom/commit/5279f3ecf50d461c835f4a6540a2edd394d6768d))
+
 ## [0.2.372](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.371...Ekom-v0.2.372) (2026-11-10)
 
 
