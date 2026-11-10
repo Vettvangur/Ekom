@@ -2218,37 +2218,38 @@ public class ImportService : IImportService
         return existingComparerValue != newComparerValue;
     }
 
+    // Json.NET caches type contracts per resolver instance, so a resolver per call
+    // re-reflects every import model on every hash. Reuse one per ignore list.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, JsonSerializerSettings> _hashSettings = new(StringComparer.Ordinal);
+
+    private static JsonSerializerSettings GetHashSettings(string[]? propertiesToIgnore)
+    {
+        var cacheKey = propertiesToIgnore == null ? string.Empty : string.Join("|", propertiesToIgnore);
+
+        return _hashSettings.GetOrAdd(cacheKey, _ =>
+        {
+            var resolver = new ImportSerializeContractResolver();
+
+            if (propertiesToIgnore != null)
+            {
+                foreach (var propertyName in propertiesToIgnore)
+                {
+                    resolver.IgnorePropertyByName(propertyName);
+                }
+            }
+
+            return new JsonSerializerSettings
+            {
+                ContractResolver = resolver
+            };
+        });
+    }
+
     private string ComputeSha256Hash(object o, string[]? propertiesToIgnore = null)
     {
-        var settings = new JsonSerializerSettings
-        {
-            ContractResolver = new ImportSerializeContractResolver()
-        };
+        var json = JsonConvert.SerializeObject(o, GetHashSettings(propertiesToIgnore));
 
-        if (propertiesToIgnore != null)
-        {
-            foreach (var propertyName in propertiesToIgnore)
-            {
-                ((ImportSerializeContractResolver)settings.ContractResolver).IgnorePropertyByName(propertyName);
-            }
-        }
-
-        var json = JsonConvert.SerializeObject(o, settings);
-
-        // Create a SHA256
-        using (var sha256Hash = SHA256.Create())
-        {
-            // ComputeHash - returns byte array
-            byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(json));
-
-            // Convert byte array to a string
-            var builder = new StringBuilder();
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                builder.Append(bytes[i].ToString("x2"));
-            }
-            return builder.ToString();
-        }
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(json))).ToLowerInvariant();
     }
     private IContent? GetMediaSyncContent(IContentType? contentType, string identifier)
     {
