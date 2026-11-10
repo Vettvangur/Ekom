@@ -77,11 +77,17 @@ public class ManagerRepository
         return await CheckoutPaymentAttemptService.ReadManagerLockStatusAsync(db, orderId, ct).ConfigureAwait(false);
     }
 
-    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
+    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string page, string pageSize, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, bool? needsReview = null)
     {
         string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode);
 
-        var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
+        const string openReviewExists = "EXISTS (SELECT 1 FROM EkomOrderReviews r WHERE r.OrderId = EkomOrders.UniqueId AND r.ResolvedUtc IS NULL)";
+        if (needsReview.HasValue)
+        {
+            whereClause += needsReview.Value ? $" AND {openReviewExists}" : $" AND NOT {openReviewExists}";
+        }
+
+        var sqlBuilder = new StringBuilder($"SELECT CASE WHEN {openReviewExists} THEN 1 ELSE 0 END AS NeedsReview,ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
         var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
 
         int _page = string.IsNullOrEmpty(page) || !int.TryParse(page, out int tempPage) ? 1 : tempPage;
@@ -137,7 +143,7 @@ public class ManagerRepository
 
         ConfigureCouponComparison(db, couponCode);
 
-        var orders = await db.QueryToListAsync<OrderData>(sqlQuery, param);
+        var orders = await db.QueryToListAsync<OrderListItem>(sqlQuery, param);
 
         var totals = db.Execute<OrderListDataTotals>(sqlTotalQuery, param);
 

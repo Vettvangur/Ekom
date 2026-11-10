@@ -19,6 +19,7 @@ class CheckoutService
     readonly OrderService _orderService;
     readonly IOrderActivityLogService _orderActivityLogService;
     readonly IMailService _mailService;
+    readonly IOrderReviewService _orderReviewService;
     readonly CheckoutReservationService _checkoutReservations;
 
     public CheckoutService(
@@ -31,7 +32,8 @@ class CheckoutService
         IOrderActivityLogService orderActivityLogService,
         IMailService mailService,
         IStockReservationService reservations,
-        CheckoutReservationService checkoutReservations)
+        CheckoutReservationService checkoutReservations,
+        IOrderReviewService orderReviewService)
     {
         _logger = logger;
         _orderRepo = orderRepo;
@@ -40,6 +42,7 @@ class CheckoutService
         _orderActivityLogService = orderActivityLogService;
         _mailService = mailService;
         _checkoutReservations = checkoutReservations;
+        _orderReviewService = orderReviewService;
     }
 
     public async Task CompleteAsync(Guid key, CancellationToken ct = default)
@@ -96,6 +99,12 @@ class CheckoutService
                             _logger.LogWarning(
                                 "Order {OrderId} completed with a coupon that had no uses left",
                                 o.UniqueId);
+                            await TryRaiseReviewAsync(
+                                    o.UniqueId,
+                                    "coupon-exhausted",
+                                    "Coupon had no uses left",
+                                    "Coupon had no uses left when the order completed. Review the discount on this order.")
+                                .ConfigureAwait(false);
                             await _orderActivityLogService.AddOrderLogAsync(
                                     o.UniqueId,
                                     "Coupon had no uses left when the order completed. Review the discount on this order.",
@@ -151,6 +160,8 @@ class CheckoutService
 
             body += ex.ToString();
 
+            await TryRaiseCompletionReviewAsync(o, ex).ConfigureAwait(false);
+
             await _mailService.SendAsync(subject, body).ConfigureAwait(false);
 
             throw;
@@ -165,10 +176,41 @@ class CheckoutService
                 = $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}."
                 + $"Order id: {oi?.UniqueId}\r\n\r\n" + ex.ToString();
 
+            await TryRaiseCompletionReviewAsync(o, ex).ConfigureAwait(false);
+
             await _mailService.SendAsync(subject, body).ConfigureAwait(false);
 
             throw;
         }
     }
 
+    private Task TryRaiseCompletionReviewAsync(OrderData? order, Exception failure)
+    {
+        if (order == null || failure is OperationCanceledException) return Task.CompletedTask;
+
+        bool stockFailure = failure is NotEnoughStockException;
+        return TryRaiseReviewAsync(
+            order.UniqueId,
+            stockFailure ? "completion-stock-failed" : "completion-failed",
+            "Order completion failed",
+            stockFailure
+                ? "Order completion failed because stock was unavailable. Check payment and stock before retrying."
+                : "An unexpected error occurred while completing the order. Check payment, stock and order status before retrying.");
+    }
+
+    private async Task TryRaiseReviewAsync(Guid orderId, string code, string title, string message)
+    {
+        try
+        {
+            // Record the issue even when the original request has been cancelled.
+            await _orderReviewService.RaiseAsync(orderId, "checkout", code, title, message, CancellationToken.None)
+                .ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // Recording a review must not replace the checkout failure or prevent completion.
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            _logger.LogError(ex, "Could not record checkout review {ReviewCode} for order {OrderId}", code, orderId);
+        }
+    }
 }
