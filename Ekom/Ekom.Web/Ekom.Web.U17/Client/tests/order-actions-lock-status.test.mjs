@@ -24,6 +24,18 @@ function loadModule(relativePath, modules = {}) {
 }
 
 const shared = loadModule('../src/manager/manager-shared.ts');
+
+// Tests stub the drawer's sections one API method at a time; answer the single drawer
+// request from those stubs the way the server does: a failed section comes back as null.
+shared.EkomManagerApi.prototype.orderDrawer = async function (id) {
+  const section = async load => { try { return await load(); } catch { return null; } };
+  const order = await this.orderInfo(id);
+  const [logs, actions, lockStatus, giftcardRecovery, reviews] = await Promise.all([
+    section(() => this.orderLogs(id)), section(() => this.orderActions(id)), section(() => this.orderLockStatus(id)),
+    section(() => this.giftcardRecovery(id)), section(() => this.orderReviews(id)),
+  ]);
+  return { order, logs, actions, lockStatus, giftcardRecovery, reviews };
+};
 const { EkomOrdersSectionViewElement } = loadModule('../src/manager/orders-section-view.element.ts', {
   './manager-shared': shared,
   '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
@@ -681,7 +693,7 @@ test('the order drawer stays on its loader until everything it shows has loaded,
 
   const opening = element.openOrder('order-B');
   await new Promise(resolve => setTimeout(resolve, 0));
-  assert.ok(snapshots.length > 1, 'the individual requests still ask for renders');
+  assert.ok(snapshots.length > 0, 'the drawer renders its loader while the request is pending');
   for (const snapshot of snapshots) {
     assert.equal(snapshot.opening, true);
     assert.match(snapshot.html, /data-order-opening="order-B"/);
@@ -759,4 +771,32 @@ test('the order drawer shows line VAT, variant SKU, the gift-card eligible total
   assert.match(linked, /<h3>Customer<\/h3><button type="button" class="ekom-customer-open" data-action="open-customer">Open customer<\/button>/);
   assert.match(linked, /<button type="button" class="ekom-customer-open ekom-customer-name" data-action="open-customer">Anna &lt;b&gt;<\/button>/);
   assert.match(details, /Shipping address<\/h4>ADDRESSEXTRA:shipping:\{"shippingDoorCode":"4321"\}<h4>Billing address<\/h4>ADDRESSEXTRA:customer:/);
+});
+
+test('opening an order makes one drawer request and flags the sections the server could not load', async () => {
+  const element = createElement();
+  const requested = [];
+  for (const method of ['orderInfo', 'orderLogs', 'orderActions', 'orderLockStatus', 'giftcardRecovery', 'orderReviews']) {
+    element.api[method] = async () => assert.fail(`${method} must not be requested when opening an order`);
+  }
+  element.api.orderDrawer = async id => {
+    requested.push(id);
+    return { order: { uniqueId: id }, logs: [{ message: 'created' }], actions: null, lockStatus: { ...locked, hasLock: false }, giftcardRecovery: null, reviews: null };
+  };
+
+  await element.openOrder('order-B');
+
+  assert.equal(requested.join(), 'order-B');
+  assert.equal(element.selectedOrder.uniqueId, 'order-B');
+  assert.equal(element.orderLogs.length, 1);
+  assert.equal(element.orderLogsError, false);
+  assert.equal(element.orderActions.length, 0);
+  assert.equal(element.orderActionsError, true);
+  assert.equal(element.orderLockStatus.hasLock, false);
+  assert.equal(element.orderLockError, false);
+  assert.equal(element.recoveryAttempts, undefined);
+  assert.equal(element.recoveryError, true);
+  assert.equal(element.reviews.length, 0);
+  assert.match(element.reviewError, /Could not load order reviews/);
+  assert.equal(element.orderOpening, false);
 });

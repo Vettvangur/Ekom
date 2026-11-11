@@ -19,6 +19,18 @@ function loadModule(path, modules = {}) {
   return exports;
 }
 const shared = loadModule('../src/manager/manager-shared.ts');
+
+// Tests stub the drawer's sections one API method at a time; answer the single drawer
+// request from those stubs the way the server does: a failed section comes back as null.
+shared.EkomManagerApi.prototype.orderDrawer = async function (id) {
+  const section = async load => { try { return await load(); } catch { return null; } };
+  const order = await this.orderInfo(id);
+  const [logs, actions, lockStatus, giftcardRecovery, reviews] = await Promise.all([
+    section(() => this.orderLogs(id)), section(() => this.orderActions(id)), section(() => this.orderLockStatus(id)),
+    section(() => this.giftcardRecovery(id)), section(() => this.orderReviews(id)),
+  ]);
+  return { order, logs, actions, lockStatus, giftcardRecovery, reviews };
+};
 shared.renderManagerContent = (root, html) => { root.innerHTML = html; };
 const { EkomOrdersSectionViewElement } = loadModule('../src/manager/orders-section-view.element.ts', {
   './manager-shared': shared,

@@ -9,6 +9,9 @@ internal sealed class SecurityService : ISecurityService
 {
     private readonly BackofficeUserAccessor _backofficeUserAccessor;
     private readonly IUserService _userService;
+    private Umbraco.Cms.Core.Models.Membership.IUser? _currentUser;
+    private string? _currentUserName;
+    private bool _currentUserResolved;
 
 #if UMBRACO_18
     private readonly IEntityService _entityService;
@@ -34,8 +37,7 @@ internal sealed class SecurityService : ISecurityService
     public bool IsCurrentUserAdmin() => GetCurrentUserGroupAliases()
         .Contains(Constants.Security.AdminGroupAlias, StringComparer.OrdinalIgnoreCase);
 
-    public bool IsAuthenticated() => _backofficeUserAccessor.BackofficeUser.IsAuthenticated
-        && _userService.GetByUsername(_backofficeUserAccessor.BackofficeUser.GetUserName()) is { IsApproved: true, IsLockedOut: false };
+    public bool IsAuthenticated() => GetCurrentUser() is { IsApproved: true, IsLockedOut: false };
 
     public string? GetAuthenticatedUserName() => IsAuthenticated() ? _backofficeUserAccessor.BackofficeUser.GetUserName() : null;
 
@@ -47,7 +49,7 @@ internal sealed class SecurityService : ISecurityService
     {
         if (!IsAuthenticated()) return false;
         var ticket = _backofficeUserAccessor.BackofficeUser;
-        var user = _userService.GetByUsername(ticket.GetUserName());
+        var user = GetCurrentUser();
         if (user == null) return false;
         if (IsCurrentUserAdmin()) return true;
 #if UMBRACO_18
@@ -66,14 +68,7 @@ internal sealed class SecurityService : ISecurityService
 
     private IReadOnlyCollection<string> GetCurrentUserGroupAliases()
     {
-        var userTicket = _backofficeUserAccessor.BackofficeUser;
-
-        if (!userTicket.IsAuthenticated)
-        {
-            return Array.Empty<string>();
-        }
-
-        var user = _userService.GetByUsername(userTicket.GetUserName());
+        var user = GetCurrentUser();
 
         if (user == null)
         {
@@ -83,5 +78,34 @@ internal sealed class SecurityService : ISecurityService
         return user.Groups
             .Select(x => x.Alias)
             .ToArray();
+    }
+
+    /// <summary>
+    /// Resolves the backoffice user once per service instance. The service is scoped, so the
+    /// several permission checks made for one request share a single user lookup instead of
+    /// querying the database each time. The cache is keyed by user name so a different
+    /// identity is never served a previous lookup.
+    /// </summary>
+    private Umbraco.Cms.Core.Models.Membership.IUser? GetCurrentUser()
+    {
+        var ticket = _backofficeUserAccessor.BackofficeUser;
+
+        if (!ticket.IsAuthenticated)
+        {
+            return null;
+        }
+
+        var userName = ticket.GetUserName();
+
+        if (_currentUserResolved && string.Equals(_currentUserName, userName, StringComparison.Ordinal))
+        {
+            return _currentUser;
+        }
+
+        _currentUser = _userService.GetByUsername(userName);
+        _currentUserName = userName;
+        _currentUserResolved = true;
+
+        return _currentUser;
     }
 }
