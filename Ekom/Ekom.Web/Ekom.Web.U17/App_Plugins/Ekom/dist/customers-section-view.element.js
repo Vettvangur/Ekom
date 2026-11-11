@@ -1,12 +1,12 @@
-var x = Object.defineProperty;
-var k = (m, u, e) => u in m ? x(m, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : m[u] = e;
-var l = (m, u, e) => k(m, typeof u != "symbol" ? u + "" : u, e);
-import { E as S, m as o, e as w, c as i, l as E, r as q, a as L, b as C, d as O, g as A, h as D, i as R, u as P, v as j, w as b, q as N } from "./manager-shared.js";
-import { UmbElementMixin as F } from "@umbraco-cms/backoffice/element-api";
-class U extends F(HTMLElement) {
+var k = Object.defineProperty;
+var S = (m, u, e) => u in m ? k(m, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : m[u] = e;
+var l = (m, u, e) => S(m, typeof u != "symbol" ? u + "" : u, e);
+import { E as w, m as o, e as E, c as i, l as q, r as C, a as L, b as O, d as D, g as A, h as R, i as P, u as j, v as x, w as N, x as b, q as F } from "./manager-shared.js";
+import { UmbElementMixin as U } from "@umbraco-cms/backoffice/element-api";
+class z extends U(HTMLElement) {
   constructor() {
     super(...arguments);
-    l(this, "api", new S());
+    l(this, "api", new w());
     l(this, "result");
     l(this, "detail");
     l(this, "query", "");
@@ -47,7 +47,7 @@ class U extends F(HTMLElement) {
     this.busy = !0, this.render();
     try {
       const [a, n] = await Promise.all([this.api.stores(), this.classic ? Promise.resolve(!1) : this.api.printingEnabled()]);
-      o.stores = a, o.printingEnabled = n, o.stores.some((p) => p.alias === o.filters.store) || (o.filters.store = ((e = o.stores[0]) == null ? void 0 : e.alias) || ""), this.classic || w(), await this.load();
+      o.stores = a, o.printingEnabled = n, o.stores.some((p) => p.alias === o.filters.store) || (o.filters.store = ((e = o.stores[0]) == null ? void 0 : e.alias) || ""), this.classic || E(), await this.load();
       const d = o.pendingCustomer;
       o.pendingCustomer = void 0;
       const h = (s = ((t = this.result) == null ? void 0 : t.identityField) === "CustomerUsername" ? d == null ? void 0 : d.username : d == null ? void 0 : d.email) == null ? void 0 : s.trim();
@@ -127,7 +127,7 @@ class U extends F(HTMLElement) {
     return e == null ? "—" : i(e.toLocaleString(void 0, { maximumFractionDigits: 1 }));
   }
   date(e) {
-    return e ? i(E(new Date(e))) : "—";
+    return e ? i(q(new Date(e))) : "—";
   }
   avatar(e) {
     const t = e.trim().split(/\s+/).slice(0, 2).map((s) => Array.from(s)[0] || "").join("").toUpperCase();
@@ -138,7 +138,7 @@ class U extends F(HTMLElement) {
   }
   render() {
     const e = o.filters, t = this.result;
-    q(this, `<style>${L}${this.classic ? `
+    C(this, `<style>${L}${this.classic ? `
       ekom-customers-section-view { display:block; color:var(--uui-color-text,#20232e) }
       .customers { padding:24px; background:var(--uui-color-background,#f3f4f7); min-height:80vh }
       .customer-cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0 }
@@ -171,14 +171,14 @@ class U extends F(HTMLElement) {
       .customer-snapshot dt { color:#70778a;font-size:12px;margin-top:15px }
       .customer-snapshot dd { margin:4px 0;overflow-wrap:anywhere }
       @media(max-width:800px) { .customer-detail-grid { grid-template-columns:1fr } .customers { padding:12px } }
-    ` : ""}</style>${this.classic ? "" : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/customers-layout.css?v=20261111-background">'}<section class="customers ekom-design" aria-busy="${this.busy}">
-      ${this.classic ? "" : C("customers", "data-filter")}
+    ` : ""}</style>${this.classic ? "" : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/customers-layout.css?v=20261111-esc-close">'}<section class="customers ekom-design" aria-busy="${this.busy}">
+      ${this.classic ? "" : O("customers", "data-filter")}
       <div class="customer-toolbar ekom-shared-filters">
         ${this.classic ? `<label>Store<select data-filter="store">${o.stores.map((s) => `<option value="${i(s.alias)}" ${s.alias === e.store ? "selected" : ""}>${i(s.title)}</option>`).join("")}</select></label>` : ""}
-        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${O(e.orderStatus)}</select></label>` : A()}
+        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${D(e.orderStatus)}</select></label>` : A()}
         ${this.classic ? `        <label>Date From<input type="date" data-filter="dateFrom" value="${i(e.dateFrom)}"></label>
         <label>Date To<input type="date" data-filter="dateTo" value="${i(e.dateTo)}"></label>
-` : D()}
+` : R()}
         <button data-reload ${this.busy ? "disabled" : ""}>Refresh</button>
       </div>
       <p class="customer-muted">Customers who ordered in the selected period. Lifetime metrics include all qualifying orders in the selected store and currency. </p>
@@ -186,7 +186,7 @@ class U extends F(HTMLElement) {
       ${this.busy && t ? '<p role="status">Preparing export...</p>' : ""}
       ${t ? `<div class="customer-cards">${this.card("Customers", this.number(t.totals.customers))}${this.card("Returning", this.number(t.totals.returningPercent) + "%")}${this.card("Average lifetime spend", this.amount(t.spend, "averageLifetime"))}${this.card("Average orders per customer", this.number(t.totals.averageOrders))}${this.card("Average days between orders", this.number(t.totals.averageReorderDays))}</div>
       <p class="customer-muted">${t.missingIdentifiers} qualifying orders in this period have no ${t.identityField === "CustomerUsername" ? "username" : "email"} and are excluded. Spend uses recorded charged amounts, without refund adjustment.</p>` : ""}
-      ${this.busy && !t ? R("Customers", 5, 220) : ""}
+      ${this.busy && !t ? P("Customers", 5, 220) : ""}
       <div class="customer-panel" ${this.busy && !t ? "hidden" : ""}><div class="customer-toolbar" role="search">
         <label>Search<input name="query" value="${i(this.query)}" placeholder="Name, email or username"></label>
         <button type="button" data-search>Search</button>
@@ -202,12 +202,12 @@ class U extends F(HTMLElement) {
   renderDetailOpening(e) {
     var a;
     const t = (a = this.result) == null ? void 0 : a.customers.find((n) => n.identity === e), s = (t == null ? void 0 : t.name) || (t == null ? void 0 : t.email) || (t == null ? void 0 : t.username) || e;
-    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" aria-busy="true" class="customer-dialog"><header class="customer-heading">${this.avatar(s)}<div><h2>${i(s)}</h2>${P("Loading customer…")}</div><button data-close aria-label="Close customer details">${this.classic ? "Close" : "×"}</button></header>
-      <div class="customer-opening">${j()}</div></section></div>`;
+    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" aria-busy="true" class="customer-dialog"><header class="customer-heading">${this.avatar(s)}<div><h2>${i(s)}</h2>${j("Loading customer…")}</div>${this.classic ? '<button data-close aria-label="Close customer details">Close</button>' : x('<button data-close aria-label="Close customer details">×</button>')}</header>
+      <div class="customer-opening">${N()}</div></section></div>`;
   }
   renderDetail(e) {
     const t = e.customer;
-    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" class="customer-dialog"><header class="customer-heading">${this.avatar(t.name || t.identity)}<div><h2>${i(t.name || t.identity)} <span class="customer-badge">${t.orders > 1 ? "Returning" : "New"}</span></h2><p>${i([t.email, t.username].filter(Boolean).join(" · "))}</p></div><button data-close aria-label="Close customer details">${this.classic ? "Close" : "×"}</button></header>
+    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" class="customer-dialog"><header class="customer-heading">${this.avatar(t.name || t.identity)}<div><h2>${i(t.name || t.identity)} <span class="customer-badge">${t.orders > 1 ? "Returning" : "New"}</span></h2><p>${i([t.email, t.username].filter(Boolean).join(" · "))}</p></div>${this.classic ? '<button data-close aria-label="Close customer details">Close</button>' : x('<button data-close aria-label="Close customer details">×</button>')}</header>
       <div class="customer-cards">${this.card("Lifetime spend", this.amount(t.spend, "total"))}${this.card("Orders", String(t.orders))}${this.card("Average order", this.amount(t.spend, "averageOrder"))}${this.card("First order", this.date(t.firstOrder))}${this.card("Days since last order", String(t.daysSinceLastOrder))}${this.card("Average reorder interval (days)", this.number(t.averageReorderDays))}</div>
       <div class="customer-detail-grid"><div><h3>Orders <small>(${e.count})</small></h3><label><input type="checkbox" data-other ${this.other ? "checked" : ""}> Show other orders (excluded from lifetime metrics)</label><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Order</th>${this.classic ? "<th>Status</th>" : "<th>Order status</th><th>Payment</th><th>Fulfillment</th>"}<th>Created</th><th>Paid</th><th>Total</th></tr></thead><tbody>${e.orders.map((s) => {
       var a, n, d;
@@ -217,7 +217,7 @@ class U extends F(HTMLElement) {
   }
   bind() {
     var t, s, a, n, d, h, p, y, v, $;
-    this.classic || N(this, () => {
+    this.classic || F(this, () => {
       this.page = 1, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...o.filters } })), this.load();
     }), this.querySelectorAll("[data-filter]").forEach((r) => r.addEventListener("change", () => {
       const c = r.dataset.filter;
@@ -259,8 +259,8 @@ class U extends F(HTMLElement) {
     });
   }
 }
-customElements.define("ekom-customers-section-view", U);
+customElements.define("ekom-customers-section-view", z);
 export {
-  U as EkomCustomersSectionViewElement,
-  U as default
+  z as EkomCustomersSectionViewElement,
+  z as default
 };

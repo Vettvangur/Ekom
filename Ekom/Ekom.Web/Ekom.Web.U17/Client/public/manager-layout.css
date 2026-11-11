@@ -583,3 +583,8 @@ ekom-orders-section-view:not([classic]) {
  .ekom-customer-sidebar button.ekom-customer-open:hover { text-decoration:underline; }
  .ekom-customer-sidebar button.ekom-customer-name { display:block; font-size:15px; margin-top:4px; }
 }
+
+/* The drawer close button sits in a group with its Esc hint; keep it borderless there. */
+ekom-orders-section-view:not([classic]) {
+ .ekom-panel-heading .ekom-drawer-close > button { border:0; background:none; font-size:26px; padding:4px; min-height:0; }
+}

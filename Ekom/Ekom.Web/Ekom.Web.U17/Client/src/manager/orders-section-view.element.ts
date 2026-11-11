@@ -30,6 +30,7 @@ import {
   renderOrderRowsLoading,
   renderLoadingLine,
   renderDrawerLoading,
+  renderDrawerClose,
   storeDateFormat,
   type OrderReview,
   printOrderDocument,
@@ -465,7 +466,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     const scrollPositions = Array.from(this.querySelectorAll<HTMLElement>('.ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content')).map(node => node.scrollTop);
     renderManagerContent(this, `
       <style>${managerStyles}</style>
-      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261111-open-customer">
+      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261111-esc-close">
       <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
           ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
@@ -687,7 +688,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   /** The order drawer while everything it shows is still being fetched. */
   private renderOrderOpening(): string {
     const reference = this.result.orders.find(order => order.uniqueId === this.returnFocusOrderId)?.referenceId;
-    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details" aria-busy="true" data-order-opening="${escapeHtml(this.returnFocusOrderId)}"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><div class="ekom-order-heading-copy"><h2>${reference ? `#${escapeHtml(reference)}` : 'Order'}</h2>${renderLoadingLine('Loading order…')}</div><button type="button" data-action="close-overlay" aria-label="Close order">×</button></header><div class="ekmOverlay__content ekmOrder">${renderDrawerLoading()}</div></div></div>`;
+    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details" aria-busy="true" data-order-opening="${escapeHtml(this.returnFocusOrderId)}"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><div class="ekom-order-heading-copy"><h2>${reference ? `#${escapeHtml(reference)}` : 'Order'}</h2>${renderLoadingLine('Loading order…')}</div>${renderDrawerClose('<button type="button" data-action="close-overlay" aria-label="Close order">×</button>')}</header><div class="ekmOverlay__content ekmOrder">${renderDrawerLoading()}</div></div></div>`;
   }
 
   private renderOrderOverlay(order: OrderInfo): string {
@@ -697,7 +698,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       const label = direction < 0 ? 'Previous order' : 'Next order';
       return `<button type="button" data-action="view-order" data-order-id="${escapeHtml(neighbor?.uniqueId || '')}" aria-label="${label}" title="${label} on this page (${direction < 0 ? '← / ↑' : '→ / ↓'})" ${!neighbor || this.stateSaving || this.executingActionKey ? 'disabled' : ''}>${direction < 0 ? '‹' : '›'}</button>`;
     }).join('');
-    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><nav class="ekom-order-navigation" aria-label="Order navigation">${navigation}</nav><div class="ekom-order-heading-copy"><h2>#${escapeHtml(order.referenceId)} ${renderStatusBadge(order.status?.paymentStatus)} ${renderStatusBadge(order.status?.fulfillmentStatus)} ${renderStatusBadge(order.status?.orderStatus)}</h2><p>${escapeHtml(order.customerInformation?.customer?.name)} · ${escapeHtml(formatDate(order.createDate))} · ${escapeHtml(order.storeInfo?.alias || order.storeAlias)} · <span class="ekom-heading-order-id"><span>${escapeHtml(order.uniqueId)}</span><button type="button" class="ekom-copy-order-id" data-action="copy-order-id" aria-label="Copy order ID" title="Copy order ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></span></p></div><button type="button" data-action="close-overlay" aria-label="Close order">×</button></header><div class="ekmOverlay__content ekmOrder">${this.renderOrderDetails(order)}</div></div></div>${this.customerEditorOpen ? this.renderCustomerEditor() : ''}${this.orderLineEditorOpen ? this.renderOrderLineEditor() : ''}${this.shippingProviderEditorOpen ? this.renderShippingProviderEditor() : ''}${this.activeReview ? this.renderReviewDialog() : ''}`;
+    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><nav class="ekom-order-navigation" aria-label="Order navigation">${navigation}</nav><div class="ekom-order-heading-copy"><h2>#${escapeHtml(order.referenceId)} ${renderStatusBadge(order.status?.paymentStatus)} ${renderStatusBadge(order.status?.fulfillmentStatus)} ${renderStatusBadge(order.status?.orderStatus)}</h2><p>${escapeHtml(order.customerInformation?.customer?.name)} · ${escapeHtml(formatDate(order.createDate))} · ${escapeHtml(order.storeInfo?.alias || order.storeAlias)} · <span class="ekom-heading-order-id"><span>${escapeHtml(order.uniqueId)}</span><button type="button" class="ekom-copy-order-id" data-action="copy-order-id" aria-label="Copy order ID" title="Copy order ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></span></p></div>${renderDrawerClose('<button type="button" data-action="close-overlay" aria-label="Close order">×</button>')}</header><div class="ekmOverlay__content ekmOrder">${this.renderOrderDetails(order)}</div></div></div>${this.customerEditorOpen ? this.renderCustomerEditor() : ''}${this.orderLineEditorOpen ? this.renderOrderLineEditor() : ''}${this.shippingProviderEditorOpen ? this.renderShippingProviderEditor() : ''}${this.activeReview ? this.renderReviewDialog() : ''}`;
   }
 
   private renderOrderDetails(order: OrderInfo): string {

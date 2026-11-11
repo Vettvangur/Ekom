@@ -974,6 +974,11 @@ const loadingStyles = `
   .ekom-loading-rows > div { display: flex; align-items: center; gap: 16px; }
   .ekom-loading-rows > p { margin: 0; font-size: 12px; line-height: 1; color: var(--ekom-muted, #676b7b); }
   .ekom-list-skeleton-row:hover { background: transparent !important; }
+  .ekom-drawer-close { display: flex; align-items: center; flex: none; gap: 14px; margin-left: auto; }
+  .ekom-drawer-close > button { min-height: 0; padding: 4px; border: 0; background: none; color: inherit; font-size: 26px; line-height: 1; cursor: pointer; }
+  .ekom-esc-hint { font-size: 13px; white-space: nowrap; color: var(--ekom-muted, #676b7b); }
+  .ekom-esc-hint strong { font-weight: 800; color: var(--ekom-text, #191b24); }
+  @media (max-width: 720px) { .ekom-esc-hint { display: none; } }
   .ekom-drawer-loading { margin-top: 20px; }
   .ekom-drawer-loading .ekom-order-main { display: grid; gap: 14px; }
   .customer-opening { grid-column: 1 / -1; padding: 0 22px 22px; }
@@ -1344,6 +1349,11 @@ export function renderLoadingStatus(section: string): string {
 /** Spinner with a message, announced to screen readers. */
 export function renderLoadingLine(message: string): string {
   return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>${escapeHtml(message)}</p>`;
+}
+
+/** A drawer's close button with the keyboard hint the design shows beside it. */
+export function renderDrawerClose(button: string): string {
+  return `<div class="ekom-drawer-close"><span class="ekom-esc-hint" aria-hidden="true"><strong>Esc</strong> close</span>${button}</div>`;
 }
 
 /** Body of a detail drawer while it loads: the same two-column placeholder for orders and customers. */

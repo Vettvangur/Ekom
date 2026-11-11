@@ -549,6 +549,11 @@ const ke = `
   .ekom-loading-rows > div { display: flex; align-items: center; gap: 16px; }
   .ekom-loading-rows > p { margin: 0; font-size: 12px; line-height: 1; color: var(--ekom-muted, #676b7b); }
   .ekom-list-skeleton-row:hover { background: transparent !important; }
+  .ekom-drawer-close { display: flex; align-items: center; flex: none; gap: 14px; margin-left: auto; }
+  .ekom-drawer-close > button { min-height: 0; padding: 4px; border: 0; background: none; color: inherit; font-size: 26px; line-height: 1; cursor: pointer; }
+  .ekom-esc-hint { font-size: 13px; white-space: nowrap; color: var(--ekom-muted, #676b7b); }
+  .ekom-esc-hint strong { font-weight: 800; color: var(--ekom-text, #191b24); }
+  @media (max-width: 720px) { .ekom-esc-hint { display: none; } }
   .ekom-drawer-loading { margin-top: 20px; }
   .ekom-drawer-loading .ekom-order-main { display: grid; gap: 14px; }
   .customer-opening { grid-column: 1 / -1; padding: 0 22px 22px; }
@@ -660,11 +665,11 @@ function qe(o, r, t, e = {}) {
   const s = o.getContext("2d");
   if (!s) return;
   s.scale(i, i), s.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
-  const b = r.points || [], w = b.map((k) => k.y == null ? null : Number(k.y)), m = ((oe = e.comparison) == null ? void 0 : oe.points) || [], l = [...w, ...m.map((k) => k.y)].filter((k) => k != null), c = Math.min(0, ...l), y = Math.max(1, ...l), x = 10 ** (Math.floor(Math.log10(y / 4)) - 1), P = e.integer ? Math.ceil(y / 4) * 4 : e.templateStyle ? Math.ceil(y / 4 / x) * x * 4 : y, L = (k) => e.formatValue ? e.formatValue(k) : e.currency ? H(k, e.currency) : k.toLocaleString(void 0, { maximumFractionDigits: e.integer ? 0 : 2 }), te = e.formatAxisValue ?? L, re = Array.from({ length: 5 }, (k, f) => P - (P - c) * f / 4), D = e.templateStyle ? 1 : Math.max(48, ...re.map((k) => s.measureText(te(k)).width + 12)), F = n - (e.templateStyle ? 1 : 16), U = e.templateStyle ? 8 : 20, _ = d - (e.templateStyle ? 26 : 52), S = b.map((k, f) => {
+  const b = r.points || [], w = b.map((k) => k.y == null ? null : Number(k.y)), m = ((oe = e.comparison) == null ? void 0 : oe.points) || [], l = [...w, ...m.map((k) => k.y)].filter((k) => k != null), c = Math.min(0, ...l), y = Math.max(1, ...l), x = 10 ** (Math.floor(Math.log10(y / 4)) - 1), P = e.integer ? Math.ceil(y / 4) * 4 : e.templateStyle ? Math.ceil(y / 4 / x) * x * 4 : y, L = (k) => e.formatValue ? e.formatValue(k) : e.currency ? H(k, e.currency) : k.toLocaleString(void 0, { maximumFractionDigits: e.integer ? 0 : 2 }), te = e.formatAxisValue ?? L, re = Array.from({ length: 5 }, (k, f) => P - (P - c) * f / 4), D = e.templateStyle ? 1 : Math.max(48, ...re.map((k) => s.measureText(te(k)).width + 12)), F = n - (e.templateStyle ? 1 : 16), z = e.templateStyle ? 8 : 20, _ = d - (e.templateStyle ? 26 : 52), S = b.map((k, f) => {
     var O, T, R;
     return {
       x: b.length > 1 ? D + (F - D) * f / (b.length - 1) : (D + F) / 2,
-      y: w[f] == null ? null : _ - (w[f] - c) / (P - c) * (_ - U),
+      y: w[f] == null ? null : _ - (w[f] - c) / (P - c) * (_ - z),
       date: k.x || ((O = r.labels) == null ? void 0 : O[f]) || "",
       axisLabel: ((T = e.formatLabel) == null ? void 0 : T.call(e, f)) ?? k.x ?? ((R = r.labels) == null ? void 0 : R[f]) ?? "",
       value: w[f]
@@ -674,7 +679,7 @@ function qe(o, r, t, e = {}) {
     s.clearRect(0, 0, n, d), s.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
     const f = typeof getComputedStyle == "function" ? getComputedStyle(o) : void 0, O = (f == null ? void 0 : f.getPropertyValue("--ekom-muted").trim()) || (f == null ? void 0 : f.getPropertyValue("--uui-color-text-alt").trim()) || "#555", T = (f == null ? void 0 : f.getPropertyValue("--ekom-border").trim()) || "#e5e5e5", R = (f == null ? void 0 : f.getPropertyValue("--uui-color-text").trim()) || "", V = (ne = /^#([0-9a-f]{6})$/i.exec(R)) == null ? void 0 : ne[1], B = V ? [0, 2, 4].reduce((v, g) => v + parseInt(V.slice(g, g + 2), 16), 0) > 420 : !1, G = e.templateStyle && !B ? "#10694a" : t;
     s.lineWidth = 1, s.textAlign = e.templateStyle ? "left" : "right", re.forEach((v, g) => {
-      const $ = U + (_ - U) * g / 4;
+      const $ = z + (_ - z) * g / 4;
       s.fillStyle = O, s.fillText(te(v), e.templateStyle ? D : D - 8, e.templateStyle ? Math.min(_, $ + 3) : $ + 4), !(e.templateStyle && (g === 0 || g === 4)) && (s.globalAlpha = e.templateStyle ? 0.5 : 1, s.strokeStyle = T, s.beginPath(), s.moveTo(D, $), s.lineTo(F, $), s.stroke(), s.globalAlpha = 1);
     });
     const J = Math.max(90, ...S.map((v) => s.measureText(v.axisLabel).width + 32)), ie = Math.max(2, Math.floor((F - D) / J)), Se = new Set(Array.from({ length: Math.min(ie, S.length) }, (v, g) => Math.round(g * (S.length - 1) / Math.max(1, Math.min(ie, S.length) - 1))));
@@ -694,7 +699,7 @@ function qe(o, r, t, e = {}) {
       }), s.stroke(), (N = s.setLineDash) == null || N.call(s, []);
     };
     if (e.templateStyle && S.length > 1) {
-      const v = s.createLinearGradient(0, U, 0, _);
+      const v = s.createLinearGradient(0, z, 0, _);
       v.addColorStop(0, "rgba(16,105,74,.22)"), v.addColorStop(1, "rgba(16,105,74,0)"), s.fillStyle = v;
       let g = [];
       const $ = () => {
@@ -708,25 +713,25 @@ function qe(o, r, t, e = {}) {
       var $;
       return {
         x: v.x,
-        y: (($ = m[g]) == null ? void 0 : $.y) == null ? null : _ - (Number(m[g].y) - c) / (P - c) * (_ - U)
+        y: (($ = m[g]) == null ? void 0 : $.y) == null ? null : _ - (Number(m[g].y) - c) / (P - c) * (_ - z)
       };
     }), !0), se(S, !1), s.fillStyle = G, S.forEach((v, g) => {
       v.y == null || e.templateStyle && S.length > 1 && g !== k || (s.beginPath(), s.arc(v.x, v.y, g === k ? 5 : 3, 0, Math.PI * 2), s.fill());
     }), S.length || (s.textAlign = "center", s.fillText("No data for this period", (D + F) / 2, d / 2));
-    const z = S[k];
-    if (z) {
-      const v = [z.date, z.value == null ? "—" : L(z.value)];
+    const U = S[k];
+    if (U) {
+      const v = [U.date, U.value == null ? "—" : L(U.value)];
       if (m[k]) {
         const q = m[k];
         v.push(`Previous: ${q.x || ""}`, q.y == null ? "—" : L(q.y));
       }
-      const g = Math.max(...v.map((q) => s.measureText(q).width)) + 20, $ = Math.max(0, Math.min(n - g, z.x - g / 2)), C = v.length * 18 + 12, N = z.y ?? _, E = Math.max(0, Math.min(d - C, N > C + 20 ? N - C - 12 : N + 12));
+      const g = Math.max(...v.map((q) => s.measureText(q).width)) + 20, $ = Math.max(0, Math.min(n - g, U.x - g / 2)), C = v.length * 18 + 12, N = U.y ?? _, E = Math.max(0, Math.min(d - C, N > C + 20 ? N - C - 12 : N + 12));
       s.fillStyle = "#222", s.fillRect($, E, g, C), s.fillStyle = "#fff", s.textAlign = "left", v.forEach((q, $e) => s.fillText(q, $ + 10, E + 19 + $e * 18));
     }
   }, ae = (k) => {
     const f = o.getBoundingClientRect(), O = (k.clientX - f.left) * n / f.width, T = (k.clientY - f.top) * d / f.height;
     if (e.columnHover)
-      return !S.length || O < D || O > F || T < U || T > _ ? -1 : S.length === 1 ? 0 : Math.round((O - D) / (F - D) * (S.length - 1));
+      return !S.length || O < D || O > F || T < z || T > _ ? -1 : S.length === 1 ? 0 : Math.round((O - D) / (F - D) * (S.length - 1));
     let R = -1, V = 16;
     return S.forEach((B, G) => {
       if (B.y == null) return;
@@ -753,7 +758,7 @@ const je = [
   { key: "states:Open;;", label: "Open" },
   { key: "states:Closed;;", label: "Closed" }
 ];
-function Ue() {
+function ze() {
   var t;
   const o = p.stores.find((e) => e.alias === p.filters.store), r = (o == null ? void 0 : o.currencies) || [];
   if (!r.includes(p.filters.currency || "")) {
@@ -761,7 +766,7 @@ function Ue() {
     p.filters.currency = r.find((a) => a === e) || r[0] || "";
   }
 }
-function ze(o = "data-field") {
+function Ue(o = "data-field") {
   const r = p.stores.find((e) => e.alias === p.filters.store), t = p.filters.currency || "";
   return `<div class="ekom-store-switch"><span>Store</span><details class="ekom-dropdown ekom-store-currency"><summary aria-label="Store and currency"><strong>${u((r == null ? void 0 : r.title) || "Select store")}</strong>${t ? `<span class="ekom-currency-code">${u(t)}</span>` : ""}<span class="ekom-store-chevron">▾</span></summary><div class="ekom-currency-popover"><div class="ekom-currency-heading"><strong>Store ·<br>Currency</strong><span>Amounts shown in the selected currency</span></div>${p.stores.map((e) => `<section class="ekom-currency-store ${e.alias === (r == null ? void 0 : r.alias) ? "is-selected" : ""}" aria-label="${u(e.title)}"><h3>${u(e.title)}</h3><div class="ekom-currency-choices">${(e.currencies || []).map((a) => `<button type="button" data-header-store="${u(e.alias)}" data-header-currency="${u(a)}" aria-label="${u(e.title)} — ${u(a)}" aria-pressed="${e.alias === (r == null ? void 0 : r.alias) && a === t}">${u(a)}${e.alias === (r == null ? void 0 : r.alias) && a === t ? '<span aria-hidden="true">✓</span>' : ""}</button>`).join("") || '<span class="ekom-currency-empty">No currencies configured or recorded</span>'}</div></section>`).join("")}</div></details><select hidden aria-label="Store" ${o}="store">${p.stores.map((e) => `<option value="${u(e.alias)}" ${e.alias === (r == null ? void 0 : r.alias) ? "selected" : ""}>${u(e.title)}</option>`).join("")}</select></div>`;
 }
@@ -771,7 +776,7 @@ function Ne(o, r = "data-field", t = !0) {
     i.rel = "stylesheet", i.href = "/App_Plugins/Ekom/dist/manager-fonts.css", i.dataset.ekomFonts = "", document.head.append(i);
   }
   const e = ["orders", "analytics", "customers", ...p.printingEnabled || o === "printing" ? ["printing"] : []], a = typeof location > "u" ? "/umbraco/section/ekommanager" : location.pathname.replace(/\/view\/(orders|analytics|customers|printing)\/?$/, "").replace(/\/$/, "");
-  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((i) => `<a href="${u(a + "/view/" + i)}" ${i === o ? 'aria-current="page"' : ""}>${i[0].toUpperCase() + i.slice(1)}</a>`).join("")}</nav>${t ? ze(r) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
+  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((i) => `<a href="${u(a + "/view/" + i)}" ${i === o ? 'aria-current="page"' : ""}>${i[0].toUpperCase() + i.slice(1)}</a>`).join("")}</nav>${t ? Ue(r) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
 }
 function Ie(o) {
   var t;
@@ -1099,7 +1104,7 @@ class rt extends Xe(HTMLElement) {
     try {
       const [e, a, i] = await Promise.all([this.api.statusList(), this.api.stores(), this.hasAttribute("classic") ? Promise.resolve(!1) : this.api.printingEnabled()]);
       if (p.printingEnabled = i, this.disposed) return;
-      p.statusList = e || [], p.stores = a || [], p.stores.some((n) => n.alias === p.filters.store) || (p.filters.store = ((t = p.stores[0]) == null ? void 0 : t.alias) || ""), this.hasAttribute("classic") || Ue(), await this.loadAnalytics();
+      p.statusList = e || [], p.stores = a || [], p.stores.some((n) => n.alias === p.filters.store) || (p.filters.store = ((t = p.stores[0]) == null ? void 0 : t.alias) || ""), this.hasAttribute("classic") || ze(), await this.loadAnalytics();
     } catch (e) {
       if (this.disposed) return;
       this.error = ee(e, "Unable to load Analytics."), this.loading = !1, this.render();
