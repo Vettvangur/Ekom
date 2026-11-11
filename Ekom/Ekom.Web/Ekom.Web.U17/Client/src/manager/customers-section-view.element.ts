@@ -1,7 +1,7 @@
 import { renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { EkomManagerApi, renderSectionLoading, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
+import { EkomManagerApi, renderSectionLoading, renderLoadingLine, renderLoadingPanel, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
 
 type Spend = { currency: string; total: number; averageOrder: number; averageLifetime: number };
 type Customer = { identity: string; name?: string; email?: string; username?: string; shippingCountry?: string; firstOrder: string; lastOrder: string; lastStatus?: string; orders: number; daysSinceLastOrder: number; averageReorderDays?: number; spend: Spend[] };
@@ -20,11 +20,12 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
   private error = '';
   private request = 0;
   private detailRequest = 0;
+  private detailOpening?: string;
   private other = false;
   private classic = false;
   private opener?: string;
   private readonly dismissOnEscape = (event: KeyboardEvent): void => {
-    if (!this.detail || event.key !== 'Escape') return;
+    if ((!this.detail && !this.detailOpening) || event.key !== 'Escape') return;
     event.preventDefault();
     event.stopPropagation();
     this.close();
@@ -106,19 +107,23 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
     const request = ++this.detailRequest;
     this.opener = identity;
     this.error = '';
+    // Open the drawer on a loader. Paging inside an open drawer keeps what is on screen.
+    if (!this.detail) { this.detailOpening = identity; this.render(); this.querySelector<HTMLButtonElement>('[data-close]')?.focus(); }
     try {
       const detail = await this.get<Detail>('/detail', new URLSearchParams({ store: managerState.filters.store, currency: managerState.filters.currency || '', identity, orderStatus: managerState.filters.orderStatus, page: String(page), other: String(this.other) }));
       if (request !== this.detailRequest || !this.isConnected) return;
       this.detail = detail;
+      this.detailOpening = undefined;
       this.render();
       this.querySelector<HTMLButtonElement>('[data-close]')?.focus();
     } catch (error) {
-      if (request === this.detailRequest) { this.error = String(error); this.render(); }
+      if (request === this.detailRequest) { this.detailOpening = undefined; this.error = String(error); this.render(); }
     }
   }
 
   private close(): void {
     this.detailRequest++;
+    this.detailOpening = undefined;
     this.detail = undefined;
     this.render();
     Array.from(this.querySelectorAll<HTMLButtonElement>('[data-customer]')).find(x => x.dataset.customer === this.opener)?.focus();
@@ -217,8 +222,16 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       </div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
       ${(r?.customers || []).map(c => `<tr><td><div class="customer-identity">${this.avatar(c.name || c.email || c.username || c.identity)}<button data-customer="${esc(c.identity)}">${esc(c.name || c.email || c.username || c.identity)}<span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span><span class="customer-muted">${esc(c.email || c.username || c.identity)}</span></button></div></td><td>${this.date(c.firstOrder)}</td><td>${c.orders}</td><td>${this.amount(c.spend,'total')}</td><td>${this.amount(c.spend,'averageOrder')}</td><td>${this.date(c.lastOrder)}${this.classic ? `<span class="customer-muted">${esc(c.lastStatus || '')}</span>` : ''}</td><td>${c.daysSinceLastOrder}</td></tr>`).join('') || `<tr><td colspan="7">${r ? 'No customers found.' : this.error ? 'Customer results could not be loaded.' : 'Select a store to see customers.'}</td></tr>`}
       </tbody></table></div><div class="customer-pagination"><button data-page="${this.page-1}" ${this.page <= 1 || this.busy ? 'disabled' : ''}>Previous</button><span>Page ${this.page} of ${Math.max(1,r?.totalPages || 0)}</span><button data-page="${this.page+1}" ${this.page >= (r?.totalPages || 0) || this.busy ? 'disabled' : ''}>Next</button></div></div>
-      ${this.detail ? this.renderDetail(this.detail) : ''}</section>`);
+      ${this.detail ? this.renderDetail(this.detail) : this.detailOpening ? this.renderDetailOpening(this.detailOpening) : ''}</section>`);
     this.bind();
+  }
+
+  /** The customer drawer while the customer is still being fetched. */
+  private renderDetailOpening(identity: string): string {
+    const row = this.result?.customers.find(customer => customer.identity === identity);
+    const name = row?.name || row?.email || row?.username || identity;
+    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" aria-busy="true" class="customer-dialog"><header class="customer-heading">${this.avatar(name)}<div><h2>${esc(name)}</h2>${renderLoadingLine('Loading customer…')}</div><button data-close aria-label="Close customer details">${this.classic ? 'Close' : '×'}</button></header>
+      <div class="ekom-loading customer-opening"><div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(6,minmax(0,1fr))">${renderLoadingPanel(1).repeat(6)}</div>${renderLoadingPanel(5)}${renderLoadingPanel(3)}</div></section></div>`;
   }
 
   private renderDetail(d: Detail): string {

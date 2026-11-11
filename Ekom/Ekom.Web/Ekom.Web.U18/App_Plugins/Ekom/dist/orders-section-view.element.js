@@ -1,7 +1,7 @@
 var oe = Object.defineProperty;
 var ne = (o, h, e) => h in o ? oe(o, h, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[h] = e;
 var c = (o, h, e) => ne(o, typeof h != "symbol" ? h + "" : h, e);
-import { E as de, m as v, q as F, e as le, r as ce, a as ue, c as a, b as he, t as pe, h as me, u as S, o as E, v as ve, w as x, x as z, y as q, n as fe, z as ge, l as ye } from "./manager-shared.js";
+import { E as de, m as v, u as F, e as le, r as ce, a as ue, c as a, b as he, v as pe, h as me, w as S, t as E, o as ve, q as x, x as z, y as q, n as fe, z as ge, l as ye } from "./manager-shared.js";
 import { UmbElementMixin as be } from "@umbraco-cms/backoffice/element-api";
 import { UMB_NOTIFICATION_CONTEXT as ke } from "@umbraco-cms/backoffice/notification";
 const $e = [
@@ -547,7 +547,7 @@ class Se extends be(HTMLElement) {
   renderPaymentCard(e) {
     var n, s, d, l, m, f, u, p, g, y, O, I, A;
     const t = (e.orderLines || []).reduce((L, w) => L + (Number(w.quantity) || 0), 0), r = ((n = e.shippingProvider) == null ? void 0 : n.title) || ((d = (s = e.shippingProvider) == null ? void 0 : s.properties) == null ? void 0 : d.nodeName) || "", i = (L, w, $, C = !1) => `<div${C ? ' class="ekom-money-total"' : ""}><dt>${a(L)}</dt><dd class="ekom-money-description">${a(w)}</dd><dd>${a($ || "—")}</dd></div>`;
-    return `<section class="ekom-detail-card ekom-payment-card"><h3>Payment ${E((l = e.status) == null ? void 0 : l.paymentStatus)}</h3><dl class="ekom-money-summary">${i("Subtotal", `${t} ${t === 1 ? "item" : "items"}`, (f = (m = e.subTotal) == null ? void 0 : m.withVat) == null ? void 0 : f.currencyString)}${i("Discount", e.coupon || "", (u = e.discountAmount) != null && u.currencyString ? `-${e.discountAmount.currencyString}` : "")}${i("Shipping", r, (y = (g = (p = e.shippingProvider) == null ? void 0 : p.price) == null ? void 0 : g.withVat) == null ? void 0 : y.currencyString)}${i("Tax", "Included in total", (O = e.chargedVat) == null ? void 0 : O.currencyString)}${i("Total", "", (I = e.chargedAmount) == null ? void 0 : I.currencyString, !0)}</dl>${(A = e.giftcards) != null && A.length ? `<div class="ekom-payment-breakdown">${this.renderGiftcards(e)}</div>` : ""}${this.renderPaymentDetails(e)}</section>`;
+    return `<section class="ekom-detail-card ekom-payment-card"><h3>Payment ${E((l = e.status) == null ? void 0 : l.paymentStatus)}</h3><dl class="ekom-money-summary">${i("Subtotal", `${t} ${t === 1 ? "item" : "items"}`, (f = (m = e.subTotal) == null ? void 0 : m.withVat) == null ? void 0 : f.currencyString)}${i("Discount", e.coupon || "—", (u = e.discountAmount) != null && u.currencyString ? `${Number(e.discountAmount.value) ? "-" : ""}${e.discountAmount.currencyString}` : "")}${i("Shipping", r, (y = (g = (p = e.shippingProvider) == null ? void 0 : p.price) == null ? void 0 : g.withVat) == null ? void 0 : y.currencyString)}${i("Tax", "Included in total", (O = e.chargedVat) == null ? void 0 : O.currencyString)}${i("Total", "", (I = e.chargedAmount) == null ? void 0 : I.currencyString, !0)}</dl>${(A = e.giftcards) != null && A.length ? `<div class="ekom-payment-breakdown">${this.renderGiftcards(e)}</div>` : ""}${this.renderPaymentDetails(e)}</section>`;
   }
   renderPaymentDetails(e) {
     var i, n, s, d, l, m, f;

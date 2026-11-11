@@ -188,3 +188,46 @@ test('modern customer history shows independent statuses including evidence gaps
   assert.ok(!dom.window.document.body.textContent.includes('ReadyForDispatch'));
   dom.window.close();
 });
+
+test('the customer drawer opens on a loader, keeps its content while paging, and never sticks open', async () => {
+  const { view, state } = fixture();
+  view.render = Object.getPrototypeOf(view).render.bind(view);
+  view.bind = () => {};
+  view.isConnected = true;
+  view.querySelectorAll = () => [];
+  state.filters.store = 'main';
+  view.result = { ...emptyResult, customers: [{ identity: 'A@EXAMPLE.COM', name: 'Anna <b>', email: 'a@example.com', orders: 1, spend: [] }] };
+  const detail = { customer: { identity: 'A@EXAMPLE.COM', name: 'Anna', orders: 1, spend: [], firstOrder: '2026-01-01', daysSinceLastOrder: 1 }, orders: [], count: 0, page: 1, totalPages: 0, snapshot: { fields: {}, date: '2026-01-01', orderNumber: '1' } };
+  let resolve, reject;
+  view.get = () => new Promise((res, rej) => { resolve = res; reject = rej; });
+
+  const opening = view.open('A@EXAMPLE.COM');
+  assert.match(view.innerHTML, /aria-busy="true" class="customer-dialog"/);
+  assert.match(view.innerHTML, /<h2>Anna &lt;b&gt;<\/h2><p class="ekom-loading-status" role="status">.*Loading customer…/);
+  assert.match(view.innerHTML, /data-close/);
+  resolve(detail);
+  await opening;
+  assert.doesNotMatch(view.innerHTML, /Loading customer…|class="customer-dialog" aria-busy/);
+  assert.match(view.innerHTML, /Latest order snapshot/);
+
+  // Paging inside the open drawer keeps the customer on screen instead of swapping to the loader.
+  const paging = view.open('A@EXAMPLE.COM', 2);
+  assert.match(view.innerHTML, /Latest order snapshot/);
+  assert.doesNotMatch(view.innerHTML, /Loading customer…/);
+  resolve(detail);
+  await paging;
+
+  view.close();
+  const failing = view.open('A@EXAMPLE.COM');
+  assert.match(view.innerHTML, /Loading customer…/);
+  reject(new Error('offline'));
+  await failing;
+  assert.doesNotMatch(view.innerHTML, /Loading customer…|customer-dialog/);
+  assert.match(view.innerHTML, /role="alert"/);
+
+  const closing = view.open('A@EXAMPLE.COM');
+  view.close();
+  resolve(detail);
+  await closing;
+  assert.doesNotMatch(view.innerHTML, /customer-dialog/);
+});

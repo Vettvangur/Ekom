@@ -470,6 +470,7 @@ const he = `
   .ekom-loading-rows > p { margin: 0; font-size: 12px; line-height: 1; color: var(--ekom-muted, #676b7b); }
   .ekom-list-skeleton-row:hover { background: transparent !important; }
   .ekom-order-opening { margin-top: 20px; }
+  .customer-opening { grid-column: 1 / -1; margin: 0; padding: 20px 22px 22px; }
   [hidden] { display: none !important; }
   @media (max-width: 720px) { .ekom-loading-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
   @media (prefers-reduced-motion: reduce) { .ekom-skeleton, .ekom-loading-spinner { animation: none; } }

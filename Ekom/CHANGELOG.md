@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+* **manager:** make the Customers list fast on large stores: the matching customers are worked out once per search, and names, contact details and spend are looked up only for the customers on the page instead of for every customer in the store.
+
+* **manager:** open the customer drawer on a loader, like the order drawer.
+
+* **manager:** show a dash in the order Payment summary when there is no discount code, and no minus sign on a zero discount.
+
 * **manager:** open the order drawer on a loader and show the order once everything in it has loaded, instead of flashing gift-card recovery, checkout lock and action states as each request returns.
 
 * **manager:** fix the Orders view counts failing on SQL Server ("Cannot perform an aggregate function on an expression containing an aggregate or a subquery"), which left the view tabs without counts in 1.0.2.
