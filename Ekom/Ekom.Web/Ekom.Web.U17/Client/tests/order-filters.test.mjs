@@ -344,3 +344,24 @@ test('shipping option failure during a store change still reloads the order list
   assert.equal(element.filterProvidersLoading, false);
   assert.equal(notifications.length, 1);
 });
+
+test('view counts are fetched in one request that repeats the views parameter', async () => {
+  const { shared, state } = createFixture();
+  state.filters.store = 'main';
+  state.filters.couponCode = 'SPRING10';
+  const api = new shared.EkomManagerApi();
+  const calls = [];
+  api.getJson = async (url, parameters) => { calls.push(url + shared.buildQueryString(parameters)); return []; };
+  const views = shared.orderViews.map(view => view.key).filter(key => key !== state.filters.orderStatus);
+
+  await api.orderViewCounts(state.filters, views);
+  await api.orderViewCounts(state.filters, []);
+
+  assert.equal(calls.length, 1);
+  const request = new URL(calls[0], 'https://example.test');
+  assert.equal(request.pathname, '/ekom/manager/OrderViewCounts');
+  assert.deepEqual(request.searchParams.getAll('views'), Array.from(views));
+  assert.equal(request.searchParams.get('couponCode'), 'SPRING10');
+  assert.equal(request.searchParams.get('store'), 'main');
+  assert.equal(request.searchParams.has('orderStatus'), false);
+});

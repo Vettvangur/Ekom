@@ -54,6 +54,40 @@ public class ManagerRepositoryTests
     }
 
     [Fact]
+    public async Task ViewCountsMatchSearchingEachViewSeparately()
+    {
+        using var f = new OrderDatabase();
+        foreach (var state in new[] {
+            ("Incomplete", (string?)null), ("3", null), ("Pending", "Draft"),
+            ("Pending", null), ("Closed", null), ("Cancelled", null), ("Incomplete", "Open"), ("ReadyForDispatch", null) })
+        {
+            var id = f.Add(null, Guid.Empty, 10m);
+            f.SetState(id, state.Item1, state.Item2);
+        }
+        string[] views =
+        {
+            "AllOrders", "NeedsReview", "states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled",
+            "states:Open;Pending,Authorized,PartiallyPaid,Failed;", "states:Open;;", "states:Closed;;",
+            "CompletedOrders", "Pending", "ReadyForDispatch",
+        };
+
+        var counts = await f.Repository.GetOrderViewCountsAsync(f.Date, f.Date, "", "main",
+            views.Append("AllOrders").Append("Pending' OR 1 = 1 --").ToArray(), "", "", "", "", "", "", "", "", currency: "USD");
+
+        Assert.Equal(views, counts.Select(count => count.View));
+        foreach (var count in counts)
+        {
+            var search = await f.Repository.SearchOrdersAsync(f.Date, f.Date, "", "main", count.View,
+                "", "", "", "", "", "", "", "", "1", "1", currency: "USD");
+            Assert.Equal(search.Count, count.Count);
+        }
+        Assert.Contains(counts, count => count.Count > 0);
+        Assert.Empty(await f.Repository.GetOrderViewCountsAsync(f.Date, f.Date, "", "main", Array.Empty<string>(), "", "", "", "", "", "", "", ""));
+        Assert.All(await f.Repository.GetOrderViewCountsAsync(f.Date.AddYears(1), f.Date.AddYears(1), "", "main", views, "", "", "", "", "", "", "", ""),
+            count => Assert.Equal(0, count.Count));
+    }
+
+    [Fact]
     public async Task CurrencySelectionScopesOrdersExportAndCharts()
     {
         using var f = new OrderDatabase();

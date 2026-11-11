@@ -273,16 +273,22 @@ test('polling preserves unchanged rows and pauses for editing, hidden pages and 
   shared.managerState.filters.store = 'Store';
   shared.managerState.filters.currency = 'USD';
   view.api.searchOrders = async filters => { requests++; assert.equal(filters.currency, 'USD'); return { orders: [], count: 0, totalPages: 0 }; };
+  view.api.orderViewCounts = async (filters, views) => {
+    requests++;
+    assert.equal(filters.currency, 'USD');
+    assert.deepEqual(views, shared.orderViews.map(view => view.key).filter(key => key !== filters.orderStatus));
+    return views.map(view => ({ view, count: 0 }));
+  };
   view.viewCounts = Object.fromEntries(shared.orderViews.map(view => [view.key, 0]));
   view.setPolling(2);
   assert.equal(timers[0].ms, 2000);
   await view.pollOrders();
-  assert.equal(requests, shared.orderViews.length);
+  assert.equal(requests, 2, 'one list search plus one request for every other view count');
   assert.equal(renders, 1, 'unchanged results must not redraw');
   view.overlay = 'order'; await view.pollOrders();
   view.overlay = ''; page.hidden = true; await view.pollOrders();
   page.hidden = false; view.loading = true; await view.pollOrders();
-  assert.equal(requests, shared.orderViews.length);
+  assert.equal(requests, 2);
   view.loading = false;
   view.api.searchOrders = async () => ({ orders: [], count: 1, totalPages: 1 });
   await view.pollOrders();

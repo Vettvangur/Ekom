@@ -33,8 +33,18 @@ export type StoreItem = {
   alias: string;
   title: string;
   currencies?: string[];
-  currency?: { isoCurrencySymbol?: string; currencyValue?: string; currencyDecimalDigits?: number };
+  currency?: StoreCurrency;
+  /** The store's configured currencies with their culture, used to format amounts. */
+  currencyModels?: StoreCurrency[];
 };
+
+export type StoreCurrency = { isoCurrencySymbol?: string; currencyValue?: string; currencyDecimalDigits?: number };
+
+/** The store's own definition of a currency code, so amounts use the culture configured on the store. */
+export function storeCurrency(store: StoreItem | undefined, code: string | undefined): StoreCurrency | undefined {
+  if (!code) return store?.currency;
+  return [...(store?.currencyModels || []), store?.currency].find(currency => currency?.isoCurrencySymbol === code) || { isoCurrencySymbol: code };
+}
 
 export type PaymentProviderItem = {
   key: string;
@@ -80,6 +90,11 @@ export type OrderSearchResult = {
   page?: number;
   grandTotal?: string;
   averageAmount?: string;
+};
+
+export type OrderViewCount = {
+  view: string;
+  count: number;
 };
 
 export type ChartPoint = {
@@ -256,6 +271,18 @@ export class EkomManagerApi {
     });
   }
 
+  /** Counts for several order views in one request, so the view tabs do not each run a search. */
+  async orderViewCounts(filters: ManagerFilters, views: string[]): Promise<OrderViewCount[]> {
+    if (!views.length) return [];
+    const { orderStatus: _orderStatus, ...shared } = filters;
+    return this.getJson('/ekom/manager/OrderViewCounts', {
+      ...shared,
+      start: filters.dateFrom,
+      end: filters.dateTo,
+      views,
+    });
+  }
+
   async exportOrders(filters: ManagerFilters, pageSize: number, includeOrderLines: boolean): Promise<Blob> {
     return this.getBlob('/ekom/manager/ExportOrders', {
       ...filters,
@@ -286,7 +313,11 @@ export class EkomManagerApi {
 
   async stores(): Promise<StoreItem[]> {
     const [stores, choices] = await Promise.all([this.getJson<StoreItem[]>('/ekom/manager/stores'), this.getJson<Array<{ alias: string; currencies: string[] }>>('/ekom/manager/store-currencies')]);
-    return stores.map(store => ({ ...store, currencies: choices.find(choice => choice.alias === store.alias)?.currencies || [] }));
+    return stores.map(store => ({
+      ...store,
+      currencyModels: ((store.currencies || []) as unknown[]).filter((currency): currency is StoreCurrency => !!currency && typeof currency === 'object'),
+      currencies: choices.find(choice => choice.alias === store.alias)?.currencies || [],
+    }));
   }
 
   async paymentProviders(storeAlias: string): Promise<PaymentProviderItem[]> {
@@ -483,7 +514,8 @@ export function buildQueryString(query?: Record<string, unknown>): string {
   const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(query)) {
-    params.set(key, value == null ? '' : String(value));
+    if (Array.isArray(value)) value.forEach(item => params.append(key, String(item)));
+    else params.set(key, value == null ? '' : String(value));
   }
 
   const value = params.toString();
@@ -929,10 +961,16 @@ export function renderOrderStatusSummary(status?: OrderStatusSnapshot): string {
 export function formatAnalyticsAmount(value: number, currency?: StoreItem['currency']): string {
   const code = currency?.isoCurrencySymbol;
   const digits = currency?.currencyDecimalDigits ?? (code && /^[A-Z]{3}$/.test(code) ? new Intl.NumberFormat(undefined, { style: 'currency', currency: code }).resolvedOptions().maximumFractionDigits : 2);
-  return new Intl.NumberFormat(undefined, {
+  // Format in the store currency's own culture, as Orders does, so both views read the same.
+  // Without a usable culture, fall back to the viewer's locale with an unambiguous currency code.
+  const culture = currency?.currencyValue;
+  let locale: string | undefined;
+  try { if (culture && !/^[A-Z]{3}$/.test(culture)) locale = Intl.NumberFormat.supportedLocalesOf(culture)[0]; }
+  catch { /* Not a culture name. */ }
+  return new Intl.NumberFormat(locale, {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
-    ...(code && /^[A-Z]{3}$/.test(code) ? { style: 'currency', currency: code, currencyDisplay: 'code' } : {}),
+    ...(code && /^[A-Z]{3}$/.test(code) ? { style: 'currency', currency: code, ...(locale ? {} : { currencyDisplay: 'code' }) } : {}),
   }).format(value);
 }
 

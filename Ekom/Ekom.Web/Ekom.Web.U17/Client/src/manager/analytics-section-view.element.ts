@@ -1,7 +1,7 @@
 import { renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
+import { storeCurrency, ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
 import { AnalyticsBucket, AnalyticsMetric, analyticsSummary, groupAnalytics, percentageChange, matchingPreset, presetRange, previousPeriod } from './analytics-data';
 
 export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement) {
@@ -125,8 +125,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
 
   private get currency() {
     const code = this.chartFilters?.currency || managerState.filters.currency;
-    if (code) return { isoCurrencySymbol: code };
-    return managerState.stores.find(store => store.alias === (this.chartFilters?.store || managerState.filters.store))?.currency;
+    return storeCurrency(managerState.stores.find(store => store.alias === (this.chartFilters?.store || managerState.filters.store)), code);
   }
 
   private async initialize(): Promise<void> {

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+* **manager:** read a store's order history once per Customers search instead of rescanning the orders table for every query, fixing slow or timed-out customer lists.
+
+* **manager:** format Analytics amounts in the store currency's culture, matching Orders (for example `24.774.950 kr.` instead of `ISK 24,774,950`).
+
+* **manager:** load the Orders view counts in one request and one database scan instead of running a full order search for every view, on each load and each polling refresh. Fixes slow or timed-out order lists on stores with many orders.
+
 * **release:** prepare 1.0.1 for the new manager and status migration because NuGet 1.0.0 is occupied by older unlisted packages. Validate package source commits before publishing and reject conflicting versions.
 
 * **manager:** show the installed Ekom version when hovering over the Ekom logo.

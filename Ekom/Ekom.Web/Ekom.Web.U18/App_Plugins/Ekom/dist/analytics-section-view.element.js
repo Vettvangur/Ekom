@@ -1,8 +1,8 @@
 var E = Object.defineProperty;
 var O = (l, n, t) => n in l ? E(l, n, { enumerable: !0, configurable: !0, writable: !0, value: t }) : l[n] = t;
 var h = (l, n, t) => O(l, typeof n != "symbol" ? n + "" : n, t);
-import { E as q, m, e as F, f as C, r as L, a as R, b as N, c as p, d as U, g as V, h as j, p as z, i as I, j as B, k as Z } from "./manager-shared.js";
-import { UmbElementMixin as _ } from "@umbraco-cms/backoffice/element-api";
+import { E as q, m, s as F, e as L, f as C, r as R, a as N, b as U, c as p, d as V, g as j, h as z, p as I, i as B, j as Z, k as _ } from "./manager-shared.js";
+import { UmbElementMixin as H } from "@umbraco-cms/backoffice/element-api";
 const D = 864e5, $ = (l) => l.toISOString().slice(0, 10), x = (l) => /* @__PURE__ */ new Date(`${l}T00:00:00Z`);
 function w(l, n) {
   const t = x(l), e = x(n), s = Math.round((e.getTime() - t.getTime()) / D) + 1;
@@ -12,7 +12,7 @@ function M(l, n = /* @__PURE__ */ new Date()) {
   const t = new Date(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())), e = new Date(t);
   return l === "7" && e.setUTCDate(e.getUTCDate() - 6), l === "30" && e.setUTCDate(e.getUTCDate() - 29), l === "month" && e.setUTCDate(1), l === "year" && (e.setUTCMonth(0), e.setUTCDate(1)), { dateFrom: $(e), dateTo: $(t) };
 }
-function H(l, n, t, e = /* @__PURE__ */ new Date()) {
+function G(l, n, t, e = /* @__PURE__ */ new Date()) {
   if (t === "") return "";
   const s = ["today", "7", "30", "month", "year"];
   return t && s.includes(t) && s.unshift(t), s.find((a) => {
@@ -20,7 +20,7 @@ function H(l, n, t, e = /* @__PURE__ */ new Date()) {
     return o.dateFrom === l && o.dateTo === n;
   }) || "";
 }
-function G(l, n, t) {
+function J(l, n, t) {
   var o, i, r, b, v;
   const e = [], s = l.ordersChart.points;
   let a = 0;
@@ -58,7 +58,7 @@ function T(l, n) {
   const t = (l - n) / Math.abs(n) * 100;
   return `${t > 0 ? "+" : ""}${t.toLocaleString(void 0, { maximumFractionDigits: 1 })}%`;
 }
-class J extends _(HTMLElement) {
+class W extends H(HTMLElement) {
   constructor() {
     super(...arguments);
     h(this, "api", new q());
@@ -134,19 +134,19 @@ class J extends _(HTMLElement) {
     this.disposed = !0, window.clearInterval(this.pollingTimer), this.pollingSeconds = 0, this.chartRequest++, this.productRequest++, (t = this.chartAbort) == null || t.abort(), (e = this.productAbort) == null || e.abort(), (s = this.resizeObserver) == null || s.disconnect(), this.resizeObserver = void 0, (a = this.themeObserver) == null || a.disconnect(), typeof document < "u" && document.head.removeEventListener("load", this.themeLoaded, !0), super.disconnectedCallback();
   }
   get currency() {
-    var e, s;
+    var e;
     const t = ((e = this.chartFilters) == null ? void 0 : e.currency) || m.filters.currency;
-    return t ? { isoCurrencySymbol: t } : (s = m.stores.find((a) => {
-      var o;
-      return a.alias === (((o = this.chartFilters) == null ? void 0 : o.store) || m.filters.store);
-    })) == null ? void 0 : s.currency;
+    return F(m.stores.find((s) => {
+      var a;
+      return s.alias === (((a = this.chartFilters) == null ? void 0 : a.store) || m.filters.store);
+    }), t);
   }
   async initialize() {
     var t;
     try {
       const [e, s, a] = await Promise.all([this.api.statusList(), this.api.stores(), this.hasAttribute("classic") ? Promise.resolve(!1) : this.api.printingEnabled()]);
       if (m.printingEnabled = a, this.disposed) return;
-      m.statusList = e || [], m.stores = s || [], m.stores.some((o) => o.alias === m.filters.store) || (m.filters.store = ((t = m.stores[0]) == null ? void 0 : t.alias) || ""), this.hasAttribute("classic") || F(), await this.loadAnalytics();
+      m.statusList = e || [], m.stores = s || [], m.stores.some((o) => o.alias === m.filters.store) || (m.filters.store = ((t = m.stores[0]) == null ? void 0 : t.alias) || ""), this.hasAttribute("classic") || L(), await this.loadAnalytics();
     } catch (e) {
       if (this.disposed) return;
       this.error = P(e, "Unable to load Analytics."), this.loading = !1, this.render();
@@ -194,7 +194,7 @@ class J extends _(HTMLElement) {
       }
   }
   get buckets() {
-    return this.chartData ? G(this.chartData, this.previousData, this.grouping) : [];
+    return this.chartData ? J(this.chartData, this.previousData, this.grouping) : [];
   }
   get comparisonMoneyAvailable() {
     var t, e;
@@ -219,8 +219,8 @@ class J extends _(HTMLElement) {
     return t === e ? t || "" : `${t || ""} – ${e || ""}`;
   }
   render() {
-    const t = m.filters, e = H(t.dateFrom, t.dateTo, this.datePreset);
-    L(this, `<style>${R}${this.hasAttribute("classic") ? `
+    const t = m.filters, e = G(t.dateFrom, t.dateTo, this.datePreset);
+    R(this, `<style>${N}${this.hasAttribute("classic") ? `
       ekom-analytics-section-view { display:block;color:var(--uui-color-text,#20232e) }
       .analytics {background:var(--uui-color-background,#f3f4f7);min-height:80vh}
       .analytics .card {background:var(--uui-color-surface,#fff);border:1px solid #dfe2e8;border-radius:10px;padding:18px;text-align:left;box-shadow:none}
@@ -250,14 +250,14 @@ class J extends _(HTMLElement) {
       .analytics-spinner {display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid #dfe2e8;border-top-color:#25765c;border-radius:50%;animation:analytics-spin 1s linear infinite}
       @keyframes analytics-spin {to {transform:rotate(360deg)}}
       @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
-    ` : ""}</style>${this.hasAttribute("classic") ? "" : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/analytics-layout.css">'}<section class="ekmManager analytics ekom-design" aria-busy="${this.loading}"><div class="ekmManager__body">${this.hasAttribute("classic") ? "" : N("analytics")}
+    ` : ""}</style>${this.hasAttribute("classic") ? "" : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/analytics-layout.css">'}<section class="ekmManager analytics ekom-design" aria-busy="${this.loading}"><div class="ekmManager__body">${this.hasAttribute("classic") ? "" : U("analytics")}
       <div class="analytics-toolbar ekom-shared-filters">
         ${this.hasAttribute("classic") ? `<label>Store<select data-field="store">${m.stores.map((s) => `<option value="${p(s.alias)}" ${s.alias === t.store ? "selected" : ""}>${p(s.title)}</option>`).join("")}</select></label>` : ""}
-        ${this.hasAttribute("classic") ? `<label>Order view<select data-field="orderStatus">${U(t.orderStatus)}</select></label>` : V()}
+        ${this.hasAttribute("classic") ? `<label>Order view<select data-field="orderStatus">${V(t.orderStatus)}</select></label>` : j()}
         ${this.hasAttribute("classic") ? `        <label>Date From<input type="date" data-field="dateFrom" value="${p(t.dateFrom)}"></label>
         <label>Date To<input type="date" data-field="dateTo" value="${p(t.dateTo)}"></label>
         <label>Date preset<select data-preset><option value="">Custom range</option>${[["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["month", "This month"], ["year", "This year"]].map(([s, a]) => `<option value="${s}" ${e === s ? "selected" : ""}>${a}</option>`).join("")}</select></label>
-` : j()}
+` : z()}
         ${this.hasAttribute("classic") ? `<label><span>Comparison</span><span><input type="checkbox" data-compare ${this.compare ? "checked" : ""}> Previous period</span></label><button data-refresh>Refresh</button>` : ""}
       </div>
       ${this.hasAttribute("classic") ? "" : `<div class="analytics-comparison-actions">
@@ -332,7 +332,7 @@ class J extends _(HTMLElement) {
     return `
       <div class="pagination">
         <ul>
-          ${z(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((t) => {
+          ${I(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((t) => {
       const e = Number(String(t).replace("...", ""));
       return `<li class="${e === this.pageMostSoldProducts ? "active" : ""}"><button type="button" data-action="set-most-sold-page" data-page="${e}" ${e === this.pageMostSoldProducts ? "disabled" : ""}>${p(t)}</button></li>`;
     }).join("")}
@@ -345,7 +345,7 @@ class J extends _(HTMLElement) {
     const t = this.querySelector("#analytics-chart");
     if (!t || !this.chartData || this.table) return;
     const e = this.buckets, s = this.chartData.currency || ((i = this.previousData) == null ? void 0 : i.currency), a = s && /^[A-Z]{3}$/.test(s) ? { isoCurrencySymbol: s } : this.currency, o = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: e.map((r) => ({ x: this.range(r.previousStart, r.previousEnd), y: this.previousValue(r) })) } : void 0;
-    I(t, { labels: [], points: e.map((r) => ({ x: this.range(r.start, r.end), y: r[this.metric] })) }, getComputedStyle(t).getPropertyValue("--ekom-accent").trim() || "#10694a", {
+    B(t, { labels: [], points: e.map((r) => ({ x: this.range(r.start, r.end), y: r[this.metric] })) }, getComputedStyle(t).getPropertyValue("--ekom-accent").trim() || "#10694a", {
       templateStyle: !this.hasAttribute("classic"),
       formatAxisValue: (r) => r.toLocaleString(void 0, { notation: "compact", maximumFractionDigits: 1 }).replace("K", "k"),
       formatLabel: (r) => (/* @__PURE__ */ new Date(`${e[r].start}T00:00:00Z`)).toLocaleDateString("en-GB", { timeZone: "UTC", month: "short", ...this.grouping === "month" ? {} : { day: "numeric" } }),
@@ -377,11 +377,11 @@ class J extends _(HTMLElement) {
     for (const i of this.buckets) t.push([i.start, i.end, String(i.orders), (s = this.chartData) != null && s.mixedCurrencies ? "" : String(i.amount), (a = this.chartData) != null && a.mixedCurrencies || i.average == null ? "" : String(i.average), ((o = this.chartData) == null ? void 0 : o.currency) || "", i.previousStart || "", i.previousEnd || "", i.previousOrders == null ? "" : String(i.previousOrders), this.comparisonMoneyAvailable ? String(i.previousAmount ?? "") : "", this.comparisonMoneyAvailable ? String(i.previousAverage ?? "") : ""]);
     const e = t.map((i) => i.map((r) => '"' + r.replaceAll('"', '""') + '"').join(",")).join(`\r
 `);
-    B(new Blob(["\uFEFF", e], { type: "text/csv;charset=utf-8" }), "analytics.csv");
+    Z(new Blob(["\uFEFF", e], { type: "text/csv;charset=utf-8" }), "analytics.csv");
   }
   bindEvents() {
     var t, e, s, a, o, i, r, b, v;
-    this.hasAttribute("classic") || Z(this, () => {
+    this.hasAttribute("classic") || _(this, () => {
       this.datePreset = void 0, this.changedFilters();
     }), this.querySelectorAll("[data-field]").forEach((u) => u.addEventListener("change", () => {
       const c = u.dataset.field;
@@ -417,8 +417,8 @@ function S(l, ...n) {
 function P(l, n) {
   return l instanceof Error ? l.message : n;
 }
-customElements.define("ekom-analytics-section-view", J);
+customElements.define("ekom-analytics-section-view", W);
 export {
-  J as EkomAnalyticsSectionViewElement,
-  J as default
+  W as EkomAnalyticsSectionViewElement,
+  W as default
 };

@@ -87,6 +87,20 @@ test('monetary chart labels and tooltips use the store currency and precision', 
   assert.ok(exports.formatAnalyticsAmount(12.5, { isoCurrencySymbol: 'USD', currencyDecimalDigits: 2 }).includes('12.50'));
 });
 
+test('analytics amounts use the store currency culture, matching Orders', () => {
+  const isk = { isoCurrencySymbol: 'ISK', currencyValue: 'is-IS', currencyDecimalDigits: 0 };
+  assert.equal(exports.formatAnalyticsAmount(24774950, isk).replace(/\s/g, ' '), '24.774.950 kr.');
+  assert.equal(exports.formatAnalyticsAmount(12.5, { isoCurrencySymbol: 'USD', currencyValue: 'en-US', currencyDecimalDigits: 2 }), '$12.50');
+  const store = { alias: 'main', title: 'Main', currency: isk, currencyModels: [isk, { isoCurrencySymbol: 'EUR', currencyValue: 'de-DE', currencyDecimalDigits: 2 }] };
+  assert.equal(exports.formatAnalyticsAmount(1234.5, exports.storeCurrency(store, 'EUR')).replace(/\s/g, ' '), '1.234,50 €');
+  assert.equal(exports.storeCurrency(store, 'ISK'), isk);
+  assert.equal(exports.storeCurrency(store, undefined), isk);
+  assert.ok(exports.formatAnalyticsAmount(5, exports.storeCurrency(store, 'USD')).includes('USD'));
+  for (const currencyValue of ['ISK', 'not a culture', '']) {
+    assert.ok(exports.formatAnalyticsAmount(1500, { isoCurrencySymbol: 'ISK', currencyValue, currencyDecimalDigits: 0 }).includes('ISK'));
+  }
+});
+
 test('analytics observes size changes and disconnects the observer when removed', () => {
   let callback;
   let observed;
