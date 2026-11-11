@@ -1,7 +1,7 @@
 import { renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { EkomManagerApi, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
+import { EkomManagerApi, renderSectionLoading, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
 
 type Spend = { currency: string; total: number; averageOrder: number; averageLifetime: number };
 type Customer = { identity: string; name?: string; email?: string; username?: string; shippingCountry?: string; firstOrder: string; lastOrder: string; lastStatus?: string; orders: number; daysSinceLastOrder: number; averageReorderDays?: number; spend: Spend[] };
@@ -90,9 +90,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
     this.result = undefined;
     this.error = '';
     this.busy = true;
-    const content = this.querySelector<HTMLElement>('.customers');
-    if (content && managerState.filters.store) content.setAttribute('aria-busy', 'true');
-    else this.render();
+    this.render();
     try {
       if (!managerState.filters.store) { this.result = undefined; return; }
       const result = await this.get<Result>('', this.params());
@@ -209,14 +207,15 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       ${this.busy && r ? '<p role="status">Preparing export...</p>' : ''}
       ${r ? `<div class="customer-cards">${this.card('Customers', this.number(r.totals.customers))}${this.card('Returning', this.number(r.totals.returningPercent) + '%')}${this.card('Average lifetime spend', this.amount(r.spend,'averageLifetime'))}${this.card('Average orders per customer',this.number(r.totals.averageOrders))}${this.card('Average days between orders',this.number(r.totals.averageReorderDays))}</div>
       <p class="customer-muted">${r.missingIdentifiers} qualifying orders in this period have no ${r.identityField === 'CustomerUsername' ? 'username' : 'email'} and are excluded. Spend uses recorded charged amounts, without refund adjustment.</p>` : ''}
-      <div class="customer-panel"><div class="customer-toolbar" role="search">
+      ${this.busy && !r ? renderSectionLoading('Customers', 5, 220) : ''}
+      <div class="customer-panel" ${this.busy && !r ? 'hidden' : ''}><div class="customer-toolbar" role="search">
         <label>Search<input name="query" value="${esc(this.query)}" placeholder="Name, email or username"></label>
         <button type="button" data-search>Search</button>
         <nav class="ekom-customer-segments" aria-label="Customer segment">${['all','new','returning'].map(segment => `<button type="button" data-segment-value="${segment}" aria-pressed="${segment === this.segment}">${segment[0].toUpperCase()+segment.slice(1)}</button>`).join('')}</nav>
         <label>Sort by<select data-sort>${[['newest','Newest first order'],['oldest','Oldest first order'],['lastOrder','Latest order'],['orders','Most orders'],['name','Name']].map(([v,l]) => `<option value="${v}" ${v === this.sort ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <button type="button" data-export ${this.busy || !r?.totals.customers ? 'disabled' : ''}>Export</button>
       </div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
-      ${(r?.customers || []).map(c => `<tr><td><div class="customer-identity">${this.avatar(c.name || c.email || c.username || c.identity)}<button data-customer="${esc(c.identity)}">${esc(c.name || c.email || c.username || c.identity)}<span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span><span class="customer-muted">${esc(c.email || c.username || c.identity)}</span></button></div></td><td>${this.date(c.firstOrder)}</td><td>${c.orders}</td><td>${this.amount(c.spend,'total')}</td><td>${this.amount(c.spend,'averageOrder')}</td><td>${this.date(c.lastOrder)}${this.classic ? `<span class="customer-muted">${esc(c.lastStatus || '')}</span>` : ''}</td><td>${c.daysSinceLastOrder}</td></tr>`).join('') || `<tr><td colspan="7">${this.busy ? '<div class="customer-loading" role="status"><span class="customer-spinner" aria-hidden="true"></span><strong>Loading customers...</strong><span class="customer-muted">Large datasets may take a moment.</span></div>' : r ? 'No customers found.' : this.error ? 'Customer results could not be loaded.' : 'Select a store to see customers.'}</td></tr>`}
+      ${(r?.customers || []).map(c => `<tr><td><div class="customer-identity">${this.avatar(c.name || c.email || c.username || c.identity)}<button data-customer="${esc(c.identity)}">${esc(c.name || c.email || c.username || c.identity)}<span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span><span class="customer-muted">${esc(c.email || c.username || c.identity)}</span></button></div></td><td>${this.date(c.firstOrder)}</td><td>${c.orders}</td><td>${this.amount(c.spend,'total')}</td><td>${this.amount(c.spend,'averageOrder')}</td><td>${this.date(c.lastOrder)}${this.classic ? `<span class="customer-muted">${esc(c.lastStatus || '')}</span>` : ''}</td><td>${c.daysSinceLastOrder}</td></tr>`).join('') || `<tr><td colspan="7">${r ? 'No customers found.' : this.error ? 'Customer results could not be loaded.' : 'Select a store to see customers.'}</td></tr>`}
       </tbody></table></div><div class="customer-pagination"><button data-page="${this.page-1}" ${this.page <= 1 || this.busy ? 'disabled' : ''}>Previous</button><span>Page ${this.page} of ${Math.max(1,r?.totalPages || 0)}</span><button data-page="${this.page+1}" ${this.page >= (r?.totalPages || 0) || this.busy ? 'disabled' : ''}>Next</button></div></div>
       ${this.detail ? this.renderDetail(this.detail) : ''}</section>`);
     this.bind();

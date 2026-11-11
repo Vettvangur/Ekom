@@ -27,6 +27,7 @@ import {
   renderDateRange,
   bindDateRange,
   orderViews,
+  renderOrderRowsLoading,
   type OrderReview,
   printOrderDocument,
 } from './manager-shared';
@@ -69,6 +70,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private result: OrderSearchResult = { orders: [], count: 0, totalPages: 0 };
   private page = 1;
   private loading = true;
+  private pendingListKey = '';
+  private shownListKey?: string;
   private error = '';
   private config?: ManagerConfig;
   private configError = '';
@@ -406,6 +409,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     const listRequest = ++this.orderListRequest;
     const filters = { ...managerState.filters };
+    const listKey = this.pendingListKey = JSON.stringify([filters, this.page]);
     this.loading = true;
     this.error = '';
     if (!this.stateSaving) this.render();
@@ -413,6 +417,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     try {
       const result = await this.api.searchOrders(filters, this.page);
       if (listRequest !== this.orderListRequest) return;
+      this.shownListKey = listKey;
       this.viewCounts[filters.orderStatus] = result.count;
       if (filters.orderStatus === 'NeedsReview' && result.count === 0) {
         managerState.filters.orderStatus = 'AllOrders'; this.page = 1;
@@ -488,7 +493,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       <div class="ekom-list-toolbar"><nav class="ekom-order-views" aria-label="Order views">${orderViews.map(view => `<button type="button" data-action="select-order-view" data-view="${escapeHtml(view.key)}" ${view.key === 'NeedsReview' && !(this.viewCounts[view.key] > 0) ? 'hidden' : ''} aria-pressed="${filters.orderStatus === view.key}">${view.label}${this.viewCounts[view.key] === undefined ? '' : `<span>${this.viewCounts[view.key]}</span>`}</button>`).join('')}</nav><div class="ekom-list-search"><label class="ekom-search-field"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input type="search" data-field="query" value="${escapeHtml(filters.query)}" placeholder="Search orders" aria-label="Search orders"></label><button type="button" data-action="open-filter"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filter</button></div></div>
       <div class="ekom-inline-totals"><div><span>Orders</span><strong>${escapeHtml(this.result.count || 0)}</strong></div><div><span>Order amount</span><strong>${escapeHtml(this.result.grandTotal || '0')}</strong></div><div><span>Average</span><strong>${escapeHtml(this.result.averageAmount || '0')}</strong></div></div>
       ${this.error ? `<p class="status status--error" role="alert">${escapeHtml(this.error)}</p>` : ''}
-      ${this.loading && !this.result.orders.length ? '<div class="ekom-list-message" role="status">Loading orders...</div>' : this.renderOrderTable()}
+      ${this.showOrdersLoading ? this.renderOrderTableHead() + renderOrderRowsLoading() + '</div>' : this.renderOrderTable()}
       ${this.renderPagination()}
     </section>`;
   }
@@ -499,7 +504,17 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
   private renderOrderTable(): string {
     if (!this.result.orders.length) return '<div class="ekom-list-message"><h3>No orders match these filters</h3><p>Try a wider date range, another view, or clear the filters.</p><button type="button" data-action="clear-order-filters">Clear filters</button></div>';
-    return `<div class="ekom-list-table" role="table" aria-label="Orders"><div class="ekom-list-row ekom-list-head" role="row"><span role="columnheader">Order</span><span role="columnheader">Date</span><span role="columnheader">Customer</span><span role="columnheader" class="ekom-align-right">Total</span><span role="columnheader">Payment</span><span role="columnheader">Fulfillment</span><span role="columnheader" class="ekom-align-right">Items</span><span role="columnheader"><span class="ekom-sr-only">Open order</span></span></div>${this.result.orders.map(order => this.renderOrderRow(order)).join('')}</div>`;
+    return `${this.renderOrderTableHead()}${this.result.orders.map(order => this.renderOrderRow(order)).join('')}</div>`;
+  }
+
+  /** Opens the orders table; the caller closes it after the rows. */
+  private renderOrderTableHead(): string {
+    return `<div class="ekom-list-table" role="table" aria-label="Orders"><div class="ekom-list-row ekom-list-head" role="row"><span role="columnheader">Order</span><span role="columnheader">Date</span><span role="columnheader">Customer</span><span role="columnheader" class="ekom-align-right">Total</span><span role="columnheader">Payment</span><span role="columnheader">Fulfillment</span><span role="columnheader" class="ekom-align-right">Items</span><span role="columnheader"><span class="ekom-sr-only">Open order</span></span></div>`;
+  }
+
+  /** Placeholder rows while a different list is on its way; a refresh of the list on screen keeps its rows. */
+  private get showOrdersLoading(): boolean {
+    return this.loading && this.pendingListKey !== this.shownListKey;
   }
 
   private renderOrderRow(order: OrderListItem): string {

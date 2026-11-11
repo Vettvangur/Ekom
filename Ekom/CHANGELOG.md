@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **manager:** show the design's loading states in Orders, Analytics and Customers: shimmering placeholder rows and cards with a "Loading ... for ..." status line, in place of the plain loading text and spinners.
+
 * **manager:** keep the page background behind the Customers list on wide screens after scrolling past the first screen.
 
 * **manager:** read a store's order history once per Customers search instead of rescanning the orders table for every query, fixing slow or timed-out customer lists.

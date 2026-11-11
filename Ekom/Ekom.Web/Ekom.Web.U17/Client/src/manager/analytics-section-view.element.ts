@@ -1,7 +1,7 @@
 import { renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { storeCurrency, ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
+import { renderSectionLoading, renderRowsLoading, storeCurrency, ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
 import { AnalyticsBucket, AnalyticsMetric, analyticsSummary, groupAnalytics, percentageChange, matchingPreset, presetRange, previousPeriod } from './analytics-data';
 
 export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement) {
@@ -160,9 +160,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     if (!filters.store) { this.chartData = undefined; this.previousData = undefined; }
     this.error = '';
     this.loading = !!filters.store;
-    const content = this.querySelector<HTMLElement>('.analytics');
-    if (content && filters.store) content.setAttribute('aria-busy', 'true');
-    else this.render();
+    this.render();
     if (!filters.store) return;
     try {
       const comparisonFilters = this.compare ? { ...filters, ...previousPeriod(filters.dateFrom, filters.dateTo) } : undefined;
@@ -272,11 +270,11 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
         <details class="ekom-polling${this.pollingSeconds ? ' is-active' : ''}"><summary aria-label="Analytics polling"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg><span>${this.pollingSeconds ? `Polling every ${this.pollingSeconds}s` : 'Polling off'}</span><span aria-hidden="true">⌄</span></summary><div class="ekom-poll-options" role="group" aria-label="Polling interval">${[0, 2, 5, 10, 20, 30].map(seconds => `<button type="button" data-poll-seconds="${seconds}" aria-pressed="${seconds === this.pollingSeconds}"><span aria-hidden="true">•</span>${seconds ? `Every ${seconds} seconds` : 'Off'}</button>`).join('')}</div></details>
       </div>`}
       ${this.error ? `<p role="alert">${escapeHtml(this.error)}</p>` : ''}
-      ${this.loading ? '<p role="status">Loading analytics…</p>' : !f.store ? '<p>No accessible stores.</p>' : ''}
-      ${this.chartData ? this.renderAnalytics() + this.renderCustomerInsights() : ''}
-      <div class="card analytics-main analytics-products"><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? 'Hide products' : 'Load product breakdown'}</button></div>
+      ${this.loading ? renderSectionLoading('Analytics', 3, 300) : !f.store ? '<p>No accessible stores.</p>' : ''}
+      ${this.chartData && !this.loading ? this.renderAnalytics() + this.renderCustomerInsights() : ''}
+      <div class="card analytics-main analytics-products" ${this.loading ? 'hidden' : ''}><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? 'Hide products' : 'Load product breakdown'}</button></div>
         <p class="analytics-muted">Fetch the most sold products for the selected store and dates. This may take a minute for larger date ranges. Totals include VAT and discounts, excluding shipping and payment fees.</p>
-        ${this.productsVisible ? `${this.productError ? `<p role="alert">${escapeHtml(this.productError)}</p><button data-product-retry>Retry products</button>` : ''}${this.loadingMostSoldProducts ? '<p role="status"><span class="analytics-spinner" aria-hidden="true"></span>Fetching product breakdown… This may take a minute. You can continue using Analytics.</p>' : this.renderMostSoldProducts()}` : ''}
+        ${this.productsVisible ? `${this.productError ? `<p role="alert">${escapeHtml(this.productError)}</p><button data-product-retry>Retry products</button>` : ''}${this.loadingMostSoldProducts ? renderRowsLoading('Calculating…') : this.renderMostSoldProducts()}` : ''}
       </div>
     </div></section>`);
     this.bindEvents();
