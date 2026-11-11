@@ -127,6 +127,97 @@ public sealed class OrderCreationPersistenceTests
         Assert.Null(await fixture.Repository.GetOrderAsync(data.UniqueId));
     }
 
+    [Fact]
+    public async Task EditKeepsColumnsAnotherNodeChangedBeforeItBegan()
+    {
+        using var fixture = new Fixture();
+        await fixture.SeedStockAsync();
+        var settings = new AddOrderSettings { FireEvents = false, FireOnOrderUpdatedEvent = false };
+        var created = await fixture.Service.AddOrderLineAsync(fixture.ProductKey, 1, "main", settings);
+        fixture.Context.Request.Headers.Cookie = $"ekmOrder-main={created.UniqueId}";
+        using (var db = fixture.Database.Factory.GetDatabase())
+        {
+            await db.OrderData.Where(x => x.UniqueId == created.UniqueId).Set(x => x.OrderNumber, "other-node").UpdateAsync();
+        }
+
+        await fixture.Service.AddOrderLineAsync(fixture.ProductKey, 1, "main", settings);
+
+        var persisted = (await fixture.Repository.GetOrderAsync(created.UniqueId))!;
+        Assert.Equal("other-node", persisted.OrderNumber);
+        Assert.Equal(2, Assert.Single(new OrderInfo(persisted).OrderLines).Quantity);
+    }
+
+    [Fact]
+    public async Task EditDoesNotOverwriteARowSavedByAHandlerDuringTheEdit()
+    {
+        using var fixture = new Fixture();
+        await fixture.SeedStockAsync();
+        var created = await fixture.Service.AddOrderLineAsync(fixture.ProductKey, 1, "main",
+            new AddOrderSettings { FireEvents = false, FireOnOrderUpdatedEvent = false });
+        fixture.Context.Request.Headers.Cookie = $"ekmOrder-main={created.UniqueId}";
+
+        // Other tests add lines in parallel, so only react to this test's order.
+        async Task Handler(object sender, Ekom.Events.AddingOrderlineEventArgs args, CancellationToken ct)
+        {
+            if (args.OrderInfo.UniqueId != created.UniqueId) return;
+            var row = (await fixture.Repository.GetOrderAsync(created.UniqueId, ct))!;
+            row.OrderNumber = "handler";
+            await fixture.Repository.UpdateOrderAsync(row, ct);
+        }
+
+        Ekom.Events.OrderEvents.AddingOrderlineAsync += Handler;
+        try
+        {
+            await fixture.Service.AddOrderLineAsync(fixture.ProductKey, 1, "main",
+                new AddOrderSettings { FireEvents = true, FireOnOrderUpdatedEvent = false });
+        }
+        finally
+        {
+            Ekom.Events.OrderEvents.AddingOrderlineAsync -= Handler;
+        }
+
+        var persisted = (await fixture.Repository.GetOrderAsync(created.UniqueId))!;
+        Assert.Equal("handler", persisted.OrderNumber);
+        Assert.Equal(2, Assert.Single(new OrderInfo(persisted).OrderLines).Quantity);
+    }
+
+    [Fact]
+    public void PersistedOrderIsCopiedSharedWithNestedScopesAndForgottenOnWrite()
+    {
+        var row = NewOrder();
+        row.OrderNumber = "row";
+        var outer = new CheckoutPaymentOperationScope(row.UniqueId, "owner", null) { PersistedOrder = row };
+        var nested = new CheckoutPaymentOperationScope(row.UniqueId, "owner", null, outer);
+
+        Assert.Null(CheckoutPaymentOperationScope.TakePersistedOrder(row.UniqueId));
+        using (nested.Enter())
+        {
+            var taken = CheckoutPaymentOperationScope.TakePersistedOrder(row.UniqueId)!;
+            Assert.NotSame(row, taken);
+            Assert.Equal("row", taken.OrderNumber);
+            Assert.Null(CheckoutPaymentOperationScope.TakePersistedOrder(Guid.NewGuid()));
+
+            CheckoutPaymentOperationScope.ForgetPersistedOrder(Guid.NewGuid());
+            Assert.NotNull(outer.PersistedOrder);
+            CheckoutPaymentOperationScope.ForgetPersistedOrder(row.UniqueId);
+            Assert.Null(outer.PersistedOrder);
+            Assert.Null(CheckoutPaymentOperationScope.TakePersistedOrder(row.UniqueId));
+        }
+    }
+
+    [Fact]
+    public void PersistedOrderIsNotTrustedUnderAManagerOverride()
+    {
+        var row = NewOrder();
+        var scope = CheckoutPaymentOperationScope.BeginManagerOverride(row.UniqueId);
+        scope.PersistedOrder = row;
+
+        using (scope.Enter())
+        {
+            Assert.Null(CheckoutPaymentOperationScope.TakePersistedOrder(row.UniqueId));
+        }
+    }
+
     private static OrderData NewOrder() => new()
     {
         UniqueId = Guid.NewGuid(),

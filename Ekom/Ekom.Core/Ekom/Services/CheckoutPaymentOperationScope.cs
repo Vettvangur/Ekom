@@ -35,6 +35,36 @@ internal sealed class CheckoutPaymentOperationScope : IAsyncDisposable
             else _submissionInProgress = value;
         }
     }
+    private Ekom.Models.OrderData? _persistedOrder;
+    // The order row read while this operation owned the order, for the save that follows.
+    // Any write to the row clears it, so a holder never sees a row older than the database.
+    internal Ekom.Models.OrderData? PersistedOrder
+    {
+        get => _parent != null ? _parent.PersistedOrder : _persistedOrder;
+        set
+        {
+            if (_parent != null) _parent.PersistedOrder = value;
+            else _persistedOrder = value;
+        }
+    }
+
+    /// <summary>
+    /// A copy of the row read under the ambient operation, or null when there is none for this order.
+    /// </summary>
+    internal static Ekom.Models.OrderData? TakePersistedOrder(Guid orderId)
+    {
+        var scope = Current;
+        if (scope == null || scope.OrderId != orderId || scope.IsManagerOverride) return null;
+        var row = scope.PersistedOrder;
+        return row != null && row.UniqueId == orderId ? (Ekom.Models.OrderData)row.Clone() : null;
+    }
+
+    internal static void ForgetPersistedOrder(Guid orderId)
+    {
+        var scope = Current;
+        if (scope != null && scope.OrderId == orderId) scope.PersistedOrder = null;
+    }
+
     internal bool IsOrderInformationUpdate { get; set; }
     internal bool IsManagerOverride { get; init; }
     // Nested information updates retain an enclosing cart/checkout operation's authority.
