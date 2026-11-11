@@ -2,20 +2,37 @@ name: release-please
 
 on:
   push:
-    branches: ["Ekom"]
+    branches: ["Ekom", "release/0.2"]
   workflow_dispatch: {}
 
 permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: release-please-${{ github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   release-please:
+    if: github.ref_type == 'branch' && (github.ref_name == 'Ekom' || github.ref_name == 'release/0.2')
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.13.0
+      - name: Validate release configuration
+        run: node --test .github/scripts/select-release-config.test.mjs
+      - name: Select release configuration
+        id: config
+        env:
+          RELEASE_BRANCH: ${{ github.ref_name }}
+        run: node .github/scripts/select-release-config.mjs
       - id: rp
         uses: googleapis/release-please-action@v4
         with:
-          config-file: release-please-config.json
+          target-branch: ${{ github.ref_name }}
+          config-file: ${{ steps.config.outputs.file }}
           manifest-file: .release-please-manifest.json
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
