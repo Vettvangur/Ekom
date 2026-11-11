@@ -504,7 +504,9 @@ public class EkomManagerController : ControllerBase
             // so send the format of each currency as the store's culture defines it.
             var formats = currencies.Select(code => ManagerCurrencyFormat.From(code!,
                 store.Currencies.FirstOrDefault(c => string.Equals(ManagerCurrencyScope.Code(c.CurrencyValue), code, StringComparison.OrdinalIgnoreCase))?.CurrencyValue)).ToArray();
-            result.Add(new { store.Alias, Currencies = currencies, Formats = formats });
+            // Dates follow the culture configured on the store, not the backoffice user's request culture.
+            var dateFormat = ManagerDateFormat.From(store.Cultures.FirstOrDefault()?.Name);
+            result.Add(new { store.Alias, Currencies = currencies, Formats = formats, DateFormat = dateFormat });
         }
         return Ok(result);
     }

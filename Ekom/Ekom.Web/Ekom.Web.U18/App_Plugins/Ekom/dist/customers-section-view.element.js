@@ -1,9 +1,9 @@
 var x = Object.defineProperty;
 var k = (h, u, e) => u in h ? x(h, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : h[u] = e;
 var d = (h, u, e) => k(h, typeof u != "symbol" ? u + "" : u, e);
-import { E as S, m as o, e as w, c as i, r as E, a as q, b as L, d as C, g as O, h as A, i as D, o as R, q as P, t as f, n as j } from "./manager-shared.js";
-import { UmbElementMixin as N } from "@umbraco-cms/backoffice/element-api";
-class F extends N(HTMLElement) {
+import { E as S, m as o, e as w, c as i, l as E, r as q, a as L, b as C, d as O, g as A, h as D, i as R, u as P, v as j, w as f, q as N } from "./manager-shared.js";
+import { UmbElementMixin as F } from "@umbraco-cms/backoffice/element-api";
+class U extends F(HTMLElement) {
   constructor() {
     super(...arguments);
     d(this, "api", new S());
@@ -123,7 +123,7 @@ class F extends N(HTMLElement) {
     return e == null ? "—" : i(e.toLocaleString(void 0, { maximumFractionDigits: 1 }));
   }
   date(e) {
-    return e ? i(new Date(e).toLocaleDateString()) : "—";
+    return e ? i(E(new Date(e))) : "—";
   }
   avatar(e) {
     const t = e.trim().split(/\s+/).slice(0, 2).map((s) => Array.from(s)[0] || "").join("").toUpperCase();
@@ -134,7 +134,7 @@ class F extends N(HTMLElement) {
   }
   render() {
     const e = o.filters, t = this.result;
-    E(this, `<style>${q}${this.classic ? `
+    q(this, `<style>${L}${this.classic ? `
       ekom-customers-section-view { display:block; color:var(--uui-color-text,#20232e) }
       .customers { padding:24px; background:var(--uui-color-background,#f3f4f7); min-height:80vh }
       .customer-cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0 }
@@ -168,13 +168,13 @@ class F extends N(HTMLElement) {
       .customer-snapshot dd { margin:4px 0;overflow-wrap:anywhere }
       @media(max-width:800px) { .customer-detail-grid { grid-template-columns:1fr } .customers { padding:12px } }
     ` : ""}</style>${this.classic ? "" : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/customers-layout.css?v=20261111-background">'}<section class="customers ekom-design" aria-busy="${this.busy}">
-      ${this.classic ? "" : L("customers", "data-filter")}
+      ${this.classic ? "" : C("customers", "data-filter")}
       <div class="customer-toolbar ekom-shared-filters">
         ${this.classic ? `<label>Store<select data-filter="store">${o.stores.map((s) => `<option value="${i(s.alias)}" ${s.alias === e.store ? "selected" : ""}>${i(s.title)}</option>`).join("")}</select></label>` : ""}
-        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${C(e.orderStatus)}</select></label>` : O()}
+        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${O(e.orderStatus)}</select></label>` : A()}
         ${this.classic ? `        <label>Date From<input type="date" data-filter="dateFrom" value="${i(e.dateFrom)}"></label>
         <label>Date To<input type="date" data-filter="dateTo" value="${i(e.dateTo)}"></label>
-` : A()}
+` : D()}
         <button data-reload ${this.busy ? "disabled" : ""}>Refresh</button>
       </div>
       <p class="customer-muted">Customers who ordered in the selected period. Lifetime metrics include all qualifying orders in the selected store and currency. </p>
@@ -182,7 +182,7 @@ class F extends N(HTMLElement) {
       ${this.busy && t ? '<p role="status">Preparing export...</p>' : ""}
       ${t ? `<div class="customer-cards">${this.card("Customers", this.number(t.totals.customers))}${this.card("Returning", this.number(t.totals.returningPercent) + "%")}${this.card("Average lifetime spend", this.amount(t.spend, "averageLifetime"))}${this.card("Average orders per customer", this.number(t.totals.averageOrders))}${this.card("Average days between orders", this.number(t.totals.averageReorderDays))}</div>
       <p class="customer-muted">${t.missingIdentifiers} qualifying orders in this period have no ${t.identityField === "CustomerUsername" ? "username" : "email"} and are excluded. Spend uses recorded charged amounts, without refund adjustment.</p>` : ""}
-      ${this.busy && !t ? D("Customers", 5, 220) : ""}
+      ${this.busy && !t ? R("Customers", 5, 220) : ""}
       <div class="customer-panel" ${this.busy && !t ? "hidden" : ""}><div class="customer-toolbar" role="search">
         <label>Search<input name="query" value="${i(this.query)}" placeholder="Name, email or username"></label>
         <button type="button" data-search>Search</button>
@@ -198,8 +198,8 @@ class F extends N(HTMLElement) {
   renderDetailOpening(e) {
     var a;
     const t = (a = this.result) == null ? void 0 : a.customers.find((n) => n.identity === e), s = (t == null ? void 0 : t.name) || (t == null ? void 0 : t.email) || (t == null ? void 0 : t.username) || e;
-    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" aria-busy="true" class="customer-dialog"><header class="customer-heading">${this.avatar(s)}<div><h2>${i(s)}</h2>${R("Loading customer…")}</div><button data-close aria-label="Close customer details">${this.classic ? "Close" : "×"}</button></header>
-      <div class="customer-opening">${P()}</div></section></div>`;
+    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" aria-busy="true" class="customer-dialog"><header class="customer-heading">${this.avatar(s)}<div><h2>${i(s)}</h2>${P("Loading customer…")}</div><button data-close aria-label="Close customer details">${this.classic ? "Close" : "×"}</button></header>
+      <div class="customer-opening">${j()}</div></section></div>`;
   }
   renderDetail(e) {
     const t = e.customer;
@@ -213,7 +213,7 @@ class F extends N(HTMLElement) {
   }
   bind() {
     var t, s, a, n, l, m, b, y, v, $;
-    this.classic || j(this, () => {
+    this.classic || N(this, () => {
       this.page = 1, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...o.filters } })), this.load();
     }), this.querySelectorAll("[data-filter]").forEach((r) => r.addEventListener("change", () => {
       const c = r.dataset.filter;
@@ -255,8 +255,8 @@ class F extends N(HTMLElement) {
     });
   }
 }
-customElements.define("ekom-customers-section-view", F);
+customElements.define("ekom-customers-section-view", U);
 export {
-  F as EkomCustomersSectionViewElement,
-  F as default
+  U as EkomCustomersSectionViewElement,
+  U as default
 };

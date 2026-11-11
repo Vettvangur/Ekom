@@ -36,7 +36,12 @@ export type StoreItem = {
   currency?: StoreCurrency;
   /** How each store currency is written, as defined by the culture configured on the store. */
   currencyFormats?: CurrencyFormat[];
+  /** How the culture configured on the store writes dates. */
+  dateFormat?: DateFormat;
 };
+
+/** Patterns are .NET custom date format strings; names come from the store culture. */
+export type DateFormat = { culture: string; shortDate: string; shortTime: string; monthDay: string; yearMonth: string; dateSeparator: string; timeSeparator: string; amDesignator: string; pmDesignator: string; monthNames: string[]; abbreviatedMonthNames: string[]; shortestDayNames: string[] };
 
 /** positivePattern follows .NET: 0 = $n, 1 = n$, 2 = $ n, 3 = n $. */
 export type CurrencyFormat = { code: string; symbol: string; groupSeparator: string; decimalSeparator: string; decimalDigits: number; positivePattern: number };
@@ -323,10 +328,10 @@ export class EkomManagerApi {
   }
 
   async stores(): Promise<StoreItem[]> {
-    const [stores, choices] = await Promise.all([this.getJson<StoreItem[]>('/ekom/manager/stores'), this.getJson<Array<{ alias: string; currencies: string[]; formats?: Array<CurrencyFormat | null> }>>('/ekom/manager/store-currencies')]);
+    const [stores, choices] = await Promise.all([this.getJson<StoreItem[]>('/ekom/manager/stores'), this.getJson<Array<{ alias: string; currencies: string[]; formats?: Array<CurrencyFormat | null>; dateFormat?: DateFormat | null }>>('/ekom/manager/store-currencies')]);
     return stores.map(store => {
       const choice = choices.find(item => item.alias === store.alias);
-      return { ...store, currencies: choice?.currencies || [], currencyFormats: (choice?.formats || []).filter((format): format is CurrencyFormat => !!format) };
+      return { ...store, currencies: choice?.currencies || [], currencyFormats: (choice?.formats || []).filter((format): format is CurrencyFormat => !!format), dateFormat: choice?.dateFormat || undefined };
     });
   }
 
@@ -538,15 +543,94 @@ export function toDateInputValue(value: Date): string {
   return `${value.getFullYear()}-${month}-${day}`;
 }
 
-export function formatDate(value?: string): string {
+/** How the selected store's culture writes dates; undefined until the stores have loaded. */
+export function storeDateFormat(): DateFormat | undefined {
+  return managerState.stores.find(store => store.alias === managerState.filters.store)?.dateFormat;
+}
+
+type DateParts = { year: number; month: number; day: number; hour: number; minute: number; second: number };
+
+// A plain yyyy-MM-dd is a calendar day, not a moment: keep it as written whatever the time zone.
+function toDateParts(value: string | Date): DateParts | undefined {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return { year: Number(value.slice(0, 4)), month: Number(value.slice(5, 7)), day: Number(value.slice(8, 10)), hour: 0, minute: 0, second: 0 };
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(), hour: date.getHours(), minute: date.getMinutes(), second: date.getSeconds() };
+}
+
+/** Applies a .NET custom date pattern (the form the server sends) using the store culture's names. */
+export function formatDatePattern(parts: DateParts, pattern: string, format: DateFormat): string {
+  const pad = (value: number): string => String(value).padStart(2, '0');
+  return pattern.replace(/'([^']*)'|\\(.)|d{1,4}|M{1,4}|y{1,5}|H{1,2}|h{1,2}|m{1,2}|s{1,2}|t{1,2}|\/|:/g, (token: string, quoted?: string, escaped?: string) => {
+    if (quoted !== undefined) return quoted;
+    if (escaped !== undefined) return escaped;
+    switch (token) {
+      case 'd': return String(parts.day);
+      case 'dd': return pad(parts.day);
+      case 'ddd': case 'dddd': return format.shortestDayNames[new Date(parts.year, parts.month - 1, parts.day).getDay()] || '';
+      case 'M': return String(parts.month);
+      case 'MM': return pad(parts.month);
+      case 'MMM': return format.abbreviatedMonthNames[parts.month - 1] || String(parts.month);
+      case 'MMMM': return format.monthNames[parts.month - 1] || String(parts.month);
+      case 'yy': return pad(parts.year % 100);
+      case 'H': return String(parts.hour);
+      case 'HH': return pad(parts.hour);
+      case 'h': return String(parts.hour % 12 || 12);
+      case 'hh': return pad(parts.hour % 12 || 12);
+      case 'm': return String(parts.minute);
+      case 'mm': return pad(parts.minute);
+      case 's': return String(parts.second);
+      case 'ss': return pad(parts.second);
+      case 't': return (parts.hour < 12 ? format.amDesignator : format.pmDesignator).slice(0, 1);
+      case 'tt': return parts.hour < 12 ? format.amDesignator : format.pmDesignator;
+      case '/': return format.dateSeparator || '/';
+      case ':': return format.timeSeparator || ':';
+      default: return String(parts.year);
+    }
+  });
+}
+
+/** A date without time, in the store culture's short date form. */
+export function formatDay(value?: string | Date): string {
+  if (!value) return '';
+  const parts = toDateParts(value);
+  if (!parts) return String(value);
+  const format = storeDateFormat();
+  if (format) return formatDatePattern(parts, format.shortDate, format);
+  return new Date(parts.year, parts.month - 1, parts.day).toLocaleDateString();
+}
+
+/** Day and month ("5 Jan") or month and year ("January 2026") as the store culture orders them. */
+export function formatDayPart(value: string | Date, kind: 'monthDay' | 'yearMonth' | 'month', abbreviated = true): string {
+  const parts = toDateParts(value);
+  if (!parts) return String(value);
+  const format = storeDateFormat();
+  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+  if (!format) {
+    return date.toLocaleDateString('en-GB', { timeZone: 'UTC', month: abbreviated ? 'short' : 'long', ...(kind === 'monthDay' ? { day: 'numeric' } : kind === 'yearMonth' ? { year: 'numeric' } : {}) });
+  }
+  if (kind === 'month') return (abbreviated ? format.abbreviatedMonthNames : format.monthNames)[parts.month - 1] || String(parts.month);
+  const pattern = kind === 'monthDay' ? format.monthDay : format.yearMonth;
+  return formatDatePattern(parts, abbreviated ? pattern.replace(/M{4}/g, 'MMM') : pattern, format);
+}
+
+export function formatDate(value?: string | Date): string {
   if (!value) {
     return '';
   }
 
-  const date = new Date(value);
+  const date = value instanceof Date ? value : new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return value;
+    return String(value);
+  }
+
+  const format = storeDateFormat();
+  const parts = toDateParts(date);
+  if (format && parts) {
+    return `${formatDatePattern(parts, format.shortDate, format)} ${formatDatePattern(parts, format.shortTime, format)}`;
   }
 
   return new Intl.DateTimeFormat(undefined, {
@@ -1247,7 +1331,7 @@ const skeletonBar = (width: string, height = 12): string => `<span class="ekom-s
 /** The selected period as the date range picker names it, for loading messages. */
 export function dateRangeLabel(): string {
   const { dateFrom, dateTo } = managerState.filters;
-  return dateRangePresets().find(preset => preset.from === dateFrom && preset.to === dateTo)?.label || `${dateFrom} – ${dateTo}`;
+  return dateRangePresets().find(preset => preset.from === dateFrom && preset.to === dateTo)?.label || (storeDateFormat() ? `${formatDay(dateFrom)} – ${formatDay(dateTo)}` : `${dateFrom} – ${dateTo}`);
 }
 
 /** Spinner line announcing what is loading; the only part of a loading state read to screen readers. */
@@ -1359,12 +1443,12 @@ export function registerDateRange(): void {
       this.open = false; this.render();
       if (focus) this.root.querySelector<HTMLButtonElement>('[data-toggle]')?.focus();
     }
-    private date(value: string): string { return value ? `${value.slice(8, 10)}.${value.slice(5, 7)}.${value.slice(0, 4)}` : 'Pick a date'; }
+    private date(value: string): string { return !value ? 'Pick a date' : storeDateFormat() ? formatDay(value) : `${value.slice(8, 10)}.${value.slice(5, 7)}.${value.slice(0, 4)}`; }
     private calendar(index: number): string {
       const first = new Date(Math.floor(index / 12), index % 12, 1);
       const lead = (first.getDay() + 6) % 7;
       const days = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
-      return `<section class="month"><h3>${first.toLocaleDateString('en', { month: 'long', year: 'numeric' })}</h3><div class="days">${['Mo','Tu','We','Th','Fr','Sa','Su'].map(day => `<span class="weekday">${day}</span>`).join('')}${'<span></span>'.repeat(lead)}${Array.from({ length: days }, (_, i) => {
+      return `<section class="month"><h3>${escapeHtml(storeDateFormat() ? formatDayPart(first, 'yearMonth', false) : first.toLocaleDateString('en', { month: 'long', year: 'numeric' }))}</h3><div class="days">${(storeDateFormat() ? [1, 2, 3, 4, 5, 6, 0].map(day => escapeHtml(storeDateFormat()!.shortestDayNames[day] || '')) : ['Mo','Tu','We','Th','Fr','Sa','Su']).map(day => `<span class="weekday">${day}</span>`).join('')}${'<span></span>'.repeat(lead)}${Array.from({ length: days }, (_, i) => {
         const value = `${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
         const edge = value === this.from || value === this.to;
         const inside = this.from && this.to && value > this.from && value < this.to;

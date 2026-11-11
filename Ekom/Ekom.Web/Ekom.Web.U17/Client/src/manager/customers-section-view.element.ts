@@ -1,7 +1,7 @@
 import { renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { EkomManagerApi, renderSectionLoading, renderLoadingLine, renderDrawerLoading, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
+import { EkomManagerApi, formatDay, renderSectionLoading, renderLoadingLine, renderDrawerLoading, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
 
 type Spend = { currency: string; total: number; averageOrder: number; averageLifetime: number };
 type Customer = { identity: string; name?: string; email?: string; username?: string; shippingCountry?: string; firstOrder: string; lastOrder: string; lastStatus?: string; orders: number; daysSinceLastOrder: number; averageReorderDays?: number; spend: Spend[] };
@@ -154,7 +154,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
   }
 
   private number(value?: number | null): string { return value == null ? '—' : esc(value.toLocaleString(undefined, { maximumFractionDigits: 1 })); }
-  private date(value?: string): string { return value ? esc(new Date(value).toLocaleDateString()) : '—'; }
+  private date(value?: string): string { return value ? esc(formatDay(new Date(value))) : '—'; }
   private avatar(name: string): string {
     const initials = name.trim().split(/\s+/).slice(0,2).map(part => Array.from(part)[0] || '').join('').toUpperCase();
     return this.classic ? '' : `<span class="customer-avatar" aria-hidden="true">${esc(initials)}</span>`;

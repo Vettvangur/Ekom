@@ -1,26 +1,26 @@
-var E = Object.defineProperty;
-var F = (l, n, t) => n in l ? E(l, n, { enumerable: !0, configurable: !0, writable: !0, value: t }) : l[n] = t;
-var u = (l, n, t) => F(l, typeof n != "symbol" ? n + "" : n, t);
-import { E as O, m, s as q, e as L, f as D, r as R, a as N, b as U, c as p, d as V, g as j, h as z, i as I, j as B, p as Z, k as _, l as H, n as G } from "./manager-shared.js";
-import { UmbElementMixin as J } from "@umbraco-cms/backoffice/element-api";
-const C = 864e5, S = (l) => l.toISOString().slice(0, 10), x = (l) => /* @__PURE__ */ new Date(`${l}T00:00:00Z`);
-function w(l, n) {
-  const t = x(l), e = x(n), s = Math.round((e.getTime() - t.getTime()) / C) + 1;
-  return { dateFrom: S(new Date(t.getTime() - s * C)), dateTo: S(new Date(t.getTime() - C)) };
+var O = Object.defineProperty;
+var q = (l, n, t) => n in l ? O(l, n, { enumerable: !0, configurable: !0, writable: !0, value: t }) : l[n] = t;
+var u = (l, n, t) => q(l, typeof n != "symbol" ? n + "" : n, t);
+import { E as L, m, s as R, e as N, f as D, r as U, a as V, b as j, c as p, d as z, g as I, h as B, i as _, j as Z, k as A, l as C, p as H, n as J, o as G, q as W, t as K } from "./manager-shared.js";
+import { UmbElementMixin as Q } from "@umbraco-cms/backoffice/element-api";
+const P = 864e5, S = (l) => l.toISOString().slice(0, 10), x = (l) => /* @__PURE__ */ new Date(`${l}T00:00:00Z`);
+function T(l, n) {
+  const t = x(l), e = x(n), s = Math.round((e.getTime() - t.getTime()) / P) + 1;
+  return { dateFrom: S(new Date(t.getTime() - s * P)), dateTo: S(new Date(t.getTime() - P)) };
 }
-function M(l, n = /* @__PURE__ */ new Date()) {
+function F(l, n = /* @__PURE__ */ new Date()) {
   const t = new Date(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())), e = new Date(t);
   return l === "7" && e.setUTCDate(e.getUTCDate() - 6), l === "30" && e.setUTCDate(e.getUTCDate() - 29), l === "month" && e.setUTCDate(1), l === "year" && (e.setUTCMonth(0), e.setUTCDate(1)), { dateFrom: S(e), dateTo: S(t) };
 }
-function W(l, n, t, e = /* @__PURE__ */ new Date()) {
+function Y(l, n, t, e = /* @__PURE__ */ new Date()) {
   if (t === "") return "";
   const s = ["today", "7", "30", "month", "year"];
   return t && s.includes(t) && s.unshift(t), s.find((a) => {
-    const o = M(a, e);
+    const o = F(a, e);
     return o.dateFrom === l && o.dateTo === n;
   }) || "";
 }
-function K(l, n, t) {
+function X(l, n, t) {
   var o, i, r, b, v;
   const e = [], s = l.ordersChart.points;
   let a = 0;
@@ -48,20 +48,20 @@ function K(l, n, t) {
   }
   return e;
 }
-function A(l) {
+function M(l) {
   const n = l.revenueChart.points.reduce((e, s) => e + Number(s.y || 0), 0), t = l.ordersChart.points.reduce((e, s) => e + Number(s.y || 0), 0);
   return { amount: n, orders: t, average: t ? n / t : null };
 }
-function T(l, n) {
+function E(l, n) {
   if (l == null || n == null) return "No comparison available";
   if (n === 0) return l === 0 ? "No change" : "No prior value";
   const t = (l - n) / Math.abs(n) * 100;
   return `${t > 0 ? "+" : ""}${t.toLocaleString(void 0, { maximumFractionDigits: 1 })}%`;
 }
-class Q extends J(HTMLElement) {
+class tt extends Q(HTMLElement) {
   constructor() {
     super(...arguments);
-    u(this, "api", new O());
+    u(this, "api", new L());
     u(this, "loading", !0);
     u(this, "loadingMostSoldProducts", !1);
     u(this, "error", "");
@@ -101,7 +101,7 @@ class Q extends J(HTMLElement) {
     try {
       const [i, r, b] = await Promise.all([
         this.api.charts(t),
-        a ? this.api.charts({ ...t, ...w(t.dateFrom, t.dateTo) }) : Promise.resolve(void 0),
+        a ? this.api.charts({ ...t, ...T(t.dateFrom, t.dateTo) }) : Promise.resolve(void 0),
         o ? this.api.mostSoldProducts(t, this.pageMostSoldProducts, 20) : Promise.resolve(void 0)
       ]);
       if (this.disposed || !this.pollingSeconds || e !== this.chartRequest || s !== this.productRequest || a !== this.compare || o !== this.productsVisible || JSON.stringify(t) !== JSON.stringify(m.filters) || this.contains(document.activeElement) || this.querySelector('details[open], dialog[open], [role="dialog"]')) return;
@@ -138,7 +138,7 @@ class Q extends J(HTMLElement) {
     return this.currencyFor(((t = this.chartFilters) == null ? void 0 : t.currency) || m.filters.currency);
   }
   currencyFor(t) {
-    return q(m.stores.find((e) => {
+    return R(m.stores.find((e) => {
       var s;
       return e.alias === (((s = this.chartFilters) == null ? void 0 : s.store) || m.filters.store);
     }), t);
@@ -148,10 +148,10 @@ class Q extends J(HTMLElement) {
     try {
       const [e, s, a] = await Promise.all([this.api.statusList(), this.api.stores(), this.hasAttribute("classic") ? Promise.resolve(!1) : this.api.printingEnabled()]);
       if (m.printingEnabled = a, this.disposed) return;
-      m.statusList = e || [], m.stores = s || [], m.stores.some((o) => o.alias === m.filters.store) || (m.filters.store = ((t = m.stores[0]) == null ? void 0 : t.alias) || ""), this.hasAttribute("classic") || L(), await this.loadAnalytics();
+      m.statusList = e || [], m.stores = s || [], m.stores.some((o) => o.alias === m.filters.store) || (m.filters.store = ((t = m.stores[0]) == null ? void 0 : t.alias) || ""), this.hasAttribute("classic") || N(), await this.loadAnalytics();
     } catch (e) {
       if (this.disposed) return;
-      this.error = P(e, "Unable to load Analytics."), this.loading = !1, this.render();
+      this.error = w(e, "Unable to load Analytics."), this.loading = !1, this.render();
     }
   }
   async loadAnalytics() {
@@ -164,7 +164,7 @@ class Q extends J(HTMLElement) {
     const e = this.chartAbort = new AbortController(), s = { ...m.filters };
     if (s.store || (this.chartData = void 0, this.previousData = void 0), this.error = "", this.loading = !!s.store, this.render(), !!s.store)
       try {
-        const o = this.compare ? { ...s, ...w(s.dateFrom, s.dateTo) } : void 0, [i, r] = await Promise.all([
+        const o = this.compare ? { ...s, ...T(s.dateFrom, s.dateTo) } : void 0, [i, r] = await Promise.all([
           this.api.charts(s, e.signal),
           o ? this.api.charts(o, e.signal) : Promise.resolve(void 0)
         ]);
@@ -172,7 +172,7 @@ class Q extends J(HTMLElement) {
         this.chartData = i, this.previousData = r, this.chartFilters = s, i.mixedCurrencies && (this.metric = "orders");
       } catch (o) {
         if (t !== this.chartRequest || this.disposed) return;
-        this.chartData = void 0, this.previousData = void 0, this.error = P(o, "Unable to load charts.");
+        this.chartData = void 0, this.previousData = void 0, this.error = w(o, "Unable to load charts.");
       } finally {
         t === this.chartRequest && !this.disposed && (this.loading = !1, this.render());
       }
@@ -188,13 +188,13 @@ class Q extends J(HTMLElement) {
         if (t !== this.productRequest || this.disposed) return;
         this.mostSoldProducts = { ...o, products: o.products || [] }, this.pageMostSoldProducts = o.page || this.pageMostSoldProducts;
       } catch (o) {
-        t === this.productRequest && !this.disposed && (this.productError = P(o, "Unable to load products."));
+        t === this.productRequest && !this.disposed && (this.productError = w(o, "Unable to load products."));
       } finally {
         t === this.productRequest && !this.disposed && (this.loadingMostSoldProducts = !1, this.render());
       }
   }
   get buckets() {
-    return this.chartData ? K(this.chartData, this.previousData, this.grouping) : [];
+    return this.chartData ? X(this.chartData, this.previousData, this.grouping) : [];
   }
   get comparisonMoneyAvailable() {
     var t, e;
@@ -216,11 +216,12 @@ class Q extends J(HTMLElement) {
     return this.metric === "orders" ? t.previousOrders : this.metric === "average" ? t.previousAverage : t.previousAmount;
   }
   range(t, e) {
-    return t === e ? t || "" : `${t || ""} – ${e || ""}`;
+    const s = (a) => a && A() ? C(a.slice(0, 10)) : a || "";
+    return t === e ? s(t) : `${s(t)} – ${s(e)}`;
   }
   render() {
-    const t = m.filters, e = W(t.dateFrom, t.dateTo, this.datePreset);
-    R(this, `<style>${N}${this.hasAttribute("classic") ? `
+    const t = m.filters, e = Y(t.dateFrom, t.dateTo, this.datePreset);
+    U(this, `<style>${V}${this.hasAttribute("classic") ? `
       ekom-analytics-section-view { display:block;color:var(--uui-color-text,#20232e) }
       .analytics {background:var(--uui-color-background,#f3f4f7);min-height:80vh}
       .analytics .card {background:var(--uui-color-surface,#fff);border:1px solid #dfe2e8;border-radius:10px;padding:18px;text-align:left;box-shadow:none}
@@ -250,14 +251,14 @@ class Q extends J(HTMLElement) {
       .analytics-spinner {display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid #dfe2e8;border-top-color:#25765c;border-radius:50%;animation:analytics-spin 1s linear infinite}
       @keyframes analytics-spin {to {transform:rotate(360deg)}}
       @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
-    ` : ""}</style>${this.hasAttribute("classic") ? "" : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/analytics-layout.css">'}<section class="ekmManager analytics ekom-design" aria-busy="${this.loading}"><div class="ekmManager__body">${this.hasAttribute("classic") ? "" : U("analytics")}
+    ` : ""}</style>${this.hasAttribute("classic") ? "" : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/analytics-layout.css">'}<section class="ekmManager analytics ekom-design" aria-busy="${this.loading}"><div class="ekmManager__body">${this.hasAttribute("classic") ? "" : j("analytics")}
       <div class="analytics-toolbar ekom-shared-filters">
         ${this.hasAttribute("classic") ? `<label>Store<select data-field="store">${m.stores.map((s) => `<option value="${p(s.alias)}" ${s.alias === t.store ? "selected" : ""}>${p(s.title)}</option>`).join("")}</select></label>` : ""}
-        ${this.hasAttribute("classic") ? `<label>Order view<select data-field="orderStatus">${V(t.orderStatus)}</select></label>` : j()}
+        ${this.hasAttribute("classic") ? `<label>Order view<select data-field="orderStatus">${z(t.orderStatus)}</select></label>` : I()}
         ${this.hasAttribute("classic") ? `        <label>Date From<input type="date" data-field="dateFrom" value="${p(t.dateFrom)}"></label>
         <label>Date To<input type="date" data-field="dateTo" value="${p(t.dateTo)}"></label>
         <label>Date preset<select data-preset><option value="">Custom range</option>${[["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["month", "This month"], ["year", "This year"]].map(([s, a]) => `<option value="${s}" ${e === s ? "selected" : ""}>${a}</option>`).join("")}</select></label>
-` : z()}
+` : B()}
         ${this.hasAttribute("classic") ? `<label><span>Comparison</span><span><input type="checkbox" data-compare ${this.compare ? "checked" : ""}> Previous period</span></label><button data-refresh>Refresh</button>` : ""}
       </div>
       ${this.hasAttribute("classic") ? "" : `<div class="analytics-comparison-actions">
@@ -265,21 +266,21 @@ class Q extends J(HTMLElement) {
         <details class="ekom-polling${this.pollingSeconds ? " is-active" : ""}"><summary aria-label="Analytics polling"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg><span>${this.pollingSeconds ? `Polling every ${this.pollingSeconds}s` : "Polling off"}</span><span aria-hidden="true">⌄</span></summary><div class="ekom-poll-options" role="group" aria-label="Polling interval">${[0, 2, 5, 10, 20, 30].map((s) => `<button type="button" data-poll-seconds="${s}" aria-pressed="${s === this.pollingSeconds}"><span aria-hidden="true">•</span>${s ? `Every ${s} seconds` : "Off"}</button>`).join("")}</div></details>
       </div>`}
       ${this.error ? `<p role="alert">${p(this.error)}</p>` : ""}
-      ${this.loading ? I("Analytics", 3, 300) : t.store ? "" : "<p>No accessible stores.</p>"}
+      ${this.loading ? _("Analytics", 3, 300) : t.store ? "" : "<p>No accessible stores.</p>"}
       ${this.chartData && !this.loading ? this.renderAnalytics() + this.renderCustomerInsights() : ""}
       <div class="card analytics-main analytics-products" ${this.loading ? "hidden" : ""}><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? "Hide products" : "Load product breakdown"}</button></div>
         <p class="analytics-muted">Fetch the most sold products for the selected store and dates. This may take a minute for larger date ranges. Totals include VAT and discounts, excluding shipping and payment fees.</p>
-        ${this.productsVisible ? `${this.productError ? `<p role="alert">${p(this.productError)}</p><button data-product-retry>Retry products</button>` : ""}${this.loadingMostSoldProducts ? B("Calculating…") : this.renderMostSoldProducts()}` : ""}
+        ${this.productsVisible ? `${this.productError ? `<p role="alert">${p(this.productError)}</p><button data-product-retry>Retry products</button>` : ""}${this.loadingMostSoldProducts ? Z("Calculating…") : this.renderMostSoldProducts()}` : ""}
       </div>
     </div></section>`), this.bindEvents(), this.renderCharts();
   }
   displayRange(t, e) {
-    return !t || !e ? "" : new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).formatRange(/* @__PURE__ */ new Date(`${t.slice(0, 10)}T00:00:00Z`), /* @__PURE__ */ new Date(`${e.slice(0, 10)}T00:00:00Z`));
+    return !t || !e ? "" : A() ? `${C(t.slice(0, 10))} – ${C(e.slice(0, 10))}` : new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).formatRange(/* @__PURE__ */ new Date(`${t.slice(0, 10)}T00:00:00Z`), /* @__PURE__ */ new Date(`${e.slice(0, 10)}T00:00:00Z`));
   }
   renderAnalytics() {
     var s, a, o, i;
-    const t = A(this.chartData), e = this.previousData ? A(this.previousData) : void 0;
-    return `<div class="analytics-summary">${["amount", "orders", "average"].map((r) => `<div class="card"><span>${this.label(r)}</span><strong>${p(this.value(t[r], r))}</strong><span class="analytics-muted">${e && (r === "orders" || this.comparisonMoneyAvailable) ? p(T(t[r], e[r])) + " vs previous period" : this.compare ? "No monetary comparison available" : "Selected period"}</span></div>`).join("")}</div>
+    const t = M(this.chartData), e = this.previousData ? M(this.previousData) : void 0;
+    return `<div class="analytics-summary">${["amount", "orders", "average"].map((r) => `<div class="card"><span>${this.label(r)}</span><strong>${p(this.value(t[r], r))}</strong><span class="analytics-muted">${e && (r === "orders" || this.comparisonMoneyAvailable) ? p(E(t[r], e[r])) + " vs previous period" : this.compare ? "No monetary comparison available" : "Selected period"}</span></div>`).join("")}</div>
       <p class="analytics-muted">Order amount is the recorded charged amount, after gift cards; it is not refund-adjusted revenue. Dates use ${this.chartData.dateBasis === "PaidDate" ? "payment date" : "order creation date"}, matching Orders.</p>
       ${this.chartData.mixedCurrencies ? '<p role="status">This period contains multiple currencies. Monetary totals are hidden to avoid combining different currencies.</p>' : ""}
       ${this.previousData && !this.comparisonMoneyAvailable ? '<p class="analytics-muted">Monetary comparison is unavailable across different or mixed currencies.</p>' : ""}
@@ -301,7 +302,7 @@ class Q extends J(HTMLElement) {
       ["First-time buyers", t.newCustomers, e == null ? void 0 : e.newCustomers, !1],
       ["Returning customer rate", t.returningCustomerRate, e == null ? void 0 : e.returningCustomerRate, !0]
     ], a = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], o = a.map((c, d) => t.orderTimes.filter((g) => g.weekday === d).reduce((g, y) => g + y.orders, 0)), i = Array.from({ length: 24 }, (c, d) => t.orderTimes.filter((g) => g.hour === d).reduce((g, y) => g + y.orders, 0)), r = (c, d) => c.map((g, y) => `<div class="analytics-time-row" tabindex="0" data-tooltip="${g}: ${d[y]} orders" aria-label="${g}: ${d[y]} orders"><span>${g}</span><div class="analytics-time-track" aria-hidden="true"><span style="width:${100 * d[y] / Math.max(1, ...d)}%"></span></div><span>${d[y]}</span></div>`).join("");
-    return `<div class="analytics-summary">${s.map(([c, d, g, y]) => `<div class="card"><span>${c}</span><strong>${d == null ? "—" : p(d.toLocaleString(void 0, { maximumFractionDigits: y ? 1 : 0 })) + (y ? "%" : "")}</strong><span class="analytics-muted">${e ? y ? d == null || g == null ? "No comparison available" : `${(d - g).toLocaleString(void 0, { maximumFractionDigits: 1, signDisplay: "always" })} percentage points vs previous period` : `${T(d, g ?? null)} vs previous period` : "Selected period"}</span></div>`).join("")}</div>
+    return `<div class="analytics-summary">${s.map(([c, d, g, y]) => `<div class="card"><span>${c}</span><strong>${d == null ? "—" : p(d.toLocaleString(void 0, { maximumFractionDigits: y ? 1 : 0 })) + (y ? "%" : "")}</strong><span class="analytics-muted">${e ? y ? d == null || g == null ? "No comparison available" : `${(d - g).toLocaleString(void 0, { maximumFractionDigits: 1, signDisplay: "always" })} percentage points vs previous period` : `${E(d, g ?? null)} vs previous period` : "Selected period"}</span></div>`).join("")}</div>
       <div class="card analytics-main analytics-purchases"><h3>New and returning purchases</h3>
         <div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Purchase type</th><th>Buyers</th><th>Orders</th><th>Order amount</th></tr></thead><tbody>
           <tr><td>First purchase</td><td>${t.newCustomers}</td><td>${t.firstOrders}</td><td>${p(this.amount(t.firstOrderAmount))}</td></tr>
@@ -332,7 +333,7 @@ class Q extends J(HTMLElement) {
     return `
       <div class="pagination">
         <ul>
-          ${Z(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((t) => {
+          ${H(this.pageMostSoldProducts, this.mostSoldProducts.totalPages).map((t) => {
       const e = Number(String(t).replace("...", ""));
       return `<li class="${e === this.pageMostSoldProducts ? "active" : ""}"><button type="button" data-action="set-most-sold-page" data-page="${e}" ${e === this.pageMostSoldProducts ? "disabled" : ""}>${p(t)}</button></li>`;
     }).join("")}
@@ -345,10 +346,10 @@ class Q extends J(HTMLElement) {
     const t = this.querySelector("#analytics-chart");
     if (!t || !this.chartData || this.table) return;
     const e = this.buckets, s = this.chartData.currency || ((i = this.previousData) == null ? void 0 : i.currency), a = s && /^[A-Z]{3}$/.test(s) ? this.currencyFor(s) : this.currency, o = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: e.map((r) => ({ x: this.range(r.previousStart, r.previousEnd), y: this.previousValue(r) })) } : void 0;
-    _(t, { labels: [], points: e.map((r) => ({ x: this.range(r.start, r.end), y: r[this.metric] })) }, getComputedStyle(t).getPropertyValue("--ekom-accent").trim() || "#10694a", {
+    J(t, { labels: [], points: e.map((r) => ({ x: this.range(r.start, r.end), y: r[this.metric] })) }, getComputedStyle(t).getPropertyValue("--ekom-accent").trim() || "#10694a", {
       templateStyle: !this.hasAttribute("classic"),
       formatAxisValue: (r) => r.toLocaleString(void 0, { notation: "compact", maximumFractionDigits: 1 }).replace("K", "k"),
-      formatLabel: (r) => (/* @__PURE__ */ new Date(`${e[r].start}T00:00:00Z`)).toLocaleDateString("en-GB", { timeZone: "UTC", month: "short", ...this.grouping === "month" ? {} : { day: "numeric" } }),
+      formatLabel: (r) => K(String(e[r].start).slice(0, 10), this.grouping === "month" ? "month" : "monthDay"),
       currency: this.metric === "orders" ? void 0 : a,
       integer: this.metric === "orders",
       comparison: o,
@@ -377,18 +378,18 @@ class Q extends J(HTMLElement) {
     for (const i of this.buckets) t.push([i.start, i.end, String(i.orders), (s = this.chartData) != null && s.mixedCurrencies ? "" : String(i.amount), (a = this.chartData) != null && a.mixedCurrencies || i.average == null ? "" : String(i.average), ((o = this.chartData) == null ? void 0 : o.currency) || "", i.previousStart || "", i.previousEnd || "", i.previousOrders == null ? "" : String(i.previousOrders), this.comparisonMoneyAvailable ? String(i.previousAmount ?? "") : "", this.comparisonMoneyAvailable ? String(i.previousAverage ?? "") : ""]);
     const e = t.map((i) => i.map((r) => '"' + r.replaceAll('"', '""') + '"').join(",")).join(`\r
 `);
-    H(new Blob(["\uFEFF", e], { type: "text/csv;charset=utf-8" }), "analytics.csv");
+    G(new Blob(["\uFEFF", e], { type: "text/csv;charset=utf-8" }), "analytics.csv");
   }
   bindEvents() {
     var t, e, s, a, o, i, r, b, v;
-    this.hasAttribute("classic") || G(this, () => {
+    this.hasAttribute("classic") || W(this, () => {
       this.datePreset = void 0, this.changedFilters();
     }), this.querySelectorAll("[data-field]").forEach((h) => h.addEventListener("change", () => {
       const c = h.dataset.field;
       (c === "dateFrom" || c === "dateTo") && (this.datePreset = void 0), m.filters[c] = h.value, this.changedFilters();
     })), (t = this.querySelector("[data-preset]")) == null || t.addEventListener("change", (h) => {
       const c = h.target.value;
-      this.datePreset = c, c ? (Object.assign(m.filters, M(c)), this.changedFilters()) : this.render();
+      this.datePreset = c, c ? (Object.assign(m.filters, F(c)), this.changedFilters()) : this.render();
     }), (e = this.querySelector("[data-compare]")) == null || e.addEventListener("change", () => {
       this.compare = !this.compare, this.loadCharts();
     }), (s = this.querySelector("[data-grouping]")) == null || s.addEventListener("change", (h) => {
@@ -414,11 +415,11 @@ function $(l, ...n) {
   for (const t of n) if (l[t] != null) return l[t];
   return "";
 }
-function P(l, n) {
+function w(l, n) {
   return l instanceof Error ? l.message : n;
 }
-customElements.define("ekom-analytics-section-view", Q);
+customElements.define("ekom-analytics-section-view", tt);
 export {
-  Q as EkomAnalyticsSectionViewElement,
-  Q as default
+  tt as EkomAnalyticsSectionViewElement,
+  tt as default
 };

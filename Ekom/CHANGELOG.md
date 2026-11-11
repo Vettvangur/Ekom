@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+* **manager:** format dates in Orders, Analytics, Customers, Printing and the date range picker as the culture configured on the selected store writes them, instead of the browser's locale. The patterns and month and day names come from the server because browsers lack some cultures.
+
+* **manager:** restore details from the previous order view in the order drawer: shipping custom fields, VAT per order line, the variant SKU and the gift-card eligible total. Remove the copy button next to Paid date.
+
 * **manager:** make the Customers list fast on large stores: the matching customers are worked out once per search, and names, contact details and spend are looked up only for the customers on the page instead of for every customer in the store.
 
 * **manager:** open the customer drawer on a loader, like the order drawer.

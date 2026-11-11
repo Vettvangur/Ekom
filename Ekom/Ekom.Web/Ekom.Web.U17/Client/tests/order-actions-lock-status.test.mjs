@@ -719,3 +719,40 @@ test('the order drawer stays on its loader until everything it shows has loaded,
   assert.equal(element.overlay, '');
   assert.equal(element.selectedOrder, undefined);
 });
+
+test('the order drawer shows line VAT, variant SKU, the gift-card eligible total and shipping custom fields', () => {
+  const element = createElement();
+  const price = text => ({ currencyString: text });
+  const order = {
+    uniqueId: 'order-A', currency: 'USD', coupon: '',
+    orderLines: [{ key: 'line-1', quantity: 2, product: { title: 'Shoe', sku: 'SHOE', price: { withVat: price('$50.00') } }, variant: { title: 'Size 42', sku: ' SHOE-42 ' },
+      amount: { vat: price('$19.35'), discountAmount: price('$0.00'), withVat: price('$100.00') } },
+      { key: 'line-2', quantity: 1, product: { title: 'Sock', sku: 'SOCK' }, variant: { title: 'One size', sku: ' ' }, amount: {} }],
+    subTotal: { withVat: price('$100.00') }, discountAmount: { value: 0, currencyString: '$0.00' }, chargedVat: price('$19.35'), chargedAmount: price('$70.00'),
+    giftcards: [{ code: 'Card-A', amount: 10, claimed: true }, { code: 'Card-B', amount: 20 }, { code: 'Expired', amount: 99, validUntil: '2000-01-01T00:00:00Z' }],
+    paidDate: '2026-01-05T10:00:00Z',
+  };
+
+  const lines = element.renderDesignOrderLines(order);
+  assert.match(lines, /<th>Unit price<\/th><th>VAT<\/th><th>Discount<\/th>/);
+  assert.match(lines, /<td>\$50\.00<\/td><td>\$19\.35<\/td><td>\$0\.00<\/td>/);
+  assert.match(lines, /<small>Size 42 \( SHOE-42 \)<\/small>/);
+  assert.match(lines, /<small>One size<\/small>/);
+
+  const payment = element.renderPaymentCard(order);
+  assert.match(payment, /<dt>Gift cards<\/dt><dd class="ekom-money-description">Eligible value, already applied to the total<\/dd><dd>\$30\.00<\/dd>/);
+  assert.match(payment, /<dt>Discount<\/dt><dd class="ekom-money-description">—<\/dd><dd>\$0\.00<\/dd>/);
+  assert.doesNotMatch(element.renderPaymentCard({ ...order, giftcards: [] }), /<dt>Gift cards<\/dt>/);
+  assert.match(element.renderPaymentCard({ ...order, coupon: 'SPRING', discountAmount: { value: 5, currencyString: '$5.00' } }), /SPRING<\/dd><dd>-\$5\.00<\/dd>/);
+
+  const paid = payment.slice(payment.indexOf('<dt>Paid date</dt>'), payment.indexOf('<dt>Currency</dt>'));
+  assert.ok(paid.length > 0);
+  assert.doesNotMatch(paid, /data-action="copy-provider-value"/);
+
+  element.config = {};
+  element.renderAddress = () => 'ADDRESS';
+  element.renderExtraProperties = (properties, prefix) => `EXTRA:${prefix}:${JSON.stringify(properties)}`;
+  const details = element.renderOrderDetails({ ...order, status: { orderStatus: 'Open' }, customerInformation: {
+    customer: { name: 'Anna', properties: {} }, shipping: { name: 'Anna', address: 'Street 1', properties: { shippingDoorCode: '4321' } } } });
+  assert.match(details, /Shipping address<\/h4>ADDRESSEXTRA:shipping:\{"shippingDoorCode":"4321"\}<h4>Billing address<\/h4>ADDRESSEXTRA:customer:/);
+});
