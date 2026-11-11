@@ -91,10 +91,19 @@ test('analytics amounts use the store currency culture, matching Orders', () => 
   const isk = { isoCurrencySymbol: 'ISK', currencyValue: 'is-IS', currencyDecimalDigits: 0 };
   assert.equal(exports.formatAnalyticsAmount(24774950, isk).replace(/\s/g, ' '), '24.774.950 kr.');
   assert.equal(exports.formatAnalyticsAmount(12.5, { isoCurrencySymbol: 'USD', currencyValue: 'en-US', currencyDecimalDigits: 2 }), '$12.50');
-  const store = { alias: 'main', title: 'Main', currency: isk, currencyModels: [isk, { isoCurrencySymbol: 'EUR', currencyValue: 'de-DE', currencyDecimalDigits: 2 }] };
-  assert.equal(exports.formatAnalyticsAmount(1234.5, exports.storeCurrency(store, 'EUR')).replace(/\s/g, ' '), '1.234,50 €');
-  assert.equal(exports.storeCurrency(store, 'ISK'), isk);
-  assert.equal(exports.storeCurrency(store, undefined), isk);
+  // The store's format wins over browser locale data, which lacks some cultures (Icelandic in Chrome).
+  const store = { alias: 'main', title: 'Main', currency: { isoCurrencySymbol: 'ISK' }, currencyFormats: [
+    { code: 'ISK', symbol: 'kr.', groupSeparator: '.', decimalSeparator: ',', decimalDigits: 0, positivePattern: 3 },
+    { code: 'EUR', symbol: '€', groupSeparator: '.', decimalSeparator: ',', decimalDigits: 2, positivePattern: 3 },
+    { code: 'GBP', symbol: '£', groupSeparator: ',', decimalSeparator: '.', decimalDigits: 2, positivePattern: 0 },
+  ] };
+  assert.equal(exports.formatAnalyticsAmount(24794150, exports.storeCurrency(store, 'ISK')), '24.794.150 kr.');
+  assert.equal(exports.formatAnalyticsAmount(24794150, exports.storeCurrency(store, undefined)), '24.794.150 kr.');
+  assert.equal(exports.formatAnalyticsAmount(999.6, exports.storeCurrency(store, 'ISK')), '1.000 kr.');
+  assert.equal(exports.formatAnalyticsAmount(-1500, exports.storeCurrency(store, 'ISK')), '-1.500 kr.');
+  assert.equal(exports.formatAnalyticsAmount(-0.2, exports.storeCurrency(store, 'ISK')), '0 kr.');
+  assert.equal(exports.formatAnalyticsAmount(1234.5, exports.storeCurrency(store, 'EUR')), '1.234,50 €');
+  assert.equal(exports.formatAnalyticsAmount(1234.5, exports.storeCurrency(store, 'GBP')), '£1,234.50');
   assert.ok(exports.formatAnalyticsAmount(5, exports.storeCurrency(store, 'USD')).includes('USD'));
   for (const currencyValue of ['ISK', 'not a culture', '']) {
     assert.ok(exports.formatAnalyticsAmount(1500, { isoCurrencySymbol: 'ISK', currencyValue, currencyDecimalDigits: 0 }).includes('ISK'));

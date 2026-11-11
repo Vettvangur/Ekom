@@ -1,12 +1,12 @@
 var E = Object.defineProperty;
-var O = (l, n, t) => n in l ? E(l, n, { enumerable: !0, configurable: !0, writable: !0, value: t }) : l[n] = t;
-var h = (l, n, t) => O(l, typeof n != "symbol" ? n + "" : n, t);
-import { E as q, m, s as F, e as L, f as C, r as R, a as N, b as U, c as p, d as V, g as j, h as z, p as I, i as B, j as Z, k as _ } from "./manager-shared.js";
+var F = (l, n, t) => n in l ? E(l, n, { enumerable: !0, configurable: !0, writable: !0, value: t }) : l[n] = t;
+var h = (l, n, t) => F(l, typeof n != "symbol" ? n + "" : n, t);
+import { E as O, m, s as q, e as L, f as D, r as R, a as N, b as U, c as p, d as V, g as j, h as z, p as I, i as B, j as Z, k as _ } from "./manager-shared.js";
 import { UmbElementMixin as H } from "@umbraco-cms/backoffice/element-api";
-const D = 864e5, $ = (l) => l.toISOString().slice(0, 10), x = (l) => /* @__PURE__ */ new Date(`${l}T00:00:00Z`);
+const C = 864e5, $ = (l) => l.toISOString().slice(0, 10), x = (l) => /* @__PURE__ */ new Date(`${l}T00:00:00Z`);
 function w(l, n) {
-  const t = x(l), e = x(n), s = Math.round((e.getTime() - t.getTime()) / D) + 1;
-  return { dateFrom: $(new Date(t.getTime() - s * D)), dateTo: $(new Date(t.getTime() - D)) };
+  const t = x(l), e = x(n), s = Math.round((e.getTime() - t.getTime()) / C) + 1;
+  return { dateFrom: $(new Date(t.getTime() - s * C)), dateTo: $(new Date(t.getTime() - C)) };
 }
 function M(l, n = /* @__PURE__ */ new Date()) {
   const t = new Date(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())), e = new Date(t);
@@ -61,7 +61,7 @@ function T(l, n) {
 class W extends H(HTMLElement) {
   constructor() {
     super(...arguments);
-    h(this, "api", new q());
+    h(this, "api", new O());
     h(this, "loading", !0);
     h(this, "loadingMostSoldProducts", !1);
     h(this, "error", "");
@@ -134,11 +134,13 @@ class W extends H(HTMLElement) {
     this.disposed = !0, window.clearInterval(this.pollingTimer), this.pollingSeconds = 0, this.chartRequest++, this.productRequest++, (t = this.chartAbort) == null || t.abort(), (e = this.productAbort) == null || e.abort(), (s = this.resizeObserver) == null || s.disconnect(), this.resizeObserver = void 0, (a = this.themeObserver) == null || a.disconnect(), typeof document < "u" && document.head.removeEventListener("load", this.themeLoaded, !0), super.disconnectedCallback();
   }
   get currency() {
-    var e;
-    const t = ((e = this.chartFilters) == null ? void 0 : e.currency) || m.filters.currency;
-    return F(m.stores.find((s) => {
-      var a;
-      return s.alias === (((a = this.chartFilters) == null ? void 0 : a.store) || m.filters.store);
+    var t;
+    return this.currencyFor(((t = this.chartFilters) == null ? void 0 : t.currency) || m.filters.currency);
+  }
+  currencyFor(t) {
+    return q(m.stores.find((e) => {
+      var s;
+      return e.alias === (((s = this.chartFilters) == null ? void 0 : s.store) || m.filters.store);
     }), t);
   }
   async initialize() {
@@ -204,7 +206,7 @@ class W extends H(HTMLElement) {
     var s, a, o, i, r;
     if (t == null || (s = this.chartData) != null && s.mixedCurrencies) return "—";
     const e = ((a = this.chartData) == null ? void 0 : a.currency) || ((o = this.previousData) == null ? void 0 : o.currency);
-    return !e || e === ((i = this.currency) == null ? void 0 : i.currencyValue) || e === ((r = this.currency) == null ? void 0 : r.isoCurrencySymbol) ? C(t, this.currency) : /^[A-Z]{3}$/.test(e) ? C(t, { isoCurrencySymbol: e }) : `${t.toLocaleString(void 0, { maximumFractionDigits: 2 })} ${e}`;
+    return !e || e === ((i = this.currency) == null ? void 0 : i.currencyValue) || e === ((r = this.currency) == null ? void 0 : r.isoCurrencySymbol) ? D(t, this.currency) : /^[A-Z]{3}$/.test(e) ? D(t, this.currencyFor(e)) : `${t.toLocaleString(void 0, { maximumFractionDigits: 2 })} ${e}`;
   }
   label(t) {
     return t === "orders" ? "Orders" : t === "average" ? "Average order value" : "Order amount";
@@ -322,7 +324,7 @@ class W extends H(HTMLElement) {
       <div class="umb-table">
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell">Product</div><div class="umb-table-cell">Sku</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Total</div></div></div>
         <div class="umb-table-body">
-          ${this.mostSoldProducts.products.map((t) => `<div class="umb-table-row"><div class="umb-table-cell">${p(S(t, "title", "productTitle", "name"))}</div><div class="umb-table-cell">${p(S(t, "sku", "productSku"))}</div><div class="umb-table-cell">${p(S(t, "productCount", "quantity", "count"))}</div><div class="umb-table-cell">${p(C(Number(S(t, "total")), this.currency))}</div></div>`).join("")}
+          ${this.mostSoldProducts.products.map((t) => `<div class="umb-table-row"><div class="umb-table-cell">${p(S(t, "title", "productTitle", "name"))}</div><div class="umb-table-cell">${p(S(t, "sku", "productSku"))}</div><div class="umb-table-cell">${p(S(t, "productCount", "quantity", "count"))}</div><div class="umb-table-cell">${p(D(Number(S(t, "total")), this.currency))}</div></div>`).join("")}
         </div>
       </div>
       ${this.mostSoldProducts.totalPages > 1 ? this.renderMostSoldProductsPagination() : ""}
@@ -344,7 +346,7 @@ class W extends H(HTMLElement) {
     var i;
     const t = this.querySelector("#analytics-chart");
     if (!t || !this.chartData || this.table) return;
-    const e = this.buckets, s = this.chartData.currency || ((i = this.previousData) == null ? void 0 : i.currency), a = s && /^[A-Z]{3}$/.test(s) ? { isoCurrencySymbol: s } : this.currency, o = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: e.map((r) => ({ x: this.range(r.previousStart, r.previousEnd), y: this.previousValue(r) })) } : void 0;
+    const e = this.buckets, s = this.chartData.currency || ((i = this.previousData) == null ? void 0 : i.currency), a = s && /^[A-Z]{3}$/.test(s) ? this.currencyFor(s) : this.currency, o = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: e.map((r) => ({ x: this.range(r.previousStart, r.previousEnd), y: this.previousValue(r) })) } : void 0;
     B(t, { labels: [], points: e.map((r) => ({ x: this.range(r.start, r.end), y: r[this.metric] })) }, getComputedStyle(t).getPropertyValue("--ekom-accent").trim() || "#10694a", {
       templateStyle: !this.hasAttribute("classic"),
       formatAxisValue: (r) => r.toLocaleString(void 0, { notation: "compact", maximumFractionDigits: 1 }).replace("K", "k"),
