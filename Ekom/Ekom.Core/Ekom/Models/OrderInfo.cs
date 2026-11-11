@@ -447,6 +447,9 @@ public class OrderInfo : IOrderInfo
     /// <inheritdoc />
     public OrderStatus OrderStatus => _orderData.OrderStatus;
 
+    /// <summary>Independent, read-only statuses projected from the legacy record.</summary>
+    public Orders.OrderStatusSnapshot Status => _orderData.Status;
+
     private List<string> _reservationIds = new();
     private IReadOnlyCollection<string>? _reservationIdsView;
     internal List<string> _hangfireJobs

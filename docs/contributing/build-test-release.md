@@ -35,9 +35,22 @@ There is no standalone lint task. Compiler diagnostics, analyzers, TypeScript ty
 
 ## Releases
 
-Releases are managed with release-please on pushes to the `Ekom` branch. The release configuration tracks the Ekom runtime and the Klaviyo, Algolia, and Mailchimp components; the Mailchimp and Mailchimp U18 release versions are linked.
+Ekom has two release branches:
 
-Ekom stays on the `0.2.x` release line and uses patch-only version increments, including features and breaking changes. Breaking-change notes remain in the changelog. Publishing rejects tags outside `Ekom-v0.2.x` and requires the tag, Ekom build version, and manifest version to agree. Changing the version line requires explicit maintainer approval and a deliberate update to this policy and guard. Plugin versioning is independent.
+| Branch | Release line | Purpose |
+| --- | --- | --- |
+| `Ekom` | `1.x.x` | New manager, status changes, and ongoing development |
+| `release/0.2` | `0.2.x` | Hotfixes for existing installations |
+
+The maintenance branch starts at published tag `Ekom-v0.2.378`. Its next release is `0.2.379`; it uses patch-only increments and tracks only the Ekom package group. Plugin and printer releases remain on `Ekom`.
+
+On `Ekom`, while the published manifest still contains `0.2.x`, the workflow selects `release-please-config-1.0.json` to prepare exactly `1.0.0`. Once the release PR updates the manifest to `1.0.0`, subsequent runs select the normal configuration and use semantic versioning. Keep the bootstrap configuration identical to the normal configuration except for Ekom's `release-as` override until 1.0.0 ships. Do not manually bump the manifest to 1.0.0 before the release PR.
+
+Release-please explicitly targets the triggering branch. Publishing requires a stable `Ekom-v0.2.x` or `Ekom-v1.x.x` tag matching both the Ekom build version and manifest. The maintenance branch's publishing guard permits only `0.2.x`. A future major release requires an explicit guard change.
+
+For a hotfix, branch from `release/0.2`, open a `fix:` PR targeting `release/0.2`, then review and merge the generated release PR when ready to publish. Port applicable source fixes to `Ekom` separately; do not merge maintenance manifests, version files, or release configuration into `Ekom`.
+
+Validate workflow changes with `actionlint` and `node --test .github/scripts/select-release-config.test.mjs`. Creating a branch or merging ordinary changes does not publish packages; merging the generated release PR creates the release tag and starts publishing.
 
 Use Conventional Commit-style pull request titles so release-please can determine the release change. Examples:
 

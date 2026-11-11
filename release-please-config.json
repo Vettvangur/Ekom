@@ -16,7 +16,7 @@
       "package-name": "Ekom",
       "include-component-in-tag": true,
       "release-type": "simple",
-      "versioning": "always-bump-patch",
+      "versioning": "default",
       "changelog-path": "CHANGELOG.md",
       "exclude-paths": [
         "Ekom/Tests",

@@ -3,7 +3,7 @@ name: semantic-pr-title
 on:
   pull_request_target:
     types: [opened, edited, synchronize, reopened]
-    branches: ["Ekom"]
+    branches: ["Ekom", "release/0.2"]
 
 permissions:
   contents: read

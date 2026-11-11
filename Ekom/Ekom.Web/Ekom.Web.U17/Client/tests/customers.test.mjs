@@ -14,11 +14,13 @@ function module(path, modules = {}, globals = {}) {
 }
 function fixture() {
   const shared = module('../src/manager/manager-shared.ts');
+  shared.renderManagerContent = (root, html) => { root.innerHTML = html; };
   const { EkomCustomersSectionViewElement } = module('../src/manager/customers-section-view.element.ts', {
     './manager-shared': shared, '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
   });
   const view = new EkomCustomersSectionViewElement();
   view.render = () => {};
+  view.querySelector = () => null;
   return { view, state: shared.managerState };
 }
 const emptyResult = { customers: [], totals: { customers: 0 }, spend: [], missingIdentifiers: 0, totalPages: 0 };
@@ -164,4 +166,23 @@ test('customer list shows loading until a slow request completes, and distinguis
   await view.load();
   assert.doesNotMatch(view.innerHTML, /No customers found|Loading customers/);
   assert.match(view.innerHTML, /role="alert"/);
+});
+
+
+test('canonical custom status scope remains selected in the shared filter', () => {
+  const shared = module('../src/manager/manager-shared.ts');
+  const value = 'states:Open;Paid;Picked,Packed';
+  const document = new JSDOM(`<select>${shared.renderOrderViewOptions(value)}</select>`).window.document;
+  assert.equal(document.querySelector('select').value, value);
+  assert.equal(document.querySelector('option:checked').textContent, 'Custom status filters');
+});
+
+test('modern customer history shows independent statuses including evidence gaps', () => {
+  const { view } = fixture();
+  const detail = { customer: { identity: 'a', orders: 1, spend: [], firstOrder: '2026-01-01' }, orders: [{ uniqueId: 'x', orderNumber: '1', orderStatusCol: 'ReadyForDispatch', status: { orderStatus: 'Open', paymentStatus: 'Paid', fulfillmentStatus: 'Picked' } }, { uniqueId: 'y', orderStatusCol: 'Closed', status: { orderStatus: 'Closed', paymentStatus: null, fulfillmentStatus: null } }], count: 2, page: 1, totalPages: 1, snapshot: { fields: {} } };
+  const dom = new JSDOM(view.renderDetail(detail));
+  const badges = [...dom.window.document.querySelectorAll('.ekom-badge')].map(el => el.textContent);
+  assert.deepEqual(badges, ['Open', 'Paid', 'Picked', 'Closed', 'Needs review', 'Needs review']);
+  assert.ok(!dom.window.document.body.textContent.includes('ReadyForDispatch'));
+  dom.window.close();
 });

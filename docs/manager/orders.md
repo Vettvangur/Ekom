@@ -4,24 +4,15 @@ The Ekom Manager Orders view searches, exports, and updates orders for stores av
 
 ## Default view
 
-The initial date range runs from January 1 of the current year through today. The initial status is **Completed Orders**, which includes:
+In the Umbraco 17/18 manager, the initial date range runs from January 1 of the current year through today. **All** includes Open, Closed, and Cancelled orders. Drafts are excluded unless explicitly selected in the Order status filter.
 
-- `ReadyForDispatch`
-- `OfflinePayment`
-- `ReadyForDispatchWhenStockArrives`
-- `Dispatched`
-- `Closed`
-- `ReadyForPickup`
+Select the store and currency to scope results. The summary count, order amount, average, and exports use the same active filters. Results are ordered by descending reference ID and paged. If the user has no allowed stores, the list remains empty.
 
-The first allowed store is selected. If the user has no allowed stores, the list remains empty.
-
-The summary cards show the matching order count, payment total, and average order amount. Results are ordered by descending reference ID and paged.
+See [Order, payment, and fulfillment statuses](../guides/order-statuses.md) for definitions, examples, editing rules, and the full legacy migration table.
 
 ## Dates and statuses
 
-Date inputs are inclusive of both selected days.
-
-When the selected status is `ReadyForDispatch` or `Dispatched`, search and reporting filter on the paid date. Other selections, including **Completed Orders** and **All Orders**, filter on the creation date.
+Date inputs include both selected days. The new status filters use order creation dates. The legacy Umbraco 13 manager retains its Completed Orders view and legacy filters; legacy ReadyForDispatch and Dispatched selections use paid dates.
 
 ## Search and filters
 
@@ -47,7 +38,7 @@ The additional filter panel supports:
 
 Product SKU, coupon code, and tracking-value comparisons are case-insensitive. They are exact comparisons rather than partial-text searches; leading/trailing whitespace in filter input is ignored. Coupon filtering checks only the saved order-level code, not coupons on individual order lines. Shipping-provider filtering matches the saved provider key, not a title that may have changed.
 
-Gift-card filtering matches the full saved `Giftcards[].Code`, not a reservation claim ID or transaction ID. Input whitespace is trimmed, leading zeroes are preserved, and comparisons are case-insensitive. Any matching gift card includes the order once, regardless of reservation or redemption state. To find abandoned or unpaid orders, select **All Orders** or the relevant unpaid status and an appropriate date range. The filter applies to order results, summary cards, and both CSV export formats; it does not change analytics charts.
+Gift-card filtering matches the full saved `Giftcards[].Code`, not a reservation claim ID or transaction ID. Input whitespace is trimmed, leading zeroes are preserved, and comparisons are case-insensitive. Any matching gift card includes the order once, regardless of reservation or redemption state. To find unfinished checkouts, explicitly filter Order status to **Draft**. To find accepted unpaid orders, use the payment filter and an appropriate date range. The filter applies to order results, summary cards, and both CSV export formats; it does not change analytics charts.
 
 In Umbraco 17 and 18, changing the store reloads payment and shipping filter options and clears both provider selections. An empty coupon field or the **All shipping providers** option adds no restriction. These filters combine with the other selected filters and affect the order list, count/payment-summary cards, and both CSV export formats. Analytics charts and most-sold-product reports retain their existing date/status/store filtering.
 
@@ -78,16 +69,13 @@ In Umbraco 17 and 18, the Discount total includes the saved order-level coupon c
 
 ## Status changes
 
-Status can be changed from the list or the detail view.
+In Umbraco 17/18, Payment and Fulfillment can be changed from the table on Open orders. Table selections save immediately. In order details, payment selections save immediately; use Save for pending fulfillment edits. Closed orders must be explicitly reopened before making these corrections.
 
-- By default, a list-row status change fires events and the detail **Fire events?** checkbox starts unchecked.
-- Set `Ekom:Manager:OrderStatusFireEventsByDefault` to `true` or `false` to use that default for both list-row changes and the detail checkbox. Leaving it unconfigured preserves the existing, different defaults.
-- In the detail view, **Fire events?** can still be changed for an individual update and controls the `FireEvents` setting for that update.
-- Ekom passes the current backoffice identity name to the status-update flow.
+Order controls support Close (requires Paid and Fulfilled), Cancel, and Reopen. Reopening preserves payment/fulfillment and suppresses automatic closing for that order. Draft acceptance continues through checkout; the new action endpoint does not offer Draft-to-Open or Cancelled-to-Open.
 
-Status updates use Ekom's normal order API and can produce activity entries or invoke application event handlers. Confirm the effects of a target status before changing a production order.
+**Trigger status events** controls optional notifications, not persistence or activity logging. Table updates default to enabled and detail updates to unchecked; `Ekom:Manager:OrderStatusFireEventsByDefault` can set a common default. Persistence handlers still run when the projected legacy status changes, and optional legacy notifications require that value to change too.
 
-See [Manager order-status events](../reference/configuration-reference.md#manager-order-status-events) for configuration examples.
+Manual classification does not execute a payment-provider operation or fulfillment work. See the [status guide](../guides/order-statuses.md#change-statuses-in-the-manager) and [event configuration](../reference/configuration-reference.md#manager-order-status-events).
 
 ### Blocked status changes
 
@@ -161,3 +149,9 @@ After a successful action, `OrderManagerEvents.ActionExecutedAsync` runs with th
 ## Access failures
 
 If a user can open the manager but receives a forbidden response for a store or order, review [Access and permissions](access-and-permissions.md). In particular, a non-empty store permission map denies every omitted store.
+
+## Manual payment status
+
+Open orders support manual Pending, Authorized, Paid, Partially Paid, Failed and Voided classification from the payment menu in the table and order details. Selecting an option saves immediately. This only changes the recorded status; it does not charge, capture, void or refund through a provider, change amounts, or set a payment date. Refund status editing is not available. Closed orders must be explicitly reopened first.
+
+Updates use the current status revision, enforce checkout locks and store permissions, and are logged. The status-events checkbox controls configured notifications. Marking an already fulfilled order Paid can close it automatically under the store's auto-close setting. Save any pending fulfillment edits before changing payment.

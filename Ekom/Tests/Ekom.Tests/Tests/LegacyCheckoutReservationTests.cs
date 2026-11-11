@@ -363,16 +363,18 @@ public sealed class LegacyCheckoutReservationTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ExhaustedCouponRaisesReviewAndStillCompletesEvenIfReviewFails(bool reviewFails)
+    [InlineData(false, 0)]
+    [InlineData(true, 0)]
+    [InlineData(false, 1)]
+    [InlineData(false, 2)]
+    public async Task CouponCompletionClaimsAvailableUsesOrRaisesReviewWithoutBlockingCheckout(bool reviewFails, int available)
     {
         using var f = new Fixture(false, false);
         f.DisableDiscountCacheRefresh();
         using (var db = f.Database.Factory.GetDatabase())
         {
             db.CreateTable<CouponData>();
-            db.Insert(new CouponData { CouponCode = "EXHAUSTED", NumberAvailable = 0, CouponKey = Guid.NewGuid(), DiscountId = Guid.NewGuid() });
+            db.Insert(new CouponData { CouponCode = "EXHAUSTED", NumberAvailable = available, CouponKey = Guid.NewGuid(), DiscountId = Guid.NewGuid() });
         }
         if (reviewFails)
         {
@@ -394,8 +396,12 @@ public sealed class LegacyCheckoutReservationTests
         {
             CheckoutEvents.CompleteCheckout -= ApplyCoupon;
         }
-        f.Reviews.Verify(x => x.RaiseAsync(f.Order.UniqueId, "checkout", "coupon-exhausted", It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None), Times.Once);
-        f.ActivityLog.Verify(x => x.AddOrderLogAsync(f.Order.UniqueId, It.IsAny<string>(), null, OrderActivityLogType.Alert, It.IsAny<CancellationToken>()), Times.Once);
+        f.Reviews.Verify(x => x.RaiseAsync(f.Order.UniqueId, "checkout", "coupon-exhausted", It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None), available == 0 ? Times.Once() : Times.Never());
+        using (var db = f.Database.Factory.GetDatabase())
+        {
+            Assert.Equal(Math.Max(0, available - 1), db.CouponData.Single().NumberAvailable);
+        }
+        f.ActivityLog.Verify(x => x.AddOrderLogAsync(f.Order.UniqueId, It.IsAny<string>(), null, OrderActivityLogType.Alert, It.IsAny<CancellationToken>()), available == 0 ? Times.Once() : Times.Never());
         f.ActivityLog.Verify(x => x.AddOrderLogAsync(f.Order.UniqueId, It.IsAny<string>(), null, OrderActivityLogType.Success, It.IsAny<CancellationToken>()), Times.Once);
         f.Mail.VerifyNoOtherCalls();
     }

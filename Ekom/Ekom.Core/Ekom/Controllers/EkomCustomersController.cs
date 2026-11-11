@@ -14,24 +14,24 @@ namespace Ekom.Controllers;
 public sealed class EkomCustomersController(CustomerRepository repository, IManagerAccessService access) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> Search(string store, DateTime start, DateTime end, string orderStatus = "CompletedOrders", string query = "", string segment = "all", string sort = "newest", int page = 1, int pageSize = 20, CancellationToken ct = default)
+    public async Task<IActionResult> Search(string store, DateTime start, DateTime end, string orderStatus = "CompletedOrders", string query = "", string segment = "all", string sort = "newest", int page = 1, int pageSize = 20, CancellationToken ct = default, string? currency = null)
     {
         if (!access.CanAccessStore(store)) return Forbid();
         if (!ValidRange(start, end) || page < 1 || page > 1000000 || pageSize < 1 || pageSize > 100 || !ValidSegment(segment)) return BadRequest("Invalid customer filters.");
-        return Ok(await repository.SearchAsync(store, start, end, orderStatus, query ?? "", segment, sort, page, pageSize, ct).ConfigureAwait(false));
+        return Ok(await repository.SearchAsync(store, start, end, orderStatus, query ?? "", segment, sort, page, pageSize, ct, currency).ConfigureAwait(false));
     }
 
     [HttpGet("detail")]
-    public async Task<IActionResult> Detail(string store, string identity, int page = 1, bool other = false, CancellationToken ct = default)
+    public async Task<IActionResult> Detail(string store, string identity, int page = 1, bool other = false, CancellationToken ct = default, string? currency = null, string? orderStatus = null)
     {
         if (!access.CanAccessStore(store)) return Forbid();
         if (string.IsNullOrWhiteSpace(identity) || identity.Length > 200 || page < 1 || page > 1000000) return BadRequest("Invalid customer identity or page.");
-        var detail = await repository.DetailAsync(store, identity, page, other, ct).ConfigureAwait(false);
+        var detail = await repository.DetailAsync(store, identity, page, other, ct, currency, orderStatus).ConfigureAwait(false);
         return detail == null ? NotFound() : Ok(detail);
     }
 
     [HttpGet("export")]
-    public async Task<IActionResult> Export(string store, DateTime start, DateTime end, string orderStatus = "CompletedOrders", string query = "", string segment = "all", string sort = "newest", CancellationToken ct = default)
+    public async Task<IActionResult> Export(string store, DateTime start, DateTime end, string orderStatus = "CompletedOrders", string query = "", string segment = "all", string sort = "newest", CancellationToken ct = default, string? currency = null)
     {
         if (!access.CanAccessStore(store)) return Forbid();
         if (!ValidRange(start, end) || !ValidSegment(segment)) return BadRequest("Invalid customer filters.");
@@ -40,7 +40,7 @@ public sealed class EkomCustomersController(CustomerRepository repository, IMana
         while (true)
         {
             ct.ThrowIfCancellationRequested();
-            var result = await repository.SearchAsync(store, start, end, orderStatus, query ?? "", segment, sort, page, 100, ct).ConfigureAwait(false);
+            var result = await repository.SearchAsync(store, start, end, orderStatus, query ?? "", segment, sort, page, 100, ct, currency).ConfigureAwait(false);
             foreach (var customer in result.Customers)
             foreach (var spend in customer.Spend)
             {

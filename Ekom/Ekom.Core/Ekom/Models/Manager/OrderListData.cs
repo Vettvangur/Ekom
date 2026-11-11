@@ -12,6 +12,15 @@ namespace Ekom.Models.Manager
 
             this.Count = totals.Count;
 
+            if (totals.CurrencyCount > 1)
+            {
+                GrandTotal = "Mixed currencies";
+                AverageAmount = "Mixed currencies";
+                return;
+            }
+
+            currency = string.IsNullOrWhiteSpace(totals.Currency) ? currency : totals.Currency;
+
             if (orders != null && orders.Any())
             {
                 decimal _grandTotal = totals.TotalAmount;
@@ -41,6 +50,8 @@ namespace Ekom.Models.Manager
 
     public class OrderListDataTotals
     {
+        public int CurrencyCount { get; set; }
+        public string? Currency { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal AverageAmount { get; set; }
         public int Count { get; set; }

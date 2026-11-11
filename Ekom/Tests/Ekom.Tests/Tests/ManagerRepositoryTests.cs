@@ -20,6 +20,76 @@ namespace Ekom.Tests.Tests;
 public class ManagerRepositoryTests
 {
     [Theory]
+    [InlineData("AllOrders", 4)]
+    [InlineData("states:;;", 4)]
+    [InlineData("states:;Pending;", 4)]
+    [InlineData("states:Draft;;", 3)]
+    [InlineData("states:Draft,Open;;", 5)]
+    [InlineData("states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled", 2)]
+    [InlineData("states:Open;Pending,Authorized,PartiallyPaid,Failed;", 2)]
+    public async Task DraftsAreOptInForListsTotalsExportsAndCharts(string filter, int expected)
+    {
+        using var f = new OrderDatabase();
+        foreach (var state in new[] {
+            ("Incomplete", (string?)null), ("3", null), ("Pending", "Draft"),
+            ("Pending", null), ("Closed", null), ("Cancelled", null), ("Incomplete", "Open") })
+        {
+            var id = f.Add(null, Guid.Empty, 10m);
+            f.SetState(id, state.Item1, state.Item2);
+        }
+        var result = await f.Repository.SearchOrdersAsync(f.Date, f.Date, "", "main", filter,
+            "", "", "", "", "", "", "", "", "1", "2", currency: "USD");
+        Assert.Equal(expected, result.Count);
+        Assert.Equal(2, result.Orders.Count());
+        Assert.Equal((expected + 1) / 2, result.TotalPages);
+        var export = await f.Repository.GetOrdersForExportAsync(f.Date, f.Date, "", "main", filter,
+            "", "", "", "", "", "", "", "", false, currency: "USD");
+        Assert.Equal(expected, export.Count);
+        Assert.Equal(expected * 10m, export.Sum(order => order.TotalAmount));
+        Assert.All(result.Orders, order => Assert.Contains(export, exported => exported.UniqueId == order.UniqueId));
+        Assert.Equal(string.Format(CultureInfo.GetCultureInfo("en-US"), "{0:C}", expected * 10m), result.GrandTotal);
+        var chart = Assert.Single(await f.Repository.GetChartAggregatesAsync(f.Date, f.Date, "main", filter, currency: "USD"));
+        Assert.Equal(expected, chart.Orders);
+        Assert.Equal(expected * 10m, chart.Revenue);
+    }
+
+    [Fact]
+    public async Task CurrencySelectionScopesOrdersExportAndCharts()
+    {
+        using var f = new OrderDatabase();
+        f.AddChartOrders("ReadyForDispatch", dropOrderInfo: false);
+        var start = new DateTime(2026, 1, 1);
+        var end = start.AddMonths(1);
+        var orders = await f.Repository.SearchOrdersAsync(start, end, "", "main", "AllOrders", "", "", "", "", "", "", "", "", "1", "20", currency: "USD");
+        Assert.Single(orders.Orders);
+        Assert.DoesNotContain("Mixed", orders.GrandTotal, StringComparison.Ordinal);
+        var export = await f.Repository.GetOrdersForExportAsync(start, end, "", "main", "AllOrders", "", "", "", "", "", "", "", "", false, currency: "USD");
+        Assert.Single(export);
+        Assert.Equal(orders.Orders.Single().UniqueId, export.Single().UniqueId);
+        var chart = await f.Repository.GetChartAggregatesAsync(start, end, "main", "AllOrders", currency: "USD");
+        Assert.Equal(1, Assert.Single(chart).Orders);
+        Assert.Empty(await f.Repository.GetChartAggregatesAsync(start, end, "main", "AllOrders", currency: "USD' OR 1=1 --"));
+    }
+
+    [Theory]
+    [InlineData("{\"OrderLines\":[{\"Quantity\":2},{\"Quantity\":1.5}]}", 3.5)]
+    [InlineData("{\"OrderLines\":[]}", 0.0)]
+    [InlineData("invalid", null)]
+    [InlineData("{}", null)]
+    [InlineData("{\"OrderLines\":[\"bad\"]}", null)]
+    [InlineData("{\"OrderLines\":[{\"Quantity\":2},{}]}", null)]
+    public async Task OrderListCountsSavedQuantitiesAndPreservesUnknownHistory(string json, double? expected)
+    {
+        using var database = new OrderDatabase();
+        var id = database.Add(null, Guid.Empty, 10m);
+        database.SetPayload(id, json);
+        var result = await SearchAsync(database.Repository, null, null);
+        var order = Assert.Single(result.Orders);
+        Assert.Equal(expected.HasValue ? (decimal?)expected.Value : null, order.ItemQuantity);
+        Assert.Null(order.OrderInfo);
+    }
+
+    [Theory]
     [InlineData("AllOrders", 15)]
     [InlineData("CompletedOrders", 15)]
     [InlineData("ReadyForDispatch", 16)]
@@ -493,7 +563,7 @@ public class ManagerRepositoryTests
             db.Insert(new OrderData
             {
                 UniqueId = id,
-                OrderStatusCol = "Incomplete",
+                OrderStatusCol = "Pending",
                 StoreAlias = "main",
                 Currency = "en-US",
                 CreateDate = OrderDate.AddHours(12),
@@ -511,7 +581,19 @@ public class ManagerRepositoryTests
             return id;
         }
 
-        public void AddChartOrders(string status)
+        public void SetState(Guid id, string legacy, string? state)
+        {
+            using var db = _factory.GetDatabase();
+            db.Execute("UPDATE EkomOrders SET OrderStatusCol = @legacy, OrderStateCol = @state, PaymentStateCol = 'Pending', FulfillmentStateCol = 'Unfulfilled' WHERE UniqueId = @id", new { id, legacy, state });
+        }
+
+        public void SetPayload(Guid id, string json)
+        {
+            using var db = _factory.GetDatabase();
+            db.Execute("UPDATE EkomOrders SET OrderInfo = @json WHERE UniqueId = @id", new { id, json });
+        }
+
+        public void AddChartOrders(string status, bool dropOrderInfo = true)
         {
             using var db = _factory.GetDatabase();
             foreach (var currency in new[] { "en-US", "is-IS" })
@@ -521,7 +603,7 @@ public class ManagerRepositoryTests
             }
             db.Insert(new OrderData { UniqueId = Guid.NewGuid(), StoreAlias = "other", OrderStatusCol = status,
                 Currency = "en-US", CreateDate = OrderDate, PaidDate = OrderDate.AddDays(1), TotalAmount = 999m });
-            db.Execute("ALTER TABLE EkomOrders DROP COLUMN OrderInfo");
+            if (dropOrderInfo) db.Execute("ALTER TABLE EkomOrders DROP COLUMN OrderInfo");
         }
 
         public void Dispose() => _connection.Dispose();

@@ -15,12 +15,14 @@ namespace Ekom.Controllers;
 public sealed class EkomOrderReviewsController : ControllerBase
 {
     private readonly IOrderReviewService _reviews;
+    private readonly ISecurityService? _security;
     private readonly IManagerAccessService _access;
     private readonly DatabaseFactory _databaseFactory;
 
-    public EkomOrderReviewsController(IOrderReviewService reviews, IManagerAccessService access, DatabaseFactory databaseFactory)
+    public EkomOrderReviewsController(IOrderReviewService reviews, IManagerAccessService access, DatabaseFactory databaseFactory, ISecurityService? security = null)
     {
         _reviews = reviews;
+        _security = security;
         _access = access;
         _databaseFactory = databaseFactory;
     }
@@ -56,17 +58,22 @@ public sealed class EkomOrderReviewsController : ControllerBase
     }
 
     [HttpPost("{reviewId:guid}/resolve")]
+    [HttpPost("{reviewId:guid}/review")]
     public async Task<IActionResult> ResolveAsync(Guid orderId, Guid reviewId, [FromBody] ResolveOrderReviewRequest? request, CancellationToken ct = default)
     {
         var denied = await CheckAccessAsync(orderId, ct).ConfigureAwait(false);
         if (denied != null) return denied;
         if (request == null || !ModelState.IsValid) return BadRequest();
-        var userName = User.Identity?.Name;
+        var userName = _security?.GetAuthenticatedUserName() ?? (User.Identity?.IsAuthenticated == true ? User.Identity.Name : null);
         if (string.IsNullOrWhiteSpace(userName)) return Unauthorized();
         try
         {
-            var review = await _reviews.ResolveAsync(orderId, reviewId, userName, request.Comment, ct).ConfigureAwait(false);
+            var review = await _reviews.ReviewAsync(orderId, reviewId, userName, request.Comment, request.Resolved, ct).ConfigureAwait(false);
             return review == null ? NotFound() : Ok(review);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {

@@ -55,6 +55,21 @@ public sealed class OrderPerformanceIndexMigrationTests
     }
 
     [Fact]
+    public void StatusColumnsUpgradeLegacySqliteTableIdempotently()
+    {
+        using var fixture = new Fixture();
+        using var db = fixture.Factory.GetDatabase();
+        db.Execute("CREATE TABLE EkomOrders (ReferenceId INTEGER PRIMARY KEY, OrderStatusCol TEXT, OrderInfo TEXT)");
+        db.Execute("INSERT INTO EkomOrders VALUES (1, 'ReadyForDispatch', 'preserved payload')");
+        fixture.Service.EnsureOrderStateColumns();
+        fixture.Service.EnsureOrderStateColumns();
+        Assert.Equal(0, db.Execute<int>("SELECT StatusMappingVersion FROM EkomOrders WHERE ReferenceId = 1"));
+        Assert.Equal("ReadyForDispatch", db.Execute<string>("SELECT OrderStatusCol FROM EkomOrders WHERE ReferenceId = 1"));
+        Assert.Equal("preserved payload", db.Execute<string>("SELECT OrderInfo FROM EkomOrders WHERE ReferenceId = 1"));
+        Assert.Equal(1, db.Execute<int>("SELECT COUNT(*) FROM pragma_table_info('EkomOrders') WHERE name = 'FulfilledQuantitiesJson'"));
+    }
+
+    [Fact]
     public void LaterIndexConflictLeavesEarlierIndexesAndCanBeRetriedAfterRepair()
     {
         using var fixture = new Fixture();

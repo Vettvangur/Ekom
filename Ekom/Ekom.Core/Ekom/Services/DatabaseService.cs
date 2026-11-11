@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Ekom.Services;
 
-internal class DatabaseService
+internal partial class DatabaseService
 {
     readonly DatabaseFactory _databaseFactory;
     readonly ILogger<DatabaseService> _logger;
@@ -72,6 +72,7 @@ internal class DatabaseService
         }
 
         // Required order index failures must propagate, including during fresh installation.
+        EnsureOrderStateColumns();
         EnsureOrderIndexes();
         EnsureOrderPerformanceIndexes();
         EnsureOrderReviewsTable();

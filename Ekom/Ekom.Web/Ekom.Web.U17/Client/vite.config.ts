@@ -2,12 +2,14 @@ import { defineConfig } from 'vite';
 
 export function createViteConfig(sourceRoot: string, outDir: string) {
   return defineConfig({
+    publicDir: `${sourceRoot}/../public`,
     build: {
       emptyOutDir: true,
       outDir,
       lib: {
         entry: {
           manifests: `${sourceRoot}/manifests.ts`,
+          'manager-section.element': `${sourceRoot}/manager/manager-section.element.ts`,
           'customers-section-view.element': `${sourceRoot}/manager/customers-section-view.element.ts`,
           'cache-editor.element': `${sourceRoot}/property-editors/cache-editor.element.ts`,
           'country-picker.element': `${sourceRoot}/property-editors/country-picker.element.ts`,

@@ -68,7 +68,8 @@ test('each card renders only its exact matching actions, never in Order Actions'
   assert.match(element.renderOrderActions(), /Print/);
   assert.doesNotMatch(element.renderOrderActions(), /Release|Wrong case|Missing card/);
   element.orderActions = actions.slice(1);
-  assert.equal(element.renderOrderActions(), '');
+  assert.match(element.renderOrderActions(), /data-action="print-order"/);
+  assert.doesNotMatch(element.renderOrderActions(), /Release|Wrong case|Missing card/);
 });
 
 test('disabled reasons are visible escaped text and card actions show their loading state', () => {
@@ -197,7 +198,7 @@ test('lock panel is beneath payment and above actions, displays blockers and esc
   element.orderLockStatus = { ...locked, attemptState: '<uncertain>' };
   const html = element.renderOrderDetails(element.selectedOrder);
   assert.ok(html.indexOf('Payment:') < html.indexOf('Checkout is locked'));
-  assert.ok(html.indexOf('Checkout is locked') < html.indexOf('Order Actions'));
+  assert.ok(html.indexOf('Checkout is locked') < html.indexOf('class="ekom-detail-actions"'));
   for (const text of ['ownership retained', 'Payment operation', 'Checkout preparation', 'Reconciliation required', 'attempt-1', '&lt;uncertain&gt;', 'previous checkout did not finish', 'Release Lock']) assert.ok(html.includes(text), text);
   const panel = element.renderOrderLockStatus();
   assert.equal((panel.match(/<button\b/g) || []).length, 1);

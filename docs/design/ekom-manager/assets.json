@@ -1,0 +1,153 @@
+{
+  "source": "Ekom Manager.html",
+  "sourceSha256": "7d7646d9eaf553ba073a27ecbb690c8db6e306410d4aea75ff9fa5d0206bc1c7",
+  "assets": [
+    {
+      "originalId": "71d8edfb-d988-4f9c-b905-b0f937e7baef",
+      "path": "images/ekom-logo.svg",
+      "mime": "image/svg+xml",
+      "originalDecodedSha256": "9d0a415cf1e6ebb6e1a7bb9c40104da051be9cdd91f872350aa10f24fadb9bda",
+      "bytes": 9382
+    },
+    {
+      "originalId": "f091e631-f84a-4478-9bf3-124a90bd98a4",
+      "path": "images/reference-image.jpg",
+      "mime": "image/jpeg",
+      "originalDecodedSha256": "3cf737ea928f484efec8572576565845523c640a683ce09058f87afa01f56374",
+      "bytes": 10949
+    },
+    {
+      "originalId": "32fd5953-23a0-483f-9dc7-3d14b0559073",
+      "path": "runtime/32fd5953-23a0-483f-9dc7-3d14b0559073.js",
+      "mime": "text/javascript",
+      "originalDecodedSha256": "8fe7df74405f3c55f49b7249c74ea1397e65d07dea2b1bd3b4a489bec2e28cbe",
+      "bytes": 69150
+    },
+    {
+      "originalId": "8b28863a-96f7-4bfe-afc0-31401408ae59",
+      "path": "runtime/8b28863a-96f7-4bfe-afc0-31401408ae59.js",
+      "mime": "text/javascript",
+      "originalDecodedSha256": "d949f1c3687aedadcedac85261865f29b17cd273997e7f6b2bfc53b2f9d4c4dd",
+      "bytes": 10751
+    },
+    {
+      "originalId": "8d64551d-7bcd-4790-8a49-759871221ac5",
+      "path": "runtime/8d64551d-7bcd-4790-8a49-759871221ac5.js",
+      "mime": "text/javascript",
+      "originalDecodedSha256": "35f4f974f4b2bcd44da73963347f8952e341f83909e4498227d4e26b98f66f0d",
+      "bytes": 131835
+    },
+    {
+      "originalId": "a209a65d-9b48-4cae-91c2-20da593af254",
+      "path": "fonts/a209a65d-9b48-4cae-91c2-20da593af254.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "c6f09ee0e0a24b7c85ecb2a601eb99332f65b1f6b37c31e0bbe73fb307625eca",
+      "bytes": 4348
+    },
+    {
+      "originalId": "1b678a65-82b5-4e76-93f8-1d32e0c77e71",
+      "path": "fonts/1b678a65-82b5-4e76-93f8-1d32e0c77e71.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "7b59d6bf7f8b8408ac28f27d01dca9a890abeae77045d343b1d8ccb089a92e54",
+      "bytes": 5476
+    },
+    {
+      "originalId": "eff847ba-74ab-4d24-845c-b7535b9d79b0",
+      "path": "fonts/eff847ba-74ab-4d24-845c-b7535b9d79b0.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "0a8b854cc18641bd1b8222afa7ec82a75e59bc6501f777744ec87db1b6cd7a2c",
+      "bytes": 4000
+    },
+    {
+      "originalId": "a46d20d9-af37-4d91-8e61-b872fe5d0fa2",
+      "path": "fonts/a46d20d9-af37-4d91-8e61-b872fe5d0fa2.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "f1050dc5317b43434c0aeda599d4624c774ffc162e87a8cf204b949b6a85816d",
+      "bytes": 8860
+    },
+    {
+      "originalId": "30d96e3a-d6b4-4a3e-a032-061b709eba7c",
+      "path": "fonts/30d96e3a-d6b4-4a3e-a032-061b709eba7c.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "c36f509c0a8f9f85f29cb44bc8701d8a9e0b14c499e77a884f789ead7093a7ac",
+      "bytes": 10052
+    },
+    {
+      "originalId": "f89fb2a3-ea26-47a4-9439-e9ddeebf3e42",
+      "path": "fonts/f89fb2a3-ea26-47a4-9439-e9ddeebf3e42.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "311098be73eac339128f0b5a6e33d72645b6f87488541fdf467c402152d297fd",
+      "bytes": 4336
+    },
+    {
+      "originalId": "2a7c9811-294c-449f-8a43-7aae6825bdda",
+      "path": "fonts/2a7c9811-294c-449f-8a43-7aae6825bdda.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "d524dc8ff6dbf7ed69772f3b2ff4affaf5a89b5762b270e36c3f21da0d4e39f5",
+      "bytes": 5500
+    },
+    {
+      "originalId": "adfe6ad9-5cc9-4fbb-b18e-1d363bf1aac6",
+      "path": "fonts/adfe6ad9-5cc9-4fbb-b18e-1d363bf1aac6.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "b2529fba93fd07a50ffb8fc3d103eb04b0c298d4f6564d2833c44fde286de7e4",
+      "bytes": 4036
+    },
+    {
+      "originalId": "e1e5e0f2-e421-49c7-8afe-edd8e04d7501",
+      "path": "fonts/e1e5e0f2-e421-49c7-8afe-edd8e04d7501.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "77f03e26f981c582bdba3a7abed4baa2d3149211c01366bb3ab3ba7622ec4ae5",
+      "bytes": 8848
+    },
+    {
+      "originalId": "b801d5e2-9b69-4b6e-bb68-ee2a27aa2dac",
+      "path": "fonts/b801d5e2-9b69-4b6e-bb68-ee2a27aa2dac.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "a76f53ca6612e7b3828eec2311098675b7f9849ae4169a8bcef6302aec02a6c0",
+      "bytes": 10060
+    },
+    {
+      "originalId": "ff0ce574-f824-43ce-955b-834929669c27",
+      "path": "fonts/ff0ce574-f824-43ce-955b-834929669c27.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "b85c84c655bcbba3bd628b2c1fea0fbdb5b158a9022281a2f910e82fd6da5098",
+      "bytes": 2988
+    },
+    {
+      "originalId": "aa7d8760-9659-41cd-8e42-abf6c359c223",
+      "path": "fonts/aa7d8760-9659-41cd-8e42-abf6c359c223.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "d4ae5188a65370ecfe28f42293bbee8297cfd5712c6aadfdb270d48f2bcd88b0",
+      "bytes": 13980
+    },
+    {
+      "originalId": "4ca0c7cb-d824-4fdf-8da9-306ed8600d88",
+      "path": "fonts/4ca0c7cb-d824-4fdf-8da9-306ed8600d88.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "78e850d569834892d3f4bdfd2084c7a7c0dc64ae4226f3231af30dae706400e2",
+      "bytes": 3028
+    },
+    {
+      "originalId": "47511bcb-6815-42f5-98e9-b7f76af3ab62",
+      "path": "fonts/47511bcb-6815-42f5-98e9-b7f76af3ab62.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "7a7ce1a34f3e9944fe88fc61abbc93b6db383afa2b90815fd7ccea456fbce4e5",
+      "bytes": 14168
+    },
+    {
+      "originalId": "b38f6089-2fcc-48cd-9996-1732393505a0",
+      "path": "fonts/b38f6089-2fcc-48cd-9996-1732393505a0.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "5aaafef33d89a4e866f1837d27e8cf465479efd9ef2ef53ac9bedd7c8103dc03",
+      "bytes": 3060
+    },
+    {
+      "originalId": "91c48126-2ab7-4e36-bc94-b61689b371be",
+      "path": "fonts/91c48126-2ab7-4e36-bc94-b61689b371be.woff2",
+      "mime": "font/woff2",
+      "originalDecodedSha256": "bd9a6192274f8f2f3ce31cd3d2cae5ebe32e2fa86fc7c4f60a3c28556e496d56",
+      "bytes": 13724
+    }
+  ]
+}

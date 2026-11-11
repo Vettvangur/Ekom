@@ -69,6 +69,7 @@ static class Registrations
         services.AddSingleton<OrderDiscountCalculationContextAccessor>();
 
         services.AddTransient<OrderService>();
+        services.AddTransient<IOrderStateService, OrderStateService>();
         services.AddTransient<IOrderDiscountCalculationService>(f =>
             new OrderDiscountCalculationService(
                 f.GetRequiredService<Catalog>(),

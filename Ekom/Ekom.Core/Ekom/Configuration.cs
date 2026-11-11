@@ -20,6 +20,13 @@ public class Configuration
         _configuration = configuration;
     }
 
+    /// <summary>The installed Ekom package version, without source-control metadata.</summary>
+    public string EkomVersion => typeof(Configuration).Assembly
+        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+        .FirstOrDefault()?.InformationalVersion.Split('+')[0]
+        ?? typeof(Configuration).Assembly.GetName().Version?.ToString() ?? string.Empty;
+
     public static IServiceProvider Resolver { get; set; }
 
     /// <summary>
@@ -32,6 +39,11 @@ public class Configuration
 
     /// <summary>Use EkomPrice overrides instead of publishing nodes for price changes. Default: false.</summary>
     public virtual bool UseDatabasePrices => _configuration.GetValue<bool>("Ekom:UseDatabasePrices");
+
+    /// <summary>Automatically close paid, fully fulfilled orders; a per-store value overrides the global default.</summary>
+    public virtual bool AutoClosePaidAndFulfilledOrders(string storeAlias)
+        => _configuration.GetValue<bool?>($"Ekom:Stores:{storeAlias}:AutoClosePaidAndFulfilledOrders")
+            ?? _configuration.GetValue<bool?>("Ekom:AutoClosePaidAndFulfilledOrders") ?? true;
 
     internal const string Cookie_UmbracoDomain = "EkomUmbracoDomain";
     public static string ImportAliasIdentifier => "ekmIdentifier";

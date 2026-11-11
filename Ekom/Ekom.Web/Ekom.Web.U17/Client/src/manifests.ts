@@ -12,6 +12,7 @@ export const manifests: Array<UmbExtensionManifest> = [
   {
     type: 'section',
     kind: 'default',
+    element: '/App_Plugins/Ekom/dist/manager-section.element.js',
     alias: 'ekommanager',
     name: 'Ekom Manager Section',
     weight: 300,

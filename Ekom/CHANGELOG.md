@@ -2,6 +2,116 @@
 
 ## Unreleased
 
+* **manager:** show the installed Ekom version when hovering over the Ekom logo.
+
+* **manager:** preserve review drafts and cursor position during background refreshes; report a conflict when a note targets an alert that another user has already resolved.
+
+* **manager:** display order-review badges, filtered orders and review dialogs with activity notes and resolution in Umbraco 17 and 18.
+
+* **orders:** add order reviews and checkout failure alerts, including exhausted-coupon alerts without decrementing coupons below zero.
+
+* **orders:** migrate legacy Cancelled orders with Pending / Unfulfilled defaults, preserve recorded status evidence, and flag conflicts for review while skipping active payments.
+
+* **manager:** add Orders-style polling to Analytics with interval selection, a green spinning icon and refresh pulse; keep existing data visible during background updates.
+
+* **orders:** migrate inactive WaitingForPayment orders to Draft / Pending / Unfulfilled while retaining checkout locks and active payment-attempt safeguards.
+
+* **orders:** map legacy Closed orders to Closed / Paid / Fulfilled in projections, filters and migration. ReadyForPickup remains Packed and WaitingForPayment remains Draft / Pending / Unfulfilled.
+
+* **orders:** map legacy OfflinePayment orders to Open / Paid / Unfulfilled, including status filters and migration; preserve explicit new statuses and payment records.
+
+* **manager:** align the payment card with the reference design using descriptive total rows, payment status and gift-card details.
+
+* **manager:** match the shipment design with shipment and method cards, a compact delivery address and collapsible provider data with copy controls.
+
+* **manager:** fix order printing with text-only product rows, compact side-by-side addresses and the new order, payment and fulfillment statuses.
+
+* **manager:** show the order ID in the order detail heading with a copy-to-clipboard button.
+
+* **manager:** manually update non-refund payment statuses from the table and order detail menus, retaining revision checks, checkout locks, activity logging and Paid/Fulfilled auto-close. These changes do not execute provider operations or alter payment amounts.
+
+* **manager:** use new order states for customers, including Open and Closed orders with Pending payment; keep draft orders opt-in and customer counts, spend, exports, history and analytics consistent.
+
+* **manager:** align customer search, segment, sort and export controls along the bottom of the toolbar fields.
+
+* **manager:** save fulfillment from order details without a second native browser confirmation, matching inline fulfillment updates.
+
+* **manager:** dismiss table and order-detail fulfillment menus with Escape or an outside click; Escape returns focus to the control without closing the order.
+
+* **manager:** allow manual correction to any fulfillment status on Open orders, including Unfulfilled; replacing a fulfillment summary clears previous fulfilled quantities. Closed orders still require reopening.
+
+* **manager:** refresh cached Orders layout styles and position fulfillment menus above the row when space below is limited.
+
+* **manager:** update fulfillment directly from the order table using colored options and a per-update status-events checkbox; refresh counts after saves and conflicts.
+
+* **manager:** style order numbers as green links without filled hover backgrounds or redundant status tooltips.
+
+* **manager:** add reference-style hover and keyboard help for Trigger status events.
+
+* **manager:** support arrow-key previous/next order navigation without interrupting editors, status selection, or unsaved fulfillment changes.
+
+* **manager:** align order detail controls with the design: previous/next navigation within the current result page, colored status menus, lifecycle header badge, and a print icon beside provider actions.
+
+* **manager:** briefly pulse the polling control border after a successful refresh, including when order data is unchanged.
+
+* **manager:** indicate active order polling with a green spinning reload icon, respecting reduced-motion preferences.
+
+* **manager:** exclude drafts from All orders and unspecified order-status filters; include drafts only when explicitly selected, with consistent counts, totals, charts, and exports, including legacy incomplete orders.
+
+* **manager:** improve Analytics card spacing, chart legend separation, product-table spacing, and weekday/hour chart proportions in light and dark themes.
+
+* **manager:** restore Orders polling intervals and reference toolbar icons; refresh quietly without disrupting editing or redrawing unchanged results.
+
+* **manager:** add the shared store/currency picker to Printing, scope jobs and stations to the selection, and align the full-width order search with the print-job filters.
+
+* **manager:** remove the redundant Printing heading above the page description.
+
+* **manager:** simplify the new/returning purchases card and highlight weekday/hour bars with exact-count tooltips on hover or keyboard focus.
+
+* **manager:** remove the VAT text beneath product SKU and variant details in the modern order-line table.
+
+* **manager:** show Tracking and Consent details directly in their dedicated order tab without extra expand/collapse controls.
+
+* **manager:** use text-color hover feedback on order detail tabs, preserving the active underline without a filled box.
+
+* **manager:** match editor field sizing to the HTML, add subtle hover/focus feedback, preserve drawer scroll, and avoid intermediate activity/action redraws during status saves.
+
+* **manager:** prevent stylesheet flashes during filter and status updates, retain results while loading, align customer-history checkboxes, and keep printing confirmations compact.
+
+* **manager:** keep status-filter checkboxes inline with their labels instead of inheriting stacked toolbar styles.
+
+* **manager:** use the HTML's darker page, surface, border and accent palette when Umbraco Dark is selected; keep Light and High Contrast themes independent.
+
+* **manager:** match the Analytics comparison toggle and icon-only refresh control to the HTML, aligned below the filters above the summary cards.
+
+* **manager:** align Analytics, Customers and Printing typography and spacing with the HTML reference, use the bundled font in Printing, and inset native select arrows across the modern manager.
+
+* **manager:** correct store/currency picker scale and order-row font sizes, weights and line heights to match the HTML typography in Umbraco 17/18.
+
+* **manager:** add the grouped store/currency selector for Umbraco 17/18; scope orders, exports, analytics, products and customer history by recorded currency, including legacy culture-name currency values.
+
+* **manager:** match order-line headings, thumbnails, item counts and discount columns to the HTML; contain wide tables and correct Printing action contrast in Umbraco 17 dark mode.
+
+* **manager:** align grouped filters and compact CSV export dialogs with the HTML design; keep the two-month datepicker within the viewport and reset its position on mobile resize.
+
+* **manager:** match order activity tables, tracking/consent cards and editing dialogs to the HTML design; keep dialog actions visible while long forms scroll, with Umbraco light/dark styling.
+
+* **manager:** align Customers cards, avatars and detail sidebar, Orders drawer spacing, and Printing typography and controls with the supplied HTML; improve themed product-link contrast.
+
+* **orders:** verify status backfill against isolated sample copies; align preview with configured auto-close, skip unknown and unsettled payment records, and fix .NET 10 store filtering.
+
+* **manager:** match analytics area and hourly graphs to the supplied HTML, with compact date labels and live Umbraco theme redraw.
+
+* **orders:** add independent order/payment/fulfillment statuses, evidence-aware legacy mappings, additive persistence, guarded transitions, configurable automatic closing, explicit reopening and a paginated migration API. Refund execution remains deferred.
+
+* **manager:** use the supplied HTML design for the Umbraco 17/18 Orders list and three-tab detail drawer, with extracted assets and scoped light/dark theme styles. Retain editing, printing, plugin actions and checkout recovery. Extend the shared HTML-based layout to Analytics, Customers and Printing, with themed charts, customer segments and permission-aware queue controls.
+
+* **printing:** use themed confirmation dialogs instead of native prompts and improve dark-theme status contrast. Enable explicit-capture printing in the U17/U18 samples with a placeholder station credential.
+
+* **manager:** remove duplicate Umbraco navigation from the U17/U18 manager, populate item totals from saved line quantities, and display canonical order/payment/fulfillment badges in customer history.
+
+* **manager:** match the exported date-range calendar and dropdown controls, package its fonts locally, improve host-theme contrast, correct initial section links and mixed-currency totals, and avoid exposing HTML error pages. Make SQLite status schema initialization repeatable.
+
 ### Features
 
 * **orders:** add persistent order reviews, optional resolution comments, store-authorized manager endpoints, and indexed needs-review order filtering without UI changes. Automatically flag checkout completion failures and exhausted coupons for review.

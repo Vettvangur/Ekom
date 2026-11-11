@@ -19,6 +19,7 @@ function loadModule(path, modules = {}) {
   return exports;
 }
 const shared = loadModule('../src/manager/manager-shared.ts');
+shared.renderManagerContent = (root, html) => { root.innerHTML = html; };
 const { EkomOrdersSectionViewElement } = loadModule('../src/manager/orders-section-view.element.ts', {
   './manager-shared': shared,
   '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
@@ -82,7 +83,7 @@ test('independent panel retains unresolved and resolved history without selected
   const html = element.renderOrderDetails(element.selectedOrder);
   for (const text of ['Failed gift-card preparation', 'not accepted payment', 'attempt-A', 'resolved-attempt', 'Unresolved', 'Resolved', 'Already resolved', 'Already released', 'Release allowed after confirmation.', 'Reconciliation allowed after confirmation.']) assert.ok(html.includes(text), text);
   assert.match(html, /data-action="release-giftcard-recovery"[^>]*disabled/);
-  assert.ok(html.indexOf('Failed gift-card preparation') < html.indexOf('Order Details'));
+  assert.ok(html.indexOf('Failed gift-card preparation') < html.indexOf('Order lines'));
 });
 
 test('successful empty history hides the entire recovery section in the order view', async () => {
@@ -324,6 +325,7 @@ test('every render during recovery and its refresh restores the captured overlay
     set() { renders++; overlay = { scrollTop: 0 }; },
   });
   element.querySelector = () => overlay;
+  element.querySelectorAll = () => [overlay];
   await element.executeGiftcardRecovery(attempt.attemptId, claim.id);
   assert.ok(renders > 4, 'Includes asynchronous history, lock, action and log renders');
   assert.equal(overlay.scrollTop, 480);

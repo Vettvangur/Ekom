@@ -16,7 +16,7 @@ function loadModule(relativePath, modules = {}, globals = {}) {
       assert.ok(modules[name], `Unexpected module: ${name}`);
       return modules[name];
     },
-    HTMLElement: class {},
+    HTMLElement: class { hasAttribute() { return false; } },
     customElements: { define() {} },
     ...globals,
   });

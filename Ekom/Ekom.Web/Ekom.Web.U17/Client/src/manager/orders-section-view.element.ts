@@ -1,3 +1,5 @@
+import { renderManagerContent } from './manager-shared';
+import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
 import { UMB_NOTIFICATION_CONTEXT, type UmbNotificationColor } from '@umbraco-cms/backoffice/notification';
 import {
@@ -20,7 +22,12 @@ import {
   getStatusValue,
   managerState,
   managerStyles,
-  pageRange,
+  renderStatusBadge,
+  renderManagerHeader, ensureManagerCurrency,
+  renderDateRange,
+  bindDateRange,
+  orderViews,
+  type OrderReview,
   printOrderDocument,
 } from './manager-shared';
 
@@ -67,7 +74,20 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private configError = '';
   private notifyOrderStatusOverride?: boolean;
   private searchTimer = 0;
+  private pollingSeconds = 0;
+  private pollingTimer = 0;
   private overlay = '';
+  private reviews: OrderReview[] = [];
+  private activeReview?: OrderReview;
+  private reviewSaving = false;
+  private reviewError = '';
+  private reviewComment = '';
+  private reviewResolved = true;
+  private orderTab = 'order';
+  private stateSaving = false;
+  private orderListRequest = 0;
+  private viewCounts: Record<string, number> = {};
+  private returnFocusOrderId?: string;
   private selectedOrder?: OrderInfo;
   private orderLogs: OrderActivityLog[] = [];
   private orderLogsLoading = false;
@@ -94,8 +114,6 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private recoveryActionError = '';
   private recoveryRefreshError = false;
   private recoveryScrollTop?: number;
-  private trackingExpanded = false;
-  private consentExpanded = false;
   private customerEditorOpen = false;
   private customerSaving = false;
   private customerEditModel?: { customer: CustomerInformationField[]; shipping: CustomerInformationField[] };
@@ -112,7 +130,44 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private removingOrderLineId = '';
   private exportIncludeOrderLines = false;
   private exporting = false;
+  private readonly dismissFulfillmentMenus = (event: PointerEvent): void => {
+    const path = event.composedPath();
+    this.querySelectorAll<HTMLDetailsElement>('.ekom-row-fulfillment[open], .ekom-fulfillment-menu[open]').forEach(menu => {
+      if (!path.includes(menu)) menu.open = false;
+    });
+  };
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    if (this.activeReview && event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); if (!this.reviewSaving) { this.activeReview = undefined; this.render(); } return; }
+    if (this.activeReview && event.key.startsWith('Arrow')) return;
+    if (event.key === 'Escape') {
+      const menu = this.querySelector<HTMLDetailsElement>('.ekom-row-fulfillment[open], .ekom-fulfillment-menu[open]');
+      if (menu) { event.preventDefault(); event.stopPropagation(); menu.open = false; menu.querySelector('summary')?.focus(); return; }
+    }
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key) && this.overlay === 'order') {
+      const target = event.composedPath()[0] as HTMLElement | undefined;
+      if (event.defaultPrevented || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
+          this.customerEditorOpen || this.orderLineEditorOpen || this.shippingProviderEditorOpen || this.stateSaving ||
+          this.executingActionKey || this.releasingOrderLock || this.recoveryOperation ||
+          target?.closest?.('input, select, textarea, [contenteditable], [role="tablist"], details') ||
+          this.querySelector('details[open]')) return;
+      const pending = this.querySelector<HTMLInputElement>('[data-field="fulfillmentState"]');
+      if (pending && pending.value !== this.selectedOrder?.status?.fulfillmentStatus) return;
+      const direction = ['ArrowLeft', 'ArrowUp'].includes(event.key) ? 'Previous order' : 'Next order';
+      const button = this.querySelector<HTMLButtonElement>(`.ekom-order-navigation button[aria-label="${direction}"]`);
+      if (button && !button.disabled) { event.preventDefault(); button.click(); }
+      return;
+    }
+    if (event.key === 'Tab' && this.overlay) {
+      const dialogs = this.querySelectorAll<HTMLElement>('.ekmCustomerInformationModal__panel, .ekmOverlay__panel');
+      const dialog = dialogs.item(dialogs.length - 1);
+      const targets = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], summary, [tabindex="0"]')).filter(element => !element.closest('[hidden]') && element.getClientRects().length > 0) : [];
+      const first = targets[0], last = targets[targets.length - 1];
+      if (first && last && (!dialog.contains(document.activeElement) || (event.shiftKey ? document.activeElement === first : document.activeElement === last))) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      }
+      return;
+    }
     if (event.key !== 'Escape' || !this.overlay) {
       return;
     }
@@ -158,25 +213,86 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    if (!this.hasAttribute('classic')) this.consumeContext?.<UmbThemeContext>('umbThemeContext', context => {
+      if (context) this.observe(context.theme, alias => {
+        this.toggleAttribute('data-ekom-dark', alias === 'umb-dark-theme');
+      }, 'ekom-manager-theme');
+    });
     this.consumeContext(UMB_NOTIFICATION_CONTEXT, context => {
       this.notificationContext = context;
     });
     document.addEventListener('keydown', this.handleKeyDown);
+    document.addEventListener('pointerdown', this.dismissFulfillmentMenus, true);
     this.render();
     void this.initialize();
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    if (managerState.filters.orderStatus === 'NeedsReview') managerState.filters.orderStatus = 'AllOrders';
     document.removeEventListener('keydown', this.handleKeyDown);
+    document.removeEventListener('pointerdown', this.dismissFulfillmentMenus, true);
     window.clearTimeout(this.searchTimer);
+    window.clearInterval(this.pollingTimer);
+    this.orderListRequest++;
+  }
+
+  private setPolling(seconds: number): void {
+    if (![0, 2, 5, 10, 20, 30].includes(seconds)) return;
+    window.clearInterval(this.pollingTimer);
+    this.pollingSeconds = seconds;
+    if (seconds) this.pollingTimer = window.setInterval(() => { void this.pollOrders(); }, seconds * 1000);
+    this.render();
+  }
+
+  private async pollOrders(): Promise<void> {
+    if (!this.pollingSeconds || !this.isConnected || document.hidden || this.loading || this.overlay || this.stateSaving ||
+        this.contains(document.activeElement) || this.querySelector('details[open]')) return;
+    const request = ++this.orderListRequest;
+    const filters = { ...managerState.filters };
+    if (!filters.store) return;
+    this.loading = true;
+    try {
+      const result = await this.api.searchOrders(filters, this.page);
+      if (request !== this.orderListRequest || !this.pollingSeconds || !this.isConnected || this.overlay || this.contains(document.activeElement)) return;
+      const next = { ...result, orders: result.orders || [] };
+      if (filters.orderStatus === 'NeedsReview' && result.count === 0) {
+        managerState.filters.orderStatus = 'AllOrders'; this.page = 1;
+        await this.loadOrders(); return;
+      }
+      {
+        const counts: Record<string, number> = { [filters.orderStatus]: result.count };
+        await Promise.all(orderViews.filter(view => view.key !== filters.orderStatus).map(async view => {
+          try { counts[view.key] = (await this.api.searchOrders({ ...filters, orderStatus: view.key }, 1, 1)).count; }
+          catch { /* Leave unavailable counts blank until the next refresh. */ }
+        }));
+        if (request !== this.orderListRequest || !this.pollingSeconds || !this.isConnected || this.overlay || this.contains(document.activeElement)) return;
+        if (JSON.stringify(next) !== JSON.stringify(this.result) || orderViews.some(view => counts[view.key] !== this.viewCounts[view.key])) {
+          this.result = next;
+          this.viewCounts = counts;
+          this.loading = false;
+          this.render();
+        }
+      }
+      const control = this.querySelector('.ekom-polling summary');
+      if (control) {
+        control.classList.add('just-refreshed');
+        control.addEventListener('animationend', () => control.classList.remove('just-refreshed'), { once: true });
+      }
+    } catch {
+      // Retain the last successful list on a transient background failure.
+    } finally {
+      if (request === this.orderListRequest) this.loading = false;
+    }
   }
 
   private async initialize(): Promise<void> {
+    void this.api.printingEnabled().then(enabled => { managerState.printingEnabled = enabled; if (this.isConnected) this.render(); });
     const drill = new URLSearchParams(location.search);
     if (drill.get('analyticsDrill') === '1') {
       history.replaceState(history.state, '', location.pathname);
       managerState.filters.store = drill.get('store') || '';
+      managerState.filters.currency = drill.get('currency') || '';
       managerState.filters.dateFrom = drill.get('start') || managerState.filters.dateFrom;
       managerState.filters.dateTo = drill.get('end') || managerState.filters.dateTo;
       managerState.filters.orderStatus = drill.get('orderStatus') || 'CompletedOrders';
@@ -196,6 +312,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         managerState.filters.store = managerState.stores[0].alias;
       }
 
+      if (!this.hasAttribute('classic')) ensureManagerCurrency();
       await this.loadFilterProviders();
       await this.loadOrders();
       managerState.pendingOrderId ||= new URLSearchParams(location.search).get('orderId') || undefined;
@@ -281,41 +398,82 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     if (!managerState.filters.store) {
       this.loading = false;
       this.result = { orders: [], count: 0, totalPages: 0 };
-      this.render();
+      if (!this.stateSaving) this.render();
       return;
     }
 
+    const listRequest = ++this.orderListRequest;
+    const filters = { ...managerState.filters };
     this.loading = true;
     this.error = '';
-    this.render();
+    if (!this.stateSaving) this.render();
 
     try {
-      const result = await this.api.searchOrders(managerState.filters, this.page);
+      const result = await this.api.searchOrders(filters, this.page);
+      if (listRequest !== this.orderListRequest) return;
+      this.viewCounts[filters.orderStatus] = result.count;
+      if (filters.orderStatus === 'NeedsReview' && result.count === 0) {
+        managerState.filters.orderStatus = 'AllOrders'; this.page = 1;
+        await this.loadOrders(); return;
+      }
+      void Promise.all(orderViews.filter(view => view.key !== filters.orderStatus).map(async view => {
+        try {
+          const count = await this.api.searchOrders({ ...filters, orderStatus: view.key }, 1, 1);
+          if (listRequest === this.orderListRequest) this.viewCounts[view.key] = count.count;
+        } catch { if (listRequest === this.orderListRequest) delete this.viewCounts[view.key]; }
+      })).then(() => {
+        if (listRequest !== this.orderListRequest || !this.isConnected) return;
+        this.querySelectorAll<HTMLButtonElement>('[data-action="select-order-view"]').forEach(button => {
+          const count = this.viewCounts[button.dataset.view || ''];
+          if (button.dataset.view === 'NeedsReview') button.hidden = !(count && count > 0);
+          let badge = button.querySelector('span');
+          if (count === undefined) { badge?.remove(); return; }
+          if (!badge) { badge = document.createElement('span'); button.appendChild(badge); }
+          badge.textContent = String(count);
+        });
+      });
       this.result = {
         ...result,
         orders: result.orders || [],
       };
     } catch (error) {
+      if (listRequest !== this.orderListRequest) return;
       this.error = getErrorMessage(error, 'Error searching orders.');
     } finally {
-      this.loading = false;
-      this.render();
+      if (listRequest === this.orderListRequest) { this.loading = false; if (!this.stateSaving) this.render(); }
     }
   }
 
   private render(): void {
-    this.innerHTML = `
+    const reviewInput = this.querySelector<HTMLTextAreaElement>('[data-review-comment]');
+    const reviewFocus = reviewInput && this.ownerDocument?.activeElement === reviewInput
+      ? { start: reviewInput.selectionStart, end: reviewInput.selectionEnd } : undefined;
+    const scrollPositions = Array.from(this.querySelectorAll<HTMLElement>('.ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content')).map(node => node.scrollTop);
+    renderManagerContent(this, `
       <style>${managerStyles}</style>
-      <section class="ekmManager">
+      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261110-order-tabs-1">
+      <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
           ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
+          ${renderManagerHeader('orders')}
           ${this.renderOrders()}
         </div>
       </section>
       ${this.renderOverlay()}
-    `;
+    `);
 
     this.bindEvents();
+    if (reviewFocus) {
+      const input = this.querySelector<HTMLTextAreaElement>('[data-review-comment]');
+      input?.focus({ preventScroll: true });
+      input?.setSelectionRange(reviewFocus.start, reviewFocus.end);
+    }
+    if (this.isConnected && this.overlay === 'order' && !this.contains(document.activeElement)) {
+      this.querySelector<HTMLElement>('[data-action="close-overlay"]')?.focus({ preventScroll: true });
+    }
+    this.querySelectorAll<HTMLElement>('.ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content').forEach((node, index) => {
+      node.scrollTop = scrollPositions[index] ?? 0;
+    });
     if (this.recoveryScrollTop !== undefined) {
       const overlay = this.querySelector<HTMLElement>('.ekmOverlay');
       if (overlay) overlay.scrollTop = this.recoveryScrollTop;
@@ -323,119 +481,43 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private renderOrders(): string {
-    return `
-      <div class="cards">
-        <div class="card ekmSummaryCard">
-          <span class="ekmSummaryCard__label">Orders</span>
-          <strong class="ekmSummaryCard__value">${escapeHtml(this.result.count || 0)}</strong>
-        </div>
-        <div class="card ekmSummaryCard">
-          <span class="ekmSummaryCard__label">Payments total</span>
-          <strong class="ekmSummaryCard__value">${escapeHtml(this.result.grandTotal || 0)}</strong>
-        </div>
-        <div class="card ekmSummaryCard">
-          <span class="ekmSummaryCard__label">Average order amount</span>
-          <strong class="ekmSummaryCard__value">${escapeHtml(this.result.averageAmount || 0)}</strong>
-        </div>
-      </div>
-      ${this.renderToolbar()}
-      ${this.error ? `<p class="status status--error">${escapeHtml(this.error)}</p>` : ''}
-      ${this.loading ? '<p>Hang tight! Fetching your order details... This might take a moment.</p>' : this.renderOrderTable()}
-      ${!this.loading && this.result.totalPages > 1 ? this.renderPagination() : ''}
-    `;
+    const filters = managerState.filters;
+    return `${this.renderToolbar()}<section class="ekom-order-list" aria-label="Orders" aria-busy="${this.loading}">
+      <div class="ekom-list-toolbar"><nav class="ekom-order-views" aria-label="Order views">${orderViews.map(view => `<button type="button" data-action="select-order-view" data-view="${escapeHtml(view.key)}" ${view.key === 'NeedsReview' && !(this.viewCounts[view.key] > 0) ? 'hidden' : ''} aria-pressed="${filters.orderStatus === view.key}">${view.label}${this.viewCounts[view.key] === undefined ? '' : `<span>${this.viewCounts[view.key]}</span>`}</button>`).join('')}</nav><div class="ekom-list-search"><label class="ekom-search-field"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input type="search" data-field="query" value="${escapeHtml(filters.query)}" placeholder="Search orders" aria-label="Search orders"></label><button type="button" data-action="open-filter"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filter</button></div></div>
+      <div class="ekom-inline-totals"><div><span>Orders</span><strong>${escapeHtml(this.result.count || 0)}</strong></div><div><span>Order amount</span><strong>${escapeHtml(this.result.grandTotal || '0')}</strong></div><div><span>Average</span><strong>${escapeHtml(this.result.averageAmount || '0')}</strong></div></div>
+      ${this.error ? `<p class="status status--error" role="alert">${escapeHtml(this.error)}</p>` : ''}
+      ${this.loading && !this.result.orders.length ? '<div class="ekom-list-message" role="status">Loading orders...</div>' : this.renderOrderTable()}
+      ${this.renderPagination()}
+    </section>`;
   }
 
   private renderToolbar(): string {
-    const filters = managerState.filters;
-    return `
-      <div class="umb-sub-header">
-        <div class="ekmManager__filters">
-          <label class="ekmManager__filter">Order Status:
-            <select data-field="orderStatus">
-              <option value="CompletedOrders" ${filters.orderStatus === 'CompletedOrders' ? 'selected' : ''}>Completed Orders</option>
-              <option value="AllOrders" ${filters.orderStatus === 'AllOrders' ? 'selected' : ''}>All Orders</option>
-              ${managerState.statusList.map(status => {
-                const value = getStatusValue(status);
-                return `<option value="${escapeHtml(value)}" ${filters.orderStatus === value ? 'selected' : ''}>${escapeHtml(status.label)}</option>`;
-              }).join('')}
-            </select>
-          </label>
-          <label class="ekmManager__filter">Date From:
-            <input type="date" data-field="dateFrom" value="${escapeHtml(filters.dateFrom)}">
-          </label>
-          <label class="ekmManager__filter">Date To:
-            <input type="date" data-field="dateTo" value="${escapeHtml(filters.dateTo)}">
-          </label>
-          <label class="ekmManager__filter">Store:
-            <select data-field="store">
-              ${managerState.stores.map(store => `<option value="${escapeHtml(store.alias)}" ${filters.store === store.alias ? 'selected' : ''}>${escapeHtml(store.title)}</option>`).join('')}
-            </select>
-          </label>
-          <div class="ekmManager__search">
-            <button type="button" class="btn-outline" data-action="open-export">Export</button>
-            <button type="button" class="btn-primary" data-action="open-filter">Filter</button>
-            <div class="form-search"><input type="text" data-field="query" value="${escapeHtml(filters.query)}" placeholder="Type to search..."></div>
-          </div>
-        </div>
-      </div>
-    `;
+    return `<div class="ekom-shared-filters">${renderDateRange()}<div class="ekom-shared-filter-actions"><details class="ekom-polling${this.pollingSeconds ? ' is-active' : ''}"><summary aria-label="Order polling"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg><span>${this.pollingSeconds ? `Polling every ${this.pollingSeconds}s` : 'Polling off'}</span><span aria-hidden="true">⌄</span></summary><div class="ekom-poll-options" role="group" aria-label="Polling interval">${[0, 2, 5, 10, 20, 30].map(seconds => `<button type="button" data-poll-seconds="${seconds}" aria-pressed="${seconds === this.pollingSeconds}"><span aria-hidden="true">•</span>${seconds ? `Every ${seconds} seconds` : 'Off'}</button>`).join('')}</div></details><button type="button" data-action="open-export">Export</button></div></div>`;
   }
 
   private renderOrderTable(): string {
-    if (!this.result.orders.length) {
-      return '<div class="umb-table"><div class="umb-table-row"><div class="umb-table-cell">No orders found</div></div></div>';
-    }
-
-    return `
-      <div class="umb-table">
-        <div class="umb-table-head">
-          <div class="umb-table-row">
-            <div class="umb-table-cell not-fixed"></div>
-            <div class="umb-table-cell">Order Number</div>
-            <div class="umb-table-cell">Status</div>
-            <div class="umb-table-cell">Name</div>
-            <div class="umb-table-cell">Created</div>
-            <div class="umb-table-cell">Payment</div>
-          </div>
-        </div>
-        <div class="umb-table-body">
-          ${this.result.orders.map(order => this.renderOrderRow(order)).join('')}
-        </div>
-      </div>
-    `;
+    if (!this.result.orders.length) return '<div class="ekom-list-message"><h3>No orders match these filters</h3><p>Try a wider date range, another view, or clear the filters.</p><button type="button" data-action="clear-order-filters">Clear filters</button></div>';
+    return `<div class="ekom-list-table" role="table" aria-label="Orders"><div class="ekom-list-row ekom-list-head" role="row"><span role="columnheader">Order</span><span role="columnheader">Date</span><span role="columnheader">Customer</span><span role="columnheader" class="ekom-align-right">Total</span><span role="columnheader">Payment</span><span role="columnheader">Fulfillment</span><span role="columnheader" class="ekom-align-right">Items</span><span role="columnheader"><span class="ekom-sr-only">Open order</span></span></div>${this.result.orders.map(order => this.renderOrderRow(order)).join('')}</div>`;
   }
 
   private renderOrderRow(order: OrderListItem): string {
-    return `
-      <div class="umb-table-row">
-        <div class="umb-table-cell not-fixed" data-label="Action"><button class="btn-success" type="button" data-action="view-order" data-order-id="${escapeHtml(order.uniqueId)}">View</button></div>
-        <div class="umb-table-cell" data-label="Order Number" title="${escapeHtml(order.uniqueId)}">${escapeHtml(order.referenceId)}</div>
-        <div class="umb-table-cell" data-label="Status">
-          <select data-action="change-row-status" data-order-id="${escapeHtml(order.uniqueId)}" ${this.config ? '' : 'disabled'}>
-            ${managerState.statusList.map(status => {
-              const value = getStatusValue(status);
-              return `<option value="${escapeHtml(value)}" ${order.orderStatusCol === value ? 'selected' : ''}>${escapeHtml(status.label)}</option>`;
-            }).join('')}
-          </select>
-        </div>
-        <div class="umb-table-cell" data-label="Name">${escapeHtml(order.customerName)}</div>
-        <div class="umb-table-cell" data-label="Created">${escapeHtml(formatDate(order.createDate))}</div>
-        <div class="umb-table-cell" data-label="Payment">${escapeHtml(order.formattedTotal)}</div>
-      </div>
-    `;
+    const state = order.status;
+    return `<div class="ekom-list-row" role="row">
+      <div role="cell" class="ekom-order-number"><span class="ekom-order-reference"><button type="button" data-action="view-order" data-order-id="${escapeHtml(order.uniqueId)}" aria-label="Open order ${escapeHtml(order.referenceId)}">#${escapeHtml(order.referenceId)}</button>${order.needsReview ? '<span class="ekom-review-icon" role="img" aria-label="Needs review" title="Needs review">!</span>' : ''}</span><small>${escapeHtml(state?.orderStatus || 'Needs review')}</small></div>
+      <span role="cell" class="ekom-row-date">${escapeHtml(formatDate(order.createDate))}</span>
+      <div role="cell" class="ekom-row-customer"><strong>${escapeHtml(order.customerName)}</strong><span>${escapeHtml(order.customerEmail)}</span></div>
+      <strong role="cell" class="ekom-align-right">${escapeHtml(order.formattedTotal)}</strong>
+      <div role="cell">${this.renderPaymentMenu(order)}</div>
+      <div role="cell">${this.renderRowFulfillment(order)}</div>
+      <span role="cell" class="ekom-align-right ekom-muted">${escapeHtml(order.itemQuantity ?? '—')}</span>
+      <button role="cell" type="button" class="ekom-row-open" data-action="view-order" data-order-id="${escapeHtml(order.uniqueId)}" aria-label="Open order ${escapeHtml(order.referenceId)}">›</button>
+    </div>`;
   }
 
   private renderPagination(): string {
-    return `
-      <div class="pagination">
-        <ul>
-          ${pageRange(this.page, this.result.totalPages).map(page => {
-            const pageNumber = Number(String(page).replace('...', ''));
-            return `<li class="${pageNumber === this.page ? 'active' : ''}"><button type="button" data-action="set-page" data-page="${pageNumber}" ${pageNumber === this.page ? 'disabled' : ''}>${escapeHtml(page)}</button></li>`;
-          }).join('')}
-        </ul>
-      </div>
-    `;
+    const count = this.result.count || 0;
+    const pages = Math.max(1, this.result.totalPages);
+    return `<footer class="ekom-list-footer"><span>${count ? (this.page - 1) * 20 + 1 : 0}–${Math.min(this.page * 20, count)} of ${count}</span><div><span>20 per page</span><button type="button" data-action="set-page" data-page="${this.page - 1}" ${this.page <= 1 || this.loading ? 'disabled' : ''} aria-label="Previous page">‹</button><strong>${this.page} / ${pages}</strong><button type="button" data-action="set-page" data-page="${this.page + 1}" ${this.page >= pages || this.loading ? 'disabled' : ''} aria-label="Next page">›</button></div></footer>`;
   }
 
   private renderOverlay(): string {
@@ -457,36 +539,102 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private renderFilterOverlay(): string {
     const filters = managerState.filters;
     return `
-      <div class="ekmOverlay">
-        <div class="ekmOverlay__panel ekmOverlay__panel--small">
-          <div class="ekmOverlay__header"><h2>Filter</h2><button class="btn-reset" type="button" data-action="close-overlay">&times;</button></div>
+      <div class="ekmOverlay ekom-filter-overlay">
+        <div class="ekmOverlay__panel ekom-filter-panel" role="dialog" aria-modal="true" aria-label="Filter orders">
+          <div class="ekmOverlay__header"><div><h2>Filter orders</h2><p>Status filters also apply to Analytics and Customers</p></div><button class="btn-reset" type="button" data-action="close-overlay" aria-label="Close filters">&times;</button></div>
           <div class="ekmOverlay__content">
-            <label class="control-group">Payment provider:
+            <h3>Status</h3><div class="ekom-status-filter-grid">${[['Order', ['Draft', 'Open', 'Closed', 'Cancelled']], ['Payment', ['Pending', 'Authorized', 'Paid', 'PartiallyPaid', 'Failed', 'Voided']], ['Fulfillment', ['Unfulfilled', 'Picking', 'Picked', 'Packed', 'PartiallyFulfilled', 'Fulfilled']]].map(([label, values], index) => `<label class="control-group">${label}<select data-status-dimension="${index}"><option value="">Any</option>${(values as string[]).map(value => `<option value="${value}" ${filters.orderStatus.startsWith('states:') && filters.orderStatus.slice(7).split(';')[index] === value ? 'selected' : ''}>${value.replace(/([a-z])([A-Z])/g, '$1 $2')}</option>`).join('')}</select></label>`).join('')}</div>
+            <h3>Payment &amp; shipping</h3><div class="ekom-filter-fields">
+            <label class="control-group">Payment provider
               <select data-filter-field="paymentProvider" ${this.filterProvidersLoading ? 'disabled' : ''}>
                 <option value="">Select payment provider</option>
                 ${managerState.paymentProviders.map(provider => `<option value="${escapeHtml(provider.key)}" ${filters.paymentProvider === provider.key ? 'selected' : ''}>${escapeHtml(provider.title)}</option>`).join('')}
               </select>
             </label>
-            ${this.renderFilterInput('productSku', 'Product SKU:', 'Exact SKU')}
-            <label class="control-group">Shipping provider:
+            <label class="control-group">Shipping provider
               <select data-filter-field="shippingProvider" ${this.filterProvidersLoading ? 'disabled' : ''}>
                 <option value="">All shipping providers</option>
                 ${managerState.shippingFilterProviders.map(provider => `<option value="${escapeHtml(provider.key)}" ${filters.shippingProvider === provider.key ? 'selected' : ''}>${escapeHtml(provider.title)}</option>`).join('')}
               </select>
             </label>
-            ${this.renderFilterInput('couponCode', 'Coupon code:', 'Exact order-level coupon code')}
-            ${this.renderFilterInput('giftcardCode', 'Gift card number:', 'Full gift card number')}
+            ${this.renderFilterInput('giftcardCode', 'Gift card number:', 'Full gift card number')}</div><h3>Order contents <small>Exact match</small></h3><div class="ekom-filter-fields ekom-filter-two">${this.renderFilterInput('productSku', 'Product SKU', 'Exact SKU')}${this.renderFilterInput('couponCode', 'Coupon code', 'Exact order-level coupon code')}</div><h3>Tracking</h3><div class="ekom-filter-fields ekom-filter-two">
             ${this.renderFilterInput('trackingSource', 'Tracking source:', 'facebook')}
             ${this.renderFilterInput('trackingMedium', 'Tracking medium:', 'paid-social')}
             ${this.renderFilterInput('trackingCampaign', 'Tracking campaign:', 'summer_2026')}
             ${this.renderFilterInput('trackingTerm', 'Tracking term:', 'running shoes')}
             ${this.renderFilterInput('trackingContent', 'Tracking content:', 'hero_banner')}
             ${this.renderFilterInput('trackingClickId', 'Tracking click id:', 'gclid or fbclid')}
-            <div style="margin-top:25px; display:flex; gap:10px;"><button type="button" class="btn-success" data-action="apply-filter" ${this.filterProvidersLoading ? 'disabled' : ''}>Apply</button><button type="button" class="btn-outline" data-action="close-overlay">Cancel</button></div>
-          </div>
+            </div></div><div class="ekom-filter-footer"><button type="button" class="btn-success" data-action="apply-filter" ${this.filterProvidersLoading ? 'disabled' : ''}>Apply</button><button type="button" class="btn-outline" data-action="close-overlay">Cancel</button></div>
         </div>
       </div>
     `;
+  }
+
+  private renderPaymentMenu(order: OrderListItem | OrderInfo, detail = false): string {
+    const state = order.status;
+    if (!this.config || this.configError || !state || state.requiresReview || state.orderStatus !== 'Open') return renderStatusBadge(state?.paymentStatus);
+    const values = ['Pending', 'Authorized', 'Paid', 'PartiallyPaid', 'Failed', 'Voided'];
+    return `<details class="ekom-row-fulfillment ekom-payment-menu" name="ekom-row-fulfillment"><summary aria-label="Set payment for order ${escapeHtml(order.referenceId)}">${renderStatusBadge(state.paymentStatus)}<span aria-hidden="true">▾</span></summary><div class="ekom-row-fulfillment-menu"><h4>Set payment</h4>${values.map(value => `<button type="button" data-action="set-payment" data-detail="${detail}" data-order-id="${escapeHtml(order.uniqueId)}" data-value="${value}" aria-pressed="${state.paymentStatus === value}" ${this.stateSaving ? 'disabled' : ''}>${this.renderStateDot(value)}${value.replace(/([a-z])([A-Z])/g, '$1 $2')}<span class="ekom-status-check">${state.paymentStatus === value ? '✓' : ''}</span></button>`).join('')}<p class="ekom-payment-note">Updates the recorded status immediately. Does not move money through the payment provider.</p>${detail ? '' : `<label><input type="checkbox" data-row-events ${this.config.managerOrderStatusFireEventsByDefault ?? true ? 'checked' : ''}><span><strong>Trigger status events</strong><small>Runs any handlers set up for this status</small></span></label>`}</div></details>`;
+  }
+
+  private async changePayment(button: HTMLButtonElement): Promise<void> {
+    const detail = button.dataset.detail === 'true';
+    const order = detail ? this.selectedOrder : this.result.orders.find(item => item.uniqueId === button.dataset.orderId);
+    const value = button.dataset.value || '';
+    if (button.disabled || this.stateSaving || !this.config || this.configError || !order?.status || order.status.requiresReview ||
+        order.status.orderStatus !== 'Open' || !['Pending', 'Authorized', 'Paid', 'PartiallyPaid', 'Failed', 'Voided'].includes(value)) return;
+    const menu = button.closest('details');
+    if (order.status.paymentStatus === value) { menu?.removeAttribute('open'); return; }
+    if (detail) {
+      const pending = this.querySelector<HTMLInputElement>('[data-field="fulfillmentState"]');
+      if (pending && pending.value !== order.status.fulfillmentStatus) {
+        this.showError('Save your fulfillment change before updating payment.');
+        return;
+      }
+      await this.changeState(`Payment${value}`);
+      return;
+    }
+    const notify = menu?.querySelector<HTMLInputElement>('[data-row-events]')?.checked ?? this.config.managerOrderStatusFireEventsByDefault ?? true;
+    this.stateSaving = true;
+    menu?.querySelectorAll<HTMLButtonElement>('button').forEach(item => { item.disabled = true; });
+    try {
+      await this.api.changeOrderStates(order.uniqueId, order.status.revision, `Payment${value}`, notify);
+      this.showSuccess('Payment status updated.');
+    } catch (error) {
+      this.showError(getErrorMessage(error, 'Error updating payment status.'));
+    } finally {
+      await this.loadOrders();
+      this.stateSaving = false;
+      this.render();
+    }
+  }
+
+  private renderRowFulfillment(order: OrderListItem): string {
+    const state = order.status;
+    if (!this.config || this.configError || !state || state.requiresReview || state.orderStatus !== 'Open') return renderStatusBadge(state?.fulfillmentStatus);
+    return `<details class="ekom-row-fulfillment" name="ekom-row-fulfillment"><summary aria-label="Set fulfillment for order ${escapeHtml(order.referenceId)}">${renderStatusBadge(state.fulfillmentStatus)}<span aria-hidden="true">▾</span></summary><div class="ekom-row-fulfillment-menu"><h4>Set fulfillment</h4>${['Unfulfilled', 'Picking', 'Picked', 'Packed', 'Fulfilled', 'PartiallyFulfilled'].map(value => `<button type="button" data-action="set-row-fulfillment" data-order-id="${escapeHtml(order.uniqueId)}" data-value="${value}" aria-pressed="${state.fulfillmentStatus === value}" ${this.stateSaving ? 'disabled' : ''}>${this.renderStateDot(value)}${value.replace(/([a-z])([A-Z])/g, '$1 $2')}<span class="ekom-status-check">${state.fulfillmentStatus === value ? '✓' : ''}</span></button>`).join('')}<label><input type="checkbox" data-row-events ${this.config.managerOrderStatusFireEventsByDefault ?? true ? 'checked' : ''}><span><strong>Trigger status events</strong><small>Runs any handlers set up for this status</small></span></label></div></details>`;
+  }
+
+  private async changeRowFulfillment(button: HTMLButtonElement): Promise<void> {
+    const order = this.result.orders.find(item => item.uniqueId === button.dataset.orderId);
+    const value = button.dataset.value || '';
+    if (button.disabled || this.stateSaving || !this.config || this.configError || !order?.status || order.status.requiresReview ||
+        order.status.orderStatus !== 'Open' || !['Unfulfilled', 'Picking', 'Picked', 'Packed', 'PartiallyFulfilled', 'Fulfilled'].includes(value)) return;
+    const menu = button.closest('details');
+    if (order.status.fulfillmentStatus === value) { menu?.removeAttribute('open'); return; }
+    const fireEvents = menu?.querySelector<HTMLInputElement>('[data-row-events]')?.checked ?? this.config.managerOrderStatusFireEventsByDefault ?? true;
+    this.stateSaving = true;
+    menu?.querySelectorAll<HTMLButtonElement>('button').forEach(item => { item.disabled = true; });
+    try {
+      await this.api.changeOrderStates(order.uniqueId, order.status.revision, value === 'Fulfilled' ? 'Fulfill' : value, fireEvents);
+      this.showSuccess('Fulfillment status updated.');
+    } catch (error) {
+      this.showError(getErrorMessage(error, 'Error updating fulfillment status.'));
+    } finally {
+      await this.loadOrders();
+      this.stateSaving = false;
+      this.render();
+    }
   }
 
   private renderFilterInput(field: keyof ManagerFilters, label: string, placeholder: string): string {
@@ -498,83 +646,74 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private renderExportOverlay(): string {
-    return `
-      <div class="ekmOverlay">
-        <div class="ekmOverlay__panel ekmOverlay__panel--small">
-          <div class="ekmOverlay__header"><h2>Export orders</h2><button class="btn-reset" type="button" data-action="close-overlay" ${this.exporting ? 'disabled' : ''}>&times;</button></div>
-          <div class="ekmOverlay__content">
-            <p>Choose how to export the orders matching the current filters.</p>
-            <label style="display:block; margin-top:15px;"><input type="checkbox" data-field="includeOrderLines" ${this.exportIncludeOrderLines ? 'checked' : ''} ${this.exporting ? 'disabled' : ''}> Include order lines</label>
-            ${this.exportIncludeOrderLines ? '<p style="margin-top:10px;">Including order lines can take longer because each matching order needs to be loaded before the CSV is created.</p>' : ''}
-            ${this.exporting ? '<p style="margin-top:15px;">Exporting orders. This may take a while...</p>' : ''}
-            <div style="margin-top:25px; display:flex; gap:10px;"><button type="button" class="btn-success" data-action="export-orders" ${this.exporting ? 'disabled' : ''}>Export</button><button type="button" class="btn-outline" data-action="close-overlay" ${this.exporting ? 'disabled' : ''}>Cancel</button></div>
-          </div>
-        </div>
-      </div>
-    `;
+    return `<div class="ekmOverlay ekom-export-overlay"><div class="ekmOverlay__panel ekom-export-panel" role="dialog" aria-modal="true" aria-label="Export orders">
+      <div class="ekmOverlay__header"><h2>Export orders</h2><button class="btn-reset" type="button" data-action="close-overlay" aria-label="Close export" ${this.exporting ? 'disabled' : ''}>&times;</button></div>
+      <div class="ekmOverlay__content"><p>Export the <strong>${this.result.count || 0}</strong> orders matching the current filters as CSV.</p>
+        <label class="ekom-export-option"><input type="checkbox" data-field="includeOrderLines" ${this.exportIncludeOrderLines ? 'checked' : ''} ${this.exporting ? 'disabled' : ''}><span><strong>Include order lines</strong><small>Include product, variant, SKU, quantity and price details in the CSV.</small></span></label>
+        ${this.exportIncludeOrderLines ? '<p class="ekom-export-note">Including order lines can take longer because each matching order needs to be loaded before the CSV is created.</p>' : ''}
+        ${this.exporting ? '<p role="status">Exporting orders. This may take a while...</p>' : ''}
+      </div><div class="ekom-filter-footer"><button type="button" class="btn-outline" data-action="close-overlay" ${this.exporting ? 'disabled' : ''}>Cancel</button><button type="button" class="btn-success" data-action="export-orders" ${this.exporting ? 'disabled' : ''}>Export</button></div>
+    </div></div>`;
   }
 
   private renderOrderOverlay(order: OrderInfo): string {
-    return `
-      <div class="ekmOverlay">
-        <div class="ekmOverlay__panel ekmOrderOverlay__panel">
-          <div class="ekmOverlay__header"><h2>View Order</h2><button class="btn-reset" type="button" data-action="close-overlay">&times;</button></div>
-          <div class="ekmOverlay__content ekmOrder">
-            ${this.renderOrderDetails(order)}
-          </div>
-        </div>
-      </div>
-      ${this.customerEditorOpen ? this.renderCustomerEditor() : ''}
-      ${this.orderLineEditorOpen ? this.renderOrderLineEditor() : ''}
-      ${this.shippingProviderEditorOpen ? this.renderShippingProviderEditor() : ''}
-    `;
+    const index = this.result.orders.findIndex(item => item.uniqueId === order.uniqueId);
+    const navigation = [-1, 1].map(direction => {
+      const neighbor = index >= 0 ? this.result.orders[index + direction] : undefined;
+      const label = direction < 0 ? 'Previous order' : 'Next order';
+      return `<button type="button" data-action="view-order" data-order-id="${escapeHtml(neighbor?.uniqueId || '')}" aria-label="${label}" title="${label} on this page (${direction < 0 ? '← / ↑' : '→ / ↓'})" ${!neighbor || this.stateSaving || this.executingActionKey ? 'disabled' : ''}>${direction < 0 ? '‹' : '›'}</button>`;
+    }).join('');
+    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><nav class="ekom-order-navigation" aria-label="Order navigation">${navigation}</nav><div class="ekom-order-heading-copy"><h2>#${escapeHtml(order.referenceId)} ${renderStatusBadge(order.status?.paymentStatus)} ${renderStatusBadge(order.status?.fulfillmentStatus)} ${renderStatusBadge(order.status?.orderStatus)}</h2><p>${escapeHtml(order.customerInformation?.customer?.name)} · ${escapeHtml(formatDate(order.createDate))} · ${escapeHtml(order.storeInfo?.alias || order.storeAlias)} · <span class="ekom-heading-order-id"><span>${escapeHtml(order.uniqueId)}</span><button type="button" class="ekom-copy-order-id" data-action="copy-order-id" aria-label="Copy order ID" title="Copy order ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></span></p></div><button type="button" data-action="close-overlay" aria-label="Close order">×</button></header><div class="ekmOverlay__content ekmOrder">${this.renderOrderDetails(order)}</div></div></div>${this.customerEditorOpen ? this.renderCustomerEditor() : ''}${this.orderLineEditorOpen ? this.renderOrderLineEditor() : ''}${this.shippingProviderEditorOpen ? this.renderShippingProviderEditor() : ''}${this.activeReview ? this.renderReviewDialog() : ''}`;
   }
 
   private renderOrderDetails(order: OrderInfo): string {
     const customer = order.customerInformation?.customer || {};
     const shipping = order.customerInformation?.shipping || {};
-    const orderStatus = this.getOrderStatusValue(order.orderStatus);
-    return `
-      <div class="ekmOrder__header">
-        <h1>Order number: ${escapeHtml(order.referenceId)}</h1>
-        <div class="ekmOrderStatusBar">
-          <label class="ekmOrderStatusBar__status">Order Status:
-            <select data-field="orderStatusOverlay" ${this.config ? '' : 'disabled'}>
-              ${managerState.statusList.map(status => {
-                const value = getStatusValue(status);
-                return `<option value="${escapeHtml(value)}" ${orderStatus === value ? 'selected' : ''}>${escapeHtml(status.label)}</option>`;
-              }).join('')}
-            </select>
-          </label>
-          <label class="ekmCheckboxLabel"><input type="checkbox" data-field="notifyOrderStatus" ${this.notifyOrderStatus ? 'checked' : ''} ${this.config ? '' : 'disabled'}> Fire events?</label>
-          <button type="button" class="btn-success" data-action="save-overlay-status" ${this.config ? '' : 'disabled'}>Save</button>
-          <button type="button" class="btn-outline ekmOrderStatusBar__print" data-action="print-order">Print</button>
-        </div>
-        ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
-        <p>UniqueId: ${escapeHtml(order.uniqueId)}</p>
-        <p>Created date: ${escapeHtml(formatDate(order.createDate))}</p>
-        <p>Paid date: ${escapeHtml(formatDate(order.paidDate))}</p>
-        <p>Store: ${escapeHtml(order.storeInfo?.alias || order.storeAlias)}</p>
-        <p>Payment: <strong>${escapeHtml(order.chargedAmount?.currencyString)}</strong></p>
-        ${this.renderOrderLockStatus()}
-        ${this.renderOrderActions()}
-      </div>
-      ${this.renderOrderCustomData(order)}
-      <div class="ekmSplit">
-        <div class="ekmSplit__column"><h4>Billing</h4><button type="button" class="btn-outline" data-action="open-customer-editor" style="margin-bottom:10px;">Edit customer information</button>${this.renderAddress(customer)}${this.renderExtraProperties(customer.properties, 'customer')}</div>
-        <div class="ekmSplit__column"><h4>Shipping</h4>${hasShippingInfo(shipping) ? `${this.renderAddress(shipping)}${this.renderExtraProperties(shipping.properties, 'shipping')}` : '<p style="font-weight:bold">Same as billing address</p>'}</div>
-      </div>
-      <div class="ekmSplit">
-        <div class="ekmSplit__column">${this.renderProvider('Payment Method', order.paymentProvider, 'custompayment')}</div>
-        <div class="ekmSplit__column">${order.shippingProvider ? this.renderProvider('Shipping Method', order.shippingProvider, 'customshipping') : '<h4>Shipping Method</h4>'}<button type="button" class="btn-outline" data-action="open-shipping-provider-editor">${order.shippingProvider ? 'Change shipping provider' : 'Add shipping provider'}</button></div>
-      </div>
-      ${this.renderGiftcards(order)}
-      ${this.renderGiftcardRecovery()}
-      ${this.renderOrderLines(order)}
-      ${this.renderTracking(order)}
-      ${this.renderConsent(order)}
-      ${this.renderActivityLogs()}
-    `;
+    const state = order.status;
+    const tabs = [{ key: 'order', label: 'Order' }, { key: 'activity', label: 'Activity log' }, { key: 'tracking', label: 'Tracking & consent' }];
+    const blocked = !this.config || !!this.configError || this.stateSaving || !state || state.requiresReview || this.orderLockStatus?.hasLock || this.orderLockLoading || this.orderLockError;
+    const panel = (tab: string, content: string) => `<section id="ekom-order-panel-${tab}" role="tabpanel" aria-labelledby="ekom-order-tab-${tab}" ${this.orderTab === tab ? '' : 'hidden'}>${content}</section>`;
+    const orderContent = `<div class="ekom-order-columns"><main class="ekom-order-main">
+      <section class="ekom-detail-card">${this.renderDesignOrderLines(order)}</section>
+      ${this.renderPaymentCard(order)}
+      ${this.renderShipment(order)}
+      ${Object.keys(order.customData || {}).length ? `<section class="ekom-detail-card"><h3>Notes</h3>${this.renderOrderCustomData(order)}</section>` : ''}
+    </main><aside class="ekom-customer-sidebar"><section class="ekom-detail-card"><h3>Customer</h3><strong>${escapeHtml(customer.name)}</strong><div class="ekom-card-heading"><h4>Contact information</h4><button type="button" class="btn-reset" data-action="open-customer-editor">Edit</button></div><p>${escapeHtml(customer.email)}</p><p>${escapeHtml(customer.phone)}</p><h4>Shipping address</h4>${hasShippingInfo(shipping) ? this.renderAddress(shipping) : '<p>Same as billing address</p>'}<h4>Billing address</h4>${this.renderAddress(customer)}${this.renderExtraProperties(customer.properties, 'customer')}</section></aside></div>`;
+    return `<div class="ekom-status-controls"><label>Order<details class="ekom-lifecycle-menu"><summary aria-label="Order status">${this.renderStateDot(state?.orderStatus)}${escapeHtml(state?.orderStatus || 'Needs review')} ▾</summary><div>${(state?.orderStatus === 'Closed' ? [['Reopen', 'Reopen order']] : [['Close', 'Close order'], ['Cancel', 'Cancel order']]).map(([action, label]) => `<button type="button" data-action="order-state-command" data-command="${action}" ${blocked ? 'disabled' : ''}>${label}</button>`).join('')}</div></details></label><div class="ekom-payment-control"><span>Payment</span>${this.renderPaymentMenu(order, true)}</div><div class="ekom-fulfillment-control"><span>Fulfillment</span><input type="hidden" data-field="fulfillmentState" value="${escapeHtml(state?.fulfillmentStatus || '')}"><details class="ekom-lifecycle-menu ekom-fulfillment-menu"><summary aria-label="Fulfillment status" ${blocked || state?.orderStatus !== 'Open' ? 'aria-disabled="true"' : ''}>${this.renderStateDot(state?.fulfillmentStatus)}<span data-fulfillment-label>${escapeHtml((state?.fulfillmentStatus || 'Needs review').replace(/([a-z])([A-Z])/g, '$1 $2'))}</span><span class="ekom-status-chevron">▾</span></summary><div>${['Unfulfilled', 'Picking', 'Picked', 'Packed', 'PartiallyFulfilled', 'Fulfilled'].map(value => `<button type="button" data-action="choose-fulfillment" data-value="${value}" aria-pressed="${state?.fulfillmentStatus === value}" ${blocked || state?.orderStatus !== 'Open' ? 'disabled' : ''}>${this.renderStateDot(value)}${value.replace(/([a-z])([A-Z])/g, '$1 $2')}<span class="ekom-status-check">${state?.fulfillmentStatus === value ? '✓' : ''}</span></button>`).join('')}</div></details></div><label class="ekmCheckboxLabel"><input type="checkbox" data-field="notifyOrderStatus" ${this.notifyOrderStatus ? 'checked' : ''}>Trigger status events</label><span class="ekom-events-help"><button type="button" class="ekom-events-help-button" aria-label="About trigger status events" aria-describedby="ekom-events-tooltip">i</button><span class="ekom-events-tooltip" id="ekom-events-tooltip" role="tooltip"><strong>Trigger status events ("Fire events")</strong><span><b>On</b> — saves the status and runs whatever handlers are set up for it. What happens depends on the status and your setup, for example an email or an ERP update.</span><span><b>Off</b> — saves the status only. Use for manual corrections so external actions don't repeat.</span><small>Either way the status is saved and logged. It doesn't release stock or replace the payment flow.</small></span></span><button type="button" data-action="save-fulfillment" class="btn-success" ${blocked || state?.orderStatus !== 'Open' ? 'disabled' : ''}>${this.stateSaving ? 'Saving...' : 'Save'}</button></div>
+      ${state?.requiresReview ? '<p class="status" role="status">Historical payment or fulfillment needs review before updating this order.</p>' : ''}
+      ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
+      <span class="ekom-sr-only">Payment: ${escapeHtml(order.chargedAmount?.currencyString)}</span>${this.renderOrderLockStatus()}${this.renderOrderActions()}${this.renderGiftcardRecovery()}${this.renderReviews()}
+      <div class="ekom-order-tabs" role="tablist" aria-label="Order sections">${tabs.map(tab => `<button type="button" id="ekom-order-tab-${tab.key}" role="tab" aria-selected="${this.orderTab === tab.key}" aria-controls="ekom-order-panel-${tab.key}" tabindex="${this.orderTab === tab.key ? 0 : -1}" data-action="select-order-tab" data-tab="${tab.key}">${tab.label}</button>`).join('')}</div>
+      ${panel('order', orderContent)}${panel('activity', this.renderActivityLogs())}${panel('tracking', this.renderTracking(order) + this.renderConsent(order))}`;
+  }
+
+  private selectOrderTab(tab: string): void {
+    if (!['order', 'activity', 'tracking'].includes(tab)) return;
+    this.orderTab = tab;
+    this.querySelectorAll<HTMLElement>('[role="tabpanel"]').forEach(panel => { panel.hidden = panel.id !== `ekom-order-panel-${tab}`; });
+    this.querySelectorAll<HTMLButtonElement>('[data-action="select-order-tab"]').forEach(button => {
+      const selected = button.dataset.tab === tab;
+      button.setAttribute('aria-selected', String(selected)); button.tabIndex = selected ? 0 : -1;
+      if (selected) button.focus();
+    });
+  }
+
+  private async changeState(action: string): Promise<void> {
+    const order = this.selectedOrder;
+    if (!order?.status || this.stateSaving || !this.config || this.configError) return;
+    if (action === 'Cancel' && !window.confirm('Cancel this order? This does not refund payments or reverse fulfillment.')) return;
+    this.stateSaving = true;
+    this.render();
+    try {
+      const status = await this.api.changeOrderStates(order.uniqueId, order.status.revision, action, this.notifyOrderStatus);
+      if (this.selectedOrder?.uniqueId !== order.uniqueId) return;
+      order.status = status;
+      this.selectedOrder = await this.api.orderInfo(order.uniqueId);
+      await Promise.all([this.loadOrderLogs(order.uniqueId), this.loadOrderActions(order.uniqueId)]);
+      await this.loadOrders();
+    } catch (error) {
+      this.showError(getErrorMessage(error, 'Could not update the order. Reload it before trying again.'));
+    } finally { this.stateSaving = false; this.render(); }
   }
 
   private renderOrderCustomData(order: OrderInfo): string {
@@ -589,6 +728,39 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       </div>`).join('')}</dl>`;
   }
 
+  private renderPaymentCard(order: OrderInfo): string {
+    const items = (order.orderLines || []).reduce((count: number, line: Record<string, any>) => count + (Number(line.quantity) || 0), 0);
+    const shippingName = order.shippingProvider?.title || order.shippingProvider?.properties?.nodeName || '';
+    const row = (label: string, detail: string, amount: string, total = false): string => `<div${total ? ' class="ekom-money-total"' : ''}><dt>${escapeHtml(label)}</dt><dd class="ekom-money-description">${escapeHtml(detail)}</dd><dd>${escapeHtml(amount || '—')}</dd></div>`;
+    return `<section class="ekom-detail-card ekom-payment-card"><h3>Payment ${renderStatusBadge(order.status?.paymentStatus)}</h3><dl class="ekom-money-summary">${row('Subtotal', `${items} ${items === 1 ? 'item' : 'items'}`, order.subTotal?.withVat?.currencyString)}${row('Discount', order.coupon || '', order.discountAmount?.currencyString ? `-${order.discountAmount.currencyString}` : '')}${row('Shipping', shippingName, order.shippingProvider?.price?.withVat?.currencyString)}${row('Tax', 'Included in total', order.chargedVat?.currencyString)}${row('Total', '', order.chargedAmount?.currencyString, true)}</dl>${order.giftcards?.length ? `<div class="ekom-payment-breakdown">${this.renderGiftcards(order)}</div>` : ''}${this.renderPaymentDetails(order)}</section>`;
+  }
+
+  private renderPaymentDetails(order: OrderInfo): string {
+    const rows = (fields: Array<{ label: string; value: string }>): string => `<dl>${fields.map(field => `<div><dt>${escapeHtml(field.label)}</dt><dd><span>${escapeHtml(field.value)}</span>${field.label !== 'Currency' && field.value && field.value !== 'Not recorded' && field.value !== '—' ? `<button type="button" class="ekom-payment-copy" data-action="copy-provider-value" data-copy="${escapeHtml(field.value)}" aria-label="Copy ${escapeHtml(field.label)}" title="Copy ${escapeHtml(field.label)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>` : ''}</dd></div>`).join('')}</dl>`;
+    const providerFields = parseProperties(order.paymentProvider?.customData, 'custompayment').map(([key, value]) => ({ label: labelFromKey(cleanKey(key)), value }));
+    providerFields.push({ label: 'Paid date', value: order.paidDate ? formatDate(order.paidDate) : 'Not recorded' }, { label: 'Currency', value: order.currency || order.storeInfo?.currency?.isoCurrencySymbol || 'Not recorded' });
+    return `<section class="ekom-payment-details" aria-label="Payment details"><div class="ekom-payment-detail-grid"><section class="ekom-payment-detail-box"><header><span class="ekom-payment-kind">Payment</span><h4>${escapeHtml(order.paymentProvider?.title || order.paymentProvider?.properties?.nodeName || 'Not recorded')}</h4>${renderStatusBadge(order.status?.paymentStatus)}</header>${rows(providerFields)}</section>${(order.giftcards || []).map((card: Record<string, any>) => {
+      const fields = giftcardDetails(card).filter(field => field.label !== giftcardFieldLabel('code')).map(field => field.label === giftcardFieldLabel('amount') ? { ...field, value: this.formatGiftcardAmount(card.amount, order) } : field);
+      return `<section class="ekom-payment-detail-box"><header><span class="ekom-payment-kind ekom-payment-kind-gift">Gift card</span><h4>${escapeHtml(card.code)}</h4><span class="ekom-gift-state">${escapeHtml(giftcardSummary(card).status)}</span></header>${rows(fields)}</section>`;
+    }).join('')}</div></section>`;
+  }
+
+  private renderShipment(order: OrderInfo): string {
+    const provider = order.shippingProvider;
+    const name = provider?.title || provider?.properties?.nodeName || 'No shipping provider';
+    const fields = parseProperties(provider?.customData, 'customshipping');
+    const value = (key: string): string => fields.find(([field]) => cleanKey(field).replace(/[_ -]/g, '').toLowerCase() === key.toLowerCase())?.[1] || '';
+    const tracking = value('TrackingNumber');
+    const shipmentState = value('ShipmentState');
+    const trackingUrl = value('TrackingUrl');
+    const safeTrackingUrl = /^https?:\/\//i.test(trackingUrl) ? trackingUrl : '';
+    const customer = order.customerInformation?.customer || {};
+    const shipping = order.customerInformation?.shipping || {};
+    const address = hasShippingInfo(shipping) ? shipping : customer;
+    const copy = (text: string, label: string): string => `<button type="button" class="ekom-shipment-copy" data-action="copy-provider-value" data-copy="${escapeHtml(text)}" aria-label="Copy ${escapeHtml(label)}" title="Copy ${escapeHtml(label)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>`;
+    return `<section class="ekom-detail-card ekom-shipment"><div class="ekom-shipment-grid"><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Shipment</h4>${shipmentState ? `<span class="ekom-shipment-state">${escapeHtml(shipmentState)}</span>` : ''}</div><div class="ekom-shipment-tracking"><span>Tracking number</span><div><strong>${escapeHtml(tracking || 'Not available')}</strong>${tracking ? copy(tracking, 'tracking number') : ''}${provider ? `<button type="button" class="ekom-shipment-copy" data-action="open-shipping-provider-editor" aria-label="Edit shipping data" title="Edit shipping data"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 20h9M16 3l5 5L7 22l-5 1 1-5Z"/></svg></button>` : ''}${safeTrackingUrl ? `<a href="${escapeHtml(safeTrackingUrl)}" target="_blank" rel="noopener noreferrer">Track shipment ↗</a>` : ''}</div></div></section><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Method</h4><strong>${escapeHtml(provider?.price?.withVat?.currencyString || '—')}</strong></div><h3>${escapeHtml(name)}</h3><div class="ekom-shipment-address"><span>Deliver to</span><strong>${escapeHtml([address.address, address.apartment].filter(Boolean).join(', ') || 'No address recorded')}</strong><span>${escapeHtml([address.zipCode, address.city].filter(Boolean).join(' '))}</span><span>${escapeHtml(address.country)}</span></div><div><button type="button" data-action="open-shipping-provider-editor">${provider ? 'Change shipping provider' : 'Add shipping provider'}</button></div></section></div>${fields.length ? `<details class="ekom-shipment-data" open><summary><strong>Provider data</strong><span>${fields.length} fields from ${escapeHtml(name)}</span><span class="ekom-shipment-hide">Hide ▴</span><span class="ekom-shipment-show">Show ▾</span></summary><dl>${fields.map(([key, text]) => `<div><dt>${escapeHtml(labelFromKey(cleanKey(key)))}</dt><dd><span>${escapeHtml(text || '—')}</span>${text ? copy(text, labelFromKey(cleanKey(key))) : ''}</dd></div>`).join('')}</dl></details>` : ''}</section>`;
+  }
+
   private renderPrintableOrder(order: OrderInfo): string {
     const customer = order.customerInformation?.customer || {};
     const shipping = order.customerInformation?.shipping || {};
@@ -597,7 +769,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     return `
       <main class="ekmOrder">
         <h1>Order number: ${escapeHtml(order.referenceId)}</h1>
-        <p>Order status: ${escapeHtml(status)}</p>
+        <p>Order status: ${escapeHtml(order.status?.orderStatus || status)}</p>
+        ${order.status ? `<p>Payment status: ${escapeHtml(order.status.paymentStatus.replace(/([a-z])([A-Z])/g, '$1 $2'))} · Fulfillment: ${escapeHtml(order.status.fulfillmentStatus.replace(/([a-z])([A-Z])/g, '$1 $2'))}</p>` : ''}
         <p>UniqueId: ${escapeHtml(order.uniqueId)}</p>
         <p>Created date: ${escapeHtml(formatDate(order.createDate))}</p>
         <p>Paid date: ${escapeHtml(formatDate(order.paidDate))}</p>
@@ -714,6 +887,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       }).join('')}</section>`;
   }
 
+  private renderDesignOrderLines(order: OrderInfo): string {
+    const lines = Array.isArray(order.orderLines) ? order.orderLines : [];
+    const itemCount = lines.reduce((total: number, line: Record<string, any>) => total + (Number(line.quantity) || 0), 0);
+    return `<div class="ekom-card-heading ekom-lines-heading"><h3>Order lines</h3><span>${lines.length} ${lines.length === 1 ? 'line' : 'lines'} · ${itemCount} ${itemCount === 1 ? 'item' : 'items'}</span><button type="button" data-action="open-order-line-editor">Add order line</button></div><div class="ekom-lines-scroll"><table class="ekom-design-lines"><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Discount</th><th>Total</th><th><span class="ekom-sr-only">Actions</span></th></tr></thead><tbody>${lines.map((line: Record<string, any>) => `<tr><td><div class="ekmOrderLineProduct">${renderOrderLineThumbnail(line)}<div>${renderOrderLineProductTitle(line.product)}<small>${escapeHtml(line.product?.sku)}</small>${line.variant ? `<small>${escapeHtml(line.variant.title)}</small>` : ''}${renderOrderLineProperties(line)}</div></div></td><td>${escapeHtml(line.quantity)}</td><td>${escapeHtml(line.product?.price?.withVat?.currencyString)}</td><td>${escapeHtml(line.amount?.discountAmount?.currencyString)}</td><td><strong>${escapeHtml(line.amount?.withVat?.currencyString)}</strong></td><td><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${escapeHtml(line.key)}" data-product-title="${escapeHtml(line.product?.title)}" ${this.removingOrderLineId === line.key ? 'disabled' : ''} aria-label="Remove ${escapeHtml(line.product?.title)}">×</button></td></tr>`).join('')}</tbody></table></div>`;
+  }
+
   private renderOrderLines(order: OrderInfo): string {
     const lines = Array.isArray(order.orderLines) ? order.orderLines : [];
     const coupon = typeof order.coupon === 'string' ? order.coupon.trim() : '';
@@ -755,7 +934,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return '<div class="ekmOrderTracking"><h4>Tracking</h4><p>No tracking data was captured for this order.</p></div>';
     }
 
-    return `<div class="ekmOrderTracking"><div class="ekmOrderTracking__header"><h4>Tracking</h4><button class="btn-reset" type="button" data-action="toggle-tracking">${this.trackingExpanded ? 'Hide' : 'Show'}</button></div>${this.trackingExpanded ? renderTrackingDetails(tracking) : ''}</div>`;
+    return `<div class="ekmOrderTracking"><h4>Tracking</h4>${renderTrackingDetails(tracking)}</div>`;
   }
 
   private renderConsent(order: OrderInfo): string {
@@ -765,7 +944,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return '<div class="ekmOrderTracking"><h4>Consent</h4><p>No consent data was captured for this order.</p></div>';
     }
 
-    return `<div class="ekmOrderTracking"><div class="ekmOrderTracking__header"><h4>Consent</h4><button class="btn-reset" type="button" data-action="toggle-consent">${this.consentExpanded ? 'Hide' : 'Show'}</button></div>${this.consentExpanded ? `<p>Resolved: ${escapeHtml(formatDate(consent.resolvedAtUtc))}</p><p>Source: ${escapeHtml(consent.source)}</p><p>Analytics: ${consentLabel(consent.analytics)}</p><p>Marketing: ${consentLabel(consent.marketing)}</p>` : ''}</div>`;
+    return `<div class="ekmOrderTracking"><h4>Consent</h4>${renderOptional('Resolved', formatDate(consent.resolvedAtUtc))}${renderOptional('Source', consent.source)}${renderOptional('Analytics', consentLabel(consent.analytics))}${renderOptional('Marketing', consentLabel(consent.marketing))}</div>`;
   }
 
   private renderActivityLogs(): string {
@@ -788,21 +967,10 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         ? `<button type="button" class="btn-reset ekmOrderActivityLog__toggle" data-action="toggle-activity-log" data-log-index="${index}">${isExpanded ? 'Show less' : 'Show more'}</button>`
         : '';
 
-      return `<div class="ekmOrderActivityLog__item"><div class="ekmOrderActivityLog__content"><span class="ekmOrderActivityLog__icon ${this.getActivityLogTypeClass(log)}">${this.getActivityLogIcon(log)}</span><div class="ekmOrderActivityLog__body"><div class="ekmOrderActivityLog__date">${escapeHtml(formatDate(log.date))}</div><div class="ekmOrderActivityLog__message${isExpanded ? ' ekmOrderActivityLog__message--expanded' : ''}">${escapeHtml(message)}</div>${toggle}</div></div></div>`;
+      return `<tr><td class="ekmOrderActivityLog__date">${escapeHtml(formatDate(log.date))}</td><td><span class="ekom-log-type ${this.getActivityLogTypeClass(log)}">${log.logType === activityLogTypeSuccess ? 'Success' : log.logType === activityLogTypeAlert ? 'Alert' : 'Info'}</span></td><td><div class="ekmOrderActivityLog__message${isExpanded ? ' ekmOrderActivityLog__message--expanded' : ''}">${escapeHtml(message)}</div>${toggle}</td></tr>`;
     }).join('');
 
-    return `<div class="ekmOrderActivityLog"><h4>Activity log</h4><div class="ekmOrderActivityLog__list">${activityLogs}</div></div>`;
-  }
-
-  private getActivityLogIcon(log: OrderActivityLog): string {
-    switch (log.logType) {
-      case activityLogTypeSuccess:
-        return '✓';
-      case activityLogTypeAlert:
-        return '!';
-      default:
-        return 'i';
-    }
+    return `<div class="ekmOrderActivityLog"><h4>Activity log</h4><div class="ekom-log-scroll"><table class="ekom-log-table"><thead><tr><th>Date</th><th>Type</th><th>Message</th></tr></thead><tbody>${activityLogs}</tbody></table></div></div>`;
   }
 
   private getActivityLogTypeClass(log: OrderActivityLog): string {
@@ -820,13 +988,13 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     return message.length > activityLogPreviewCharacterLimit;
   }
 
+  private renderStateDot(value?: string): string {
+    return `<span class="ekom-state-dot" data-state="${escapeHtml(value || '')}" aria-hidden="true"></span>`;
+  }
+
   private renderOrderActions(): string {
     const actions = this.orderActions.filter(action => action.giftcardCode == null);
-    if (!actions.length && !this.orderActionsLoading) {
-      return '';
-    }
-
-    return `<div style="margin-top:15px;"><h4>Order Actions</h4><div style="display:flex; flex-wrap:wrap; gap:10px;">${actions.map(action => this.renderAction(action)).join('')}</div>${this.orderActionsLoading ? '<p>Loading actions...</p>' : ''}</div>`;
+    return `<div class="ekom-detail-actions"><button type="button" data-action="print-order" class="ekom-print-button" aria-label="Print order" title="Print order"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"></path><rect x="3" y="9" width="18" height="8" rx="2"></rect><path d="M6 14h12v7H6z"></path></svg></button>${actions.length ? '<span class="ekom-action-divider" aria-hidden="true"></span>' : ''}${actions.map(action => this.renderAction(action)).join('')}${this.orderActionsLoading ? '<span role="status">Loading actions...</span>' : ''}</div>`;
   }
 
   private renderAction(action: OrderAction): string {
@@ -854,7 +1022,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return '';
     }
 
-    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel"><div class="ekmOverlay__header"><h3>Edit customer information</h3><button class="btn-reset" type="button" data-action="close-customer-editor" ${this.customerSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><div class="ekmSplit"><div class="ekmSplit__column"><h4>Billing</h4>${this.renderCustomerFields(model.customer, 'customer')}</div><div class="ekmSplit__column"><h4>Shipping</h4>${this.renderCustomerFields(model.shipping, 'shipping')}</div></div><div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;"><button class="btn-outline" type="button" data-action="close-customer-editor" ${this.customerSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-customer-information" ${this.customerSaving ? 'disabled' : ''}>${this.customerSaving ? 'Saving...' : 'Save customer information'}</button></div></div></div></div>`;
+    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel ekom-editor-customer" role="dialog" aria-modal="true" aria-label="Edit customer information"><div class="ekmOverlay__header"><h3>Edit customer information</h3><button class="btn-reset" type="button" aria-label="Close edit customer information" data-action="close-customer-editor" ${this.customerSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><div class="ekmSplit"><div class="ekmSplit__column"><h4>Billing</h4>${this.renderCustomerFields(model.customer, 'customer')}</div><div class="ekmSplit__column"><h4>Shipping</h4>${this.renderCustomerFields(model.shipping, 'shipping')}</div></div></div><div class="ekom-editor-footer"><button class="btn-outline" type="button" data-action="close-customer-editor" ${this.customerSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-customer-information" ${this.customerSaving ? 'disabled' : ''}>${this.customerSaving ? 'Saving...' : 'Save customer information'}</button></div></div></div>`;
   }
 
   private renderCustomerFields(fields: CustomerInformationField[], group: string): string {
@@ -868,11 +1036,11 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return '';
     }
 
-    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel"><div class="ekmOverlay__header"><h3>Add order line</h3><button class="btn-reset" type="button" data-action="close-order-line-editor" ${this.orderLineSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Product ID<input type="text" data-order-line-field="productId" value="${escapeHtml(model.productId)}" required ${this.orderLineSaving ? 'disabled' : ''}></label><label class="control-group">Variant ID<input type="text" data-order-line-field="variantId" value="${escapeHtml(model.variantId)}" ${this.orderLineSaving ? 'disabled' : ''}></label><label class="control-group" style="padding-bottom:20px;">Quantity<input type="number" min="0.000001" step="any" data-order-line-field="quantity" value="${escapeHtml(model.quantity)}" required ${this.orderLineSaving ? 'disabled' : ''}></label><div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;"><button class="btn-outline" type="button" data-action="close-order-line-editor" ${this.orderLineSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-order-line" ${this.orderLineSaving ? 'disabled' : ''}>${this.orderLineSaving ? 'Adding...' : 'Add order line'}</button></div></div></div></div>`;
+    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel ekom-editor-order-line" role="dialog" aria-modal="true" aria-label="Add order line"><div class="ekmOverlay__header"><h3>Add order line</h3><button class="btn-reset" type="button" aria-label="Close add order line" data-action="close-order-line-editor" ${this.orderLineSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Product ID<input type="text" data-order-line-field="productId" value="${escapeHtml(model.productId)}" required ${this.orderLineSaving ? 'disabled' : ''}></label><label class="control-group">Variant ID<input type="text" data-order-line-field="variantId" value="${escapeHtml(model.variantId)}" ${this.orderLineSaving ? 'disabled' : ''}></label><label class="control-group" style="padding-bottom:20px;">Quantity<input type="number" min="0.000001" step="any" data-order-line-field="quantity" value="${escapeHtml(model.quantity)}" required ${this.orderLineSaving ? 'disabled' : ''}></label></div><div class="ekom-editor-footer"><button class="btn-outline" type="button" data-action="close-order-line-editor" ${this.orderLineSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-order-line" ${this.orderLineSaving ? 'disabled' : ''}>${this.orderLineSaving ? 'Adding...' : 'Add order line'}</button></div></div></div>`;
   }
 
   private renderShippingProviderEditor(): string {
-    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel"><div class="ekmOverlay__header"><h3>${this.selectedOrder?.shippingProvider ? 'Change shipping provider' : 'Add shipping provider'}</h3><button class="btn-reset" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Shipping provider<select data-field="shippingProviderId" ${this.shippingProviderSaving ? 'disabled' : ''}><option value="">Select a provider</option>${this.shippingProviders.map(provider => `<option value="${escapeHtml(provider.key)}" ${this.shippingProviderId === provider.key ? 'selected' : ''}>${escapeHtml(provider.title)}</option>`).join('')}</select></label>${this.shippingProviders.length ? '' : '<p>No shipping providers available for this store.</p>'}<h4>Shipping provider custom data</h4><p>New keys are prefixed with customshipping.</p>${this.shippingCustomFields.map((field, index) => `<div class="control-group"><label>Key<input type="text" data-shipping-key="${index}" value="${escapeHtml(field.key)}" ${field.existing ? 'readonly' : ''} ${this.shippingProviderSaving ? 'disabled' : ''} placeholder="TrackingNumber" maxlength="100"></label><label>Value<input type="text" data-shipping-value="${index}" value="${escapeHtml(field.value)}" ${this.shippingProviderSaving ? 'disabled' : ''} maxlength="4096"></label></div>`).join('')}<button class="btn-outline" type="button" data-action="add-shipping-custom-field" ${this.shippingProviderSaving ? 'disabled' : ''}>Add custom field</button><div style="display:flex; justify-content:flex-end; gap:10px; padding-top:20px; border-top:1px solid #d8d7d9;"><button class="btn-outline" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-shipping-provider" ${this.shippingProviderSaving || !this.shippingProviders.length ? 'disabled' : ''}>${this.shippingProviderSaving ? 'Saving...' : 'Save shipping provider'}</button></div></div></div></div>`;
+    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel ekom-editor-shipping-provider" role="dialog" aria-modal="true" aria-label="Shipping provider"><div class="ekmOverlay__header"><h3>${this.selectedOrder?.shippingProvider ? 'Change shipping provider' : 'Add shipping provider'}</h3><button class="btn-reset" type="button" aria-label="Close shipping provider" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? 'disabled' : ''}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Shipping provider<select data-field="shippingProviderId" ${this.shippingProviderSaving ? 'disabled' : ''}><option value="">Select a provider</option>${this.shippingProviders.map(provider => `<option value="${escapeHtml(provider.key)}" ${this.shippingProviderId === provider.key ? 'selected' : ''}>${escapeHtml(provider.title)}</option>`).join('')}</select></label>${this.shippingProviders.length ? '' : '<p>No shipping providers available for this store.</p>'}<div class="ekom-provider-data-heading"><h4>Provider data</h4><p>Stored on the order. Keys are kept as-is; new keys are prefixed <code>customshipping</code>.</p></div><div class="ekom-provider-field-labels" aria-hidden="true"><span>Key</span><span>Value</span></div><div class="ekom-provider-fields">${this.shippingCustomFields.map((field, index) => `<div class="ekom-provider-field-row"><input aria-label="Key ${index + 1}" type="text" data-shipping-key="${index}" value="${escapeHtml(field.key)}" ${field.existing ? 'readonly' : ''} ${this.shippingProviderSaving ? 'disabled' : ''} placeholder="TrackingNumber" maxlength="100"><input aria-label="Value ${index + 1}" type="text" data-shipping-value="${index}" value="${escapeHtml(field.value)}" ${this.shippingProviderSaving ? 'disabled' : ''} maxlength="4096"></div>`).join('')}</div><button class="btn-outline" type="button" data-action="add-shipping-custom-field" ${this.shippingProviderSaving ? 'disabled' : ''}>Add custom field</button></div><div class="ekom-editor-footer"><p>Changes apply to this order only.</p><button class="btn-outline" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-shipping-provider" ${this.shippingProviderSaving || !this.shippingProviders.length ? 'disabled' : ''}>${this.shippingProviderSaving ? 'Saving...' : 'Save shipping provider'}</button></div></div></div>`;
   }
 
   private readShippingCustomFields(): void {
@@ -884,6 +1052,54 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private bindEvents(): void {
+    this.querySelector<HTMLTextAreaElement>('[data-review-comment]')?.addEventListener('input', event => {
+      this.reviewComment = (event.target as HTMLTextAreaElement).value;
+    });
+    this.querySelector('.ekom-review-overlay')?.addEventListener('click', event => {
+      if (event.target === event.currentTarget && !this.reviewSaving) { this.activeReview = undefined; this.render(); }
+    });
+    this.querySelector<HTMLInputElement>('[data-review-resolved]')?.addEventListener('change', event => {
+      this.reviewResolved = (event.target as HTMLInputElement).checked;
+      this.reviewComment = this.querySelector<HTMLTextAreaElement>('[data-review-comment]')?.value || '';
+      const button = this.querySelector('[data-action="save-review"]');
+      if (button) button.textContent = this.reviewResolved ? 'Mark as reviewed' : 'Save note';
+    });
+    this.querySelectorAll<HTMLDetailsElement>('.ekom-row-fulfillment').forEach(details => {
+      details.addEventListener('toggle', () => {
+        if (!details.open) return;
+        const menu = details.querySelector<HTMLElement>('.ekom-row-fulfillment-menu')!;
+        menu.style.top = ''; menu.style.bottom = ''; menu.style.maxHeight = ''; menu.style.overflowY = 'auto';
+        const anchor = details.getBoundingClientRect();
+        const below = window.innerHeight - anchor.bottom - 22;
+        const above = anchor.top - 86;
+        if (menu.offsetHeight > below && above > below) {
+          menu.style.top = 'auto'; menu.style.bottom = 'calc(100% + 6px)';
+          menu.style.maxHeight = `${Math.max(120, above)}px`;
+        } else { menu.style.maxHeight = `${Math.max(120, below)}px`; }
+      });
+      details.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); details.open = false; details.querySelector('summary')?.focus(); }
+      });
+    });
+    this.querySelectorAll<HTMLButtonElement>('[data-poll-seconds]').forEach(button => button.addEventListener('click', () => this.setPolling(Number(button.dataset.pollSeconds))));
+    this.querySelector('.ekom-polling')?.addEventListener('keydown', event => {
+      if ((event as KeyboardEvent).key !== 'Escape') return;
+      const details = event.currentTarget as HTMLDetailsElement;
+      details.open = false;
+      details.querySelector('summary')?.focus();
+      event.stopPropagation();
+    });
+    bindDateRange(this, () => { this.page = 1; void this.loadOrders(); });
+    this.querySelectorAll<HTMLButtonElement>('[data-action="select-order-tab"]').forEach(button => {
+      button.addEventListener('keydown', event => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        const tabs = ['order', 'activity', 'tracking'];
+        const index = tabs.indexOf(this.orderTab);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        this.selectOrderTab(tabs[next]);
+      });
+    });
     this.querySelectorAll<HTMLImageElement>('.ekmOrderLineThumbnail img').forEach(image => {
       const showPlaceholder = () => { image.hidden = true; };
       image.addEventListener('error', showPlaceholder, { once: true });
@@ -891,7 +1107,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     });
     if (this.overlay === 'order') {
       this.querySelector('.ekmOverlay')?.addEventListener('click', event => {
-        if (event.target === event.currentTarget && !this.customerEditorOpen && !this.orderLineEditorOpen && !this.shippingProviderEditorOpen) {
+        if (event.target === event.currentTarget && !this.customerEditorOpen && !this.orderLineEditorOpen && !this.shippingProviderEditorOpen && !this.activeReview) {
           this.closeOverlay();
         }
       });
@@ -916,6 +1132,62 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private async handleAction(event: Event): Promise<void> {
     const target = event.currentTarget as HTMLElement;
     const action = target.dataset.action;
+    if (action === 'open-review') {
+      this.activeReview = this.reviews.find(review => review.id === target.dataset.reviewId);
+      this.reviewComment = ''; this.reviewResolved = true; this.reviewError = ''; this.render();
+      this.querySelector<HTMLTextAreaElement>('[data-review-comment]')?.focus(); return;
+    }
+    if (action === 'close-review') { if (!this.reviewSaving) { this.activeReview = undefined; this.render(); } return; }
+    if (action === 'save-review') { await this.saveReview(); return; }
+
+    if (action === 'select-order-view') { managerState.filters.orderStatus = target.dataset.view || 'AllOrders'; this.page = 1; await this.loadOrders(); return; }
+    if (action === 'clear-order-filters') { managerState.filters.orderStatus = 'AllOrders'; managerState.filters.query = ''; this.page = 1; await this.loadOrders(); return; }
+    if (action === 'order-state-command') { await this.changeState(target.dataset.command || ''); return; }
+    if (action === 'copy-provider-value') {
+      try {
+        await navigator.clipboard.writeText(target.dataset.copy || '');
+        this.showSuccess('Copied to clipboard.');
+      } catch { this.showError('Could not copy this value. Select the text to copy it manually.'); }
+      return;
+    }
+    if (action === 'copy-order-id') {
+      const orderId = this.selectedOrder?.uniqueId;
+      if (!orderId) return;
+      try {
+        await navigator.clipboard.writeText(orderId);
+        this.showNotification('positive', 'Copied', 'Order ID copied to clipboard.');
+      } catch {
+        this.showError('Could not copy the order ID. You can select and copy it from the heading.');
+      }
+      return;
+    }
+    if (action === 'set-payment') { await this.changePayment(target as HTMLButtonElement); return; }
+    if (action === 'set-row-fulfillment') { await this.changeRowFulfillment(target as HTMLButtonElement); return; }
+    if (action === 'choose-fulfillment') {
+      if ((target as HTMLButtonElement).disabled) return;
+      const menu = target.closest('details')!;
+      const value = target.dataset.value || '';
+      const input = this.querySelector<HTMLInputElement>('[data-field="fulfillmentState"]');
+      if (input) input.value = value;
+      menu.querySelector('[data-fulfillment-label]')!.textContent = value.replace(/([a-z])([A-Z])/g, '$1 $2');
+      (menu.querySelector('summary .ekom-state-dot') as HTMLElement).dataset.state = value;
+      menu.querySelectorAll<HTMLButtonElement>('button[data-value]').forEach(button => {
+        const selected = button.dataset.value === value;
+        button.setAttribute('aria-pressed', String(selected));
+        button.querySelector('.ekom-status-check')!.textContent = selected ? '✓' : '';
+      });
+      menu.removeAttribute('open');
+      menu.querySelector('summary')?.focus();
+      return;
+    }
+    if (action === 'save-fulfillment') {
+      const value = this.querySelector<HTMLSelectElement>('[data-field="fulfillmentState"]')?.value;
+      if (value && value !== this.selectedOrder?.status?.fulfillmentStatus) await this.changeState(value === 'Fulfilled' ? 'Fulfill' : value);
+      return;
+    }
+
+
+    if (action === 'select-order-tab') { this.selectOrderTab(target.dataset.tab || 'order'); return; }
 
     if (action === 'set-page') {
       this.page = Number(target.dataset.page || 1);
@@ -970,18 +1242,6 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
           this.showError('Unable to prepare the order for printing. Please try again.');
         }
       }
-      return;
-    }
-
-    if (action === 'toggle-tracking') {
-      this.trackingExpanded = !this.trackingExpanded;
-      this.renderPreservingOverlayScroll();
-      return;
-    }
-
-    if (action === 'toggle-consent') {
-      this.consentExpanded = !this.consentExpanded;
-      this.renderPreservingOverlayScroll();
       return;
     }
 
@@ -1122,6 +1382,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private applyFilterOverlay(): void {
+    const dimensions = Array.from(this.querySelectorAll<HTMLSelectElement>('[data-status-dimension]')).map(select => select.value);
+    if (dimensions.length === 3) managerState.filters.orderStatus = dimensions.some(Boolean) ? `states:${dimensions.join(';')}` : 'AllOrders';
     this.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-filter-field]').forEach(input => {
       const field = input.dataset.filterField;
 
@@ -1156,6 +1418,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return;
     }
 
+    this.returnFocusOrderId = orderId;
+    this.orderTab = 'order';
     const requestId = ++this.orderRequestId;
     ++this.lockRequestId;
     ++this.recoveryRequestId;
@@ -1183,25 +1447,70 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       const order = await this.api.orderInfo(orderId);
       if (requestId !== this.orderRequestId) return;
       this.selectedOrder = order;
+      this.reviews = []; this.activeReview = undefined; this.reviewError = '';
       this.overlay = 'order';
-      this.trackingExpanded = false;
-      this.consentExpanded = false;
       this.orderLogs = [];
       this.orderLogsError = false;
       this.activityLogExpandedIndexes.clear();
       this.render();
-      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId)]);
+      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId), this.loadOrderReviews(orderId)]);
     } catch (error) {
       if (requestId !== this.orderRequestId) return;
       this.showError(getErrorMessage(error, 'Error on getting orderInfo.'));
     }
   }
 
+  private async loadOrderReviews(orderId: string): Promise<void> {
+    try {
+      const reviews = await this.api.orderReviews(orderId);
+      if (this.selectedOrder?.uniqueId !== orderId) return;
+      this.reviews = reviews; this.render();
+    } catch (error) {
+      if (this.selectedOrder?.uniqueId !== orderId) return;
+      this.reviewError = `Could not load order reviews: ${String(error)}`; this.render();
+    }
+  }
+
+  private renderReviewAlert(review: OrderReview, button = false): string {
+    return `<div class="ekom-review-alert"><span class="ekom-review-icon" aria-hidden="true">!</span><div><strong>${escapeHtml(review.title)}</strong><small>${escapeHtml(review.source)} · ${escapeHtml(formatDate(review.createdUtc))}</small><p>${escapeHtml(review.message)}</p></div>${button ? `<button type="button" data-action="open-review" data-review-id="${escapeHtml(review.id)}">Review</button>` : ''}</div>`;
+  }
+
+  private renderReviews(): string {
+    return `${this.reviewError && !this.activeReview ? `<p role="alert">${escapeHtml(this.reviewError)}</p>` : ''}${this.reviews.map(review => this.renderReviewAlert(review, true)).join('')}`;
+  }
+
+  private renderReviewDialog(): string {
+    return `<div class="ekmCustomerInformationModal ekom-review-overlay"><section class="ekmCustomerInformationModal__panel ekom-review-panel" role="dialog" aria-modal="true" aria-label="Review alert">
+      <header><h2>Review alert · Order #${escapeHtml(this.selectedOrder?.referenceId)}</h2><button type="button" data-action="close-review" aria-label="Close review" ${this.reviewSaving ? 'disabled' : ''}>×</button></header>
+      <div class="ekom-review-body">${this.renderReviewAlert(this.activeReview!)}
+      <label for="ekom-review-comment">What was done</label><textarea id="ekom-review-comment" data-review-comment maxlength="4000" rows="4" placeholder="Describe how this was resolved or what was checked." ${this.reviewSaving ? 'disabled' : ''}>${escapeHtml(this.reviewComment)}</textarea>
+      <p class="ekom-muted">Saved to the activity log with your name and the time.</p>
+      <label class="ekom-review-checkbox"><input type="checkbox" data-review-resolved ${this.reviewResolved ? 'checked' : ''} ${this.reviewSaving ? 'disabled' : ''}><span>Problem is resolved <small>— untick to log a note but keep the alert open</small></span></label>
+      ${this.reviewError ? `<p role="alert">${escapeHtml(this.reviewError)}</p>` : ''}</div>
+      <footer><button type="button" data-action="close-review" ${this.reviewSaving ? 'disabled' : ''}>Cancel</button><button class="btn-success" type="button" data-action="save-review" ${this.reviewSaving ? 'disabled' : ''}>${this.reviewSaving ? 'Saving...' : this.reviewResolved ? 'Mark as reviewed' : 'Save note'}</button></footer>
+    </section></div>`;
+  }
+
+  private async saveReview(): Promise<void> {
+    if (!this.activeReview || !this.selectedOrder || this.reviewSaving) return;
+    const orderId = this.selectedOrder.uniqueId;
+    this.reviewComment = this.querySelector<HTMLTextAreaElement>('[data-review-comment]')?.value || '';
+    this.reviewResolved = this.querySelector<HTMLInputElement>('[data-review-resolved]')?.checked ?? true;
+    if (!this.reviewResolved && !this.reviewComment.trim()) { this.reviewError = 'Describe what was done before saving a note.'; this.render(); return; }
+    this.reviewSaving = true; this.reviewError = ''; this.render();
+    try {
+      await this.api.reviewOrder(orderId, this.activeReview.id, this.reviewComment, this.reviewResolved);
+      this.activeReview = undefined;
+      await Promise.all([this.loadOrderReviews(orderId), this.loadOrderLogs(orderId), this.loadOrders()]);
+    } catch (error) { this.reviewError = String(error); }
+    finally { this.reviewSaving = false; this.render(); }
+  }
+
   private async loadOrderLogs(orderId: string): Promise<void> {
     const requestId = this.orderRequestId;
     this.orderLogsLoading = true;
     this.orderLogsError = false;
-    this.render();
+    if (!this.stateSaving) this.render();
 
     try {
       const logs = await this.api.orderLogs(orderId);
@@ -1214,7 +1523,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     } finally {
       if (requestId !== this.orderRequestId) return;
       this.orderLogsLoading = false;
-      this.render();
+      if (!this.stateSaving) this.render();
     }
   }
 
@@ -1222,7 +1531,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     const requestId = this.orderRequestId;
     this.orderActionsLoading = true;
     this.orderActionsError = false;
-    this.render();
+    if (!this.stateSaving) this.render();
 
     try {
       const actions = await this.api.orderActions(orderId);
@@ -1235,7 +1544,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     } finally {
       if (requestId !== this.orderRequestId) return;
       this.orderActionsLoading = false;
-      this.render();
+      if (!this.stateSaving) this.render();
     }
   }
 
@@ -1349,7 +1658,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       released = true;
       this.orderLockWarning = result.warning || '';
       this.showSuccess(result.message);
-      const [order] = await Promise.all([this.api.orderInfo(orderId), this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId)]);
+      const [order] = await Promise.all([this.api.orderInfo(orderId), this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId), this.loadOrderReviews(orderId)]);
       if (isCurrent()) this.selectedOrder = order;
     } catch (error) {
       if (!isCurrent()) return;
@@ -1358,7 +1667,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         : getErrorMessage(error, 'We could not confirm the checkout reset. Check the updated order before trying again.');
       // A failed response can still have acquired a recovery owner. Fetch a fresh
       // confirmation token, but never automatically repeat the editor's POST.
-      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId),
+      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId), this.loadOrderReviews(orderId),
         this.api.orderInfo(orderId).then(order => { if (isCurrent()) this.selectedOrder = order; }).catch(() => {})]);
     } finally {
       if (isCurrent()) {
@@ -1442,6 +1751,9 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     this.orderLineEditModel = undefined;
     this.shippingProviderEditorOpen = false;
     this.render();
+    const trigger = Array.from(this.querySelectorAll<HTMLElement>('[data-action="view-order"]')).find(button => button.dataset.orderId === this.returnFocusOrderId);
+    trigger?.focus();
+    this.returnFocusOrderId = undefined;
   }
 
   private getOrderStatusValue(orderStatus: unknown): string {
@@ -1878,7 +2190,7 @@ function hasAlgoliaTrackingData(algolia: Record<string, any> | undefined): boole
 }
 
 function renderOptional(label: string, value: unknown): string {
-  return value ? `<p class="ekmOrderTracking__wrap">${escapeHtml(label)}: ${escapeHtml(value)}</p>` : '';
+  return value ? `<p class="ekmOrderTracking__wrap ekom-tracking-field"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></p>` : '';
 }
 
 function renderPairs(entries: Array<[string, unknown]>): string {

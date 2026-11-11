@@ -8,6 +8,8 @@ namespace Ekom.Services
 
         bool IsAuthenticated() => false;
 
+        string? GetAuthenticatedUserName() => null;
+
         /// <summary>Content access with update permission, without requiring publish permission.</summary>
         bool CanEditContent(Ekom.Models.UmbracoContent content) => false;
 

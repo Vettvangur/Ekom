@@ -22,13 +22,13 @@ internal static class PrinterManagerEndpoints
             return Results.Ok(new { enabled = true, canManage = manager.CanManage,
                 csrfHeader = tokens.HeaderName, csrfToken = tokens.RequestToken });
         });
-        group.MapGet("/jobs", async (string? state, string? station, string? search, int? page,
+        group.MapGet("/jobs", async (string? state, string? station, string? search, int? page, string? store, string? currency,
             PrinterManagerService manager, CancellationToken ct) =>
         {
-            if (page is < 1 or > 100000 || search?.Length > 100 || station?.Length > 100 ||
+            if (page is < 1 or > 100000 || search?.Length > 100 || station?.Length > 100 || store?.Length > 100 || currency?.Length > 10 ||
                 (!string.IsNullOrEmpty(state) && state != "attention" && !Enum.TryParse<PrintJobState>(state, out _)))
                 return Results.BadRequest();
-            return Results.Ok(await manager.ListAsync(state, station, search, page ?? 1, ct).ConfigureAwait(false));
+            return Results.Ok(await manager.ListAsync(state, station, search, page ?? 1, ct, store, currency).ConfigureAwait(false));
         });
         group.MapGet("/stations", async (IOptions<PrinterOptions> options, IManagerAccessService access,
             PrinterDeliveryStore delivery, CancellationToken ct) =>

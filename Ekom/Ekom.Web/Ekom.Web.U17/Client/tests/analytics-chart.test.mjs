@@ -16,6 +16,7 @@ function render(points, options = {}) {
     scale() {}, clearRect() { labels.length = 0; dots.length = 0; },
     measureText(text) { return { width: text.length * 6 }; },
     fillText(text) { labels.push(text); },
+    createLinearGradient() { return { addColorStop() {} }; }, closePath() {},
     beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, fill() {}, fillRect() {},
     arc(x, y) { dots.push({ x, y }); },
   };
@@ -98,7 +99,7 @@ test('analytics observes size changes and disconnects the observer when removed'
   const module = {};
   const source = readFileSync(new URL('../src/manager/analytics-section-view.element.ts', import.meta.url), 'utf8');
   runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, {
-    exports: module, ResizeObserver: Observer,
+    exports: module, ResizeObserver: Observer, window: { clearTimeout() {}, clearInterval() {} },
     require: name => name === './manager-shared' ? exports : { UmbElementMixin: Base => Base },
     HTMLElement: class { connectedCallback() {} disconnectedCallback() {} hasAttribute() { return false; } }, customElements: { define() {} },
   });
@@ -126,4 +127,28 @@ test('column hover and drill-through work on empty average days with comparison 
   assert.deepEqual(labels.slice(-4), ['2026-10-01', '—', 'Previous: 2026-09-29', '10']);
   canvas.onclick(event);
   assert.equal(selected, 0);
+});
+
+
+test('template area chart retains null gaps and exact column selection without permanent point markers', () => {
+  let selected = -1;
+  const { canvas, dots, labels } = render([{ x:'a', y:10 }, { x:'b', y:null }, { x:'c', y:20 }], {
+    templateStyle:true, columnHover:true, onSelect:index => { selected=index; },
+  });
+  assert.equal(dots.length, 0);
+  canvas.onmousemove({ clientX:326, clientY:100 });
+  assert.equal(labels.at(-1), '—');
+  canvas.onclick({ clientX:326, clientY:100 });
+  assert.equal(selected,1);
+});
+
+test('compact template axes keep the exact amount in the tooltip', () => {
+  const { canvas, labels } = render([{ x:'1 Sep', y:18543.25 }, { x:'2 Sep', y:62000 }], {
+    templateStyle:true, columnHover:true,
+    formatAxisValue:value => `${value/1000}k`,
+    formatValue:value => `ISK ${value}`,
+  });
+  assert.ok(labels.includes('64k'));
+  canvas.onmousemove({ clientX:12, clientY:100 });
+  assert.deepEqual(labels.slice(-2), ['1 Sep', 'ISK 18543.25']);
 });

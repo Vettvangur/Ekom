@@ -19,6 +19,73 @@ namespace Ekom.Tests.Tests;
 public sealed class ManagerCustomerTests
 {
     [Fact]
+    public async Task NewStatusesIncludePendingOpenAndClosedAndKeepDraftsOptIn()
+    {
+        using var f = new Fixture();
+        var day = new DateTime(2026, 1, 5);
+        f.Add("buyer@example.com", day, 20m, status: OrderStatus.Pending);
+        f.Add("buyer@example.com", day, 30m, status: OrderStatus.Incomplete);
+        f.Add("draft@example.com", day, 900m, status: OrderStatus.Incomplete);
+        f.Add("cancelled@example.com", day, 800m, status: OrderStatus.Cancelled);
+        using (var db = f.Factory.GetDatabase())
+            db.Execute("UPDATE EkomOrders SET OrderStateCol = 'Closed', PaymentStateCol = 'Pending', FulfillmentStateCol = 'Picked', StatusMappingVersion = 1 WHERE TotalAmount = 30");
+        var result = await f.Search(day, day, "AllOrders");
+        Assert.Equal(2, Assert.Single(result.Customers).Orders);
+        Assert.Equal(1, result.Totals.Customers);
+        Assert.Equal(2, result.Totals.Orders);
+        Assert.Equal(50m, Assert.Single(result.Spend).Total);
+        var filtered = await f.Search(day, day, "states:;Pending;");
+        Assert.Equal(50m, Assert.Single(filtered.Spend).Total);
+        var detail = JObject.FromObject((await f.Repository.DetailAsync("main", "buyer@example.com", 1, false))!);
+        Assert.Equal(2, detail["Count"]!.Value<int>());
+        var analytics = await f.Repository.GetAnalyticsAsync("main", day, day, "AllOrders");
+        Assert.Equal(1, analytics.UniqueCustomers);
+        Assert.Equal(50m, analytics.FirstOrderAmount + analytics.RepeatOrderAmount);
+        Assert.Equal(2, analytics.OrderTimes.Sum(x => x.Orders));
+        var drafts = await f.Search(day, day, "states:Draft;;");
+        Assert.Equal("DRAFT@EXAMPLE.COM", Assert.Single(drafts.Customers).Identity);
+        Assert.Equal(900m, Assert.Single(drafts.Spend).Total);
+        Assert.NotNull(await f.Repository.DetailAsync("main", "draft@example.com", 1, false, status: "states:Draft;;"));
+        Assert.Empty((await f.Search(day, day, "states:Open;Paid;")).Customers);
+    }
+
+    [Fact]
+    public async Task CurrencyScopeIncludesCultureAliasesAndKeepsLifetimeAndHistoryInScope()
+    {
+        using var f = new Fixture();
+        var day = new DateTime(2026, 1, 5);
+        f.Add("buyer@example.com", day.AddDays(-1), 10m, currency: "en-US");
+        f.Add("buyer@example.com", day, 20m, currency: "USD");
+        f.Add("buyer@example.com", day, 900m, currency: "ISK");
+        f.Add("other@example.com", day, 50m, store: "other", currency: "USD");
+        var result = await f.Repository.SearchAsync("main", day, day, "AllOrders", "", "all", "newest", 1, 20, currency: "USD");
+        Assert.Equal(2, Assert.Single(result.Customers).Orders);
+        Assert.Equal(30m, Assert.Single(result.Spend).Total);
+        Assert.Equal(30m, Assert.Single(result.Spend).AverageLifetime);
+        Assert.Equal("USD", Assert.Single(result.Spend).Currency);
+        var detail = JObject.FromObject((await f.Repository.DetailAsync("main", "buyer@example.com", 1, false, currency: "USD"))!);
+        Assert.Equal(2, detail["Count"]!.Value<int>());
+        var analytics = await f.Repository.GetAnalyticsAsync("main", day, day, "AllOrders", currency: "USD");
+        Assert.Equal(20m, analytics.RepeatOrderAmount);
+        Assert.Equal(1, analytics.OrderTimes.Sum(x => x.Orders));
+        Assert.Empty((await f.Repository.SearchAsync("main", day, day, "AllOrders", "", "all", "newest", 1, 20, currency: "USD' OR 1=1 --")).Customers);
+    }
+
+    [Fact]
+    public async Task HistoryReadsPersistedStatusesAndProjectsLegacyEvidence()
+    {
+        using var f = new Fixture();
+        f.Add("a@example.com", new DateTime(2026, 1, 1), 10, status: OrderStatus.ReadyForDispatch);
+        var legacy = JObject.FromObject((await f.Repository.DetailAsync("main", "a@example.com", 1, false))!);
+        Assert.Equal("Unfulfilled", legacy["Orders"]![0]!["Status"]!["FulfillmentStatus"]!.Value<string>());
+        using (var db = f.Factory.GetDatabase())
+            db.Execute("UPDATE EkomOrders SET OrderStateCol = 'Open', PaymentStateCol = 'Paid', FulfillmentStateCol = 'Picked', StatusMappingVersion = 1, StatusRevision = 3");
+        var current = JObject.FromObject((await f.Repository.DetailAsync("main", "a@example.com", 1, false))!);
+        Assert.Equal("Picked", current["Orders"]![0]!["Status"]!["FulfillmentStatus"]!.Value<string>());
+        Assert.Equal("Paid", current["Orders"]![0]!["Status"]!["PaymentStatus"]!.Value<string>());
+    }
+
+    [Fact]
     public async Task AnalyticsUsesPurchaseHistoryWithoutOrderInfoAndIncludesUnidentifiedOrderTimes()
     {
         using var f = new Fixture();

@@ -1,5 +1,7 @@
+import { renderManagerContent } from './manager-shared';
+import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, getStatusValue, managerState, managerStyles, pageRange, renderLineChart, downloadBlob } from './manager-shared';
+import { ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
 import { AnalyticsBucket, AnalyticsMetric, analyticsSummary, groupAnalytics, percentageChange, matchingPreset, presetRange, previousPeriod } from './analytics-data';
 
 export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement) {
@@ -14,6 +16,8 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   private mostSoldProducts: MostSoldProductsResult = { products: [], count: 0, totalPages: 0, page: 1 };
   private pageMostSoldProducts = 1;
   private resizeObserver?: ResizeObserver;
+  private themeObserver?: MutationObserver;
+  private readonly themeLoaded = () => this.renderCharts();
   private chartRequest = 0;
   private productRequest = 0;
   private chartAbort?: AbortController;
@@ -25,9 +29,66 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   private compare = true;
   private table = false;
   private datePreset?: string;
+  private pollingSeconds = 0;
+  private pollingTimer = 0;
+  private polling = false;
+
+  private setPolling(seconds: number): void {
+    if (![0, 2, 5, 10, 20, 30].includes(seconds)) return;
+    window.clearInterval(this.pollingTimer);
+    this.pollingSeconds = seconds;
+    if (seconds) this.pollingTimer = window.setInterval(() => void this.pollAnalytics(), seconds * 1000);
+    this.render();
+  }
+
+  private async pollAnalytics(): Promise<void> {
+    if (!this.pollingSeconds || this.polling || this.disposed || document.hidden || this.loading || this.loadingMostSoldProducts ||
+        this.contains(document.activeElement) || this.querySelector('details[open], dialog[open], [role="dialog"]')) return;
+    const filters = { ...managerState.filters };
+    if (!filters.store) return;
+    const request = this.chartRequest;
+    const productRequest = this.productRequest;
+    const compare = this.compare;
+    const productsVisible = this.productsVisible;
+    this.polling = true;
+    try {
+      const [current, previous, products] = await Promise.all([
+        this.api.charts(filters),
+        compare ? this.api.charts({ ...filters, ...previousPeriod(filters.dateFrom, filters.dateTo) }) : Promise.resolve(undefined),
+        productsVisible ? this.api.mostSoldProducts(filters, this.pageMostSoldProducts, 20) : Promise.resolve(undefined),
+      ]);
+      if (this.disposed || !this.pollingSeconds || request !== this.chartRequest || productRequest !== this.productRequest ||
+          compare !== this.compare || productsVisible !== this.productsVisible || JSON.stringify(filters) !== JSON.stringify(managerState.filters) ||
+          this.contains(document.activeElement) || this.querySelector('details[open], dialog[open], [role="dialog"]')) return;
+      const nextProducts = products ? { ...products, products: products.products || [] } : this.mostSoldProducts;
+      const changed = this.error || this.productError || JSON.stringify([current, previous, nextProducts]) !== JSON.stringify([this.chartData, this.previousData, this.mostSoldProducts]);
+      this.chartData = current;
+      this.previousData = previous;
+      this.chartFilters = filters;
+      this.mostSoldProducts = nextProducts;
+      this.error = '';
+      this.productError = '';
+      if (current.mixedCurrencies) this.metric = 'orders';
+      if (changed) this.render();
+      const control = this.querySelector('.ekom-polling summary');
+      control?.classList.add('just-refreshed');
+      control?.addEventListener('animationend', event => {
+        if (event.target === control) control.classList.remove('just-refreshed');
+      }, { once: true });
+    } catch {
+      // Keep the last successful analytics visible after a background failure.
+    } finally {
+      this.polling = false;
+    }
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
+    if (!this.hasAttribute('classic')) this.consumeContext?.<UmbThemeContext>('umbThemeContext', context => {
+      if (context) this.observe(context.theme, alias => {
+        this.toggleAttribute('data-ekom-dark', alias === 'umb-dark-theme');
+      }, 'ekom-manager-theme');
+    });
     this.disposed = false;
     if (this.hasAttribute('classic')) {
       for (const field of ['store', 'dateFrom', 'dateTo', 'orderStatus'] as const) {
@@ -38,31 +99,45 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     this.render();
     this.resizeObserver = new ResizeObserver(() => this.renderCharts());
     this.resizeObserver.observe(this);
+    // Umbraco installs theme CSS asynchronously in the document head.
+    if (typeof MutationObserver !== 'undefined') {
+      this.themeObserver = new MutationObserver(() => this.renderCharts());
+      this.themeObserver.observe(document.head, { childList:true, subtree:true, attributes:true, attributeFilter:['href'] });
+      document.head.addEventListener('load', this.themeLoaded, true);
+    }
     void this.initialize();
   }
 
   override disconnectedCallback(): void {
     this.disposed = true;
+    window.clearInterval(this.pollingTimer);
+    this.pollingSeconds = 0;
     this.chartRequest++;
     this.productRequest++;
     this.chartAbort?.abort();
     this.productAbort?.abort();
     this.resizeObserver?.disconnect();
     this.resizeObserver = undefined;
+    this.themeObserver?.disconnect();
+    if (typeof document !== 'undefined') document.head.removeEventListener('load', this.themeLoaded, true);
     super.disconnectedCallback();
   }
 
   private get currency() {
+    const code = this.chartFilters?.currency || managerState.filters.currency;
+    if (code) return { isoCurrencySymbol: code };
     return managerState.stores.find(store => store.alias === (this.chartFilters?.store || managerState.filters.store))?.currency;
   }
 
   private async initialize(): Promise<void> {
     try {
-      const [statuses, stores] = await Promise.all([this.api.statusList(), this.api.stores()]);
+      const [statuses, stores, printing] = await Promise.all([this.api.statusList(), this.api.stores(), this.hasAttribute('classic') ? Promise.resolve(false) : this.api.printingEnabled()]);
+      managerState.printingEnabled = printing;
       if (this.disposed) return;
       managerState.statusList = statuses || [];
       managerState.stores = stores || [];
       if (!managerState.stores.some(store => store.alias === managerState.filters.store)) managerState.filters.store = managerState.stores[0]?.alias || '';
+      if (!this.hasAttribute('classic')) ensureManagerCurrency();
       await this.loadAnalytics();
     } catch (error) {
       if (this.disposed) return;
@@ -81,11 +156,12 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     this.chartAbort?.abort();
     const abort = this.chartAbort = new AbortController();
     const filters = { ...managerState.filters };
-    this.chartData = undefined;
-    this.previousData = undefined;
+    if (!filters.store) { this.chartData = undefined; this.previousData = undefined; }
     this.error = '';
     this.loading = !!filters.store;
-    this.render();
+    const content = this.querySelector<HTMLElement>('.analytics');
+    if (content && filters.store) content.setAttribute('aria-busy', 'true');
+    else this.render();
     if (!filters.store) return;
     try {
       const comparisonFilters = this.compare ? { ...filters, ...previousPeriod(filters.dateFrom, filters.dateTo) } : undefined;
@@ -100,6 +176,8 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       if (current.mixedCurrencies) this.metric = 'orders';
     } catch (error) {
       if (request !== this.chartRequest || this.disposed) return;
+      this.chartData = undefined;
+      this.previousData = undefined;
       this.error = getErrorMessage(error, 'Unable to load charts.');
     } finally {
       if (request === this.chartRequest && !this.disposed) { this.loading = false; this.render(); }
@@ -148,7 +226,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   private render(): void {
     const f = managerState.filters;
     const preset = matchingPreset(f.dateFrom, f.dateTo, this.datePreset);
-    this.innerHTML = `<style>${managerStyles}
+    renderManagerContent(this, `<style>${managerStyles}${this.hasAttribute('classic') ? `
       ekom-analytics-section-view { display:block;color:var(--uui-color-text,#20232e) }
       .analytics {background:var(--uui-color-background,#f3f4f7);min-height:80vh}
       .analytics .card {background:var(--uui-color-surface,#fff);border:1px solid #dfe2e8;border-radius:10px;padding:18px;text-align:left;box-shadow:none}
@@ -178,26 +256,36 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       .analytics-spinner {display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid #dfe2e8;border-top-color:#25765c;border-radius:50%;animation:analytics-spin 1s linear infinite}
       @keyframes analytics-spin {to {transform:rotate(360deg)}}
       @media (prefers-reduced-motion:reduce) {.analytics-spinner {animation:none}}
-    </style><section class="ekmManager analytics"><div class="ekmManager__body">
-      <div class="analytics-toolbar">
-        <label>Store<select data-field="store">${managerState.stores.map(s => `<option value="${escapeHtml(s.alias)}" ${s.alias === f.store ? 'selected' : ''}>${escapeHtml(s.title)}</option>`).join('')}</select></label>
-        <label>Order status<select data-field="orderStatus"><option value="CompletedOrders" ${f.orderStatus === 'CompletedOrders' ? 'selected' : ''}>Completed Orders</option><option value="AllOrders" ${f.orderStatus === 'AllOrders' ? 'selected' : ''}>All Orders</option>${managerState.statusList.map(s => `<option value="${escapeHtml(getStatusValue(s))}" ${getStatusValue(s) === f.orderStatus ? 'selected' : ''}>${escapeHtml(s.label)}</option>`).join('')}</select></label>
-        <label>Date From<input type="date" data-field="dateFrom" value="${escapeHtml(f.dateFrom)}"></label>
+    ` : ''}</style>${this.hasAttribute('classic') ? '' : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/analytics-layout.css">'}<section class="ekmManager analytics ekom-design" aria-busy="${this.loading}"><div class="ekmManager__body">${this.hasAttribute('classic') ? '' : renderManagerHeader('analytics')}
+      <div class="analytics-toolbar ekom-shared-filters">
+        ${this.hasAttribute('classic') ? `<label>Store<select data-field="store">${managerState.stores.map(store => `<option value="${escapeHtml(store.alias)}" ${store.alias === f.store ? 'selected' : ''}>${escapeHtml(store.title)}</option>`).join('')}</select></label>` : ''}
+        ${this.hasAttribute('classic') ? `<label>Order view<select data-field="orderStatus">${renderOrderViewOptions(f.orderStatus)}</select></label>` : renderStatusFilters()}
+        ${this.hasAttribute('classic') ? `        <label>Date From<input type="date" data-field="dateFrom" value="${escapeHtml(f.dateFrom)}"></label>
         <label>Date To<input type="date" data-field="dateTo" value="${escapeHtml(f.dateTo)}"></label>
         <label>Date preset<select data-preset><option value="">Custom range</option>${[['today','Today'],['7','Last 7 days'],['30','Last 30 days'],['month','This month'],['year','This year']].map(([v,l])=>`<option value="${v}" ${preset === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-        <label><span>Comparison</span><span><input type="checkbox" data-compare ${this.compare ? 'checked' : ''}> Previous period</span></label>
-        <button data-refresh>Refresh</button>
+` : renderDateRange()}
+        ${this.hasAttribute('classic') ? `<label><span>Comparison</span><span><input type="checkbox" data-compare ${this.compare ? 'checked' : ''}> Previous period</span></label><button data-refresh>Refresh</button>` : ''}
       </div>
+      ${this.hasAttribute('classic') ? '' : `<div class="analytics-comparison-actions">
+        <label class="analytics-compare"><input type="checkbox" data-compare ${this.compare ? 'checked' : ''}><span>Compare to previous period</span></label>
+        <details class="ekom-polling${this.pollingSeconds ? ' is-active' : ''}"><summary aria-label="Analytics polling"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg><span>${this.pollingSeconds ? `Polling every ${this.pollingSeconds}s` : 'Polling off'}</span><span aria-hidden="true">⌄</span></summary><div class="ekom-poll-options" role="group" aria-label="Polling interval">${[0, 2, 5, 10, 20, 30].map(seconds => `<button type="button" data-poll-seconds="${seconds}" aria-pressed="${seconds === this.pollingSeconds}"><span aria-hidden="true">•</span>${seconds ? `Every ${seconds} seconds` : 'Off'}</button>`).join('')}</div></details>
+      </div>`}
       ${this.error ? `<p role="alert">${escapeHtml(this.error)}</p>` : ''}
       ${this.loading ? '<p role="status">Loading analytics…</p>' : !f.store ? '<p>No accessible stores.</p>' : ''}
       ${this.chartData ? this.renderAnalytics() + this.renderCustomerInsights() : ''}
-      <div class="card analytics-main"><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? 'Hide products' : 'Load product breakdown'}</button></div>
+      <div class="card analytics-main analytics-products"><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? 'Hide products' : 'Load product breakdown'}</button></div>
         <p class="analytics-muted">Fetch the most sold products for the selected store and dates. This may take a minute for larger date ranges. Totals include VAT and discounts, excluding shipping and payment fees.</p>
         ${this.productsVisible ? `${this.productError ? `<p role="alert">${escapeHtml(this.productError)}</p><button data-product-retry>Retry products</button>` : ''}${this.loadingMostSoldProducts ? '<p role="status"><span class="analytics-spinner" aria-hidden="true"></span>Fetching product breakdown… This may take a minute. You can continue using Analytics.</p>' : this.renderMostSoldProducts()}` : ''}
       </div>
-    </div></section>`;
+    </div></section>`);
     this.bindEvents();
     this.renderCharts();
+  }
+
+  private displayRange(start?: string, end?: string): string {
+    if (!start || !end) return '';
+    const format = new Intl.DateTimeFormat('en-GB', { day:'numeric', month:'short', year:'numeric', timeZone:'UTC' });
+    return format.formatRange(new Date(`${start.slice(0,10)}T00:00:00Z`), new Date(`${end.slice(0,10)}T00:00:00Z`));
   }
 
   private renderAnalytics(): string {
@@ -208,12 +296,12 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       ${this.chartData!.mixedCurrencies ? '<p role="status">This period contains multiple currencies. Monetary totals are hidden to avoid combining different currencies.</p>' : ''}
       ${this.previousData && !this.comparisonMoneyAvailable ? '<p class="analytics-muted">Monetary comparison is unavailable across different or mixed currencies.</p>' : ''}
       <div class="card analytics-main"><div class="analytics-toolbar">
-        ${(['amount','orders','average'] as AnalyticsMetric[]).map(metric => `<button data-metric="${metric}" aria-pressed="${this.metric === metric}" ${metric !== 'orders' && this.chartData!.mixedCurrencies ? 'disabled' : ''}>${this.label(metric)}</button>`).join('')}
-        <label>Group by<select data-grouping>${[['day','Daily'],['week','Weekly'],['month','Monthly']].map(([v,l])=>`<option value="${v}" ${this.grouping === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        <div class="analytics-metrics">${(['amount','orders','average'] as AnalyticsMetric[]).map(metric => `<button data-metric="${metric}" aria-pressed="${this.metric === metric}" ${metric !== 'orders' && this.chartData!.mixedCurrencies ? 'disabled' : ''}>${this.label(metric)}</button>`).join('')}</div>
+        <label class="analytics-grouping">Group by<select data-grouping>${[['day','Daily'],['week','Weekly'],['month','Monthly']].map(([v,l])=>`<option value="${v}" ${this.grouping === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <button data-table aria-pressed="${this.table}">${this.table ? 'Show chart' : 'Show data table'}</button><button data-csv>Download CSV</button>
       </div>
-      <p class="analytics-muted">${this.previousData ? `Solid: ${escapeHtml(this.range(this.chartFilters?.dateFrom,this.chartFilters?.dateTo))}. Dashed: ${escapeHtml(this.range(this.previousData.ordersChart.points[0]?.x,this.previousData.ordersChart.points.at(-1)?.x))}. Comparison buckets cover the same number of days.` : 'Selected period.'} Click a bucket to open its orders.</p>
-      ${this.table ? this.renderTable() : `<div style="height:360px"><canvas id="analytics-chart" style="width:100%;height:100%" role="img" aria-label="${this.label(this.metric)} over time. Use Show data table for exact values and order links."></canvas></div>`}
+      <p class="analytics-muted">${this.previousData ? `Solid: ${escapeHtml(this.displayRange(this.chartFilters?.dateFrom,this.chartFilters?.dateTo))}. Dashed: ${escapeHtml(this.displayRange(this.previousData.ordersChart.points[0]?.x,this.previousData.ordersChart.points.at(-1)?.x))}. Comparison buckets cover the same number of days.` : 'Selected period.'} Grouped ${this.grouping === 'month' ? 'monthly' : this.grouping === 'week' ? 'weekly' : 'daily'}.</p>
+      ${this.table ? this.renderTable() : `<div class="analytics-chart-frame" style="height:${this.hasAttribute('classic') ? 360 : 266}px"><canvas id="analytics-chart" style="width:100%;height:100%" role="img" aria-label="${this.label(this.metric)} over time. Use Show data table for exact values and order links."></canvas></div><div class="analytics-legend"><span><i></i>This period</span>${this.previousData ? '<span><i class="previous"></i>Previous period</span>' : ''}<span>Click a bucket to open its orders</span></div>`}
       </div>`;
   }
 
@@ -229,19 +317,18 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     const weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
     const days = weekdays.map((_, day) => data.orderTimes.filter(row => row.weekday === day).reduce((sum,row) => sum + row.orders,0));
     const hours = Array.from({length:24}, (_, hour) => data.orderTimes.filter(row => row.hour === hour).reduce((sum,row) => sum + row.orders,0));
-    const bars = (labels: string[], values: number[]) => labels.map((label,index) => `<div class="analytics-time-row"><span>${label}</span><div class="analytics-time-track" aria-hidden="true"><span style="width:${100 * values[index] / Math.max(1,...values)}%"></span></div><span>${values[index]}</span></div>`).join('');
+    const bars = (labels: string[], values: number[]) => labels.map((label,index) => `<div class="analytics-time-row" tabindex="0" data-tooltip="${label}: ${values[index]} orders" aria-label="${label}: ${values[index]} orders"><span>${label}</span><div class="analytics-time-track" aria-hidden="true"><span style="width:${100 * values[index] / Math.max(1,...values)}%"></span></div><span>${values[index]}</span></div>`).join('');
     return `<div class="analytics-summary">${cards.map(([label,value,prior,rate]) => `<div class="card"><span>${label}</span><strong>${value == null ? '—' : escapeHtml(value.toLocaleString(undefined,{maximumFractionDigits:rate ? 1 : 0})) + (rate ? '%' : '')}</strong><span class="analytics-muted">${previous ? rate ? value == null || prior == null ? 'No comparison available' : `${(value-prior).toLocaleString(undefined,{maximumFractionDigits:1,signDisplay:'always'})} percentage points vs previous period` : `${percentageChange(value,prior ?? null)} vs previous period` : 'Selected period'}</span></div>`).join('')}</div>
-      <div class="card analytics-main"><h3>New and returning purchases</h3>
-        <p class="analytics-muted">Based on qualifying purchase orders and ${data.identityField === 'CustomerUsername' ? 'username' : 'email'}. A repeat purchase has an earlier qualifying order in this store, ordered by payment time (creation time when unpaid). A buyer can appear in both rows if they buy for the first time and return in this period. Returning rate is repeat buyers divided by unique identified buyers.</p>
+      <div class="card analytics-main analytics-purchases"><h3>New and returning purchases</h3>
         <div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Purchase type</th><th>Buyers</th><th>Orders</th><th>Order amount</th></tr></thead><tbody>
           <tr><td>First purchase</td><td>${data.newCustomers}</td><td>${data.firstOrders}</td><td>${escapeHtml(this.amount(data.firstOrderAmount))}</td></tr>
           <tr><td>Repeat purchase</td><td>${data.returningCustomers}</td><td>${data.repeatOrders}</td><td>${escapeHtml(this.amount(data.repeatOrderAmount))}</td></tr>
         </tbody></table></div>
-        <p class="analytics-muted">${data.missingIdentifiers} qualifying orders have no customer identifier and are excluded from buyer counts and this breakdown. They remain included in the time charts below. Incomplete and cancelled orders are excluded from these customer insights, even with All Orders selected.</p>
       </div>
       <div class="analytics-insight-grid">
-        <div class="card analytics-main"><h3>Orders by weekday</h3><p class="analytics-muted">Qualifying orders within the selected filters, grouped by recorded creation day.</p><div class="analytics-time-bars">${bars(weekdays,days)}</div></div>
-        <div class="card analytics-main"><h3>Orders by hour</h3><p class="analytics-muted">Recorded creation time, 00–23. No timezone conversion. Totals are counts, not averages per hour.</p><div class="analytics-time-bars analytics-hour-bars">${bars(hours.map((_,hour)=>String(hour).padStart(2,'0')+':00'),hours)}</div></div>
+        <div class="card analytics-main"><div class="analytics-chart-heading"><h3>Orders by weekday</h3><span>By creation day</span></div><div class="analytics-time-bars">${bars(weekdays,days)}</div></div>
+        ${this.hasAttribute?.('classic') ? `<div class="card analytics-main"><h3>Orders by hour</h3><p class="analytics-muted">Recorded creation time, 00–23. No timezone conversion. Totals are counts, not averages per hour.</p><div class="analytics-time-bars analytics-hour-bars">${bars(hours.map((_,hour)=>String(hour).padStart(2,'0')+':00'),hours)}</div></div>` : `<div class="card analytics-main"><div class="analytics-chart-heading"><h3>Orders by hour</h3><span>${Math.max(...hours) > 0 ? `Peak ${String(hours.indexOf(Math.max(...hours))).padStart(2,'0')}:00` : 'No orders'}</span></div><div class="analytics-hour-columns">${hours.map((count,hour) => `<div class="analytics-hour-column" tabindex="0" data-tooltip="${String(hour).padStart(2,'0')}:00: ${count} orders" aria-label="${String(hour).padStart(2,'0')}:00: ${count} orders"><span class="analytics-hour-value">${count || ''}</span><span class="analytics-hour-bar" style="height:${130 * count / Math.max(1,...hours)}px"></span><span class="analytics-hour-label">${hour % 3 === 0 ? String(hour).padStart(2,'0') : ''}</span></div>`).join('')}</div></div>`}
+
       </div>`;
   }
 
@@ -286,7 +373,10 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     const currency = code && /^[A-Z]{3}$/.test(code) ? { isoCurrencySymbol: code } : this.currency;
     const comparison = this.previousData && (this.metric === 'orders' || this.comparisonMoneyAvailable)
       ? { labels: [], points: buckets.map(b => ({ x: this.range(b.previousStart,b.previousEnd), y: this.previousValue(b) })) } : undefined;
-    renderLineChart(canvas, { labels: [], points: buckets.map(b => ({ x: this.range(b.start,b.end), y: b[this.metric] })) }, '#25765c', {
+    renderLineChart(canvas, { labels: [], points: buckets.map(b => ({ x: this.range(b.start,b.end), y: b[this.metric] })) }, getComputedStyle(canvas).getPropertyValue('--ekom-accent').trim() || '#10694a', {
+      templateStyle: !this.hasAttribute('classic'),
+      formatAxisValue: value => value.toLocaleString(undefined, { notation:'compact', maximumFractionDigits:1 }).replace('K','k'),
+      formatLabel: index => new Date(`${buckets[index].start}T00:00:00Z`).toLocaleDateString('en-GB', { timeZone:'UTC', month:'short', ...(this.grouping === 'month' ? {} : { day:'numeric' }) }),
       currency: this.metric === 'orders' ? undefined : currency, integer: this.metric === 'orders', comparison,
       formatValue: value => this.value(value), columnHover: true, onSelect: index => this.openOrders(index),
     });
@@ -306,7 +396,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     Object.assign(managerState.filters, filters);
     if (this.hasAttribute('classic')) this.dispatchEvent(new CustomEvent('analytics-open-orders', { bubbles:true, detail:filters }));
     else {
-      const params = new URLSearchParams({ analyticsDrill: '1', store:filters.store, start:filters.dateFrom, end:filters.dateTo, orderStatus:filters.orderStatus });
+      const params = new URLSearchParams({ analyticsDrill: '1', store:filters.store, currency:filters.currency || '', start:filters.dateFrom, end:filters.dateTo, orderStatus:filters.orderStatus });
       const link = document.createElement('a');
       link.href = location.pathname.replace(/\/analytics\/?$/, '/orders') + '?' + params;
       this.appendChild(link); link.click(); link.remove();
@@ -321,6 +411,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   }
 
   private bindEvents(): void {
+    if (!this.hasAttribute('classic')) bindDateRange(this, () => { this.datePreset = undefined; this.changedFilters(); });
     this.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-field]').forEach(input => input.addEventListener('change', () => {
       const field = input.dataset.field as keyof ManagerFilters;
       if (field === 'dateFrom' || field === 'dateTo') this.datePreset = undefined;
@@ -337,6 +428,14 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     this.querySelectorAll<HTMLButtonElement>('[data-metric]').forEach(b => b.addEventListener('click', () => { this.metric = b.dataset.metric as AnalyticsMetric; this.render(); }));
     this.querySelector('[data-table]')?.addEventListener('click', () => { this.table = !this.table; this.render(); } );
     this.querySelector('[data-csv]')?.addEventListener('click', () => this.exportCsv());
+    this.querySelectorAll<HTMLButtonElement>('[data-poll-seconds]').forEach(button => button.addEventListener('click', () => this.setPolling(Number(button.dataset.pollSeconds))));
+    this.querySelector('.ekom-polling')?.addEventListener('keydown', event => {
+      if ((event as KeyboardEvent).key !== 'Escape') return;
+      const details = event.currentTarget as HTMLDetailsElement;
+      details.open = false;
+      details.querySelector('summary')?.focus();
+      event.stopPropagation();
+    });
     this.querySelector('[data-refresh]')?.addEventListener('click', () => void this.loadAnalytics());
     this.querySelectorAll<HTMLButtonElement>('[data-orders]').forEach(b => b.addEventListener('click', () => this.openOrders(Number(b.dataset.orders))));
     this.querySelector('[data-products]')?.addEventListener('click', () => {

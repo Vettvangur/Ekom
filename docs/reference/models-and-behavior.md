@@ -116,3 +116,12 @@ Do not use serialized catalog/order objects as write DTOs unless an endpoint exp
 - [HTTP API](http-api.md)
 - [Events](events.md)
 - [Configuration](configuration-reference.md)
+
+
+## Independent status snapshot
+
+`OrderData.Status` and concrete `OrderInfo.Status` expose `Ekom.Models.Orders.OrderStatusSnapshot`: independent order, payment, and fulfillment dimensions, revision, legacy status, review flag, auto-close suppression, and recorded fulfillment quantities. Reading/serializing the snapshot is side-effect free. JSON uses named enum values; null dimensions and `RequiresReview` indicate unresolved historical evidence.
+
+The existing `Ekom.Utilities.OrderStatus`, `IOrderInfo`, and legacy methods remain available. Canonical state is persisted in additive columns and synchronized with legacy writes. Legacy Closed maps to Closed / Paid / Fulfilled; ReadyForDispatch maps to Open / Paid / Unfulfilled.
+
+See [Order, payment, and fulfillment statuses](../guides/order-statuses.md) for every status, the complete migration table, configuration, supported actions, revision handling, quantity semantics, and migration endpoints. Refund execution and refund status editing remain outside this release.
