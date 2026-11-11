@@ -69,6 +69,7 @@ class OrderRepository
     internal async Task UpdateOrderAsync(OrderData orderData, bool reservationPersistence, CancellationToken ct)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
+        CheckoutPaymentOperationScope.ForgetPersistedOrder(orderData.UniqueId);
 
         if (_paymentAttempts == null)
         {
@@ -161,6 +162,7 @@ class OrderRepository
         string? expectedStatus = null)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
+        CheckoutPaymentOperationScope.ForgetPersistedOrder(orderId);
 
         await using var transaction = _paymentAttempts == null ? null
             : await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);

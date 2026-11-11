@@ -55,7 +55,7 @@ partial class OrderService
             }
         }
 
-        var semaphore = _orderLocks.GetOrAdd(orderId, static _ => new SemaphoreSlim(1, 1));
+        var semaphore = _orderLocks.Get(orderId);
         var ownsSemaphore = CheckoutPaymentOperationScope.Current?.OrderId != orderId;
         if (ownsSemaphore) await semaphore.WaitAsync(ct).ConfigureAwait(false);
         try
