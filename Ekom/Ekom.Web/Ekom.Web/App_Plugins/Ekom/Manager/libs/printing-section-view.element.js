@@ -86,12 +86,8 @@ class v {
   async stores() {
     const [t, a] = await Promise.all([this.getJson("/ekom/manager/stores"), this.getJson("/ekom/manager/store-currencies")]);
     return t.map((e) => {
-      var r;
-      return {
-        ...e,
-        currencyModels: (e.currencies || []).filter((o) => !!o && typeof o == "object"),
-        currencies: ((r = a.find((o) => o.alias === e.alias)) == null ? void 0 : r.currencies) || []
-      };
+      const r = a.find((o) => o.alias === e.alias);
+      return { ...e, currencies: (r == null ? void 0 : r.currencies) || [], currencyFormats: ((r == null ? void 0 : r.formats) || []).filter((o) => !!o) };
     });
   }
   async paymentProviders(t) {

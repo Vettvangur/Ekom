@@ -91,10 +91,19 @@ test('analytics amounts use the store currency culture, matching Orders', () => 
   const isk = { isoCurrencySymbol: 'ISK', currencyValue: 'is-IS', currencyDecimalDigits: 0 };
   assert.equal(exports.formatAnalyticsAmount(24774950, isk).replace(/\s/g, ' '), '24.774.950 kr.');
   assert.equal(exports.formatAnalyticsAmount(12.5, { isoCurrencySymbol: 'USD', currencyValue: 'en-US', currencyDecimalDigits: 2 }), '$12.50');
-  const store = { alias: 'main', title: 'Main', currency: isk, currencyModels: [isk, { isoCurrencySymbol: 'EUR', currencyValue: 'de-DE', currencyDecimalDigits: 2 }] };
-  assert.equal(exports.formatAnalyticsAmount(1234.5, exports.storeCurrency(store, 'EUR')).replace(/\s/g, ' '), '1.234,50 €');
-  assert.equal(exports.storeCurrency(store, 'ISK'), isk);
-  assert.equal(exports.storeCurrency(store, undefined), isk);
+  // The store's format wins over browser locale data, which lacks some cultures (Icelandic in Chrome).
+  const store = { alias: 'main', title: 'Main', currency: { isoCurrencySymbol: 'ISK' }, currencyFormats: [
+    { code: 'ISK', symbol: 'kr.', groupSeparator: '.', decimalSeparator: ',', decimalDigits: 0, positivePattern: 3 },
+    { code: 'EUR', symbol: '€', groupSeparator: '.', decimalSeparator: ',', decimalDigits: 2, positivePattern: 3 },
+    { code: 'GBP', symbol: '£', groupSeparator: ',', decimalSeparator: '.', decimalDigits: 2, positivePattern: 0 },
+  ] };
+  assert.equal(exports.formatAnalyticsAmount(24794150, exports.storeCurrency(store, 'ISK')), '24.794.150 kr.');
+  assert.equal(exports.formatAnalyticsAmount(24794150, exports.storeCurrency(store, undefined)), '24.794.150 kr.');
+  assert.equal(exports.formatAnalyticsAmount(999.6, exports.storeCurrency(store, 'ISK')), '1.000 kr.');
+  assert.equal(exports.formatAnalyticsAmount(-1500, exports.storeCurrency(store, 'ISK')), '-1.500 kr.');
+  assert.equal(exports.formatAnalyticsAmount(-0.2, exports.storeCurrency(store, 'ISK')), '0 kr.');
+  assert.equal(exports.formatAnalyticsAmount(1234.5, exports.storeCurrency(store, 'EUR')), '1.234,50 €');
+  assert.equal(exports.formatAnalyticsAmount(1234.5, exports.storeCurrency(store, 'GBP')), '£1,234.50');
   assert.ok(exports.formatAnalyticsAmount(5, exports.storeCurrency(store, 'USD')).includes('USD'));
   for (const currencyValue of ['ISK', 'not a culture', '']) {
     assert.ok(exports.formatAnalyticsAmount(1500, { isoCurrencySymbol: 'ISK', currencyValue, currencyDecimalDigits: 0 }).includes('ISK'));
@@ -165,4 +174,30 @@ test('compact template axes keep the exact amount in the tooltip', () => {
   assert.ok(labels.includes('64k'));
   canvas.onmousemove({ clientX:12, clientY:100 });
   assert.deepEqual(labels.slice(-2), ['1 Sep', 'ISK 18543.25']);
+});
+
+test('loading placeholders follow the manager design and announce only the status line', () => {
+  const count = (html, pattern) => (html.match(pattern) || []).length;
+  const year = exports.dateRangePresets().find(preset => preset.label === 'This year');
+  Object.assign(exports.managerState.filters, { dateFrom: year.from, dateTo: year.to });
+  const section = exports.renderSectionLoading('Analytics', 3, 300);
+  assert.match(section, /role="status"><span class="ekom-loading-spinner" aria-hidden="true"><\/span>Loading Analytics for This year…/);
+  assert.equal(count(section, /class="ekom-loading-card"/g), 3);
+  assert.match(section, /class="ekom-loading-panel" style="height:300px"/);
+  assert.equal(count(section, /role="status"/g), 1);
+  assert.equal(count(exports.renderSectionLoading('Customers', 5, 220), /class="ekom-loading-card"/g), 5);
+
+  Object.assign(exports.managerState.filters, { dateFrom: '2020-02-03', dateTo: '2020-02-09' });
+  assert.match(exports.renderLoadingStatus('<Customers>'), /Loading &lt;Customers&gt; for 2020-02-03 – 2020-02-09…/);
+
+  const orders = exports.renderOrderRowsLoading();
+  assert.equal(count(orders, /class="ekom-list-row ekom-list-skeleton-row" aria-hidden="true"/g), 6);
+  assert.equal(count(orders, /class="ekom-skeleton"/g), 42);
+  assert.match(orders, /role="status">Loading orders…/);
+
+  const rows = exports.renderRowsLoading('Calculating…');
+  assert.equal(count(rows, /<div aria-hidden="true">/g), 4);
+  assert.match(rows, /<p role="status">Calculating…<\/p>/);
+  assert.match(exports.managerStyles, /@keyframes ekom-shim/);
+  assert.match(exports.managerStyles, /prefers-reduced-motion: reduce\) \{ \.ekom-skeleton, \.ekom-loading-spinner \{ animation: none; \}/);
 });

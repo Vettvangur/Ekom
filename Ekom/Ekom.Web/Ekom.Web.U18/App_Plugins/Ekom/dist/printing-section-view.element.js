@@ -1,7 +1,7 @@
 var E = Object.defineProperty;
 var P = (s, d, t) => d in s ? E(s, d, { enumerable: !0, configurable: !0, writable: !0, value: t }) : s[d] = t;
 var h = (s, d, t) => P(s, typeof d != "symbol" ? d + "" : d, t);
-import { m as b, E as A, e as j, r as R, b as q, k as L } from "./manager-shared.js";
+import { m as b, E as A, e as j, r as R, b as q, n as L } from "./manager-shared.js";
 import { UmbElementMixin as N } from "@umbraco-cms/backoffice/element-api";
 const M = "/ekom/printer/manager", r = (s) => String(s ?? "").replace(/[&<>"']/g, (d) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[d]), f = (s) => s ? new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(s) ? s : s + "Z").toLocaleString(void 0, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Never", T = (s) => ({
   PendingRender: "Generating slip",

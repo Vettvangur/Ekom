@@ -1,7 +1,7 @@
 import { renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { storeCurrency, ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
+import { renderSectionLoading, renderRowsLoading, storeCurrency, ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
 import { AnalyticsBucket, AnalyticsMetric, analyticsSummary, groupAnalytics, percentageChange, matchingPreset, presetRange, previousPeriod } from './analytics-data';
 
 export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement) {
@@ -124,7 +124,9 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   }
 
   private get currency() {
-    const code = this.chartFilters?.currency || managerState.filters.currency;
+    return this.currencyFor(this.chartFilters?.currency || managerState.filters.currency);
+  }
+  private currencyFor(code: string | undefined) {
     return storeCurrency(managerState.stores.find(store => store.alias === (this.chartFilters?.store || managerState.filters.store)), code);
   }
 
@@ -158,9 +160,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     if (!filters.store) { this.chartData = undefined; this.previousData = undefined; }
     this.error = '';
     this.loading = !!filters.store;
-    const content = this.querySelector<HTMLElement>('.analytics');
-    if (content && filters.store) content.setAttribute('aria-busy', 'true');
-    else this.render();
+    this.render();
     if (!filters.store) return;
     try {
       const comparisonFilters = this.compare ? { ...filters, ...previousPeriod(filters.dateFrom, filters.dateTo) } : undefined;
@@ -214,7 +214,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     if (value == null || this.chartData?.mixedCurrencies) return '—';
     const code = this.chartData?.currency || this.previousData?.currency;
     if (!code || code === this.currency?.currencyValue || code === this.currency?.isoCurrencySymbol) return formatAnalyticsAmount(value, this.currency);
-    if (/^[A-Z]{3}$/.test(code)) return formatAnalyticsAmount(value, { isoCurrencySymbol: code });
+    if (/^[A-Z]{3}$/.test(code)) return formatAnalyticsAmount(value, this.currencyFor(code));
     return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${code}`;
   }
   private label(metric: AnalyticsMetric): string { return metric === 'orders' ? 'Orders' : metric === 'average' ? 'Average order value' : 'Order amount'; }
@@ -270,11 +270,11 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
         <details class="ekom-polling${this.pollingSeconds ? ' is-active' : ''}"><summary aria-label="Analytics polling"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg><span>${this.pollingSeconds ? `Polling every ${this.pollingSeconds}s` : 'Polling off'}</span><span aria-hidden="true">⌄</span></summary><div class="ekom-poll-options" role="group" aria-label="Polling interval">${[0, 2, 5, 10, 20, 30].map(seconds => `<button type="button" data-poll-seconds="${seconds}" aria-pressed="${seconds === this.pollingSeconds}"><span aria-hidden="true">•</span>${seconds ? `Every ${seconds} seconds` : 'Off'}</button>`).join('')}</div></details>
       </div>`}
       ${this.error ? `<p role="alert">${escapeHtml(this.error)}</p>` : ''}
-      ${this.loading ? '<p role="status">Loading analytics…</p>' : !f.store ? '<p>No accessible stores.</p>' : ''}
-      ${this.chartData ? this.renderAnalytics() + this.renderCustomerInsights() : ''}
-      <div class="card analytics-main analytics-products"><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? 'Hide products' : 'Load product breakdown'}</button></div>
+      ${this.loading ? renderSectionLoading('Analytics', 3, 300) : !f.store ? '<p>No accessible stores.</p>' : ''}
+      ${this.chartData && !this.loading ? this.renderAnalytics() + this.renderCustomerInsights() : ''}
+      <div class="card analytics-main analytics-products" ${this.loading ? 'hidden' : ''}><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? 'Hide products' : 'Load product breakdown'}</button></div>
         <p class="analytics-muted">Fetch the most sold products for the selected store and dates. This may take a minute for larger date ranges. Totals include VAT and discounts, excluding shipping and payment fees.</p>
-        ${this.productsVisible ? `${this.productError ? `<p role="alert">${escapeHtml(this.productError)}</p><button data-product-retry>Retry products</button>` : ''}${this.loadingMostSoldProducts ? '<p role="status"><span class="analytics-spinner" aria-hidden="true"></span>Fetching product breakdown… This may take a minute. You can continue using Analytics.</p>' : this.renderMostSoldProducts()}` : ''}
+        ${this.productsVisible ? `${this.productError ? `<p role="alert">${escapeHtml(this.productError)}</p><button data-product-retry>Retry products</button>` : ''}${this.loadingMostSoldProducts ? renderRowsLoading('Calculating…') : this.renderMostSoldProducts()}` : ''}
       </div>
     </div></section>`);
     this.bindEvents();
@@ -369,7 +369,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     if (!canvas || !this.chartData || this.table) return;
     const buckets = this.buckets;
     const code = this.chartData.currency || this.previousData?.currency;
-    const currency = code && /^[A-Z]{3}$/.test(code) ? { isoCurrencySymbol: code } : this.currency;
+    const currency = code && /^[A-Z]{3}$/.test(code) ? this.currencyFor(code) : this.currency;
     const comparison = this.previousData && (this.metric === 'orders' || this.comparisonMoneyAvailable)
       ? { labels: [], points: buckets.map(b => ({ x: this.range(b.previousStart,b.previousEnd), y: this.previousValue(b) })) } : undefined;
     renderLineChart(canvas, { labels: [], points: buckets.map(b => ({ x: this.range(b.start,b.end), y: b[this.metric] })) }, getComputedStyle(canvas).getPropertyValue('--ekom-accent').trim() || '#10694a', {

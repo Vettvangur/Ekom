@@ -34,16 +34,27 @@ export type StoreItem = {
   title: string;
   currencies?: string[];
   currency?: StoreCurrency;
-  /** The store's configured currencies with their culture, used to format amounts. */
-  currencyModels?: StoreCurrency[];
+  /** How each store currency is written, as defined by the culture configured on the store. */
+  currencyFormats?: CurrencyFormat[];
 };
 
-export type StoreCurrency = { isoCurrencySymbol?: string; currencyValue?: string; currencyDecimalDigits?: number };
+/** positivePattern follows .NET: 0 = $n, 1 = n$, 2 = $ n, 3 = n $. */
+export type CurrencyFormat = { code: string; symbol: string; groupSeparator: string; decimalSeparator: string; decimalDigits: number; positivePattern: number };
+export type StoreCurrency = { isoCurrencySymbol?: string; currencyValue?: string; currencyDecimalDigits?: number; format?: CurrencyFormat };
 
-/** The store's own definition of a currency code, so amounts use the culture configured on the store. */
+/** A store currency with the store's own format for it, so amounts read the same as in Orders. */
 export function storeCurrency(store: StoreItem | undefined, code: string | undefined): StoreCurrency | undefined {
+  code ||= store?.currency?.isoCurrencySymbol;
   if (!code) return store?.currency;
-  return [...(store?.currencyModels || []), store?.currency].find(currency => currency?.isoCurrencySymbol === code) || { isoCurrencySymbol: code };
+  const format = store?.currencyFormats?.find(item => item?.code === code);
+  return { ...(store?.currency?.isoCurrencySymbol === code ? store.currency : {}), isoCurrencySymbol: code, ...(format ? { format, currencyDecimalDigits: format.decimalDigits } : {}) };
+}
+
+function formatWithStoreCulture(value: number, format: CurrencyFormat): string {
+  const [whole, fraction] = Math.abs(value).toFixed(Math.max(0, format.decimalDigits)).split('.');
+  const number = whole.replace(/\B(?=(\d{3})+(?!\d))/g, format.groupSeparator) + (fraction ? format.decimalSeparator + fraction : '');
+  const amount = [`${format.symbol}${number}`, `${number}${format.symbol}`, `${format.symbol} ${number}`, `${number} ${format.symbol}`][format.positivePattern] ?? `${number} ${format.symbol}`;
+  return (value < 0 && Number(whole + '.' + (fraction || '0')) !== 0 ? '-' : '') + amount;
 }
 
 export type PaymentProviderItem = {
@@ -312,12 +323,11 @@ export class EkomManagerApi {
   }
 
   async stores(): Promise<StoreItem[]> {
-    const [stores, choices] = await Promise.all([this.getJson<StoreItem[]>('/ekom/manager/stores'), this.getJson<Array<{ alias: string; currencies: string[] }>>('/ekom/manager/store-currencies')]);
-    return stores.map(store => ({
-      ...store,
-      currencyModels: ((store.currencies || []) as unknown[]).filter((currency): currency is StoreCurrency => !!currency && typeof currency === 'object'),
-      currencies: choices.find(choice => choice.alias === store.alias)?.currencies || [],
-    }));
+    const [stores, choices] = await Promise.all([this.getJson<StoreItem[]>('/ekom/manager/stores'), this.getJson<Array<{ alias: string; currencies: string[]; formats?: Array<CurrencyFormat | null> }>>('/ekom/manager/store-currencies')]);
+    return stores.map(store => {
+      const choice = choices.find(item => item.alias === store.alias);
+      return { ...store, currencies: choice?.currencies || [], currencyFormats: (choice?.formats || []).filter((format): format is CurrencyFormat => !!format) };
+    });
   }
 
   async paymentProviders(storeAlias: string): Promise<PaymentProviderItem[]> {
@@ -863,8 +873,31 @@ const themeColorTokens: Record<string, string> = {
 const themedManagerStyles = baseManagerStyles.replaceAll(':host', '&')
   .replace(/#[0-9a-f]{3,8}\b/gi, color => themeColorTokens[color.toLowerCase()] ? `var(${themeColorTokens[color.toLowerCase()]})` : color);
 
-export const managerStyles = `${managerScope} {
+// Loading patterns from the Ekom Manager design: shimmering placeholders shaped like the content they stand in for.
+const loadingStyles = `
+  .ekom-skeleton { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--ekom-border, #eceef1) 0%, var(--ekom-surface-alt, #f7f8fa) 40%, var(--ekom-border, #eceef1) 80%); background-size: 320px 100%; animation: ekom-shim 1.2s linear infinite; }
+  .ekom-skeleton-block { flex: 1; height: auto; border-radius: 8px; background-image: linear-gradient(90deg, var(--ekom-surface-alt, #f7f8fa) 0%, var(--ekom-surface, #fff) 40%, var(--ekom-surface-alt, #f7f8fa) 80%); }
+  .ekom-loading { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; }
+  .ekom-loading-status { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 13px; line-height: 1; color: var(--ekom-muted, #676b7b); }
+  .ekom-loading-spinner { flex: none; width: 14px; height: 14px; border: 2px solid var(--ekom-border, #e1e3e8); border-top-color: var(--ekom-accent, #10694a); border-radius: 50%; animation: ekom-spin .8s linear infinite; }
+  .ekom-loading-cards { display: grid; gap: 12px; }
+  .ekom-loading-card, .ekom-loading-panel { display: flex; flex-direction: column; background: var(--ekom-surface, #fff); border: 1px solid var(--ekom-border, #e1e3e8); border-radius: 12px; }
+  .ekom-loading-card { gap: 12px; padding: 14px 16px; }
+  .ekom-loading-panel { gap: 14px; padding: 16px 18px; }
+  .ekom-loading-rows { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; padding-top: 6px; }
+  .ekom-loading-rows > div { display: flex; align-items: center; gap: 16px; }
+  .ekom-loading-rows > p { margin: 0; font-size: 12px; line-height: 1; color: var(--ekom-muted, #676b7b); }
+  .ekom-list-skeleton-row:hover { background: transparent !important; }
+  [hidden] { display: none !important; }
+  @media (max-width: 720px) { .ekom-loading-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+  @media (prefers-reduced-motion: reduce) { .ekom-skeleton, .ekom-loading-spinner { animation: none; } }
+`;
+
+export const managerStyles = `@keyframes ekom-shim { 0% { background-position: -320px 0; } 100% { background-position: 320px 0; } }
+@keyframes ekom-spin { to { transform: rotate(360deg); } }
+${managerScope} {
   ${baseManagerStyles.replaceAll(':host', '&')}
+  ${loadingStyles}
 }
 ${managerScope}:not([classic]) {
   ${themedManagerStyles}
@@ -959,6 +992,7 @@ export function renderOrderStatusSummary(status?: OrderStatusSnapshot): string {
 }
 
 export function formatAnalyticsAmount(value: number, currency?: StoreItem['currency']): string {
+  if (currency?.format) return formatWithStoreCulture(value, currency.format);
   const code = currency?.isoCurrencySymbol;
   const digits = currency?.currencyDecimalDigits ?? (code && /^[A-Z]{3}$/.test(code) ? new Intl.NumberFormat(undefined, { style: 'currency', currency: code }).resolvedOptions().maximumFractionDigits : 2);
   // Format in the store currency's own culture, as Orders does, so both views read the same.
@@ -1203,6 +1237,39 @@ export function dateRangePresets(now = new Date()): Array<{ label: string; from:
     { label: 'This quarter', from: iso(new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)), to: today },
     { label: 'This year', from: iso(new Date(now.getFullYear(), 0, 1)), to: today },
   ];
+}
+
+const skeletonBar = (width: string, height = 12): string => `<span class="ekom-skeleton" style="width:${width};height:${height}px"></span>`;
+
+/** The selected period as the date range picker names it, for loading messages. */
+export function dateRangeLabel(): string {
+  const { dateFrom, dateTo } = managerState.filters;
+  return dateRangePresets().find(preset => preset.from === dateFrom && preset.to === dateTo)?.label || `${dateFrom} – ${dateTo}`;
+}
+
+/** Spinner line announcing what is loading; the only part of a loading state read to screen readers. */
+export function renderLoadingStatus(section: string): string {
+  return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>Loading ${escapeHtml(section)} for ${escapeHtml(dateRangeLabel())}…</p>`;
+}
+
+/** Section placeholder: status line, summary cards, a chart-sized block and a few lines of text. */
+export function renderSectionLoading(section: string, cards: number, blockHeight: number): string {
+  const card = `<div class="ekom-loading-card">${skeletonBar('40%')}${skeletonBar('55%', 22)}</div>`;
+  return `<div class="ekom-loading">${renderLoadingStatus(section)}<div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(${cards},minmax(0,1fr))">${card.repeat(cards)}</div>
+    <div aria-hidden="true" class="ekom-loading-panel" style="height:${blockHeight}px">${skeletonBar('30%')}<span class="ekom-skeleton ekom-skeleton-block"></span></div>
+    <div aria-hidden="true" class="ekom-loading-panel">${skeletonBar('28%')}${skeletonBar('100%').repeat(3)}</div></div>`;
+}
+
+/** Placeholder rows for a table that is still being calculated. */
+export function renderRowsLoading(message: string, rows = 4): string {
+  const row = `<div aria-hidden="true"><span class="ekom-skeleton" style="flex:1"></span>${skeletonBar('60px')}${skeletonBar('110px')}</div>`;
+  return `<div class="ekom-loading-rows">${row.repeat(rows)}<p role="status">${escapeHtml(message)}</p></div>`;
+}
+
+/** Placeholder rows for the orders list, laid out on the list's own grid. */
+export function renderOrderRowsLoading(rows = 6): string {
+  const row = `<div class="ekom-list-row ekom-list-skeleton-row" aria-hidden="true">${['60%', '70%', '55%', '80%', '70%', '60%', '50%'].map(width => skeletonBar(width)).join('')}<span></span></div>`;
+  return row.repeat(rows) + '<span class="ekom-sr-only" role="status">Loading orders…</span>';
 }
 
 export function renderDateRange(): string {

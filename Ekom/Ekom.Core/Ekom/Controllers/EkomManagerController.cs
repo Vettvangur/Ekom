@@ -500,7 +500,11 @@ public class EkomManagerController : ControllerBase
             var recorded = await _repo.GetRecordedCurrenciesAsync(store.Alias).ConfigureAwait(false);
             var currencies = store.Currencies.Select(c => c.CurrencyValue).Concat(recorded)
                 .Select(ManagerCurrencyScope.Code).Where(code => code != null).Distinct().ToArray();
-            result.Add(new { store.Alias, Currencies = currencies });
+            // Browsers do not ship number formats for every culture (Icelandic among them),
+            // so send the format of each currency as the store's culture defines it.
+            var formats = currencies.Select(code => ManagerCurrencyFormat.From(code!,
+                store.Currencies.FirstOrDefault(c => string.Equals(ManagerCurrencyScope.Code(c.CurrencyValue), code, StringComparison.OrdinalIgnoreCase))?.CurrencyValue)).ToArray();
+            result.Add(new { store.Alias, Currencies = currencies, Formats = formats });
         }
         return Ok(result);
     }
