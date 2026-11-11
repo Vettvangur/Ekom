@@ -63,12 +63,37 @@ public sealed class CustomerRepository(DatabaseFactory databaseFactory, IOptions
     private string PageSql => databaseFactory.IsSqlite ? "LIMIT @take OFFSET @skip" : "OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY";
     private const string Columns = "UniqueId, ReferenceId, OrderNumber, OrderStatusCol, CustomerName, CustomerEmail, CustomerUsername, ShippingCountry, TotalAmount, Currency, StoreAlias, CreateDate, UpdateDate, PaidDate";
 
-    internal string BuildCte(string orderStatus, string? currency = null)
+    // The store's qualifying orders, read once per search. Every customer query below reads this
+    // narrow copy instead of rescanning EkomOrders for each reference to Q.
+    private string History => databaseFactory.IsSqlite ? "temp.EkomCustomerHistory" : "#EkomCustomerHistory";
+
+    private async Task LoadHistoryAsync(DbContext db, string orderStatus, string? currency, object args, CancellationToken ct)
+    {
+        string where = $"FROM EkomOrders WHERE StoreAlias = @store{ManagerCurrencyScope.Predicate(currency)} AND {Qualification(orderStatus)}";
+        await DropHistoryAsync(db).ConfigureAwait(false);
+        if (databaseFactory.IsSqlite)
+        {
+            await db.ExecuteAsync($"CREATE TEMP TABLE EkomCustomerHistory AS SELECT {Columns}, OrderStateCol, PaymentStateCol, FulfillmentStateCol, {Key} AS [Identity] {where}", ct, args).ConfigureAwait(false);
+            return;
+        }
+
+        // The cast stops SELECT INTO copying the identity property, which would reject the insert.
+        string columns = $"UniqueId, CAST(ReferenceId AS int) AS ReferenceId{Columns["UniqueId, ReferenceId".Length..]}, OrderStateCol, PaymentStateCol, FulfillmentStateCol, {Key} AS [Identity]";
+        // Created without parameters so the table belongs to the session, not to one parameterised call.
+        await db.ExecuteAsync($"SELECT TOP 0 {columns} INTO {History} FROM EkomOrders", ct).ConfigureAwait(false);
+        await db.ExecuteAsync($"INSERT INTO {History} SELECT {columns} {where}", ct, args).ConfigureAwait(false);
+    }
+
+    private Task DropHistoryAsync(DbContext db) => db.ExecuteAsync(databaseFactory.IsSqlite
+        ? $"DROP TABLE IF EXISTS {History}"
+        : $"IF OBJECT_ID('tempdb..{History}') IS NOT NULL DROP TABLE {History}");
+
+    internal string BuildCte(string orderStatus)
     {
         string date = orderStatus is "ReadyForDispatch" or "Dispatched" ? "PaidDate" : "CreateDate";
         string gap = databaseFactory.IsSqlite ? "(julianday(MAX(CreateDate)) - julianday(MIN(CreateDate)))" : "(DATEDIFF_BIG(second, MIN(CreateDate), MAX(CreateDate)) / 86400.0)";
         return $@"WITH Q AS (
- SELECT {Columns}, OrderStateCol, PaymentStateCol, FulfillmentStateCol, {Key} AS [Identity] FROM EkomOrders WHERE StoreAlias = @store{ManagerCurrencyScope.Predicate(currency)} AND {Qualification(orderStatus)}
+ SELECT * FROM {History}
 ), R AS (
  SELECT Q.*,
  ROW_NUMBER() OVER (PARTITION BY [Identity] ORDER BY CASE WHEN CustomerName IS NULL OR CustomerName = '' THEN 1 ELSE 0 END, CreateDate DESC, ReferenceId DESC) AS NameRank,
@@ -138,8 +163,11 @@ GROUP BY {weekday}, {hour}", ct, args).ConfigureAwait(false);
     {
         await using var db = OpenDatabase();
         var args = Arguments(store, start, end, status, query, segment, page, pageSize, currency);
-        string cte = BuildCte(status, currency);
-        string profiles = cte + @", Profiles AS (
+        string cte = BuildCte(status);
+        await LoadHistoryAsync(db, status, currency, args, ct).ConfigureAwait(false);
+        try
+        {
+            string profiles = cte + @", Profiles AS (
 SELECT S.[Identity], S.Orders, S.FirstOrder, S.LastOrder,
  MAX(CASE WHEN R.NameRank = 1 THEN CustomerName END) AS Name,
  MAX(CASE WHEN R.EmailRank = 1 THEN CustomerEmail END) AS Email,
@@ -148,18 +176,23 @@ SELECT S.[Identity], S.Orders, S.FirstOrder, S.LastOrder,
  FROM Selected S JOIN R ON R.[Identity] = S.[Identity]
  GROUP BY S.[Identity], S.Orders, S.FirstOrder, S.LastOrder
 ), PageKeys AS (SELECT * FROM Profiles ORDER BY " + Sort(sort) + ", [Identity] " + PageSql + ") ";
-        var customers = await db.QueryToListAsync<CustomerSummary>(profiles + "SELECT * FROM PageKeys ORDER BY " + Sort(sort) + ", [Identity]", ct, args).ConfigureAwait(false);
-        var pageSpend = await db.QueryToListAsync<CustomerSpend>(profiles + "SELECT Q.[Identity], CASE WHEN @currency = '' THEN Q.Currency ELSE @currency END AS Currency, SUM(Q.TotalAmount) AS Total, COUNT(*) AS Orders FROM Q JOIN PageKeys P ON P.[Identity] = Q.[Identity] GROUP BY Q.[Identity], CASE WHEN @currency = '' THEN Q.Currency ELSE @currency END", ct, args).ConfigureAwait(false);
-        var spendByIdentity = pageSpend.ToLookup(x => x.Identity, StringComparer.Ordinal);
-        foreach (var customer in customers)
-        {
-            customer.Spend = spendByIdentity[customer.Identity].ToArray();
+            var customers = await db.QueryToListAsync<CustomerSummary>(profiles + "SELECT * FROM PageKeys ORDER BY " + Sort(sort) + ", [Identity]", ct, args).ConfigureAwait(false);
+            var pageSpend = await db.QueryToListAsync<CustomerSpend>(profiles + "SELECT Q.[Identity], CASE WHEN @currency = '' THEN Q.Currency ELSE @currency END AS Currency, SUM(Q.TotalAmount) AS Total, COUNT(*) AS Orders FROM Q JOIN PageKeys P ON P.[Identity] = Q.[Identity] GROUP BY Q.[Identity], CASE WHEN @currency = '' THEN Q.Currency ELSE @currency END", ct, args).ConfigureAwait(false);
+            var spendByIdentity = pageSpend.ToLookup(x => x.Identity, StringComparer.Ordinal);
+            foreach (var customer in customers)
+            {
+                customer.Spend = spendByIdentity[customer.Identity].ToArray();
+            }
+            var totals = await db.QueryToListAsync<CustomerTotals>(cte + "SELECT COUNT(*) AS Customers, COALESCE(SUM(CASE WHEN Orders > 1 THEN 1 ELSE 0 END),0) AS [Returning], COALESCE(SUM(Orders),0) AS Orders, AVG(AverageReorderDays) AS AverageReorderDays FROM Selected", ct, args).ConfigureAwait(false);
+            var spend = await db.QueryToListAsync<CustomerSpend>(cte + "SELECT CASE WHEN @currency = '' THEN Currency ELSE @currency END AS Currency, SUM(TotalAmount) AS Total, COUNT(*) AS Orders, COUNT(DISTINCT Q.[Identity]) AS Customers FROM Q INNER JOIN Selected S ON Q.[Identity] = S.[Identity] GROUP BY CASE WHEN @currency = '' THEN Currency ELSE @currency END", ct, args).ConfigureAwait(false);
+            string date = status is "ReadyForDispatch" or "Dispatched" ? "PaidDate" : "CreateDate";
+            var missing = await db.ExecuteAsync<int>($"SELECT COUNT(*) FROM {History} WHERE [Identity] = '' AND {date} >= @start AND {date} < @end AND {Selection(status)}", ct, args).ConfigureAwait(false);
+            return new CustomerSearchResult { Customers = customers, Totals = totals[0], Spend = spend, MissingIdentifiers = missing, IdentityField = IdentityField, Page = page, PageSize = pageSize, TotalPages = (int)Math.Ceiling((double)totals[0].Customers / pageSize) };
         }
-        var totals = await db.QueryToListAsync<CustomerTotals>(cte + "SELECT COUNT(*) AS Customers, COALESCE(SUM(CASE WHEN Orders > 1 THEN 1 ELSE 0 END),0) AS [Returning], COALESCE(SUM(Orders),0) AS Orders, AVG(AverageReorderDays) AS AverageReorderDays FROM Selected", ct, args).ConfigureAwait(false);
-        var spend = await db.QueryToListAsync<CustomerSpend>(cte + "SELECT CASE WHEN @currency = '' THEN Currency ELSE @currency END AS Currency, SUM(TotalAmount) AS Total, COUNT(*) AS Orders, COUNT(DISTINCT Q.[Identity]) AS Customers FROM Q INNER JOIN Selected S ON Q.[Identity] = S.[Identity] GROUP BY CASE WHEN @currency = '' THEN Currency ELSE @currency END", ct, args).ConfigureAwait(false);
-        string date = status is "ReadyForDispatch" or "Dispatched" ? "PaidDate" : "CreateDate";
-        var missing = await db.ExecuteAsync<int>($"SELECT COUNT(*) FROM EkomOrders WHERE StoreAlias = @store{ManagerCurrencyScope.Predicate(currency)} AND {Qualification(status)} AND {Key} = '' AND {date} >= @start AND {date} < @end AND {Selection(status)}", ct, args).ConfigureAwait(false);
-        return new CustomerSearchResult { Customers = customers, Totals = totals[0], Spend = spend, MissingIdentifiers = missing, IdentityField = IdentityField, Page = page, PageSize = pageSize, TotalPages = (int)Math.Ceiling((double)totals[0].Customers / pageSize) };
+        finally
+        {
+            await DropHistoryAsync(db).ConfigureAwait(false);
+        }
     }
 
     internal static object Arguments(string store, DateTime start, DateTime end, string status, string query, string segment, int page, int pageSize, string? currency = null)

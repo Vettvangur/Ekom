@@ -262,10 +262,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       }
       {
         const counts: Record<string, number> = { [filters.orderStatus]: result.count };
-        await Promise.all(orderViews.filter(view => view.key !== filters.orderStatus).map(async view => {
-          try { counts[view.key] = (await this.api.searchOrders({ ...filters, orderStatus: view.key }, 1, 1)).count; }
-          catch { /* Leave unavailable counts blank until the next refresh. */ }
-        }));
+        try { for (const item of await this.api.orderViewCounts(filters, this.otherViews(filters))) counts[item.view] = item.count; }
+        catch { /* Leave unavailable counts blank until the next refresh. */ }
         if (request !== this.orderListRequest || !this.pollingSeconds || !this.isConnected || this.overlay || this.contains(document.activeElement)) return;
         if (JSON.stringify(next) !== JSON.stringify(this.result) || orderViews.some(view => counts[view.key] !== this.viewCounts[view.key])) {
           this.result = next;
@@ -394,6 +392,10 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     this.render();
   }
 
+  private otherViews(filters: ManagerFilters): string[] {
+    return orderViews.map(view => view.key).filter(key => key !== filters.orderStatus);
+  }
+
   private async loadOrders(): Promise<void> {
     if (!managerState.filters.store) {
       this.loading = false;
@@ -416,12 +418,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         managerState.filters.orderStatus = 'AllOrders'; this.page = 1;
         await this.loadOrders(); return;
       }
-      void Promise.all(orderViews.filter(view => view.key !== filters.orderStatus).map(async view => {
-        try {
-          const count = await this.api.searchOrders({ ...filters, orderStatus: view.key }, 1, 1);
-          if (listRequest === this.orderListRequest) this.viewCounts[view.key] = count.count;
-        } catch { if (listRequest === this.orderListRequest) delete this.viewCounts[view.key]; }
-      })).then(() => {
+      const otherViews = this.otherViews(filters);
+      void this.api.orderViewCounts(filters, otherViews).catch(() => []).then(items => {
+        if (listRequest !== this.orderListRequest) return;
+        otherViews.forEach(view => delete this.viewCounts[view]);
+        items.forEach(item => { this.viewCounts[item.view] = item.count; });
+      }).then(() => {
         if (listRequest !== this.orderListRequest || !this.isConnected) return;
         this.querySelectorAll<HTMLButtonElement>('[data-action="select-order-view"]').forEach(button => {
           const count = this.viewCounts[button.dataset.view || ''];

@@ -56,4 +56,13 @@ namespace Ekom.Models.Manager
         public decimal AverageAmount { get; set; }
         public int Count { get; set; }
     }
+
+    /// <summary>
+    /// Number of orders matching one manager order view.
+    /// </summary>
+    public class OrderViewCount
+    {
+        public string View { get; set; } = string.Empty;
+        public int Count { get; set; }
+    }
 }

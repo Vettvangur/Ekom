@@ -179,6 +179,76 @@ public class ManagerRepository
         return orderListData;
     }
 
+    /// <summary>
+    /// Counts the orders matching each view in a single scan, instead of one search per view.
+    /// Views that are not recognised are left out of the result.
+    /// </summary>
+    public async Task<IReadOnlyList<OrderViewCount>> GetOrderViewCountsAsync(DateTime start, DateTime end, string query, string store, IReadOnlyCollection<string> views, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, string? currency = null)
+    {
+        var keys = new List<string>();
+        var columns = new List<string>();
+        var dates = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (string view in views)
+        {
+            if (string.IsNullOrWhiteSpace(view) || keys.Contains(view) || keys.Count >= MaxOrderViewCounts) continue;
+            if (StatusPredicate(view, inlineStatus: true) is not string status) continue;
+
+            string date = DatePredicate(view);
+            dates.Add(date);
+            columns.Add($"SUM(CASE WHEN {date}{status} THEN 1 ELSE 0 END) AS C{keys.Count}");
+            keys.Add(view);
+        }
+
+        if (keys.Count == 0) return Array.Empty<OrderViewCount>();
+
+        var sql = new StringBuilder("SELECT ").Append(string.Join(", ", columns))
+            .Append(" FROM EkomOrders WHERE (").Append(string.Join(" OR ", dates.Select(date => $"({date})"))).Append(')');
+        AppendSharedFilters(sql, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode);
+        sql.Append(ManagerCurrencyScope.Predicate(currency));
+
+        var param = new
+        {
+            startDate = start.Date,
+            endDate = end.Date.AddDays(1).AddTicks(-1),
+            query = "%" + query + "%",
+            queryUniqueId = Guid.TryParse(query?.Trim(), out Guid parsedQueryUniqueId) ? parsedQueryUniqueId : (Guid?)null,
+            store,
+            paymentProvider = Guid.TryParse(paymentProvider, out Guid parsedPaymentProvider) ? parsedPaymentProvider.ToString() : null,
+            couponCode = string.IsNullOrWhiteSpace(couponCode) ? null : couponCode.Trim(),
+            giftcardCode = string.IsNullOrWhiteSpace(giftcardCode) ? null : giftcardCode.Trim(),
+            shippingProvider = Guid.TryParse(shippingProvider, out Guid parsedShippingProvider) ? parsedShippingProvider.ToString() : null,
+            productSku = string.IsNullOrWhiteSpace(productSku) ? null : productSku.Trim(),
+            trackingSource = string.IsNullOrWhiteSpace(trackingSource) ? null : trackingSource.Trim(),
+            trackingMedium = string.IsNullOrWhiteSpace(trackingMedium) ? null : trackingMedium.Trim(),
+            trackingCampaign = string.IsNullOrWhiteSpace(trackingCampaign) ? null : trackingCampaign.Trim(),
+            trackingTerm = string.IsNullOrWhiteSpace(trackingTerm) ? null : trackingTerm.Trim(),
+            trackingContent = string.IsNullOrWhiteSpace(trackingContent) ? null : trackingContent.Trim(),
+            trackingClickId = string.IsNullOrWhiteSpace(trackingClickId) ? null : trackingClickId.Trim(),
+        };
+
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        ConfigureCouponComparison(db, couponCode);
+
+        var rows = await db.QueryToListAsync(reader =>
+        {
+            var counts = new int[keys.Count];
+            for (int i = 0; i < counts.Length; i++)
+            {
+                // SUM over no rows is NULL.
+                counts[i] = reader.IsDBNull(i) ? 0 : Convert.ToInt32(reader.GetValue(i), System.Globalization.CultureInfo.InvariantCulture);
+            }
+            return counts;
+        }, sql.ToString(), param).ConfigureAwait(false);
+
+        int[] totals = rows.Count > 0 ? rows[0] : new int[keys.Count];
+
+        return keys.Select((view, index) => new OrderViewCount { View = view, Count = totals[index] }).ToList();
+    }
+
+    private const int MaxOrderViewCounts = 20;
+
     private string? GetStoreCurrency(string storeAlias)
     {
         return _storeService.GetStoreByAlias(storeAlias)?.Currency.CurrencyValue;
@@ -265,17 +335,25 @@ ORDER BY {bucketDateExpression}";
 
     private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider, string productSku = "", string trackingSource = "", string trackingMedium = "", string trackingCampaign = "", string trackingTerm = "", string trackingContent = "", string trackingClickId = "", string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null)
     {
-        var whereClause = new StringBuilder();
+        var whereClause = new StringBuilder(" WHERE ").Append(DatePredicate(orderStatus));
+        AppendSharedFilters(whereClause, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode);
+        whereClause.Append(StatusPredicate(orderStatus, inlineStatus: false));
 
-        if (Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched))
-        {
-            whereClause.Append(" WHERE PaidDate >= @startDate AND PaidDate <= @endDate");
-        }
-        else
-        {
-            whereClause.Append(" WHERE CreateDate >= @startDate AND CreateDate <= @endDate");
-        }
+        return whereClause.ToString();
+    }
 
+    private static string DatePredicate(string orderStatus)
+    {
+        return Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched)
+            ? "PaidDate >= @startDate AND PaidDate <= @endDate"
+            : "CreateDate >= @startDate AND CreateDate <= @endDate";
+    }
+
+    /// <summary>
+    /// Filters that do not depend on the selected order view, so one scan can serve several views.
+    /// </summary>
+    private void AppendSharedFilters(StringBuilder whereClause, string query, string store, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string? couponCode, string? shippingProvider, string? giftcardCode)
+    {
         if (!string.IsNullOrEmpty(query))
         {
             whereClause.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query");
@@ -340,6 +418,20 @@ ORDER BY {bucketDateExpression}";
         AppendTrackingJsonFilter(whereClause, trackingContent, "Content", "trackingContent");
         AppendTrackingJsonFilter(whereClause, trackingClickId, "ClickId", "trackingClickId");
 
+        if (!string.IsNullOrEmpty(store))
+        {
+            whereClause.Append(" AND StoreAlias = @store");
+        }
+    }
+
+    /// <summary>
+    /// The view dependent part of the filter, prefixed with AND. Returns null when
+    /// <paramref name="inlineStatus"/> is set and the status is not a known value.
+    /// </summary>
+    private static string? StatusPredicate(string orderStatus, bool inlineStatus)
+    {
+        var whereClause = new StringBuilder();
+
         if (orderStatus == "NeedsReview")
         {
             whereClause.Append(" AND EXISTS (SELECT 1 FROM EkomOrderReviews r WHERE r.OrderId = EkomOrders.UniqueId AND r.ResolvedUtc IS NULL)");
@@ -351,16 +443,14 @@ ORDER BY {bucketDateExpression}";
         }
         else if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders" && orderStatus != "AllOrders")
         {
-            whereClause.Append(" AND OrderStatusCol = @orderStatus");
+            if (!inlineStatus) whereClause.Append(" AND OrderStatusCol = @orderStatus");
+            // Only enum-whitelisted names become SQL literals. Caller input is never interpolated directly.
+            else if (Enum.GetNames<OrderStatus>().Contains(orderStatus, StringComparer.Ordinal)) whereClause.Append(" AND OrderStatusCol = '").Append(orderStatus).Append('\'');
+            else return null;
         }
         else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders" && orderStatus != "AllOrders")
         {
             whereClause.Append(" AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed' OR OrderStatusCol = 'ReadyForPickup')");
-        }
-
-        if (!string.IsNullOrEmpty(store))
-        {
-            whereClause.Append(" AND StoreAlias = @store");
         }
 
         return whereClause.ToString();

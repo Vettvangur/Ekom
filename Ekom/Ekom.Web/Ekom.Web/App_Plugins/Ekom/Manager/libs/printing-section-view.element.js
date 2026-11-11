@@ -49,6 +49,17 @@ class v {
       pageSize: e
     });
   }
+  /** Counts for several order views in one request, so the view tabs do not each run a search. */
+  async orderViewCounts(t, a) {
+    if (!a.length) return [];
+    const { orderStatus: e, ...r } = t;
+    return this.getJson("/ekom/manager/OrderViewCounts", {
+      ...r,
+      start: t.dateFrom,
+      end: t.dateTo,
+      views: a
+    });
+  }
   async exportOrders(t, a, e) {
     return this.getBlob("/ekom/manager/ExportOrders", {
       ...t,
@@ -76,7 +87,11 @@ class v {
     const [t, a] = await Promise.all([this.getJson("/ekom/manager/stores"), this.getJson("/ekom/manager/store-currencies")]);
     return t.map((e) => {
       var r;
-      return { ...e, currencies: ((r = a.find((o) => o.alias === e.alias)) == null ? void 0 : r.currencies) || [] };
+      return {
+        ...e,
+        currencyModels: (e.currencies || []).filter((o) => !!o && typeof o == "object"),
+        currencies: ((r = a.find((o) => o.alias === e.alias)) == null ? void 0 : r.currencies) || []
+      };
     });
   }
   async paymentProviders(t) {
@@ -224,7 +239,7 @@ function _(i) {
     return "";
   const t = new URLSearchParams();
   for (const [e, r] of Object.entries(i))
-    t.set(e, r == null ? "" : String(r));
+    Array.isArray(r) ? r.forEach((o) => t.append(e, String(o))) : t.set(e, r == null ? "" : String(r));
   const a = t.toString();
   return a ? `?${a}` : "";
 }

@@ -415,6 +415,19 @@ public class EkomManagerController : ControllerBase
     }
 
     [HttpGet]
+    [Route("OrderViewCounts")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> GetOrderViewCountsAsync(DateTime start, DateTime end, string query, string store, [FromQuery] string[] views, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, string? currency = null)
+    {
+        if (!CanAccessStore(store))
+        {
+            return ForbidStore(store);
+        }
+
+        return Ok(await _repo.GetOrderViewCountsAsync(start, end, query, store, views ?? Array.Empty<string>(), paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode, currency));
+    }
+
+    [HttpGet]
     [Route("ExportOrders")]
     [UmbracoUserAuthorize]
     public async Task<IActionResult> ExportOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string trackingSource, string trackingMedium, string trackingCampaign, string trackingTerm, string trackingContent, string trackingClickId, bool includeOrderLines, string? couponCode = null, string? shippingProvider = null, string? giftcardCode = null, CancellationToken ct = default, string? currency = null)
