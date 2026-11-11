@@ -308,7 +308,7 @@ class Le extends ke(HTMLElement) {
     const e = this.querySelector("[data-review-comment]"), t = e && ((n = this.ownerDocument) == null ? void 0 : n.activeElement) === e ? { start: e.selectionStart, end: e.selectionEnd } : void 0, r = Array.from(this.querySelectorAll(".ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content")).map((d) => d.scrollTop);
     if (le(this, `
       <style>${ce}</style>
-      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261110-order-tabs-1">
+      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261111-provider-name">
       <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
           ${this.configError ? `<p class="status status--error" role="alert">${a(this.configError)}</p>` : ""}

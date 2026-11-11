@@ -528,7 +528,7 @@ ekom-orders-section-view:not([classic]) {
  .ekom-payment-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; align-items:start; margin-top:14px; }
  .ekom-payment-detail-box { border:1px solid var(--ekom-border); border-radius:10px; padding:16px; min-width:0; }
  .ekom-payment-detail-box header { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
- .ekom-payment-detail-box header h4 { margin:0; font-size:15px; font-weight:700; text-transform:none; letter-spacing:normal; overflow-wrap:anywhere; }
+ .ekom-payment-detail-box header h4 { margin:0; color:var(--ekom-text); font-size:15px; font-weight:700; text-transform:none; letter-spacing:normal; overflow-wrap:anywhere; }
  .ekom-payment-kind { font:700 11px/1.3 'Ekom Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--ekom-muted); display:inline-flex; align-items:center; gap:8px; }
  .ekom-payment-kind::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--ekom-accent); }
  .ekom-payment-kind-gift::before { background:#d59c12; }
