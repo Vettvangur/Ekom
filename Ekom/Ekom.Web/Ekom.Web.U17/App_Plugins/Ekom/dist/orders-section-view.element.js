@@ -1,10 +1,10 @@
-var ae = Object.defineProperty;
-var oe = (a, h, e) => h in a ? ae(a, h, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[h] = e;
-var c = (a, h, e) => oe(a, typeof h != "symbol" ? h + "" : h, e);
-import { E as ne, m as v, q as D, e as de, r as le, a as ce, c as o, b as ue, t as he, h as pe, u as O, o as E, v as G, w as q, n as me, x as ve, l as fe } from "./manager-shared.js";
-import { UmbElementMixin as ge } from "@umbraco-cms/backoffice/element-api";
-import { UMB_NOTIFICATION_CONTEXT as ye } from "@umbraco-cms/backoffice/notification";
-const be = [
+var oe = Object.defineProperty;
+var ne = (o, h, e) => h in o ? oe(o, h, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[h] = e;
+var c = (o, h, e) => ne(o, typeof h != "symbol" ? h + "" : h, e);
+import { E as de, m as v, q as F, e as le, r as ce, a as ue, c as a, b as he, t as pe, h as me, u as S, o as E, v as ve, w as x, x as z, y as q, n as fe, z as ge, l as ye } from "./manager-shared.js";
+import { UmbElementMixin as be } from "@umbraco-cms/backoffice/element-api";
+import { UMB_NOTIFICATION_CONTEXT as ke } from "@umbraco-cms/backoffice/notification";
+const $e = [
   { key: "customerName", label: "Name", property: "name" },
   { key: "customerEmail", label: "Email", property: "email" },
   { key: "customerAddress", label: "Address", property: "address" },
@@ -13,7 +13,7 @@ const be = [
   { key: "customerCountry", label: "Country", property: "country" },
   { key: "customerZipCode", label: "Zipcode", property: "zipCode" },
   { key: "customerPhone", label: "Phone", property: "phone" }
-], ke = [
+], we = [
   { key: "shippingName", label: "Name", property: "name" },
   { key: "shippingEmail", label: "Email", property: "email" },
   { key: "shippingAddress", label: "Address", property: "address" },
@@ -22,15 +22,16 @@ const be = [
   { key: "shippingCountry", label: "Country", property: "country" },
   { key: "shippingZipCode", label: "Zipcode", property: "zipCode" },
   { key: "shippingPhone", label: "Phone", property: "phone" }
-], $e = 180, z = 1, W = 2;
-class we extends ge(HTMLElement) {
+], Oe = 180, W = 1, H = 2;
+class Se extends be(HTMLElement) {
   constructor() {
     super(...arguments);
-    c(this, "api", new ne());
+    c(this, "api", new de());
     c(this, "notificationContext");
     c(this, "result", { orders: [], count: 0, totalPages: 0 });
     c(this, "page", 1);
     c(this, "loading", !0);
+    c(this, "orderOpening", !1);
     c(this, "pendingListKey", "");
     c(this, "shownListKey");
     c(this, "error", "");
@@ -158,7 +159,7 @@ class we extends ge(HTMLElement) {
       t && this.observe(t.theme, (r) => {
         this.toggleAttribute("data-ekom-dark", r === "umb-dark-theme");
       }, "ekom-manager-theme");
-    }), this.consumeContext(ye, (t) => {
+    }), this.consumeContext(ke, (t) => {
       this.notificationContext = t;
     }), document.addEventListener("keydown", this.handleKeyDown), document.addEventListener("pointerdown", this.dismissFulfillmentMenus, !0), this.render(), this.initialize();
   }
@@ -190,7 +191,7 @@ class we extends ge(HTMLElement) {
           } catch {
           }
           if (e !== this.orderListRequest || !this.pollingSeconds || !this.isConnected || this.overlay || this.contains(document.activeElement)) return;
-          (JSON.stringify(i) !== JSON.stringify(this.result) || D.some((d) => s[d.key] !== this.viewCounts[d.key])) && (this.result = i, this.viewCounts = s, this.loading = !1, this.render());
+          (JSON.stringify(i) !== JSON.stringify(this.result) || F.some((d) => s[d.key] !== this.viewCounts[d.key])) && (this.result = i, this.viewCounts = s, this.loading = !1, this.render());
         }
         const n = this.querySelector(".ekom-polling summary");
         n && (n.classList.add("just-refreshed"), n.addEventListener("animationend", () => n.classList.remove("just-refreshed"), { once: !0 }));
@@ -216,7 +217,7 @@ class we extends ge(HTMLElement) {
         this.api.stores(),
         this.loadConfig()
       ]);
-      if (v.statusList = r || [], v.stores = i || [], !v.filters.store && v.stores.length && (v.filters.store = v.stores[0].alias), this.hasAttribute("classic") || de(), await this.loadFilterProviders(), await this.loadOrders(), (t = v).pendingOrderId || (t.pendingOrderId = new URLSearchParams(location.search).get("orderId") || void 0), v.pendingOrderId) {
+      if (v.statusList = r || [], v.stores = i || [], !v.filters.store && v.stores.length && (v.filters.store = v.stores[0].alias), this.hasAttribute("classic") || le(), await this.loadFilterProviders(), await this.loadOrders(), (t = v).pendingOrderId || (t.pendingOrderId = new URLSearchParams(location.search).get("orderId") || void 0), v.pendingOrderId) {
         const n = v.pendingOrderId;
         v.pendingOrderId = void 0, await this.openOrder(n);
       }
@@ -258,7 +259,7 @@ class we extends ge(HTMLElement) {
     ), v.filters.paymentProvider && (v.paymentProviders.some((m) => m.key === v.filters.paymentProvider) || (v.filters.paymentProvider = "")), v.filters.shippingProvider && !d.some((l) => l.key === v.filters.shippingProvider) && (v.filters.shippingProvider = ""), this.render();
   }
   otherViews(e) {
-    return D.map((t) => t.key).filter((t) => t !== e.orderStatus);
+    return F.map((t) => t.key).filter((t) => t !== e.orderStatus);
   }
   async loadOrders() {
     if (!v.filters.store) {
@@ -302,42 +303,43 @@ class we extends ge(HTMLElement) {
     }
   }
   render() {
-    var i, n;
-    const e = this.querySelector("[data-review-comment]"), t = e && ((i = this.ownerDocument) == null ? void 0 : i.activeElement) === e ? { start: e.selectionStart, end: e.selectionEnd } : void 0, r = Array.from(this.querySelectorAll(".ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content")).map((s) => s.scrollTop);
-    if (le(this, `
-      <style>${ce}</style>
+    var i, n, s;
+    if (this.orderOpening && ((i = this.querySelector("[data-order-opening]")) == null ? void 0 : i.dataset.orderOpening) === this.returnFocusOrderId) return;
+    const e = this.querySelector("[data-review-comment]"), t = e && ((n = this.ownerDocument) == null ? void 0 : n.activeElement) === e ? { start: e.selectionStart, end: e.selectionEnd } : void 0, r = Array.from(this.querySelectorAll(".ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content")).map((d) => d.scrollTop);
+    if (ce(this, `
+      <style>${ue}</style>
       <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261110-order-tabs-1">
       <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
-          ${this.configError ? `<p class="status status--error" role="alert">${o(this.configError)}</p>` : ""}
-          ${ue("orders")}
+          ${this.configError ? `<p class="status status--error" role="alert">${a(this.configError)}</p>` : ""}
+          ${he("orders")}
           ${this.renderOrders()}
         </div>
       </section>
       ${this.renderOverlay()}
     `), this.bindEvents(), t) {
-      const s = this.querySelector("[data-review-comment]");
-      s == null || s.focus({ preventScroll: !0 }), s == null || s.setSelectionRange(t.start, t.end);
+      const d = this.querySelector("[data-review-comment]");
+      d == null || d.focus({ preventScroll: !0 }), d == null || d.setSelectionRange(t.start, t.end);
     }
-    if (this.isConnected && this.overlay === "order" && !this.contains(document.activeElement) && ((n = this.querySelector('[data-action="close-overlay"]')) == null || n.focus({ preventScroll: !0 })), this.querySelectorAll(".ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content").forEach((s, d) => {
-      s.scrollTop = r[d] ?? 0;
+    if (this.isConnected && this.overlay === "order" && !this.contains(document.activeElement) && ((s = this.querySelector('[data-action="close-overlay"]')) == null || s.focus({ preventScroll: !0 })), this.querySelectorAll(".ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content").forEach((d, l) => {
+      d.scrollTop = r[l] ?? 0;
     }), this.recoveryScrollTop !== void 0) {
-      const s = this.querySelector(".ekmOverlay");
-      s && (s.scrollTop = this.recoveryScrollTop);
+      const d = this.querySelector(".ekmOverlay");
+      d && (d.scrollTop = this.recoveryScrollTop);
     }
   }
   renderOrders() {
     const e = v.filters;
     return `${this.renderToolbar()}<section class="ekom-order-list" aria-label="Orders" aria-busy="${this.loading}">
-      <div class="ekom-list-toolbar"><nav class="ekom-order-views" aria-label="Order views">${D.map((t) => `<button type="button" data-action="select-order-view" data-view="${o(t.key)}" ${t.key === "NeedsReview" && !(this.viewCounts[t.key] > 0) ? "hidden" : ""} aria-pressed="${e.orderStatus === t.key}">${t.label}${this.viewCounts[t.key] === void 0 ? "" : `<span>${this.viewCounts[t.key]}</span>`}</button>`).join("")}</nav><div class="ekom-list-search"><label class="ekom-search-field"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input type="search" data-field="query" value="${o(e.query)}" placeholder="Search orders" aria-label="Search orders"></label><button type="button" data-action="open-filter"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filter</button></div></div>
-      <div class="ekom-inline-totals"><div><span>Orders</span><strong>${o(this.result.count || 0)}</strong></div><div><span>Order amount</span><strong>${o(this.result.grandTotal || "0")}</strong></div><div><span>Average</span><strong>${o(this.result.averageAmount || "0")}</strong></div></div>
-      ${this.error ? `<p class="status status--error" role="alert">${o(this.error)}</p>` : ""}
-      ${this.showOrdersLoading ? this.renderOrderTableHead() + he() + "</div>" : this.renderOrderTable()}
+      <div class="ekom-list-toolbar"><nav class="ekom-order-views" aria-label="Order views">${F.map((t) => `<button type="button" data-action="select-order-view" data-view="${a(t.key)}" ${t.key === "NeedsReview" && !(this.viewCounts[t.key] > 0) ? "hidden" : ""} aria-pressed="${e.orderStatus === t.key}">${t.label}${this.viewCounts[t.key] === void 0 ? "" : `<span>${this.viewCounts[t.key]}</span>`}</button>`).join("")}</nav><div class="ekom-list-search"><label class="ekom-search-field"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input type="search" data-field="query" value="${a(e.query)}" placeholder="Search orders" aria-label="Search orders"></label><button type="button" data-action="open-filter"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filter</button></div></div>
+      <div class="ekom-inline-totals"><div><span>Orders</span><strong>${a(this.result.count || 0)}</strong></div><div><span>Order amount</span><strong>${a(this.result.grandTotal || "0")}</strong></div><div><span>Average</span><strong>${a(this.result.averageAmount || "0")}</strong></div></div>
+      ${this.error ? `<p class="status status--error" role="alert">${a(this.error)}</p>` : ""}
+      ${this.showOrdersLoading ? this.renderOrderTableHead() + pe() + "</div>" : this.renderOrderTable()}
       ${this.renderPagination()}
     </section>`;
   }
   renderToolbar() {
-    return `<div class="ekom-shared-filters">${pe()}<div class="ekom-shared-filter-actions"><details class="ekom-polling${this.pollingSeconds ? " is-active" : ""}"><summary aria-label="Order polling"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg><span>${this.pollingSeconds ? `Polling every ${this.pollingSeconds}s` : "Polling off"}</span><span aria-hidden="true">⌄</span></summary><div class="ekom-poll-options" role="group" aria-label="Polling interval">${[0, 2, 5, 10, 20, 30].map((e) => `<button type="button" data-poll-seconds="${e}" aria-pressed="${e === this.pollingSeconds}"><span aria-hidden="true">•</span>${e ? `Every ${e} seconds` : "Off"}</button>`).join("")}</div></details><button type="button" data-action="open-export">Export</button></div></div>`;
+    return `<div class="ekom-shared-filters">${me()}<div class="ekom-shared-filter-actions"><details class="ekom-polling${this.pollingSeconds ? " is-active" : ""}"><summary aria-label="Order polling"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg><span>${this.pollingSeconds ? `Polling every ${this.pollingSeconds}s` : "Polling off"}</span><span aria-hidden="true">⌄</span></summary><div class="ekom-poll-options" role="group" aria-label="Polling interval">${[0, 2, 5, 10, 20, 30].map((e) => `<button type="button" data-poll-seconds="${e}" aria-pressed="${e === this.pollingSeconds}"><span aria-hidden="true">•</span>${e ? `Every ${e} seconds` : "Off"}</button>`).join("")}</div></details><button type="button" data-action="open-export">Export</button></div></div>`;
   }
   renderOrderTable() {
     return this.result.orders.length ? `${this.renderOrderTableHead()}${this.result.orders.map((e) => this.renderOrderRow(e)).join("")}</div>` : '<div class="ekom-list-message"><h3>No orders match these filters</h3><p>Try a wider date range, another view, or clear the filters.</p><button type="button" data-action="clear-order-filters">Clear filters</button></div>';
@@ -353,14 +355,14 @@ class we extends ge(HTMLElement) {
   renderOrderRow(e) {
     const t = e.status;
     return `<div class="ekom-list-row" role="row">
-      <div role="cell" class="ekom-order-number"><span class="ekom-order-reference"><button type="button" data-action="view-order" data-order-id="${o(e.uniqueId)}" aria-label="Open order ${o(e.referenceId)}">#${o(e.referenceId)}</button>${e.needsReview ? '<span class="ekom-review-icon" role="img" aria-label="Needs review" title="Needs review">!</span>' : ""}</span><small>${o((t == null ? void 0 : t.orderStatus) || "Needs review")}</small></div>
-      <span role="cell" class="ekom-row-date">${o(O(e.createDate))}</span>
-      <div role="cell" class="ekom-row-customer"><strong>${o(e.customerName)}</strong><span>${o(e.customerEmail)}</span></div>
-      <strong role="cell" class="ekom-align-right">${o(e.formattedTotal)}</strong>
+      <div role="cell" class="ekom-order-number"><span class="ekom-order-reference"><button type="button" data-action="view-order" data-order-id="${a(e.uniqueId)}" aria-label="Open order ${a(e.referenceId)}">#${a(e.referenceId)}</button>${e.needsReview ? '<span class="ekom-review-icon" role="img" aria-label="Needs review" title="Needs review">!</span>' : ""}</span><small>${a((t == null ? void 0 : t.orderStatus) || "Needs review")}</small></div>
+      <span role="cell" class="ekom-row-date">${a(S(e.createDate))}</span>
+      <div role="cell" class="ekom-row-customer"><strong>${a(e.customerName)}</strong><span>${a(e.customerEmail)}</span></div>
+      <strong role="cell" class="ekom-align-right">${a(e.formattedTotal)}</strong>
       <div role="cell">${this.renderPaymentMenu(e)}</div>
       <div role="cell">${this.renderRowFulfillment(e)}</div>
-      <span role="cell" class="ekom-align-right ekom-muted">${o(e.itemQuantity ?? "—")}</span>
-      <button role="cell" type="button" class="ekom-row-open" data-action="view-order" data-order-id="${o(e.uniqueId)}" aria-label="Open order ${o(e.referenceId)}">›</button>
+      <span role="cell" class="ekom-align-right ekom-muted">${a(e.itemQuantity ?? "—")}</span>
+      <button role="cell" type="button" class="ekom-row-open" data-action="view-order" data-order-id="${a(e.uniqueId)}" aria-label="Open order ${a(e.referenceId)}">›</button>
     </div>`;
   }
   renderPagination() {
@@ -368,7 +370,7 @@ class we extends ge(HTMLElement) {
     return `<footer class="ekom-list-footer"><span>${e ? (this.page - 1) * 20 + 1 : 0}–${Math.min(this.page * 20, e)} of ${e}</span><div><span>20 per page</span><button type="button" data-action="set-page" data-page="${this.page - 1}" ${this.page <= 1 || this.loading ? "disabled" : ""} aria-label="Previous page">‹</button><strong>${this.page} / ${t}</strong><button type="button" data-action="set-page" data-page="${this.page + 1}" ${this.page >= t || this.loading ? "disabled" : ""} aria-label="Next page">›</button></div></footer>`;
   }
   renderOverlay() {
-    return this.overlay === "filter" ? this.renderFilterOverlay() : this.overlay === "export" ? this.renderExportOverlay() : this.overlay === "order" && this.selectedOrder ? this.renderOrderOverlay(this.selectedOrder) : "";
+    return this.overlay === "filter" ? this.renderFilterOverlay() : this.overlay === "export" ? this.renderExportOverlay() : this.overlay === "order" && this.orderOpening ? this.renderOrderOpening() : this.overlay === "order" && this.selectedOrder ? this.renderOrderOverlay(this.selectedOrder) : "";
   }
   renderFilterOverlay() {
     const e = v.filters;
@@ -382,13 +384,13 @@ class we extends ge(HTMLElement) {
             <label class="control-group">Payment provider
               <select data-filter-field="paymentProvider" ${this.filterProvidersLoading ? "disabled" : ""}>
                 <option value="">Select payment provider</option>
-                ${v.paymentProviders.map((t) => `<option value="${o(t.key)}" ${e.paymentProvider === t.key ? "selected" : ""}>${o(t.title)}</option>`).join("")}
+                ${v.paymentProviders.map((t) => `<option value="${a(t.key)}" ${e.paymentProvider === t.key ? "selected" : ""}>${a(t.title)}</option>`).join("")}
               </select>
             </label>
             <label class="control-group">Shipping provider
               <select data-filter-field="shippingProvider" ${this.filterProvidersLoading ? "disabled" : ""}>
                 <option value="">All shipping providers</option>
-                ${v.shippingFilterProviders.map((t) => `<option value="${o(t.key)}" ${e.shippingProvider === t.key ? "selected" : ""}>${o(t.title)}</option>`).join("")}
+                ${v.shippingFilterProviders.map((t) => `<option value="${a(t.key)}" ${e.shippingProvider === t.key ? "selected" : ""}>${a(t.title)}</option>`).join("")}
               </select>
             </label>
             ${this.renderFilterInput("giftcardCode", "Gift card number:", "Full gift card number")}</div><h3>Order contents <small>Exact match</small></h3><div class="ekom-filter-fields ekom-filter-two">${this.renderFilterInput("productSku", "Product SKU", "Exact SKU")}${this.renderFilterInput("couponCode", "Coupon code", "Exact order-level coupon code")}</div><h3>Tracking</h3><div class="ekom-filter-fields ekom-filter-two">
@@ -407,7 +409,7 @@ class we extends ge(HTMLElement) {
     const r = e.status;
     if (!this.config || this.configError || !r || r.requiresReview || r.orderStatus !== "Open") return E(r == null ? void 0 : r.paymentStatus);
     const i = ["Pending", "Authorized", "Paid", "PartiallyPaid", "Failed", "Voided"];
-    return `<details class="ekom-row-fulfillment ekom-payment-menu" name="ekom-row-fulfillment"><summary aria-label="Set payment for order ${o(e.referenceId)}">${E(r.paymentStatus)}<span aria-hidden="true">▾</span></summary><div class="ekom-row-fulfillment-menu"><h4>Set payment</h4>${i.map((n) => `<button type="button" data-action="set-payment" data-detail="${t}" data-order-id="${o(e.uniqueId)}" data-value="${n}" aria-pressed="${r.paymentStatus === n}" ${this.stateSaving ? "disabled" : ""}>${this.renderStateDot(n)}${n.replace(/([a-z])([A-Z])/g, "$1 $2")}<span class="ekom-status-check">${r.paymentStatus === n ? "✓" : ""}</span></button>`).join("")}<p class="ekom-payment-note">Updates the recorded status immediately. Does not move money through the payment provider.</p>${t ? "" : `<label><input type="checkbox" data-row-events ${this.config.managerOrderStatusFireEventsByDefault ?? !0 ? "checked" : ""}><span><strong>Trigger status events</strong><small>Runs any handlers set up for this status</small></span></label>`}</div></details>`;
+    return `<details class="ekom-row-fulfillment ekom-payment-menu" name="ekom-row-fulfillment"><summary aria-label="Set payment for order ${a(e.referenceId)}">${E(r.paymentStatus)}<span aria-hidden="true">▾</span></summary><div class="ekom-row-fulfillment-menu"><h4>Set payment</h4>${i.map((n) => `<button type="button" data-action="set-payment" data-detail="${t}" data-order-id="${a(e.uniqueId)}" data-value="${n}" aria-pressed="${r.paymentStatus === n}" ${this.stateSaving ? "disabled" : ""}>${this.renderStateDot(n)}${n.replace(/([a-z])([A-Z])/g, "$1 $2")}<span class="ekom-status-check">${r.paymentStatus === n ? "✓" : ""}</span></button>`).join("")}<p class="ekom-payment-note">Updates the recorded status immediately. Does not move money through the payment provider.</p>${t ? "" : `<label><input type="checkbox" data-row-events ${this.config.managerOrderStatusFireEventsByDefault ?? !0 ? "checked" : ""}><span><strong>Trigger status events</strong><small>Runs any handlers set up for this status</small></span></label>`}</div></details>`;
   }
   async changePayment(e) {
     var d;
@@ -441,7 +443,7 @@ class we extends ge(HTMLElement) {
   }
   renderRowFulfillment(e) {
     const t = e.status;
-    return !this.config || this.configError || !t || t.requiresReview || t.orderStatus !== "Open" ? E(t == null ? void 0 : t.fulfillmentStatus) : `<details class="ekom-row-fulfillment" name="ekom-row-fulfillment"><summary aria-label="Set fulfillment for order ${o(e.referenceId)}">${E(t.fulfillmentStatus)}<span aria-hidden="true">▾</span></summary><div class="ekom-row-fulfillment-menu"><h4>Set fulfillment</h4>${["Unfulfilled", "Picking", "Picked", "Packed", "Fulfilled", "PartiallyFulfilled"].map((r) => `<button type="button" data-action="set-row-fulfillment" data-order-id="${o(e.uniqueId)}" data-value="${r}" aria-pressed="${t.fulfillmentStatus === r}" ${this.stateSaving ? "disabled" : ""}>${this.renderStateDot(r)}${r.replace(/([a-z])([A-Z])/g, "$1 $2")}<span class="ekom-status-check">${t.fulfillmentStatus === r ? "✓" : ""}</span></button>`).join("")}<label><input type="checkbox" data-row-events ${this.config.managerOrderStatusFireEventsByDefault ?? !0 ? "checked" : ""}><span><strong>Trigger status events</strong><small>Runs any handlers set up for this status</small></span></label></div></details>`;
+    return !this.config || this.configError || !t || t.requiresReview || t.orderStatus !== "Open" ? E(t == null ? void 0 : t.fulfillmentStatus) : `<details class="ekom-row-fulfillment" name="ekom-row-fulfillment"><summary aria-label="Set fulfillment for order ${a(e.referenceId)}">${E(t.fulfillmentStatus)}<span aria-hidden="true">▾</span></summary><div class="ekom-row-fulfillment-menu"><h4>Set fulfillment</h4>${["Unfulfilled", "Picking", "Picked", "Packed", "Fulfilled", "PartiallyFulfilled"].map((r) => `<button type="button" data-action="set-row-fulfillment" data-order-id="${a(e.uniqueId)}" data-value="${r}" aria-pressed="${t.fulfillmentStatus === r}" ${this.stateSaving ? "disabled" : ""}>${this.renderStateDot(r)}${r.replace(/([a-z])([A-Z])/g, "$1 $2")}<span class="ekom-status-check">${t.fulfillmentStatus === r ? "✓" : ""}</span></button>`).join("")}<label><input type="checkbox" data-row-events ${this.config.managerOrderStatusFireEventsByDefault ?? !0 ? "checked" : ""}><span><strong>Trigger status events</strong><small>Runs any handlers set up for this status</small></span></label></div></details>`;
   }
   async changeRowFulfillment(e) {
     var s;
@@ -466,8 +468,8 @@ class we extends ge(HTMLElement) {
   }
   renderFilterInput(e, t, r) {
     return `
-      <label class="control-group">${o(t)}
-        <input type="text" data-filter-field="${o(e)}" value="${o(v.filters[e])}" placeholder="${o(r)}">
+      <label class="control-group">${a(t)}
+        <input type="text" data-filter-field="${a(e)}" value="${a(v.filters[e])}" placeholder="${a(r)}">
       </label>
     `;
   }
@@ -481,13 +483,19 @@ class we extends ge(HTMLElement) {
       </div><div class="ekom-filter-footer"><button type="button" class="btn-outline" data-action="close-overlay" ${this.exporting ? "disabled" : ""}>Cancel</button><button type="button" class="btn-success" data-action="export-orders" ${this.exporting ? "disabled" : ""}>Export</button></div>
     </div></div>`;
   }
+  /** The order drawer while everything it shows is still being fetched. */
+  renderOrderOpening() {
+    var t;
+    const e = (t = this.result.orders.find((r) => r.uniqueId === this.returnFocusOrderId)) == null ? void 0 : t.referenceId;
+    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details" aria-busy="true" data-order-opening="${a(this.returnFocusOrderId)}"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><div class="ekom-order-heading-copy"><h2>${e ? `#${a(e)}` : "Order"}</h2>${ve("Loading order…")}</div><button type="button" data-action="close-overlay" aria-label="Close order">×</button></header><div class="ekmOverlay__content ekmOrder"><div class="ekom-order-columns ekom-order-opening"><main class="ekom-order-main">${x(4)}${x(3)}${x(2)}</main><aside class="ekom-customer-sidebar">${x(5)}</aside></div></div></div></div>`;
+  }
   renderOrderOverlay(e) {
     var i, n, s, d, l, m;
     const t = this.result.orders.findIndex((f) => f.uniqueId === e.uniqueId);
     return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><nav class="ekom-order-navigation" aria-label="Order navigation">${[-1, 1].map((f) => {
       const u = t >= 0 ? this.result.orders[t + f] : void 0, p = f < 0 ? "Previous order" : "Next order";
-      return `<button type="button" data-action="view-order" data-order-id="${o((u == null ? void 0 : u.uniqueId) || "")}" aria-label="${p}" title="${p} on this page (${f < 0 ? "← / ↑" : "→ / ↓"})" ${!u || this.stateSaving || this.executingActionKey ? "disabled" : ""}>${f < 0 ? "‹" : "›"}</button>`;
-    }).join("")}</nav><div class="ekom-order-heading-copy"><h2>#${o(e.referenceId)} ${E((i = e.status) == null ? void 0 : i.paymentStatus)} ${E((n = e.status) == null ? void 0 : n.fulfillmentStatus)} ${E((s = e.status) == null ? void 0 : s.orderStatus)}</h2><p>${o((l = (d = e.customerInformation) == null ? void 0 : d.customer) == null ? void 0 : l.name)} · ${o(O(e.createDate))} · ${o(((m = e.storeInfo) == null ? void 0 : m.alias) || e.storeAlias)} · <span class="ekom-heading-order-id"><span>${o(e.uniqueId)}</span><button type="button" class="ekom-copy-order-id" data-action="copy-order-id" aria-label="Copy order ID" title="Copy order ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></span></p></div><button type="button" data-action="close-overlay" aria-label="Close order">×</button></header><div class="ekmOverlay__content ekmOrder">${this.renderOrderDetails(e)}</div></div></div>${this.customerEditorOpen ? this.renderCustomerEditor() : ""}${this.orderLineEditorOpen ? this.renderOrderLineEditor() : ""}${this.shippingProviderEditorOpen ? this.renderShippingProviderEditor() : ""}${this.activeReview ? this.renderReviewDialog() : ""}`;
+      return `<button type="button" data-action="view-order" data-order-id="${a((u == null ? void 0 : u.uniqueId) || "")}" aria-label="${p}" title="${p} on this page (${f < 0 ? "← / ↑" : "→ / ↓"})" ${!u || this.stateSaving || this.executingActionKey ? "disabled" : ""}>${f < 0 ? "‹" : "›"}</button>`;
+    }).join("")}</nav><div class="ekom-order-heading-copy"><h2>#${a(e.referenceId)} ${E((i = e.status) == null ? void 0 : i.paymentStatus)} ${E((n = e.status) == null ? void 0 : n.fulfillmentStatus)} ${E((s = e.status) == null ? void 0 : s.orderStatus)}</h2><p>${a((l = (d = e.customerInformation) == null ? void 0 : d.customer) == null ? void 0 : l.name)} · ${a(S(e.createDate))} · ${a(((m = e.storeInfo) == null ? void 0 : m.alias) || e.storeAlias)} · <span class="ekom-heading-order-id"><span>${a(e.uniqueId)}</span><button type="button" class="ekom-copy-order-id" data-action="copy-order-id" aria-label="Copy order ID" title="Copy order ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></span></p></div><button type="button" data-action="close-overlay" aria-label="Close order">×</button></header><div class="ekmOverlay__content ekmOrder">${this.renderOrderDetails(e)}</div></div></div>${this.customerEditorOpen ? this.renderCustomerEditor() : ""}${this.orderLineEditorOpen ? this.renderOrderLineEditor() : ""}${this.shippingProviderEditorOpen ? this.renderShippingProviderEditor() : ""}${this.activeReview ? this.renderReviewDialog() : ""}`;
   }
   renderOrderDetails(e) {
     var m, f, u, p;
@@ -496,11 +504,11 @@ class we extends ge(HTMLElement) {
       ${this.renderPaymentCard(e)}
       ${this.renderShipment(e)}
       ${Object.keys(e.customData || {}).length ? `<section class="ekom-detail-card"><h3>Notes</h3>${this.renderOrderCustomData(e)}</section>` : ""}
-    </main><aside class="ekom-customer-sidebar"><section class="ekom-detail-card"><h3>Customer</h3><strong>${o(t.name)}</strong><div class="ekom-card-heading"><h4>Contact information</h4><button type="button" class="btn-reset" data-action="open-customer-editor">Edit</button></div><p>${o(t.email)}</p><p>${o(t.phone)}</p><h4>Shipping address</h4>${F(r) ? this.renderAddress(r) : "<p>Same as billing address</p>"}<h4>Billing address</h4>${this.renderAddress(t)}${this.renderExtraProperties(t.properties, "customer")}</section></aside></div>`;
-    return `<div class="ekom-status-controls"><label>Order<details class="ekom-lifecycle-menu"><summary aria-label="Order status">${this.renderStateDot(i == null ? void 0 : i.orderStatus)}${o((i == null ? void 0 : i.orderStatus) || "Needs review")} ▾</summary><div>${((i == null ? void 0 : i.orderStatus) === "Closed" ? [["Reopen", "Reopen order"]] : [["Close", "Close order"], ["Cancel", "Cancel order"]]).map(([g, y]) => `<button type="button" data-action="order-state-command" data-command="${g}" ${s ? "disabled" : ""}>${y}</button>`).join("")}</div></details></label><div class="ekom-payment-control"><span>Payment</span>${this.renderPaymentMenu(e, !0)}</div><div class="ekom-fulfillment-control"><span>Fulfillment</span><input type="hidden" data-field="fulfillmentState" value="${o((i == null ? void 0 : i.fulfillmentStatus) || "")}"><details class="ekom-lifecycle-menu ekom-fulfillment-menu"><summary aria-label="Fulfillment status" ${s || (i == null ? void 0 : i.orderStatus) !== "Open" ? 'aria-disabled="true"' : ""}>${this.renderStateDot(i == null ? void 0 : i.fulfillmentStatus)}<span data-fulfillment-label>${o(((i == null ? void 0 : i.fulfillmentStatus) || "Needs review").replace(/([a-z])([A-Z])/g, "$1 $2"))}</span><span class="ekom-status-chevron">▾</span></summary><div>${["Unfulfilled", "Picking", "Picked", "Packed", "PartiallyFulfilled", "Fulfilled"].map((g) => `<button type="button" data-action="choose-fulfillment" data-value="${g}" aria-pressed="${(i == null ? void 0 : i.fulfillmentStatus) === g}" ${s || (i == null ? void 0 : i.orderStatus) !== "Open" ? "disabled" : ""}>${this.renderStateDot(g)}${g.replace(/([a-z])([A-Z])/g, "$1 $2")}<span class="ekom-status-check">${(i == null ? void 0 : i.fulfillmentStatus) === g ? "✓" : ""}</span></button>`).join("")}</div></details></div><label class="ekmCheckboxLabel"><input type="checkbox" data-field="notifyOrderStatus" ${this.notifyOrderStatus ? "checked" : ""}>Trigger status events</label><span class="ekom-events-help"><button type="button" class="ekom-events-help-button" aria-label="About trigger status events" aria-describedby="ekom-events-tooltip">i</button><span class="ekom-events-tooltip" id="ekom-events-tooltip" role="tooltip"><strong>Trigger status events ("Fire events")</strong><span><b>On</b> — saves the status and runs whatever handlers are set up for it. What happens depends on the status and your setup, for example an email or an ERP update.</span><span><b>Off</b> — saves the status only. Use for manual corrections so external actions don't repeat.</span><small>Either way the status is saved and logged. It doesn't release stock or replace the payment flow.</small></span></span><button type="button" data-action="save-fulfillment" class="btn-success" ${s || (i == null ? void 0 : i.orderStatus) !== "Open" ? "disabled" : ""}>${this.stateSaving ? "Saving..." : "Save"}</button></div>
+    </main><aside class="ekom-customer-sidebar"><section class="ekom-detail-card"><h3>Customer</h3><strong>${a(t.name)}</strong><div class="ekom-card-heading"><h4>Contact information</h4><button type="button" class="btn-reset" data-action="open-customer-editor">Edit</button></div><p>${a(t.email)}</p><p>${a(t.phone)}</p><h4>Shipping address</h4>${M(r) ? this.renderAddress(r) : "<p>Same as billing address</p>"}<h4>Billing address</h4>${this.renderAddress(t)}${this.renderExtraProperties(t.properties, "customer")}</section></aside></div>`;
+    return `<div class="ekom-status-controls"><label>Order<details class="ekom-lifecycle-menu"><summary aria-label="Order status">${this.renderStateDot(i == null ? void 0 : i.orderStatus)}${a((i == null ? void 0 : i.orderStatus) || "Needs review")} ▾</summary><div>${((i == null ? void 0 : i.orderStatus) === "Closed" ? [["Reopen", "Reopen order"]] : [["Close", "Close order"], ["Cancel", "Cancel order"]]).map(([g, y]) => `<button type="button" data-action="order-state-command" data-command="${g}" ${s ? "disabled" : ""}>${y}</button>`).join("")}</div></details></label><div class="ekom-payment-control"><span>Payment</span>${this.renderPaymentMenu(e, !0)}</div><div class="ekom-fulfillment-control"><span>Fulfillment</span><input type="hidden" data-field="fulfillmentState" value="${a((i == null ? void 0 : i.fulfillmentStatus) || "")}"><details class="ekom-lifecycle-menu ekom-fulfillment-menu"><summary aria-label="Fulfillment status" ${s || (i == null ? void 0 : i.orderStatus) !== "Open" ? 'aria-disabled="true"' : ""}>${this.renderStateDot(i == null ? void 0 : i.fulfillmentStatus)}<span data-fulfillment-label>${a(((i == null ? void 0 : i.fulfillmentStatus) || "Needs review").replace(/([a-z])([A-Z])/g, "$1 $2"))}</span><span class="ekom-status-chevron">▾</span></summary><div>${["Unfulfilled", "Picking", "Picked", "Packed", "PartiallyFulfilled", "Fulfilled"].map((g) => `<button type="button" data-action="choose-fulfillment" data-value="${g}" aria-pressed="${(i == null ? void 0 : i.fulfillmentStatus) === g}" ${s || (i == null ? void 0 : i.orderStatus) !== "Open" ? "disabled" : ""}>${this.renderStateDot(g)}${g.replace(/([a-z])([A-Z])/g, "$1 $2")}<span class="ekom-status-check">${(i == null ? void 0 : i.fulfillmentStatus) === g ? "✓" : ""}</span></button>`).join("")}</div></details></div><label class="ekmCheckboxLabel"><input type="checkbox" data-field="notifyOrderStatus" ${this.notifyOrderStatus ? "checked" : ""}>Trigger status events</label><span class="ekom-events-help"><button type="button" class="ekom-events-help-button" aria-label="About trigger status events" aria-describedby="ekom-events-tooltip">i</button><span class="ekom-events-tooltip" id="ekom-events-tooltip" role="tooltip"><strong>Trigger status events ("Fire events")</strong><span><b>On</b> — saves the status and runs whatever handlers are set up for it. What happens depends on the status and your setup, for example an email or an ERP update.</span><span><b>Off</b> — saves the status only. Use for manual corrections so external actions don't repeat.</span><small>Either way the status is saved and logged. It doesn't release stock or replace the payment flow.</small></span></span><button type="button" data-action="save-fulfillment" class="btn-success" ${s || (i == null ? void 0 : i.orderStatus) !== "Open" ? "disabled" : ""}>${this.stateSaving ? "Saving..." : "Save"}</button></div>
       ${i != null && i.requiresReview ? '<p class="status" role="status">Historical payment or fulfillment needs review before updating this order.</p>' : ""}
-      ${this.configError ? `<p class="status status--error" role="alert">${o(this.configError)}</p>` : ""}
-      <span class="ekom-sr-only">Payment: ${o((p = e.chargedAmount) == null ? void 0 : p.currencyString)}</span>${this.renderOrderLockStatus()}${this.renderOrderActions()}${this.renderGiftcardRecovery()}${this.renderReviews()}
+      ${this.configError ? `<p class="status status--error" role="alert">${a(this.configError)}</p>` : ""}
+      <span class="ekom-sr-only">Payment: ${a((p = e.chargedAmount) == null ? void 0 : p.currencyString)}</span>${this.renderOrderLockStatus()}${this.renderOrderActions()}${this.renderGiftcardRecovery()}${this.renderReviews()}
       <div class="ekom-order-tabs" role="tablist" aria-label="Order sections">${n.map((g) => `<button type="button" id="ekom-order-tab-${g.key}" role="tab" aria-selected="${this.orderTab === g.key}" aria-controls="ekom-order-panel-${g.key}" tabindex="${this.orderTab === g.key ? 0 : -1}" data-action="select-order-tab" data-tab="${g.key}">${g.label}</button>`).join("")}</div>
       ${d("order", l)}${d("activity", this.renderActivityLogs())}${d("tracking", this.renderTracking(e) + this.renderConsent(e))}`;
   }
@@ -532,48 +540,48 @@ class we extends ge(HTMLElement) {
     const t = Object.entries(e.customData || {}).filter(([r, i]) => r.trim() && typeof i == "string" && i.trim());
     return t.length ? `<dl class="ekmOrderCustomData" aria-label="Order custom data">${t.map(([r, i]) => `
       <div class="ekmOrderCustomData__item">
-        <dt class="ekmOrderCustomData__key">${o(Oe(r))}</dt>
-        <dd class="ekmOrderCustomData__value">${o(i)}</dd>
+        <dt class="ekmOrderCustomData__key">${a(Ee(r))}</dt>
+        <dd class="ekmOrderCustomData__value">${a(i)}</dd>
       </div>`).join("")}</dl>` : "";
   }
   renderPaymentCard(e) {
-    var n, s, d, l, m, f, u, p, g, y, S, A, I;
-    const t = (e.orderLines || []).reduce((L, w) => L + (Number(w.quantity) || 0), 0), r = ((n = e.shippingProvider) == null ? void 0 : n.title) || ((d = (s = e.shippingProvider) == null ? void 0 : s.properties) == null ? void 0 : d.nodeName) || "", i = (L, w, $, C = !1) => `<div${C ? ' class="ekom-money-total"' : ""}><dt>${o(L)}</dt><dd class="ekom-money-description">${o(w)}</dd><dd>${o($ || "—")}</dd></div>`;
-    return `<section class="ekom-detail-card ekom-payment-card"><h3>Payment ${E((l = e.status) == null ? void 0 : l.paymentStatus)}</h3><dl class="ekom-money-summary">${i("Subtotal", `${t} ${t === 1 ? "item" : "items"}`, (f = (m = e.subTotal) == null ? void 0 : m.withVat) == null ? void 0 : f.currencyString)}${i("Discount", e.coupon || "", (u = e.discountAmount) != null && u.currencyString ? `-${e.discountAmount.currencyString}` : "")}${i("Shipping", r, (y = (g = (p = e.shippingProvider) == null ? void 0 : p.price) == null ? void 0 : g.withVat) == null ? void 0 : y.currencyString)}${i("Tax", "Included in total", (S = e.chargedVat) == null ? void 0 : S.currencyString)}${i("Total", "", (A = e.chargedAmount) == null ? void 0 : A.currencyString, !0)}</dl>${(I = e.giftcards) != null && I.length ? `<div class="ekom-payment-breakdown">${this.renderGiftcards(e)}</div>` : ""}${this.renderPaymentDetails(e)}</section>`;
+    var n, s, d, l, m, f, u, p, g, y, O, I, A;
+    const t = (e.orderLines || []).reduce((L, w) => L + (Number(w.quantity) || 0), 0), r = ((n = e.shippingProvider) == null ? void 0 : n.title) || ((d = (s = e.shippingProvider) == null ? void 0 : s.properties) == null ? void 0 : d.nodeName) || "", i = (L, w, $, C = !1) => `<div${C ? ' class="ekom-money-total"' : ""}><dt>${a(L)}</dt><dd class="ekom-money-description">${a(w)}</dd><dd>${a($ || "—")}</dd></div>`;
+    return `<section class="ekom-detail-card ekom-payment-card"><h3>Payment ${E((l = e.status) == null ? void 0 : l.paymentStatus)}</h3><dl class="ekom-money-summary">${i("Subtotal", `${t} ${t === 1 ? "item" : "items"}`, (f = (m = e.subTotal) == null ? void 0 : m.withVat) == null ? void 0 : f.currencyString)}${i("Discount", e.coupon || "", (u = e.discountAmount) != null && u.currencyString ? `-${e.discountAmount.currencyString}` : "")}${i("Shipping", r, (y = (g = (p = e.shippingProvider) == null ? void 0 : p.price) == null ? void 0 : g.withVat) == null ? void 0 : y.currencyString)}${i("Tax", "Included in total", (O = e.chargedVat) == null ? void 0 : O.currencyString)}${i("Total", "", (I = e.chargedAmount) == null ? void 0 : I.currencyString, !0)}</dl>${(A = e.giftcards) != null && A.length ? `<div class="ekom-payment-breakdown">${this.renderGiftcards(e)}</div>` : ""}${this.renderPaymentDetails(e)}</section>`;
   }
   renderPaymentDetails(e) {
     var i, n, s, d, l, m, f;
-    const t = (u) => `<dl>${u.map((p) => `<div><dt>${o(p.label)}</dt><dd><span>${o(p.value)}</span>${p.label !== "Currency" && p.value && p.value !== "Not recorded" && p.value !== "—" ? `<button type="button" class="ekom-payment-copy" data-action="copy-provider-value" data-copy="${o(p.value)}" aria-label="Copy ${o(p.label)}" title="Copy ${o(p.label)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>` : ""}</dd></div>`).join("")}</dl>`, r = T((i = e.paymentProvider) == null ? void 0 : i.customData, "custompayment").map(([u, p]) => ({ label: x(R(u)), value: p }));
-    return r.push({ label: "Paid date", value: e.paidDate ? O(e.paidDate) : "Not recorded" }, { label: "Currency", value: e.currency || ((s = (n = e.storeInfo) == null ? void 0 : n.currency) == null ? void 0 : s.isoCurrencySymbol) || "Not recorded" }), `<section class="ekom-payment-details" aria-label="Payment details"><div class="ekom-payment-detail-grid"><section class="ekom-payment-detail-box"><header><span class="ekom-payment-kind">Payment</span><h4>${o(((d = e.paymentProvider) == null ? void 0 : d.title) || ((m = (l = e.paymentProvider) == null ? void 0 : l.properties) == null ? void 0 : m.nodeName) || "Not recorded")}</h4>${E((f = e.status) == null ? void 0 : f.paymentStatus)}</header>${t(r)}</section>${(e.giftcards || []).map((u) => {
-      const p = H(u).filter((g) => g.label !== _("code")).map((g) => g.label === _("amount") ? { ...g, value: this.formatGiftcardAmount(u.amount, e) } : g);
-      return `<section class="ekom-payment-detail-box"><header><span class="ekom-payment-kind ekom-payment-kind-gift">Gift card</span><h4>${o(u.code)}</h4><span class="ekom-gift-state">${o(Z(u).status)}</span></header>${t(p)}</section>`;
+    const t = (u) => `<dl>${u.map((p) => `<div><dt>${a(p.label)}</dt><dd><span>${a(p.value)}</span>${p.label !== "Currency" && p.value && p.value !== "Not recorded" && p.value !== "—" ? `<button type="button" class="ekom-payment-copy" data-action="copy-provider-value" data-copy="${a(p.value)}" aria-label="Copy ${a(p.label)}" title="Copy ${a(p.label)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>` : ""}</dd></div>`).join("")}</dl>`, r = _((i = e.paymentProvider) == null ? void 0 : i.customData, "custompayment").map(([u, p]) => ({ label: T(R(u)), value: p }));
+    return r.push({ label: "Paid date", value: e.paidDate ? S(e.paidDate) : "Not recorded" }, { label: "Currency", value: e.currency || ((s = (n = e.storeInfo) == null ? void 0 : n.currency) == null ? void 0 : s.isoCurrencySymbol) || "Not recorded" }), `<section class="ekom-payment-details" aria-label="Payment details"><div class="ekom-payment-detail-grid"><section class="ekom-payment-detail-box"><header><span class="ekom-payment-kind">Payment</span><h4>${a(((d = e.paymentProvider) == null ? void 0 : d.title) || ((m = (l = e.paymentProvider) == null ? void 0 : l.properties) == null ? void 0 : m.nodeName) || "Not recorded")}</h4>${E((f = e.status) == null ? void 0 : f.paymentStatus)}</header>${t(r)}</section>${(e.giftcards || []).map((u) => {
+      const p = Z(u).filter((g) => g.label !== D("code")).map((g) => g.label === D("amount") ? { ...g, value: this.formatGiftcardAmount(u.amount, e) } : g);
+      return `<section class="ekom-payment-detail-box"><header><span class="ekom-payment-kind ekom-payment-kind-gift">Gift card</span><h4>${a(u.code)}</h4><span class="ekom-gift-state">${a(Q(u).status)}</span></header>${t(p)}</section>`;
     }).join("")}</div></section>`;
   }
   renderShipment(e) {
-    var y, S, A, I, L;
-    const t = e.shippingProvider, r = (t == null ? void 0 : t.title) || ((y = t == null ? void 0 : t.properties) == null ? void 0 : y.nodeName) || "No shipping provider", i = T(t == null ? void 0 : t.customData, "customshipping"), n = (w) => {
+    var y, O, I, A, L;
+    const t = e.shippingProvider, r = (t == null ? void 0 : t.title) || ((y = t == null ? void 0 : t.properties) == null ? void 0 : y.nodeName) || "No shipping provider", i = _(t == null ? void 0 : t.customData, "customshipping"), n = (w) => {
       var $;
       return (($ = i.find(([C]) => R(C).replace(/[_ -]/g, "").toLowerCase() === w.toLowerCase())) == null ? void 0 : $[1]) || "";
-    }, s = n("TrackingNumber"), d = n("ShipmentState"), l = n("TrackingUrl"), m = /^https?:\/\//i.test(l) ? l : "", f = ((S = e.customerInformation) == null ? void 0 : S.customer) || {}, u = ((A = e.customerInformation) == null ? void 0 : A.shipping) || {}, p = F(u) ? u : f, g = (w, $) => `<button type="button" class="ekom-shipment-copy" data-action="copy-provider-value" data-copy="${o(w)}" aria-label="Copy ${o($)}" title="Copy ${o($)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>`;
-    return `<section class="ekom-detail-card ekom-shipment"><div class="ekom-shipment-grid"><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Shipment</h4>${d ? `<span class="ekom-shipment-state">${o(d)}</span>` : ""}</div><div class="ekom-shipment-tracking"><span>Tracking number</span><div><strong>${o(s || "Not available")}</strong>${s ? g(s, "tracking number") : ""}${t ? '<button type="button" class="ekom-shipment-copy" data-action="open-shipping-provider-editor" aria-label="Edit shipping data" title="Edit shipping data"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 20h9M16 3l5 5L7 22l-5 1 1-5Z"/></svg></button>' : ""}${m ? `<a href="${o(m)}" target="_blank" rel="noopener noreferrer">Track shipment ↗</a>` : ""}</div></div></section><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Method</h4><strong>${o(((L = (I = t == null ? void 0 : t.price) == null ? void 0 : I.withVat) == null ? void 0 : L.currencyString) || "—")}</strong></div><h3>${o(r)}</h3><div class="ekom-shipment-address"><span>Deliver to</span><strong>${o([p.address, p.apartment].filter(Boolean).join(", ") || "No address recorded")}</strong><span>${o([p.zipCode, p.city].filter(Boolean).join(" "))}</span><span>${o(p.country)}</span></div><div><button type="button" data-action="open-shipping-provider-editor">${t ? "Change shipping provider" : "Add shipping provider"}</button></div></section></div>${i.length ? `<details class="ekom-shipment-data" open><summary><strong>Provider data</strong><span>${i.length} fields from ${o(r)}</span><span class="ekom-shipment-hide">Hide ▴</span><span class="ekom-shipment-show">Show ▾</span></summary><dl>${i.map(([w, $]) => `<div><dt>${o(x(R(w)))}</dt><dd><span>${o($ || "—")}</span>${$ ? g($, x(R(w))) : ""}</dd></div>`).join("")}</dl></details>` : ""}</section>`;
+    }, s = n("TrackingNumber"), d = n("ShipmentState"), l = n("TrackingUrl"), m = /^https?:\/\//i.test(l) ? l : "", f = ((O = e.customerInformation) == null ? void 0 : O.customer) || {}, u = ((I = e.customerInformation) == null ? void 0 : I.shipping) || {}, p = M(u) ? u : f, g = (w, $) => `<button type="button" class="ekom-shipment-copy" data-action="copy-provider-value" data-copy="${a(w)}" aria-label="Copy ${a($)}" title="Copy ${a($)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>`;
+    return `<section class="ekom-detail-card ekom-shipment"><div class="ekom-shipment-grid"><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Shipment</h4>${d ? `<span class="ekom-shipment-state">${a(d)}</span>` : ""}</div><div class="ekom-shipment-tracking"><span>Tracking number</span><div><strong>${a(s || "Not available")}</strong>${s ? g(s, "tracking number") : ""}${t ? '<button type="button" class="ekom-shipment-copy" data-action="open-shipping-provider-editor" aria-label="Edit shipping data" title="Edit shipping data"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 20h9M16 3l5 5L7 22l-5 1 1-5Z"/></svg></button>' : ""}${m ? `<a href="${a(m)}" target="_blank" rel="noopener noreferrer">Track shipment ↗</a>` : ""}</div></div></section><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Method</h4><strong>${a(((L = (A = t == null ? void 0 : t.price) == null ? void 0 : A.withVat) == null ? void 0 : L.currencyString) || "—")}</strong></div><h3>${a(r)}</h3><div class="ekom-shipment-address"><span>Deliver to</span><strong>${a([p.address, p.apartment].filter(Boolean).join(", ") || "No address recorded")}</strong><span>${a([p.zipCode, p.city].filter(Boolean).join(" "))}</span><span>${a(p.country)}</span></div><div><button type="button" data-action="open-shipping-provider-editor">${t ? "Change shipping provider" : "Add shipping provider"}</button></div></section></div>${i.length ? `<details class="ekom-shipment-data" open><summary><strong>Provider data</strong><span>${i.length} fields from ${a(r)}</span><span class="ekom-shipment-hide">Hide ▴</span><span class="ekom-shipment-show">Show ▾</span></summary><dl>${i.map(([w, $]) => `<div><dt>${a(T(R(w)))}</dt><dd><span>${a($ || "—")}</span>${$ ? g($, T(R(w))) : ""}</dd></div>`).join("")}</dl></details>` : ""}</section>`;
   }
   renderPrintableOrder(e) {
     var s, d, l, m, f, u;
-    const t = ((s = e.customerInformation) == null ? void 0 : s.customer) || {}, r = ((d = e.customerInformation) == null ? void 0 : d.shipping) || {}, i = this.getOrderStatusValue(e.orderStatus), n = ((l = v.statusList.find((p) => G(p) === i)) == null ? void 0 : l.label) || i;
+    const t = ((s = e.customerInformation) == null ? void 0 : s.customer) || {}, r = ((d = e.customerInformation) == null ? void 0 : d.shipping) || {}, i = this.getOrderStatusValue(e.orderStatus), n = ((l = v.statusList.find((p) => z(p) === i)) == null ? void 0 : l.label) || i;
     return `
       <main class="ekmOrder">
-        <h1>Order number: ${o(e.referenceId)}</h1>
-        <p>Order status: ${o(((m = e.status) == null ? void 0 : m.orderStatus) || n)}</p>
-        ${e.status ? `<p>Payment status: ${o(e.status.paymentStatus.replace(/([a-z])([A-Z])/g, "$1 $2"))} · Fulfillment: ${o(e.status.fulfillmentStatus.replace(/([a-z])([A-Z])/g, "$1 $2"))}</p>` : ""}
-        <p>UniqueId: ${o(e.uniqueId)}</p>
-        <p>Created date: ${o(O(e.createDate))}</p>
-        <p>Paid date: ${o(O(e.paidDate))}</p>
-        <p>Store: ${o(((f = e.storeInfo) == null ? void 0 : f.alias) || e.storeAlias)}</p>
-        <p>Payment: <strong>${o((u = e.chargedAmount) == null ? void 0 : u.currencyString)}</strong></p>
+        <h1>Order number: ${a(e.referenceId)}</h1>
+        <p>Order status: ${a(((m = e.status) == null ? void 0 : m.orderStatus) || n)}</p>
+        ${e.status ? `<p>Payment status: ${a(e.status.paymentStatus.replace(/([a-z])([A-Z])/g, "$1 $2"))} · Fulfillment: ${a(e.status.fulfillmentStatus.replace(/([a-z])([A-Z])/g, "$1 $2"))}</p>` : ""}
+        <p>UniqueId: ${a(e.uniqueId)}</p>
+        <p>Created date: ${a(S(e.createDate))}</p>
+        <p>Paid date: ${a(S(e.paidDate))}</p>
+        <p>Store: ${a(((f = e.storeInfo) == null ? void 0 : f.alias) || e.storeAlias)}</p>
+        <p>Payment: <strong>${a((u = e.chargedAmount) == null ? void 0 : u.currencyString)}</strong></p>
         ${this.renderOrderCustomData(e)}
         <section class="ekmSplit">
           <div class="ekmSplit__column"><h4>Billing</h4>${this.renderAddress(t)}${this.renderExtraProperties(t.properties, "customer")}</div>
-          <div class="ekmSplit__column"><h4>Shipping</h4>${F(r) ? `${this.renderAddress(r)}${this.renderExtraProperties(r.properties, "shipping")}` : "<p>Same as billing address</p>"}</div>
+          <div class="ekmSplit__column"><h4>Shipping</h4>${M(r) ? `${this.renderAddress(r)}${this.renderExtraProperties(r.properties, "shipping")}` : "<p>Same as billing address</p>"}</div>
         </section>
         <section class="ekmSplit">
           <div class="ekmSplit__column">${this.renderProvider("Payment Method", e.paymentProvider, "custompayment")}</div>
@@ -584,28 +592,28 @@ class we extends ge(HTMLElement) {
       </main>`;
   }
   renderAddress(e) {
-    return ["name", "email", "address", "apartment", "city", "country", "zipCode", "phone"].filter((t) => e[t]).map((t) => `<p>${x(t)}: ${o(q(e[t]))}</p>`).join("");
+    return ["name", "email", "address", "apartment", "city", "country", "zipCode", "phone"].filter((t) => e[t]).map((t) => `<p>${T(t)}: ${a(q(e[t]))}</p>`).join("");
   }
   renderExtraProperties(e, t) {
-    const r = T(e, t);
-    return r.length ? `<h5 style="margin-top:20px; font-weight:bold;">${t === "customshipping" ? "Shipping Provider Custom" : `Extra ${t === "shipping" ? "Shipping" : "Customer"}`} Data</h5><ul>${r.map(([i, n]) => `<li><strong>${o(R(i))}</strong>: ${o(n)}</li>`).join("")}</ul>` : "";
+    const r = _(e, t);
+    return r.length ? `<h5 style="margin-top:20px; font-weight:bold;">${t === "customshipping" ? "Shipping Provider Custom" : `Extra ${t === "shipping" ? "Shipping" : "Customer"}`} Data</h5><ul>${r.map(([i, n]) => `<li><strong>${a(R(i))}</strong>: ${a(n)}</li>`).join("")}</ul>` : "";
   }
   renderProvider(e, t, r) {
     var n, s;
     if (!t)
       return "";
     const i = typeof t.title == "string" && t.title.trim() ? t.title : (n = t.properties) == null ? void 0 : n.nodeName;
-    return `<h4>${o(e)}</h4><h4><strong>${o(i)}</strong></h4>${t.price ? `<p>Price: ${o((s = t.price.withVat) == null ? void 0 : s.currencyString)}</p>` : ""}${this.renderExtraProperties(t.customData, r)}`;
+    return `<h4>${a(e)}</h4><h4><strong>${a(i)}</strong></h4>${t.price ? `<p>Price: ${a((s = t.price.withVat) == null ? void 0 : s.currencyString)}</p>` : ""}${this.renderExtraProperties(t.customData, r)}`;
   }
   renderGiftcards(e) {
     const t = Array.isArray(e.giftcards) ? e.giftcards : [];
     return t.length ? `<div class="ekmOrderGiftcards"><h4>Gift cards</h4><ul class="ekmOrderGiftcards__list">${t.map((r) => {
-      const i = Z(r), n = H(r);
-      return `<li><div class="ekmOrderGiftcards__summary"><strong>${o(r.code)}</strong><strong>${o(this.formatGiftcardAmount(r.amount, e))}</strong><span>${o(i.status)}</span></div>
-        <p>${o(i.expiryLabel)}: ${o(i.expiry)}</p>
-        ${i.warning ? `<p role="alert">${o(i.warning)}</p>` : ""}
+      const i = Q(r), n = Z(r);
+      return `<li><div class="ekmOrderGiftcards__summary"><strong>${a(r.code)}</strong><strong>${a(this.formatGiftcardAmount(r.amount, e))}</strong><span>${a(i.status)}</span></div>
+        <p>${a(i.expiryLabel)}: ${a(i.expiry)}</p>
+        ${i.warning ? `<p role="alert">${a(i.warning)}</p>` : ""}
         <div class="ekmOrderGiftcards__actions">${this.orderActions.filter((s) => s.giftcardCode != null && s.giftcardCode === r.code).map((s) => this.renderAction(s)).join("")}</div>
-        <details><summary>More details</summary><dl>${n.map((s) => `<dt>${o(s.label)}</dt><dd>${o(s.value)}</dd>`).join("")}</dl></details></li>`;
+        <details><summary>More details</summary><dl>${n.map((s) => `<dt>${a(s.label)}</dt><dd>${a(s.value)}</dd>`).join("")}</dl></details></li>`;
     }).join("")}</ul></div>` : "";
   }
   formatGiftcardAmount(e, t) {
@@ -624,11 +632,11 @@ class we extends ge(HTMLElement) {
     var t;
     if (((t = this.recoveryAttempts) == null ? void 0 : t.length) === 0 && !this.recoveryLoading && !this.recoveryError && !this.recoveryOperation && !this.recoveryMessage && !this.recoveryActionError && !this.recoveryRefreshError && !this.orderActionsError)
       return "";
-    const e = (r, i) => `<dt>${o(r)}</dt><dd>${o(i ?? "Not recorded")}</dd>`;
+    const e = (r, i) => `<dt>${a(r)}</dt><dd>${a(i ?? "Not recorded")}</dd>`;
     return `<section class="ekmOrderTracking ekmGiftcardRecovery"><h4>Failed gift-card preparation</h4>
       <p>Recovery history for failed checkout preparation, not accepted payment. These actions do not refund a payment or retry checkout.</p>
-      ${this.recoveryMessage ? `<p role="status">${o(this.recoveryMessage)}</p>` : ""}
-      ${this.recoveryActionError ? `<p role="alert">${o(this.recoveryActionError)}</p>` : ""}
+      ${this.recoveryMessage ? `<p role="status">${a(this.recoveryMessage)}</p>` : ""}
+      ${this.recoveryActionError ? `<p role="alert">${a(this.recoveryActionError)}</p>` : ""}
       ${this.recoveryRefreshError ? '<p role="alert">We could not refresh all order details. Reopen the order before taking another recovery action.</p>' : ""}
       ${this.orderActionsError ? '<p role="alert">We could not refresh order actions. Recovery actions are unavailable. Reopen the order to try again.</p>' : ""}
       ${this.recoveryLoading ? "<p>Loading recovery history...</p>" : ""}
@@ -636,18 +644,18 @@ class we extends ge(HTMLElement) {
       ${this.recoveryAttempts === void 0 && !this.recoveryLoading && !this.recoveryError ? "<p>Recovery history has not been checked. Recovery actions are unavailable.</p>" : ""}
       ${(this.recoveryAttempts || []).map((r) => {
       const i = r.canReconcile && !!r.reconcileToken;
-      return `<article><h5>Preparation attempt: ${o(r.attemptId)}</h5>
-          <dl>${e("Created", O(r.createdUtc))}${e("Recovery state", r.state)}${e("Reason", r.reason)}</dl>
+      return `<article><h5>Preparation attempt: ${a(r.attemptId)}</h5>
+          <dl>${e("Created", S(r.createdUtc))}${e("Recovery state", r.state)}${e("Reason", r.reason)}</dl>
           ${r.hasUnknownEffects ? '<p role="alert">Unknown provider effects need reconciliation. A missing claim reference is not evidence that no hold exists. Do not release by card number or amount.</p>' : ""}
           ${r.claims.map((n) => {
         const s = n.canRelease && !!n.releaseToken;
         return `<div class="ekmGiftcardRecovery__claim"><dl>${e("Masked card", n.cardReference)}${e("Claim reference", n.claimReference)}${e("Provider", n.provider)}${e("Account", n.account)}${e("Requested amount", `${n.requestedAmount} ${n.currency}`)}${e("Raw returned amount", n.rawReturnedAmount)}${e("Returned amount type", n.returnedAmountType)}${e("Raw expiry", n.rawExpiry)}${e("Cleanup status", n.cleanupState)}</dl>
-              ${n.claimReference ? `<button type="button" class="btn-outline" data-action="release-giftcard-recovery" data-attempt-id="${o(r.attemptId)}" data-claim-id="${o(n.id)}" ${!s || this.recoveryBusy ? "disabled" : ""}>Release failed-preparation hold${this.recoveryOperation === `release:${r.attemptId}:${n.id}` ? " (Working...)" : ""}</button>` : "<p>Missing claim reference: needs reconciliation. No release action is available.</p>"}
-              <p>${o(s && n.claimReference ? "Release allowed after confirmation." : n.unavailableReason || "Release unavailable; check reconciliation requirements.")}</p></div>`;
+              ${n.claimReference ? `<button type="button" class="btn-outline" data-action="release-giftcard-recovery" data-attempt-id="${a(r.attemptId)}" data-claim-id="${a(n.id)}" ${!s || this.recoveryBusy ? "disabled" : ""}>Release failed-preparation hold${this.recoveryOperation === `release:${r.attemptId}:${n.id}` ? " (Working...)" : ""}</button>` : "<p>Missing claim reference: needs reconciliation. No release action is available.</p>"}
+              <p>${a(s && n.claimReference ? "Release allowed after confirmation." : n.unavailableReason || "Release unavailable; check reconciliation requirements.")}</p></div>`;
       }).join("")}
           ${!r.claims.length && r.hasUnknownEffects ? "<p>No known claim to release. Reconcile unknown provider effects.</p>" : ""}
-          <button type="button" class="btn-outline" data-action="reconcile-giftcard-recovery" data-attempt-id="${o(r.attemptId)}" ${!i || this.recoveryBusy ? "disabled" : ""}>Reconcile failed preparation${this.recoveryOperation === `reconcile:${r.attemptId}` ? " (Working...)" : ""}</button>
-          <p>${o(i ? "Reconciliation allowed after confirmation." : r.unavailableReason || "Reconciliation unavailable.")}</p>
+          <button type="button" class="btn-outline" data-action="reconcile-giftcard-recovery" data-attempt-id="${a(r.attemptId)}" ${!i || this.recoveryBusy ? "disabled" : ""}>Reconcile failed preparation${this.recoveryOperation === `reconcile:${r.attemptId}` ? " (Working...)" : ""}</button>
+          <p>${a(i ? "Reconciliation allowed after confirmation." : r.unavailableReason || "Reconciliation unavailable.")}</p>
         </article>`;
     }).join("")}</section>`;
   }
@@ -655,7 +663,7 @@ class we extends ge(HTMLElement) {
     const t = Array.isArray(e.orderLines) ? e.orderLines : [], r = t.reduce((i, n) => i + (Number(n.quantity) || 0), 0);
     return `<div class="ekom-card-heading ekom-lines-heading"><h3>Order lines</h3><span>${t.length} ${t.length === 1 ? "line" : "lines"} · ${r} ${r === 1 ? "item" : "items"}</span><button type="button" data-action="open-order-line-editor">Add order line</button></div><div class="ekom-lines-scroll"><table class="ekom-design-lines"><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Discount</th><th>Total</th><th><span class="ekom-sr-only">Actions</span></th></tr></thead><tbody>${t.map((i) => {
       var n, s, d, l, m, f, u, p, g, y;
-      return `<tr><td><div class="ekmOrderLineProduct">${Q(i)}<div>${Y(i.product)}<small>${o((n = i.product) == null ? void 0 : n.sku)}</small>${i.variant ? `<small>${o(i.variant.title)}</small>` : ""}${J(i)}</div></div></td><td>${o(i.quantity)}</td><td>${o((l = (d = (s = i.product) == null ? void 0 : s.price) == null ? void 0 : d.withVat) == null ? void 0 : l.currencyString)}</td><td>${o((f = (m = i.amount) == null ? void 0 : m.discountAmount) == null ? void 0 : f.currencyString)}</td><td><strong>${o((p = (u = i.amount) == null ? void 0 : u.withVat) == null ? void 0 : p.currencyString)}</strong></td><td><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${o(i.key)}" data-product-title="${o((g = i.product) == null ? void 0 : g.title)}" ${this.removingOrderLineId === i.key ? "disabled" : ""} aria-label="Remove ${o((y = i.product) == null ? void 0 : y.title)}">×</button></td></tr>`;
+      return `<tr><td><div class="ekmOrderLineProduct">${Y(i)}<div>${J(i.product)}<small>${a((n = i.product) == null ? void 0 : n.sku)}</small>${i.variant ? `<small>${a(i.variant.title)}</small>` : ""}${X(i)}</div></div></td><td>${a(i.quantity)}</td><td>${a((l = (d = (s = i.product) == null ? void 0 : s.price) == null ? void 0 : d.withVat) == null ? void 0 : l.currencyString)}</td><td>${a((f = (m = i.amount) == null ? void 0 : m.discountAmount) == null ? void 0 : f.currencyString)}</td><td><strong>${a((p = (u = i.amount) == null ? void 0 : u.withVat) == null ? void 0 : p.currencyString)}</strong></td><td><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${a(i.key)}" data-product-title="${a((g = i.product) == null ? void 0 : g.title)}" ${this.removingOrderLineId === i.key ? "disabled" : ""} aria-label="Remove ${a((y = i.product) == null ? void 0 : y.title)}">×</button></td></tr>`;
     }).join("")}</tbody></table></div>`;
   }
   renderOrderLines(e) {
@@ -667,54 +675,54 @@ class we extends ge(HTMLElement) {
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
         <div class="umb-table-body">
           ${t.map((p) => {
-      var g, y, S, A, I, L, w, $, C, j, U, V, K, B;
-      return `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${o(p.key)}" data-product-title="${o((g = p.product) == null ? void 0 : g.title)}" ${this.removingOrderLineId === p.key ? "disabled" : ""} aria-label="Remove ${o((y = p.product) == null ? void 0 : y.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><div class="ekmOrderLineProduct">${Q(p)}<div class="ekmOrderLineProduct__details"><span>${Y(p.product)}${(A = (S = p.product) == null ? void 0 : S.sku) != null && A.trim() ? ` (${o(p.product.sku)})` : ""}</span>${p.variant ? `<small style="display:block; margin-top:3px;">${o(p.variant.title)} ${(I = p.variant.sku) != null && I.trim() ? `(${o(p.variant.sku)})` : ""}</small>` : ""}${J(p)}</div></div></div><div class="umb-table-cell">${o(p.quantity)}</div><div class="umb-table-cell">${o(($ = (w = (L = p.product) == null ? void 0 : L.price) == null ? void 0 : w.withVat) == null ? void 0 : $.currencyString)}</div><div class="umb-table-cell">${o((j = (C = p.amount) == null ? void 0 : C.vat) == null ? void 0 : j.currencyString)}</div><div class="umb-table-cell">-${o((V = (U = p.amount) == null ? void 0 : U.discountAmount) == null ? void 0 : V.currencyString)}</div><div class="umb-table-cell"><strong>${o((B = (K = p.amount) == null ? void 0 : K.withVat) == null ? void 0 : B.currencyString)}</strong></div></div>`;
+      var g, y, O, I, A, L, w, $, C, U, V, K, B, G;
+      return `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${a(p.key)}" data-product-title="${a((g = p.product) == null ? void 0 : g.title)}" ${this.removingOrderLineId === p.key ? "disabled" : ""} aria-label="Remove ${a((y = p.product) == null ? void 0 : y.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><div class="ekmOrderLineProduct">${Y(p)}<div class="ekmOrderLineProduct__details"><span>${J(p.product)}${(I = (O = p.product) == null ? void 0 : O.sku) != null && I.trim() ? ` (${a(p.product.sku)})` : ""}</span>${p.variant ? `<small style="display:block; margin-top:3px;">${a(p.variant.title)} ${(A = p.variant.sku) != null && A.trim() ? `(${a(p.variant.sku)})` : ""}</small>` : ""}${X(p)}</div></div></div><div class="umb-table-cell">${a(p.quantity)}</div><div class="umb-table-cell">${a(($ = (w = (L = p.product) == null ? void 0 : L.price) == null ? void 0 : w.withVat) == null ? void 0 : $.currencyString)}</div><div class="umb-table-cell">${a((U = (C = p.amount) == null ? void 0 : C.vat) == null ? void 0 : U.currencyString)}</div><div class="umb-table-cell">-${a((K = (V = p.amount) == null ? void 0 : V.discountAmount) == null ? void 0 : K.currencyString)}</div><div class="umb-table-cell"><strong>${a((G = (B = p.amount) == null ? void 0 : B.withVat) == null ? void 0 : G.currencyString)}</strong></div></div>`;
     }).join("")}
         </div>
         <div class="umb-table-footer">
-          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${o((s = (n = e.subTotal) == null ? void 0 : n.withVat) == null ? void 0 : s.currencyString)}</div></div>
-          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">${o(i)}</div><div class="umb-table-cell">-${o((d = e.discountAmount) == null ? void 0 : d.currencyString)}</div></div>
-          ${e.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${o((m = (l = e.shippingProvider.price) == null ? void 0 : l.withVat) == null ? void 0 : m.currencyString)}</div></div>` : ""}
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Sub Total (inc VAT)</div><div class="umb-table-cell">${a((s = (n = e.subTotal) == null ? void 0 : n.withVat) == null ? void 0 : s.currencyString)}</div></div>
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">${a(i)}</div><div class="umb-table-cell">-${a((d = e.discountAmount) == null ? void 0 : d.currencyString)}</div></div>
+          ${e.shippingProvider ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Shipping Total</div><div class="umb-table-cell">${a((m = (l = e.shippingProvider.price) == null ? void 0 : l.withVat) == null ? void 0 : m.currencyString)}</div></div>` : ""}
           ${this.renderGiftcardTotal(e)}
-          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${o((f = e.chargedVat) == null ? void 0 : f.currencyString)}</div></div>
-          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Total</div><div class="umb-table-cell"><strong>${o((u = e.chargedAmount) == null ? void 0 : u.currencyString)}</strong></div></div>
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">${a((f = e.chargedVat) == null ? void 0 : f.currencyString)}</div></div>
+          <div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell">Total</div><div class="umb-table-cell"><strong>${a((u = e.chargedAmount) == null ? void 0 : u.currencyString)}</strong></div></div>
         </div>
       </div>
     `;
   }
   renderGiftcardTotal(e) {
     const r = (Array.isArray(e.giftcards) ? e.giftcards : []).reduce((i, n) => i + (n.amount > 0 && (n.claimed || !n.validUntil || Date.parse(n.validUntil) > Date.now()) ? n.amount : 0), 0);
-    return r ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell" title="Payable total already includes applicable gift cards; eligible value may exceed the order total.">Gift cards (eligible value)</div><div class="umb-table-cell">${o(this.formatGiftcardAmount(r, e))}</div></div>` : "";
+    return r ? `<div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell"></div><div class="umb-table-cell" title="Payable total already includes applicable gift cards; eligible value may exceed the order total.">Gift cards (eligible value)</div><div class="umb-table-cell">${a(this.formatGiftcardAmount(r, e))}</div></div>` : "";
   }
   renderTracking(e) {
     const t = e.tracking;
-    return Ee(t) ? `<div class="ekmOrderTracking"><h4>Tracking</h4>${Ae(t)}</div>` : '<div class="ekmOrderTracking"><h4>Tracking</h4><p>No tracking data was captured for this order.</p></div>';
+    return Ae(t) ? `<div class="ekmOrderTracking"><h4>Tracking</h4>${Ce(t)}</div>` : '<div class="ekmOrderTracking"><h4>Tracking</h4><p>No tracking data was captured for this order.</p></div>';
   }
   renderConsent(e) {
     const t = e.consent;
-    return Ie(t) ? `<div class="ekmOrderTracking"><h4>Consent</h4>${b("Resolved", O(t.resolvedAtUtc))}${b("Source", t.source)}${b("Analytics", ee(t.analytics))}${b("Marketing", ee(t.marketing))}</div>` : '<div class="ekmOrderTracking"><h4>Consent</h4><p>No consent data was captured for this order.</p></div>';
+    return Pe(t) ? `<div class="ekmOrderTracking"><h4>Consent</h4>${b("Resolved", S(t.resolvedAtUtc))}${b("Source", t.source)}${b("Analytics", te(t.analytics))}${b("Marketing", te(t.marketing))}</div>` : '<div class="ekmOrderTracking"><h4>Consent</h4><p>No consent data was captured for this order.</p></div>';
   }
   renderActivityLogs() {
     return this.orderLogsLoading ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Loading activity...</p></div>' : this.orderLogsError ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Unable to load activity log.</p></div>' : this.orderLogs.length ? `<div class="ekmOrderActivityLog"><h4>Activity log</h4><div class="ekom-log-scroll"><table class="ekom-log-table"><thead><tr><th>Date</th><th>Type</th><th>Message</th></tr></thead><tbody>${this.orderLogs.map((t, r) => {
       const i = t.message ?? "", n = this.activityLogExpandedIndexes.has(r), s = this.canExpandActivityLog(i) ? `<button type="button" class="btn-reset ekmOrderActivityLog__toggle" data-action="toggle-activity-log" data-log-index="${r}">${n ? "Show less" : "Show more"}</button>` : "";
-      return `<tr><td class="ekmOrderActivityLog__date">${o(O(t.date))}</td><td><span class="ekom-log-type ${this.getActivityLogTypeClass(t)}">${t.logType === z ? "Success" : t.logType === W ? "Alert" : "Info"}</span></td><td><div class="ekmOrderActivityLog__message${n ? " ekmOrderActivityLog__message--expanded" : ""}">${o(i)}</div>${s}</td></tr>`;
+      return `<tr><td class="ekmOrderActivityLog__date">${a(S(t.date))}</td><td><span class="ekom-log-type ${this.getActivityLogTypeClass(t)}">${t.logType === W ? "Success" : t.logType === H ? "Alert" : "Info"}</span></td><td><div class="ekmOrderActivityLog__message${n ? " ekmOrderActivityLog__message--expanded" : ""}">${a(i)}</div>${s}</td></tr>`;
     }).join("")}</tbody></table></div></div>` : '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>No activity yet.</p></div>';
   }
   getActivityLogTypeClass(e) {
     switch (e.logType) {
-      case z:
-        return "ekmOrderActivityLog__icon--success";
       case W:
+        return "ekmOrderActivityLog__icon--success";
+      case H:
         return "ekmOrderActivityLog__icon--alert";
       default:
         return "ekmOrderActivityLog__icon--info";
     }
   }
   canExpandActivityLog(e) {
-    return e.length > $e;
+    return e.length > Oe;
   }
   renderStateDot(e) {
-    return `<span class="ekom-state-dot" data-state="${o(e || "")}" aria-hidden="true"></span>`;
+    return `<span class="ekom-state-dot" data-state="${a(e || "")}" aria-hidden="true"></span>`;
   }
   renderOrderActions() {
     const e = this.orderActions.filter((t) => t.giftcardCode == null);
@@ -722,29 +730,29 @@ class we extends ge(HTMLElement) {
   }
   renderAction(e) {
     const t = this.executingActionKey === e.key;
-    return `<span style="display:inline-block; margin:4px;"><button type="button" class="${e.look === "primary" ? "btn-success" : "btn-outline"}" data-action="execute-order-action" data-action-key="${o(e.key)}" ${e.enabled === !1 || this.executingActionKey || this.releasingOrderLock || this.recoveryOperation ? "disabled" : ""}>${o(e.label)}${t ? " (Working...)" : ""}</button>${e.enabled === !1 && e.disabledReason ? `<small style="display:block;">${o(e.disabledReason)}</small>` : ""}</span>`;
+    return `<span style="display:inline-block; margin:4px;"><button type="button" class="${e.look === "primary" ? "btn-success" : "btn-outline"}" data-action="execute-order-action" data-action-key="${a(e.key)}" ${e.enabled === !1 || this.executingActionKey || this.releasingOrderLock || this.recoveryOperation ? "disabled" : ""}>${a(e.label)}${t ? " (Working...)" : ""}</button>${e.enabled === !1 && e.disabledReason ? `<small style="display:block;">${a(e.disabledReason)}</small>` : ""}</span>`;
   }
   renderOrderLockStatus() {
-    const e = this.orderLockStatus, t = this.orderLockWarning ? `<p role="alert">${o(this.orderLockWarning)}</p>` : "", r = this.orderLockError ? '<p role="alert">We could not check whether checkout is locked. Reopen the order to try again.</p>' : "", i = this.orderLockReleaseError ? `<p role="alert">${o(this.orderLockReleaseError)}</p>` : "";
+    const e = this.orderLockStatus, t = this.orderLockWarning ? `<p role="alert">${a(this.orderLockWarning)}</p>` : "", r = this.orderLockError ? '<p role="alert">We could not check whether checkout is locked. Reopen the order to try again.</p>' : "", i = this.orderLockReleaseError ? `<p role="alert">${a(this.orderLockReleaseError)}</p>` : "";
     if (!(e != null && e.hasLock))
       return `${t}${r}${i}${this.orderLockLoading ? "<p>Checking checkout...</p>" : ""}`;
     const n = !e.canRelease || !e.releaseToken ? e.releaseUnavailableReason || "This checkout lock cannot be released right now." : "";
-    return `<section class="ekmOrderTracking"><h4>Checkout is locked</h4>${t}${r}${i}<p>${e.reconciliationRequired && !e.paymentOperationLocked && !e.preparationLocked ? "The previous payment needs checking before the customer can pay or edit their basket." : "A previous checkout did not finish. This prevents the customer from paying or editing their basket."}</p><p>If you have checked that no payment is being processed, Release Lock resets checkout and lets the customer try again.</p><button type="button" class="btn-outline" data-action="release-order-lock" ${n || this.orderLockLoading || this.orderLockError || this.releasingOrderLock || this.executingActionKey || this.recoveryOperation ? "disabled" : ""}>Release Lock</button>${n ? `<p>${o(n)}</p>` : ""}<details><summary>Technical details</summary><ul>${e.paymentOperationLocked ? "<li>Payment operation ownership retained.</li>" : ""}${e.preparationLocked ? "<li>Checkout preparation ownership retained.</li>" : ""}${e.reconciliationRequired ? "<li>Reconciliation required.</li>" : ""}</ul><p>Attempt ID: ${o(e.attemptId || "Not available")}</p><p>Attempt state: ${o(e.attemptState || "Not available")}</p></details></section>`;
+    return `<section class="ekmOrderTracking"><h4>Checkout is locked</h4>${t}${r}${i}<p>${e.reconciliationRequired && !e.paymentOperationLocked && !e.preparationLocked ? "The previous payment needs checking before the customer can pay or edit their basket." : "A previous checkout did not finish. This prevents the customer from paying or editing their basket."}</p><p>If you have checked that no payment is being processed, Release Lock resets checkout and lets the customer try again.</p><button type="button" class="btn-outline" data-action="release-order-lock" ${n || this.orderLockLoading || this.orderLockError || this.releasingOrderLock || this.executingActionKey || this.recoveryOperation ? "disabled" : ""}>Release Lock</button>${n ? `<p>${a(n)}</p>` : ""}<details><summary>Technical details</summary><ul>${e.paymentOperationLocked ? "<li>Payment operation ownership retained.</li>" : ""}${e.preparationLocked ? "<li>Checkout preparation ownership retained.</li>" : ""}${e.reconciliationRequired ? "<li>Reconciliation required.</li>" : ""}</ul><p>Attempt ID: ${a(e.attemptId || "Not available")}</p><p>Attempt state: ${a(e.attemptState || "Not available")}</p></details></section>`;
   }
   renderCustomerEditor() {
     const e = this.customerEditModel;
     return e ? `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel ekom-editor-customer" role="dialog" aria-modal="true" aria-label="Edit customer information"><div class="ekmOverlay__header"><h3>Edit customer information</h3><button class="btn-reset" type="button" aria-label="Close edit customer information" data-action="close-customer-editor" ${this.customerSaving ? "disabled" : ""}>&times;</button></div><div class="ekmOverlay__content"><div class="ekmSplit"><div class="ekmSplit__column"><h4>Billing</h4>${this.renderCustomerFields(e.customer, "customer")}</div><div class="ekmSplit__column"><h4>Shipping</h4>${this.renderCustomerFields(e.shipping, "shipping")}</div></div></div><div class="ekom-editor-footer"><button class="btn-outline" type="button" data-action="close-customer-editor" ${this.customerSaving ? "disabled" : ""}>Cancel</button><button class="btn-success" type="button" data-action="save-customer-information" ${this.customerSaving ? "disabled" : ""}>${this.customerSaving ? "Saving..." : "Save customer information"}</button></div></div></div>` : "";
   }
   renderCustomerFields(e, t) {
-    return e.map((r) => `<label class="control-group">${o(r.label)} ${r.isExtra ? `<small>(${o(r.key)})</small>` : ""}<input type="text" data-customer-group="${t}" data-customer-key="${o(r.key)}" value="${o(r.value)}" ${this.customerSaving ? "disabled" : ""}></label>`).join("");
+    return e.map((r) => `<label class="control-group">${a(r.label)} ${r.isExtra ? `<small>(${a(r.key)})</small>` : ""}<input type="text" data-customer-group="${t}" data-customer-key="${a(r.key)}" value="${a(r.value)}" ${this.customerSaving ? "disabled" : ""}></label>`).join("");
   }
   renderOrderLineEditor() {
     const e = this.orderLineEditModel;
-    return e ? `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel ekom-editor-order-line" role="dialog" aria-modal="true" aria-label="Add order line"><div class="ekmOverlay__header"><h3>Add order line</h3><button class="btn-reset" type="button" aria-label="Close add order line" data-action="close-order-line-editor" ${this.orderLineSaving ? "disabled" : ""}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Product ID<input type="text" data-order-line-field="productId" value="${o(e.productId)}" required ${this.orderLineSaving ? "disabled" : ""}></label><label class="control-group">Variant ID<input type="text" data-order-line-field="variantId" value="${o(e.variantId)}" ${this.orderLineSaving ? "disabled" : ""}></label><label class="control-group" style="padding-bottom:20px;">Quantity<input type="number" min="0.000001" step="any" data-order-line-field="quantity" value="${o(e.quantity)}" required ${this.orderLineSaving ? "disabled" : ""}></label></div><div class="ekom-editor-footer"><button class="btn-outline" type="button" data-action="close-order-line-editor" ${this.orderLineSaving ? "disabled" : ""}>Cancel</button><button class="btn-success" type="button" data-action="save-order-line" ${this.orderLineSaving ? "disabled" : ""}>${this.orderLineSaving ? "Adding..." : "Add order line"}</button></div></div></div>` : "";
+    return e ? `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel ekom-editor-order-line" role="dialog" aria-modal="true" aria-label="Add order line"><div class="ekmOverlay__header"><h3>Add order line</h3><button class="btn-reset" type="button" aria-label="Close add order line" data-action="close-order-line-editor" ${this.orderLineSaving ? "disabled" : ""}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Product ID<input type="text" data-order-line-field="productId" value="${a(e.productId)}" required ${this.orderLineSaving ? "disabled" : ""}></label><label class="control-group">Variant ID<input type="text" data-order-line-field="variantId" value="${a(e.variantId)}" ${this.orderLineSaving ? "disabled" : ""}></label><label class="control-group" style="padding-bottom:20px;">Quantity<input type="number" min="0.000001" step="any" data-order-line-field="quantity" value="${a(e.quantity)}" required ${this.orderLineSaving ? "disabled" : ""}></label></div><div class="ekom-editor-footer"><button class="btn-outline" type="button" data-action="close-order-line-editor" ${this.orderLineSaving ? "disabled" : ""}>Cancel</button><button class="btn-success" type="button" data-action="save-order-line" ${this.orderLineSaving ? "disabled" : ""}>${this.orderLineSaving ? "Adding..." : "Add order line"}</button></div></div></div>` : "";
   }
   renderShippingProviderEditor() {
     var e;
-    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel ekom-editor-shipping-provider" role="dialog" aria-modal="true" aria-label="Shipping provider"><div class="ekmOverlay__header"><h3>${(e = this.selectedOrder) != null && e.shippingProvider ? "Change shipping provider" : "Add shipping provider"}</h3><button class="btn-reset" type="button" aria-label="Close shipping provider" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? "disabled" : ""}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Shipping provider<select data-field="shippingProviderId" ${this.shippingProviderSaving ? "disabled" : ""}><option value="">Select a provider</option>${this.shippingProviders.map((t) => `<option value="${o(t.key)}" ${this.shippingProviderId === t.key ? "selected" : ""}>${o(t.title)}</option>`).join("")}</select></label>${this.shippingProviders.length ? "" : "<p>No shipping providers available for this store.</p>"}<div class="ekom-provider-data-heading"><h4>Provider data</h4><p>Stored on the order. Keys are kept as-is; new keys are prefixed <code>customshipping</code>.</p></div><div class="ekom-provider-field-labels" aria-hidden="true"><span>Key</span><span>Value</span></div><div class="ekom-provider-fields">${this.shippingCustomFields.map((t, r) => `<div class="ekom-provider-field-row"><input aria-label="Key ${r + 1}" type="text" data-shipping-key="${r}" value="${o(t.key)}" ${t.existing ? "readonly" : ""} ${this.shippingProviderSaving ? "disabled" : ""} placeholder="TrackingNumber" maxlength="100"><input aria-label="Value ${r + 1}" type="text" data-shipping-value="${r}" value="${o(t.value)}" ${this.shippingProviderSaving ? "disabled" : ""} maxlength="4096"></div>`).join("")}</div><button class="btn-outline" type="button" data-action="add-shipping-custom-field" ${this.shippingProviderSaving ? "disabled" : ""}>Add custom field</button></div><div class="ekom-editor-footer"><p>Changes apply to this order only.</p><button class="btn-outline" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? "disabled" : ""}>Cancel</button><button class="btn-success" type="button" data-action="save-shipping-provider" ${this.shippingProviderSaving || !this.shippingProviders.length ? "disabled" : ""}>${this.shippingProviderSaving ? "Saving..." : "Save shipping provider"}</button></div></div></div>`;
+    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel ekom-editor-shipping-provider" role="dialog" aria-modal="true" aria-label="Shipping provider"><div class="ekmOverlay__header"><h3>${(e = this.selectedOrder) != null && e.shippingProvider ? "Change shipping provider" : "Add shipping provider"}</h3><button class="btn-reset" type="button" aria-label="Close shipping provider" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? "disabled" : ""}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Shipping provider<select data-field="shippingProviderId" ${this.shippingProviderSaving ? "disabled" : ""}><option value="">Select a provider</option>${this.shippingProviders.map((t) => `<option value="${a(t.key)}" ${this.shippingProviderId === t.key ? "selected" : ""}>${a(t.title)}</option>`).join("")}</select></label>${this.shippingProviders.length ? "" : "<p>No shipping providers available for this store.</p>"}<div class="ekom-provider-data-heading"><h4>Provider data</h4><p>Stored on the order. Keys are kept as-is; new keys are prefixed <code>customshipping</code>.</p></div><div class="ekom-provider-field-labels" aria-hidden="true"><span>Key</span><span>Value</span></div><div class="ekom-provider-fields">${this.shippingCustomFields.map((t, r) => `<div class="ekom-provider-field-row"><input aria-label="Key ${r + 1}" type="text" data-shipping-key="${r}" value="${a(t.key)}" ${t.existing ? "readonly" : ""} ${this.shippingProviderSaving ? "disabled" : ""} placeholder="TrackingNumber" maxlength="100"><input aria-label="Value ${r + 1}" type="text" data-shipping-value="${r}" value="${a(t.value)}" ${this.shippingProviderSaving ? "disabled" : ""} maxlength="4096"></div>`).join("")}</div><button class="btn-outline" type="button" data-action="add-shipping-custom-field" ${this.shippingProviderSaving ? "disabled" : ""}>Add custom field</button></div><div class="ekom-editor-footer"><p>Changes apply to this order only.</p><button class="btn-outline" type="button" data-action="close-shipping-provider-editor" ${this.shippingProviderSaving ? "disabled" : ""}>Cancel</button><button class="btn-success" type="button" data-action="save-shipping-provider" ${this.shippingProviderSaving || !this.shippingProviders.length ? "disabled" : ""}>${this.shippingProviderSaving ? "Saving..." : "Save shipping provider"}</button></div></div></div>`;
   }
   readShippingCustomFields() {
     this.shippingCustomFields = this.shippingCustomFields.map((e, t) => {
@@ -783,7 +791,7 @@ class we extends ge(HTMLElement) {
       if (s.key !== "Escape") return;
       const d = s.currentTarget;
       d.open = !1, (l = d.querySelector("summary")) == null || l.focus(), s.stopPropagation();
-    }), me(this, () => {
+    }), fe(this, () => {
       this.page = 1, this.loadOrders();
     }), this.querySelectorAll('[data-action="select-order-tab"]').forEach((s) => {
       s.addEventListener("keydown", (d) => {
@@ -862,8 +870,8 @@ class we extends ge(HTMLElement) {
       if (t.disabled) return;
       const u = t.closest("details"), p = t.dataset.value || "", g = this.querySelector('[data-field="fulfillmentState"]');
       g && (g.value = p), u.querySelector("[data-fulfillment-label]").textContent = p.replace(/([a-z])([A-Z])/g, "$1 $2"), u.querySelector("summary .ekom-state-dot").dataset.state = p, u.querySelectorAll("button[data-value]").forEach((y) => {
-        const S = y.dataset.value === p;
-        y.setAttribute("aria-pressed", String(S)), y.querySelector(".ekom-status-check").textContent = S ? "✓" : "";
+        const O = y.dataset.value === p;
+        y.setAttribute("aria-pressed", String(O)), y.querySelector(".ekom-status-check").textContent = O ? "✓" : "";
       }), u.removeAttribute("open"), (s = u.querySelector("summary")) == null || s.focus();
       return;
     }
@@ -911,7 +919,7 @@ class we extends ge(HTMLElement) {
     if (r === "print-order") {
       if (this.selectedOrder)
         try {
-          await ve(this.renderPrintableOrder(this.selectedOrder), `Order ${this.selectedOrder.referenceId}`);
+          await ge(this.renderPrintableOrder(this.selectedOrder), `Order ${this.selectedOrder.referenceId}`);
         } catch {
           this.showError("Unable to prepare the order for printing. Please try again.");
         }
@@ -1004,7 +1012,7 @@ class we extends ge(HTMLElement) {
       this.exporting = !0, this.render();
       try {
         const e = await this.api.exportOrders(v.filters, this.result.count, this.exportIncludeOrderLines);
-        fe(e, this.exportIncludeOrderLines ? "orders-with-orderlines.csv" : "orders.csv"), this.overlay = "";
+        ye(e, this.exportIncludeOrderLines ? "orders-with-orderlines.csv" : "orders.csv"), this.overlay = "";
       } catch (e) {
         this.showError(k(e, "Error exporting orders."));
       } finally {
@@ -1017,14 +1025,18 @@ class we extends ge(HTMLElement) {
       return;
     this.returnFocusOrderId = e, this.orderTab = "order";
     const t = ++this.orderRequestId;
-    ++this.lockRequestId, ++this.recoveryRequestId, this.recoveryAttempts = void 0, this.recoveryLoading = !1, this.recoveryError = !1, this.recoveryOperation = "", this.recoveryMessage = "", this.recoveryActionError = "", this.recoveryRefreshError = !1, this.recoveryScrollTop = void 0, this.notifyOrderStatusOverride = void 0, this.selectedOrder = void 0, this.orderActions = [], this.orderActionsError = !1, this.executingActionKey = "", this.orderLockStatus = void 0, this.releasingOrderLock = !1, this.orderLockWarning = "", this.orderLockReleaseError = "", this.orderLockError = !1, this.orderLockLoading = !1, this.render();
+    ++this.lockRequestId, ++this.recoveryRequestId, this.recoveryAttempts = void 0, this.recoveryLoading = !1, this.recoveryError = !1, this.recoveryOperation = "", this.recoveryMessage = "", this.recoveryActionError = "", this.recoveryRefreshError = !1, this.recoveryScrollTop = void 0, this.notifyOrderStatusOverride = void 0, this.selectedOrder = void 0, this.orderActions = [], this.orderActionsError = !1, this.executingActionKey = "", this.orderLockStatus = void 0, this.releasingOrderLock = !1, this.orderLockWarning = "", this.orderLockReleaseError = "", this.orderLockError = !1, this.orderLockLoading = !1;
+    const r = this.overlay;
+    this.orderOpening = !0, this.overlay = "order", this.render();
     try {
-      const r = await this.api.orderInfo(e);
+      const i = await this.api.orderInfo(e);
       if (t !== this.orderRequestId) return;
-      this.selectedOrder = r, this.reviews = [], this.activeReview = void 0, this.reviewError = "", this.overlay = "order", this.orderLogs = [], this.orderLogsError = !1, this.activityLogExpandedIndexes.clear(), this.render(), await Promise.all([this.loadOrderLogs(e), this.loadOrderActions(e), this.loadOrderLockStatus(e), this.loadGiftcardRecovery(e), this.loadOrderReviews(e)]);
-    } catch (r) {
+      this.selectedOrder = i, this.reviews = [], this.activeReview = void 0, this.reviewError = "", this.orderLogs = [], this.orderLogsError = !1, this.activityLogExpandedIndexes.clear(), await Promise.all([this.loadOrderLogs(e), this.loadOrderActions(e), this.loadOrderLockStatus(e), this.loadGiftcardRecovery(e), this.loadOrderReviews(e)]);
+    } catch (i) {
       if (t !== this.orderRequestId) return;
-      this.showError(k(r, "Error on getting orderInfo."));
+      this.selectedOrder || (this.overlay = r === "order" ? "" : r), this.showError(k(i, "Error on getting orderInfo."));
+    } finally {
+      t === this.orderRequestId && (this.orderOpening = !1, this.render());
     }
   }
   async loadOrderReviews(e) {
@@ -1039,20 +1051,20 @@ class we extends ge(HTMLElement) {
     }
   }
   renderReviewAlert(e, t = !1) {
-    return `<div class="ekom-review-alert"><span class="ekom-review-icon" aria-hidden="true">!</span><div><strong>${o(e.title)}</strong><small>${o(e.source)} · ${o(O(e.createdUtc))}</small><p>${o(e.message)}</p></div>${t ? `<button type="button" data-action="open-review" data-review-id="${o(e.id)}">Review</button>` : ""}</div>`;
+    return `<div class="ekom-review-alert"><span class="ekom-review-icon" aria-hidden="true">!</span><div><strong>${a(e.title)}</strong><small>${a(e.source)} · ${a(S(e.createdUtc))}</small><p>${a(e.message)}</p></div>${t ? `<button type="button" data-action="open-review" data-review-id="${a(e.id)}">Review</button>` : ""}</div>`;
   }
   renderReviews() {
-    return `${this.reviewError && !this.activeReview ? `<p role="alert">${o(this.reviewError)}</p>` : ""}${this.reviews.map((e) => this.renderReviewAlert(e, !0)).join("")}`;
+    return `${this.reviewError && !this.activeReview ? `<p role="alert">${a(this.reviewError)}</p>` : ""}${this.reviews.map((e) => this.renderReviewAlert(e, !0)).join("")}`;
   }
   renderReviewDialog() {
     var e;
     return `<div class="ekmCustomerInformationModal ekom-review-overlay"><section class="ekmCustomerInformationModal__panel ekom-review-panel" role="dialog" aria-modal="true" aria-label="Review alert">
-      <header><h2>Review alert · Order #${o((e = this.selectedOrder) == null ? void 0 : e.referenceId)}</h2><button type="button" data-action="close-review" aria-label="Close review" ${this.reviewSaving ? "disabled" : ""}>×</button></header>
+      <header><h2>Review alert · Order #${a((e = this.selectedOrder) == null ? void 0 : e.referenceId)}</h2><button type="button" data-action="close-review" aria-label="Close review" ${this.reviewSaving ? "disabled" : ""}>×</button></header>
       <div class="ekom-review-body">${this.renderReviewAlert(this.activeReview)}
-      <label for="ekom-review-comment">What was done</label><textarea id="ekom-review-comment" data-review-comment maxlength="4000" rows="4" placeholder="Describe how this was resolved or what was checked." ${this.reviewSaving ? "disabled" : ""}>${o(this.reviewComment)}</textarea>
+      <label for="ekom-review-comment">What was done</label><textarea id="ekom-review-comment" data-review-comment maxlength="4000" rows="4" placeholder="Describe how this was resolved or what was checked." ${this.reviewSaving ? "disabled" : ""}>${a(this.reviewComment)}</textarea>
       <p class="ekom-muted">Saved to the activity log with your name and the time.</p>
       <label class="ekom-review-checkbox"><input type="checkbox" data-review-resolved ${this.reviewResolved ? "checked" : ""} ${this.reviewSaving ? "disabled" : ""}><span>Problem is resolved <small>— untick to log a note but keep the alert open</small></span></label>
-      ${this.reviewError ? `<p role="alert">${o(this.reviewError)}</p>` : ""}</div>
+      ${this.reviewError ? `<p role="alert">${a(this.reviewError)}</p>` : ""}</div>
       <footer><button type="button" data-action="close-review" ${this.reviewSaving ? "disabled" : ""}>Cancel</button><button class="btn-success" type="button" data-action="save-review" ${this.reviewSaving ? "disabled" : ""}>${this.reviewSaving ? "Saving..." : this.reviewResolved ? "Mark as reviewed" : "Save note"}</button></footer>
     </section></div>`;
   }
@@ -1240,13 +1252,13 @@ class we extends ge(HTMLElement) {
     });
   }
   closeOverlay() {
-    ++this.orderRequestId, ++this.lockRequestId, ++this.recoveryRequestId, this.recoveryOperation = "", this.recoveryScrollTop = void 0, this.overlay = "", this.selectedOrder = void 0, this.customerEditorOpen = !1, this.customerEditModel = void 0, this.orderLineEditorOpen = !1, this.orderLineEditModel = void 0, this.shippingProviderEditorOpen = !1, this.render();
+    this.orderOpening = !1, ++this.orderRequestId, ++this.lockRequestId, ++this.recoveryRequestId, this.recoveryOperation = "", this.recoveryScrollTop = void 0, this.overlay = "", this.selectedOrder = void 0, this.customerEditorOpen = !1, this.customerEditModel = void 0, this.orderLineEditorOpen = !1, this.orderLineEditModel = void 0, this.shippingProviderEditorOpen = !1, this.render();
     const e = Array.from(this.querySelectorAll('[data-action="view-order"]')).find((t) => t.dataset.orderId === this.returnFocusOrderId);
     e == null || e.focus(), this.returnFocusOrderId = void 0;
   }
   getOrderStatusValue(e) {
     const t = String(e ?? ""), r = v.statusList.find((i) => String(i.value ?? "") === t || String(i.enumValue ?? "") === t);
-    return r ? G(r) : t;
+    return r ? z(r) : t;
   }
   async changeRowStatus(e) {
     const t = e.dataset.orderId || "";
@@ -1274,7 +1286,7 @@ class we extends ge(HTMLElement) {
           window.open(URL.createObjectURL(d), "_blank");
         else {
           const u = await d.text();
-          this.showSuccess(Ce(u));
+          this.showSuccess(Re(u));
         }
         if (i !== this.orderRequestId) return;
         const [f] = await Promise.all([this.api.orderInfo(r), this.loadOrderLockStatus(r), this.loadGiftcardRecovery(r)]);
@@ -1296,8 +1308,8 @@ class we extends ge(HTMLElement) {
       return;
     const t = ((i = e.customerInformation) == null ? void 0 : i.customer) || {}, r = ((n = e.customerInformation) == null ? void 0 : n.shipping) || {};
     this.customerEditModel = {
-      customer: te(t, be).concat(re(t.properties, "customer")),
-      shipping: te(r, ke).concat(re(r.properties, "shipping"))
+      customer: re(t, $e).concat(ie(t.properties, "customer")),
+      shipping: re(r, we).concat(ie(r.properties, "shipping"))
     }, this.customerEditorOpen = !0, this.render();
   }
   async saveCustomerInformation() {
@@ -1311,8 +1323,8 @@ class we extends ge(HTMLElement) {
       try {
         this.selectedOrder = await this.api.updateCustomerInformation(
           this.selectedOrder.uniqueId,
-          ie(this.customerEditModel.customer),
-          ie(this.customerEditModel.shipping)
+          se(this.customerEditModel.customer),
+          se(this.customerEditModel.shipping)
         ), this.customerEditorOpen = !1, this.customerEditModel = void 0, this.showSuccess("Customer information updated."), await this.loadOrders();
       } catch (t) {
         this.showError(k(t, "Error updating customer information."));
@@ -1402,72 +1414,72 @@ class we extends ge(HTMLElement) {
     await Promise.all([this.loadOrders(), this.loadOrderLogs(e), this.loadOrderActions(e)]);
   }
 }
-function k(a, h) {
-  return a instanceof Error ? a.message : h;
+function k(o, h) {
+  return o instanceof Error ? o.message : h;
 }
-function P(a) {
-  return a != null && (typeof a != "string" || a.trim() !== "");
+function P(o) {
+  return o != null && (typeof o != "string" || o.trim() !== "");
 }
-function _(a) {
-  if (a === "code") return "Gift-card number";
-  if (a === "claimId") return "Reservation reference";
-  if (a === "transactionId") return "Transaction reference";
-  if (a === "usedDate") return "Used on";
-  if (a === "validUntil") return "Saved expiry";
-  if (a === "claimDate") return "Payment claim date";
-  const h = a.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ");
+function D(o) {
+  if (o === "code") return "Gift-card number";
+  if (o === "claimId") return "Reservation reference";
+  if (o === "transactionId") return "Transaction reference";
+  if (o === "usedDate") return "Used on";
+  if (o === "validUntil") return "Saved expiry";
+  if (o === "claimDate") return "Payment claim date";
+  const h = o.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ");
   return h.charAt(0).toUpperCase() + h.slice(1).toLowerCase().replace(/\bid\b/g, "ID");
 }
-function N(a) {
-  if (!P(a)) return "Not recorded";
-  if (typeof a == "boolean") return a ? "Yes" : "No";
-  if (Array.isArray(a)) return a.length ? a.map(N).join("; ") : "Empty list";
-  if (typeof a == "object") {
-    const h = Object.entries(a);
-    return h.length ? h.map(([e, t]) => `${_(e)}: ${N(t)}`).join("; ") : "Empty object";
+function j(o) {
+  if (!P(o)) return "Not recorded";
+  if (typeof o == "boolean") return o ? "Yes" : "No";
+  if (Array.isArray(o)) return o.length ? o.map(j).join("; ") : "Empty list";
+  if (typeof o == "object") {
+    const h = Object.entries(o);
+    return h.length ? h.map(([e, t]) => `${D(e)}: ${j(t)}`).join("; ") : "Empty object";
   }
-  return String(a);
+  return String(o);
 }
-function H(a) {
+function Z(o) {
   const h = ["code", "amount", "claimId", "claimDate", "transactionId", "usedDate", "claimed", "validUntil"];
-  return [...h, ...Object.keys(a).filter((e) => !h.includes(e))].map((e) => ({ label: _(e), value: N(a[e]) }));
+  return [...h, ...Object.keys(o).filter((e) => !h.includes(e))].map((e) => ({ label: D(e), value: j(o[e]) }));
 }
-function Z(a, h = Date.now()) {
-  const e = P(a.claimId), t = P(a.validUntil), r = t ? Date.parse(String(a.validUntil)) : NaN, i = r > h, n = a.claimed === !0 || P(a.transactionId) || P(a.claimDate) || P(a.usedDate), s = n ? "Used" : e && i ? "Reserved" : e && r <= h ? "Reservation expired" : e || t ? "Needs checking" : "Selected";
+function Q(o, h = Date.now()) {
+  const e = P(o.claimId), t = P(o.validUntil), r = t ? Date.parse(String(o.validUntil)) : NaN, i = r > h, n = o.claimed === !0 || P(o.transactionId) || P(o.claimDate) || P(o.usedDate), s = n ? "Used" : e && i ? "Reserved" : e && r <= h ? "Reservation expired" : e || t ? "Needs checking" : "Selected";
   let d = "";
   !n && !e && t ? d = "An expiry time is saved, but the reservation reference is missing. Check the gift-card provider if an amount is still held." : !n && e && r <= h ? d = "The saved reservation expiry has passed. This does not confirm that the provider has released the hold." : !n && e && !t && (d = "No expiry time is saved. Check the gift-card provider if an amount is still held."), t && !Number.isFinite(r) && (d += `${d ? " " : ""}The saved expiry time could not be read. Check the gift-card provider.`);
   let l = "Not recorded";
-  if (t && (l = Number.isFinite(r) ? new Intl.DateTimeFormat(void 0, { dateStyle: "medium", timeStyle: "long" }).format(new Date(r)) : String(a.validUntil), i)) {
+  if (t && (l = Number.isFinite(r) ? new Intl.DateTimeFormat(void 0, { dateStyle: "medium", timeStyle: "long" }).format(new Date(r)) : String(o.validUntil), i)) {
     const m = Math.ceil((r - h) / 6e4), f = m < 60 ? m : m < 1440 ? Math.ceil(m / 60) : Math.ceil(m / 1440), u = m < 60 ? "minute" : m < 1440 ? "hour" : "day";
     l += ` (in about ${f} ${u}${f === 1 ? "" : "s"})`;
   }
   return { status: s, warning: d, expiryLabel: !n && e ? "Reservation ends" : "Saved expiry", expiry: l };
 }
-function x(a) {
-  return a === "zipCode" ? "Zipcode" : a.charAt(0).toUpperCase() + a.slice(1);
+function T(o) {
+  return o === "zipCode" ? "Zipcode" : o.charAt(0).toUpperCase() + o.slice(1);
 }
-function Se(a) {
-  return (/* @__PURE__ */ new Set(["shippingname", "shippingaddress", "shippingcity", "shippingcountry", "shippingemail", "shippingapartment", "shippingzipcode", "shippingphone", "customeremail", "customername", "customeraddress", "customerapartment", "customercity", "customercountry", "customerzipcode", "customerphone"])).has(a.toLowerCase());
+function Le(o) {
+  return (/* @__PURE__ */ new Set(["shippingname", "shippingaddress", "shippingcity", "shippingcountry", "shippingemail", "shippingapartment", "shippingzipcode", "shippingphone", "customeremail", "customername", "customeraddress", "customerapartment", "customercity", "customercountry", "customerzipcode", "customerphone"])).has(o.toLowerCase());
 }
-function R(a) {
-  return a.replace(/^customshipping/i, "").replace(/^custompayment/i, "").replace(/^shipping/i, "").replace(/^customer/i, "");
+function R(o) {
+  return o.replace(/^customshipping/i, "").replace(/^custompayment/i, "").replace(/^shipping/i, "").replace(/^customer/i, "");
 }
-function T(a, h) {
-  return Object.entries(a || {}).filter(([e, t]) => (!!t || h === "customshipping" && t === "") && e.toLowerCase().startsWith(h) && !Se(e)).map(([e, t]) => [e, q(t)]);
+function _(o, h) {
+  return Object.entries(o || {}).filter(([e, t]) => (!!t || h === "customshipping" && t === "") && e.toLowerCase().startsWith(h) && !Le(e)).map(([e, t]) => [e, q(t)]);
 }
-function F(a) {
-  return !!(a != null && a.name || a != null && a.email || a != null && a.address || a != null && a.apartment || a != null && a.city || a != null && a.country || a != null && a.zipCode || a != null && a.phone);
+function M(o) {
+  return !!(o != null && o.name || o != null && o.email || o != null && o.address || o != null && o.apartment || o != null && o.city || o != null && o.country || o != null && o.zipCode || o != null && o.phone);
 }
-function Oe(a) {
-  return a.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Z])([A-Z][a-z])/g, "$1 $2").replace(/[_-]+/g, " ").trim().replace(/\b[a-z]/g, (h) => h.toUpperCase());
+function Ee(o) {
+  return o.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Z])([A-Z][a-z])/g, "$1 $2").replace(/[_-]+/g, " ").trim().replace(/\b[a-z]/g, (h) => h.toUpperCase());
 }
-function M(a, h) {
-  const e = a.indexOf("#"), t = e >= 0 ? a.slice(e) : "", r = e >= 0 ? a.slice(0, e) : a, i = r.indexOf("?"), n = i >= 0 ? r.slice(0, i) : r, s = new URLSearchParams(i >= 0 ? r.slice(i + 1) : "");
+function N(o, h) {
+  const e = o.indexOf("#"), t = e >= 0 ? o.slice(e) : "", r = e >= 0 ? o.slice(0, e) : o, i = r.indexOf("?"), n = i >= 0 ? r.slice(0, i) : r, s = new URLSearchParams(i >= 0 ? r.slice(i + 1) : "");
   return s.set("width", String(h)), s.set("format", "webp"), s.set("rmode", "pad"), s.set("rcolor", "ffffff"), `${n}?${s}${t}`.replace(/,/g, "%2C").replace(/ /g, "%20");
 }
-function Q(a) {
+function Y(o) {
   var t, r;
-  const e = [(t = a.variant) == null ? void 0 : t.images, (r = a.product) == null ? void 0 : r.images].flatMap((i) => Array.isArray(i) ? i : []).map((i) => {
+  const e = [(t = o.variant) == null ? void 0 : t.images, (r = o.product) == null ? void 0 : r.images].flatMap((i) => Array.isArray(i) ? i : []).map((i) => {
     if (typeof (i == null ? void 0 : i.url) != "string" || !i.url.trim()) return "";
     try {
       const n = i.url.trim();
@@ -1476,10 +1488,10 @@ function Q(a) {
       return "";
     }
   }).find(Boolean);
-  return `<span class="ekmOrderLineThumbnail" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg>${e ? `<picture><source srcset="${o(M(e, 56))} 1x, ${o(M(e, 112))} 2x"><img src="${o(M(e, 56))}" width="56" height="56" alt="" loading="lazy" decoding="async"></picture>` : ""}</span>`;
+  return `<span class="ekmOrderLineThumbnail" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg>${e ? `<picture><source srcset="${a(N(e, 56))} 1x, ${a(N(e, 112))} 2x"><img src="${a(N(e, 56))}" width="56" height="56" alt="" loading="lazy" decoding="async"></picture>` : ""}</span>`;
 }
-function Y(a) {
-  const h = o(a == null ? void 0 : a.title), e = typeof (a == null ? void 0 : a.url) == "string" ? a.url.trim() : "";
+function J(o) {
+  const h = a(o == null ? void 0 : o.title), e = typeof (o == null ? void 0 : o.url) == "string" ? o.url.trim() : "";
   if (!e) return h;
   try {
     const t = new URL(e, "https://ekom.invalid/").protocol;
@@ -1487,72 +1499,72 @@ function Y(a) {
   } catch {
     return h;
   }
-  return `<a href="${o(e)}" target="_blank" rel="noopener noreferrer">${h}</a>`;
+  return `<a href="${a(e)}" target="_blank" rel="noopener noreferrer">${h}</a>`;
 }
-function J(a) {
+function X(o) {
   var e;
-  const h = ((e = a.orderLineInfo) == null ? void 0 : e.properties) || {};
-  return Object.entries(h).filter(([, t]) => !!t).map(([t, r]) => `<small style="display:block; margin-top:3px;"><strong>${o(Le(t))}</strong>: ${o(q(r))}</small>`).join("");
+  const h = ((e = o.orderLineInfo) == null ? void 0 : e.properties) || {};
+  return Object.entries(h).filter(([, t]) => !!t).map(([t, r]) => `<small style="display:block; margin-top:3px;"><strong>${a(Ie(t))}</strong>: ${a(q(r))}</small>`).join("");
 }
-function Le(a) {
-  const h = a.replace(/^orderline/i, "").replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim();
-  return h ? h.charAt(0).toUpperCase() + h.slice(1) : a;
+function Ie(o) {
+  const h = o.replace(/^orderline/i, "").replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim();
+  return h ? h.charAt(0).toUpperCase() + h.slice(1) : o;
 }
-function Ee(a) {
+function Ae(o) {
   var h, e, t, r;
-  return !!(a && (a.source || a.medium || a.campaign || a.term || a.content || a.clickId || a.clickIdType || a.landingUrl || a.referrer || a.captureMethod || a.capturedAtUtc || a.hasCookieSupport !== null && a.hasCookieSupport !== void 0 || (h = a.ga4) != null && h.clientId || (e = a.ga4) != null && e.sessionId || (t = a.meta) != null && t.fbp || (r = a.meta) != null && r.fbc || se(a.algolia)));
+  return !!(o && (o.source || o.medium || o.campaign || o.term || o.content || o.clickId || o.clickIdType || o.landingUrl || o.referrer || o.captureMethod || o.capturedAtUtc || o.hasCookieSupport !== null && o.hasCookieSupport !== void 0 || (h = o.ga4) != null && h.clientId || (e = o.ga4) != null && e.sessionId || (t = o.meta) != null && t.fbp || (r = o.meta) != null && r.fbc || ae(o.algolia)));
 }
-function Ae(a) {
+function Ce(o) {
   var n, s, d, l, m, f;
-  const h = Object.entries(((n = a.ga4) == null ? void 0 : n.data) || {}), e = Object.entries(((s = a.meta) == null ? void 0 : s.data) || {}), t = a.algolia, r = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], i = se(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${b("User token", t.userToken)}${r.length ? `<ul>${r.map((u) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${o(u.orderLineKey)}<br><strong>Query ID</strong>: ${o(u.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
-  return `<div class="ekmSplit"><div class="ekmSplit__column">${b("Captured", O(a.capturedAtUtc))}${b("Capture method", a.captureMethod)}${a.hasCookieSupport !== null && a.hasCookieSupport !== void 0 ? `<p>Cookie support: ${a.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${b("Source", a.source)}${b("Medium", a.medium)}${b("Campaign", a.campaign)}${b("Term", a.term)}${b("Content", a.content)}${b("Click ID", a.clickId)}${b("Click ID Type", a.clickIdType)}${b("Landing URL", a.landingUrl)}${b("Referrer", a.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${b("Client ID", (d = a.ga4) == null ? void 0 : d.clientId)}${b("Session ID", (l = a.ga4) == null ? void 0 : l.sessionId)}${X(h)}<h5>Meta</h5>${b("FBP", (m = a.meta) == null ? void 0 : m.fbp)}${b("FBC", (f = a.meta) == null ? void 0 : f.fbc)}${X(e)}${i}</div></div>`;
+  const h = Object.entries(((n = o.ga4) == null ? void 0 : n.data) || {}), e = Object.entries(((s = o.meta) == null ? void 0 : s.data) || {}), t = o.algolia, r = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], i = ae(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${b("User token", t.userToken)}${r.length ? `<ul>${r.map((u) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${a(u.orderLineKey)}<br><strong>Query ID</strong>: ${a(u.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
+  return `<div class="ekmSplit"><div class="ekmSplit__column">${b("Captured", S(o.capturedAtUtc))}${b("Capture method", o.captureMethod)}${o.hasCookieSupport !== null && o.hasCookieSupport !== void 0 ? `<p>Cookie support: ${o.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${b("Source", o.source)}${b("Medium", o.medium)}${b("Campaign", o.campaign)}${b("Term", o.term)}${b("Content", o.content)}${b("Click ID", o.clickId)}${b("Click ID Type", o.clickIdType)}${b("Landing URL", o.landingUrl)}${b("Referrer", o.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${b("Client ID", (d = o.ga4) == null ? void 0 : d.clientId)}${b("Session ID", (l = o.ga4) == null ? void 0 : l.sessionId)}${ee(h)}<h5>Meta</h5>${b("FBP", (m = o.meta) == null ? void 0 : m.fbp)}${b("FBC", (f = o.meta) == null ? void 0 : f.fbc)}${ee(e)}${i}</div></div>`;
 }
-function se(a) {
-  return !!(a && (a.userToken || Array.isArray(a.lines) && a.lines.length));
+function ae(o) {
+  return !!(o && (o.userToken || Array.isArray(o.lines) && o.lines.length));
 }
-function b(a, h) {
-  return h ? `<p class="ekmOrderTracking__wrap ekom-tracking-field"><span>${o(a)}</span><strong>${o(h)}</strong></p>` : "";
+function b(o, h) {
+  return h ? `<p class="ekmOrderTracking__wrap ekom-tracking-field"><span>${a(o)}</span><strong>${a(h)}</strong></p>` : "";
 }
-function X(a) {
-  return a.length ? `<ul>${a.map(([h, e]) => `<li><strong>${o(h)}</strong>: ${o(e)}</li>`).join("")}</ul>` : "";
+function ee(o) {
+  return o.length ? `<ul>${o.map(([h, e]) => `<li><strong>${a(h)}</strong>: ${a(e)}</li>`).join("")}</ul>` : "";
 }
-function Ie(a) {
-  return !!(a && (a.resolvedAtUtc || a.source || a.analytics !== null && a.analytics !== void 0 || a.marketing !== null && a.marketing !== void 0));
+function Pe(o) {
+  return !!(o && (o.resolvedAtUtc || o.source || o.analytics !== null && o.analytics !== void 0 || o.marketing !== null && o.marketing !== void 0));
 }
-function ee(a) {
-  return a === !0 ? "Yes" : a === !1 ? "No" : "Unknown";
+function te(o) {
+  return o === !0 ? "Yes" : o === !1 ? "No" : "Unknown";
 }
-function te(a, h) {
+function re(o, h) {
   return h.map((e) => {
     var t;
     return {
       key: e.key,
       label: e.label,
-      value: q(a[e.property] || ((t = a.properties) == null ? void 0 : t[e.key]) || ""),
+      value: q(o[e.property] || ((t = o.properties) == null ? void 0 : t[e.key]) || ""),
       isExtra: !1
     };
   });
 }
-function re(a, h) {
-  return T(a, h).map(([e, t]) => ({
+function ie(o, h) {
+  return _(o, h).map(([e, t]) => ({
     key: e,
     label: R(e).replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim() || e,
     value: t,
     isExtra: !0
   }));
 }
-function ie(a) {
-  return Object.fromEntries(a.map((h) => [h.key, h.value || ""]));
+function se(o) {
+  return Object.fromEntries(o.map((h) => [h.key, h.value || ""]));
 }
-function Ce(a) {
+function Re(o) {
   try {
-    return JSON.parse(a).message || a;
+    return JSON.parse(o).message || o;
   } catch {
-    return a;
+    return o;
   }
 }
-customElements.define("ekom-orders-section-view", we);
+customElements.define("ekom-orders-section-view", Se);
 export {
-  we as EkomOrdersSectionViewElement,
-  we as default
+  Se as EkomOrdersSectionViewElement,
+  Se as default
 };

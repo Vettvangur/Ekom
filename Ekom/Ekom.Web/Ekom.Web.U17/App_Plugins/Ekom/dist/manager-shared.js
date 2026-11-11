@@ -1,15 +1,15 @@
 var ce = Object.defineProperty;
-var me = (a, t, r) => t in a ? ce(a, t, { enumerable: !0, configurable: !0, writable: !0, value: r }) : a[t] = r;
-var A = (a, t, r) => me(a, typeof t != "symbol" ? t + "" : t, r);
-function Ce(a, t) {
+var me = (r, t, a) => t in r ? ce(r, t, { enumerable: !0, configurable: !0, writable: !0, value: a }) : r[t] = a;
+var M = (r, t, a) => me(r, typeof t != "symbol" ? t + "" : t, a);
+function Le(r, t) {
   var e, o, n;
-  if (t || (t = (e = a == null ? void 0 : a.currency) == null ? void 0 : e.isoCurrencySymbol), !t) return a == null ? void 0 : a.currency;
-  const r = (o = a == null ? void 0 : a.currencyFormats) == null ? void 0 : o.find((s) => (s == null ? void 0 : s.code) === t);
-  return { ...((n = a == null ? void 0 : a.currency) == null ? void 0 : n.isoCurrencySymbol) === t ? a.currency : {}, isoCurrencySymbol: t, ...r ? { format: r, currencyDecimalDigits: r.decimalDigits } : {} };
+  if (t || (t = (e = r == null ? void 0 : r.currency) == null ? void 0 : e.isoCurrencySymbol), !t) return r == null ? void 0 : r.currency;
+  const a = (o = r == null ? void 0 : r.currencyFormats) == null ? void 0 : o.find((s) => (s == null ? void 0 : s.code) === t);
+  return { ...((n = r == null ? void 0 : r.currency) == null ? void 0 : n.isoCurrencySymbol) === t ? r.currency : {}, isoCurrencySymbol: t, ...a ? { format: a, currencyDecimalDigits: a.decimalDigits } : {} };
 }
-function pe(a, t) {
-  const [r, e] = Math.abs(a).toFixed(Math.max(0, t.decimalDigits)).split("."), o = r.replace(/\B(?=(\d{3})+(?!\d))/g, t.groupSeparator) + (e ? t.decimalSeparator + e : ""), n = [`${t.symbol}${o}`, `${o}${t.symbol}`, `${t.symbol} ${o}`, `${o} ${t.symbol}`][t.positivePattern] ?? `${o} ${t.symbol}`;
-  return (a < 0 && +(r + "." + (e || "0")) != 0 ? "-" : "") + n;
+function pe(r, t) {
+  const [a, e] = Math.abs(r).toFixed(Math.max(0, t.decimalDigits)).split("."), o = a.replace(/\B(?=(\d{3})+(?!\d))/g, t.groupSeparator) + (e ? t.decimalSeparator + e : ""), n = [`${t.symbol}${o}`, `${o}${t.symbol}`, `${t.symbol} ${o}`, `${o} ${t.symbol}`][t.positivePattern] ?? `${o} ${t.symbol}`;
+  return (r < 0 && +(a + "." + (e || "0")) != 0 ? "-" : "") + n;
 }
 const oe = /* @__PURE__ */ new Date(), ue = new Date(oe.getFullYear(), 0, 1), f = {
   filters: {
@@ -35,9 +35,9 @@ const oe = /* @__PURE__ */ new Date(), ue = new Date(oe.getFullYear(), 0, 1), f 
   paymentProviders: [],
   shippingFilterProviders: []
 };
-class M {
-  async changeOrderStates(t, r, e, o, n) {
-    return this.postBody(`/ekom/manager/orderStates/${encodeURIComponent(t)}`, { expectedRevision: r, action: e, notify: o, fulfilledQuantities: n });
+class E {
+  async changeOrderStates(t, a, e, o, n) {
+    return this.postBody(`/ekom/manager/orderStates/${encodeURIComponent(t)}`, { expectedRevision: a, action: e, notify: o, fulfilledQuantities: n });
   }
   async printingEnabled() {
     try {
@@ -50,53 +50,53 @@ class M {
   async config() {
     return this.getJson("/ekom/backoffice/Config");
   }
-  async searchOrders(t, r, e = 20) {
+  async searchOrders(t, a, e = 20) {
     return this.getJson("/ekom/manager/SearchOrders", {
       ...t,
       start: t.dateFrom,
       end: t.dateTo,
-      page: r,
+      page: a,
       pageSize: e
     });
   }
   /** Counts for several order views in one request, so the view tabs do not each run a search. */
-  async orderViewCounts(t, r) {
-    if (!r.length) return [];
+  async orderViewCounts(t, a) {
+    if (!a.length) return [];
     const { orderStatus: e, ...o } = t;
     return this.getJson("/ekom/manager/OrderViewCounts", {
       ...o,
       start: t.dateFrom,
       end: t.dateTo,
-      views: r
+      views: a
     });
   }
-  async exportOrders(t, r, e) {
+  async exportOrders(t, a, e) {
     return this.getBlob("/ekom/manager/ExportOrders", {
       ...t,
       start: t.dateFrom,
       end: t.dateTo,
       page: 1,
-      pageSize: r,
+      pageSize: a,
       includeOrderLines: e
     });
   }
   async orderReviews(t) {
-    const r = [];
+    const a = [];
     for (let e = 0; ; e += 200) {
       const o = await this.getJson(`/ekom/manager/orders/${encodeURIComponent(t)}/reviews`, { skip: e, take: 200 });
-      if (r.push(...o), o.length < 200) return r;
+      if (a.push(...o), o.length < 200) return a;
     }
   }
-  async reviewOrder(t, r, e, o) {
-    return this.postBody(`/ekom/manager/orders/${encodeURIComponent(t)}/reviews/${encodeURIComponent(r)}/review`, { comment: e, resolved: o });
+  async reviewOrder(t, a, e, o) {
+    return this.postBody(`/ekom/manager/orders/${encodeURIComponent(t)}/reviews/${encodeURIComponent(a)}/review`, { comment: e, resolved: o });
   }
   async statusList() {
     return this.getJson("/ekom/manager/StatusList");
   }
   async stores() {
-    const [t, r] = await Promise.all([this.getJson("/ekom/manager/stores"), this.getJson("/ekom/manager/store-currencies")]);
+    const [t, a] = await Promise.all([this.getJson("/ekom/manager/stores"), this.getJson("/ekom/manager/store-currencies")]);
     return t.map((e) => {
-      const o = r.find((n) => n.alias === e.alias);
+      const o = a.find((n) => n.alias === e.alias);
       return { ...e, currencies: (o == null ? void 0 : o.currencies) || [], currencyFormats: ((o == null ? void 0 : o.formats) || []).filter((n) => !!n) };
     });
   }
@@ -118,100 +118,100 @@ class M {
   async orderLockStatus(t) {
     return this.getJson(`/ekom/manager/orderLockStatus/${encodeURIComponent(t)}`);
   }
-  async releaseOrderLock(t, r) {
-    return this.postBody(`/ekom/manager/releaseOrderLock/${encodeURIComponent(t)}`, { releaseToken: r });
+  async releaseOrderLock(t, a) {
+    return this.postBody(`/ekom/manager/releaseOrderLock/${encodeURIComponent(t)}`, { releaseToken: a });
   }
   async giftcardRecovery(t) {
     return this.getJson(`/ekom/manager/giftcardRecovery/${encodeURIComponent(t)}`);
   }
-  async releaseGiftcardRecovery(t, r, e, o) {
-    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(t)}/release`, { attemptId: r, claimId: e, token: o });
+  async releaseGiftcardRecovery(t, a, e, o) {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(t)}/release`, { attemptId: a, claimId: e, token: o });
   }
-  async reconcileGiftcardRecovery(t, r, e) {
-    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(t)}/reconcile`, { attemptId: r, token: e });
+  async reconcileGiftcardRecovery(t, a, e) {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(t)}/reconcile`, { attemptId: a, token: e });
   }
-  async executeOrderAction(t, r) {
-    const e = await fetch(`/ekom/manager/OrderActions/${encodeURIComponent(t)}/${encodeURIComponent(r)}`, {
+  async executeOrderAction(t, a) {
+    const e = await fetch(`/ekom/manager/OrderActions/${encodeURIComponent(t)}/${encodeURIComponent(a)}`, {
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json, application/octet-stream" }
     });
     if (!e.ok)
-      throw await M.createError(e, "Order action failed.");
+      throw await E.createError(e, "Order action failed.");
     return e;
   }
-  async changeOrderStatus(t, r, e) {
-    return this.postJson("/ekom/manager/changeOrderStatus", { orderId: t, orderStatus: r, notify: e });
+  async changeOrderStatus(t, a, e) {
+    return this.postJson("/ekom/manager/changeOrderStatus", { orderId: t, orderStatus: a, notify: e });
   }
-  async updateCustomerInformation(t, r, e) {
-    return this.postBody("/ekom/manager/UpdateCustomerInformation", { orderId: t, customer: r, shipping: e });
+  async updateCustomerInformation(t, a, e) {
+    return this.postBody("/ekom/manager/UpdateCustomerInformation", { orderId: t, customer: a, shipping: e });
   }
-  async addOrderLine(t, r, e, o) {
-    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(t)}/OrderLines`, { productId: r, variantId: e, quantity: o });
+  async addOrderLine(t, a, e, o) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(t)}/OrderLines`, { productId: a, variantId: e, quantity: o });
   }
-  async updateShippingProvider(t, r, e) {
-    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(t)}/ShippingProvider`, { providerId: r, customData: e });
+  async updateShippingProvider(t, a, e) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(t)}/ShippingProvider`, { providerId: a, customData: e });
   }
-  async removeOrderLine(t, r) {
-    const e = await fetch(`/ekom/manager/Order/${encodeURIComponent(t)}/OrderLines/${encodeURIComponent(r)}`, {
+  async removeOrderLine(t, a) {
+    const e = await fetch(`/ekom/manager/Order/${encodeURIComponent(t)}/OrderLines/${encodeURIComponent(a)}`, {
       method: "DELETE",
       credentials: "same-origin",
       headers: { Accept: "application/json" }
     });
     if (!e.ok)
-      throw await M.createError(e, "Error removing order line.");
+      throw await E.createError(e, "Error removing order line.");
     return e.json();
   }
-  async charts(t, r) {
+  async charts(t, a) {
     return this.getJson("/ekom/manager/charts", {
       start: t.dateFrom,
       end: t.dateTo,
       orderStatus: t.orderStatus,
       store: t.store,
       currency: t.currency
-    }, r);
+    }, a);
   }
-  async mostSoldProducts(t, r, e = 20, o) {
+  async mostSoldProducts(t, a, e = 20, o) {
     return this.getJson("/ekom/manager/MostSoldProducts", {
       start: t.dateFrom,
       end: t.dateTo,
       orderStatus: t.orderStatus,
       store: t.store,
       currency: t.currency,
-      page: r,
+      page: a,
       pageSize: e
     }, o);
   }
-  async getJson(t, r, e) {
-    const o = await fetch(t + J(r), {
+  async getJson(t, a, e) {
+    const o = await fetch(t + J(a), {
       credentials: "same-origin",
       signal: e,
       headers: { Accept: "application/json" }
     });
     if (!o.ok)
-      throw await M.createError(o, "Request failed.");
+      throw await E.createError(o, "Request failed.");
     return o.json();
   }
-  async getBlob(t, r) {
-    const e = await fetch(t + J(r), {
+  async getBlob(t, a) {
+    const e = await fetch(t + J(a), {
       credentials: "same-origin",
       headers: { Accept: "text/csv, application/octet-stream" }
     });
     if (!e.ok)
-      throw await M.createError(e, "Request failed.");
+      throw await E.createError(e, "Request failed.");
     return e.blob();
   }
-  async postJson(t, r) {
-    const e = await fetch(t + J(r), {
+  async postJson(t, a) {
+    const e = await fetch(t + J(a), {
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json" }
     });
     if (!e.ok)
-      throw await M.createError(e, "Request failed.");
+      throw await E.createError(e, "Request failed.");
     return e.json();
   }
-  async postBody(t, r) {
+  async postBody(t, a) {
     const e = await fetch(t, {
       method: "POST",
       credentials: "same-origin",
@@ -219,45 +219,45 @@ class M {
         Accept: "application/json",
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(r)
+      body: JSON.stringify(a)
     });
     if (!e.ok)
-      throw await M.createError(e, "Request failed.");
+      throw await E.createError(e, "Request failed.");
     return e.json();
   }
-  static async createError(t, r) {
+  static async createError(t, a) {
     var n, s;
     if (t.status === 401 || t.redirected && /\/Account\/Login/i.test(t.url))
       return new Error("Your session has expired. Sign in to Umbraco and reload the manager.");
     if ((s = (n = t.headers) == null ? void 0 : n.get("content-type")) != null && s.includes("text/html"))
-      return new Error(`${r} Status ${t.status}. Reload the manager and try again.`);
+      return new Error(`${a} Status ${t.status}. Reload the manager and try again.`);
     const e = await t.text();
-    let o = e || r;
+    let o = e || a;
     try {
       o = JSON.parse(e).message || o;
     } catch {
     }
-    return new Error(o || `${r} Status ${t.status}.`);
+    return new Error(o || `${a} Status ${t.status}.`);
   }
 }
-function J(a) {
-  if (!a)
+function J(r) {
+  if (!r)
     return "";
   const t = new URLSearchParams();
-  for (const [e, o] of Object.entries(a))
+  for (const [e, o] of Object.entries(r))
     Array.isArray(o) ? o.forEach((n) => t.append(e, String(n))) : t.set(e, o == null ? "" : String(o));
-  const r = t.toString();
-  return r ? `?${r}` : "";
+  const a = t.toString();
+  return a ? `?${a}` : "";
 }
-function ee(a) {
-  const t = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
-  return `${a.getFullYear()}-${t}-${r}`;
+function ee(r) {
+  const t = String(r.getMonth() + 1).padStart(2, "0"), a = String(r.getDate()).padStart(2, "0");
+  return `${r.getFullYear()}-${t}-${a}`;
 }
-function Le(a) {
-  if (!a)
+function Ae(r) {
+  if (!r)
     return "";
-  const t = new Date(a);
-  return Number.isNaN(t.getTime()) ? a : new Intl.DateTimeFormat(void 0, {
+  const t = new Date(r);
+  return Number.isNaN(t.getTime()) ? r : new Intl.DateTimeFormat(void 0, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -265,20 +265,20 @@ function Le(a) {
     minute: "2-digit"
   }).format(t);
 }
-function u(a) {
-  return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+function u(r) {
+  return String(r ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function Ae(a) {
+function Me(r) {
   const t = document.createElement("textarea");
-  return t.innerHTML = String(a ?? ""), t.value;
+  return t.innerHTML = String(r ?? ""), t.value;
 }
-function ge(a) {
-  return a.enumValue || a.value || "";
+function ge(r) {
+  return r.enumValue || r.value || "";
 }
-function Me(a, t) {
+function Ee(r, t) {
   const e = [], o = Math.max(t || 1, 1);
   let n;
-  a <= Math.floor(5 / 2) ? n = 1 : a + Math.floor(5 / 2) >= o ? n = Math.max(o - 5 + 1, 1) : n = a - Math.floor(5 / 2);
+  r <= Math.floor(5 / 2) ? n = 1 : r + Math.floor(5 / 2) >= o ? n = Math.max(o - 5 + 1, 1) : n = r - Math.floor(5 / 2);
   for (let s = 0; s < 5; s += 1) {
     const g = n + s;
     g <= o && e.push(g);
@@ -291,24 +291,24 @@ const ne = `
   .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
   .ekmOrderCustomData__value { margin: 0; min-width: 0; color: #252830; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
 `;
-async function Ee(a, t) {
-  const r = document.createElement("iframe");
-  r.title = t, r.setAttribute("aria-hidden", "true"), r.style.cssText = "position:fixed;left:-10000px;top:0;width:800px;height:600px;border:0;";
+async function Pe(r, t) {
+  const a = document.createElement("iframe");
+  a.title = t, a.setAttribute("aria-hidden", "true"), a.style.cssText = "position:fixed;left:-10000px;top:0;width:800px;height:600px;border:0;";
   try {
     const e = new Promise((n, s) => {
-      r.onload = () => n(), r.onerror = () => s(new Error("Unable to load the print document."));
+      a.onload = () => n(), a.onerror = () => s(new Error("Unable to load the print document."));
     });
-    r.srcdoc = fe(a, t), document.body.append(r), await e;
-    const o = r.contentWindow;
+    a.srcdoc = fe(r, t), document.body.append(a), await e;
+    const o = a.contentWindow;
     if (!o) throw new Error("Print window unavailable.");
-    await o.document.fonts.ready, o.addEventListener("afterprint", () => r.remove(), { once: !0 }), o.focus(), o.print();
+    await o.document.fonts.ready, o.addEventListener("afterprint", () => a.remove(), { once: !0 }), o.focus(), o.print();
   } catch (e) {
-    throw r.remove(), e;
+    throw a.remove(), e;
   }
 }
-function fe(a, t) {
-  const r = document.createElement("template");
-  return r.innerHTML = a, r.content.querySelectorAll("button, input, select, .ekmOrderGiftcards__actions, .ekmOrderLineThumbnail").forEach((e) => e.remove()), r.content.querySelectorAll("details").forEach((e) => e.setAttribute("open", "")), r.content.querySelectorAll("summary").forEach((e) => e.remove()), r.content.querySelectorAll("a").forEach((e) => e.replaceWith(...Array.from(e.childNodes))), `<!doctype html><html><head><meta charset="utf-8"><title>${u(t)}</title><style>
+function fe(r, t) {
+  const a = document.createElement("template");
+  return a.innerHTML = r, a.content.querySelectorAll("button, input, select, .ekmOrderGiftcards__actions, .ekmOrderLineThumbnail").forEach((e) => e.remove()), a.content.querySelectorAll("details").forEach((e) => e.setAttribute("open", "")), a.content.querySelectorAll("summary").forEach((e) => e.remove()), a.content.querySelectorAll("a").forEach((e) => e.replaceWith(...Array.from(e.childNodes))), `<!doctype html><html><head><meta charset="utf-8"><title>${u(t)}</title><style>
     ${ne}
     @page { size: auto; margin: 14mm; }
     * { box-sizing: border-box; }
@@ -339,11 +339,11 @@ function fe(a, t) {
     .ekmOrderGiftcards__summary { display: flex; flex-wrap: wrap; gap: 12px; }
     dt { font-weight: bold; margin-top: 6px; }
     dd { margin: 0 0 4px; white-space: pre-wrap; }
-  </style></head><body>${r.innerHTML}</body></html>`;
+  </style></head><body>${a.innerHTML}</body></html>`;
 }
-function Pe(a, t) {
-  const r = URL.createObjectURL(a), e = document.createElement("a");
-  e.href = r, e.download = t, e.addEventListener("click", (o) => o.stopPropagation()), document.body.append(e), e.click(), e.remove(), URL.revokeObjectURL(r);
+function Te(r, t) {
+  const a = URL.createObjectURL(r), e = document.createElement("a");
+  e.href = a, e.download = t, e.addEventListener("click", (o) => o.stopPropagation()), document.body.append(e), e.click(), e.remove(), URL.revokeObjectURL(a);
 }
 const ie = `
 .ekmOrderLineProduct { display: flex; align-items: flex-start; gap: 14px; min-width: 0; width: 100%; }
@@ -521,7 +521,7 @@ const ie = `
   "#f0f0f0": "--ekom-border",
   "#247f45": "--ekom-positive",
   "#ad5f00": "--ekom-warning"
-}, he = ie.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (a) => re[a.toLowerCase()] ? `var(${re[a.toLowerCase()]})` : a), be = `
+}, he = ie.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (r) => re[r.toLowerCase()] ? `var(${re[r.toLowerCase()]})` : r), be = `
   .ekom-skeleton { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--ekom-border, #eceef1) 0%, var(--ekom-surface-alt, #f7f8fa) 40%, var(--ekom-border, #eceef1) 80%); background-size: 320px 100%; animation: ekom-shim 1.2s linear infinite; }
   .ekom-skeleton-block { flex: 1; height: auto; border-radius: 8px; background-image: linear-gradient(90deg, var(--ekom-surface-alt, #f7f8fa) 0%, var(--ekom-surface, #fff) 40%, var(--ekom-surface-alt, #f7f8fa) 80%); }
   .ekom-loading { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; }
@@ -535,10 +535,11 @@ const ie = `
   .ekom-loading-rows > div { display: flex; align-items: center; gap: 16px; }
   .ekom-loading-rows > p { margin: 0; font-size: 12px; line-height: 1; color: var(--ekom-muted, #676b7b); }
   .ekom-list-skeleton-row:hover { background: transparent !important; }
+  .ekom-order-opening { margin-top: 20px; }
   [hidden] { display: none !important; }
   @media (max-width: 720px) { .ekom-loading-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
   @media (prefers-reduced-motion: reduce) { .ekom-skeleton, .ekom-loading-spinner { animation: none; } }
-`, Te = `@keyframes ekom-shim { 0% { background-position: -320px 0; } 100% { background-position: 320px 0; } }
+`, De = `@keyframes ekom-shim { 0% { background-position: -320px 0; } 100% { background-position: 320px 0; } }
 @keyframes ekom-spin { to { transform: rotate(360deg); } }
 ${te} {
   ${ie.replaceAll(":host", "&")}
@@ -622,13 +623,13 @@ ${te}:not([classic]) {
   }
   @media print { --ekom-text: #000; --ekom-muted: #444; --ekom-surface: #fff; --ekom-surface-alt: #fff; --ekom-border: #bbb; .ekom-order-tabs, .ekom-legacy-status { display: none; } }
 }`;
-function De(a) {
-  const t = ["Paid", "Fulfilled", "Closed"].includes(a || "") ? "positive" : ["Failed", "Cancelled"].includes(a || "") ? "negative" : ["Pending", "PartiallyPaid", "PartiallyFulfilled", "PartiallyRefunded"].includes(a || "") ? "warning" : "neutral", r = a ? a.replace(/([a-z])([A-Z])/g, "$1 $2") : "Needs review";
-  return `<span class="ekom-badge ekom-badge--${t}">${u(r)}</span>`;
+function Re(r) {
+  const t = ["Paid", "Fulfilled", "Closed"].includes(r || "") ? "positive" : ["Failed", "Cancelled"].includes(r || "") ? "negative" : ["Pending", "PartiallyPaid", "PartiallyFulfilled", "PartiallyRefunded"].includes(r || "") ? "warning" : "neutral", a = r ? r.replace(/([a-z])([A-Z])/g, "$1 $2") : "Needs review";
+  return `<span class="ekom-badge ekom-badge--${t}">${u(a)}</span>`;
 }
-function ke(a, t) {
-  if (t != null && t.format) return pe(a, t.format);
-  const r = t == null ? void 0 : t.isoCurrencySymbol, e = (t == null ? void 0 : t.currencyDecimalDigits) ?? (r && /^[A-Z]{3}$/.test(r) ? new Intl.NumberFormat(void 0, { style: "currency", currency: r }).resolvedOptions().maximumFractionDigits : 2), o = t == null ? void 0 : t.currencyValue;
+function ke(r, t) {
+  if (t != null && t.format) return pe(r, t.format);
+  const a = t == null ? void 0 : t.isoCurrencySymbol, e = (t == null ? void 0 : t.currencyDecimalDigits) ?? (a && /^[A-Z]{3}$/.test(a) ? new Intl.NumberFormat(void 0, { style: "currency", currency: a }).resolvedOptions().maximumFractionDigits : 2), o = t == null ? void 0 : t.currencyValue;
   let n;
   try {
     o && !/^[A-Z]{3}$/.test(o) && (n = Intl.NumberFormat.supportedLocalesOf(o)[0]);
@@ -637,68 +638,68 @@ function ke(a, t) {
   return new Intl.NumberFormat(n, {
     minimumFractionDigits: e,
     maximumFractionDigits: e,
-    ...r && /^[A-Z]{3}$/.test(r) ? { style: "currency", currency: r, ...n ? {} : { currencyDisplay: "code" } } : {}
-  }).format(a);
+    ...a && /^[A-Z]{3}$/.test(a) ? { style: "currency", currency: a, ...n ? {} : { currencyDisplay: "code" } } : {}
+  }).format(r);
 }
-function Re(a, t, r, e = {}) {
+function ze(r, t, a, e = {}) {
   var Z;
-  const o = a.getBoundingClientRect(), n = window.devicePixelRatio || 1, s = o.width || 300, g = o.height || 320;
-  a.width = s * n, a.height = g * n;
-  const i = a.getContext("2d");
+  const o = r.getBoundingClientRect(), n = window.devicePixelRatio || 1, s = o.width || 300, g = o.height || 320;
+  r.width = s * n, r.height = g * n;
+  const i = r.getContext("2d");
   if (!i) return;
   i.scale(n, n), i.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
-  const x = t.points || [], S = x.map((m) => m.y == null ? null : Number(m.y)), w = ((Z = e.comparison) == null ? void 0 : Z.points) || [], c = [...S, ...w.map((m) => m.y)].filter((m) => m != null), b = Math.min(0, ...c), O = Math.max(1, ...c), j = 10 ** (Math.floor(Math.log10(O / 4)) - 1), U = e.integer ? Math.ceil(O / 4) * 4 : e.templateStyle ? Math.ceil(O / 4 / j) * j * 4 : O, N = (m) => e.formatValue ? e.formatValue(m) : e.currency ? ke(m, e.currency) : m.toLocaleString(void 0, { maximumFractionDigits: e.integer ? 0 : 2 }), Y = e.formatAxisValue ?? N, H = Array.from({ length: 5 }, (m, d) => U - (U - b) * d / 4), $ = e.templateStyle ? 1 : Math.max(48, ...H.map((m) => i.measureText(Y(m)).width + 12)), P = s - (e.templateStyle ? 1 : 16), R = e.templateStyle ? 8 : 20, _ = g - (e.templateStyle ? 26 : 52), h = x.map((m, d) => {
-    var v, C, T;
+  const x = t.points || [], S = x.map((m) => m.y == null ? null : Number(m.y)), w = ((Z = e.comparison) == null ? void 0 : Z.points) || [], c = [...S, ...w.map((m) => m.y)].filter((m) => m != null), b = Math.min(0, ...c), O = Math.max(1, ...c), j = 10 ** (Math.floor(Math.log10(O / 4)) - 1), U = e.integer ? Math.ceil(O / 4) * 4 : e.templateStyle ? Math.ceil(O / 4 / j) * j * 4 : O, N = (m) => e.formatValue ? e.formatValue(m) : e.currency ? ke(m, e.currency) : m.toLocaleString(void 0, { maximumFractionDigits: e.integer ? 0 : 2 }), Y = e.formatAxisValue ?? N, H = Array.from({ length: 5 }, (m, l) => U - (U - b) * l / 4), $ = e.templateStyle ? 1 : Math.max(48, ...H.map((m) => i.measureText(Y(m)).width + 12)), P = s - (e.templateStyle ? 1 : 16), R = e.templateStyle ? 8 : 20, _ = g - (e.templateStyle ? 26 : 52), h = x.map((m, l) => {
+    var v, L, T;
     return {
-      x: x.length > 1 ? $ + (P - $) * d / (x.length - 1) : ($ + P) / 2,
-      y: S[d] == null ? null : _ - (S[d] - b) / (U - b) * (_ - R),
-      date: m.x || ((v = t.labels) == null ? void 0 : v[d]) || "",
-      axisLabel: ((C = e.formatLabel) == null ? void 0 : C.call(e, d)) ?? m.x ?? ((T = t.labels) == null ? void 0 : T[d]) ?? "",
-      value: S[d]
+      x: x.length > 1 ? $ + (P - $) * l / (x.length - 1) : ($ + P) / 2,
+      y: S[l] == null ? null : _ - (S[l] - b) / (U - b) * (_ - R),
+      date: m.x || ((v = t.labels) == null ? void 0 : v[l]) || "",
+      axisLabel: ((L = e.formatLabel) == null ? void 0 : L.call(e, l)) ?? m.x ?? ((T = t.labels) == null ? void 0 : T[l]) ?? "",
+      value: S[l]
     };
   }), V = (m = -1) => {
     var K;
     i.clearRect(0, 0, s, g), i.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
-    const d = typeof getComputedStyle == "function" ? getComputedStyle(a) : void 0, v = (d == null ? void 0 : d.getPropertyValue("--ekom-muted").trim()) || (d == null ? void 0 : d.getPropertyValue("--uui-color-text-alt").trim()) || "#555", C = (d == null ? void 0 : d.getPropertyValue("--ekom-border").trim()) || "#e5e5e5", T = (d == null ? void 0 : d.getPropertyValue("--uui-color-text").trim()) || "", I = (K = /^#([0-9a-f]{6})$/i.exec(T)) == null ? void 0 : K[1], q = I ? [0, 2, 4].reduce((p, l) => p + parseInt(I.slice(l, l + 2), 16), 0) > 420 : !1, B = e.templateStyle && !q ? "#10694a" : r;
-    i.lineWidth = 1, i.textAlign = e.templateStyle ? "left" : "right", H.forEach((p, l) => {
-      const k = R + (_ - R) * l / 4;
-      i.fillStyle = v, i.fillText(Y(p), e.templateStyle ? $ : $ - 8, e.templateStyle ? Math.min(_, k + 3) : k + 4), !(e.templateStyle && (l === 0 || l === 4)) && (i.globalAlpha = e.templateStyle ? 0.5 : 1, i.strokeStyle = C, i.beginPath(), i.moveTo($, k), i.lineTo(P, k), i.stroke(), i.globalAlpha = 1);
+    const l = typeof getComputedStyle == "function" ? getComputedStyle(r) : void 0, v = (l == null ? void 0 : l.getPropertyValue("--ekom-muted").trim()) || (l == null ? void 0 : l.getPropertyValue("--uui-color-text-alt").trim()) || "#555", L = (l == null ? void 0 : l.getPropertyValue("--ekom-border").trim()) || "#e5e5e5", T = (l == null ? void 0 : l.getPropertyValue("--uui-color-text").trim()) || "", I = (K = /^#([0-9a-f]{6})$/i.exec(T)) == null ? void 0 : K[1], q = I ? [0, 2, 4].reduce((p, d) => p + parseInt(I.slice(d, d + 2), 16), 0) > 420 : !1, B = e.templateStyle && !q ? "#10694a" : a;
+    i.lineWidth = 1, i.textAlign = e.templateStyle ? "left" : "right", H.forEach((p, d) => {
+      const k = R + (_ - R) * d / 4;
+      i.fillStyle = v, i.fillText(Y(p), e.templateStyle ? $ : $ - 8, e.templateStyle ? Math.min(_, k + 3) : k + 4), !(e.templateStyle && (d === 0 || d === 4)) && (i.globalAlpha = e.templateStyle ? 0.5 : 1, i.strokeStyle = L, i.beginPath(), i.moveTo($, k), i.lineTo(P, k), i.stroke(), i.globalAlpha = 1);
     });
-    const G = Math.max(90, ...h.map((p) => i.measureText(p.axisLabel).width + 32)), Q = Math.max(2, Math.floor((P - $) / G)), le = new Set(Array.from({ length: Math.min(Q, h.length) }, (p, l) => Math.round(l * (h.length - 1) / Math.max(1, Math.min(Q, h.length) - 1))));
-    i.fillStyle = v, h.forEach((p, l) => {
-      le.has(l) && (i.textAlign = h.length === 1 ? "center" : l === 0 ? "left" : l === h.length - 1 ? "right" : "center", i.fillText(p.axisLabel, p.x, _ + 24));
+    const G = Math.max(90, ...h.map((p) => i.measureText(p.axisLabel).width + 32)), Q = Math.max(2, Math.floor((P - $) / G)), de = new Set(Array.from({ length: Math.min(Q, h.length) }, (p, d) => Math.round(d * (h.length - 1) / Math.max(1, Math.min(Q, h.length) - 1))));
+    i.fillStyle = v, h.forEach((p, d) => {
+      de.has(d) && (i.textAlign = h.length === 1 ? "center" : d === 0 ? "left" : d === h.length - 1 ? "right" : "center", i.fillText(p.axisLabel, p.x, _ + 24));
     });
-    const X = (p, l) => {
+    const X = (p, d) => {
       var y, F;
-      i.strokeStyle = l ? "#9b9fad" : B, i.lineWidth = e.templateStyle ? l ? 1.5 : 2.5 : 2, i.lineJoin = "round", i.lineCap = "round", (y = i.setLineDash) == null || y.call(i, l ? [4, 5] : []), i.beginPath();
+      i.strokeStyle = d ? "#9b9fad" : B, i.lineWidth = e.templateStyle ? d ? 1.5 : 2.5 : 2, i.lineJoin = "round", i.lineCap = "round", (y = i.setLineDash) == null || y.call(i, d ? [4, 5] : []), i.beginPath();
       let k = !1;
-      p.forEach((L) => {
-        if (L.y == null) {
+      p.forEach((A) => {
+        if (A.y == null) {
           k = !1;
           return;
         }
-        k ? i.lineTo(L.x, L.y) : i.moveTo(L.x, L.y), k = !0;
+        k ? i.lineTo(A.x, A.y) : i.moveTo(A.x, A.y), k = !0;
       }), i.stroke(), (F = i.setLineDash) == null || F.call(i, []);
     };
     if (e.templateStyle && h.length > 1) {
       const p = i.createLinearGradient(0, R, 0, _);
       p.addColorStop(0, "rgba(16,105,74,.22)"), p.addColorStop(1, "rgba(16,105,74,0)"), i.fillStyle = p;
-      let l = [];
+      let d = [];
       const k = () => {
-        l.length > 1 && (i.beginPath(), i.moveTo(l[0].x, _), l.forEach((y) => i.lineTo(y.x, y.y)), i.lineTo(l[l.length - 1].x, _), i.closePath(), i.fill()), l = [];
+        d.length > 1 && (i.beginPath(), i.moveTo(d[0].x, _), d.forEach((y) => i.lineTo(y.x, y.y)), i.lineTo(d[d.length - 1].x, _), i.closePath(), i.fill()), d = [];
       };
       h.forEach((y) => {
-        y.y == null ? k() : l.push({ x: y.x, y: y.y });
+        y.y == null ? k() : d.push({ x: y.x, y: y.y });
       }), k();
     }
-    w.length && X(h.map((p, l) => {
+    w.length && X(h.map((p, d) => {
       var k;
       return {
         x: p.x,
-        y: ((k = w[l]) == null ? void 0 : k.y) == null ? null : _ - (Number(w[l].y) - b) / (U - b) * (_ - R)
+        y: ((k = w[d]) == null ? void 0 : k.y) == null ? null : _ - (Number(w[d].y) - b) / (U - b) * (_ - R)
       };
-    }), !0), X(h, !1), i.fillStyle = B, h.forEach((p, l) => {
-      p.y == null || e.templateStyle && h.length > 1 && l !== m || (i.beginPath(), i.arc(p.x, p.y, l === m ? 5 : 3, 0, Math.PI * 2), i.fill());
+    }), !0), X(h, !1), i.fillStyle = B, h.forEach((p, d) => {
+      p.y == null || e.templateStyle && h.length > 1 && d !== m || (i.beginPath(), i.arc(p.x, p.y, d === m ? 5 : 3, 0, Math.PI * 2), i.fill());
     }), h.length || (i.textAlign = "center", i.fillText("No data for this period", ($ + P) / 2, g / 2));
     const z = h[m];
     if (z) {
@@ -707,29 +708,29 @@ function Re(a, t, r, e = {}) {
         const D = w[m];
         p.push(`Previous: ${D.x || ""}`, D.y == null ? "—" : N(D.y));
       }
-      const l = Math.max(...p.map((D) => i.measureText(D).width)) + 20, k = Math.max(0, Math.min(s - l, z.x - l / 2)), y = p.length * 18 + 12, F = z.y ?? _, L = Math.max(0, Math.min(g - y, F > y + 20 ? F - y - 12 : F + 12));
-      i.fillStyle = "#222", i.fillRect(k, L, l, y), i.fillStyle = "#fff", i.textAlign = "left", p.forEach((D, de) => i.fillText(D, k + 10, L + 19 + de * 18));
+      const d = Math.max(...p.map((D) => i.measureText(D).width)) + 20, k = Math.max(0, Math.min(s - d, z.x - d / 2)), y = p.length * 18 + 12, F = z.y ?? _, A = Math.max(0, Math.min(g - y, F > y + 20 ? F - y - 12 : F + 12));
+      i.fillStyle = "#222", i.fillRect(k, A, d, y), i.fillStyle = "#fff", i.textAlign = "left", p.forEach((D, le) => i.fillText(D, k + 10, A + 19 + le * 18));
     }
   }, W = (m) => {
-    const d = a.getBoundingClientRect(), v = (m.clientX - d.left) * s / d.width, C = (m.clientY - d.top) * g / d.height;
+    const l = r.getBoundingClientRect(), v = (m.clientX - l.left) * s / l.width, L = (m.clientY - l.top) * g / l.height;
     if (e.columnHover)
-      return !h.length || v < $ || v > P || C < R || C > _ ? -1 : h.length === 1 ? 0 : Math.round((v - $) / (P - $) * (h.length - 1));
+      return !h.length || v < $ || v > P || L < R || L > _ ? -1 : h.length === 1 ? 0 : Math.round((v - $) / (P - $) * (h.length - 1));
     let T = -1, I = 16;
     return h.forEach((q, B) => {
       if (q.y == null) return;
-      const G = Math.hypot(q.x - v, q.y - C);
+      const G = Math.hypot(q.x - v, q.y - L);
       G < I && (T = B, I = G);
     }), T;
   };
-  a.onmousemove = (m) => {
-    const d = W(m);
-    a.style.cursor = d >= 0 ? "pointer" : "default", V(d);
-  }, a.onclick = e.onSelect ? (m) => {
+  r.onmousemove = (m) => {
+    const l = W(m);
+    r.style.cursor = l >= 0 ? "pointer" : "default", V(l);
+  }, r.onclick = e.onSelect ? (m) => {
     var v;
-    const d = W(m);
-    d >= 0 && ((v = e.onSelect) == null || v.call(e, d));
-  } : null, a.onmouseleave = () => {
-    a.style.cursor = "default", V();
+    const l = W(m);
+    l >= 0 && ((v = e.onSelect) == null || v.call(e, l));
+  } : null, r.onmouseleave = () => {
+    r.style.cursor = "default", V();
   }, V();
 }
 const xe = [
@@ -740,98 +741,104 @@ const xe = [
   { key: "states:Open;;", label: "Open" },
   { key: "states:Closed;;", label: "Closed" }
 ];
-function ze() {
-  var r;
-  const a = f.stores.find((e) => e.alias === f.filters.store), t = (a == null ? void 0 : a.currencies) || [];
+function Fe() {
+  var a;
+  const r = f.stores.find((e) => e.alias === f.filters.store), t = (r == null ? void 0 : r.currencies) || [];
   if (!t.includes(f.filters.currency || "")) {
-    const e = (r = a == null ? void 0 : a.currency) == null ? void 0 : r.isoCurrencySymbol;
+    const e = (a = r == null ? void 0 : r.currency) == null ? void 0 : a.isoCurrencySymbol;
     f.filters.currency = t.find((o) => o === e) || t[0] || "";
   }
 }
-function ye(a = "data-field") {
-  const t = f.stores.find((e) => e.alias === f.filters.store), r = f.filters.currency || "";
-  return `<div class="ekom-store-switch"><span>Store</span><details class="ekom-dropdown ekom-store-currency"><summary aria-label="Store and currency"><strong>${u((t == null ? void 0 : t.title) || "Select store")}</strong>${r ? `<span class="ekom-currency-code">${u(r)}</span>` : ""}<span class="ekom-store-chevron">▾</span></summary><div class="ekom-currency-popover"><div class="ekom-currency-heading"><strong>Store ·<br>Currency</strong><span>Amounts shown in the selected currency</span></div>${f.stores.map((e) => `<section class="ekom-currency-store ${e.alias === (t == null ? void 0 : t.alias) ? "is-selected" : ""}" aria-label="${u(e.title)}"><h3>${u(e.title)}</h3><div class="ekom-currency-choices">${(e.currencies || []).map((o) => `<button type="button" data-header-store="${u(e.alias)}" data-header-currency="${u(o)}" aria-label="${u(e.title)} — ${u(o)}" aria-pressed="${e.alias === (t == null ? void 0 : t.alias) && o === r}">${u(o)}${e.alias === (t == null ? void 0 : t.alias) && o === r ? '<span aria-hidden="true">✓</span>' : ""}</button>`).join("") || '<span class="ekom-currency-empty">No currencies configured or recorded</span>'}</div></section>`).join("")}</div></details><select hidden aria-label="Store" ${a}="store">${f.stores.map((e) => `<option value="${u(e.alias)}" ${e.alias === (t == null ? void 0 : t.alias) ? "selected" : ""}>${u(e.title)}</option>`).join("")}</select></div>`;
+function ye(r = "data-field") {
+  const t = f.stores.find((e) => e.alias === f.filters.store), a = f.filters.currency || "";
+  return `<div class="ekom-store-switch"><span>Store</span><details class="ekom-dropdown ekom-store-currency"><summary aria-label="Store and currency"><strong>${u((t == null ? void 0 : t.title) || "Select store")}</strong>${a ? `<span class="ekom-currency-code">${u(a)}</span>` : ""}<span class="ekom-store-chevron">▾</span></summary><div class="ekom-currency-popover"><div class="ekom-currency-heading"><strong>Store ·<br>Currency</strong><span>Amounts shown in the selected currency</span></div>${f.stores.map((e) => `<section class="ekom-currency-store ${e.alias === (t == null ? void 0 : t.alias) ? "is-selected" : ""}" aria-label="${u(e.title)}"><h3>${u(e.title)}</h3><div class="ekom-currency-choices">${(e.currencies || []).map((o) => `<button type="button" data-header-store="${u(e.alias)}" data-header-currency="${u(o)}" aria-label="${u(e.title)} — ${u(o)}" aria-pressed="${e.alias === (t == null ? void 0 : t.alias) && o === a}">${u(o)}${e.alias === (t == null ? void 0 : t.alias) && o === a ? '<span aria-hidden="true">✓</span>' : ""}</button>`).join("") || '<span class="ekom-currency-empty">No currencies configured or recorded</span>'}</div></section>`).join("")}</div></details><select hidden aria-label="Store" ${r}="store">${f.stores.map((e) => `<option value="${u(e.alias)}" ${e.alias === (t == null ? void 0 : t.alias) ? "selected" : ""}>${u(e.title)}</option>`).join("")}</select></div>`;
 }
-function Fe(a, t = "data-field", r = !0) {
+function je(r, t = "data-field", a = !0) {
   if (typeof document < "u" && !document.querySelector("link[data-ekom-fonts]")) {
     const n = document.createElement("link");
     n.rel = "stylesheet", n.href = "/App_Plugins/Ekom/dist/manager-fonts.css", n.dataset.ekomFonts = "", document.head.append(n);
   }
-  const e = ["orders", "analytics", "customers", ...f.printingEnabled || a === "printing" ? ["printing"] : []], o = typeof location > "u" ? "/umbraco/section/ekommanager" : location.pathname.replace(/\/view\/(orders|analytics|customers|printing)\/?$/, "").replace(/\/$/, "");
-  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((n) => `<a href="${u(o + "/view/" + n)}" ${n === a ? 'aria-current="page"' : ""}>${n[0].toUpperCase() + n.slice(1)}</a>`).join("")}</nav>${r ? ye(t) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
+  const e = ["orders", "analytics", "customers", ...f.printingEnabled || r === "printing" ? ["printing"] : []], o = typeof location > "u" ? "/umbraco/section/ekommanager" : location.pathname.replace(/\/view\/(orders|analytics|customers|printing)\/?$/, "").replace(/\/$/, "");
+  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((n) => `<a href="${u(o + "/view/" + n)}" ${n === r ? 'aria-current="page"' : ""}>${n[0].toUpperCase() + n.slice(1)}</a>`).join("")}</nav>${a ? ye(t) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
 }
-function je(a) {
-  var r;
+function Ie(r) {
+  var a;
   const t = [...xe];
-  return t.some((e) => e.key === a) || t.push({ key: a, label: a.startsWith("states:") ? "Custom status filters" : ((r = f.statusList.find((e) => ge(e) === a)) == null ? void 0 : r.label) || a }), t.map((e) => `<option value="${u(e.key)}" ${e.key === a ? "selected" : ""}>${u(e.label)}</option>`).join("");
+  return t.some((e) => e.key === r) || t.push({ key: r, label: r.startsWith("states:") ? "Custom status filters" : ((a = f.statusList.find((e) => ge(e) === r)) == null ? void 0 : a.label) || r }), t.map((e) => `<option value="${u(e.key)}" ${e.key === r ? "selected" : ""}>${u(e.label)}</option>`).join("");
 }
-function se(a = /* @__PURE__ */ new Date()) {
-  const t = (o) => `${o.getFullYear()}-${String(o.getMonth() + 1).padStart(2, "0")}-${String(o.getDate()).padStart(2, "0")}`, r = (o) => new Date(a.getFullYear(), a.getMonth(), a.getDate() + o), e = t(a);
+function se(r = /* @__PURE__ */ new Date()) {
+  const t = (o) => `${o.getFullYear()}-${String(o.getMonth() + 1).padStart(2, "0")}-${String(o.getDate()).padStart(2, "0")}`, a = (o) => new Date(r.getFullYear(), r.getMonth(), r.getDate() + o), e = t(r);
   return [
     { label: "Today", from: e, to: e },
-    { label: "Yesterday", from: t(r(-1)), to: t(r(-1)) },
-    { label: "Last 7 days", from: t(r(-6)), to: e },
-    { label: "Last 30 days", from: t(r(-29)), to: e },
-    { label: "This month", from: t(new Date(a.getFullYear(), a.getMonth(), 1)), to: e },
-    { label: "Last month", from: t(new Date(a.getFullYear(), a.getMonth() - 1, 1)), to: t(new Date(a.getFullYear(), a.getMonth(), 0)) },
-    { label: "This quarter", from: t(new Date(a.getFullYear(), Math.floor(a.getMonth() / 3) * 3, 1)), to: e },
-    { label: "This year", from: t(new Date(a.getFullYear(), 0, 1)), to: e }
+    { label: "Yesterday", from: t(a(-1)), to: t(a(-1)) },
+    { label: "Last 7 days", from: t(a(-6)), to: e },
+    { label: "Last 30 days", from: t(a(-29)), to: e },
+    { label: "This month", from: t(new Date(r.getFullYear(), r.getMonth(), 1)), to: e },
+    { label: "Last month", from: t(new Date(r.getFullYear(), r.getMonth() - 1, 1)), to: t(new Date(r.getFullYear(), r.getMonth(), 0)) },
+    { label: "This quarter", from: t(new Date(r.getFullYear(), Math.floor(r.getMonth() / 3) * 3, 1)), to: e },
+    { label: "This year", from: t(new Date(r.getFullYear(), 0, 1)), to: e }
   ];
 }
-const E = (a, t = 12) => `<span class="ekom-skeleton" style="width:${a};height:${t}px"></span>`;
+const C = (r, t = 12) => `<span class="ekom-skeleton" style="width:${r};height:${t}px"></span>`;
 function ve() {
-  var r;
-  const { dateFrom: a, dateTo: t } = f.filters;
-  return ((r = se().find((e) => e.from === a && e.to === t)) == null ? void 0 : r.label) || `${a} – ${t}`;
+  var a;
+  const { dateFrom: r, dateTo: t } = f.filters;
+  return ((a = se().find((e) => e.from === r && e.to === t)) == null ? void 0 : a.label) || `${r} – ${t}`;
 }
-function we(a) {
-  return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>Loading ${u(a)} for ${u(ve())}…</p>`;
+function we(r) {
+  return _e(`Loading ${r} for ${ve()}…`);
 }
-function Ie(a, t, r) {
-  const e = `<div class="ekom-loading-card">${E("40%")}${E("55%", 22)}</div>`;
-  return `<div class="ekom-loading">${we(a)}<div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(${t},minmax(0,1fr))">${e.repeat(t)}</div>
-    <div aria-hidden="true" class="ekom-loading-panel" style="height:${r}px">${E("30%")}<span class="ekom-skeleton ekom-skeleton-block"></span></div>
-    <div aria-hidden="true" class="ekom-loading-panel">${E("28%")}${E("100%").repeat(3)}</div></div>`;
+function _e(r) {
+  return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>${u(r)}</p>`;
 }
-function qe(a, t = 4) {
-  return `<div class="ekom-loading-rows">${`<div aria-hidden="true"><span class="ekom-skeleton" style="flex:1"></span>${E("60px")}${E("110px")}</div>`.repeat(t)}<p role="status">${u(a)}</p></div>`;
+function qe(r = 3) {
+  return `<div aria-hidden="true" class="ekom-loading-panel">${C("28%")}${C("100%").repeat(r)}</div>`;
 }
-function Ue(a = 6) {
-  return `<div class="ekom-list-row ekom-list-skeleton-row" aria-hidden="true">${["60%", "70%", "55%", "80%", "70%", "60%", "50%"].map((r) => E(r)).join("")}<span></span></div>`.repeat(a) + '<span class="ekom-sr-only" role="status">Loading orders…</span>';
+function Ue(r, t, a) {
+  const e = `<div class="ekom-loading-card">${C("40%")}${C("55%", 22)}</div>`;
+  return `<div class="ekom-loading">${we(r)}<div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(${t},minmax(0,1fr))">${e.repeat(t)}</div>
+    <div aria-hidden="true" class="ekom-loading-panel" style="height:${a}px">${C("30%")}<span class="ekom-skeleton ekom-skeleton-block"></span></div>
+    <div aria-hidden="true" class="ekom-loading-panel">${C("28%")}${C("100%").repeat(3)}</div></div>`;
 }
-function Be() {
+function Be(r, t = 4) {
+  return `<div class="ekom-loading-rows">${`<div aria-hidden="true"><span class="ekom-skeleton" style="flex:1"></span>${C("60px")}${C("110px")}</div>`.repeat(t)}<p role="status">${u(r)}</p></div>`;
+}
+function Ge(r = 6) {
+  return `<div class="ekom-list-row ekom-list-skeleton-row" aria-hidden="true">${["60%", "70%", "55%", "80%", "70%", "60%", "50%"].map((a) => C(a)).join("")}<span></span></div>`.repeat(r) + '<span class="ekom-sr-only" role="status">Loading orders…</span>';
+}
+function Ne() {
   return `<ekom-date-range from="${u(f.filters.dateFrom)}" to="${u(f.filters.dateTo)}"></ekom-date-range>`;
 }
-function Ge(a, t) {
-  var r, e;
-  _e(), (r = a.querySelector(".ekom-store-currency")) == null || r.addEventListener("keydown", (o) => {
+function Ve(r, t) {
+  var a, e;
+  $e(), (a = r.querySelector(".ekom-store-currency")) == null || a.addEventListener("keydown", (o) => {
     var s;
     if (o.key !== "Escape") return;
     const n = o.currentTarget;
     n.open = !1, (s = n.querySelector("summary")) == null || s.focus(), o.stopPropagation();
-  }), a.querySelectorAll("[data-header-store]").forEach((o) => o.addEventListener("click", () => {
+  }), r.querySelectorAll("[data-header-store]").forEach((o) => o.addEventListener("click", () => {
     var s;
-    const n = a.querySelector('[data-field="store"], [data-filter="store"]');
+    const n = r.querySelector('[data-field="store"], [data-filter="store"]');
     n && (f.filters.currency = o.dataset.headerCurrency || "", (s = o.closest("details")) == null || s.removeAttribute("open"), n.value = o.dataset.headerStore || "", n.dispatchEvent(new Event("change", { bubbles: !0 })));
-  })), a.querySelectorAll("[data-shared-status]").forEach((o) => o.addEventListener("change", () => {
-    const n = [0, 1, 2].map((s) => Array.from(a.querySelectorAll(`[data-shared-status="${s}"]:checked`), (g) => g.value).join(","));
+  })), r.querySelectorAll("[data-shared-status]").forEach((o) => o.addEventListener("change", () => {
+    const n = [0, 1, 2].map((s) => Array.from(r.querySelectorAll(`[data-shared-status="${s}"]:checked`), (g) => g.value).join(","));
     f.filters.orderStatus = n.some(Boolean) ? "states:" + n.join(";") : "AllOrders", t();
-  })), (e = a.querySelector("ekom-date-range")) == null || e.addEventListener("date-range-apply", (o) => {
+  })), (e = r.querySelector("ekom-date-range")) == null || e.addEventListener("date-range-apply", (o) => {
     const n = o.detail;
     f.filters.dateFrom = n.from, f.filters.dateTo = n.to, t();
   });
 }
-function _e() {
+function $e() {
   if (typeof customElements > "u" || !customElements.get || customElements.get("ekom-date-range")) return;
-  class a extends HTMLElement {
+  class r extends HTMLElement {
     constructor() {
       super(...arguments);
-      A(this, "root", this.attachShadow({ mode: "open" }));
-      A(this, "open", !1);
-      A(this, "from", "");
-      A(this, "to", "");
-      A(this, "month", 0);
-      A(this, "reposition", () => {
+      M(this, "root", this.attachShadow({ mode: "open" }));
+      M(this, "open", !1);
+      M(this, "from", "");
+      M(this, "to", "");
+      M(this, "month", 0);
+      M(this, "reposition", () => {
         const e = this.root.querySelector(".popover"), o = this.root.querySelector(".anchor"), n = this.ownerDocument.defaultView;
         if (!e || !o || !n) return;
         if (n.innerWidth <= 650) {
@@ -841,7 +848,7 @@ function _e() {
         const s = o.getBoundingClientRect().left;
         e.style.left = `${Math.min(0, Math.max(24 - s, n.innerWidth - 24 - s - e.getBoundingClientRect().width))}px`;
       });
-      A(this, "outside", (e) => {
+      M(this, "outside", (e) => {
         this.open && !e.composedPath().includes(this) && this.close(!1);
       });
     }
@@ -875,7 +882,7 @@ function _e() {
     render() {
       var g, i, x, S, w;
       const e = this.getAttribute("from") || "", o = this.getAttribute("to") || "", n = se(), s = ((g = n.find((c) => c.from === e && c.to === o)) == null ? void 0 : g.label) || "Custom";
-      Se(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${s}</strong><span class="dates">${this.date(e)} – ${this.date(o)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${n.map((c, b) => `<button type="button" data-preset="${b}" aria-pressed="${c.from === this.from && c.to === this.to}">${c.label}<span>${c.from === this.from && c.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (i = this.root.querySelector("link")) == null || i.addEventListener("load", this.reposition), this.reposition(), (x = this.root.querySelector("[data-toggle]")) == null || x.addEventListener("click", () => {
+      Oe(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${s}</strong><span class="dates">${this.date(e)} – ${this.date(o)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${n.map((c, b) => `<button type="button" data-preset="${b}" aria-pressed="${c.from === this.from && c.to === this.to}">${c.label}<span>${c.from === this.from && c.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (i = this.root.querySelector("link")) == null || i.addEventListener("load", this.reposition), this.reposition(), (x = this.root.querySelector("[data-toggle]")) == null || x.addEventListener("click", () => {
         var c;
         if (this.open) {
           this.close();
@@ -902,64 +909,66 @@ function _e() {
       };
     }
   }
-  customElements.define("ekom-date-range", a);
+  customElements.define("ekom-date-range", r);
 }
-function Ne() {
-  const a = f.filters.orderStatus.startsWith("states:") ? f.filters.orderStatus.slice(7).split(";") : ["", "", ""];
+function Je() {
+  const r = f.filters.orderStatus.startsWith("states:") ? f.filters.orderStatus.slice(7).split(";") : ["", "", ""];
   return [
     { label: "Order", values: ["Draft", "Open", "Closed", "Cancelled"] },
     { label: "Payment", values: ["Pending", "Authorized", "Paid", "PartiallyPaid", "Failed", "Voided"] },
     { label: "Fulfillment", values: ["Unfulfilled", "Picking", "Picked", "Packed", "PartiallyFulfilled", "Fulfilled"] }
-  ].map((r, e) => {
-    const o = (a[e] || "").split(",").filter(Boolean), n = o.length === 1 ? o[0].replace(/([a-z])([A-Z])/g, "$1 $2") : o.length ? `${o.length} selected` : "Any";
-    return `<div class="ekom-status-filter"><span>${r.label}</span><details class="ekom-dropdown"><summary>${u(n)}<span>▾</span></summary><div class="ekom-dropdown-options">${r.values.map((s) => `<label><input type="checkbox" data-shared-status="${e}" value="${s}" ${o.includes(s) ? "checked" : ""}>${s.replace(/([a-z])([A-Z])/g, "$1 $2")}</label>`).join("")}</div></details></div>`;
+  ].map((a, e) => {
+    const o = (r[e] || "").split(",").filter(Boolean), n = o.length === 1 ? o[0].replace(/([a-z])([A-Z])/g, "$1 $2") : o.length ? `${o.length} selected` : "Any";
+    return `<div class="ekom-status-filter"><span>${a.label}</span><details class="ekom-dropdown"><summary>${u(n)}<span>▾</span></summary><div class="ekom-dropdown-options">${a.values.map((s) => `<label><input type="checkbox" data-shared-status="${e}" value="${s}" ${o.includes(s) ? "checked" : ""}>${s.replace(/([a-z])([A-Z])/g, "$1 $2")}</label>`).join("")}</div></details></div>`;
   }).join("");
 }
 let ae;
-function $e(a) {
-  const t = a.querySelector(".ekom-design-logo");
-  t && (ae ?? (ae = new M().config().then((r) => r.ekomVersion).catch(() => {
-  })), ae.then((r) => {
-    r && (t.title = `Ekom ${r}`, t.alt = `Ekom ${r}`);
+function Se(r) {
+  const t = r.querySelector(".ekom-design-logo");
+  t && (ae ?? (ae = new E().config().then((a) => a.ekomVersion).catch(() => {
+  })), ae.then((a) => {
+    a && (t.title = `Ekom ${a}`, t.alt = `Ekom ${a}`);
   }));
 }
-function Se(a, t) {
-  const r = a.ownerDocument.createElement("template");
-  r.innerHTML = t;
-  const e = Array.from(a.children).filter((n) => n.matches('style, link[rel="stylesheet"]')), o = Array.from(r.content.children).filter((n) => n.matches('style, link[rel="stylesheet"]'));
+function Oe(r, t) {
+  const a = r.ownerDocument.createElement("template");
+  a.innerHTML = t;
+  const e = Array.from(r.children).filter((n) => n.matches('style, link[rel="stylesheet"]')), o = Array.from(a.content.children).filter((n) => n.matches('style, link[rel="stylesheet"]'));
   for (const n of o) {
     const s = e.find((g) => g.outerHTML === n.outerHTML);
-    s ? e.splice(e.indexOf(s), 1) : a.appendChild(n.cloneNode(!0)), n.remove();
+    s ? e.splice(e.indexOf(s), 1) : r.appendChild(n.cloneNode(!0)), n.remove();
   }
   for (const n of e) n.remove();
-  for (const n of Array.from(a.childNodes))
+  for (const n of Array.from(r.childNodes))
     (n.nodeType !== 1 || !n.matches('style, link[rel="stylesheet"]')) && n.remove();
-  a.appendChild(r.content), $e(a);
+  r.appendChild(a.content), Se(r);
 }
 export {
-  M as E,
-  Te as a,
-  Fe as b,
+  E,
+  De as a,
+  je as b,
   u as c,
-  je as d,
-  ze as e,
+  Ie as d,
+  Fe as e,
   ke as f,
-  Ne as g,
-  Be as h,
-  Ie as i,
-  qe as j,
-  Re as k,
-  Pe as l,
+  Je as g,
+  Ne as h,
+  Ue as i,
+  Be as j,
+  ze as k,
+  Te as l,
   f as m,
-  Ge as n,
-  De as o,
-  Me as p,
+  Ve as n,
+  Re as o,
+  Ee as p,
   xe as q,
-  Se as r,
-  Ce as s,
-  Ue as t,
-  Le as u,
-  ge as v,
-  Ae as w,
-  Ee as x
+  Oe as r,
+  Le as s,
+  Ge as t,
+  Ae as u,
+  _e as v,
+  qe as w,
+  ge as x,
+  Me as y,
+  Pe as z
 };

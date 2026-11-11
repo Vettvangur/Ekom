@@ -28,6 +28,8 @@ import {
   bindDateRange,
   orderViews,
   renderOrderRowsLoading,
+  renderLoadingLine,
+  renderLoadingPanel,
   type OrderReview,
   printOrderDocument,
 } from './manager-shared';
@@ -70,6 +72,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private result: OrderSearchResult = { orders: [], count: 0, totalPages: 0 };
   private page = 1;
   private loading = true;
+  private orderOpening = false;
   private pendingListKey = '';
   private shownListKey?: string;
   private error = '';
@@ -452,6 +455,9 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private render(): void {
+    // While an order is opening, its loader is already on screen. Skip the renders the
+    // individual requests trigger so the panel appears once, complete, instead of in pieces.
+    if (this.orderOpening && this.querySelector<HTMLElement>('[data-order-opening]')?.dataset.orderOpening === this.returnFocusOrderId) return;
     const reviewInput = this.querySelector<HTMLTextAreaElement>('[data-review-comment]');
     const reviewFocus = reviewInput && this.ownerDocument?.activeElement === reviewInput
       ? { start: reviewInput.selectionStart, end: reviewInput.selectionEnd } : undefined;
@@ -544,6 +550,10 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     if (this.overlay === 'export') {
       return this.renderExportOverlay();
+    }
+
+    if (this.overlay === 'order' && this.orderOpening) {
+      return this.renderOrderOpening();
     }
 
     if (this.overlay === 'order' && this.selectedOrder) {
@@ -671,6 +681,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         ${this.exporting ? '<p role="status">Exporting orders. This may take a while...</p>' : ''}
       </div><div class="ekom-filter-footer"><button type="button" class="btn-outline" data-action="close-overlay" ${this.exporting ? 'disabled' : ''}>Cancel</button><button type="button" class="btn-success" data-action="export-orders" ${this.exporting ? 'disabled' : ''}>Export</button></div>
     </div></div>`;
+  }
+
+  /** The order drawer while everything it shows is still being fetched. */
+  private renderOrderOpening(): string {
+    const reference = this.result.orders.find(order => order.uniqueId === this.returnFocusOrderId)?.referenceId;
+    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details" aria-busy="true" data-order-opening="${escapeHtml(this.returnFocusOrderId)}"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><div class="ekom-order-heading-copy"><h2>${reference ? `#${escapeHtml(reference)}` : 'Order'}</h2>${renderLoadingLine('Loading order…')}</div><button type="button" data-action="close-overlay" aria-label="Close order">×</button></header><div class="ekmOverlay__content ekmOrder"><div class="ekom-order-columns ekom-order-opening"><main class="ekom-order-main">${renderLoadingPanel(4)}${renderLoadingPanel(3)}${renderLoadingPanel(2)}</main><aside class="ekom-customer-sidebar">${renderLoadingPanel(5)}</aside></div></div></div></div>`;
   }
 
   private renderOrderOverlay(order: OrderInfo): string {
@@ -1459,21 +1475,30 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     this.orderLockReleaseError = '';
     this.orderLockError = false;
     this.orderLockLoading = false;
+    // Open the drawer on a loader and hold it until the order and everything shown with it
+    // (activity, actions, checkout lock, gift-card recovery, reviews) has arrived.
+    const previousOverlay = this.overlay;
+    this.orderOpening = true;
+    this.overlay = 'order';
     this.render();
     try {
       const order = await this.api.orderInfo(orderId);
       if (requestId !== this.orderRequestId) return;
       this.selectedOrder = order;
       this.reviews = []; this.activeReview = undefined; this.reviewError = '';
-      this.overlay = 'order';
       this.orderLogs = [];
       this.orderLogsError = false;
       this.activityLogExpandedIndexes.clear();
-      this.render();
       await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId), this.loadOrderReviews(orderId)]);
     } catch (error) {
       if (requestId !== this.orderRequestId) return;
+      if (!this.selectedOrder) this.overlay = previousOverlay === 'order' ? '' : previousOverlay;
       this.showError(getErrorMessage(error, 'Error on getting orderInfo.'));
+    } finally {
+      if (requestId === this.orderRequestId) {
+        this.orderOpening = false;
+        this.render();
+      }
     }
   }
 
@@ -1755,6 +1780,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private closeOverlay(): void {
+    this.orderOpening = false;
     ++this.orderRequestId;
     ++this.lockRequestId;
     ++this.recoveryRequestId;

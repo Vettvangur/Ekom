@@ -26,8 +26,8 @@ const L = /* @__PURE__ */ new Date(), D = new Date(L.getFullYear(), 0, 1), l = {
   shippingFilterProviders: []
 };
 class f {
-  async changeOrderStates(a, t, e, r, s) {
-    return this.postBody(`/ekom/manager/orderStates/${encodeURIComponent(a)}`, { expectedRevision: t, action: e, notify: r, fulfilledQuantities: s });
+  async changeOrderStates(a, t, e, r, i) {
+    return this.postBody(`/ekom/manager/orderStates/${encodeURIComponent(a)}`, { expectedRevision: t, action: e, notify: r, fulfilledQuantities: i });
   }
   async printingEnabled() {
     try {
@@ -86,8 +86,8 @@ class f {
   async stores() {
     const [a, t] = await Promise.all([this.getJson("/ekom/manager/stores"), this.getJson("/ekom/manager/store-currencies")]);
     return a.map((e) => {
-      const r = t.find((s) => s.alias === e.alias);
-      return { ...e, currencies: (r == null ? void 0 : r.currencies) || [], currencyFormats: ((r == null ? void 0 : r.formats) || []).filter((s) => !!s) };
+      const r = t.find((i) => i.alias === e.alias);
+      return { ...e, currencies: (r == null ? void 0 : r.currencies) || [], currencyFormats: ((r == null ? void 0 : r.formats) || []).filter((i) => !!i) };
     });
   }
   async paymentProviders(a) {
@@ -216,10 +216,10 @@ class f {
     return e.json();
   }
   static async createError(a, t) {
-    var s, d;
+    var i, d;
     if (a.status === 401 || a.redirected && /\/Account\/Login/i.test(a.url))
       return new Error("Your session has expired. Sign in to Umbraco and reload the manager.");
-    if ((d = (s = a.headers) == null ? void 0 : s.get("content-type")) != null && d.includes("text/html"))
+    if ((d = (i = a.headers) == null ? void 0 : i.get("content-type")) != null && d.includes("text/html"))
       return new Error(`${t} Status ${a.status}. Reload the manager and try again.`);
     const e = await a.text();
     let r = e || t;
@@ -235,7 +235,7 @@ function w(o) {
     return "";
   const a = new URLSearchParams();
   for (const [e, r] of Object.entries(o))
-    Array.isArray(r) ? r.forEach((s) => a.append(e, String(s))) : a.set(e, r == null ? "" : String(r));
+    Array.isArray(r) ? r.forEach((i) => a.append(e, String(i))) : a.set(e, r == null ? "" : String(r));
   const t = a.toString();
   return t ? `?${t}` : "";
 }
@@ -444,6 +444,7 @@ const j = `
   .ekom-loading-rows > div { display: flex; align-items: center; gap: 16px; }
   .ekom-loading-rows > p { margin: 0; font-size: 12px; line-height: 1; color: var(--ekom-muted, #676b7b); }
   .ekom-list-skeleton-row:hover { background: transparent !important; }
+  .ekom-order-opening { margin-top: 20px; }
   [hidden] { display: none !important; }
   @media (max-width: 720px) { .ekom-loading-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
   @media (prefers-reduced-motion: reduce) { .ekom-skeleton, .ekom-loading-spinner { animation: none; } }
@@ -557,11 +558,11 @@ function B(o = "data-field") {
 }
 function N(o, a = "data-field", t = !0) {
   if (typeof document < "u" && !document.querySelector("link[data-ekom-fonts]")) {
-    const s = document.createElement("link");
-    s.rel = "stylesheet", s.href = "/App_Plugins/Ekom/dist/manager-fonts.css", s.dataset.ekomFonts = "", document.head.append(s);
+    const i = document.createElement("link");
+    i.rel = "stylesheet", i.href = "/App_Plugins/Ekom/dist/manager-fonts.css", i.dataset.ekomFonts = "", document.head.append(i);
   }
   const e = ["orders", "analytics", "customers", ...l.printingEnabled || o === "printing" ? ["printing"] : []], r = typeof location > "u" ? "/umbraco/section/ekommanager" : location.pathname.replace(/\/view\/(orders|analytics|customers|printing)\/?$/, "").replace(/\/$/, "");
-  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((s) => `<a href="${n(r + "/view/" + s)}" ${s === o ? 'aria-current="page"' : ""}>${s[0].toUpperCase() + s.slice(1)}</a>`).join("")}</nav>${t ? B(a) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
+  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((i) => `<a href="${n(r + "/view/" + i)}" ${i === o ? 'aria-current="page"' : ""}>${i[0].toUpperCase() + i.slice(1)}</a>`).join("")}</nav>${t ? B(a) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
 }
 function G(o) {
   var t;
@@ -588,37 +589,40 @@ function J() {
   return ((t = A().find((e) => e.from === o && e.to === a)) == null ? void 0 : t.label) || `${o} – ${a}`;
 }
 function V(o) {
-  return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>Loading ${n(o)} for ${n(J())}…</p>`;
+  return Y(`Loading ${o} for ${J()}…`);
 }
-function Y(o, a, t) {
+function Y(o) {
+  return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>${n(o)}</p>`;
+}
+function H(o, a, t) {
   const e = `<div class="ekom-loading-card">${x("40%")}${x("55%", 22)}</div>`;
   return `<div class="ekom-loading">${V(o)}<div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(${a},minmax(0,1fr))">${e.repeat(a)}</div>
     <div aria-hidden="true" class="ekom-loading-panel" style="height:${t}px">${x("30%")}<span class="ekom-skeleton ekom-skeleton-block"></span></div>
     <div aria-hidden="true" class="ekom-loading-panel">${x("28%")}${x("100%").repeat(3)}</div></div>`;
 }
-function H() {
+function W() {
   return `<ekom-date-range from="${n(l.filters.dateFrom)}" to="${n(l.filters.dateTo)}"></ekom-date-range>`;
 }
-function W(o, a) {
+function Z(o, a) {
   var t, e;
-  Z(), (t = o.querySelector(".ekom-store-currency")) == null || t.addEventListener("keydown", (r) => {
+  K(), (t = o.querySelector(".ekom-store-currency")) == null || t.addEventListener("keydown", (r) => {
     var d;
     if (r.key !== "Escape") return;
-    const s = r.currentTarget;
-    s.open = !1, (d = s.querySelector("summary")) == null || d.focus(), r.stopPropagation();
+    const i = r.currentTarget;
+    i.open = !1, (d = i.querySelector("summary")) == null || d.focus(), r.stopPropagation();
   }), o.querySelectorAll("[data-header-store]").forEach((r) => r.addEventListener("click", () => {
     var d;
-    const s = o.querySelector('[data-field="store"], [data-filter="store"]');
-    s && (l.filters.currency = r.dataset.headerCurrency || "", (d = r.closest("details")) == null || d.removeAttribute("open"), s.value = r.dataset.headerStore || "", s.dispatchEvent(new Event("change", { bubbles: !0 })));
+    const i = o.querySelector('[data-field="store"], [data-filter="store"]');
+    i && (l.filters.currency = r.dataset.headerCurrency || "", (d = r.closest("details")) == null || d.removeAttribute("open"), i.value = r.dataset.headerStore || "", i.dispatchEvent(new Event("change", { bubbles: !0 })));
   })), o.querySelectorAll("[data-shared-status]").forEach((r) => r.addEventListener("change", () => {
-    const s = [0, 1, 2].map((d) => Array.from(o.querySelectorAll(`[data-shared-status="${d}"]:checked`), (u) => u.value).join(","));
-    l.filters.orderStatus = s.some(Boolean) ? "states:" + s.join(";") : "AllOrders", a();
+    const i = [0, 1, 2].map((d) => Array.from(o.querySelectorAll(`[data-shared-status="${d}"]:checked`), (u) => u.value).join(","));
+    l.filters.orderStatus = i.some(Boolean) ? "states:" + i.join(";") : "AllOrders", a();
   })), (e = o.querySelector("ekom-date-range")) == null || e.addEventListener("date-range-apply", (r) => {
-    const s = r.detail;
-    l.filters.dateFrom = s.from, l.filters.dateTo = s.to, a();
+    const i = r.detail;
+    l.filters.dateFrom = i.from, l.filters.dateTo = i.to, a();
   });
 }
-function Z() {
+function K() {
   if (typeof customElements > "u" || !customElements.get || customElements.get("ekom-date-range")) return;
   class o extends HTMLElement {
     constructor() {
@@ -629,14 +633,14 @@ function Z() {
       m(this, "to", "");
       m(this, "month", 0);
       m(this, "reposition", () => {
-        const e = this.root.querySelector(".popover"), r = this.root.querySelector(".anchor"), s = this.ownerDocument.defaultView;
-        if (!e || !r || !s) return;
-        if (s.innerWidth <= 650) {
+        const e = this.root.querySelector(".popover"), r = this.root.querySelector(".anchor"), i = this.ownerDocument.defaultView;
+        if (!e || !r || !i) return;
+        if (i.innerWidth <= 650) {
           e.style.left = "";
           return;
         }
         const d = r.getBoundingClientRect().left;
-        e.style.left = `${Math.min(0, Math.max(24 - d, s.innerWidth - 24 - d - e.getBoundingClientRect().width))}px`;
+        e.style.left = `${Math.min(0, Math.max(24 - d, i.innerWidth - 24 - d - e.getBoundingClientRect().width))}px`;
       });
       m(this, "outside", (e) => {
         this.open && !e.composedPath().includes(this) && this.close(!1);
@@ -663,16 +667,16 @@ function Z() {
       return e ? `${e.slice(8, 10)}.${e.slice(5, 7)}.${e.slice(0, 4)}` : "Pick a date";
     }
     calendar(e) {
-      const r = new Date(Math.floor(e / 12), e % 12, 1), s = (r.getDay() + 6) % 7, d = new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate();
-      return `<section class="month"><h3>${r.toLocaleDateString("en", { month: "long", year: "numeric" })}</h3><div class="days">${["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((u) => `<span class="weekday">${u}</span>`).join("")}${"<span></span>".repeat(s)}${Array.from({ length: d }, (u, g) => {
+      const r = new Date(Math.floor(e / 12), e % 12, 1), i = (r.getDay() + 6) % 7, d = new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate();
+      return `<section class="month"><h3>${r.toLocaleDateString("en", { month: "long", year: "numeric" })}</h3><div class="days">${["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((u) => `<span class="weekday">${u}</span>`).join("")}${"<span></span>".repeat(i)}${Array.from({ length: d }, (u, g) => {
         const h = `${r.getFullYear()}-${String(r.getMonth() + 1).padStart(2, "0")}-${String(g + 1).padStart(2, "0")}`, b = h === this.from || h === this.to, k = this.from && this.to && h > this.from && h < this.to;
         return `<button type="button" data-day="${h}" aria-label="${h}" aria-pressed="${b || !!k}" class="day ${b ? "edge" : k ? "inside" : ""} ${h === this.from ? "start" : ""} ${h === this.to ? "end" : ""} ${!this.to || this.to === this.from ? "single" : ""}">${g + 1}</button>`;
       }).join("")}</div></section>`;
     }
     render() {
       var u, g, h, b, k;
-      const e = this.getAttribute("from") || "", r = this.getAttribute("to") || "", s = A(), d = ((u = s.find((c) => c.from === e && c.to === r)) == null ? void 0 : u.label) || "Custom";
-      q(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${d}</strong><span class="dates">${this.date(e)} – ${this.date(r)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${s.map((c, i) => `<button type="button" data-preset="${i}" aria-pressed="${c.from === this.from && c.to === this.to}">${c.label}<span>${c.from === this.from && c.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (g = this.root.querySelector("link")) == null || g.addEventListener("load", this.reposition), this.reposition(), (h = this.root.querySelector("[data-toggle]")) == null || h.addEventListener("click", () => {
+      const e = this.getAttribute("from") || "", r = this.getAttribute("to") || "", i = A(), d = ((u = i.find((c) => c.from === e && c.to === r)) == null ? void 0 : u.label) || "Custom";
+      q(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${d}</strong><span class="dates">${this.date(e)} – ${this.date(r)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${i.map((c, s) => `<button type="button" data-preset="${s}" aria-pressed="${c.from === this.from && c.to === this.to}">${c.label}<span>${c.from === this.from && c.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (g = this.root.querySelector("link")) == null || g.addEventListener("load", this.reposition), this.reposition(), (h = this.root.querySelector("[data-toggle]")) == null || h.addEventListener("click", () => {
         var c;
         if (this.open) {
           this.close();
@@ -683,17 +687,17 @@ function Z() {
         !this.from || !this.to || this.from > this.to || (this.setAttribute("from", this.from), this.setAttribute("to", this.to), this.close(), this.dispatchEvent(new CustomEvent("date-range-apply", { bubbles: !0, composed: !0, detail: { from: this.from, to: this.to } })));
       }), this.root.querySelectorAll("[data-preset]").forEach((c) => c.addEventListener("click", () => {
         var y;
-        const i = s[Number(c.dataset.preset)];
-        this.from = i.from, this.to = i.to;
+        const s = i[Number(c.dataset.preset)];
+        this.from = s.from, this.to = s.to;
         const p = /* @__PURE__ */ new Date(`${this.from}T12:00:00`);
         this.month = p.getFullYear() * 12 + p.getMonth(), this.render(), (y = this.root.querySelector(`[data-preset="${c.dataset.preset}"]`)) == null || y.focus();
       })), this.root.querySelectorAll("[data-month]").forEach((c) => c.addEventListener("click", () => {
-        var i;
-        this.month += Number(c.dataset.month), this.render(), (i = this.root.querySelector(`[data-month="${c.dataset.month}"]`)) == null || i.focus();
+        var s;
+        this.month += Number(c.dataset.month), this.render(), (s = this.root.querySelector(`[data-month="${c.dataset.month}"]`)) == null || s.focus();
       })), this.root.querySelectorAll("[data-day]").forEach((c) => c.addEventListener("click", () => {
         var p;
-        const i = c.dataset.day;
-        !this.from || this.to || i < this.from ? (this.from = i, this.to = "") : this.to = i, this.render(), (p = this.root.querySelector(`[data-day="${i}"]`)) == null || p.focus();
+        const s = c.dataset.day;
+        !this.from || this.to || s < this.from ? (this.from = s, this.to = "") : this.to = s, this.render(), (p = this.root.querySelector(`[data-day="${s}"]`)) == null || p.focus();
       })), this.onkeydown = (c) => {
         c.key === "Escape" && this.open && (c.preventDefault(), c.stopPropagation(), this.close());
       };
@@ -701,19 +705,19 @@ function Z() {
   }
   customElements.define("ekom-date-range", o);
 }
-function K() {
+function Q() {
   const o = l.filters.orderStatus.startsWith("states:") ? l.filters.orderStatus.slice(7).split(";") : ["", "", ""];
   return [
     { label: "Order", values: ["Draft", "Open", "Closed", "Cancelled"] },
     { label: "Payment", values: ["Pending", "Authorized", "Paid", "PartiallyPaid", "Failed", "Voided"] },
     { label: "Fulfillment", values: ["Unfulfilled", "Picking", "Picked", "Packed", "PartiallyFulfilled", "Fulfilled"] }
   ].map((t, e) => {
-    const r = (o[e] || "").split(",").filter(Boolean), s = r.length === 1 ? r[0].replace(/([a-z])([A-Z])/g, "$1 $2") : r.length ? `${r.length} selected` : "Any";
-    return `<div class="ekom-status-filter"><span>${t.label}</span><details class="ekom-dropdown"><summary>${n(s)}<span>▾</span></summary><div class="ekom-dropdown-options">${t.values.map((d) => `<label><input type="checkbox" data-shared-status="${e}" value="${d}" ${r.includes(d) ? "checked" : ""}>${d.replace(/([a-z])([A-Z])/g, "$1 $2")}</label>`).join("")}</div></details></div>`;
+    const r = (o[e] || "").split(",").filter(Boolean), i = r.length === 1 ? r[0].replace(/([a-z])([A-Z])/g, "$1 $2") : r.length ? `${r.length} selected` : "Any";
+    return `<div class="ekom-status-filter"><span>${t.label}</span><details class="ekom-dropdown"><summary>${n(i)}<span>▾</span></summary><div class="ekom-dropdown-options">${t.values.map((d) => `<label><input type="checkbox" data-shared-status="${e}" value="${d}" ${r.includes(d) ? "checked" : ""}>${d.replace(/([a-z])([A-Z])/g, "$1 $2")}</label>`).join("")}</div></details></div>`;
   }).join("");
 }
 let C;
-function Q(o) {
+function X(o) {
   const a = o.querySelector(".ekom-design-logo");
   a && (C ?? (C = new f().config().then((t) => t.ekomVersion).catch(() => {
   })), C.then((t) => {
@@ -723,23 +727,23 @@ function Q(o) {
 function q(o, a) {
   const t = o.ownerDocument.createElement("template");
   t.innerHTML = a;
-  const e = Array.from(o.children).filter((s) => s.matches('style, link[rel="stylesheet"]')), r = Array.from(t.content.children).filter((s) => s.matches('style, link[rel="stylesheet"]'));
-  for (const s of r) {
-    const d = e.find((u) => u.outerHTML === s.outerHTML);
-    d ? e.splice(e.indexOf(d), 1) : o.appendChild(s.cloneNode(!0)), s.remove();
+  const e = Array.from(o.children).filter((i) => i.matches('style, link[rel="stylesheet"]')), r = Array.from(t.content.children).filter((i) => i.matches('style, link[rel="stylesheet"]'));
+  for (const i of r) {
+    const d = e.find((u) => u.outerHTML === i.outerHTML);
+    d ? e.splice(e.indexOf(d), 1) : o.appendChild(i.cloneNode(!0)), i.remove();
   }
-  for (const s of e) s.remove();
-  for (const s of Array.from(o.childNodes))
-    (s.nodeType !== 1 || !s.matches('style, link[rel="stylesheet"]')) && s.remove();
-  o.appendChild(t.content), Q(o);
+  for (const i of e) i.remove();
+  for (const i of Array.from(o.childNodes))
+    (i.nodeType !== 1 || !i.matches('style, link[rel="stylesheet"]')) && i.remove();
+  o.appendChild(t.content), X(o);
 }
-const X = (o) => class extends o {
+const ee = (o) => class extends o {
   connectedCallback() {
   }
   disconnectedCallback() {
   }
 };
-class ee extends X(HTMLElement) {
+class te extends ee(HTMLElement) {
   constructor() {
     super(...arguments);
     m(this, "api", new f());
@@ -763,13 +767,13 @@ class ee extends X(HTMLElement) {
   connectedCallback() {
     var t, e;
     if (super.connectedCallback(), this.hasAttribute("classic") || (t = this.consumeContext) == null || t.call(this, "umbThemeContext", (r) => {
-      r && this.observe(r.theme, (s) => {
-        this.toggleAttribute("data-ekom-dark", s === "umb-dark-theme");
+      r && this.observe(r.theme, (i) => {
+        this.toggleAttribute("data-ekom-dark", i === "umb-dark-theme");
       }, "ekom-manager-theme");
     }), (e = this.ownerDocument) == null || e.addEventListener("keydown", this.dismissOnEscape, !0), this.classic = this.hasAttribute("classic"), this.classic)
       for (const r of ["store", "dateFrom", "dateTo", "orderStatus"]) {
-        const s = this.getAttribute(r.toLowerCase());
-        s && (l.filters[r] = s);
+        const i = this.getAttribute(r.toLowerCase());
+        i && (l.filters[r] = i);
       }
     this.initialize();
   }
@@ -782,7 +786,7 @@ class ee extends X(HTMLElement) {
     this.busy = !0, this.render();
     try {
       const [e, r] = await Promise.all([this.api.stores(), this.classic ? Promise.resolve(!1) : this.api.printingEnabled()]);
-      l.stores = e, l.printingEnabled = r, l.stores.some((s) => s.alias === l.filters.store) || (l.filters.store = ((t = l.stores[0]) == null ? void 0 : t.alias) || ""), this.classic || I(), await this.load();
+      l.stores = e, l.printingEnabled = r, l.stores.some((i) => i.alias === l.filters.store) || (l.filters.store = ((t = l.stores[0]) == null ? void 0 : t.alias) || ""), this.classic || I(), await this.load();
     } catch {
       this.error = "Unable to load customers. Please try again.", this.busy = !1, this.render();
     }
@@ -813,13 +817,13 @@ class ee extends X(HTMLElement) {
     }
   }
   async open(t, e = 1) {
-    var s;
+    var i;
     const r = ++this.detailRequest;
     this.opener = t, this.error = "";
     try {
       const d = await this.get("/detail", new URLSearchParams({ store: l.filters.store, currency: l.filters.currency || "", identity: t, orderStatus: l.filters.orderStatus, page: String(e), other: String(this.other) }));
       if (r !== this.detailRequest || !this.isConnected) return;
-      this.detail = d, this.render(), (s = this.querySelector("[data-close]")) == null || s.focus();
+      this.detail = d, this.render(), (i = this.querySelector("[data-close]")) == null || i.focus();
     } catch (d) {
       r === this.detailRequest && (this.error = String(d), this.render());
     }
@@ -844,9 +848,9 @@ class ee extends X(HTMLElement) {
   amount(t, e) {
     return t.map((r) => {
       var u;
-      const s = (u = l.stores.find((g) => g.alias === l.filters.store)) == null ? void 0 : u.currency;
+      const i = (u = l.stores.find((g) => g.alias === l.filters.store)) == null ? void 0 : u.currency;
       let d = r.currency;
-      !/^[A-Z]{3}$/.test(d) && (s == null ? void 0 : s.currencyValue) === d && (d = s.isoCurrencySymbol || d);
+      !/^[A-Z]{3}$/.test(d) && (i == null ? void 0 : i.currencyValue) === d && (d = i.isoCurrencySymbol || d);
       try {
         return n(new Intl.NumberFormat(void 0, { style: "currency", currency: d }).format(r[e]));
       } catch {
@@ -906,10 +910,10 @@ class ee extends X(HTMLElement) {
       ${this.classic ? "" : N("customers", "data-filter")}
       <div class="customer-toolbar ekom-shared-filters">
         ${this.classic ? `<label>Store<select data-filter="store">${l.stores.map((r) => `<option value="${n(r.alias)}" ${r.alias === t.store ? "selected" : ""}>${n(r.title)}</option>`).join("")}</select></label>` : ""}
-        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${G(t.orderStatus)}</select></label>` : K()}
+        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${G(t.orderStatus)}</select></label>` : Q()}
         ${this.classic ? `        <label>Date From<input type="date" data-filter="dateFrom" value="${n(t.dateFrom)}"></label>
         <label>Date To<input type="date" data-filter="dateTo" value="${n(t.dateTo)}"></label>
-` : H()}
+` : W()}
         <button data-reload ${this.busy ? "disabled" : ""}>Refresh</button>
       </div>
       <p class="customer-muted">Customers who ordered in the selected period. Lifetime metrics include all qualifying orders in the selected store and currency. </p>
@@ -917,12 +921,12 @@ class ee extends X(HTMLElement) {
       ${this.busy && e ? '<p role="status">Preparing export...</p>' : ""}
       ${e ? `<div class="customer-cards">${this.card("Customers", this.number(e.totals.customers))}${this.card("Returning", this.number(e.totals.returningPercent) + "%")}${this.card("Average lifetime spend", this.amount(e.spend, "averageLifetime"))}${this.card("Average orders per customer", this.number(e.totals.averageOrders))}${this.card("Average days between orders", this.number(e.totals.averageReorderDays))}</div>
       <p class="customer-muted">${e.missingIdentifiers} qualifying orders in this period have no ${e.identityField === "CustomerUsername" ? "username" : "email"} and are excluded. Spend uses recorded charged amounts, without refund adjustment.</p>` : ""}
-      ${this.busy && !e ? Y("Customers", 5, 220) : ""}
+      ${this.busy && !e ? H("Customers", 5, 220) : ""}
       <div class="customer-panel" ${this.busy && !e ? "hidden" : ""}><div class="customer-toolbar" role="search">
         <label>Search<input name="query" value="${n(this.query)}" placeholder="Name, email or username"></label>
         <button type="button" data-search>Search</button>
         <nav class="ekom-customer-segments" aria-label="Customer segment">${["all", "new", "returning"].map((r) => `<button type="button" data-segment-value="${r}" aria-pressed="${r === this.segment}">${r[0].toUpperCase() + r.slice(1)}</button>`).join("")}</nav>
-        <label>Sort by<select data-sort>${[["newest", "Newest first order"], ["oldest", "Oldest first order"], ["lastOrder", "Latest order"], ["orders", "Most orders"], ["name", "Name"]].map(([r, s]) => `<option value="${r}" ${r === this.sort ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+        <label>Sort by<select data-sort>${[["newest", "Newest first order"], ["oldest", "Oldest first order"], ["lastOrder", "Latest order"], ["orders", "Most orders"], ["name", "Name"]].map(([r, i]) => `<option value="${r}" ${r === this.sort ? "selected" : ""}>${i}</option>`).join("")}</select></label>
         <button type="button" data-export ${this.busy || !(e != null && e.totals.customers) ? "disabled" : ""}>Export</button>
       </div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
       ${((e == null ? void 0 : e.customers) || []).map((r) => `<tr><td><div class="customer-identity">${this.avatar(r.name || r.email || r.username || r.identity)}<button data-customer="${n(r.identity)}">${n(r.name || r.email || r.username || r.identity)}<span class="customer-badge">${r.orders > 1 ? "Returning" : "New"}</span><span class="customer-muted">${n(r.email || r.username || r.identity)}</span></button></div></td><td>${this.date(r.firstOrder)}</td><td>${r.orders}</td><td>${this.amount(r.spend, "total")}</td><td>${this.amount(r.spend, "averageOrder")}</td><td>${this.date(r.lastOrder)}${this.classic ? `<span class="customer-muted">${n(r.lastStatus || "")}</span>` : ""}</td><td>${r.daysSinceLastOrder}</td></tr>`).join("") || `<tr><td colspan="7">${e ? "No customers found." : this.error ? "Customer results could not be loaded." : "Select a store to see customers."}</td></tr>`}
@@ -934,57 +938,57 @@ class ee extends X(HTMLElement) {
     return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" class="customer-dialog"><header class="customer-heading">${this.avatar(e.name || e.identity)}<div><h2>${n(e.name || e.identity)} <span class="customer-badge">${e.orders > 1 ? "Returning" : "New"}</span></h2><p>${n([e.email, e.username].filter(Boolean).join(" · "))}</p></div><button data-close aria-label="Close customer details">${this.classic ? "Close" : "×"}</button></header>
       <div class="customer-cards">${this.card("Lifetime spend", this.amount(e.spend, "total"))}${this.card("Orders", String(e.orders))}${this.card("Average order", this.amount(e.spend, "averageOrder"))}${this.card("First order", this.date(e.firstOrder))}${this.card("Days since last order", String(e.daysSinceLastOrder))}${this.card("Average reorder interval (days)", this.number(e.averageReorderDays))}</div>
       <div class="customer-detail-grid"><div><h3>Orders <small>(${t.count})</small></h3><label><input type="checkbox" data-other ${this.other ? "checked" : ""}> Show other orders (excluded from lifetime metrics)</label><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Order</th>${this.classic ? "<th>Status</th>" : "<th>Order status</th><th>Payment</th><th>Fulfillment</th>"}<th>Created</th><th>Paid</th><th>Total</th></tr></thead><tbody>${t.orders.map((r) => {
-      var s, d, u;
-      return `<tr><td><button data-order="${n(r.uniqueId)}">#${n(r.orderNumber || String(r.referenceId))}</button></td>${this.classic ? `<td>${n(r.orderStatusCol)}</td>` : `<td>${$((s = r.status) == null ? void 0 : s.orderStatus)}</td><td>${$((d = r.status) == null ? void 0 : d.paymentStatus)}</td><td>${$((u = r.status) == null ? void 0 : u.fulfillmentStatus)}</td>`}<td>${this.date(r.createDate)}</td><td>${this.date(r.paidDate)}</td><td>${n(r.formattedTotal)}</td></tr>`;
+      var i, d, u;
+      return `<tr><td><button data-order="${n(r.uniqueId)}">#${n(r.orderNumber || String(r.referenceId))}</button></td>${this.classic ? `<td>${n(r.orderStatusCol)}</td>` : `<td>${$((i = r.status) == null ? void 0 : i.orderStatus)}</td><td>${$((d = r.status) == null ? void 0 : d.paymentStatus)}</td><td>${$((u = r.status) == null ? void 0 : u.fulfillmentStatus)}</td>`}<td>${this.date(r.createDate)}</td><td>${this.date(r.paidDate)}</td><td>${n(r.formattedTotal)}</td></tr>`;
     }).join("") || `<tr><td colspan="${this.classic ? 5 : 7}">No orders.</td></tr>`}</tbody></table></div><div class="customer-pagination"><button data-detail-page="${t.page - 1}" ${t.page <= 1 ? "disabled" : ""}>Previous</button><span>${t.page} / ${Math.max(1, t.totalPages)}</span><button data-detail-page="${t.page + 1}" ${t.page >= t.totalPages ? "disabled" : ""}>Next</button></div></div>
-      <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${n(t.snapshot.orderNumber)} · ${this.date(t.snapshot.date)}. Historical details, not a current customer profile.</p>${t.snapshot.unavailable ? "<p>Saved details could not be read.</p>" : ""}<dl>${Object.entries(t.snapshot.fields).map(([r, s]) => `<dt>${n(r)}</dt><dd>${n(s)}</dd>`).join("") || "<dd>No additional details recorded.</dd>"}</dl></aside></div></section></div>`;
+      <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${n(t.snapshot.orderNumber)} · ${this.date(t.snapshot.date)}. Historical details, not a current customer profile.</p>${t.snapshot.unavailable ? "<p>Saved details could not be read.</p>" : ""}<dl>${Object.entries(t.snapshot.fields).map(([r, i]) => `<dt>${n(r)}</dt><dd>${n(i)}</dd>`).join("") || "<dd>No additional details recorded.</dd>"}</dl></aside></div></section></div>`;
   }
   bind() {
-    var e, r, s, d, u, g, h, b, k, c;
-    this.classic || W(this, () => {
+    var e, r, i, d, u, g, h, b, k, c;
+    this.classic || Z(this, () => {
       this.page = 1, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...l.filters } })), this.load();
-    }), this.querySelectorAll("[data-filter]").forEach((i) => i.addEventListener("change", () => {
-      const p = i.dataset.filter;
-      l.filters[p] = i.value, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...l.filters } })), this.page = 1, this.load();
+    }), this.querySelectorAll("[data-filter]").forEach((s) => s.addEventListener("change", () => {
+      const p = s.dataset.filter;
+      l.filters[p] = s.value, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...l.filters } })), this.page = 1, this.load();
     }));
     const t = () => {
-      var i;
-      this.query = ((i = this.querySelector("[name=query]")) == null ? void 0 : i.value.trim()) || "", this.page = 1, this.load();
+      var s;
+      this.query = ((s = this.querySelector("[name=query]")) == null ? void 0 : s.value.trim()) || "", this.page = 1, this.load();
     };
-    (e = this.querySelector("[data-search]")) == null || e.addEventListener("click", t), (r = this.querySelector("[name=query]")) == null || r.addEventListener("keydown", (i) => {
-      i.key !== "Enter" || i.isComposing || (i.preventDefault(), i.stopPropagation(), t());
-    }), this.querySelectorAll("[data-segment-value]").forEach((i) => i.addEventListener("click", () => {
-      this.segment = i.dataset.segmentValue, this.page = 1, this.load();
-    })), (s = this.querySelector("[data-segment]")) == null || s.addEventListener("change", (i) => {
-      this.segment = i.target.value, this.page = 1, this.load();
-    }), (d = this.querySelector("[data-sort]")) == null || d.addEventListener("change", (i) => {
-      this.sort = i.target.value, this.page = 1, this.load();
-    }), (u = this.querySelector("[data-reload]")) == null || u.addEventListener("click", () => void this.load()), (g = this.querySelector("[data-export]")) == null || g.addEventListener("click", () => void this.export()), (h = this.querySelector("[data-close]")) == null || h.addEventListener("click", () => this.close()), (b = this.querySelector(".customer-overlay")) == null || b.addEventListener("click", (i) => {
-      i.target === i.currentTarget && this.close();
+    (e = this.querySelector("[data-search]")) == null || e.addEventListener("click", t), (r = this.querySelector("[name=query]")) == null || r.addEventListener("keydown", (s) => {
+      s.key !== "Enter" || s.isComposing || (s.preventDefault(), s.stopPropagation(), t());
+    }), this.querySelectorAll("[data-segment-value]").forEach((s) => s.addEventListener("click", () => {
+      this.segment = s.dataset.segmentValue, this.page = 1, this.load();
+    })), (i = this.querySelector("[data-segment]")) == null || i.addEventListener("change", (s) => {
+      this.segment = s.target.value, this.page = 1, this.load();
+    }), (d = this.querySelector("[data-sort]")) == null || d.addEventListener("change", (s) => {
+      this.sort = s.target.value, this.page = 1, this.load();
+    }), (u = this.querySelector("[data-reload]")) == null || u.addEventListener("click", () => void this.load()), (g = this.querySelector("[data-export]")) == null || g.addEventListener("click", () => void this.export()), (h = this.querySelector("[data-close]")) == null || h.addEventListener("click", () => this.close()), (b = this.querySelector(".customer-overlay")) == null || b.addEventListener("click", (s) => {
+      s.target === s.currentTarget && this.close();
     }), (k = this.querySelector("[data-other]")) == null || k.addEventListener("change", () => {
       this.other = !this.other, this.detail && this.open(this.detail.customer.identity);
-    }), this.querySelectorAll("[data-customer]").forEach((i) => i.addEventListener("click", () => {
-      this.other = !1, this.open(i.dataset.customer);
-    })), this.querySelectorAll("[data-page]").forEach((i) => i.addEventListener("click", () => {
-      this.page = Number(i.dataset.page), this.load();
-    })), this.querySelectorAll("[data-detail-page]").forEach((i) => i.addEventListener("click", () => {
-      this.detail && this.open(this.detail.customer.identity, Number(i.dataset.detailPage));
-    })), this.querySelectorAll("[data-order]").forEach((i) => i.addEventListener("click", () => {
-      if (this.classic) this.dispatchEvent(new CustomEvent("customer-open-order", { bubbles: !0, detail: { orderId: i.dataset.order } }));
+    }), this.querySelectorAll("[data-customer]").forEach((s) => s.addEventListener("click", () => {
+      this.other = !1, this.open(s.dataset.customer);
+    })), this.querySelectorAll("[data-page]").forEach((s) => s.addEventListener("click", () => {
+      this.page = Number(s.dataset.page), this.load();
+    })), this.querySelectorAll("[data-detail-page]").forEach((s) => s.addEventListener("click", () => {
+      this.detail && this.open(this.detail.customer.identity, Number(s.dataset.detailPage));
+    })), this.querySelectorAll("[data-order]").forEach((s) => s.addEventListener("click", () => {
+      if (this.classic) this.dispatchEvent(new CustomEvent("customer-open-order", { bubbles: !0, detail: { orderId: s.dataset.order } }));
       else {
-        l.pendingOrderId = i.dataset.order;
+        l.pendingOrderId = s.dataset.order;
         const p = document.createElement("a");
-        p.href = location.pathname.replace(/\/customers\/?$/, "/orders") + "?orderId=" + encodeURIComponent(i.dataset.order || ""), this.appendChild(p), p.click(), p.remove();
+        p.href = location.pathname.replace(/\/customers\/?$/, "/orders") + "?orderId=" + encodeURIComponent(s.dataset.order || ""), this.appendChild(p), p.click(), p.remove();
       }
-    })), (c = this.querySelector("[role=dialog]")) == null || c.addEventListener("keydown", (i) => {
-      if (i.key === "Escape" && (i.preventDefault(), this.close()), i.key !== "Tab") return;
+    })), (c = this.querySelector("[role=dialog]")) == null || c.addEventListener("keydown", (s) => {
+      if (s.key === "Escape" && (s.preventDefault(), this.close()), s.key !== "Tab") return;
       const p = Array.from(this.querySelectorAll("[role=dialog] button:not(:disabled),[role=dialog] input")), y = p[0], v = p[p.length - 1];
-      i.shiftKey && document.activeElement === y ? (i.preventDefault(), v == null || v.focus()) : !i.shiftKey && document.activeElement === v && (i.preventDefault(), y == null || y.focus());
+      s.shiftKey && document.activeElement === y ? (s.preventDefault(), v == null || v.focus()) : !s.shiftKey && document.activeElement === v && (s.preventDefault(), y == null || y.focus());
     });
   }
 }
-customElements.define("ekom-customers-section-view", ee);
+customElements.define("ekom-customers-section-view", te);
 export {
-  ee as EkomCustomersSectionViewElement,
-  ee as default
+  te as EkomCustomersSectionViewElement,
+  te as default
 };
