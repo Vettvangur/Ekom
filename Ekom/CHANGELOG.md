@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+* **manager:** open the order drawer with one request instead of six. A new `OrderDrawer` endpoint returns the order with its activity, actions, checkout lock, gift-card recovery and reviews after a single access check and order load; a section that fails to load is reported on its own and no longer hides the order.
+
+* **manager:** look up the signed-in backoffice user once per request instead of on every permission check. Each Manager request made two to four identical user queries before doing any work.
+
 * **database:** add indexes for lookups that scanned their table: coupons by code, by discount and code, and by key, and payment attempts and stock reservations by order. A migration adds them to existing databases; a table that cannot take one is logged and skipped.
 
 * **manager:** show an "Esc close" hint beside the close button of the order and customer drawers.

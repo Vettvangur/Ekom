@@ -173,6 +173,118 @@ public class EkomManagerController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Loads the order and everything the drawer shows with it in one request, with one
+    /// access check and one order load, instead of one request per section.
+    /// </summary>
+    [HttpGet]
+    [Route("OrderDrawer/{orderId:guid}")]
+    [UmbracoUserAuthorize]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> GetOrderDrawerAsync(Guid orderId,
+        [FromServices] IOrderManagerGiftcardRecoveryService recoveryService,
+        [FromServices] IOrderReviewService reviewService, CancellationToken ct = default)
+    {
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(orderId, ct).ConfigureAwait(false);
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            var order = await _repo.GetOrderInfoAsync(orderId, ct).ConfigureAwait(false);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            var response = GetOrderInfoResponse(order);
+            var drawer = await LoadOrderDrawerSectionsAsync(orderId, order, recoveryService, reviewService, ct).ConfigureAwait(false);
+            drawer.Order = response;
+
+            return Ok(drawer);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get order drawer. {OrderId}", orderId);
+
+            return StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
+    /// <summary>
+    /// Loads the drawer's sections for an order the caller has already authorized.
+    /// Sections load one after another: the services share request-scoped state.
+    /// </summary>
+    internal async Task<OrderDrawer> LoadOrderDrawerSectionsAsync(Guid orderId, IOrderInfo order,
+        IOrderManagerGiftcardRecoveryService recoveryService, IOrderReviewService reviewService, CancellationToken ct = default)
+    {
+        return new OrderDrawer
+        {
+            Logs = await LoadDrawerSectionAsync(orderId, "logs", true,
+                () => _orderActivityLogService.GetOrderLogsAsync(orderId, ct), ct).ConfigureAwait(false),
+            Actions = await LoadDrawerSectionAsync(orderId, "actions", true,
+                () => _orderManagerActionService.GetActionsAsync(order, ct), ct).ConfigureAwait(false),
+            LockStatus = await LoadDrawerSectionAsync(orderId, "lockStatus", false,
+                () => _repo.GetOrderLockStatusAsync(orderId, ct), ct).ConfigureAwait(false),
+            GiftcardRecovery = await LoadDrawerSectionAsync(orderId, "giftcardRecovery", false,
+                () => recoveryService.GetGiftcardRecoveryAsync(orderId, _managerAccessService.GetAllowedStoreAliases(), ct), ct).ConfigureAwait(false),
+            Reviews = await LoadDrawerSectionAsync(orderId, "reviews", true,
+                () => GetOpenReviewsAsync(reviewService, orderId, ct), ct).ConfigureAwait(false),
+        };
+    }
+
+    private async Task<T?> LoadDrawerSectionAsync<T>(Guid orderId, string section, bool logException,
+        Func<Task<T>> load, CancellationToken ct) where T : class
+    {
+        try
+        {
+            return await load().ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Lock and gift-card recovery failures log the failure type only, as their own endpoints do.
+            if (logException)
+            {
+                _logger.LogError(ex, "Failed to get order drawer section. OrderId: {OrderId}; Section: {Section}", orderId, section);
+            }
+            else
+            {
+                _logger.LogError("Failed to get order drawer section. OrderId: {OrderId}; Section: {Section}; FailureType: {FailureType}", orderId, section, ex.GetType().Name);
+            }
+
+            return null;
+        }
+    }
+
+    private static async Task<IReadOnlyList<OrderReview>> GetOpenReviewsAsync(IOrderReviewService reviewService, Guid orderId, CancellationToken ct)
+    {
+        const int pageSize = 200;
+        var reviews = new List<OrderReview>();
+
+        for (var skip = 0; ; skip += pageSize)
+        {
+            var page = await reviewService.GetReviewsAsync(orderId, false, skip, pageSize, ct).ConfigureAwait(false);
+            reviews.AddRange(page);
+
+            if (page.Count < pageSize)
+            {
+                return reviews;
+            }
+        }
+    }
+
     [HttpGet]
     [Route("OrderLogs/{orderId}")]
     [UmbracoUserAuthorize]

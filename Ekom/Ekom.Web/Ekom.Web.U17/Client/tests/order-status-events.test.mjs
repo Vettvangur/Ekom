@@ -23,6 +23,18 @@ function loadModule(path, modules = {}, globals = {}) {
 }
 
 const shared = loadModule('../src/manager/manager-shared.ts');
+
+// Tests stub the drawer's sections one API method at a time; answer the single drawer
+// request from those stubs the way the server does: a failed section comes back as null.
+shared.EkomManagerApi.prototype.orderDrawer = async function (id) {
+  const section = async load => { try { return await load(); } catch { return null; } };
+  const order = await this.orderInfo(id);
+  const [logs, actions, lockStatus, giftcardRecovery, reviews] = await Promise.all([
+    section(() => this.orderLogs(id)), section(() => this.orderActions(id)), section(() => this.orderLockStatus(id)),
+    section(() => this.giftcardRecovery(id)), section(() => this.orderReviews(id)),
+  ]);
+  return { order, logs, actions, lockStatus, giftcardRecovery, reviews };
+};
 shared.renderManagerContent = (root, html) => { root.innerHTML = html; };
 const { EkomOrdersSectionViewElement } = loadModule('../src/manager/orders-section-view.element.ts', {
   './manager-shared': shared,
@@ -97,6 +109,17 @@ for (const defaultValue of [true, false]) {
     assert.equal(checkboxIsChecked(element), defaultValue, 'Reopening the same order also resets its override');
   });
 }
+
+test('the drawer loads from one authenticated request for the order', async () => {
+  const { EkomManagerApi } = loadModule('../src/manager/manager-shared.ts', {}, {
+    fetch: async (url, options) => {
+      assert.equal(url, '/ekom/manager/OrderDrawer/order%2FA');
+      assert.equal(options.credentials, 'same-origin');
+      return { ok: true, json: async () => ({ order: { uniqueId: 'order/A' } }) };
+    },
+  });
+  assert.equal((await new EkomManagerApi().orderDrawer('order/A')).order.uniqueId, 'order/A');
+});
 
 test('config uses the existing authenticated backoffice endpoint', async () => {
   const { EkomManagerApi } = loadModule('../src/manager/manager-shared.ts', {}, {

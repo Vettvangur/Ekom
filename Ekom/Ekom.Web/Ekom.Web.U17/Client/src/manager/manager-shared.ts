@@ -223,6 +223,16 @@ export type CustomerInformationField = {
 
 export type OrderInfo = Record<string, any>;
 
+/** A section other than the order is null when the server could not load it. */
+export interface OrderDrawerData {
+  order: OrderInfo;
+  logs: OrderActivityLog[] | null;
+  actions: OrderAction[] | null;
+  lockStatus: OrderLockStatus | null;
+  giftcardRecovery: GiftcardRecoveryAttempt[] | null;
+  reviews: OrderReview[] | null;
+}
+
 export type ManagerState = {
   pendingOrderId?: string;
   /** Customer to open in the Customers section, handed over from an order. */
@@ -343,6 +353,11 @@ export class EkomManagerApi {
 
   async shippingProviders(storeAlias: string): Promise<ShippingProviderItem[]> {
     return this.getJson(`/ekom/manager/shippingproviders/${encodeURIComponent(storeAlias)}`);
+  }
+
+  /** The order and everything the drawer shows with it, in one request. */
+  async orderDrawer(orderId: string): Promise<OrderDrawerData> {
+    return this.getJson(`/ekom/manager/OrderDrawer/${encodeURIComponent(orderId)}`);
   }
 
   async orderInfo(orderId: string): Promise<OrderInfo> {

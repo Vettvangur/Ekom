@@ -1493,21 +1493,31 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     this.orderLockReleaseError = '';
     this.orderLockError = false;
     this.orderLockLoading = false;
-    // Open the drawer on a loader and hold it until the order and everything shown with it
+    // Open the drawer on a loader until the order and everything shown with it
     // (activity, actions, checkout lock, gift-card recovery, reviews) has arrived.
     const previousOverlay = this.overlay;
     this.orderOpening = true;
     this.overlay = 'order';
     this.render();
     try {
-      const order = await this.api.orderInfo(orderId);
+      // One request brings the order and every section; a section the server could not load is null.
+      const drawer = await this.api.orderDrawer(orderId);
       if (requestId !== this.orderRequestId) return;
-      this.selectedOrder = order;
-      this.reviews = []; this.activeReview = undefined; this.reviewError = '';
-      this.orderLogs = [];
-      this.orderLogsError = false;
+      const recovery = drawer.giftcardRecovery;
+      const recoveryValid = Array.isArray(recovery) && recovery.every(attempt => Array.isArray(attempt.claims));
+      this.selectedOrder = drawer.order;
+      this.reviews = drawer.reviews || []; this.activeReview = undefined; this.reviewError = drawer.reviews ? '' : 'Could not load order reviews.';
+      this.orderLogs = drawer.logs || [];
+      this.orderLogsLoading = false;
+      this.orderLogsError = !drawer.logs;
       this.activityLogExpandedIndexes.clear();
-      await Promise.all([this.loadOrderLogs(orderId), this.loadOrderActions(orderId), this.loadOrderLockStatus(orderId), this.loadGiftcardRecovery(orderId), this.loadOrderReviews(orderId)]);
+      this.orderActions = drawer.actions || [];
+      this.orderActionsLoading = false;
+      this.orderActionsError = !drawer.actions;
+      this.orderLockStatus = drawer.lockStatus || undefined;
+      this.orderLockError = !drawer.lockStatus;
+      this.recoveryAttempts = recoveryValid ? recovery : undefined;
+      this.recoveryError = !recoveryValid;
     } catch (error) {
       if (requestId !== this.orderRequestId) return;
       if (!this.selectedOrder) this.overlay = previousOverlay === 'order' ? '' : previousOverlay;
