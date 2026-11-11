@@ -194,7 +194,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       .customer-snapshot dt { color:#70778a;font-size:12px;margin-top:15px }
       .customer-snapshot dd { margin:4px 0;overflow-wrap:anywhere }
       @media(max-width:800px) { .customer-detail-grid { grid-template-columns:1fr } .customers { padding:12px } }
-    ` : ''}</style>${this.classic ? '' : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/customers-layout.css?v=20261110-toolbar">'}<section class="customers ekom-design" aria-busy="${this.busy}">
+    ` : ''}</style>${this.classic ? '' : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/customers-layout.css?v=20261111-background">'}<section class="customers ekom-design" aria-busy="${this.busy}">
       ${this.classic ? '' : renderManagerHeader('customers', 'data-filter')}
       <div class="customer-toolbar ekom-shared-filters">
         ${this.classic ? `<label>Store<select data-filter="store">${managerState.stores.map(store => `<option value="${esc(store.alias)}" ${store.alias === f.store ? 'selected' : ''}>${esc(store.title)}</option>`).join('')}</select></label>` : ''}

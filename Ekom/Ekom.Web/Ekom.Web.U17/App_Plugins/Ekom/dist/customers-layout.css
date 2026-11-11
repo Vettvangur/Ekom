@@ -1,3 +1,7 @@
+/* The page is centred at 1800px. Paint the full-width element behind it and let it grow with the
+   list, so the margins keep the page background after scrolling past the first screen. */
+ekom-customers-section-view:not([classic]) { height:auto; min-height:100%; background:var(--ekom-bg); }
+
 ekom-customers-section-view:not([classic]) {
 
       

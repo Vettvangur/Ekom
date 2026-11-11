@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **manager:** keep the page background behind the Customers list on wide screens after scrolling past the first screen.
+
 * **manager:** read a store's order history once per Customers search instead of rescanning the orders table for every query, fixing slow or timed-out customer lists.
 
 * **manager:** format Analytics amounts as the culture configured on the store defines each currency, matching Orders (for example `24.774.950 kr.` instead of `ISK 24,774,950`). The format comes from the server because browsers lack number formats for some cultures, Icelandic among them.
