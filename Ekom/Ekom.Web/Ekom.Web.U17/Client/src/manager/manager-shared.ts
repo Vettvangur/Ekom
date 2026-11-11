@@ -888,6 +888,7 @@ const loadingStyles = `
   .ekom-loading-rows > div { display: flex; align-items: center; gap: 16px; }
   .ekom-loading-rows > p { margin: 0; font-size: 12px; line-height: 1; color: var(--ekom-muted, #676b7b); }
   .ekom-list-skeleton-row:hover { background: transparent !important; }
+  .ekom-order-opening { margin-top: 20px; }
   [hidden] { display: none !important; }
   @media (max-width: 720px) { .ekom-loading-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
   @media (prefers-reduced-motion: reduce) { .ekom-skeleton, .ekom-loading-spinner { animation: none; } }
@@ -1249,7 +1250,17 @@ export function dateRangeLabel(): string {
 
 /** Spinner line announcing what is loading; the only part of a loading state read to screen readers. */
 export function renderLoadingStatus(section: string): string {
-  return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>Loading ${escapeHtml(section)} for ${escapeHtml(dateRangeLabel())}…</p>`;
+  return renderLoadingLine(`Loading ${section} for ${dateRangeLabel()}…`);
+}
+
+/** Spinner with a message, announced to screen readers. */
+export function renderLoadingLine(message: string): string {
+  return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>${escapeHtml(message)}</p>`;
+}
+
+/** Placeholder card: a short title bar followed by full-width lines. */
+export function renderLoadingPanel(lines = 3): string {
+  return `<div aria-hidden="true" class="ekom-loading-panel">${skeletonBar('28%')}${skeletonBar('100%').repeat(lines)}</div>`;
 }
 
 /** Section placeholder: status line, summary cards, a chart-sized block and a few lines of text. */

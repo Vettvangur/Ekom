@@ -664,3 +664,58 @@ test('a confirmed reset with a failed details refresh is not reported as a faile
   assert.match(element.renderOrderLockStatus(), /Check the gift-card provider/);
   assert.equal(element.releasingOrderLock, false);
 });
+
+test('the order drawer stays on its loader until everything it shows has loaded, then appears once', async () => {
+  const element = createElement();
+  const recovery = deferred();
+  const snapshots = [];
+  element.renderOrderOverlay = order => `DETAILS ${order.uniqueId} recovery:${element.recoveryLoading ? 'loading' : 'ready'}`;
+  element.render = () => snapshots.push({ opening: element.orderOpening, html: element.renderOverlay() });
+  element.result = { orders: [{ uniqueId: 'order-B', referenceId: 4521 }], count: 1, totalPages: 1 };
+  element.api.orderInfo = async id => ({ uniqueId: id });
+  element.api.orderLogs = async () => [];
+  element.api.orderActions = async () => [];
+  element.api.orderLockStatus = async () => ({ ...locked, hasLock: false });
+  element.api.orderReviews = async () => [];
+  element.api.giftcardRecovery = () => recovery.promise;
+
+  const opening = element.openOrder('order-B');
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.ok(snapshots.length > 1, 'the individual requests still ask for renders');
+  for (const snapshot of snapshots) {
+    assert.equal(snapshot.opening, true);
+    assert.match(snapshot.html, /data-order-opening="order-B"/);
+    assert.match(snapshot.html, /#4521/);
+    assert.match(snapshot.html, /role="status"><span class="ekom-loading-spinner" aria-hidden="true"><\/span>Loading order…/);
+    assert.match(snapshot.html, /data-action="close-overlay"/);
+    assert.doesNotMatch(snapshot.html, /DETAILS/);
+  }
+  recovery.resolve([]);
+  await opening;
+  assert.deepEqual(snapshots.filter(snapshot => /DETAILS/.test(snapshot.html)).map(snapshot => snapshot.html), ['DETAILS order-B recovery:ready']);
+  assert.equal(snapshots.at(-1).opening, false);
+
+  // A failed order never leaves the loader open.
+  const errors = [];
+  element.showError = message => errors.push(message);
+  element.overlay = '';
+  element.api.orderInfo = async () => { throw new Error('offline'); };
+  await element.openOrder('order-C');
+  assert.equal(element.orderOpening, false);
+  assert.equal(element.overlay, '');
+  assert.equal(errors.length, 1);
+  assert.equal(element.renderOverlay(), '');
+
+  // Closing while loading dismisses the loader and a late response cannot reopen it.
+  const late = deferred();
+  element.querySelectorAll = () => [];
+  element.api.orderInfo = () => late.promise;
+  const closing = element.openOrder('order-B');
+  assert.match(element.renderOverlay(), /data-order-opening="order-B"/);
+  element.closeOverlay();
+  late.resolve({ uniqueId: 'order-B' });
+  await closing;
+  assert.equal(element.orderOpening, false);
+  assert.equal(element.overlay, '');
+  assert.equal(element.selectedOrder, undefined);
+});

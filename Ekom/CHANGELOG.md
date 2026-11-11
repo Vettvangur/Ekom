@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **manager:** open the order drawer on a loader and show the order once everything in it has loaded, instead of flashing gift-card recovery, checkout lock and action states as each request returns.
+
 * **manager:** fix the Orders view counts failing on SQL Server ("Cannot perform an aggregate function on an expression containing an aggregate or a subquery"), which left the view tabs without counts in 1.0.2.
 
 * **manager:** show the design's loading states in Orders, Analytics and Customers: shimmering placeholder rows and cards with a "Loading ... for ..." status line, in place of the plain loading text and spinners.

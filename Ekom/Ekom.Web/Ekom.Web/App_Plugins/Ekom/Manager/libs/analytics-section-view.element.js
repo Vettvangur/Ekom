@@ -469,6 +469,7 @@ const he = `
   .ekom-loading-rows > div { display: flex; align-items: center; gap: 16px; }
   .ekom-loading-rows > p { margin: 0; font-size: 12px; line-height: 1; color: var(--ekom-muted, #676b7b); }
   .ekom-list-skeleton-row:hover { background: transparent !important; }
+  .ekom-order-opening { margin-top: 20px; }
   [hidden] { display: none !important; }
   @media (max-width: 720px) { .ekom-loading-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
   @media (prefers-reduced-motion: reduce) { .ekom-skeleton, .ekom-loading-spinner { animation: none; } }
@@ -715,23 +716,26 @@ function je() {
   return ((t = ge().find((e) => e.from === o && e.to === r)) == null ? void 0 : t.label) || `${o} – ${r}`;
 }
 function ze(o) {
-  return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>Loading ${u(o)} for ${u(je())}…</p>`;
+  return Ue(`Loading ${o} for ${je()}…`);
 }
-function Ue(o, r, t) {
+function Ue(o) {
+  return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>${u(o)}</p>`;
+}
+function Ie(o, r, t) {
   const e = `<div class="ekom-loading-card">${q("40%")}${q("55%", 22)}</div>`;
   return `<div class="ekom-loading">${ze(o)}<div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(${r},minmax(0,1fr))">${e.repeat(r)}</div>
     <div aria-hidden="true" class="ekom-loading-panel" style="height:${t}px">${q("30%")}<span class="ekom-skeleton ekom-skeleton-block"></span></div>
     <div aria-hidden="true" class="ekom-loading-panel">${q("28%")}${q("100%").repeat(3)}</div></div>`;
 }
-function Ie(o, r = 4) {
+function Ne(o, r = 4) {
   return `<div class="ekom-loading-rows">${`<div aria-hidden="true"><span class="ekom-skeleton" style="flex:1"></span>${q("60px")}${q("110px")}</div>`.repeat(r)}<p role="status">${u(o)}</p></div>`;
 }
-function Ne() {
+function Ve() {
   return `<ekom-date-range from="${u(p.filters.dateFrom)}" to="${u(p.filters.dateTo)}"></ekom-date-range>`;
 }
-function Ve(o, r) {
+function Be(o, r) {
   var t, e;
-  Be(), (t = o.querySelector(".ekom-store-currency")) == null || t.addEventListener("keydown", (a) => {
+  Ge(), (t = o.querySelector(".ekom-store-currency")) == null || t.addEventListener("keydown", (a) => {
     var n;
     if (a.key !== "Escape") return;
     const i = a.currentTarget;
@@ -748,7 +752,7 @@ function Ve(o, r) {
     p.filters.dateFrom = i.from, p.filters.dateTo = i.to, r();
   });
 }
-function Be() {
+function Ge() {
   if (typeof customElements > "u" || !customElements.get || customElements.get("ekom-date-range")) return;
   class o extends HTMLElement {
     constructor() {
@@ -831,7 +835,7 @@ function Be() {
   }
   customElements.define("ekom-date-range", o);
 }
-function Ge() {
+function Je() {
   const o = p.filters.orderStatus.startsWith("states:") ? p.filters.orderStatus.slice(7).split(";") : ["", "", ""];
   return [
     { label: "Order", values: ["Draft", "Open", "Closed", "Cancelled"] },
@@ -843,7 +847,7 @@ function Ge() {
   }).join("");
 }
 let le;
-function Je(o) {
+function Ye(o) {
   const r = o.querySelector(".ekom-design-logo");
   r && (le ?? (le = new P().config().then((t) => t.ekomVersion).catch(() => {
   })), le.then((t) => {
@@ -861,9 +865,9 @@ function fe(o, r) {
   for (const i of e) i.remove();
   for (const i of Array.from(o.childNodes))
     (i.nodeType !== 1 || !i.matches('style, link[rel="stylesheet"]')) && i.remove();
-  o.appendChild(t.content), Je(o);
+  o.appendChild(t.content), Ye(o);
 }
-const Ye = (o) => class extends o {
+const Ze = (o) => class extends o {
   connectedCallback() {
   }
   disconnectedCallback() {
@@ -877,7 +881,7 @@ function be(o, r = /* @__PURE__ */ new Date()) {
   const t = new Date(Date.UTC(r.getFullYear(), r.getMonth(), r.getDate())), e = new Date(t);
   return o === "7" && e.setUTCDate(e.getUTCDate() - 6), o === "30" && e.setUTCDate(e.getUTCDate() - 29), o === "month" && e.setUTCDate(1), o === "year" && (e.setUTCMonth(0), e.setUTCDate(1)), { dateFrom: Y(e), dateTo: Y(t) };
 }
-function Ze(o, r, t, e = /* @__PURE__ */ new Date()) {
+function He(o, r, t, e = /* @__PURE__ */ new Date()) {
   if (t === "") return "";
   const a = ["today", "7", "30", "month", "year"];
   return t && a.includes(t) && a.unshift(t), a.find((i) => {
@@ -885,7 +889,7 @@ function Ze(o, r, t, e = /* @__PURE__ */ new Date()) {
     return n.dateFrom === o && n.dateTo === r;
   }) || "";
 }
-function He(o, r, t) {
+function We(o, r, t) {
   var n, d, s, b, w;
   const e = [], a = o.ordersChart.points;
   let i = 0;
@@ -923,7 +927,7 @@ function ue(o, r) {
   const t = (o - r) / Math.abs(r) * 100;
   return `${t > 0 ? "+" : ""}${t.toLocaleString(void 0, { maximumFractionDigits: 1 })}%`;
 }
-class We extends Ye(HTMLElement) {
+class Qe extends Ze(HTMLElement) {
   constructor() {
     super(...arguments);
     h(this, "api", new P());
@@ -1059,7 +1063,7 @@ class We extends Ye(HTMLElement) {
       }
   }
   get buckets() {
-    return this.chartData ? He(this.chartData, this.previousData, this.grouping) : [];
+    return this.chartData ? We(this.chartData, this.previousData, this.grouping) : [];
   }
   get comparisonMoneyAvailable() {
     var t, e;
@@ -1084,7 +1088,7 @@ class We extends Ye(HTMLElement) {
     return t === e ? t || "" : `${t || ""} – ${e || ""}`;
   }
   render() {
-    const t = p.filters, e = Ze(t.dateFrom, t.dateTo, this.datePreset);
+    const t = p.filters, e = He(t.dateFrom, t.dateTo, this.datePreset);
     fe(this, `<style>${Me}${this.hasAttribute("classic") ? `
       ekom-analytics-section-view { display:block;color:var(--uui-color-text,#20232e) }
       .analytics {background:var(--uui-color-background,#f3f4f7);min-height:80vh}
@@ -1118,11 +1122,11 @@ class We extends Ye(HTMLElement) {
     ` : ""}</style>${this.hasAttribute("classic") ? "" : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/analytics-layout.css">'}<section class="ekmManager analytics ekom-design" aria-busy="${this.loading}"><div class="ekmManager__body">${this.hasAttribute("classic") ? "" : Re("analytics")}
       <div class="analytics-toolbar ekom-shared-filters">
         ${this.hasAttribute("classic") ? `<label>Store<select data-field="store">${p.stores.map((a) => `<option value="${u(a.alias)}" ${a.alias === t.store ? "selected" : ""}>${u(a.title)}</option>`).join("")}</select></label>` : ""}
-        ${this.hasAttribute("classic") ? `<label>Order view<select data-field="orderStatus">${qe(t.orderStatus)}</select></label>` : Ge()}
+        ${this.hasAttribute("classic") ? `<label>Order view<select data-field="orderStatus">${qe(t.orderStatus)}</select></label>` : Je()}
         ${this.hasAttribute("classic") ? `        <label>Date From<input type="date" data-field="dateFrom" value="${u(t.dateFrom)}"></label>
         <label>Date To<input type="date" data-field="dateTo" value="${u(t.dateTo)}"></label>
         <label>Date preset<select data-preset><option value="">Custom range</option>${[["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["month", "This month"], ["year", "This year"]].map(([a, i]) => `<option value="${a}" ${e === a ? "selected" : ""}>${i}</option>`).join("")}</select></label>
-` : Ne()}
+` : Ve()}
         ${this.hasAttribute("classic") ? `<label><span>Comparison</span><span><input type="checkbox" data-compare ${this.compare ? "checked" : ""}> Previous period</span></label><button data-refresh>Refresh</button>` : ""}
       </div>
       ${this.hasAttribute("classic") ? "" : `<div class="analytics-comparison-actions">
@@ -1130,11 +1134,11 @@ class We extends Ye(HTMLElement) {
         <details class="ekom-polling${this.pollingSeconds ? " is-active" : ""}"><summary aria-label="Analytics polling"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v6h-6"></path></svg><span>${this.pollingSeconds ? `Polling every ${this.pollingSeconds}s` : "Polling off"}</span><span aria-hidden="true">⌄</span></summary><div class="ekom-poll-options" role="group" aria-label="Polling interval">${[0, 2, 5, 10, 20, 30].map((a) => `<button type="button" data-poll-seconds="${a}" aria-pressed="${a === this.pollingSeconds}"><span aria-hidden="true">•</span>${a ? `Every ${a} seconds` : "Off"}</button>`).join("")}</div></details>
       </div>`}
       ${this.error ? `<p role="alert">${u(this.error)}</p>` : ""}
-      ${this.loading ? Ue("Analytics", 3, 300) : t.store ? "" : "<p>No accessible stores.</p>"}
+      ${this.loading ? Ie("Analytics", 3, 300) : t.store ? "" : "<p>No accessible stores.</p>"}
       ${this.chartData && !this.loading ? this.renderAnalytics() + this.renderCustomerInsights() : ""}
       <div class="card analytics-main analytics-products" ${this.loading ? "hidden" : ""}><div class="analytics-toolbar"><h3>Most Sold Products</h3><button data-products>${this.productsVisible ? "Hide products" : "Load product breakdown"}</button></div>
         <p class="analytics-muted">Fetch the most sold products for the selected store and dates. This may take a minute for larger date ranges. Totals include VAT and discounts, excluding shipping and payment fees.</p>
-        ${this.productsVisible ? `${this.productError ? `<p role="alert">${u(this.productError)}</p><button data-product-retry>Retry products</button>` : ""}${this.loadingMostSoldProducts ? Ie("Calculating…") : this.renderMostSoldProducts()}` : ""}
+        ${this.productsVisible ? `${this.productError ? `<p role="alert">${u(this.productError)}</p><button data-product-retry>Retry products</button>` : ""}${this.loadingMostSoldProducts ? Ne("Calculating…") : this.renderMostSoldProducts()}` : ""}
       </div>
     </div></section>`), this.bindEvents(), this.renderCharts();
   }
@@ -1246,7 +1250,7 @@ class We extends Ye(HTMLElement) {
   }
   bindEvents() {
     var t, e, a, i, n, d, s, b, w;
-    this.hasAttribute("classic") || Ve(this, () => {
+    this.hasAttribute("classic") || Be(this, () => {
       this.datePreset = void 0, this.changedFilters();
     }), this.querySelectorAll("[data-field]").forEach((m) => m.addEventListener("change", () => {
       const l = m.dataset.field;
@@ -1282,8 +1286,8 @@ function G(o, ...r) {
 function K(o, r) {
   return o instanceof Error ? o.message : r;
 }
-customElements.define("ekom-analytics-section-view", We);
+customElements.define("ekom-analytics-section-view", Qe);
 export {
-  We as EkomAnalyticsSectionViewElement,
-  We as default
+  Qe as EkomAnalyticsSectionViewElement,
+  Qe as default
 };
