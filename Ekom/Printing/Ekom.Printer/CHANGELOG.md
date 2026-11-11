@@ -13,6 +13,13 @@
 
 - Keep the printer minimum Ekom.Core dependency at 0.2.352 independently of core releases and reject NuGet version substitution during publication.
 
+## [1.2.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Printer-v1.1.1...Ekom.Printer-v1.2.0) (2026-11-11)
+
+
+### Features
+
+* prepare Ekom 1.0.0 with new manager and status migration ([#1148](https://github.com/Vettvangur/Ekom/issues/1148)) ([fef3419](https://github.com/Vettvangur/Ekom/commit/fef34190fce84f274666654478b5fa5688ad1c4c))
+
 ## [1.1.1](https://github.com/Vettvangur/Ekom/compare/Ekom.Printer-v1.1.0...Ekom.Printer-v1.1.1) (2026-11-09)
 
 
