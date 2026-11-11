@@ -75,6 +75,47 @@ public class PropertyEditorValueTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReadsSerializedRichTextFromSelectedEntry(bool direct)
+    {
+        const string markup = "<p>Endurn\u00e6r\u00f0u &nbsp;</p>";
+        var richText = System.Text.Json.JsonSerializer.Serialize(new { markup, blocks = new { contentData = Array.Empty<object>() } });
+        var entries = new Dictionary<string, string> { ["IS"] = richText };
+        var value = direct
+            ? System.Text.Json.JsonSerializer.Serialize(entries)
+            : System.Text.Json.JsonSerializer.Serialize(new { values = entries });
+
+        Assert.Equal(markup, value.GetEkomPropertyEditorValue("is"));
+        Assert.Equal(markup, StringExtension.GetEkomPropertyEditorValueWithJToken(value, "is"));
+        if (!direct)
+            Assert.Equal(markup, value.GetEkomPropertyEditorValue("missing", fallback: true));
+    }
+
+    [Theory]
+    [InlineData("{not json}")]
+    [InlineData("{\"other\":\"value\"}")]
+    [InlineData("{\"markup\":42}")]
+    [InlineData("<p>Legacy HTML</p>")]
+    public void PreservesStringsThatAreNotRichTextObjects(string text)
+    {
+        var value = System.Text.Json.JsonSerializer.Serialize(new { values = new Dictionary<string, string> { ["IS"] = text } });
+        Assert.Equal(text, value.GetEkomPropertyEditorValue("IS"));
+        Assert.Equal(text, StringExtension.GetEkomPropertyEditorValueWithJToken(value, "IS"));
+    }
+
+    [Theory]
+    [InlineData("main")]
+    [InlineData("outlet")]
+    public void UnwrappedRichTextIsDefaultForAnyStore(string storeAlias)
+    {
+        const string markup = "<p>Original content</p>";
+        var value = System.Text.Json.JsonSerializer.Serialize(new { markup, blocks = new { contentData = Array.Empty<object>() } });
+        Assert.Equal(markup, value.GetEkomPropertyEditorValue(storeAlias));
+        Assert.Equal(markup, StringExtension.GetEkomPropertyEditorValueWithJToken(value, storeAlias));
+    }
+
     [Fact]
     public void ReadsStoreValue()
     {

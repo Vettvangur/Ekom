@@ -169,7 +169,9 @@ public static class StringExtension
 
             if (!found || values.ValueKind != System.Text.Json.JsonValueKind.Object)
             {
-                result = found && values.ValueKind == System.Text.Json.JsonValueKind.Null ? string.Empty : value;
+                result = found
+                    ? values.ValueKind == System.Text.Json.JsonValueKind.Null ? string.Empty : value
+                    : ExtractSerializedRichText(value);
                 return true;
             }
 
@@ -273,7 +275,7 @@ public static class StringExtension
             return false;
         }
 
-        result = text;
+        result = ExtractSerializedRichText(text);
         return true;
     }
 
@@ -296,10 +298,7 @@ public static class StringExtension
                 // 1. Try getting the value directly by alias
                 if (obj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out var directToken) && directToken != null)
                 {
-                    if (directToken.Type == JTokenType.Object && directToken["markup"] != null)
-                        return directToken["markup"]!.ToString();
-
-                    return directToken.ToString();
+                    return ExtractValueFromToken(directToken) ?? string.Empty;
                 }
 
                 // 2. Try getting from "values" dictionary inside the JSON
@@ -314,6 +313,11 @@ public static class StringExtension
                     {
                         return GetValueFromValuesObject(valuesObj, alias, fallback);
                     }
+                }
+                else
+                {
+                    // A native rich-text value is a shared default until store overrides are saved.
+                    return ExtractSerializedRichText(value);
                 }
             }
             else if (token.Type == JTokenType.Array)
@@ -375,7 +379,32 @@ public static class StringExtension
         if (token.Type == JTokenType.Object && token["markup"] != null)
             return token["markup"]!.ToString();
 
-        return token.ToString();
+        return token.Type == JTokenType.String
+            ? ExtractSerializedRichText(token.ToString())
+            : token.ToString();
+    }
+
+    private static string ExtractSerializedRichText(string value)
+    {
+        if (!value.AsSpan().TrimStart().StartsWith("{"))
+            return value;
+
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(value);
+            if (document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+                && document.RootElement.TryGetProperty("markup", out var markup)
+                && markup.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                return markup.GetString() ?? string.Empty;
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // Preserve ordinary text and malformed JSON unchanged.
+        }
+
+        return value;
     }
 
     internal static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)
