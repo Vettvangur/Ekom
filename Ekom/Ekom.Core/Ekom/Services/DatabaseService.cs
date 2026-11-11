@@ -76,6 +76,7 @@ internal partial class DatabaseService
         EnsureOrderIndexes();
         EnsureOrderPerformanceIndexes();
         EnsureOrderReviewsTable();
+        EnsureLookupIndexes();
     }
 
     internal virtual void EnsurePriceTable()
@@ -200,6 +201,35 @@ AND EXISTS (SELECT 1 FROM pragma_index_info(i.name) k WHERE k.name = 'UniqueId' 
             "IX_EkomOrders_CustomerUsername", nameof(OrderData.CustomerUsername));
         DatabaseIndexInstaller.EnsureIndex(db, _databaseFactory.IsSqlServer, "EkomOrdersActivityLog",
             "IX_EkomOrdersActivityLog_Key_Date", nameof(OrderActivityLog.Key), nameof(OrderActivityLog.Date));
+    }
+
+    /// <summary>
+    /// Indexes for lookups that otherwise scan their table: coupons by code, discount and key,
+    /// and payment attempts and stock reservations by order. They only speed queries up, so a
+    /// table that cannot take one (for example an older, wider column) is logged and skipped
+    /// rather than stopping startup. Runs on every start, so a skipped index is retried.
+    /// </summary>
+    internal virtual void EnsureLookupIndexes()
+    {
+        using var db = _databaseFactory.GetDatabase();
+
+        EnsureLookupIndex(db, "EkomCoupon", "IX_EkomCoupon_CouponCode", nameof(CouponData.CouponCode));
+        EnsureLookupIndex(db, "EkomCoupon", "IX_EkomCoupon_DiscountId_CouponCode", nameof(CouponData.DiscountId), nameof(CouponData.CouponCode));
+        EnsureLookupIndex(db, "EkomCoupon", "IX_EkomCoupon_CouponKey", nameof(CouponData.CouponKey));
+        EnsureLookupIndex(db, "EkomCheckoutPaymentAttempt", "IX_EkomCheckoutPaymentAttempt_OrderId", nameof(CheckoutPaymentAttemptData.OrderId));
+        EnsureLookupIndex(db, "EkomStockReservation", "IX_EkomStockReservation_OrderId", nameof(StockReservationData.OrderId));
+    }
+
+    private void EnsureLookupIndex(Repositories.DbContext db, string tableName, string indexName, params string[] columns)
+    {
+        try
+        {
+            DatabaseIndexInstaller.EnsureIndex(db, _databaseFactory.IsSqlServer, tableName, indexName, columns);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.Data.Common.DbException)
+        {
+            _logger.LogWarning(ex, "Ekom could not create lookup index {IndexName} on {TableName}. Queries on that table stay correct but may be slow.", indexName, tableName);
+        }
     }
 
     internal virtual void EnsureWarehouseStockTable()

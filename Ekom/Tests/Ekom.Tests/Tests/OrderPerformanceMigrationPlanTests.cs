@@ -15,7 +15,7 @@ namespace Ekom.Tests.Tests;
 
 public sealed class OrderPerformanceMigrationPlanTests
 {
-    private const string FinalState = "order-performance-indexes-v1";
+    private const string FinalState = "lookup-indexes-v1";
     private const string StateKey = "Umbraco.Core.Upgrader.State+Ekom";
 
 #if NET8_0
@@ -36,6 +36,7 @@ public sealed class OrderPerformanceMigrationPlanTests
 #endif
         yield return new object[] { "native-reservations-v1" };
         yield return new object[] { "orders-indexes-v1" };
+        yield return new object[] { "order-performance-indexes-v1" };
     }
 
     [Theory]
@@ -49,7 +50,7 @@ public sealed class OrderPerformanceMigrationPlanTests
 #if NET10_0
             "3",
 #endif
-            "native-reservations-v1", "orders-indexes-v1", FinalState,
+            "native-reservations-v1", "orders-indexes-v1", "order-performance-indexes-v1", FinalState,
         };
         var actual = new List<string> { initialState };
         var state = initialState;
@@ -79,8 +80,13 @@ public sealed class OrderPerformanceMigrationPlanTests
 
         Assert.Equal("orders-indexes-v1", phaseOne.TargetState);
         Assert.Equal(MigrationType("MigrationEnsureOrderIndexes"), phaseOne.MigrationType);
-        Assert.Equal(FinalState, performance.TargetState);
+        Assert.Equal("order-performance-indexes-v1", performance.TargetState);
         Assert.Equal(MigrationType("MigrationEnsureOrderPerformanceIndexes"), performance.MigrationType);
+
+        // Sites already on the performance-index state pick the lookup indexes up as one further step.
+        var lookup = Assert.IsType<MigrationPlan.Transition>(plan.Transitions["order-performance-indexes-v1"]);
+        Assert.Equal(FinalState, lookup.TargetState);
+        Assert.Equal(MigrationType("MigrationEnsureLookupIndexes"), lookup.MigrationType);
     }
 
     [Theory]

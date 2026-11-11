@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **database:** add indexes for lookups that scanned their table: coupons by code, by discount and code, and by key, and payment attempts and stock reservations by order. A migration adds them to existing databases; a table that cannot take one is logged and skipped.
+
 * **manager:** show an "Esc close" hint beside the close button of the order and customer drawers.
 
 * **manager:** link the customer on an order to their record: the name and an "Open customer" link in the order drawer open that customer in Customers.
