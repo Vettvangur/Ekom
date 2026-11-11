@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **manager:** fix the Orders view counts failing on SQL Server ("Cannot perform an aggregate function on an expression containing an aggregate or a subquery"), which left the view tabs without counts in 1.0.2.
+
 * **manager:** show the design's loading states in Orders, Analytics and Customers: shimmering placeholder rows and cards with a "Loading ... for ..." status line, in place of the plain loading text and spinners.
 
 * **manager:** keep the page background behind the Customers list on wide screens after scrolling past the first screen.
