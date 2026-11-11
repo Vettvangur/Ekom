@@ -1,12 +1,12 @@
-var k = Object.defineProperty;
-var S = (h, u, e) => u in h ? k(h, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : h[u] = e;
-var d = (h, u, e) => S(h, typeof u != "symbol" ? u + "" : u, e);
-import { E as w, m as o, e as E, c as i, r as q, a as L, b as C, d as O, g as A, h as D, i as R, o as P, q as f, t as b, n as j } from "./manager-shared.js";
+var x = Object.defineProperty;
+var k = (h, u, e) => u in h ? x(h, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : h[u] = e;
+var d = (h, u, e) => k(h, typeof u != "symbol" ? u + "" : u, e);
+import { E as S, m as o, e as w, c as i, r as E, a as q, b as L, d as C, g as O, h as A, i as D, o as R, q as P, t as f, n as j } from "./manager-shared.js";
 import { UmbElementMixin as N } from "@umbraco-cms/backoffice/element-api";
 class F extends N(HTMLElement) {
   constructor() {
     super(...arguments);
-    d(this, "api", new w());
+    d(this, "api", new S());
     d(this, "result");
     d(this, "detail");
     d(this, "query", "");
@@ -47,7 +47,7 @@ class F extends N(HTMLElement) {
     this.busy = !0, this.render();
     try {
       const [t, s] = await Promise.all([this.api.stores(), this.classic ? Promise.resolve(!1) : this.api.printingEnabled()]);
-      o.stores = t, o.printingEnabled = s, o.stores.some((a) => a.alias === o.filters.store) || (o.filters.store = ((e = o.stores[0]) == null ? void 0 : e.alias) || ""), this.classic || E(), await this.load();
+      o.stores = t, o.printingEnabled = s, o.stores.some((a) => a.alias === o.filters.store) || (o.filters.store = ((e = o.stores[0]) == null ? void 0 : e.alias) || ""), this.classic || w(), await this.load();
     } catch {
       this.error = "Unable to load customers. Please try again.", this.busy = !1, this.render();
     }
@@ -134,7 +134,7 @@ class F extends N(HTMLElement) {
   }
   render() {
     const e = o.filters, t = this.result;
-    q(this, `<style>${L}${this.classic ? `
+    E(this, `<style>${q}${this.classic ? `
       ekom-customers-section-view { display:block; color:var(--uui-color-text,#20232e) }
       .customers { padding:24px; background:var(--uui-color-background,#f3f4f7); min-height:80vh }
       .customer-cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0 }
@@ -168,13 +168,13 @@ class F extends N(HTMLElement) {
       .customer-snapshot dd { margin:4px 0;overflow-wrap:anywhere }
       @media(max-width:800px) { .customer-detail-grid { grid-template-columns:1fr } .customers { padding:12px } }
     ` : ""}</style>${this.classic ? "" : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/customers-layout.css?v=20261111-background">'}<section class="customers ekom-design" aria-busy="${this.busy}">
-      ${this.classic ? "" : C("customers", "data-filter")}
+      ${this.classic ? "" : L("customers", "data-filter")}
       <div class="customer-toolbar ekom-shared-filters">
         ${this.classic ? `<label>Store<select data-filter="store">${o.stores.map((s) => `<option value="${i(s.alias)}" ${s.alias === e.store ? "selected" : ""}>${i(s.title)}</option>`).join("")}</select></label>` : ""}
-        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${O(e.orderStatus)}</select></label>` : A()}
+        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${C(e.orderStatus)}</select></label>` : O()}
         ${this.classic ? `        <label>Date From<input type="date" data-filter="dateFrom" value="${i(e.dateFrom)}"></label>
         <label>Date To<input type="date" data-filter="dateTo" value="${i(e.dateTo)}"></label>
-` : D()}
+` : A()}
         <button data-reload ${this.busy ? "disabled" : ""}>Refresh</button>
       </div>
       <p class="customer-muted">Customers who ordered in the selected period. Lifetime metrics include all qualifying orders in the selected store and currency. </p>
@@ -182,7 +182,7 @@ class F extends N(HTMLElement) {
       ${this.busy && t ? '<p role="status">Preparing export...</p>' : ""}
       ${t ? `<div class="customer-cards">${this.card("Customers", this.number(t.totals.customers))}${this.card("Returning", this.number(t.totals.returningPercent) + "%")}${this.card("Average lifetime spend", this.amount(t.spend, "averageLifetime"))}${this.card("Average orders per customer", this.number(t.totals.averageOrders))}${this.card("Average days between orders", this.number(t.totals.averageReorderDays))}</div>
       <p class="customer-muted">${t.missingIdentifiers} qualifying orders in this period have no ${t.identityField === "CustomerUsername" ? "username" : "email"} and are excluded. Spend uses recorded charged amounts, without refund adjustment.</p>` : ""}
-      ${this.busy && !t ? R("Customers", 5, 220) : ""}
+      ${this.busy && !t ? D("Customers", 5, 220) : ""}
       <div class="customer-panel" ${this.busy && !t ? "hidden" : ""}><div class="customer-toolbar" role="search">
         <label>Search<input name="query" value="${i(this.query)}" placeholder="Name, email or username"></label>
         <button type="button" data-search>Search</button>
@@ -198,8 +198,8 @@ class F extends N(HTMLElement) {
   renderDetailOpening(e) {
     var a;
     const t = (a = this.result) == null ? void 0 : a.customers.find((n) => n.identity === e), s = (t == null ? void 0 : t.name) || (t == null ? void 0 : t.email) || (t == null ? void 0 : t.username) || e;
-    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" aria-busy="true" class="customer-dialog"><header class="customer-heading">${this.avatar(s)}<div><h2>${i(s)}</h2>${P("Loading customer…")}</div><button data-close aria-label="Close customer details">${this.classic ? "Close" : "×"}</button></header>
-      <div class="ekom-loading customer-opening"><div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(6,minmax(0,1fr))">${f(1).repeat(6)}</div>${f(5)}${f(3)}</div></section></div>`;
+    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" aria-busy="true" class="customer-dialog"><header class="customer-heading">${this.avatar(s)}<div><h2>${i(s)}</h2>${R("Loading customer…")}</div><button data-close aria-label="Close customer details">${this.classic ? "Close" : "×"}</button></header>
+      <div class="customer-opening">${P()}</div></section></div>`;
   }
   renderDetail(e) {
     const t = e.customer;
@@ -207,12 +207,12 @@ class F extends N(HTMLElement) {
       <div class="customer-cards">${this.card("Lifetime spend", this.amount(t.spend, "total"))}${this.card("Orders", String(t.orders))}${this.card("Average order", this.amount(t.spend, "averageOrder"))}${this.card("First order", this.date(t.firstOrder))}${this.card("Days since last order", String(t.daysSinceLastOrder))}${this.card("Average reorder interval (days)", this.number(t.averageReorderDays))}</div>
       <div class="customer-detail-grid"><div><h3>Orders <small>(${e.count})</small></h3><label><input type="checkbox" data-other ${this.other ? "checked" : ""}> Show other orders (excluded from lifetime metrics)</label><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Order</th>${this.classic ? "<th>Status</th>" : "<th>Order status</th><th>Payment</th><th>Fulfillment</th>"}<th>Created</th><th>Paid</th><th>Total</th></tr></thead><tbody>${e.orders.map((s) => {
       var a, n, l;
-      return `<tr><td><button data-order="${i(s.uniqueId)}">#${i(s.orderNumber || String(s.referenceId))}</button></td>${this.classic ? `<td>${i(s.orderStatusCol)}</td>` : `<td>${b((a = s.status) == null ? void 0 : a.orderStatus)}</td><td>${b((n = s.status) == null ? void 0 : n.paymentStatus)}</td><td>${b((l = s.status) == null ? void 0 : l.fulfillmentStatus)}</td>`}<td>${this.date(s.createDate)}</td><td>${this.date(s.paidDate)}</td><td>${i(s.formattedTotal)}</td></tr>`;
+      return `<tr><td><button data-order="${i(s.uniqueId)}">#${i(s.orderNumber || String(s.referenceId))}</button></td>${this.classic ? `<td>${i(s.orderStatusCol)}</td>` : `<td>${f((a = s.status) == null ? void 0 : a.orderStatus)}</td><td>${f((n = s.status) == null ? void 0 : n.paymentStatus)}</td><td>${f((l = s.status) == null ? void 0 : l.fulfillmentStatus)}</td>`}<td>${this.date(s.createDate)}</td><td>${this.date(s.paidDate)}</td><td>${i(s.formattedTotal)}</td></tr>`;
     }).join("") || `<tr><td colspan="${this.classic ? 5 : 7}">No orders.</td></tr>`}</tbody></table></div><div class="customer-pagination"><button data-detail-page="${e.page - 1}" ${e.page <= 1 ? "disabled" : ""}>Previous</button><span>${e.page} / ${Math.max(1, e.totalPages)}</span><button data-detail-page="${e.page + 1}" ${e.page >= e.totalPages ? "disabled" : ""}>Next</button></div></div>
       <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${i(e.snapshot.orderNumber)} · ${this.date(e.snapshot.date)}. Historical details, not a current customer profile.</p>${e.snapshot.unavailable ? "<p>Saved details could not be read.</p>" : ""}<dl>${Object.entries(e.snapshot.fields).map(([s, a]) => `<dt>${i(s)}</dt><dd>${i(a)}</dd>`).join("") || "<dd>No additional details recorded.</dd>"}</dl></aside></div></section></div>`;
   }
   bind() {
-    var t, s, a, n, l, m, y, v, $, x;
+    var t, s, a, n, l, m, b, y, v, $;
     this.classic || j(this, () => {
       this.page = 1, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...o.filters } })), this.load();
     }), this.querySelectorAll("[data-filter]").forEach((r) => r.addEventListener("change", () => {
@@ -231,9 +231,9 @@ class F extends N(HTMLElement) {
       this.segment = r.target.value, this.page = 1, this.load();
     }), (n = this.querySelector("[data-sort]")) == null || n.addEventListener("change", (r) => {
       this.sort = r.target.value, this.page = 1, this.load();
-    }), (l = this.querySelector("[data-reload]")) == null || l.addEventListener("click", () => void this.load()), (m = this.querySelector("[data-export]")) == null || m.addEventListener("click", () => void this.export()), (y = this.querySelector("[data-close]")) == null || y.addEventListener("click", () => this.close()), (v = this.querySelector(".customer-overlay")) == null || v.addEventListener("click", (r) => {
+    }), (l = this.querySelector("[data-reload]")) == null || l.addEventListener("click", () => void this.load()), (m = this.querySelector("[data-export]")) == null || m.addEventListener("click", () => void this.export()), (b = this.querySelector("[data-close]")) == null || b.addEventListener("click", () => this.close()), (y = this.querySelector(".customer-overlay")) == null || y.addEventListener("click", (r) => {
       r.target === r.currentTarget && this.close();
-    }), ($ = this.querySelector("[data-other]")) == null || $.addEventListener("change", () => {
+    }), (v = this.querySelector("[data-other]")) == null || v.addEventListener("change", () => {
       this.other = !this.other, this.detail && this.open(this.detail.customer.identity);
     }), this.querySelectorAll("[data-customer]").forEach((r) => r.addEventListener("click", () => {
       this.other = !1, this.open(r.dataset.customer);
@@ -248,7 +248,7 @@ class F extends N(HTMLElement) {
         const c = document.createElement("a");
         c.href = location.pathname.replace(/\/customers\/?$/, "/orders") + "?orderId=" + encodeURIComponent(r.dataset.order || ""), this.appendChild(c), c.click(), c.remove();
       }
-    })), (x = this.querySelector("[role=dialog]")) == null || x.addEventListener("keydown", (r) => {
+    })), ($ = this.querySelector("[role=dialog]")) == null || $.addEventListener("keydown", (r) => {
       if (r.key === "Escape" && (r.preventDefault(), this.close()), r.key !== "Tab") return;
       const c = Array.from(this.querySelectorAll("[role=dialog] button:not(:disabled),[role=dialog] input")), p = c[0], g = c[c.length - 1];
       r.shiftKey && document.activeElement === p ? (r.preventDefault(), g == null || g.focus()) : !r.shiftKey && document.activeElement === g && (r.preventDefault(), p == null || p.focus());

@@ -29,7 +29,7 @@ import {
   orderViews,
   renderOrderRowsLoading,
   renderLoadingLine,
-  renderLoadingPanel,
+  renderDrawerLoading,
   type OrderReview,
   printOrderDocument,
 } from './manager-shared';
@@ -686,7 +686,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   /** The order drawer while everything it shows is still being fetched. */
   private renderOrderOpening(): string {
     const reference = this.result.orders.find(order => order.uniqueId === this.returnFocusOrderId)?.referenceId;
-    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details" aria-busy="true" data-order-opening="${escapeHtml(this.returnFocusOrderId)}"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><div class="ekom-order-heading-copy"><h2>${reference ? `#${escapeHtml(reference)}` : 'Order'}</h2>${renderLoadingLine('Loading order…')}</div><button type="button" data-action="close-overlay" aria-label="Close order">×</button></header><div class="ekmOverlay__content ekmOrder"><div class="ekom-order-columns ekom-order-opening"><main class="ekom-order-main">${renderLoadingPanel(4)}${renderLoadingPanel(3)}${renderLoadingPanel(2)}</main><aside class="ekom-customer-sidebar">${renderLoadingPanel(5)}</aside></div></div></div></div>`;
+    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details" aria-busy="true" data-order-opening="${escapeHtml(this.returnFocusOrderId)}"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><div class="ekom-order-heading-copy"><h2>${reference ? `#${escapeHtml(reference)}` : 'Order'}</h2>${renderLoadingLine('Loading order…')}</div><button type="button" data-action="close-overlay" aria-label="Close order">×</button></header><div class="ekmOverlay__content ekmOrder">${renderDrawerLoading()}</div></div></div>`;
   }
 
   private renderOrderOverlay(order: OrderInfo): string {

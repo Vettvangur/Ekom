@@ -173,7 +173,7 @@ class f {
     }, r);
   }
   async getJson(a, t, e) {
-    const r = await fetch(a + w(t), {
+    const r = await fetch(a + $(t), {
       credentials: "same-origin",
       signal: e,
       headers: { Accept: "application/json" }
@@ -183,7 +183,7 @@ class f {
     return r.json();
   }
   async getBlob(a, t) {
-    const e = await fetch(a + w(t), {
+    const e = await fetch(a + $(t), {
       credentials: "same-origin",
       headers: { Accept: "text/csv, application/octet-stream" }
     });
@@ -192,7 +192,7 @@ class f {
     return e.blob();
   }
   async postJson(a, t) {
-    const e = await fetch(a + w(t), {
+    const e = await fetch(a + $(t), {
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json" }
@@ -230,7 +230,7 @@ class f {
     return new Error(r || `${t} Status ${a.status}.`);
   }
 }
-function w(o) {
+function $(o) {
   if (!o)
     return "";
   const a = new URLSearchParams();
@@ -444,8 +444,9 @@ const F = `
   .ekom-loading-rows > div { display: flex; align-items: center; gap: 16px; }
   .ekom-loading-rows > p { margin: 0; font-size: 12px; line-height: 1; color: var(--ekom-muted, #676b7b); }
   .ekom-list-skeleton-row:hover { background: transparent !important; }
-  .ekom-order-opening { margin-top: 20px; }
-  .customer-opening { grid-column: 1 / -1; margin: 0; padding: 20px 22px 22px; }
+  .ekom-drawer-loading { margin-top: 20px; }
+  .ekom-drawer-loading .ekom-order-main { display: grid; gap: 14px; }
+  .customer-opening { grid-column: 1 / -1; padding: 0 22px 22px; }
   [hidden] { display: none !important; }
   @media (max-width: 720px) { .ekom-loading-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
   @media (prefers-reduced-motion: reduce) { .ekom-skeleton, .ekom-loading-spinner { animation: none; } }
@@ -533,7 +534,7 @@ ${O}:not([classic]) {
   }
   @media print { --ekom-text: #000; --ekom-muted: #444; --ekom-surface: #fff; --ekom-surface-alt: #fff; --ekom-border: #bbb; .ekom-order-tabs, .ekom-legacy-status { display: none; } }
 }`;
-function $(o) {
+function _(o) {
   const a = ["Paid", "Fulfilled", "Closed"].includes(o || "") ? "positive" : ["Failed", "Cancelled"].includes(o || "") ? "negative" : ["Pending", "PartiallyPaid", "PartiallyFulfilled", "PartiallyRefunded"].includes(o || "") ? "warning" : "neutral", t = o ? o.replace(/([a-z])([A-Z])/g, "$1 $2") : "Needs review";
   return `<span class="ekom-badge ekom-badge--${a}">${n(t)}</span>`;
 }
@@ -595,21 +596,24 @@ function H(o) {
 function P(o) {
   return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>${n(o)}</p>`;
 }
-function _(o = 3) {
+function W() {
+  return `<div class="ekom-order-columns ekom-drawer-loading"><main class="ekom-order-main">${w(4)}${w(3)}${w(2)}</main><aside class="ekom-customer-sidebar">${w(5)}</aside></div>`;
+}
+function w(o = 3) {
   return `<div aria-hidden="true" class="ekom-loading-panel">${x("28%")}${x("100%").repeat(o)}</div>`;
 }
-function W(o, a, t) {
+function Z(o, a, t) {
   const e = `<div class="ekom-loading-card">${x("40%")}${x("55%", 22)}</div>`;
   return `<div class="ekom-loading">${H(o)}<div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(${a},minmax(0,1fr))">${e.repeat(a)}</div>
     <div aria-hidden="true" class="ekom-loading-panel" style="height:${t}px">${x("30%")}<span class="ekom-skeleton ekom-skeleton-block"></span></div>
     <div aria-hidden="true" class="ekom-loading-panel">${x("28%")}${x("100%").repeat(3)}</div></div>`;
 }
-function Z() {
+function K() {
   return `<ekom-date-range from="${n(l.filters.dateFrom)}" to="${n(l.filters.dateTo)}"></ekom-date-range>`;
 }
-function K(o, a) {
+function Q(o, a) {
   var t, e;
-  Q(), (t = o.querySelector(".ekom-store-currency")) == null || t.addEventListener("keydown", (r) => {
+  X(), (t = o.querySelector(".ekom-store-currency")) == null || t.addEventListener("keydown", (r) => {
     var d;
     if (r.key !== "Escape") return;
     const i = r.currentTarget;
@@ -626,7 +630,7 @@ function K(o, a) {
     l.filters.dateFrom = i.from, l.filters.dateTo = i.to, a();
   });
 }
-function Q() {
+function X() {
   if (typeof customElements > "u" || !customElements.get || customElements.get("ekom-date-range")) return;
   class o extends HTMLElement {
     constructor() {
@@ -709,7 +713,7 @@ function Q() {
   }
   customElements.define("ekom-date-range", o);
 }
-function X() {
+function ee() {
   const o = l.filters.orderStatus.startsWith("states:") ? l.filters.orderStatus.slice(7).split(";") : ["", "", ""];
   return [
     { label: "Order", values: ["Draft", "Open", "Closed", "Cancelled"] },
@@ -721,7 +725,7 @@ function X() {
   }).join("");
 }
 let L;
-function ee(o) {
+function te(o) {
   const a = o.querySelector(".ekom-design-logo");
   a && (L ?? (L = new f().config().then((t) => t.ekomVersion).catch(() => {
   })), L.then((t) => {
@@ -739,15 +743,15 @@ function R(o, a) {
   for (const i of e) i.remove();
   for (const i of Array.from(o.childNodes))
     (i.nodeType !== 1 || !i.matches('style, link[rel="stylesheet"]')) && i.remove();
-  o.appendChild(t.content), ee(o);
+  o.appendChild(t.content), te(o);
 }
-const te = (o) => class extends o {
+const re = (o) => class extends o {
   connectedCallback() {
   }
   disconnectedCallback() {
   }
 };
-class re extends te(HTMLElement) {
+class ae extends re(HTMLElement) {
   constructor() {
     super(...arguments);
     m(this, "api", new f());
@@ -915,10 +919,10 @@ class re extends te(HTMLElement) {
       ${this.classic ? "" : J("customers", "data-filter")}
       <div class="customer-toolbar ekom-shared-filters">
         ${this.classic ? `<label>Store<select data-filter="store">${l.stores.map((r) => `<option value="${n(r.alias)}" ${r.alias === t.store ? "selected" : ""}>${n(r.title)}</option>`).join("")}</select></label>` : ""}
-        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${V(t.orderStatus)}</select></label>` : X()}
+        ${this.classic ? `<label>Order view<select data-filter="orderStatus">${V(t.orderStatus)}</select></label>` : ee()}
         ${this.classic ? `        <label>Date From<input type="date" data-filter="dateFrom" value="${n(t.dateFrom)}"></label>
         <label>Date To<input type="date" data-filter="dateTo" value="${n(t.dateTo)}"></label>
-` : Z()}
+` : K()}
         <button data-reload ${this.busy ? "disabled" : ""}>Refresh</button>
       </div>
       <p class="customer-muted">Customers who ordered in the selected period. Lifetime metrics include all qualifying orders in the selected store and currency. </p>
@@ -926,7 +930,7 @@ class re extends te(HTMLElement) {
       ${this.busy && e ? '<p role="status">Preparing export...</p>' : ""}
       ${e ? `<div class="customer-cards">${this.card("Customers", this.number(e.totals.customers))}${this.card("Returning", this.number(e.totals.returningPercent) + "%")}${this.card("Average lifetime spend", this.amount(e.spend, "averageLifetime"))}${this.card("Average orders per customer", this.number(e.totals.averageOrders))}${this.card("Average days between orders", this.number(e.totals.averageReorderDays))}</div>
       <p class="customer-muted">${e.missingIdentifiers} qualifying orders in this period have no ${e.identityField === "CustomerUsername" ? "username" : "email"} and are excluded. Spend uses recorded charged amounts, without refund adjustment.</p>` : ""}
-      ${this.busy && !e ? W("Customers", 5, 220) : ""}
+      ${this.busy && !e ? Z("Customers", 5, 220) : ""}
       <div class="customer-panel" ${this.busy && !e ? "hidden" : ""}><div class="customer-toolbar" role="search">
         <label>Search<input name="query" value="${n(this.query)}" placeholder="Name, email or username"></label>
         <button type="button" data-search>Search</button>
@@ -943,7 +947,7 @@ class re extends te(HTMLElement) {
     var i;
     const e = (i = this.result) == null ? void 0 : i.customers.find((d) => d.identity === t), r = (e == null ? void 0 : e.name) || (e == null ? void 0 : e.email) || (e == null ? void 0 : e.username) || t;
     return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" aria-busy="true" class="customer-dialog"><header class="customer-heading">${this.avatar(r)}<div><h2>${n(r)}</h2>${P("Loading customer…")}</div><button data-close aria-label="Close customer details">${this.classic ? "Close" : "×"}</button></header>
-      <div class="ekom-loading customer-opening"><div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(6,minmax(0,1fr))">${_(1).repeat(6)}</div>${_(5)}${_(3)}</div></section></div>`;
+      <div class="customer-opening">${W()}</div></section></div>`;
   }
   renderDetail(t) {
     const e = t.customer;
@@ -951,13 +955,13 @@ class re extends te(HTMLElement) {
       <div class="customer-cards">${this.card("Lifetime spend", this.amount(e.spend, "total"))}${this.card("Orders", String(e.orders))}${this.card("Average order", this.amount(e.spend, "averageOrder"))}${this.card("First order", this.date(e.firstOrder))}${this.card("Days since last order", String(e.daysSinceLastOrder))}${this.card("Average reorder interval (days)", this.number(e.averageReorderDays))}</div>
       <div class="customer-detail-grid"><div><h3>Orders <small>(${t.count})</small></h3><label><input type="checkbox" data-other ${this.other ? "checked" : ""}> Show other orders (excluded from lifetime metrics)</label><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Order</th>${this.classic ? "<th>Status</th>" : "<th>Order status</th><th>Payment</th><th>Fulfillment</th>"}<th>Created</th><th>Paid</th><th>Total</th></tr></thead><tbody>${t.orders.map((r) => {
       var i, d, u;
-      return `<tr><td><button data-order="${n(r.uniqueId)}">#${n(r.orderNumber || String(r.referenceId))}</button></td>${this.classic ? `<td>${n(r.orderStatusCol)}</td>` : `<td>${$((i = r.status) == null ? void 0 : i.orderStatus)}</td><td>${$((d = r.status) == null ? void 0 : d.paymentStatus)}</td><td>${$((u = r.status) == null ? void 0 : u.fulfillmentStatus)}</td>`}<td>${this.date(r.createDate)}</td><td>${this.date(r.paidDate)}</td><td>${n(r.formattedTotal)}</td></tr>`;
+      return `<tr><td><button data-order="${n(r.uniqueId)}">#${n(r.orderNumber || String(r.referenceId))}</button></td>${this.classic ? `<td>${n(r.orderStatusCol)}</td>` : `<td>${_((i = r.status) == null ? void 0 : i.orderStatus)}</td><td>${_((d = r.status) == null ? void 0 : d.paymentStatus)}</td><td>${_((u = r.status) == null ? void 0 : u.fulfillmentStatus)}</td>`}<td>${this.date(r.createDate)}</td><td>${this.date(r.paidDate)}</td><td>${n(r.formattedTotal)}</td></tr>`;
     }).join("") || `<tr><td colspan="${this.classic ? 5 : 7}">No orders.</td></tr>`}</tbody></table></div><div class="customer-pagination"><button data-detail-page="${t.page - 1}" ${t.page <= 1 ? "disabled" : ""}>Previous</button><span>${t.page} / ${Math.max(1, t.totalPages)}</span><button data-detail-page="${t.page + 1}" ${t.page >= t.totalPages ? "disabled" : ""}>Next</button></div></div>
       <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${n(t.snapshot.orderNumber)} · ${this.date(t.snapshot.date)}. Historical details, not a current customer profile.</p>${t.snapshot.unavailable ? "<p>Saved details could not be read.</p>" : ""}<dl>${Object.entries(t.snapshot.fields).map(([r, i]) => `<dt>${n(r)}</dt><dd>${n(i)}</dd>`).join("") || "<dd>No additional details recorded.</dd>"}</dl></aside></div></section></div>`;
   }
   bind() {
     var e, r, i, d, u, g, h, b, k, c;
-    this.classic || K(this, () => {
+    this.classic || Q(this, () => {
       this.page = 1, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...l.filters } })), this.load();
     }), this.querySelectorAll("[data-filter]").forEach((s) => s.addEventListener("change", () => {
       const p = s.dataset.filter;
@@ -999,8 +1003,8 @@ class re extends te(HTMLElement) {
     });
   }
 }
-customElements.define("ekom-customers-section-view", re);
+customElements.define("ekom-customers-section-view", ae);
 export {
-  re as EkomCustomersSectionViewElement,
-  re as default
+  ae as EkomCustomersSectionViewElement,
+  ae as default
 };

@@ -1,7 +1,7 @@
 import { renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { EkomManagerApi, renderSectionLoading, renderLoadingLine, renderLoadingPanel, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
+import { EkomManagerApi, renderSectionLoading, renderLoadingLine, renderDrawerLoading, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
 
 type Spend = { currency: string; total: number; averageOrder: number; averageLifetime: number };
 type Customer = { identity: string; name?: string; email?: string; username?: string; shippingCountry?: string; firstOrder: string; lastOrder: string; lastStatus?: string; orders: number; daysSinceLastOrder: number; averageReorderDays?: number; spend: Spend[] };
@@ -231,7 +231,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
     const row = this.result?.customers.find(customer => customer.identity === identity);
     const name = row?.name || row?.email || row?.username || identity;
     return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" aria-busy="true" class="customer-dialog"><header class="customer-heading">${this.avatar(name)}<div><h2>${esc(name)}</h2>${renderLoadingLine('Loading customer…')}</div><button data-close aria-label="Close customer details">${this.classic ? 'Close' : '×'}</button></header>
-      <div class="ekom-loading customer-opening"><div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(6,minmax(0,1fr))">${renderLoadingPanel(1).repeat(6)}</div>${renderLoadingPanel(5)}${renderLoadingPanel(3)}</div></section></div>`;
+      <div class="customer-opening">${renderDrawerLoading()}</div></section></div>`;
   }
 
   private renderDetail(d: Detail): string {
