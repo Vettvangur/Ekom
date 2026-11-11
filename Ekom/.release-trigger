@@ -1,1 +1,1 @@
-trigger 2026-11-08 - release Customers manager section from PR #1112
+trigger 2026-11-11 - prepare 1.0.1 because NuGet 1.0.0 is occupied by older unlisted packages; validate source commits before upload

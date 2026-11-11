@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **release:** prepare 1.0.1 for the new manager and status migration because NuGet 1.0.0 is occupied by older unlisted packages. Validate package source commits before publishing and reject conflicting versions.
+
 * **manager:** show the installed Ekom version when hovering over the Ekom logo.
 
 * **manager:** preserve review drafts and cursor position during background refreshes; report a conflict when a note targets an alert that another user has already resolved.

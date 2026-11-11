@@ -65,3 +65,13 @@ Merging a release-please release PR creates component tags. Tag-triggered publis
 Do not manually edit manifest versions, create release tags, or publish artifacts outside these workflows unless the maintainers explicitly request it. Before a release, inspect the generated changelog, ensure package lock files are current, and verify every changed target that is not covered by the selected solution.
 
 See [Contributor setup](setup.md) for environment requirements.
+
+## 1.0.1 recovery and package collision checks
+
+NuGet version 1.0.0 is already occupied by unlisted Ekom packages built from commit `b418047bb29fd7d220c2b7158e2f3a3756a5dab7`, not the new manager release. The 1.0.0 GitHub release exists, but its publishing run skipped those older packages. Do not install that package version expecting the new manager. The next release is 1.0.1; all nine package IDs were checked as absent on 2026-11-11. Availability is not a reservation and is checked again by publishing.
+
+The corrective PR leaves the manifest/build version at 1.0.0. Its `fix:` change under `Ekom/` causes release-please to prepare the next patch release, 1.0.1. Review that generated release PR and merge it only when ready to publish. Do not retag or overwrite 1.0.0.
+
+Before obtaining NuGet credentials or uploading any package, `verify-ekom-packages.py` validates all nine local package IDs, versions and full repository commit SHAs against the tag checkout. It checks the NuGet flat-container endpoint, including unlisted versions. Existing packages are skipped only when their source commit matches; missing or different source metadata fails the entire preflight. Only HTTP 404 means absent; other HTTP/network failures stop the release. Uploads do not use `--skip-duplicate`, so a collision after preflight also fails instead of silently succeeding. A retry revalidates packages already uploaded from the same source commit.
+
+Run the guard tests with `python -m unittest discover -s .github/scripts -p 'test_*.py' -v`. PR validation runs them on Linux and Windows. The guard compares source provenance, not byte-for-byte reproducibility. This change covers the Ekom package group; the independently versioned printer/plugin publishers have separate workflows.

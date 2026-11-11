@@ -1,0 +1,23 @@
+name: validate-ekom-publishing
+on:
+  pull_request:
+    branches: [Ekom, release/0.2]
+    paths:
+      - '.github/scripts/**'
+      - '.github/workflows/publish-ekom.yml'
+      - '.github/workflows/validate-ekom-publishing.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Test package collision guard
+        run: python -m unittest discover -s .github/scripts -p 'test_*.py' -v

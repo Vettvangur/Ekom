@@ -160,6 +160,22 @@ jobs:
 
           Get-ChildItem -Path artifacts -Filter *.nupkg -File | Format-Table Name,Length
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Validate package source commits before any upload
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:RELEASE_TAG -replace '^Ekom-v', ''
+          $commit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Could not resolve source commit.' }
+          python .github/scripts/verify-ekom-packages.py --directory artifacts --version $version --commit $commit --output artifacts/publish-plan.json
+          if ($LASTEXITCODE -ne 0) { throw 'Package source validation failed. No packages were uploaded.' }
+
       - name: NuGet Login (OIDC)
         id: login
         uses: NuGet/login@v1
@@ -171,15 +187,16 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          $pkgs = Get-ChildItem -Path "artifacts" -Filter "*.nupkg" -File
-          if (-not $pkgs) { throw "No .nupkg files found under artifacts/." }
-
-          foreach ($p in $pkgs) {
-            Write-Host "Pushing $($p.Name)"
-            dotnet nuget push "$($p.FullName)" `
+          $plan = Get-Content artifacts/publish-plan.json -Raw | ConvertFrom-Json
+          foreach ($package in $plan) {
+            if ($package.alreadyPublished) {
+              Write-Host "Already published from this source commit: $($package.path)"
+              continue
+            }
+            Write-Host "Pushing $($package.path)"
+            dotnet nuget push "$($package.path)" `
               --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" `
-              --source "https://api.nuget.org/v3/index.json" `
-              --skip-duplicate
+              --source "https://api.nuget.org/v3/index.json"
 
-            if ($LASTEXITCODE -ne 0) { throw "dotnet nuget push failed for $($p.Name)" }
+            if ($LASTEXITCODE -ne 0) { throw "dotnet nuget push failed for $($package.path). A concurrent duplicate is not silently accepted; rerun the validated workflow." }
           }
