@@ -201,3 +201,46 @@ test('loading placeholders follow the manager design and announce only the statu
   assert.match(exports.managerStyles, /@keyframes ekom-shim/);
   assert.match(exports.managerStyles, /prefers-reduced-motion: reduce\) \{ \.ekom-skeleton, \.ekom-loading-spinner \{ animation: none; \}/);
 });
+
+test('dates follow the culture configured on the selected store, not the browser', () => {
+  const icelandic = { culture: 'is-IS', shortDate: 'd.M.yyyy', shortTime: 'HH:mm', monthDay: 'd. MMMM', yearMonth: 'MMMM yyyy', dateSeparator: '.', timeSeparator: ':', amDesignator: 'f.h.', pmDesignator: 'e.h.',
+    monthNames: ['janúar', 'febrúar', 'mars', 'apríl', 'maí', 'júní', 'júlí', 'ágúst', 'september', 'október', 'nóvember', 'desember'],
+    abbreviatedMonthNames: ['jan.', 'feb.', 'mar.', 'apr.', 'maí', 'jún.', 'júl.', 'ágú.', 'sep.', 'okt.', 'nóv.', 'des.'],
+    shortestDayNames: ['su', 'má', 'þr', 'mi', 'fi', 'fö', 'la'] };
+  const american = { ...icelandic, culture: 'en-US', shortDate: 'M/d/yyyy', shortTime: 'h:mm tt', monthDay: 'MMMM d', dateSeparator: '/', amDesignator: 'AM', pmDesignator: 'PM',
+    monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    abbreviatedMonthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] };
+  const state = exports.managerState;
+  const previous = { stores: state.stores, store: state.filters.store };
+  try {
+    state.stores = [{ alias: 'is', title: 'IS', dateFormat: icelandic }, { alias: 'us', title: 'US', dateFormat: american }, { alias: 'plain', title: 'Plain' }];
+    const moment = new Date(2026, 10, 5, 14, 7, 9);
+
+    state.filters.store = 'is';
+    assert.equal(exports.formatDate(moment), '5.11.2026 14:07');
+    assert.equal(exports.formatDay('2026-11-05'), '5.11.2026');
+    assert.equal(exports.formatDay('2026-01-01'), '1.1.2026', 'a plain day is never shifted by the time zone');
+    assert.equal(exports.formatDayPart('2026-11-05', 'monthDay'), '5. nóv.');
+    assert.equal(exports.formatDayPart('2026-11-05', 'yearMonth', false), 'nóvember 2026');
+    assert.equal(exports.formatDayPart('2026-11-05', 'month'), 'nóv.');
+    Object.assign(state.filters, { dateFrom: '2020-02-03', dateTo: '2020-02-09' });
+    assert.equal(exports.dateRangeLabel(), '3.2.2020 – 9.2.2020');
+
+    state.filters.store = 'us';
+    assert.equal(exports.formatDate(moment), '11/5/2026 2:07 PM');
+    assert.equal(exports.formatDate(new Date(2026, 0, 2, 0, 5)), '1/2/2026 12:05 AM');
+    assert.equal(exports.formatDayPart('2026-11-05', 'monthDay'), 'Nov 5');
+
+    assert.equal(exports.formatDatePattern({ year: 2026, month: 3, day: 9, hour: 7, minute: 4, second: 2 }, "dd/MM/yy 'kl.' HH:mm:ss \\d", { ...icelandic, dateSeparator: '-' }), '09-03-26 kl. 07:04:02 d');
+
+    // Without a store format the browser's own formatting is kept.
+    state.filters.store = 'plain';
+    assert.equal(exports.storeDateFormat(), undefined);
+    assert.equal(exports.dateRangeLabel(), '2020-02-03 – 2020-02-09');
+    assert.equal(exports.formatDate(''), '');
+    assert.equal(exports.formatDate('not a date'), 'not a date');
+  } finally {
+    state.stores = previous.stores;
+    state.filters.store = previous.store;
+  }
+});

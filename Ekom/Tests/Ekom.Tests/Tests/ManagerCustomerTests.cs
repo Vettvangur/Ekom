@@ -319,6 +319,50 @@ public sealed class ManagerCustomerTests
         Assert.DoesNotContain("never expose", string.Join(" ", snapshot.Fields.Values));
     }
 
+    [Fact]
+    public async Task EverySortPagesTheSameSelectedCustomersWithTheirLatestDetails()
+    {
+        using var f = new Fixture();
+        var day = new DateTime(2026, 1, 5);
+        f.Add("a@example.com", day, 10m, name: "Zed");
+        f.Add("a@example.com", day.AddDays(9), 10m, name: "");
+        f.Add("b@example.com", day.AddDays(1), 40m, name: "Anna");
+        f.Add("c@example.com", day.AddDays(2), 5m, name: "Old Mia");
+        f.Add("c@example.com", day.AddDays(3), 5m, name: "Mia");
+        f.Add("c@example.com", day.AddDays(4), 5m, name: "Mia");
+        f.Add("outside@example.com", day.AddYears(-1), 99m, name: "Outside");
+
+        async Task<string[]> Order(string sort, int page = 1, int pageSize = 20)
+            => (await f.Repository.SearchAsync("main", day, day.AddDays(30), "CompletedOrders", "", "all", sort, page, pageSize)).Customers.Select(x => x.Identity).ToArray();
+
+        Assert.Equal(new[] { "C@EXAMPLE.COM", "B@EXAMPLE.COM", "A@EXAMPLE.COM" }, await Order("newest"));
+        Assert.Equal(new[] { "A@EXAMPLE.COM", "B@EXAMPLE.COM", "C@EXAMPLE.COM" }, await Order("oldest"));
+        Assert.Equal(new[] { "A@EXAMPLE.COM", "C@EXAMPLE.COM", "B@EXAMPLE.COM" }, await Order("lastOrder"));
+        Assert.Equal(new[] { "C@EXAMPLE.COM", "A@EXAMPLE.COM", "B@EXAMPLE.COM" }, await Order("orders"));
+        Assert.Equal(new[] { "B@EXAMPLE.COM", "C@EXAMPLE.COM", "A@EXAMPLE.COM" }, await Order("name"));
+        Assert.Equal(new[] { "B@EXAMPLE.COM", "C@EXAMPLE.COM" }, await Order("name", 1, 2));
+        Assert.Equal(new[] { "A@EXAMPLE.COM" }, await Order("name", 2, 2));
+        Assert.Empty(await Order("name", 3, 2));
+
+        var result = await f.Repository.SearchAsync("main", day, day.AddDays(30), "CompletedOrders", "", "all", "name", 1, 2);
+        Assert.Equal(3, result.Totals.Customers);
+        Assert.Equal(2, result.Totals.Returning);
+        Assert.Equal(6, result.Totals.Orders);
+        Assert.Equal(2, result.TotalPages);
+        Assert.Equal(75m, Assert.Single(result.Spend).Total);
+        var mia = result.Customers[1];
+        Assert.Equal("Mia", mia.Name);
+        Assert.Equal("c@example.com", mia.Email);
+        Assert.Equal(3, mia.Orders);
+        Assert.Equal(day.AddDays(2), mia.FirstOrder);
+        Assert.Equal(day.AddDays(4), mia.LastOrder);
+        Assert.Equal(15m, Assert.Single(mia.Spend).Total);
+        // A blank name on the latest order falls back to the most recent order that has one.
+        var zed = Assert.Single((await f.Repository.SearchAsync("main", day, day.AddDays(30), "CompletedOrders", "zed", "returning", "newest", 1, 20)).Customers);
+        Assert.Equal("Zed", zed.Name);
+        Assert.Equal(20m, Assert.Single(zed.Spend).Total);
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly string path = Path.Combine(Path.GetTempPath(), $"ekom-customers-{Guid.NewGuid():N}.sqlite");

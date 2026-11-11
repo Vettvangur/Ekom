@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+* **manager:** show an "Esc close" hint beside the close button of the order and customer drawers.
+
+* **manager:** link the customer on an order to their record: the name and an "Open customer" link in the order drawer open that customer in Customers.
+
+* **manager:** format dates in Orders, Analytics, Customers, Printing and the date range picker as the culture configured on the selected store writes them, instead of the browser's locale. The patterns and month and day names come from the server because browsers lack some cultures.
+
+* **manager:** restore details from the previous order view in the order drawer: shipping custom fields, VAT per order line, the variant SKU and the gift-card eligible total. Remove the copy button next to Paid date.
+
+* **manager:** make the Customers list fast on large stores: the matching customers are worked out once per search, and names, contact details and spend are looked up only for the customers on the page instead of for every customer in the store.
+
+* **manager:** open the customer drawer on a loader, like the order drawer.
+
+* **manager:** show a dash in the order Payment summary when there is no discount code, and no minus sign on a zero discount.
+
 * **manager:** open the order drawer on a loader and show the order once everything in it has loaded, instead of flashing gift-card recovery, checkout lock and action states as each request returns.
 
 * **manager:** fix the Orders view counts failing on SQL Server ("Cannot perform an aggregate function on an expression containing an aggregate or a subquery"), which left the view tabs without counts in 1.0.2.

@@ -1,7 +1,7 @@
 import { renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { renderSectionLoading, renderRowsLoading, storeCurrency, ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
+import { formatDay, formatDayPart, storeDateFormat, renderSectionLoading, renderRowsLoading, storeCurrency, ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
 import { AnalyticsBucket, AnalyticsMetric, analyticsSummary, groupAnalytics, percentageChange, matchingPreset, presetRange, previousPeriod } from './analytics-data';
 
 export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement) {
@@ -220,7 +220,10 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   private label(metric: AnalyticsMetric): string { return metric === 'orders' ? 'Orders' : metric === 'average' ? 'Average order value' : 'Order amount'; }
   private value(value: number | null | undefined, metric = this.metric): string { return metric === 'orders' ? (value == null ? '—' : value.toLocaleString()) : this.amount(value); }
   private previousValue(bucket: AnalyticsBucket): number | null | undefined { return this.metric === 'orders' ? bucket.previousOrders : this.metric === 'average' ? bucket.previousAverage : bucket.previousAmount; }
-  private range(start?: string, end?: string): string { return start === end ? start || '' : `${start || ''} – ${end || ''}`; }
+  private range(start?: string, end?: string): string {
+    const day = (value?: string): string => value && storeDateFormat() ? formatDay(value.slice(0, 10)) : value || '';
+    return start === end ? day(start) : `${day(start)} – ${day(end)}`;
+  }
 
   private render(): void {
     const f = managerState.filters;
@@ -283,6 +286,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
 
   private displayRange(start?: string, end?: string): string {
     if (!start || !end) return '';
+    if (storeDateFormat()) return `${formatDay(start.slice(0, 10))} – ${formatDay(end.slice(0, 10))}`;
     const format = new Intl.DateTimeFormat('en-GB', { day:'numeric', month:'short', year:'numeric', timeZone:'UTC' });
     return format.formatRange(new Date(`${start.slice(0,10)}T00:00:00Z`), new Date(`${end.slice(0,10)}T00:00:00Z`));
   }
@@ -375,7 +379,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     renderLineChart(canvas, { labels: [], points: buckets.map(b => ({ x: this.range(b.start,b.end), y: b[this.metric] })) }, getComputedStyle(canvas).getPropertyValue('--ekom-accent').trim() || '#10694a', {
       templateStyle: !this.hasAttribute('classic'),
       formatAxisValue: value => value.toLocaleString(undefined, { notation:'compact', maximumFractionDigits:1 }).replace('K','k'),
-      formatLabel: index => new Date(`${buckets[index].start}T00:00:00Z`).toLocaleDateString('en-GB', { timeZone:'UTC', month:'short', ...(this.grouping === 'month' ? {} : { day:'numeric' }) }),
+      formatLabel: index => formatDayPart(String(buckets[index].start).slice(0, 10), this.grouping === 'month' ? 'month' : 'monthDay'),
       currency: this.metric === 'orders' ? undefined : currency, integer: this.metric === 'orders', comparison,
       formatValue: value => this.value(value), columnHover: true, onSelect: index => this.openOrders(index),
     });

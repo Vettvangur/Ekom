@@ -1,4 +1,4 @@
-import { EkomManagerApi, managerState, ensureManagerCurrency, bindDateRange, renderManagerContent } from './manager-shared';
+import { EkomManagerApi, formatDate, storeDateFormat, managerState, ensureManagerCurrency, bindDateRange, renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { renderManagerHeader } from './manager-shared';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
@@ -13,7 +13,11 @@ type History = { actions: { action: string; actor: string; createdUtc: string; n
 
 const root = '/ekom/printer/manager';
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!));
-const date = (value?: string): string => value ? new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(value) ? value : value + 'Z').toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Never';
+const date = (value?: string): string => {
+  if (!value) return 'Never';
+  const moment = new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(value) ? value : value + 'Z');
+  return storeDateFormat() ? formatDate(moment) : moment.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
 export const stateLabel = (state: string): string => ({ PendingRender: 'Generating slip', Ready: 'Queued', Claimed: 'With agent',
   ConfirmedPrinted: 'Confirmed printed', Submitted: 'Submitted to printer', NeedsReview: 'Needs review', Cancelled: 'Cancelled', RenderFailed: 'Generation failed' }[state] ?? state);
 

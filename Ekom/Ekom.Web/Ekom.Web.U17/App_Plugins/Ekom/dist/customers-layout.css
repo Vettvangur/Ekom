@@ -125,3 +125,8 @@ ekom-customers-section-view:not([classic]) {
  .customer-panel > .customer-table-wrap .customer-table td:nth-child(5) { font-size:14px; line-height:1; }
  .customer-pagination { padding:12px 20px; font-size:13px; line-height:1; }
 }
+
+ekom-customers-section-view:not([classic]) {
+ .customer-heading > .ekom-drawer-close { flex:none; margin-left:auto; }
+ .customer-heading .ekom-drawer-close > button { border:0; background:transparent; font-size:20px; padding:4px; min-height:0; }
+}

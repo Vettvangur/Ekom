@@ -528,7 +528,7 @@ ekom-orders-section-view:not([classic]) {
  .ekom-payment-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; align-items:start; margin-top:14px; }
  .ekom-payment-detail-box { border:1px solid var(--ekom-border); border-radius:10px; padding:16px; min-width:0; }
  .ekom-payment-detail-box header { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
- .ekom-payment-detail-box header h4 { margin:0; font-size:15px; font-weight:700; text-transform:none; letter-spacing:normal; overflow-wrap:anywhere; }
+ .ekom-payment-detail-box header h4 { margin:0; color:var(--ekom-text); font-size:15px; font-weight:700; text-transform:none; letter-spacing:normal; overflow-wrap:anywhere; }
  .ekom-payment-kind { font:700 11px/1.3 'Ekom Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--ekom-muted); display:inline-flex; align-items:center; gap:8px; }
  .ekom-payment-kind::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--ekom-accent); }
  .ekom-payment-kind-gift::before { background:#d59c12; }
@@ -576,3 +576,15 @@ ekom-orders-section-view:not([classic]) {
 
 /* Order views use text emphasis and an underline, without a filled button hover. */
 ekom-orders-section-view:not([classic]) .ekom-order-views button:hover { background:transparent; color:var(--ekom-text); box-shadow:none; }
+
+/* The customer on an order links to their record in Customers. */
+ekom-orders-section-view:not([classic]) {
+ .ekom-customer-sidebar button.ekom-customer-open { border:0; background:none; padding:0; min-height:0; color:var(--ekom-accent); font:inherit; font-size:13px; font-weight:700; text-align:left; cursor:pointer; }
+ .ekom-customer-sidebar button.ekom-customer-open:hover { text-decoration:underline; }
+ .ekom-customer-sidebar button.ekom-customer-name { display:block; font-size:15px; margin-top:4px; }
+}
+
+/* The drawer close button sits in a group with its Esc hint; keep it borderless there. */
+ekom-orders-section-view:not([classic]) {
+ .ekom-panel-heading .ekom-drawer-close > button { border:0; background:none; font-size:26px; padding:4px; min-height:0; }
+}

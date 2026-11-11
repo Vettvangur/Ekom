@@ -1,7 +1,7 @@
 import { renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { EkomManagerApi, renderSectionLoading, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
+import { EkomManagerApi, formatDay, renderSectionLoading, renderLoadingLine, renderDrawerLoading, renderDrawerClose, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
 
 type Spend = { currency: string; total: number; averageOrder: number; averageLifetime: number };
 type Customer = { identity: string; name?: string; email?: string; username?: string; shippingCountry?: string; firstOrder: string; lastOrder: string; lastStatus?: string; orders: number; daysSinceLastOrder: number; averageReorderDays?: number; spend: Spend[] };
@@ -20,11 +20,12 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
   private error = '';
   private request = 0;
   private detailRequest = 0;
+  private detailOpening?: string;
   private other = false;
   private classic = false;
   private opener?: string;
   private readonly dismissOnEscape = (event: KeyboardEvent): void => {
-    if (!this.detail || event.key !== 'Escape') return;
+    if ((!this.detail && !this.detailOpening) || event.key !== 'Escape') return;
     event.preventDefault();
     event.stopPropagation();
     this.close();
@@ -65,6 +66,11 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       if (!managerState.stores.some(x => x.alias === managerState.filters.store)) managerState.filters.store = managerState.stores[0]?.alias || '';
       if (!this.classic) ensureManagerCurrency();
       await this.load();
+      // An order's "Open customer" link lands here with the customer to show.
+      const pending = managerState.pendingCustomer;
+      managerState.pendingCustomer = undefined;
+      const identity = (this.result?.identityField === 'CustomerUsername' ? pending?.username : pending?.email)?.trim();
+      if (identity) await this.open(identity);
     } catch {
       this.error = 'Unable to load customers. Please try again.';
       this.busy = false;
@@ -106,19 +112,23 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
     const request = ++this.detailRequest;
     this.opener = identity;
     this.error = '';
+    // Open the drawer on a loader. Paging inside an open drawer keeps what is on screen.
+    if (!this.detail) { this.detailOpening = identity; this.render(); this.querySelector<HTMLButtonElement>('[data-close]')?.focus(); }
     try {
       const detail = await this.get<Detail>('/detail', new URLSearchParams({ store: managerState.filters.store, currency: managerState.filters.currency || '', identity, orderStatus: managerState.filters.orderStatus, page: String(page), other: String(this.other) }));
       if (request !== this.detailRequest || !this.isConnected) return;
       this.detail = detail;
+      this.detailOpening = undefined;
       this.render();
       this.querySelector<HTMLButtonElement>('[data-close]')?.focus();
     } catch (error) {
-      if (request === this.detailRequest) { this.error = String(error); this.render(); }
+      if (request === this.detailRequest) { this.detailOpening = undefined; this.error = String(error); this.render(); }
     }
   }
 
   private close(): void {
     this.detailRequest++;
+    this.detailOpening = undefined;
     this.detail = undefined;
     this.render();
     Array.from(this.querySelectorAll<HTMLButtonElement>('[data-customer]')).find(x => x.dataset.customer === this.opener)?.focus();
@@ -149,7 +159,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
   }
 
   private number(value?: number | null): string { return value == null ? '—' : esc(value.toLocaleString(undefined, { maximumFractionDigits: 1 })); }
-  private date(value?: string): string { return value ? esc(new Date(value).toLocaleDateString()) : '—'; }
+  private date(value?: string): string { return value ? esc(formatDay(new Date(value))) : '—'; }
   private avatar(name: string): string {
     const initials = name.trim().split(/\s+/).slice(0,2).map(part => Array.from(part)[0] || '').join('').toUpperCase();
     return this.classic ? '' : `<span class="customer-avatar" aria-hidden="true">${esc(initials)}</span>`;
@@ -192,7 +202,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       .customer-snapshot dt { color:#70778a;font-size:12px;margin-top:15px }
       .customer-snapshot dd { margin:4px 0;overflow-wrap:anywhere }
       @media(max-width:800px) { .customer-detail-grid { grid-template-columns:1fr } .customers { padding:12px } }
-    ` : ''}</style>${this.classic ? '' : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/customers-layout.css?v=20261111-background">'}<section class="customers ekom-design" aria-busy="${this.busy}">
+    ` : ''}</style>${this.classic ? '' : '<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/customers-layout.css?v=20261111-esc-close">'}<section class="customers ekom-design" aria-busy="${this.busy}">
       ${this.classic ? '' : renderManagerHeader('customers', 'data-filter')}
       <div class="customer-toolbar ekom-shared-filters">
         ${this.classic ? `<label>Store<select data-filter="store">${managerState.stores.map(store => `<option value="${esc(store.alias)}" ${store.alias === f.store ? 'selected' : ''}>${esc(store.title)}</option>`).join('')}</select></label>` : ''}
@@ -217,13 +227,21 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       </div><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Customer</th><th>First order</th><th>Orders</th><th>Lifetime spend</th><th>Average order</th><th>Last order</th><th>Days since last order</th></tr></thead><tbody>
       ${(r?.customers || []).map(c => `<tr><td><div class="customer-identity">${this.avatar(c.name || c.email || c.username || c.identity)}<button data-customer="${esc(c.identity)}">${esc(c.name || c.email || c.username || c.identity)}<span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span><span class="customer-muted">${esc(c.email || c.username || c.identity)}</span></button></div></td><td>${this.date(c.firstOrder)}</td><td>${c.orders}</td><td>${this.amount(c.spend,'total')}</td><td>${this.amount(c.spend,'averageOrder')}</td><td>${this.date(c.lastOrder)}${this.classic ? `<span class="customer-muted">${esc(c.lastStatus || '')}</span>` : ''}</td><td>${c.daysSinceLastOrder}</td></tr>`).join('') || `<tr><td colspan="7">${r ? 'No customers found.' : this.error ? 'Customer results could not be loaded.' : 'Select a store to see customers.'}</td></tr>`}
       </tbody></table></div><div class="customer-pagination"><button data-page="${this.page-1}" ${this.page <= 1 || this.busy ? 'disabled' : ''}>Previous</button><span>Page ${this.page} of ${Math.max(1,r?.totalPages || 0)}</span><button data-page="${this.page+1}" ${this.page >= (r?.totalPages || 0) || this.busy ? 'disabled' : ''}>Next</button></div></div>
-      ${this.detail ? this.renderDetail(this.detail) : ''}</section>`);
+      ${this.detail ? this.renderDetail(this.detail) : this.detailOpening ? this.renderDetailOpening(this.detailOpening) : ''}</section>`);
     this.bind();
+  }
+
+  /** The customer drawer while the customer is still being fetched. */
+  private renderDetailOpening(identity: string): string {
+    const row = this.result?.customers.find(customer => customer.identity === identity);
+    const name = row?.name || row?.email || row?.username || identity;
+    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" aria-busy="true" class="customer-dialog"><header class="customer-heading">${this.avatar(name)}<div><h2>${esc(name)}</h2>${renderLoadingLine('Loading customer…')}</div>${this.classic ? '<button data-close aria-label="Close customer details">Close</button>' : renderDrawerClose('<button data-close aria-label="Close customer details">×</button>')}</header>
+      <div class="customer-opening">${renderDrawerLoading()}</div></section></div>`;
   }
 
   private renderDetail(d: Detail): string {
     const c = d.customer;
-    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" class="customer-dialog"><header class="customer-heading">${this.avatar(c.name || c.identity)}<div><h2>${esc(c.name || c.identity)} <span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span></h2><p>${esc([c.email,c.username].filter(Boolean).join(' · '))}</p></div><button data-close aria-label="Close customer details">${this.classic ? 'Close' : '×'}</button></header>
+    return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" class="customer-dialog"><header class="customer-heading">${this.avatar(c.name || c.identity)}<div><h2>${esc(c.name || c.identity)} <span class="customer-badge">${c.orders > 1 ? 'Returning' : 'New'}</span></h2><p>${esc([c.email,c.username].filter(Boolean).join(' · '))}</p></div>${this.classic ? '<button data-close aria-label="Close customer details">Close</button>' : renderDrawerClose('<button data-close aria-label="Close customer details">×</button>')}</header>
       <div class="customer-cards">${this.card('Lifetime spend',this.amount(c.spend,'total'))}${this.card('Orders',String(c.orders))}${this.card('Average order',this.amount(c.spend,'averageOrder'))}${this.card('First order',this.date(c.firstOrder))}${this.card('Days since last order',String(c.daysSinceLastOrder))}${this.card('Average reorder interval (days)',this.number(c.averageReorderDays))}</div>
       <div class="customer-detail-grid"><div><h3>Orders <small>(${d.count})</small></h3><label><input type="checkbox" data-other ${this.other ? 'checked' : ''}> Show other orders (excluded from lifetime metrics)</label><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Order</th>${this.classic ? '<th>Status</th>' : '<th>Order status</th><th>Payment</th><th>Fulfillment</th>'}<th>Created</th><th>Paid</th><th>Total</th></tr></thead><tbody>${d.orders.map(o => `<tr><td><button data-order="${esc(o.uniqueId)}">#${esc(o.orderNumber || String(o.referenceId))}</button></td>${this.classic ? `<td>${esc(o.orderStatusCol)}</td>` : `<td>${renderStatusBadge(o.status?.orderStatus)}</td><td>${renderStatusBadge(o.status?.paymentStatus)}</td><td>${renderStatusBadge(o.status?.fulfillmentStatus)}</td>`}<td>${this.date(o.createDate)}</td><td>${this.date(o.paidDate)}</td><td>${esc(o.formattedTotal)}</td></tr>`).join('') || `<tr><td colspan="${this.classic ? 5 : 7}">No orders.</td></tr>`}</tbody></table></div><div class="customer-pagination"><button data-detail-page="${d.page-1}" ${d.page <= 1 ? 'disabled' : ''}>Previous</button><span>${d.page} / ${Math.max(1,d.totalPages)}</span><button data-detail-page="${d.page+1}" ${d.page >= d.totalPages ? 'disabled' : ''}>Next</button></div></div>
       <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${esc(d.snapshot.orderNumber)} · ${this.date(d.snapshot.date)}. Historical details, not a current customer profile.</p>${d.snapshot.unavailable ? '<p>Saved details could not be read.</p>' : ''}<dl>${Object.entries(d.snapshot.fields).map(([k,v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('') || '<dd>No additional details recorded.</dd>'}</dl></aside></div></section></div>`;
