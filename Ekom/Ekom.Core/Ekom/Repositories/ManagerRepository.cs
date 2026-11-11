@@ -196,16 +196,19 @@ public class ManagerRepository
 
             string date = DatePredicate(view);
             dates.Add(date);
-            columns.Add($"SUM(CASE WHEN {date}{status} THEN 1 ELSE 0 END) AS C{keys.Count}");
+            columns.Add($"CASE WHEN {date}{status} THEN 1 ELSE 0 END AS C{keys.Count}");
             keys.Add(view);
         }
 
         if (keys.Count == 0) return Array.Empty<OrderViewCount>();
 
-        var sql = new StringBuilder("SELECT ").Append(string.Join(", ", columns))
+        // SQL Server cannot aggregate an expression that contains a subquery (the review check),
+        // so each row is flagged per view in an inner query and the flags are summed outside it.
+        var sql = new StringBuilder("SELECT ").Append(string.Join(", ", keys.Select((_, index) => $"SUM(C{index}) AS C{index}")))
+            .Append(" FROM (SELECT ").Append(string.Join(", ", columns))
             .Append(" FROM EkomOrders WHERE (").Append(string.Join(" OR ", dates.Select(date => $"({date})"))).Append(')');
         AppendSharedFilters(sql, query, store, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, couponCode, shippingProvider, giftcardCode);
-        sql.Append(ManagerCurrencyScope.Predicate(currency));
+        sql.Append(ManagerCurrencyScope.Predicate(currency)).Append(") ViewFlags");
 
         var param = new
         {
