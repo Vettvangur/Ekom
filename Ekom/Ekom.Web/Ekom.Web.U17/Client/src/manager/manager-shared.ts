@@ -1,4 +1,5 @@
 export type ManagerConfig = {
+  ekomVersion?: string;
   managerOrderStatusFireEventsByDefault?: boolean | null;
 };
 
@@ -1298,6 +1299,23 @@ export function renderStatusFilters(): string {
   }).join('');
 }
 
+let managerVersionRequest: Promise<string | undefined> | undefined;
+
+/** Load the installed server version once, without re-rendering the active screen. */
+function bindManagerVersion(root: HTMLElement | ShadowRoot): void {
+  const logo = root.querySelector<HTMLImageElement>('.ekom-design-logo');
+  if (!logo) return;
+  managerVersionRequest ??= new EkomManagerApi().config()
+    .then(config => config.ekomVersion)
+    .catch(() => undefined);
+  void managerVersionRequest.then(version => {
+    if (version) {
+      logo.title = `Ekom ${version}`;
+      logo.alt = `Ekom ${version}`;
+    }
+  });
+}
+
 /** Keep loaded styles connected so refreshing content cannot flash unstyled markup. */
 export function renderManagerContent(root: HTMLElement | ShadowRoot, html: string): void {
   const template = root.ownerDocument.createElement('template');
@@ -1315,4 +1333,5 @@ export function renderManagerContent(root: HTMLElement | ShadowRoot, html: strin
     if (node.nodeType !== 1 || !(node as Element).matches('style, link[rel="stylesheet"]')) node.remove();
   }
   root.appendChild(template.content);
+  bindManagerVersion(root);
 }

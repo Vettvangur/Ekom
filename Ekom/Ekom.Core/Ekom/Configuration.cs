@@ -18,6 +18,13 @@ public class Configuration
         _configuration = configuration;
     }
 
+    /// <summary>The installed Ekom package version, without source-control metadata.</summary>
+    public string EkomVersion => typeof(Configuration).Assembly
+        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+        .FirstOrDefault()?.InformationalVersion.Split('+')[0]
+        ?? typeof(Configuration).Assembly.GetName().Version?.ToString() ?? string.Empty;
+
     public static IServiceProvider Resolver { get; set; }
 
     /// <summary>

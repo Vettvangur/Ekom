@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **manager:** show the installed Ekom version when hovering over the Ekom logo.
+
 * **manager:** preserve review drafts and cursor position during background refreshes; report a conflict when a note targets an alert that another user has already resolved.
 
 * **manager:** display order-review badges, filtered orders and review dialogs with activity notes and resolution in Umbraco 17 and 18.
