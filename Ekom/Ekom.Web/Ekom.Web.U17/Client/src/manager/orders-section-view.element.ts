@@ -165,6 +165,16 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       if (button && !button.disabled) { event.preventDefault(); button.click(); }
       return;
     }
+    if ((event.key === 'ArrowLeft' || event.key === 'ArrowRight') && !this.overlay) {
+      const target = event.composedPath()[0] as HTMLElement | undefined;
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || this.loading ||
+          target?.closest?.('input, select, textarea, [contenteditable], [role="tablist"], details') ||
+          this.querySelector('details[open]')) return;
+      const direction = event.key === 'ArrowLeft' ? 'Previous page' : 'Next page';
+      const button = this.querySelector<HTMLButtonElement>(`.ekom-list-footer button[aria-label="${direction}"]`);
+      if (button && !button.disabled) { event.preventDefault(); button.click(); }
+      return;
+    }
     if (event.key === 'Tab' && this.overlay) {
       const dialogs = this.querySelectorAll<HTMLElement>('.ekmCustomerInformationModal__panel, .ekmOverlay__panel');
       const dialog = dialogs.item(dialogs.length - 1);
