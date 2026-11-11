@@ -156,15 +156,17 @@ test('customer list shows loading until a slow request completes, and distinguis
   view.get = () => new Promise(r => { resolve = r; });
   const request = view.load();
   assert.match(view.innerHTML, /role="status"/);
-  assert.match(view.innerHTML, /Loading customers/);
+  assert.match(view.innerHTML, /Loading Customers for /);
+  assert.equal((view.innerHTML.match(/class="ekom-loading-card"/g) || []).length, 5);
+  assert.match(view.innerHTML, /class="customer-panel" hidden/);
   assert.doesNotMatch(view.innerHTML, /No customers found/);
   resolve(emptyResult);
   await request;
-  assert.doesNotMatch(view.innerHTML, /Loading customers/);
+  assert.doesNotMatch(view.innerHTML, /Loading Customers|class="ekom-loading"|class="customer-panel" hidden/);
   assert.match(view.innerHTML, /No customers found/);
   view.get = async () => { throw new Error('Request failed'); };
   await view.load();
-  assert.doesNotMatch(view.innerHTML, /No customers found|Loading customers/);
+  assert.doesNotMatch(view.innerHTML, /No customers found|Loading Customers|class="ekom-loading"/);
   assert.match(view.innerHTML, /role="alert"/);
 });
 

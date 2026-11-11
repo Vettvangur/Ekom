@@ -873,8 +873,31 @@ const themeColorTokens: Record<string, string> = {
 const themedManagerStyles = baseManagerStyles.replaceAll(':host', '&')
   .replace(/#[0-9a-f]{3,8}\b/gi, color => themeColorTokens[color.toLowerCase()] ? `var(${themeColorTokens[color.toLowerCase()]})` : color);
 
-export const managerStyles = `${managerScope} {
+// Loading patterns from the Ekom Manager design: shimmering placeholders shaped like the content they stand in for.
+const loadingStyles = `
+  .ekom-skeleton { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--ekom-border, #eceef1) 0%, var(--ekom-surface-alt, #f7f8fa) 40%, var(--ekom-border, #eceef1) 80%); background-size: 320px 100%; animation: ekom-shim 1.2s linear infinite; }
+  .ekom-skeleton-block { flex: 1; height: auto; border-radius: 8px; background-image: linear-gradient(90deg, var(--ekom-surface-alt, #f7f8fa) 0%, var(--ekom-surface, #fff) 40%, var(--ekom-surface-alt, #f7f8fa) 80%); }
+  .ekom-loading { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; }
+  .ekom-loading-status { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 13px; line-height: 1; color: var(--ekom-muted, #676b7b); }
+  .ekom-loading-spinner { flex: none; width: 14px; height: 14px; border: 2px solid var(--ekom-border, #e1e3e8); border-top-color: var(--ekom-accent, #10694a); border-radius: 50%; animation: ekom-spin .8s linear infinite; }
+  .ekom-loading-cards { display: grid; gap: 12px; }
+  .ekom-loading-card, .ekom-loading-panel { display: flex; flex-direction: column; background: var(--ekom-surface, #fff); border: 1px solid var(--ekom-border, #e1e3e8); border-radius: 12px; }
+  .ekom-loading-card { gap: 12px; padding: 14px 16px; }
+  .ekom-loading-panel { gap: 14px; padding: 16px 18px; }
+  .ekom-loading-rows { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; padding-top: 6px; }
+  .ekom-loading-rows > div { display: flex; align-items: center; gap: 16px; }
+  .ekom-loading-rows > p { margin: 0; font-size: 12px; line-height: 1; color: var(--ekom-muted, #676b7b); }
+  .ekom-list-skeleton-row:hover { background: transparent !important; }
+  [hidden] { display: none !important; }
+  @media (max-width: 720px) { .ekom-loading-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+  @media (prefers-reduced-motion: reduce) { .ekom-skeleton, .ekom-loading-spinner { animation: none; } }
+`;
+
+export const managerStyles = `@keyframes ekom-shim { 0% { background-position: -320px 0; } 100% { background-position: 320px 0; } }
+@keyframes ekom-spin { to { transform: rotate(360deg); } }
+${managerScope} {
   ${baseManagerStyles.replaceAll(':host', '&')}
+  ${loadingStyles}
 }
 ${managerScope}:not([classic]) {
   ${themedManagerStyles}
@@ -1214,6 +1237,39 @@ export function dateRangePresets(now = new Date()): Array<{ label: string; from:
     { label: 'This quarter', from: iso(new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)), to: today },
     { label: 'This year', from: iso(new Date(now.getFullYear(), 0, 1)), to: today },
   ];
+}
+
+const skeletonBar = (width: string, height = 12): string => `<span class="ekom-skeleton" style="width:${width};height:${height}px"></span>`;
+
+/** The selected period as the date range picker names it, for loading messages. */
+export function dateRangeLabel(): string {
+  const { dateFrom, dateTo } = managerState.filters;
+  return dateRangePresets().find(preset => preset.from === dateFrom && preset.to === dateTo)?.label || `${dateFrom} – ${dateTo}`;
+}
+
+/** Spinner line announcing what is loading; the only part of a loading state read to screen readers. */
+export function renderLoadingStatus(section: string): string {
+  return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>Loading ${escapeHtml(section)} for ${escapeHtml(dateRangeLabel())}…</p>`;
+}
+
+/** Section placeholder: status line, summary cards, a chart-sized block and a few lines of text. */
+export function renderSectionLoading(section: string, cards: number, blockHeight: number): string {
+  const card = `<div class="ekom-loading-card">${skeletonBar('40%')}${skeletonBar('55%', 22)}</div>`;
+  return `<div class="ekom-loading">${renderLoadingStatus(section)}<div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(${cards},minmax(0,1fr))">${card.repeat(cards)}</div>
+    <div aria-hidden="true" class="ekom-loading-panel" style="height:${blockHeight}px">${skeletonBar('30%')}<span class="ekom-skeleton ekom-skeleton-block"></span></div>
+    <div aria-hidden="true" class="ekom-loading-panel">${skeletonBar('28%')}${skeletonBar('100%').repeat(3)}</div></div>`;
+}
+
+/** Placeholder rows for a table that is still being calculated. */
+export function renderRowsLoading(message: string, rows = 4): string {
+  const row = `<div aria-hidden="true"><span class="ekom-skeleton" style="flex:1"></span>${skeletonBar('60px')}${skeletonBar('110px')}</div>`;
+  return `<div class="ekom-loading-rows">${row.repeat(rows)}<p role="status">${escapeHtml(message)}</p></div>`;
+}
+
+/** Placeholder rows for the orders list, laid out on the list's own grid. */
+export function renderOrderRowsLoading(rows = 6): string {
+  const row = `<div class="ekom-list-row ekom-list-skeleton-row" aria-hidden="true">${['60%', '70%', '55%', '80%', '70%', '60%', '50%'].map(width => skeletonBar(width)).join('')}<span></span></div>`;
+  return row.repeat(rows) + '<span class="ekom-sr-only" role="status">Loading orders…</span>';
 }
 
 export function renderDateRange(): string {
