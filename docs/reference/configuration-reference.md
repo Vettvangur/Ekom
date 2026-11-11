@@ -190,3 +190,7 @@ Provider-specific values live beneath `Ekom:Payments`. Their shape is defined by
 ## Database prices
 
 `Ekom:UseDatabasePrices` (boolean, default `false`) enables the `EkomPrice` table for price overrides. See [catalog prices](../guides/database-price-storage.md) for ERP updates, editor behavior, and rollout details.
+
+## Automatic order closing
+
+`Ekom:AutoClosePaidAndFulfilledOrders` defaults to `true`. Override it per store with `Ekom:Stores:{storeAlias}:AutoClosePaidAndFulfilledOrders`. An Open order closes when Paid and Fulfilled; explicit Reopen suppresses automatic closing for that order. Manual Close still requires Paid and Fulfilled. See the [status guide](../guides/order-statuses.md#automatic-closing-and-reopening) for an example and operational rules.

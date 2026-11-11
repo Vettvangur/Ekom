@@ -2,6 +2,8 @@
 
 In Ekom, a basket is the current non-final order for a store and customer context. The same persisted model becomes an order as it moves through checkout and fulfillment. Use current-basket methods for shopping flows and explicit order-ID methods only where the caller is authorized to read that persisted order.
 
+See [Order, payment, and fulfillment statuses](order-statuses.md) for the 1.0 status model, manager usage, and legacy migration.
+
 ## Basket identity and resolution
 
 Read the current basket through the injected `Ekom.API.Order` facade:
