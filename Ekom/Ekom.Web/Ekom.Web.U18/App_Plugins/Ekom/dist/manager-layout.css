@@ -576,3 +576,10 @@ ekom-orders-section-view:not([classic]) {
 
 /* Order views use text emphasis and an underline, without a filled button hover. */
 ekom-orders-section-view:not([classic]) .ekom-order-views button:hover { background:transparent; color:var(--ekom-text); box-shadow:none; }
+
+/* The customer on an order links to their record in Customers. */
+ekom-orders-section-view:not([classic]) {
+ .ekom-customer-sidebar button.ekom-customer-open { border:0; background:none; padding:0; min-height:0; color:var(--ekom-accent); font:inherit; font-size:13px; font-weight:700; text-align:left; cursor:pointer; }
+ .ekom-customer-sidebar button.ekom-customer-open:hover { text-decoration:underline; }
+ .ekom-customer-sidebar button.ekom-customer-name { display:block; font-size:15px; margin-top:4px; }
+}

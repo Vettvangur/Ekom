@@ -465,7 +465,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     const scrollPositions = Array.from(this.querySelectorAll<HTMLElement>('.ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content')).map(node => node.scrollTop);
     renderManagerContent(this, `
       <style>${managerStyles}</style>
-      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261111-provider-name">
+      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261111-open-customer">
       <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
           ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
@@ -712,7 +712,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       ${this.renderPaymentCard(order)}
       ${this.renderShipment(order)}
       ${Object.keys(order.customData || {}).length ? `<section class="ekom-detail-card"><h3>Notes</h3>${this.renderOrderCustomData(order)}</section>` : ''}
-    </main><aside class="ekom-customer-sidebar"><section class="ekom-detail-card"><h3>Customer</h3><strong>${escapeHtml(customer.name)}</strong><div class="ekom-card-heading"><h4>Contact information</h4><button type="button" class="btn-reset" data-action="open-customer-editor">Edit</button></div><p>${escapeHtml(customer.email)}</p><p>${escapeHtml(customer.phone)}</p><h4>Shipping address</h4>${hasShippingInfo(shipping) ? `${this.renderAddress(shipping)}${this.renderExtraProperties(shipping.properties, 'shipping')}` : '<p>Same as billing address</p>'}<h4>Billing address</h4>${this.renderAddress(customer)}${this.renderExtraProperties(customer.properties, 'customer')}</section></aside></div>`;
+    </main><aside class="ekom-customer-sidebar"><section class="ekom-detail-card"><div class="ekom-card-heading"><h3>Customer</h3>${customer.email || customer.userName ? '<button type="button" class="ekom-customer-open" data-action="open-customer">Open customer</button>' : ''}</div>${customer.email || customer.userName ? `<button type="button" class="ekom-customer-open ekom-customer-name" data-action="open-customer">${escapeHtml(customer.name || customer.email || customer.userName)}</button>` : `<strong>${escapeHtml(customer.name)}</strong>`}<div class="ekom-card-heading"><h4>Contact information</h4><button type="button" class="btn-reset" data-action="open-customer-editor">Edit</button></div><p>${escapeHtml(customer.email)}</p><p>${escapeHtml(customer.phone)}</p><h4>Shipping address</h4>${hasShippingInfo(shipping) ? `${this.renderAddress(shipping)}${this.renderExtraProperties(shipping.properties, 'shipping')}` : '<p>Same as billing address</p>'}<h4>Billing address</h4>${this.renderAddress(customer)}${this.renderExtraProperties(customer.properties, 'customer')}</section></aside></div>`;
     return `<div class="ekom-status-controls"><label>Order<details class="ekom-lifecycle-menu"><summary aria-label="Order status">${this.renderStateDot(state?.orderStatus)}${escapeHtml(state?.orderStatus || 'Needs review')} ▾</summary><div>${(state?.orderStatus === 'Closed' ? [['Reopen', 'Reopen order']] : [['Close', 'Close order'], ['Cancel', 'Cancel order']]).map(([action, label]) => `<button type="button" data-action="order-state-command" data-command="${action}" ${blocked ? 'disabled' : ''}>${label}</button>`).join('')}</div></details></label><div class="ekom-payment-control"><span>Payment</span>${this.renderPaymentMenu(order, true)}</div><div class="ekom-fulfillment-control"><span>Fulfillment</span><input type="hidden" data-field="fulfillmentState" value="${escapeHtml(state?.fulfillmentStatus || '')}"><details class="ekom-lifecycle-menu ekom-fulfillment-menu"><summary aria-label="Fulfillment status" ${blocked || state?.orderStatus !== 'Open' ? 'aria-disabled="true"' : ''}>${this.renderStateDot(state?.fulfillmentStatus)}<span data-fulfillment-label>${escapeHtml((state?.fulfillmentStatus || 'Needs review').replace(/([a-z])([A-Z])/g, '$1 $2'))}</span><span class="ekom-status-chevron">▾</span></summary><div>${['Unfulfilled', 'Picking', 'Picked', 'Packed', 'PartiallyFulfilled', 'Fulfilled'].map(value => `<button type="button" data-action="choose-fulfillment" data-value="${value}" aria-pressed="${state?.fulfillmentStatus === value}" ${blocked || state?.orderStatus !== 'Open' ? 'disabled' : ''}>${this.renderStateDot(value)}${value.replace(/([a-z])([A-Z])/g, '$1 $2')}<span class="ekom-status-check">${state?.fulfillmentStatus === value ? '✓' : ''}</span></button>`).join('')}</div></details></div><label class="ekmCheckboxLabel"><input type="checkbox" data-field="notifyOrderStatus" ${this.notifyOrderStatus ? 'checked' : ''}>Trigger status events</label><span class="ekom-events-help"><button type="button" class="ekom-events-help-button" aria-label="About trigger status events" aria-describedby="ekom-events-tooltip">i</button><span class="ekom-events-tooltip" id="ekom-events-tooltip" role="tooltip"><strong>Trigger status events ("Fire events")</strong><span><b>On</b> — saves the status and runs whatever handlers are set up for it. What happens depends on the status and your setup, for example an email or an ERP update.</span><span><b>Off</b> — saves the status only. Use for manual corrections so external actions don't repeat.</span><small>Either way the status is saved and logged. It doesn't release stock or replace the payment flow.</small></span></span><button type="button" data-action="save-fulfillment" class="btn-success" ${blocked || state?.orderStatus !== 'Open' ? 'disabled' : ''}>${this.stateSaving ? 'Saving...' : 'Save'}</button></div>
       ${state?.requiresReview ? '<p class="status" role="status">Historical payment or fulfillment needs review before updating this order.</p>' : ''}
       ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
@@ -1228,6 +1228,16 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
 
     if (action === 'select-order-tab') { this.selectOrderTab(target.dataset.tab || 'order'); return; }
+
+    if (action === 'open-customer') {
+      // Hand the customer to the Customers section, which opens their drawer once it has loaded.
+      const customer = this.selectedOrder?.customerInformation?.customer;
+      managerState.pendingCustomer = { email: customer?.email || '', username: customer?.userName || '' };
+      const link = document.createElement('a');
+      link.href = location.pathname.replace(/\/orders\/?$/, '/customers');
+      this.appendChild(link); link.click(); link.remove();
+      return;
+    }
 
     if (action === 'set-page') {
       this.page = Number(target.dataset.page || 1);

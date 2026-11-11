@@ -231,3 +231,21 @@ test('the customer drawer opens on a loader, keeps its content while paging, and
   await closing;
   assert.doesNotMatch(view.innerHTML, /customer-dialog/);
 });
+
+test('a customer handed over from an order opens once the list has loaded, by the configured identity', async () => {
+  for (const [identityField, expected] of [['CustomerEmail', 'anna@example.com'], ['CustomerUsername', 'anna']]) {
+    const { view, state } = fixture();
+    const opened = [];
+    view.api.stores = async () => [{ alias: 'main', title: 'Main' }];
+    view.api.printingEnabled = async () => false;
+    view.get = async () => ({ ...emptyResult, identityField });
+    view.open = async identity => { opened.push(identity); };
+    state.filters.store = 'main';
+    state.pendingCustomer = { email: ' anna@example.com ', username: 'anna' };
+    await view.initialize();
+    assert.deepEqual(opened, [expected]);
+    assert.equal(state.pendingCustomer, undefined);
+    await view.initialize();
+    assert.deepEqual(opened, [expected], 'the hand-over is used once');
+  }
+});

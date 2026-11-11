@@ -1,27 +1,27 @@
 var x = Object.defineProperty;
-var k = (h, u, e) => u in h ? x(h, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : h[u] = e;
-var d = (h, u, e) => k(h, typeof u != "symbol" ? u + "" : u, e);
-import { E as S, m as o, e as w, c as i, l as E, r as q, a as L, b as C, d as O, g as A, h as D, i as R, u as P, v as j, w as f, q as N } from "./manager-shared.js";
+var k = (m, u, e) => u in m ? x(m, u, { enumerable: !0, configurable: !0, writable: !0, value: e }) : m[u] = e;
+var l = (m, u, e) => k(m, typeof u != "symbol" ? u + "" : u, e);
+import { E as S, m as o, e as w, c as i, l as E, r as q, a as L, b as C, d as O, g as A, h as D, i as R, u as P, v as j, w as b, q as N } from "./manager-shared.js";
 import { UmbElementMixin as F } from "@umbraco-cms/backoffice/element-api";
 class U extends F(HTMLElement) {
   constructor() {
     super(...arguments);
-    d(this, "api", new S());
-    d(this, "result");
-    d(this, "detail");
-    d(this, "query", "");
-    d(this, "segment", "all");
-    d(this, "sort", "newest");
-    d(this, "page", 1);
-    d(this, "busy", !1);
-    d(this, "error", "");
-    d(this, "request", 0);
-    d(this, "detailRequest", 0);
-    d(this, "detailOpening");
-    d(this, "other", !1);
-    d(this, "classic", !1);
-    d(this, "opener");
-    d(this, "dismissOnEscape", (e) => {
+    l(this, "api", new S());
+    l(this, "result");
+    l(this, "detail");
+    l(this, "query", "");
+    l(this, "segment", "all");
+    l(this, "sort", "newest");
+    l(this, "page", 1);
+    l(this, "busy", !1);
+    l(this, "error", "");
+    l(this, "request", 0);
+    l(this, "detailRequest", 0);
+    l(this, "detailOpening");
+    l(this, "other", !1);
+    l(this, "classic", !1);
+    l(this, "opener");
+    l(this, "dismissOnEscape", (e) => {
       !this.detail && !this.detailOpening || e.key !== "Escape" || (e.preventDefault(), e.stopPropagation(), this.close());
     });
   }
@@ -43,11 +43,15 @@ class U extends F(HTMLElement) {
     (e = this.ownerDocument) == null || e.removeEventListener("keydown", this.dismissOnEscape, !0), this.request++, this.detailRequest++, super.disconnectedCallback();
   }
   async initialize() {
-    var e;
+    var e, t, s;
     this.busy = !0, this.render();
     try {
-      const [t, s] = await Promise.all([this.api.stores(), this.classic ? Promise.resolve(!1) : this.api.printingEnabled()]);
-      o.stores = t, o.printingEnabled = s, o.stores.some((a) => a.alias === o.filters.store) || (o.filters.store = ((e = o.stores[0]) == null ? void 0 : e.alias) || ""), this.classic || w(), await this.load();
+      const [a, n] = await Promise.all([this.api.stores(), this.classic ? Promise.resolve(!1) : this.api.printingEnabled()]);
+      o.stores = a, o.printingEnabled = n, o.stores.some((p) => p.alias === o.filters.store) || (o.filters.store = ((e = o.stores[0]) == null ? void 0 : e.alias) || ""), this.classic || w(), await this.load();
+      const d = o.pendingCustomer;
+      o.pendingCustomer = void 0;
+      const h = (s = ((t = this.result) == null ? void 0 : t.identityField) === "CustomerUsername" ? d == null ? void 0 : d.username : d == null ? void 0 : d.email) == null ? void 0 : s.trim();
+      h && await this.open(h);
     } catch {
       this.error = "Unable to load customers. Please try again.", this.busy = !1, this.render();
     }
@@ -82,11 +86,11 @@ class U extends F(HTMLElement) {
     const s = ++this.detailRequest;
     this.opener = e, this.error = "", this.detail || (this.detailOpening = e, this.render(), (a = this.querySelector("[data-close]")) == null || a.focus());
     try {
-      const l = await this.get("/detail", new URLSearchParams({ store: o.filters.store, currency: o.filters.currency || "", identity: e, orderStatus: o.filters.orderStatus, page: String(t), other: String(this.other) }));
+      const d = await this.get("/detail", new URLSearchParams({ store: o.filters.store, currency: o.filters.currency || "", identity: e, orderStatus: o.filters.orderStatus, page: String(t), other: String(this.other) }));
       if (s !== this.detailRequest || !this.isConnected) return;
-      this.detail = l, this.detailOpening = void 0, this.render(), (n = this.querySelector("[data-close]")) == null || n.focus();
-    } catch (l) {
-      s === this.detailRequest && (this.detailOpening = void 0, this.error = String(l), this.render());
+      this.detail = d, this.detailOpening = void 0, this.render(), (n = this.querySelector("[data-close]")) == null || n.focus();
+    } catch (d) {
+      s === this.detailRequest && (this.detailOpening = void 0, this.error = String(d), this.render());
     }
   }
   close() {
@@ -108,8 +112,8 @@ class U extends F(HTMLElement) {
   }
   amount(e, t) {
     return e.map((s) => {
-      var l;
-      const a = (l = o.stores.find((m) => m.alias === o.filters.store)) == null ? void 0 : l.currency;
+      var d;
+      const a = (d = o.stores.find((h) => h.alias === o.filters.store)) == null ? void 0 : d.currency;
       let n = s.currency;
       !/^[A-Z]{3}$/.test(n) && (a == null ? void 0 : a.currencyValue) === n && (n = a.isoCurrencySymbol || n);
       try {
@@ -206,13 +210,13 @@ class U extends F(HTMLElement) {
     return `<div class="customer-overlay"><section role="dialog" aria-modal="true" aria-label="Customer details" class="customer-dialog"><header class="customer-heading">${this.avatar(t.name || t.identity)}<div><h2>${i(t.name || t.identity)} <span class="customer-badge">${t.orders > 1 ? "Returning" : "New"}</span></h2><p>${i([t.email, t.username].filter(Boolean).join(" · "))}</p></div><button data-close aria-label="Close customer details">${this.classic ? "Close" : "×"}</button></header>
       <div class="customer-cards">${this.card("Lifetime spend", this.amount(t.spend, "total"))}${this.card("Orders", String(t.orders))}${this.card("Average order", this.amount(t.spend, "averageOrder"))}${this.card("First order", this.date(t.firstOrder))}${this.card("Days since last order", String(t.daysSinceLastOrder))}${this.card("Average reorder interval (days)", this.number(t.averageReorderDays))}</div>
       <div class="customer-detail-grid"><div><h3>Orders <small>(${e.count})</small></h3><label><input type="checkbox" data-other ${this.other ? "checked" : ""}> Show other orders (excluded from lifetime metrics)</label><div class="customer-table-wrap"><table class="customer-table"><thead><tr><th>Order</th>${this.classic ? "<th>Status</th>" : "<th>Order status</th><th>Payment</th><th>Fulfillment</th>"}<th>Created</th><th>Paid</th><th>Total</th></tr></thead><tbody>${e.orders.map((s) => {
-      var a, n, l;
-      return `<tr><td><button data-order="${i(s.uniqueId)}">#${i(s.orderNumber || String(s.referenceId))}</button></td>${this.classic ? `<td>${i(s.orderStatusCol)}</td>` : `<td>${f((a = s.status) == null ? void 0 : a.orderStatus)}</td><td>${f((n = s.status) == null ? void 0 : n.paymentStatus)}</td><td>${f((l = s.status) == null ? void 0 : l.fulfillmentStatus)}</td>`}<td>${this.date(s.createDate)}</td><td>${this.date(s.paidDate)}</td><td>${i(s.formattedTotal)}</td></tr>`;
+      var a, n, d;
+      return `<tr><td><button data-order="${i(s.uniqueId)}">#${i(s.orderNumber || String(s.referenceId))}</button></td>${this.classic ? `<td>${i(s.orderStatusCol)}</td>` : `<td>${b((a = s.status) == null ? void 0 : a.orderStatus)}</td><td>${b((n = s.status) == null ? void 0 : n.paymentStatus)}</td><td>${b((d = s.status) == null ? void 0 : d.fulfillmentStatus)}</td>`}<td>${this.date(s.createDate)}</td><td>${this.date(s.paidDate)}</td><td>${i(s.formattedTotal)}</td></tr>`;
     }).join("") || `<tr><td colspan="${this.classic ? 5 : 7}">No orders.</td></tr>`}</tbody></table></div><div class="customer-pagination"><button data-detail-page="${e.page - 1}" ${e.page <= 1 ? "disabled" : ""}>Previous</button><span>${e.page} / ${Math.max(1, e.totalPages)}</span><button data-detail-page="${e.page + 1}" ${e.page >= e.totalPages ? "disabled" : ""}>Next</button></div></div>
       <aside class="customer-snapshot"><h3>Latest order snapshot</h3><p class="customer-muted">Recorded on order #${i(e.snapshot.orderNumber)} · ${this.date(e.snapshot.date)}. Historical details, not a current customer profile.</p>${e.snapshot.unavailable ? "<p>Saved details could not be read.</p>" : ""}<dl>${Object.entries(e.snapshot.fields).map(([s, a]) => `<dt>${i(s)}</dt><dd>${i(a)}</dd>`).join("") || "<dd>No additional details recorded.</dd>"}</dl></aside></div></section></div>`;
   }
   bind() {
-    var t, s, a, n, l, m, b, y, v, $;
+    var t, s, a, n, d, h, p, y, v, $;
     this.classic || N(this, () => {
       this.page = 1, this.dispatchEvent(new CustomEvent("customer-filters-changed", { bubbles: !0, detail: { ...o.filters } })), this.load();
     }), this.querySelectorAll("[data-filter]").forEach((r) => r.addEventListener("change", () => {
@@ -231,7 +235,7 @@ class U extends F(HTMLElement) {
       this.segment = r.target.value, this.page = 1, this.load();
     }), (n = this.querySelector("[data-sort]")) == null || n.addEventListener("change", (r) => {
       this.sort = r.target.value, this.page = 1, this.load();
-    }), (l = this.querySelector("[data-reload]")) == null || l.addEventListener("click", () => void this.load()), (m = this.querySelector("[data-export]")) == null || m.addEventListener("click", () => void this.export()), (b = this.querySelector("[data-close]")) == null || b.addEventListener("click", () => this.close()), (y = this.querySelector(".customer-overlay")) == null || y.addEventListener("click", (r) => {
+    }), (d = this.querySelector("[data-reload]")) == null || d.addEventListener("click", () => void this.load()), (h = this.querySelector("[data-export]")) == null || h.addEventListener("click", () => void this.export()), (p = this.querySelector("[data-close]")) == null || p.addEventListener("click", () => this.close()), (y = this.querySelector(".customer-overlay")) == null || y.addEventListener("click", (r) => {
       r.target === r.currentTarget && this.close();
     }), (v = this.querySelector("[data-other]")) == null || v.addEventListener("change", () => {
       this.other = !this.other, this.detail && this.open(this.detail.customer.identity);
@@ -250,8 +254,8 @@ class U extends F(HTMLElement) {
       }
     })), ($ = this.querySelector("[role=dialog]")) == null || $.addEventListener("keydown", (r) => {
       if (r.key === "Escape" && (r.preventDefault(), this.close()), r.key !== "Tab") return;
-      const c = Array.from(this.querySelectorAll("[role=dialog] button:not(:disabled),[role=dialog] input")), p = c[0], g = c[c.length - 1];
-      r.shiftKey && document.activeElement === p ? (r.preventDefault(), g == null || g.focus()) : !r.shiftKey && document.activeElement === g && (r.preventDefault(), p == null || p.focus());
+      const c = Array.from(this.querySelectorAll("[role=dialog] button:not(:disabled),[role=dialog] input")), g = c[0], f = c[c.length - 1];
+      r.shiftKey && document.activeElement === g ? (r.preventDefault(), f == null || f.focus()) : !r.shiftKey && document.activeElement === f && (r.preventDefault(), g == null || g.focus());
     });
   }
 }

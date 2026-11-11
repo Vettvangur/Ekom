@@ -754,5 +754,9 @@ test('the order drawer shows line VAT, variant SKU, the gift-card eligible total
   element.renderExtraProperties = (properties, prefix) => `EXTRA:${prefix}:${JSON.stringify(properties)}`;
   const details = element.renderOrderDetails({ ...order, status: { orderStatus: 'Open' }, customerInformation: {
     customer: { name: 'Anna', properties: {} }, shipping: { name: 'Anna', address: 'Street 1', properties: { shippingDoorCode: '4321' } } } });
+  assert.doesNotMatch(details, /data-action="open-customer"/, 'no link without an email or username to look the customer up by');
+  const linked = element.renderOrderDetails({ ...order, status: { orderStatus: 'Open' }, customerInformation: { customer: { name: 'Anna <b>', email: 'anna@example.com', properties: {} }, shipping: {} } });
+  assert.match(linked, /<h3>Customer<\/h3><button type="button" class="ekom-customer-open" data-action="open-customer">Open customer<\/button>/);
+  assert.match(linked, /<button type="button" class="ekom-customer-open ekom-customer-name" data-action="open-customer">Anna &lt;b&gt;<\/button>/);
   assert.match(details, /Shipping address<\/h4>ADDRESSEXTRA:shipping:\{"shippingDoorCode":"4321"\}<h4>Billing address<\/h4>ADDRESSEXTRA:customer:/);
 });

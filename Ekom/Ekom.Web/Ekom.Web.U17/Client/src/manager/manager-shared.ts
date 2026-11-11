@@ -225,6 +225,8 @@ export type OrderInfo = Record<string, any>;
 
 export type ManagerState = {
   pendingOrderId?: string;
+  /** Customer to open in the Customers section, handed over from an order. */
+  pendingCustomer?: { email: string; username: string };
   printingEnabled?: boolean;
   filters: ManagerFilters;
   statusList: StatusItem[];

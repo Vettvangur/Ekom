@@ -66,6 +66,11 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       if (!managerState.stores.some(x => x.alias === managerState.filters.store)) managerState.filters.store = managerState.stores[0]?.alias || '';
       if (!this.classic) ensureManagerCurrency();
       await this.load();
+      // An order's "Open customer" link lands here with the customer to show.
+      const pending = managerState.pendingCustomer;
+      managerState.pendingCustomer = undefined;
+      const identity = (this.result?.identityField === 'CustomerUsername' ? pending?.username : pending?.email)?.trim();
+      if (identity) await this.open(identity);
     } catch {
       this.error = 'Unable to load customers. Please try again.';
       this.busy = false;

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **manager:** link the customer on an order to their record: the name and an "Open customer" link in the order drawer open that customer in Customers.
+
 * **manager:** format dates in Orders, Analytics, Customers, Printing and the date range picker as the culture configured on the selected store writes them, instead of the browser's locale. The patterns and month and day names come from the server because browsers lack some cultures.
 
 * **manager:** restore details from the previous order view in the order drawer: shipping custom fields, VAT per order line, the variant SKU and the gift-card eligible total. Remove the copy button next to Paid date.
