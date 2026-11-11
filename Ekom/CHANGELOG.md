@@ -20,6 +20,12 @@
 
 ### Bug Fixes
 
+* **properties:** normalize unwrapped store rich text in the Umbraco 17/18 content save handler, preserving HTML and blocks without marking the editor changed on opening.
+
+* **properties:** use unwrapped rich text as the default for store-based properties; preserve defaults for other stores when saving an override.
+
+* **properties:** read serialized rich-text values as HTML and load legacy HTML/serialized rich text in the Umbraco 17/18 Ekom property editor, preserving block data.
+
 * **cache:** build replacement caches and indexes in isolation, retaining the live cache on failure; reject empty stores and concurrent-update conflicts, and report manual rebuild failures to the backoffice.
 
 * **prices:** enlist document price edits in the content-save transaction to avoid SQLite lock waits; refresh the cache and notify subscribers only after commit.
