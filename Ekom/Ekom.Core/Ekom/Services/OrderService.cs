@@ -324,7 +324,8 @@ partial class OrderService
             return cached;
         }
 
-        SemaphoreSlim sem = _orderLocks.GetOrAdd(uniqueId, _ => new SemaphoreSlim(1, 1));
+        // Shared with cart edits, so a read that misses the cache waits for an edit in progress.
+        SemaphoreSlim sem = _orderLocks.Get(uniqueId);
         await sem.WaitAsync(ct).ConfigureAwait(false);
 
         try
@@ -341,11 +342,6 @@ partial class OrderService
         finally
         {
             sem.Release();
-
-            if (sem.CurrentCount == 1)
-            {
-                _orderLocks.TryRemove(uniqueId, out _);
-            }
         }
     }
 
@@ -1551,11 +1547,14 @@ partial class OrderService
             {
                 // Other nodes may have edited an already released cart since this instance was cached.
                 // Refresh while holding ownership, never after the caller has begun its mutation.
-                var persisted = await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct).ConfigureAwait(false)
+                // Beginning the edit has already read the row under ownership and applied it to orderInfo.
+                var applied = operation.PersistedOrder;
+                var persisted = applied
+                    ?? await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct).ConfigureAwait(false)
                     ?? throw new OrderInfoNotFoundException();
                 if (persisted.PaidDate != null || IsFinalCartStatus(persisted.OrderStatus))
                     throw new InvalidOperationException("The order became final before the cart edit began.");
-                if (!string.IsNullOrWhiteSpace(persisted.OrderInfo))
+                if (applied == null && !string.IsNullOrWhiteSpace(persisted.OrderInfo))
                 {
                     orderInfo.ApplyPersistedSnapshot(new OrderInfo(persisted), persisted);
                 }
@@ -1617,8 +1616,8 @@ partial class OrderService
             VerifyDiscounts(orderInfo);
             AddGlobalDiscounts(orderInfo);
 
-            OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct)
-                .ConfigureAwait(false);
+            OrderData orderData = CheckoutPaymentOperationScope.TakePersistedOrder(orderInfo.UniqueId)
+                ?? await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct).ConfigureAwait(false);
 
             string? removedShippingProviderMessage = null;
             if (verifyProviders && orderData.OrderStatus == OrderStatus.Incomplete)
@@ -2951,9 +2950,8 @@ partial class OrderService
 
     /// See comments for service and under <see cref="OrderSettings"/>
     private SemaphoreSlim GetOrderLock(IOrderInfo orderInfo)
-        => _orderLocks.GetOrAdd(orderInfo.UniqueId, new SemaphoreSlim(1, 1));
+        => _orderLocks.Get(orderInfo.UniqueId);
 
     /// See comments for service and under <see cref="OrderSettings"/>
-    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _orderLocks
-        = new();
+    private static readonly OrderLockRegistry _orderLocks = new();
 }
