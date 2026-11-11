@@ -1,3 +1,4 @@
+using Ekom.Utilities;
 using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Exceptions;
@@ -26,6 +27,9 @@ class StartupFilter : IStartupFilter
 {
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
     {
+        // Must run before anything below reads or buffers the request body.
+        app.UseEkomRequestSizeLimit();
+
         app.Use(async (context, next) =>
         {
             context.Request.EnableBuffering();

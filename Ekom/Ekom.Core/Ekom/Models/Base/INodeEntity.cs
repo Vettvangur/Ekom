@@ -91,6 +91,9 @@ public interface INodeEntity
     /// <value>
     /// The path.
     /// </value>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     string Path { get; set; }
 
     /// <summary>
@@ -111,6 +114,9 @@ public interface INodeEntity
     /// <summary>
     /// Umbraco node properties
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IReadOnlyDictionary<string, string> Properties { get; }
 }
 

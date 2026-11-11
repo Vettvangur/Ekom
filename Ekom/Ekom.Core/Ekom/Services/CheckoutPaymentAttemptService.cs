@@ -405,6 +405,8 @@ internal sealed partial class CheckoutPaymentAttemptService
             // Nested scopes returned above deliberately preserve in-progress
             // mutations; outer edits always start from the durable purchase.
             Apply(order, data);
+            // Ownership keeps other writers out, so the edit can save from this row instead of reading it again.
+            scope.PersistedOrder = data;
             return scope;
         }
         catch
@@ -881,6 +883,7 @@ internal sealed partial class CheckoutPaymentAttemptService
         var previous = _statusPersistenceHandlers.Length == 0 ? null
             : await ReadOrderAsync(db, data.UniqueId, ct).ConfigureAwait(false);
         data.UpdateDate = DateTime.Now;
+        CheckoutPaymentOperationScope.ForgetPersistedOrder(data.UniqueId);
         var updated = await db.GetTable<OrderData>()
             .Where(x => x.UniqueId == data.UniqueId && x.PaidDate == null &&
                 x.OrderStatusCol != nameof(OrderStatus.OfflinePayment) && x.OrderStatusCol != nameof(OrderStatus.Closed) &&

@@ -5,6 +5,7 @@ internal sealed class StockReservationReadiness
 {
     private int _schemaReady;
     private int _initialized;
+    internal bool IsInitialized => Volatile.Read(ref _initialized) == 1;
     public bool IsReady => Volatile.Read(ref _schemaReady) == 1 && Volatile.Read(ref _initialized) == 1;
     public void SchemaReady() => Volatile.Write(ref _schemaReady, 1);
     public void Initialized() => Volatile.Write(ref _initialized, 1);

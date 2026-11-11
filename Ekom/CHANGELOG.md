@@ -99,13 +99,22 @@
 * **manager:** align Customers cards, avatars and detail sidebar, Orders drawer spacing, and Printing typography and controls with the supplied HTML; improve themed product-link contrast.
 
 * **orders:** verify status backfill against isolated sample copies; align preview with configured auto-close, skip unknown and unsettled payment records, and fix .NET 10 store filtering.
-* **manager:** match analytics area and hourly graphs to the supplied HTML, with compact date labels and live Umbraco theme redraw.
 
-### Features
+* **manager:** match analytics area and hourly graphs to the supplied HTML, with compact date labels and live Umbraco theme redraw.
 
 * **orders:** add independent order/payment/fulfillment statuses, evidence-aware legacy mappings, additive persistence, guarded transitions, configurable automatic closing, explicit reopening and a paginated migration API. Refund execution remains deferred.
 
 * **manager:** use the supplied HTML design for the Umbraco 17/18 Orders list and three-tab detail drawer, with extracted assets and scoped light/dark theme styles. Retain editing, printing, plugin actions and checkout recovery. Extend the shared HTML-based layout to Analytics, Customers and Printing, with themed charts, customer segments and permission-aware queue controls.
+
+* **printing:** use themed confirmation dialogs instead of native prompts and improve dark-theme status contrast. Enable explicit-capture printing in the U17/U18 samples with a placeholder station credential.
+
+* **manager:** remove duplicate Umbraco navigation from the U17/U18 manager, populate item totals from saved line quantities, and display canonical order/payment/fulfillment badges in customer history.
+
+* **manager:** match the exported date-range calendar and dropdown controls, package its fonts locally, improve host-theme contrast, correct initial section links and mixed-currency totals, and avoid exposing HTML error pages. Make SQLite status schema initialization repeatable.
+
+### Features
+
+* **orders:** add persistent order reviews, optional resolution comments, store-authorized manager endpoints, and indexed needs-review order filtering without UI changes. Automatically flag checkout completion failures and exhausted coupons for review.
 
 * **prices:** add repeatable node-to-table migration for published prices without an ERP, preserving existing overrides and supporting legacy price formats.
 
@@ -121,11 +130,13 @@
 
 ### Bug Fixes
 
-* **printing:** use themed confirmation dialogs instead of native prompts and improve dark-theme status contrast. Enable explicit-capture printing in the U17/U18 samples with a placeholder station credential.
+* **properties:** normalize unwrapped store rich text in the Umbraco 17/18 content save handler, preserving HTML and blocks without marking the editor changed on opening.
 
-* **manager:** remove duplicate Umbraco navigation from the U17/U18 manager, populate item totals from saved line quantities, and display canonical order/payment/fulfillment badges in customer history.
+* **properties:** use unwrapped rich text as the default for store-based properties; preserve defaults for other stores when saving an override.
 
-* **manager:** match the exported date-range calendar and dropdown controls, package its fonts locally, improve host-theme contrast, correct initial section links and mixed-currency totals, and avoid exposing HTML error pages. Make SQLite status schema initialization repeatable.
+* **properties:** read serialized rich-text values as HTML and load legacy HTML/serialized rich text in the Umbraco 17/18 Ekom property editor, preserving block data.
+
+* **cache:** build replacement caches and indexes in isolation, retaining the live cache on failure; reject empty stores and concurrent-update conflicts, and report manual rebuild failures to the backoffice.
 
 * **prices:** enlist document price edits in the content-save transaction to avoid SQLite lock waits; refresh the cache and notify subscribers only after commit.
 
@@ -288,6 +299,62 @@
 * **discounts:** add a global product setting that disables product, coupon, and order discounts for the product and its variants, excluding protected lines from quantity and minimum-spend qualification.
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
+
+## [0.2.378](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.377...Ekom-v0.2.378) (2026-11-11)
+
+
+### Bug Fixes
+
+* **properties:** normalize legacy rich text on content save ([#1146](https://github.com/Vettvangur/Ekom/issues/1146)) ([ad8e5e5](https://github.com/Vettvangur/Ekom/commit/ad8e5e570ff91825d200ab712271a0e2b232b717))
+
+## [0.2.377](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.376...Ekom-v0.2.377) (2026-11-11)
+
+
+### Bug Fixes
+
+* **orders:** keep one lock per order and reuse the loaded row in cart edits ([#1143](https://github.com/Vettvangur/Ekom/issues/1143)) ([3f5ddb6](https://github.com/Vettvangur/Ekom/commit/3f5ddb6d29fc7252acda5a28213c098d58869c4f))
+
+## [0.2.376](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.375...Ekom-v0.2.376) (2026-11-10)
+
+
+### Performance Improvements
+
+* **import:** reduce CPU and database load in catalog imports ([#1141](https://github.com/Vettvangur/Ekom/issues/1141)) ([98d2989](https://github.com/Vettvangur/Ekom/commit/98d2989ba4e1eff529584c83bbfa208a93602133))
+
+## [0.2.375](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.374...Ekom-v0.2.375) (2026-11-10)
+
+
+### Features
+
+* **orders:** add order reviews and checkout failure alerts ([#1139](https://github.com/Vettvangur/Ekom/issues/1139)) ([81d8537](https://github.com/Vettvangur/Ekom/commit/81d85371d8526e8ecde11b88d174b0a96e11926a))
+
+## [0.2.374](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.373...Ekom-v0.2.374) (2026-11-10)
+
+
+### Bug Fixes
+
+* **security:** limit request size and order fields on public routes ([#1137](https://github.com/Vettvangur/Ekom/issues/1137)) ([055d5bf](https://github.com/Vettvangur/Ekom/commit/055d5bf0f29a6556d47d6f67bcf7611b1ec20c62))
+
+## [0.2.373](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.372...Ekom-v0.2.373) (2026-11-10)
+
+
+### Bug Fixes
+
+* **security:** harden gift cards, rate limits, search input and coupon use ([#1135](https://github.com/Vettvangur/Ekom/issues/1135)) ([5279f3e](https://github.com/Vettvangur/Ekom/commit/5279f3ecf50d461c835f4a6540a2edd394d6768d))
+
+## [0.2.372](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.371...Ekom-v0.2.372) (2026-11-10)
+
+
+### Performance Improvements
+
+* faster cache build, product responses and metafields ([#1133](https://github.com/Vettvangur/Ekom/issues/1133)) ([ce7a189](https://github.com/Vettvangur/Ekom/commit/ce7a1892b1142cf8bb88b91d7a720c43b426d5f6))
+
+## [0.2.371](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.370...Ekom-v0.2.371) (2026-11-09)
+
+
+### Bug Fixes
+
+* **cache:** preserve live caches during rebuilds ([#1131](https://github.com/Vettvangur/Ekom/issues/1131)) ([5999d14](https://github.com/Vettvangur/Ekom/commit/5999d14131801047adfe6113ef56400ad7a74222))
 
 ## [0.2.370](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.369...Ekom-v0.2.370) (2026-11-09)
 

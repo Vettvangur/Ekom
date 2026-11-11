@@ -1,3 +1,4 @@
+using Ekom.ActionFilters;
 using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Services;
@@ -39,6 +40,7 @@ public class EkomCheckoutApiController : ControllerBase
     /// </summary>
     [Route("pay")]
     [HttpPost]
+    [EkomRateLimit(EkomRateLimitPolicies.CheckoutPay)]
     public async Task<IActionResult> Pay([FromQuery] string culture, CancellationToken ct = default)
     {
         var logContext = new CheckoutPaymentLogContext();
@@ -103,6 +105,7 @@ public class EkomCheckoutApiController : ControllerBase
                         StringComparer.OrdinalIgnoreCase);
             }
 
+            OrderFieldLimits.ValidateRequestFields(additionalData);
             paymentRequest!.AdditionalData = additionalData;
 
             return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture, logContext, ct);
@@ -330,6 +333,7 @@ public class CheckoutController : ControllerBase
     [Route("pay")]
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [EkomRateLimit(EkomRateLimitPolicies.CheckoutPay)]
     public async Task<ActionResult> Pay(PaymentRequest paymentRequest, CancellationToken ct = default)
     {
         var logContext = new CheckoutPaymentLogContext();
@@ -349,6 +353,7 @@ public class CheckoutController : ControllerBase
 
             Dictionary<string, string> additionalData = OrderCustomData.FromForm(form, encodeOtherFields: false);
 
+            OrderFieldLimits.ValidateRequestFields(additionalData);
             paymentRequest.AdditionalData = additionalData;
 
             string culture = string.IsNullOrEmpty(paymentRequest.Culture) ? Thread.CurrentThread.CurrentCulture.Name : paymentRequest.Culture;

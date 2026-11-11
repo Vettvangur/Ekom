@@ -3,6 +3,7 @@ using Ekom.Models.Import;
 using Ekom.Services;
 using Ekom.Tests.Objects;
 using Ekom.Umb.Services;
+using LinqToDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -116,6 +117,39 @@ public sealed class ImportDatabasePriceTests
         Assert.Empty(fixture.ContentService.Invocations);
     }
 
+    [Fact]
+    public void BulkSyncReadsChunkPricesOnceAndSkipsUnchangedPriceTransactions()
+    {
+        using var fixture = new Fixture();
+        var import = (ImportProduct)CreateImport(variant: false);
+        fixture.SetExistingComparer(import, ignorePrice: true);
+        fixture.Save(import);
+        Assert.Equal(50, Assert.Single(Prices.Instance.Get(fixture.Key)).Price);
+
+        // A write from elsewhere after the chunk was read is left alone until the next chunk read.
+        fixture.RefreshChunk(import);
+        fixture.WriteExternally(99);
+        fixture.Save(import);
+        Prices.Instance.FillCache();
+        Assert.Equal(99, Assert.Single(Prices.Instance.Get(fixture.Key)).Price);
+
+        // The next chunk read sees the difference and the import writes its price again.
+        fixture.RefreshChunk(import);
+        fixture.Save(import);
+        Prices.Instance.FillCache();
+        Assert.Equal(50, Assert.Single(Prices.Instance.Get(fixture.Key)).Price);
+
+        // A changed price is always written, and invalid prices are still rejected.
+        fixture.RefreshChunk(import);
+        import.Price[0].Price = 60;
+        fixture.Save(import);
+        Assert.Equal(60, Assert.Single(Prices.Instance.Get(fixture.Key)).Price);
+        import.Price[0].Price = -1;
+        fixture.Save(import);
+        Assert.NotNull(import.Exception);
+        Assert.Empty(fixture.ContentService.Invocations);
+    }
+
     private static ImportBase CreateImport(bool variant)
     {
         ImportBase import = variant
@@ -192,6 +226,16 @@ public sealed class ImportDatabasePriceTests
             if (ignorePrice) ignored.Add("Price");
             var hash = import.Comparer ?? (string)Invoke("ComputeSha256Hash", [import, ignored.ToArray()])!;
             Content.Setup(x => x.GetValue<string>("comparer", null, null, false)).Returns(hash);
+        }
+
+        public void RefreshChunk(ImportProduct import)
+            => Invoke("RefreshChunkPrices", [new List<ImportProduct> { import }, 0,
+                new Dictionary<string, IContent> { [import.Identifier] = Content.Object }, new Dictionary<int, List<IContent>>()]);
+
+        public void WriteExternally(decimal price)
+        {
+            using var db = Configuration.Resolver.GetRequiredService<DatabaseFactory>().GetDatabase();
+            db.Prices.Where(row => row.NodeKey == Key).Set(row => row.Price, price).Update();
         }
 
         public void Save(ImportBase import, bool create = false)

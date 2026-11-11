@@ -20,7 +20,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using System.Threading.RateLimiting;
 
 namespace Ekom.AspNetCore;
 
@@ -264,48 +263,6 @@ static class Registrations
         services.Configure<MvcOptions>(mvcOptions =>
         {
             mvcOptions.Filters.Add<HttpResponseExceptionFilter>();
-        });
-
-        services.AddRateLimiter(options =>
-        {
-            options.AddPolicy("order-add", context =>
-            {
-                // Use client IP as the partition key
-                var ip =
-                    context.Connection.RemoteIpAddress?.ToString()
-                    ?? "unknown";
-
-                return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: ip,
-                    factory: _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 30,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        QueueLimit = 0
-                    });
-            });
-
-            options.AddPolicy("order-coupon", context =>
-            {
-                var ip =
-                    context.Connection.RemoteIpAddress?.ToString()
-                    ?? "unknown";
-
-                return RateLimitPartition.GetTokenBucketLimiter(
-                    partitionKey: ip,
-                    factory: _ => new TokenBucketRateLimiterOptions
-                    {
-                        TokenLimit = 13,
-                        TokensPerPeriod = 10,
-                        ReplenishmentPeriod = TimeSpan.FromMinutes(1),
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        QueueLimit = 0,
-                        AutoReplenishment = true
-                    });
-            });
-
-            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         });
 
         return services;

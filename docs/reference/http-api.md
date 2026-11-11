@@ -8,7 +8,7 @@ The catalog, general API, provider, order, and `/ekom/checkout` controllers have
 
 Cart endpoints identify the active cart through Ekom's order cookie and store context. A `storeAlias` is a route/body/query value only where listed; there is no verified general `storeAlias` header contract.
 
-Exceptions handled by `ApiExceptionFilter` may return problem responses in addition to the explicit statuses below. Rate-limited routes return `429 Too Many Requests`.
+Exceptions handled by `ApiExceptionFilter` may return problem responses in addition to the explicit statuses below. Requests to the public storefront routes larger than `Ekom:Api:MaxRequestBodySize` (128 KB by default) return `413`. Customer, shipping, provider and custom-data fields sent to the order and checkout routes are limited to 200 fields per request, 100 characters per name and 4096 characters per value (`400` otherwise), and an order holds at most 500 fields per group. Rate-limited routes return `429 Too Many Requests`. Limits are enforced by Ekom itself per remote IP address (no `UseRateLimiter()` call is needed); sites behind a proxy or load balancer must enable forwarded headers so each visitor is counted separately.
 
 ## General data
 
@@ -50,7 +50,7 @@ Base route: `/ekom/catalog`. Single lookups return `404` when absent. Collection
 | `GET`, `POST` | `/relatedproducts?ids={id}&ids={id}&count=4` | Repeated `ids` query values. |
 | `GET`, `POST` | `/relatedproductsbysku/{sku}/{count:int}` | One SKU. |
 | `GET`, `POST` | `/relatedproductsbyskus?skus=A&skus=B&count=4` | Repeated `skus`. |
-| `GET`, `POST` | `/productsearch` | Required `SearchRequest` body. |
+| `GET`, `POST` | `/productsearch` | Required `SearchRequest` body. `examineIndex` is ignored, `searchFields` are limited to `Ekom:Search:PublicFields`, and `searchQuery` is cut to 200 characters. |
 | `GET`, `POST` | `/metafields` | All metafields. |
 
 Example:
@@ -101,7 +101,7 @@ Base route: `/ekom/order`. These routes have no authorization attribute. In part
 | Method | Route | Body/query |
 | --- | --- | --- |
 | `POST` | `/add` | JSON or form `OrderRequest`; 64 KB controller limit; rate policy `order-add` (30/minute per remote IP). |
-| `POST` | `/giftcards` | `GiftcardRequest`. |
+| `POST` | `/giftcards` | `GiftcardRequest`; only `giftcard.code` and `storeAlias` are read. The amount comes from the registered `IGiftcardValidator`; returns `403` when none is registered and `400` when the code is rejected. Rate policy `order-giftcard`. |
 | `DELETE` | `/giftcards/{code}?storeAlias=...` | Gift card code and required query alias. |
 | `POST` | `/updatecustomer` | JSON object or form fields; `consent` and `tracking` are modeled separately. |
 | `POST` | `/updatetracking` | JSON `OrderTrackingUpdateRequest`. |
@@ -142,7 +142,7 @@ Base route: `/ekom/order-discounts`. All three routes require an exact `X-Ekom-A
 | --- | --- | --- | --- |
 | `POST` | `/calculate` | `OrderDiscountCalculationRequest` with coupon, store, and SKU lines | Non-mutating calculation result; coupon rate policy applies. |
 | `POST` | `/update-stock` | `{ "key": "...", "value": -1, "coupon": "..." }` | Updates discount/coupon stock; zero is `400`. |
-| `POST` | `/coupon/mark-used` | `{ "coupon": "code" }` | Marks the coupon used; coupon rate policy applies. |
+| `POST` | `/coupon/mark-used` | `{ "coupon": "code" }` | Consumes one use of the coupon; returns `409` when the coupon is unknown or has no uses left. Coupon rate policy applies. |
 
 ```http
 POST /ekom/order-discounts/calculate

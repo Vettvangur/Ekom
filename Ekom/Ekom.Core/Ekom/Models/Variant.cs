@@ -17,7 +17,8 @@ namespace Ekom.Models;
 /// </summary>
 public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
 {
-    private readonly ConcurrentDictionary<string, object> _cache = new ConcurrentDictionary<string, object>();
+    // One per cached variant, so keep it small: the default costs about 1 KB while empty.
+    private readonly ConcurrentDictionary<string, object> _cache = new(concurrencyLevel: 1, capacity: 4);
 
     /// <summary>
     /// Stock Keeping Unit, identifier
@@ -99,7 +100,21 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual IProduct? Product => Catalog.Instance.GetProduct(ProductId, Store.Alias, raiseEvent: false);
+    public virtual IProduct? Product
+    {
+        get
+        {
+            // Read by every price, VAT and availability lookup, so try the cache directly before
+            // resolving the Catalog API, which also covers the global catalog fallback.
+            var productCache = Configuration.Resolver.GetService<IPerStoreIndexedCache<IProduct>>();
+            if (productCache != null && productCache.TryGetById(Store.Alias, ProductId, out var product) && product != null)
+            {
+                return product;
+            }
+
+            return Catalog.Instance.GetProduct(ProductId, Store.Alias, raiseEvent: false);
+        }
+    }
 
     /// <summary>
     /// 
@@ -242,9 +257,6 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         {
             var product = Product;
             using var priceSnapshot = Configuration.Instance.UseDatabasePrices ? API.Prices.Instance.BeginCalculationScope(Key, product?.Key) : null;
-            string[] categories = product?.Categories.Select(x => x.Id.ToString()).ToArray()
-                                    ?? Array.Empty<string>();
-
             string itemKey = Path;
 
             var priceValue = _priceValue;
@@ -258,10 +270,22 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
                 : product?.Properties.GetPropertyValue("price", Store.Alias) ?? string.Empty;
             var parentSale = NativeDiscountPrice.Raw(product);
 
+            var productCategories = product == null
+                ? null
+                : product.Categories as IReadOnlyList<ICategory> ?? product.Categories.ToList();
+            var inputs = new PriceInputs(globalGen, productGen, Store.Currency.CurrencyValue, itemKey, priceValue, sale,
+                product?.DisableDiscounts == true, parentGen, parentPrice, parentSale, product != null);
+            var memo = _priceMemo;
+            if (memo != null && memo.Matches(inputs, productCategories))
+                return memo.Prices;
+
+            string[] categories = productCategories?.Select(x => x.Id.ToString()).ToArray()
+                                    ?? Array.Empty<string>();
+
             string cacheKey =
                 $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:currency={Store.Currency.CurrencyValue}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(priceValue)}:sale={CacheHelpers.Sha256(sale)}:parent={parentGen}:parentPrice={CacheHelpers.Sha256(parentPrice)}:parentSale={CacheHelpers.Sha256(parentSale)}:disabled={product?.DisableDiscounts == true}";
 
-            return CacheHelpers.GetOrCreateVersioned(
+            var result = CacheHelpers.GetOrCreateVersioned(
                 cacheKey.Split(":hash=", 2)[0],
                 cacheKey,
                 () =>
@@ -302,10 +326,15 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
 
                     return prices;
                 },
-                TimeSpan.FromHours(48)
+                PriceMemo.Lifetime
             );
+
+            _priceMemo = new PriceMemo(inputs, productCategories, result);
+            return result;
         }
     }
+
+    private volatile PriceMemo? _priceMemo;
 
     public virtual decimal Vat
     {

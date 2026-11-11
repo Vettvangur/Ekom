@@ -24,6 +24,7 @@ namespace Ekom.Models
             {
                 CheckoutConflictReason.Busy => ("checkoutBusy", "Checkout is already in progress. Please wait for it to finish or cancel the existing payment before trying again."),
                 CheckoutConflictReason.PaymentReview => ("paymentReviewRequired", "Your payment needs to be reviewed before checkout can continue. Please contact the store before making another payment."),
+                CheckoutConflictReason.CouponUnavailable => ("couponUnavailable", "The coupon on this basket can no longer be used. Please remove it and try again."),
                 CheckoutConflictReason.Completed => ("checkoutCompleted", "This checkout has already been completed. Please check your order confirmation before making another payment."),
                 _ => ("checkout_state_conflict", "Unable to prepare checkout. Please refresh your basket and try again. If the problem continues, contact the store."),
             };
@@ -38,6 +39,7 @@ namespace Ekom.Models
         Busy,
         PaymentReview,
         Completed,
+        CouponUnavailable,
     }
 }
 

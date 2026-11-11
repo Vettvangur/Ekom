@@ -186,7 +186,7 @@ bool changed = await orderApi.ApplyCouponToOrderAsync("SPRING10", "Store", ct);
 await orderApi.RemoveCouponFromOrderAsync("Store", settings: null, ct);
 ```
 
-Coupon input is normalized to lower case. Missing, exhausted, or store-inapplicable coupons raise discount exceptions. A valid coupon may still lose to a better discount; the HTTP apply route reports that no-change case with status `450`. Coupon usage is marked during trusted checkout completion, not merely when the code is attached to a basket. The usage count belongs to the code, not the customer or logged-in user. Full rule and stock behavior is documented in [Discounts for developers](discounts/developers.md).
+Coupon input is normalized to lower case. Missing, exhausted, or store-inapplicable coupons raise discount exceptions. A valid coupon may still lose to a better discount; the HTTP apply route reports that no-change case with status `450`. Coupon usage is marked during trusted checkout completion, not merely when the code is attached to a basket. Remaining uses are checked again when payment starts (a `409` with code `couponUnavailable` if none are left), and the decrement at completion is atomic; an order that still completes with an exhausted coupon gets an alert in its activity log. The usage count belongs to the code, not the customer or logged-in user. Full rule and stock behavior is documented in [Discounts for developers](discounts/developers.md).
 
 Gift cards are attached separately:
 
@@ -204,7 +204,9 @@ basket = await orderApi.AddGiftcardAsync(
 basket = await orderApi.RemoveGiftcardAsync("GIFT-100", "Store", ct: ct);
 ```
 
-Codes must be non-empty, amounts must be positive, and duplicate codes are rejected case-insensitively. Applicable gift-card amounts reduce `ChargedAmount`, never below zero. `GrandTotal` retains the discounted order value including VAT, shipping and payment fees before gift cards; `GrandTotalWithOutVat` retains that value excluding VAT. An order worth 5,000 paid entirely with gift cards therefore has `GrandTotal.Value == 5000` and `ChargedAmount.Value == 0`. The core add operation accepts a `Giftcard` value; it does not itself prove that the code, balance, claim, or client-supplied amount came from a trusted gift-card system. Validate and claim gift cards at the application's trust boundary before calling it, and protect the public gift-card route if exposing it would allow untrusted values.
+Codes must be non-empty, amounts must be positive, and duplicate codes are rejected case-insensitively. Applicable gift-card amounts reduce `ChargedAmount`, never below zero. `GrandTotal` retains the discounted order value including VAT, shipping and payment fees before gift cards; `GrandTotalWithOutVat` retains that value excluding VAT. An order worth 5,000 paid entirely with gift cards therefore has `GrandTotal.Value == 5000` and `ChargedAmount.Value == 0`. The core add operation accepts a `Giftcard` value; it does not itself prove that the code, balance or claim came from a trusted gift-card system, so only call it with values your application has verified.
+
+The public route `POST /ekom/order/giftcards` never trusts the browser: it reads only the code and asks the application's `IGiftcardValidator` for the gift card to attach. Register one to enable the route, for example `services.AddScoped<IGiftcardValidator, MyGiftcardValidator>()`. `ValidateAsync(code, order, ct)` returns the `Giftcard` (with the amount your gift-card system will honour) or `null` to reject the code. Without a registered validator the route returns `403`.
 
 ### Grand-total compatibility
 

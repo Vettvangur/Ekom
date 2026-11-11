@@ -90,7 +90,7 @@ class CheckoutService
 
                     if (!string.IsNullOrEmpty(oi.Coupon))
                     {
-                        if (!await _couponRepo.TryMarkUsedAsync(oi.Coupon).ConfigureAwait(false))
+                        if (!await _couponRepo.MarkUsedAsync(oi.Coupon).ConfigureAwait(false))
                         {
                             _logger.LogWarning("Order {OrderId} completed with a coupon that could not be claimed", o.UniqueId);
                             const string message = "The coupon was no longer available when checkout completed. Check the discount applied to this order.";

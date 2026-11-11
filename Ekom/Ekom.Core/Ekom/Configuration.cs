@@ -11,6 +11,8 @@ namespace Ekom;
 /// </summary>
 public class Configuration
 {
+    internal CacheRebuildCoordinator CacheRebuild { get; } = new();
+
     readonly IConfiguration _configuration;
     private List<CharCollection> _charCollectionsCache;
     public Configuration(IConfiguration configuration)
@@ -87,6 +89,28 @@ public class Configuration
                 ?? ["nodeName", "title", "pageTitle", "sku", "searchTags", "summary", "description"];
         }
     }
+
+    /// <summary>
+    /// Ekom:Search:PublicFields
+    /// Index fields that anonymous callers of the catalog HTTP API may search.
+    /// Requests naming other fields have those fields ignored.
+    /// </summary>
+    public virtual IReadOnlyList<string> PublicSearchFields
+    {
+        get
+        {
+            return _configuration.GetSection("Ekom:Search:PublicFields").Get<string[]>()
+                ?? ["nodeName", "sku", "title", "description", "searchTags", "id"];
+        }
+    }
+
+    /// <summary>
+    /// Ekom:Api:MaxRequestBodySize
+    /// Largest request body, in bytes, accepted by the public storefront routes
+    /// (order, checkout, catalog, provider, api and order-discounts). 0 disables the cap.
+    /// </summary>
+    public virtual long MaxPublicRequestBodySize
+        => _configuration.GetValue<long?>("Ekom:Api:MaxRequestBodySize") ?? 128_000;
 
     /// <summary>
     /// Umbraco:CMS:RequestHandler:CharCollection

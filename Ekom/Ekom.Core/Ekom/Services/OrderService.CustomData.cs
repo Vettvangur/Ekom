@@ -37,7 +37,7 @@ partial class OrderService
         if (settings.OrderInfo != null || settings.IsEventHandler)
             throw new ArgumentException("This operation loads the persisted order and cannot use a supplied order or event-handler reentry.", nameof(settings));
 
-        var semaphore = _orderLocks.GetOrAdd(orderId, static _ => new SemaphoreSlim(1, 1));
+        var semaphore = _orderLocks.Get(orderId);
         var ownsSemaphore = CheckoutPaymentOperationScope.Current?.OrderId != orderId;
         if (ownsSemaphore) await semaphore.WaitAsync(ct).ConfigureAwait(false);
         try

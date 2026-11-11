@@ -10,10 +10,12 @@ class CategoryCache : PerStoreCache<ICategory>
     public override string NodeAlias { get; } = "ekmCategory";
 
     // storeAlias -> parentId -> child keys
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentBag<Guid>>> _childrenIndex = new();
+    private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentBag<Guid>>> _childrenIndex =>
+        _config.CacheRebuild.Get(this, nameof(_childrenIndex), static () => new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentBag<Guid>>>());
 
     // storeAlias -> categoryId -> descendant keys (includes all descendants)
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentBag<Guid>>> _descIndex = new();
+    private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentBag<Guid>>> _descIndex =>
+        _config.CacheRebuild.Get(this, nameof(_descIndex), static () => new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentBag<Guid>>>());
 
     public CategoryCache(
         Configuration config,
@@ -40,6 +42,7 @@ class CategoryCache : PerStoreCache<ICategory>
         string nodeAlias,
         IReadOnlyDictionary<int, IReadOnlyList<UmbracoContent>>? ancestorsByNodeId)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         var count = base.FillStoreCache(store, results, nodeAlias, ancestorsByNodeId);
 
         RebuildIndexes(store.Alias);
@@ -49,6 +52,7 @@ class CategoryCache : PerStoreCache<ICategory>
 
     public override void ClearCache()
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         base.ClearCache();
         _childrenIndex.Clear();
         _descIndex.Clear();
@@ -56,12 +60,14 @@ class CategoryCache : PerStoreCache<ICategory>
 
     public override void AddOrReplaceFromCache(Guid key, Store store, ICategory item)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         base.AddOrReplaceFromCache(key, store, item);
         RebuildIndexes(store.Alias);
     }
 
     public override bool RemoveItemFromCache(IStore store, Guid key)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         var removed = RemoveItemFromCacheCore(store, key);
         if (removed)
             RebuildIndexes(store.Alias);
@@ -71,6 +77,7 @@ class CategoryCache : PerStoreCache<ICategory>
 
     protected override void RemoveItemsFromCache(IStore store, IReadOnlyCollection<Guid> keys)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         var removed = false;
 
         foreach (var key in keys)
@@ -131,6 +138,7 @@ class CategoryCache : PerStoreCache<ICategory>
 
     public IEnumerable<ICategory> GetChildren(string storeAlias, int parentId)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         if (!Cache.TryGetValue(storeAlias, out var storeCache))
             return Enumerable.Empty<ICategory>();
 
@@ -150,6 +158,7 @@ class CategoryCache : PerStoreCache<ICategory>
 
     public IEnumerable<ICategory> GetDescendants(string storeAlias, int categoryId)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         if (!Cache.TryGetValue(storeAlias, out var storeCache))
             return Enumerable.Empty<ICategory>();
 

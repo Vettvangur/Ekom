@@ -125,6 +125,168 @@ public static class StringExtension
         if (!value.IsJson())
             return value;
 
+        // Reading plain string values without building a JToken tree keeps cache fills and listings cheap.
+        if (TryGetEkomPropertyEditorValueFast(value, alias, fallback, out var fastValue))
+            return fastValue;
+
+        return GetEkomPropertyEditorValueWithJToken(value, alias, fallback);
+    }
+
+    /// <summary>
+    /// Handles the common shapes only: arrays, and objects whose selected value is a plain string or null.
+    /// Returns false for anything else so the JToken path keeps deciding the result.
+    /// </summary>
+    private static bool TryGetEkomPropertyEditorValueFast(string value, string alias, bool fallback, out string result)
+    {
+        result = string.Empty;
+
+        if (alias == null)
+            return false;
+
+        // Arrays are returned as is whether or not they parse.
+        if (value.AsSpan().TrimStart()[0] == '[')
+        {
+            result = value;
+            return true;
+        }
+
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(value);
+            var root = document.RootElement;
+
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Object)
+                return false;
+
+            if (!TryFindSingleProperty(root, alias, out var found, out var direct))
+                return false;
+
+            if (found)
+                return TryReadPlainValue(direct, out result);
+
+            if (!TryFindSingleProperty(root, "values", out found, out var values))
+                return false;
+
+            if (!found || values.ValueKind != System.Text.Json.JsonValueKind.Object)
+            {
+                result = found
+                    ? values.ValueKind == System.Text.Json.JsonValueKind.Null ? string.Empty : value
+                    : ExtractSerializedRichText(value);
+                return true;
+            }
+
+            return TryGetValueFromValuesElement(values, alias, fallback, out result);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // Newtonsoft is more lenient (comments, single quotes), let it decide.
+            return false;
+        }
+    }
+
+    private static bool TryGetValueFromValuesElement(System.Text.Json.JsonElement values, string alias, bool fallback, out string result)
+    {
+        result = string.Empty;
+
+        System.Text.Json.JsonProperty? first = null;
+        var firstNameCount = 0;
+        foreach (var property in values.EnumerateObject())
+        {
+            first ??= property;
+            if (property.NameEquals(first.Value.Name))
+                firstNameCount++;
+        }
+
+        if (first == null)
+            return true;
+
+        bool found;
+        if (!string.IsNullOrEmpty(alias))
+        {
+            if (!TryFindSingleProperty(values, alias, out found, out var aliasValue))
+                return false;
+
+            if (found)
+                return TryReadPlainValue(aliasValue, out result);
+        }
+
+        HttpContext? httpCtx = Configuration.Resolver?.GetService<IHttpContextAccessor>()?.HttpContext;
+        var culture = httpCtx?.Request?.HttpContext?.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture ?? CultureInfo.CurrentCulture;
+
+        if (!TryFindSingleProperty(values, culture.Name, out found, out var cultureValue))
+            return false;
+
+        if (found)
+            return TryReadPlainValue(cultureValue, out result);
+
+        if (fallback)
+        {
+            // A repeated name is resolved by the JToken path (last value wins there).
+            return firstNameCount == 1 && TryReadPlainValue(first.Value.Value, out result);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Case-insensitive lookup. Returns false when several properties match, as JObject then
+    /// prefers an exact match and replaces duplicates, which only the JToken path reproduces.
+    /// </summary>
+    private static bool TryFindSingleProperty(
+        System.Text.Json.JsonElement obj,
+        string name,
+        out bool found,
+        out System.Text.Json.JsonElement value)
+    {
+        found = false;
+        value = default;
+
+        foreach (var property in obj.EnumerateObject())
+        {
+            if (!string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (found)
+                return false;
+
+            found = true;
+            value = property.Value;
+        }
+
+        return true;
+    }
+
+    private static bool TryReadPlainValue(System.Text.Json.JsonElement element, out string result)
+    {
+        result = string.Empty;
+
+        if (element.ValueKind == System.Text.Json.JsonValueKind.Null)
+            return true;
+
+        if (element.ValueKind != System.Text.Json.JsonValueKind.String)
+            return false;
+
+        var text = element.GetString() ?? string.Empty;
+
+        // JToken.Parse turns date-like strings into dates and formats them differently.
+        if (text.Length > 0
+            && (text[0] == '/' || (text.Length >= 19 && text.Length <= 40 && char.IsDigit(text[0]) && text[10] == 'T')))
+        {
+            return false;
+        }
+
+        result = ExtractSerializedRichText(text);
+        return true;
+    }
+
+    internal static string GetEkomPropertyEditorValueWithJToken(string value, string alias, bool fallback = false)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        if (!value.IsJson())
+            return value;
+
         try
         {
             var token = JToken.Parse(value);
@@ -136,10 +298,7 @@ public static class StringExtension
                 // 1. Try getting the value directly by alias
                 if (obj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out var directToken) && directToken != null)
                 {
-                    if (directToken.Type == JTokenType.Object && directToken["markup"] != null)
-                        return directToken["markup"]!.ToString();
-
-                    return directToken.ToString();
+                    return ExtractValueFromToken(directToken) ?? string.Empty;
                 }
 
                 // 2. Try getting from "values" dictionary inside the JSON
@@ -154,6 +313,11 @@ public static class StringExtension
                     {
                         return GetValueFromValuesObject(valuesObj, alias, fallback);
                     }
+                }
+                else
+                {
+                    // A native rich-text value is a shared default until store overrides are saved.
+                    return ExtractSerializedRichText(value);
                 }
             }
             else if (token.Type == JTokenType.Array)
@@ -215,7 +379,32 @@ public static class StringExtension
         if (token.Type == JTokenType.Object && token["markup"] != null)
             return token["markup"]!.ToString();
 
-        return token.ToString();
+        return token.Type == JTokenType.String
+            ? ExtractSerializedRichText(token.ToString())
+            : token.ToString();
+    }
+
+    private static string ExtractSerializedRichText(string value)
+    {
+        if (!value.AsSpan().TrimStart().StartsWith("{"))
+            return value;
+
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(value);
+            if (document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+                && document.RootElement.TryGetProperty("markup", out var markup)
+                && markup.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                return markup.GetString() ?? string.Empty;
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // Preserve ordinary text and malformed JSON unchanged.
+        }
+
+        return value;
     }
 
     internal static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)

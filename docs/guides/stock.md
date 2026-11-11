@@ -26,6 +26,8 @@ Prefer `IncrementStockAsync` for deltas because the repository applies condition
 
 Equal sets and zero increments are no-ops at the SQL layer for existing rows. `StockEvents.StockChangedAsync` is best-effort after commit and provides key, optional store alias, old value, and new value. A subscriber failure is logged and does not roll back inventory.
 
+To set many balances at once, pass `StockSetRequest` values to `SetStockAsync(IEnumerable<StockSetRequest>, ct)`. Rows are written in batches of 200, each with one transaction and one cache refresh instead of one of each per value. Every value is an absolute replacement, as with the single-item overloads; when the same key and store appear more than once, the last value wins. `StoreAlias` is only used with `PerStoreStock`.
+
 ## Global or per-store stock
 
 `Ekom:PerStoreStock` defaults to `false`:

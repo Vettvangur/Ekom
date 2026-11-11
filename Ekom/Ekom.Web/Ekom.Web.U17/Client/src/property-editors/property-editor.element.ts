@@ -92,14 +92,15 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
   private readonly manuallyEditedSlugTabs = new Set<string>();
   private readonly onTitleChanged = (event: Event): void => this.handleTitleChanged(event);
   private readonly onTabChanged = (event: Event): void => this.handleTabChanged(event);
+  private unwrappedValue: unknown;
   private internalValue: EkomPropertyValue = {
     values: {},
     dtdGuid: emptyGuid,
     type: 'Language',
   };
 
-  get value(): EkomPropertyValue {
-    return this.internalValue;
+  get value(): unknown {
+    return this.unwrappedValue ?? this.internalValue;
   }
 
   set value(value: unknown) {
@@ -282,7 +283,7 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
 
     editor.manifest = manifest;
     editor.name = `${this.name ?? this.propertyAlias}.${this.currentTab.value}`;
-    editor.value = this.internalValue.values?.[this.currentTab.value];
+    editor.value = this.getCurrentEditorValue();
     editor.config = new UmbPropertyEditorConfigCollection(this.getWrappedConfig());
     editor.readonly = this.readonly;
     editor.mandatory = false;
@@ -310,13 +311,19 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
       this.manuallyEditedSlugTabs.add(this.currentTab.value);
     }
 
+    const defaultValue = this.getUnwrappedRichText();
+    const defaults = defaultValue == null ? {} : Object.fromEntries(
+      this.tabs.map(tab => [tab.value, structuredClone(defaultValue)]),
+    );
     this.internalValue = {
       ...this.internalValue,
       values: {
+        ...defaults,
         ...this.internalValue.values,
         [this.currentTab.value]: this.editor.value,
       },
     };
+    this.unwrappedValue = undefined;
 
     this.emitChange();
     this.emitTitleChanged();
@@ -453,12 +460,51 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
     this.emitChange();
   }
 
+  private getUnwrappedRichText(): { markup: string; [key: string]: unknown } | undefined {
+    const alias = this.wrappedDataType?.propertyEditorAlias;
+    if (this.internalValue.type !== 'Store' || (alias !== 'Umbraco.RichText' && alias !== 'Umbraco.TinyMCE')) {
+      return undefined;
+    }
+
+    const value = this.unwrappedValue;
+    if (typeof value === 'string') {
+      return { markup: value };
+    }
+    if (value != null && typeof value === 'object' && 'markup' in value && typeof value.markup === 'string') {
+      return value as { markup: string; [key: string]: unknown };
+    }
+    return undefined;
+  }
+
+  private getCurrentEditorValue(): unknown {
+    const storedValue = this.currentTab == null ? undefined : this.internalValue.values?.[this.currentTab.value];
+    const defaultValue = this.getUnwrappedRichText();
+    const value = storedValue === undefined && defaultValue != null ? structuredClone(defaultValue) : storedValue;
+    const alias = this.wrappedDataType?.propertyEditorAlias;
+
+    if ((alias !== 'Umbraco.RichText' && alias !== 'Umbraco.TinyMCE') || typeof value !== 'string') {
+      return value;
+    }
+
+    // Ekom's nested values are not migrated by Umbraco's native rich-text migrations.
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (parsed != null && typeof parsed === 'object' && 'markup' in parsed && typeof parsed.markup === 'string') {
+        return parsed;
+      }
+    } catch {
+      // Legacy rich text can be plain HTML.
+    }
+
+    return { markup: value };
+  }
+
   private syncCurrentEditorValue(): void {
     if (this.editor == null || this.currentTab == null) {
       return;
     }
 
-    this.editor.value = this.internalValue.values?.[this.currentTab.value];
+    this.editor.value = this.getCurrentEditorValue();
   }
 
   private setTabValue(tab: string, value: string): void {
@@ -718,6 +764,14 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
   }
 
   private normalizeValue(value: unknown): EkomPropertyValue {
+    if (typeof value === 'string') {
+      try {
+        value = JSON.parse(value);
+      } catch {
+        // Older rich-text values may be plain HTML.
+      }
+    }
+    this.unwrappedValue = undefined;
     if (value != null && typeof value === 'object' && 'values' in value) {
       const typedValue = value as Partial<EkomPropertyValue>;
 
@@ -730,10 +784,11 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
       };
     }
 
+    this.unwrappedValue = value;
     return {
       values: {},
       dtdGuid: emptyGuid,
-      type: 'Language',
+      type: this.internalValue.type,
     };
   }
 

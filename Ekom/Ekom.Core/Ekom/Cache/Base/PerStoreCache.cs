@@ -55,8 +55,8 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
     /// <summary>
     /// Concurrent dictionaries per store: storeAlias -> (Key Guid -> TItem)
     /// </summary>
-    public virtual ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>> Cache { get; }
-        = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>>();
+    public virtual ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>> Cache =>
+        _config.CacheRebuild.Get(this, nameof(Cache), static () => new ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>>());
 
     /// <summary>
     /// Store cache indexer: returns the Key->Item dictionary for a store alias
@@ -143,20 +143,26 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
     /// <summary>
     /// storeAlias -> (Id -> Key)
     /// </summary>
-    protected virtual ConcurrentDictionary<string, ConcurrentDictionary<int, Guid>> IdIndex { get; }
-        = new ConcurrentDictionary<string, ConcurrentDictionary<int, Guid>>();
+    protected virtual ConcurrentDictionary<string, ConcurrentDictionary<int, Guid>> IdIndex =>
+        _config.CacheRebuild.Get(this, nameof(IdIndex), static () => new ConcurrentDictionary<string, ConcurrentDictionary<int, Guid>>());
 
     /// <summary>
     /// storeAlias -> (Sku -> Key)
     /// </summary>
-    protected virtual ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>> SkuIndex { get; }
-        = new ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>>();
+    protected virtual ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>> SkuIndex =>
+        _config.CacheRebuild.Get(this, nameof(SkuIndex), static () => new ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>>());
 
     /// <summary>
     /// storeAlias -> (Route -> Key)
     /// </summary>
-    protected virtual ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>> RouteIndex { get; }
-        = new ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>>();
+    protected virtual ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>> RouteIndex =>
+        _config.CacheRebuild.Get(this, nameof(RouteIndex), static () => new ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>>());
+
+    /// <summary>
+    /// Key set for secondary indexes. These exist per product, group or category, so they are
+    /// created small: a default ConcurrentDictionary costs about 1 KB before holding anything.
+    /// </summary>
+    protected static ConcurrentDictionary<Guid, byte> NewKeySet() => new(concurrencyLevel: 1, capacity: 4);
 
     private ConcurrentDictionary<Guid, TItem> GetStoreCache(string alias) =>
         Cache.GetOrAdd(alias, _ => new ConcurrentDictionary<Guid, TItem>());
@@ -178,6 +184,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     public virtual void FillCache(IStore? storeParam = null)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         if (string.IsNullOrWhiteSpace(NodeAlias))
         {
             _logger.LogError("No NodeAlias, can not fill cache.");
@@ -218,6 +225,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
         }
         catch (Exception ex)
         {
+            if (_config.CacheRebuild.IsRebuilding) throw;
             _logger.LogError(ex, "Filling per store cache failed for {NodeAlias}!", NodeAlias);
         }
 
@@ -232,6 +240,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     public virtual void ClearCache()
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         Cache.Clear();
         IdIndex.Clear();
         SkuIndex.Clear();
@@ -247,6 +256,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
         string nodeAlias,
         IReadOnlyDictionary<int, IReadOnlyList<UmbracoContent>>? ancestorsByNodeId)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         int count = 0;
 
         // Replace whole store cache (fast + consistent)
@@ -324,6 +334,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
             }
             catch (Exception ex)
             {
+                if (_config.CacheRebuild.IsRebuilding) throw;
                 _logger.LogWarning(
                     ex,
                     "Error on adding item with id: {Id} in Store: {StoreAlias} to cache.",
@@ -348,6 +359,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     public virtual void AddOrReplaceFromCache(Guid key, Store store, TItem item)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         var alias = store.Alias;
 
         var storeCache = GetStoreCache(alias);
@@ -408,6 +420,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     protected bool RemoveItemFromCacheCore(IStore store, Guid key)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         var alias = store.Alias;
 
         if (!GetStoreCache(alias).TryRemove(key, out var item))
@@ -437,6 +450,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     public void AddOrReplaceFromAllCaches(UmbracoContent node)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         using var scope = _serviceScopeFactory.CreateScope();
         var nodeService = scope.ServiceProvider.GetRequiredService<INodeService>();
 
@@ -464,6 +478,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
             }
             catch (Exception ex)
             {
+                if (_config.CacheRebuild.IsRebuilding) throw;
                 _logger.LogWarning(
                     ex,
                     "Error on adding item with id: {Id} in Store: {StoreAlias}",
@@ -476,6 +491,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     public void RemoveItemFromAllCaches(Guid key)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (KeyValuePair<Guid, IStore> store in _storeCache.Cache)
             RemoveItemFromCache(store.Value, key);
     }
@@ -490,6 +506,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     public virtual void RemoveDescendants(int id)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var store in _storeCache.Cache.Values)
         {
             if (!Cache.TryGetValue(store.Alias, out var storeCache))
@@ -508,6 +525,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     protected virtual void RemoveItemsFromCache(IStore store, IReadOnlyCollection<Guid> keys)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         foreach (var key in keys)
         {
             RemoveItemFromCacheCore(store, key);
@@ -524,12 +542,14 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     public bool TryGetByKey(string storeAlias, Guid key, out TItem? item)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         item = null;
         return Cache.TryGetValue(storeAlias, out var d) && d.TryGetValue(key, out item);
     }
 
     public bool TryGetById(string storeAlias, int id, out TItem? item)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         item = null;
         if (!EnableIdIndex) return false;
 
@@ -541,6 +561,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     public bool TryGetBySku(string storeAlias, string sku, out TItem? item)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         item = null;
         if (!EnableSkuIndex || string.IsNullOrWhiteSpace(sku)) return false;
 
@@ -554,6 +575,7 @@ abstract class PerStoreCache<TItem> : ICache, IClearableCache, IPerStoreCache, I
 
     public bool TryGetByRoute(string storeAlias, string route, out TItem? item)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         item = null;
         if (!EnableRouteIndex || string.IsNullOrWhiteSpace(route)) return false;
 

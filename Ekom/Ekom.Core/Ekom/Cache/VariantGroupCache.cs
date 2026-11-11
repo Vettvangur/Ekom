@@ -10,8 +10,8 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
     public override string NodeAlias { get; } = "ekmProductVariantGroup";
 
     // storeAlias -> (ProductId -> group keys)
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>> _productIndex
-        = new();
+    private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>> _productIndex =>
+        _config.CacheRebuild.Get(this, nameof(_productIndex), static () => new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>>());
 
     private ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>> GetStoreProductIndex(string storeAlias) =>
         _productIndex.GetOrAdd(storeAlias, _ => new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>());
@@ -35,6 +35,7 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
         string nodeAlias,
         IReadOnlyDictionary<int, IReadOnlyList<UmbracoContent>>? ancestorsByNodeId)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         var count = base.FillStoreCache(store, results, nodeAlias, ancestorsByNodeId);
 
         var pi = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
@@ -46,7 +47,7 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
                 var key = kv.Key;
                 var g = kv.Value;
 
-                pi.GetOrAdd(g.ProductId, _ => new ConcurrentDictionary<Guid, byte>()).TryAdd(key, 0);
+                pi.GetOrAdd(g.ProductId, static _ => NewKeySet()).TryAdd(key, 0);
             }
         }
 
@@ -56,12 +57,14 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
 
     public override void ClearCache()
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         base.ClearCache();
         _productIndex.Clear();
     }
 
     public IEnumerable<IVariantGroup> GetByProductId(string storeAlias, int productId)
     {
+        using var cacheRead = _config.CacheRebuild.Read();
         if (!Cache.TryGetValue(storeAlias, out var storeCache))
             return Enumerable.Empty<IVariantGroup>();
 
@@ -82,15 +85,17 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
     // Event-driven updates (lazy-cleaned, same approach as VariantCache)
     public override void AddOrReplaceFromCache(Guid key, Store store, IVariantGroup item)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         base.AddOrReplaceFromCache(key, store, item);
 
         GetStoreProductIndex(store.Alias)
-            .GetOrAdd(item.ProductId, _ => new ConcurrentDictionary<Guid, byte>())
+            .GetOrAdd(item.ProductId, static _ => NewKeySet())
             .TryAdd(key, 0);
     }
 
     public override bool RemoveItemFromCache(IStore store, Guid key)
     {
+        using var cacheUpdate = _config.CacheRebuild.Update();
         return base.RemoveItemFromCache(store, key);
     }
 }

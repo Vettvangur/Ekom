@@ -1011,6 +1011,77 @@ public sealed class LinkedOrderLinesTests
         Assert.Empty((await fixture.ReloadAsync()).CustomData);
     }
 
+    [Fact]
+    public async Task GiftcardRouteIsClosedWithoutValidator()
+    {
+        using var fixture = new Fixture();
+        var productKey = fixture.AddProduct(price: 990);
+        await fixture.Service.AddOrderLineAsync(productKey, 1, "main",
+            new AddOrderSettings { OrderInfo = fixture.Order, FireEvents = false });
+        var controller = CreateGiftcardController(fixture, validator: null);
+
+        var result = await controller.AddGiftcard(new GiftcardRequest
+        {
+            StoreAlias = "main",
+            Giftcard = new Giftcard { Code = "MADE-UP", Amount = 989, Claimed = true },
+        });
+
+        Assert.Equal(403, Assert.IsType<Microsoft.AspNetCore.Mvc.ObjectResult>(result).StatusCode);
+        Assert.Empty((await fixture.ReloadAsync()).Giftcards);
+    }
+
+    [Fact]
+    public async Task GiftcardRouteUsesValidatorAmountNotClientAmount()
+    {
+        using var fixture = new Fixture();
+        var productKey = fixture.AddProduct(price: 990);
+        await fixture.Service.AddOrderLineAsync(productKey, 1, "main",
+            new AddOrderSettings { OrderInfo = fixture.Order, FireEvents = false });
+        var validator = new Mock<IGiftcardValidator>();
+        validator.Setup(x => x.ValidateAsync("REAL-100", It.IsAny<IOrderInfo>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Giftcard { Code = "REAL-100", Amount = 100 });
+        var controller = CreateGiftcardController(fixture, validator.Object);
+
+        var accepted = await controller.AddGiftcard(new GiftcardRequest
+        {
+            StoreAlias = "main",
+            Giftcard = new Giftcard { Code = " REAL-100 ", Amount = 989, Claimed = true, ClaimId = "forged" },
+        });
+        var rejected = await controller.AddGiftcard(new GiftcardRequest
+        {
+            StoreAlias = "main",
+            Giftcard = new Giftcard { Code = "MADE-UP", Amount = 989 },
+        });
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.OkObjectResult>(accepted);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>(rejected);
+        var order = await fixture.ReloadAsync();
+        var giftcard = Assert.Single(order.Giftcards);
+        Assert.Equal(100, giftcard.Amount);
+        Assert.False(giftcard.Claimed);
+        Assert.Null(giftcard.ClaimId);
+        Assert.Equal(890, order.ChargedAmount.Value);
+    }
+
+    private static EkomOrderController CreateGiftcardController(Fixture fixture, IGiftcardValidator? validator)
+    {
+        var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+        if (validator != null)
+        {
+            Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, validator);
+        }
+
+        var controller = new EkomOrderController(NullLogger<EkomOrderController>.Instance, fixture.CreateHttpOrderApi());
+        controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+        {
+            HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+            {
+                RequestServices = Microsoft.Extensions.DependencyInjection.ServiceCollectionContainerBuilderExtensions.BuildServiceProvider(services),
+            },
+        };
+        return controller;
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly ConfigurationScope _scope;

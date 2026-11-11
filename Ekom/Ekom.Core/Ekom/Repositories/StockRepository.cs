@@ -96,6 +96,43 @@ class StockRepository
     }
 
     /// <summary>Returns the committed mutation's previous value. Never calculates a delta from cache.</summary>
+    /// <summary>
+    /// Sets several balances in one transaction and returns the previous value of each (0 when the row is new).
+    /// Like a single explicit set, this replaces the stored balance.
+    /// </summary>
+    public Task<Dictionary<string, decimal>> SetManyAsync(IReadOnlyDictionary<string, decimal> values, CancellationToken ct = default)
+    {
+        return StockReservationService.RetryAsync(async () =>
+        {
+            var ids = values.Keys.ToArray();
+            var oldValues = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+            await using var db = _databaseFactory.GetDatabase();
+            await using var tx = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+            var rows = await db.StockData.Where(x => Enumerable.Contains(ids, x.UniqueId)).ToListAsync(ct).ConfigureAwait(false);
+            var existing = new Dictionary<string, StockData>(StringComparer.OrdinalIgnoreCase);
+            foreach (var row in rows) existing[row.UniqueId] = row;
+
+            var now = DateTime.Now;
+            foreach (var (uniqueId, value) in values)
+            {
+                existing.TryGetValue(uniqueId, out var row);
+                oldValues[uniqueId] = row?.Stock ?? 0;
+                if (row == null)
+                {
+                    await db.InsertAsync(new StockData { UniqueId = uniqueId, Stock = value, CreateDate = now, UpdateDate = now }, token: ct).ConfigureAwait(false);
+                }
+                else if (row.Stock != value)
+                {
+                    await db.StockData.Where(x => x.UniqueId == uniqueId).Set(x => x.Stock, value)
+                        .Set(x => x.UpdateDate, now).UpdateAsync(ct).ConfigureAwait(false);
+                }
+            }
+
+            await tx.CommitAsync(ct).ConfigureAwait(false);
+            return oldValues;
+        }, ct);
+    }
+
     public Task<decimal> MutateAsync(string uniqueId, decimal value, bool increment, CancellationToken ct = default)
     {
         return StockReservationService.RetryAsync(async () =>
