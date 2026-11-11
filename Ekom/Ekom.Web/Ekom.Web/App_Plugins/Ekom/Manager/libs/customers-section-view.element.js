@@ -86,12 +86,8 @@ class f {
   async stores() {
     const [a, t] = await Promise.all([this.getJson("/ekom/manager/stores"), this.getJson("/ekom/manager/store-currencies")]);
     return a.map((e) => {
-      var r;
-      return {
-        ...e,
-        currencyModels: (e.currencies || []).filter((o) => !!o && typeof o == "object"),
-        currencies: ((r = t.find((o) => o.alias === e.alias)) == null ? void 0 : r.currencies) || []
-      };
+      const r = t.find((o) => o.alias === e.alias);
+      return { ...e, currencies: (r == null ? void 0 : r.currencies) || [], currencyFormats: ((r == null ? void 0 : r.formats) || []).filter((o) => !!o) };
     });
   }
   async paymentProviders(a) {
@@ -434,11 +430,11 @@ const D = `
   "#f0f0f0": "--ekom-border",
   "#247f45": "--ekom-positive",
   "#ad5f00": "--ekom-warning"
-}, j = L.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (s) => S[s.toLowerCase()] ? `var(${S[s.toLowerCase()]})` : s), T = `${_} {
+}, T = L.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (s) => S[s.toLowerCase()] ? `var(${S[s.toLowerCase()]})` : s), j = `${_} {
   ${L.replaceAll(":host", "&")}
 }
 ${_}:not([classic]) {
-  ${j}
+  ${T}
   --ekom-bg: var(--uui-color-background, #f0f1f4);
   --ekom-surface: var(--uui-color-surface, #fff);
   --ekom-surface-alt: var(--uui-color-surface-alt, #f6f7f9);
@@ -840,7 +836,7 @@ class W extends H(HTMLElement) {
   }
   render() {
     const t = l.filters, e = this.result;
-    E(this, `<style>${T}${this.classic ? `
+    E(this, `<style>${j}${this.classic ? `
       ekom-customers-section-view { display:block; color:var(--uui-color-text,#20232e) }
       .customers { padding:24px; background:var(--uui-color-background,#f3f4f7); min-height:80vh }
       .customer-cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:18px 0 }

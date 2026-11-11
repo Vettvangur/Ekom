@@ -34,16 +34,27 @@ export type StoreItem = {
   title: string;
   currencies?: string[];
   currency?: StoreCurrency;
-  /** The store's configured currencies with their culture, used to format amounts. */
-  currencyModels?: StoreCurrency[];
+  /** How each store currency is written, as defined by the culture configured on the store. */
+  currencyFormats?: CurrencyFormat[];
 };
 
-export type StoreCurrency = { isoCurrencySymbol?: string; currencyValue?: string; currencyDecimalDigits?: number };
+/** positivePattern follows .NET: 0 = $n, 1 = n$, 2 = $ n, 3 = n $. */
+export type CurrencyFormat = { code: string; symbol: string; groupSeparator: string; decimalSeparator: string; decimalDigits: number; positivePattern: number };
+export type StoreCurrency = { isoCurrencySymbol?: string; currencyValue?: string; currencyDecimalDigits?: number; format?: CurrencyFormat };
 
-/** The store's own definition of a currency code, so amounts use the culture configured on the store. */
+/** A store currency with the store's own format for it, so amounts read the same as in Orders. */
 export function storeCurrency(store: StoreItem | undefined, code: string | undefined): StoreCurrency | undefined {
+  code ||= store?.currency?.isoCurrencySymbol;
   if (!code) return store?.currency;
-  return [...(store?.currencyModels || []), store?.currency].find(currency => currency?.isoCurrencySymbol === code) || { isoCurrencySymbol: code };
+  const format = store?.currencyFormats?.find(item => item?.code === code);
+  return { ...(store?.currency?.isoCurrencySymbol === code ? store.currency : {}), isoCurrencySymbol: code, ...(format ? { format, currencyDecimalDigits: format.decimalDigits } : {}) };
+}
+
+function formatWithStoreCulture(value: number, format: CurrencyFormat): string {
+  const [whole, fraction] = Math.abs(value).toFixed(Math.max(0, format.decimalDigits)).split('.');
+  const number = whole.replace(/\B(?=(\d{3})+(?!\d))/g, format.groupSeparator) + (fraction ? format.decimalSeparator + fraction : '');
+  const amount = [`${format.symbol}${number}`, `${number}${format.symbol}`, `${format.symbol} ${number}`, `${number} ${format.symbol}`][format.positivePattern] ?? `${number} ${format.symbol}`;
+  return (value < 0 && Number(whole + '.' + (fraction || '0')) !== 0 ? '-' : '') + amount;
 }
 
 export type PaymentProviderItem = {
@@ -312,12 +323,11 @@ export class EkomManagerApi {
   }
 
   async stores(): Promise<StoreItem[]> {
-    const [stores, choices] = await Promise.all([this.getJson<StoreItem[]>('/ekom/manager/stores'), this.getJson<Array<{ alias: string; currencies: string[] }>>('/ekom/manager/store-currencies')]);
-    return stores.map(store => ({
-      ...store,
-      currencyModels: ((store.currencies || []) as unknown[]).filter((currency): currency is StoreCurrency => !!currency && typeof currency === 'object'),
-      currencies: choices.find(choice => choice.alias === store.alias)?.currencies || [],
-    }));
+    const [stores, choices] = await Promise.all([this.getJson<StoreItem[]>('/ekom/manager/stores'), this.getJson<Array<{ alias: string; currencies: string[]; formats?: Array<CurrencyFormat | null> }>>('/ekom/manager/store-currencies')]);
+    return stores.map(store => {
+      const choice = choices.find(item => item.alias === store.alias);
+      return { ...store, currencies: choice?.currencies || [], currencyFormats: (choice?.formats || []).filter((format): format is CurrencyFormat => !!format) };
+    });
   }
 
   async paymentProviders(storeAlias: string): Promise<PaymentProviderItem[]> {
@@ -959,6 +969,7 @@ export function renderOrderStatusSummary(status?: OrderStatusSnapshot): string {
 }
 
 export function formatAnalyticsAmount(value: number, currency?: StoreItem['currency']): string {
+  if (currency?.format) return formatWithStoreCulture(value, currency.format);
   const code = currency?.isoCurrencySymbol;
   const digits = currency?.currencyDecimalDigits ?? (code && /^[A-Z]{3}$/.test(code) ? new Intl.NumberFormat(undefined, { style: 'currency', currency: code }).resolvedOptions().maximumFractionDigits : 2);
   // Format in the store currency's own culture, as Orders does, so both views read the same.

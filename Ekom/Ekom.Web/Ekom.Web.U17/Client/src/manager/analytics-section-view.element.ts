@@ -124,7 +124,9 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   }
 
   private get currency() {
-    const code = this.chartFilters?.currency || managerState.filters.currency;
+    return this.currencyFor(this.chartFilters?.currency || managerState.filters.currency);
+  }
+  private currencyFor(code: string | undefined) {
     return storeCurrency(managerState.stores.find(store => store.alias === (this.chartFilters?.store || managerState.filters.store)), code);
   }
 
@@ -214,7 +216,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     if (value == null || this.chartData?.mixedCurrencies) return '—';
     const code = this.chartData?.currency || this.previousData?.currency;
     if (!code || code === this.currency?.currencyValue || code === this.currency?.isoCurrencySymbol) return formatAnalyticsAmount(value, this.currency);
-    if (/^[A-Z]{3}$/.test(code)) return formatAnalyticsAmount(value, { isoCurrencySymbol: code });
+    if (/^[A-Z]{3}$/.test(code)) return formatAnalyticsAmount(value, this.currencyFor(code));
     return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${code}`;
   }
   private label(metric: AnalyticsMetric): string { return metric === 'orders' ? 'Orders' : metric === 'average' ? 'Average order value' : 'Order amount'; }
@@ -369,7 +371,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     if (!canvas || !this.chartData || this.table) return;
     const buckets = this.buckets;
     const code = this.chartData.currency || this.previousData?.currency;
-    const currency = code && /^[A-Z]{3}$/.test(code) ? { isoCurrencySymbol: code } : this.currency;
+    const currency = code && /^[A-Z]{3}$/.test(code) ? this.currencyFor(code) : this.currency;
     const comparison = this.previousData && (this.metric === 'orders' || this.comparisonMoneyAvailable)
       ? { labels: [], points: buckets.map(b => ({ x: this.range(b.previousStart,b.previousEnd), y: this.previousValue(b) })) } : undefined;
     renderLineChart(canvas, { labels: [], points: buckets.map(b => ({ x: this.range(b.start,b.end), y: b[this.metric] })) }, getComputedStyle(canvas).getPropertyValue('--ekom-accent').trim() || '#10694a', {

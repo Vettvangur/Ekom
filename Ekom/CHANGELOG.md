@@ -4,7 +4,7 @@
 
 * **manager:** read a store's order history once per Customers search instead of rescanning the orders table for every query, fixing slow or timed-out customer lists.
 
-* **manager:** format Analytics amounts in the store currency's culture, matching Orders (for example `24.774.950 kr.` instead of `ISK 24,774,950`).
+* **manager:** format Analytics amounts as the culture configured on the store defines each currency, matching Orders (for example `24.774.950 kr.` instead of `ISK 24,774,950`). The format comes from the server because browsers lack number formats for some cultures, Icelandic among them.
 
 * **manager:** load the Orders view counts in one request and one database scan instead of running a full order search for every view, on each load and each polling refresh. Fixes slow or timed-out order lists on stores with many orders.
 
