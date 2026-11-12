@@ -3,6 +3,7 @@ using Ekom.Models.Umbraco;
 using Ekom.Umb.CatalogCollection.Models;
 using Ekom.Umb.Models;
 using Ekom.Utilities;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Globalization;
 using System.Net;
@@ -24,15 +25,18 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
     private readonly IScopeProvider _scopeProvider;
+    private readonly ILogger<CatalogCollectionService> _logger;
 
     public CatalogCollectionService(
         IContentService contentService,
         IContentTypeService contentTypeService,
-        IScopeProvider scopeProvider)
+        IScopeProvider scopeProvider,
+        ILogger<CatalogCollectionService> logger)
     {
         _contentService = contentService;
         _contentTypeService = contentTypeService;
         _scopeProvider = scopeProvider;
+        _logger = logger;
     }
 
     public CatalogCollectionResponse GetCollection(string nodeId, CatalogCollectionRequest request)
@@ -52,65 +56,92 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
 
         var pageSize = Math.Clamp(request.PageSize <= 0 ? 80 : request.PageSize, 1, MaxPageSize);
         var page = Math.Max(request.Page, 1);
+        var status = CatalogCollectionIndex.NormalizeStatus(request.Status);
+
+        // Narrow rows for the whole subtree: enough for counts, filters, sorting and paging
+        // without loading content. Full content is only loaded for the page being shown.
+        var rows = new CatalogCollectionRowReader(_scopeProvider);
+        var productRows = rows.GetProductRows(current.Path);
+        var variantRows = rows.GetVariantRows(current.Path);
+        var links = rows.GetLinkRows(current.Id, current.Path);
+        rows.AddLinkedProducts(productRows, variantRows, links);
+
+        var index = CatalogCollectionIndex.Build(
+            current.Id,
+            current.Path,
+            productRows,
+            variantRows,
+            links,
+            CreateStockReader());
+
         var subcategoryContent = GetCatalogChildren(current.Id, "ekmCategory")
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .ToList();
         var subcategoryCounts = GetChildCounts(subcategoryContent.Select(x => x.Id).ToList());
         var subcategories = subcategoryContent
-            .Select(category => MapNode(category, subcategoryCounts.GetValueOrDefault(category.Id)))
+            .Select(category => MapNode(category, subcategoryCounts.GetValueOrDefault(category.Id), index.GetBranch(category.Id)))
             .ToList();
-        var hasQuery = !string.IsNullOrWhiteSpace(request.Query);
-        var productCount = 0;
-        var filteredProductCount = 0;
-        var totalPages = 1;
-        IReadOnlyList<CatalogCollectionProduct> pagedProducts;
 
-        if (hasQuery)
+        IReadOnlyList<CatalogProductEntry> candidates = index.DirectProducts;
+        Dictionary<int, IContent>? loadedContent = null;
+
+        if (!string.IsNullOrWhiteSpace(request.Query))
         {
-            var products = GetCatalogChildren(current.Id, "ekmProduct")
-                .Select(MapProduct)
-                .ToList();
-            var filteredProducts = SortProducts(FilterProducts(products, request.Query), request.Sort);
-
-            productCount = products.Count;
-            filteredProductCount = filteredProducts.Count;
-            totalPages = Math.Max(1, (int)Math.Ceiling(filteredProductCount / (double)pageSize));
-            page = Math.Min(page, totalPages);
-            pagedProducts = filteredProducts
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-        }
-        else
-        {
-            var productContent = GetPagedProducts(current.Id, page - 1, pageSize, request.Sort, out var totalProducts);
-            productCount = (int)Math.Min(totalProducts, int.MaxValue);
-            filteredProductCount = productCount;
-            totalPages = Math.Max(1, (int)Math.Ceiling(productCount / (double)pageSize));
-            page = Math.Min(page, totalPages);
-
-            if (page - 1 != request.Page - 1)
+            // Title and SKU live in property data, so a text search has to read the content.
+            loadedContent = GetCatalogChildren(current.Id, "ekmProduct").ToDictionary(x => x.Id);
+            var linkedIds = index.DirectProducts.Where(x => x.Linked && !loadedContent.ContainsKey(x.Id)).Select(x => x.Id).ToList();
+            foreach (var linked in _contentService.GetByIds(linkedIds))
             {
-                productContent = GetPagedProducts(current.Id, page - 1, pageSize, request.Sort, out _);
+                loadedContent[linked.Id] = linked;
             }
 
-            pagedProducts = productContent.Select(MapProduct).ToList();
+            var matches = loadedContent.Values
+                .Where(x => MatchesQuery(x, request.Query))
+                .Select(x => x.Id)
+                .ToHashSet();
+            candidates = index.DirectProducts.Where(x => matches.Contains(x.Id)).ToList();
         }
+
+        var statusCounts = CatalogCollectionIndex.CountStatuses(candidates);
+        var filtered = CatalogCollectionIndex.Sort(CatalogCollectionIndex.FilterByStatus(candidates, status), request.Sort);
+        var totalPages = Math.Max(1, (int)Math.Ceiling(filtered.Count / (double)pageSize));
+        page = Math.Min(page, totalPages);
+
+        var pageEntries = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var pageContent = loadedContent
+            ?? _contentService.GetByIds(pageEntries.Select(x => x.Id)).ToDictionary(x => x.Id);
+        var storeAlias = GetDefaultStore()?.Alias;
+        var products = new List<CatalogCollectionProduct>(pageEntries.Count);
+        foreach (var entry in pageEntries)
+        {
+            if (pageContent.TryGetValue(entry.Id, out var content))
+            {
+                products.Add(MapProduct(content, entry, storeAlias));
+            }
+        }
+
+        var totals = GetCategoryTotals(current);
+        var currentNode = MapNode(current);
+        currentNode.TotalProductCount = index.TotalProductCount;
+        currentNode.ProductCount = index.DirectProducts.Count;
+        currentNode.SubcategoryCount = subcategories.Count;
 
         return new CatalogCollectionResponse
         {
-            Current = MapNode(current),
+            Current = currentNode,
             Parent = GetParent(current),
-            Breadcrumbs = GetBreadcrumbs(current),
+            Breadcrumbs = GetBreadcrumbs(current, totals),
             Subcategories = subcategories,
-            Products = pagedProducts,
-            ProductCount = productCount,
+            Products = products,
+            ProductCount = index.DirectProducts.Count,
             SubcategoryCount = subcategories.Count,
-            FilteredProductCount = filteredProductCount,
+            FilteredProductCount = filtered.Count,
             Page = page,
             PageSize = pageSize,
             TotalPages = totalPages,
+            Status = status,
+            StatusCounts = statusCounts,
         };
     }
 
@@ -147,41 +178,58 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
             .ToList();
     }
 
-    private IReadOnlyList<IContent> GetPagedProducts(
-        int parentId,
-        int pageIndex,
-        int pageSize,
-        string? sort,
-        out long totalRecords)
+    /// <summary>
+    /// Recursive product totals for every category in the catalog, from two aggregate queries.
+    /// Used for the sibling lists in the breadcrumb.
+    /// </summary>
+    private IReadOnlyDictionary<int, int> GetCategoryTotals(IContent current)
     {
-        var productType = _contentTypeService.Get("ekmProduct")
-            ?? throw new InvalidOperationException("Content type ekmProduct not found.");
-        var filter = new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed && x.ContentTypeId == productType.Id);
+        var top = current;
+        while (top.ParentId > 0)
+        {
+            var parent = _contentService.GetById(top.ParentId);
+            if (parent == null || !CatalogAliases.Contains(parent.ContentType.Alias))
+            {
+                break;
+            }
 
-        return _contentService.GetPagedChildNodes(
-                parentId,
-                pageIndex,
-                pageSize,
-                out totalRecords,
-                filter,
-                GetProductOrdering(sort))
-            .ToList();
+            top = parent;
+        }
+
+        // Siblings of the top catalog node share its parent, so count from one level above it.
+        var lastSeparator = top.Path.LastIndexOf(',');
+        var scopePath = lastSeparator > 0 ? top.Path[..lastSeparator] : top.Path;
+
+        return new CatalogCollectionRowReader(_scopeProvider).GetCategoryTotals(scopePath);
     }
 
-    private static Ordering GetProductOrdering(string? sort)
+    private static IStore? GetDefaultStore()
+        => API.Store.Instance.GetStore() ?? API.Store.Instance.GetAllStores().FirstOrDefault();
+
+    private static Func<Guid, decimal> CreateStockReader()
     {
-        return (sort ?? string.Empty).ToUpperInvariant() switch
+        var storeAlias = Configuration.Instance.PerStoreStock ? GetDefaultStore()?.Alias : null;
+
+        return key =>
         {
-            "SORTORDERDESC" => Ordering.By("sortOrder", Direction.Descending),
-            "NAMEASC" => Ordering.By("name", Direction.Ascending),
-            "NAMEDESC" => Ordering.By("name", Direction.Descending),
-            "CREATEDASC" => Ordering.By("createDate", Direction.Ascending),
-            "CREATEDDESC" => Ordering.By("createDate", Direction.Descending),
-            "UPDATEDASC" => Ordering.By("updateDate", Direction.Ascending),
-            "UPDATEDDESC" => Ordering.By("updateDate", Direction.Descending),
-            _ => Ordering.By("sortOrder", Direction.Ascending),
+            try
+            {
+                return string.IsNullOrWhiteSpace(storeAlias)
+                    ? API.Stock.Instance.GetStock(key)
+                    : API.Stock.Instance.GetStock(key, storeAlias);
+            }
+            catch (InvalidOperationException)
+            {
+                return 0;
+            }
         };
+    }
+
+    private static bool MatchesQuery(IContent content, string query)
+    {
+        return GetTitle(content).Contains(query, StringComparison.OrdinalIgnoreCase)
+            || (content.Name ?? string.Empty).Contains(query, StringComparison.OrdinalIgnoreCase)
+            || GetStringValue(content, "sku").Contains(query, StringComparison.OrdinalIgnoreCase);
     }
 
     private CatalogCollectionNode? GetParent(IContent content)
@@ -195,7 +243,7 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
         return parent == null || !CatalogAliases.Contains(parent.ContentType.Alias) ? null : MapNode(parent);
     }
 
-    private IReadOnlyList<CatalogCollectionBreadcrumb> GetBreadcrumbs(IContent content)
+    private IReadOnlyList<CatalogCollectionBreadcrumb> GetBreadcrumbs(IContent content, IReadOnlyDictionary<int, int> totals)
     {
         var breadcrumbs = new List<IContent>();
         var current = content;
@@ -218,17 +266,22 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
 
         breadcrumbs.Reverse();
         breadcrumbs.Add(content);
-        return breadcrumbs.Select(MapBreadcrumb).ToList();
+        return breadcrumbs.Select(x => MapBreadcrumb(x, totals)).ToList();
     }
 
-    private CatalogCollectionBreadcrumb MapBreadcrumb(IContent content)
+    private CatalogCollectionBreadcrumb MapBreadcrumb(IContent content, IReadOnlyDictionary<int, int> totals)
     {
         IReadOnlyList<CatalogCollectionNode> siblings = content.ContentType.Alias.Equals("ekmCategory", StringComparison.OrdinalIgnoreCase)
             && content.ParentId > 0
                 ? GetCatalogChildren(content.ParentId, "ekmCategory")
                     .OrderBy(x => x.SortOrder)
                     .ThenBy(x => x.Name)
-                    .Select(category => MapNode(category))
+                    .Select(category =>
+                    {
+                        var sibling = MapNode(category);
+                        sibling.TotalProductCount = totals.GetValueOrDefault(category.Id);
+                        return sibling;
+                    })
                     .ToList()
                 : Array.Empty<CatalogCollectionNode>();
 
@@ -241,35 +294,6 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
             ContentTypeAlias = content.ContentType.Alias,
             SortOrder = content.SortOrder,
             Siblings = siblings,
-        };
-    }
-
-    private static List<CatalogCollectionProduct> FilterProducts(List<CatalogCollectionProduct> products, string? query)
-    {
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            return products;
-        }
-
-        return products
-            .Where(x => x.Title.Contains(query, StringComparison.OrdinalIgnoreCase)
-                || x.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
-                || x.Sku.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-    }
-
-    private static List<CatalogCollectionProduct> SortProducts(List<CatalogCollectionProduct> products, string? sort)
-    {
-        return (sort ?? string.Empty).ToUpperInvariant() switch
-        {
-            "SORTORDERDESC" => products.OrderByDescending(x => x.SortOrder).ThenBy(x => x.Title).ToList(),
-            "NAMEDESC" => products.OrderByDescending(x => x.Title).ThenBy(x => x.Sku).ToList(),
-            "CREATEDASC" => products.OrderBy(x => x.CreatedDate).ThenBy(x => x.Title).ToList(),
-            "CREATEDDESC" => products.OrderByDescending(x => x.CreatedDate).ThenBy(x => x.Title).ToList(),
-            "UPDATEDASC" => products.OrderBy(x => x.UpdatedDate).ThenBy(x => x.Title).ToList(),
-            "UPDATEDDESC" => products.OrderByDescending(x => x.UpdatedDate).ThenBy(x => x.Title).ToList(),
-            "NAMEASC" => products.OrderBy(x => x.Title).ThenBy(x => x.Sku).ToList(),
-            _ => products.OrderBy(x => x.SortOrder).ThenBy(x => x.Title).ToList(),
         };
     }
 
@@ -314,7 +338,7 @@ GROUP BY n.parentId, ct.alias",
         return counts;
     }
 
-    private static CatalogCollectionNode MapNode(IContent content, CatalogCollectionCounts? counts = null)
+    private static CatalogCollectionNode MapNode(IContent content, CatalogCollectionCounts? counts = null, CatalogBranchSummary? branch = null)
     {
         var pendingChanges = content.Published && content.Edited;
 
@@ -331,15 +355,17 @@ GROUP BY n.parentId, ct.alias",
             Published = content.Published,
             PendingChanges = pendingChanges,
             Status = content.Published ? pendingChanges ? "Pending changes" : "Published" : "Unpublished",
+            TotalProductCount = branch?.Total ?? 0,
+            LiveCount = branch?.Live ?? 0,
+            OutOfStockCount = branch?.OutOfStock ?? 0,
         };
     }
 
-    private static CatalogCollectionProduct MapProduct(IContent content)
+    private CatalogCollectionProduct MapProduct(IContent content, CatalogProductEntry entry, string? storeAlias)
     {
         var price = GetPrice(content);
         var pendingChanges = content.Published && content.Edited;
-
-        return new CatalogCollectionProduct
+        var product = new CatalogCollectionProduct
         {
             Id = content.Id,
             Key = content.Key,
@@ -352,12 +378,54 @@ GROUP BY n.parentId, ct.alias",
             Price = FormatPrice(price),
             CreatedDate = content.CreateDate,
             UpdatedDate = content.UpdateDate,
-            Available = IsAvailable(content),
+            Available = entry.Stock > 0,
+            Linked = entry.Linked,
+            Stock = entry.Stock,
+            VariantCount = entry.VariantCount,
             Image = GetFirstImage(GetStringValue(content, "images")),
             Published = content.Published,
             PendingChanges = pendingChanges,
             Status = content.Published ? pendingChanges ? "Pending changes" : "Published" : "Unpublished",
         };
+
+        if (content.Published)
+        {
+            ApplyDiscountedPrice(product, price.Currency, storeAlias);
+        }
+
+        return product;
+    }
+
+    /// <summary>
+    /// Shows the discounted price with the original struck through when the storefront
+    /// product currently has a product discount.
+    /// </summary>
+    private void ApplyDiscountedPrice(CatalogCollectionProduct product, CurrencyModel? currency, string? storeAlias)
+    {
+        try
+        {
+            var price = API.Catalog.Instance.GetProduct(product.Key, storeAlias, raiseEvent: false)?.Price;
+            if (price == null)
+            {
+                return;
+            }
+
+            var before = price.BeforeDiscount.Value;
+            var after = price.AfterDiscount.Value;
+            if (after <= 0 || after >= before)
+            {
+                return;
+            }
+
+            product.PriceValue = after;
+            product.Price = FormatPrice(new CatalogProductPrice(after, currency));
+            product.OriginalPrice = FormatPrice(new CatalogProductPrice(before, currency));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or NullReferenceException or KeyNotFoundException)
+        {
+            // The storefront price pipeline can be unavailable for a node; keep the stored price.
+            _logger.LogDebug(ex, "Could not resolve discounted price for product {ProductKey}", product.Key);
+        }
     }
 
     private static string GetFirstImage(string value)
@@ -555,18 +623,6 @@ GROUP BY n.parentId, ct.alias",
         catch (ArgumentException)
         {
             return price.Value.Value.ToString("N0", CultureInfo.InvariantCulture);
-        }
-    }
-
-    private static bool IsAvailable(IContent content)
-    {
-        try
-        {
-            return API.Stock.Instance.GetStock(content.Key) > 0;
-        }
-        catch (InvalidOperationException)
-        {
-            return false;
         }
     }
 

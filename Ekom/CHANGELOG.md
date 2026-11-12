@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **catalog:** redesign the Umbraco 17/18/19 Catalog collection view: light and dark tokens that follow the backoffice theme, status filter chips with counts, subcategory health, variant counts, stock levels, discounted prices and Umbraco's standard actions menu on each card. A category also lists products connected to it through their categories picker, marked **Linked**. Counts, filters and sorting are answered from narrow database rows, and content is loaded only for the visible page.
+
 * **orders:** match the parent link when adding order lines, so standalone products do not merge into linked child lines with the same product or variant.
 
 * **manager:** remove the Items column from the Umbraco 17/18 Orders table. The list query no longer parses `OrderInfo` to total line quantities, and `OrderData.ItemQuantity` is removed.

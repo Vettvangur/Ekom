@@ -6,6 +6,7 @@ public sealed class CatalogCollectionRequest
     public string Sort { get; set; } = "sortOrderAsc";
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 80;
+    public string Status { get; set; } = "all";
 }
 
 public sealed class CatalogCollectionResponse
@@ -21,6 +22,16 @@ public sealed class CatalogCollectionResponse
     public int Page { get; set; }
     public int PageSize { get; set; }
     public int TotalPages { get; set; }
+    public string Status { get; set; } = "all";
+    public CatalogCollectionStatusCounts StatusCounts { get; set; } = new();
+}
+
+public sealed class CatalogCollectionStatusCounts
+{
+    public int All { get; set; }
+    public int Published { get; set; }
+    public int Unpublished { get; set; }
+    public int OutOfStock { get; set; }
 }
 
 public class CatalogCollectionNode
@@ -36,6 +47,9 @@ public class CatalogCollectionNode
     public string Status { get; set; } = string.Empty;
     public bool Published { get; set; }
     public bool PendingChanges { get; set; }
+    public int TotalProductCount { get; set; }
+    public int LiveCount { get; set; }
+    public int OutOfStockCount { get; set; }
 }
 
 public sealed class CatalogCollectionBreadcrumb : CatalogCollectionNode
@@ -52,4 +66,8 @@ public sealed class CatalogCollectionProduct : CatalogCollectionNode
     public DateTime UpdatedDate { get; set; }
     public bool Available { get; set; }
     public string Image { get; set; } = string.Empty;
+    public string OriginalPrice { get; set; } = string.Empty;
+    public int VariantCount { get; set; }
+    public decimal Stock { get; set; }
+    public bool Linked { get; set; }
 }
