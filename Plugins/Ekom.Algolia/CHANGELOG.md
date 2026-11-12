@@ -28,6 +28,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.74](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.73...Ekom.Algolia-v0.2.74) (2026-11-12)
+
+
+### Bug Fixes
+
+* **payments:** reference Ekom.Payments 1.0.0 and use Ekom.Payments.U19 on Umbraco 19 ([#1195](https://github.com/Vettvangur/Ekom/issues/1195)) ([958b96c](https://github.com/Vettvangur/Ekom/commit/958b96cbf99274b9c8dd233c45f6bf77b32faaeb))
+
 ## [0.2.73](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.72...Ekom.Algolia-v0.2.73) (2026-11-12)
 
 
