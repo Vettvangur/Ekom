@@ -13,6 +13,13 @@
 
 - Keep the printer minimum Ekom.Core dependency at 0.2.352 independently of core releases and reject NuGet version substitution during publication.
 
+## [1.3.1](https://github.com/Vettvangur/Ekom/compare/Ekom.Printer-v1.3.0...Ekom.Printer-v1.3.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **payments:** reference Ekom.Payments 1.0.0 and use Ekom.Payments.U19 on Umbraco 19 ([#1195](https://github.com/Vettvangur/Ekom/issues/1195)) ([958b96c](https://github.com/Vettvangur/Ekom/commit/958b96cbf99274b9c8dd233c45f6bf77b32faaeb))
+
 ## [1.3.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Printer-v1.2.0...Ekom.Printer-v1.3.0) (2026-11-12)
 
 
