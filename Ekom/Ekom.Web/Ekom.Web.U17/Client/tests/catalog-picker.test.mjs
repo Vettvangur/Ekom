@@ -18,7 +18,9 @@ function compile(file, modules, globals = {}) {
 }
 
 const pickerContext = compile('catalog-picker-context', {});
+const defaultView = compile('catalog-default-view', { './catalog-picker-context': pickerContext });
 const collectionToken = Symbol('collection');
+const documentWorkspaceToken = Symbol('documentWorkspace');
 class Controller {
   permitted = false;
   consumers = new Map();
@@ -32,7 +34,9 @@ class Controller {
 }
 const { default: Condition } = compile('catalog-picker.condition', {
   '@umbraco-cms/backoffice/collection': { UMB_COLLECTION_CONTEXT: collectionToken },
+  '@umbraco-cms/backoffice/document': { UMB_DOCUMENT_WORKSPACE_CONTEXT: documentWorkspaceToken },
   '@umbraco-cms/backoffice/extension-registry': { UmbConditionBase: Controller },
+  './catalog-default-view': defaultView,
   './catalog-picker-context': pickerContext,
 });
 
