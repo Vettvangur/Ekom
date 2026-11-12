@@ -14,6 +14,13 @@
 * **mailchimp:** expose cached global audience tags through `IMailchimpService`
 * **mailchimp:** automatically use consent-aware, first-touch `mc_cid` and `mc_tc` order attribution
 
+## [1.6.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.5.3...Ekom.Mailchimp-v1.6.0) (2026-11-12)
+
+
+### Features
+
+* **u19:** add Umbraco 19 support ([#1170](https://github.com/Vettvangur/Ekom/issues/1170)) ([e724838](https://github.com/Vettvangur/Ekom/commit/e7248384f9161973955e5766bf7be8bea9e9711d))
+
 ## [1.5.3](https://github.com/Vettvangur/Ekom/compare/Ekom.Mailchimp-v1.5.2...Ekom.Mailchimp-v1.5.3) (2026-11-03)
 
 
