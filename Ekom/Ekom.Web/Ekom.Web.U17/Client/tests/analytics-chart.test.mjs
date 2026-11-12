@@ -192,7 +192,7 @@ test('loading placeholders follow the manager design and announce only the statu
 
   const orders = exports.renderOrderRowsLoading();
   assert.equal(count(orders, /class="ekom-list-row ekom-list-skeleton-row" aria-hidden="true"/g), 6);
-  assert.equal(count(orders, /class="ekom-skeleton"/g), 42);
+  assert.equal(count(orders, /class="ekom-skeleton"/g), 36);
   assert.match(orders, /role="status">Loading orders…/);
 
   const rows = exports.renderRowsLoading('Calculating…');

@@ -34,10 +34,6 @@ namespace Ekom.Models
         [Column(Length = int.MaxValue)]
         public string OrderInfo { get; set; }
 
-        /// <summary>Total saved line quantities, populated for manager list queries.</summary>
-        [Column(IsColumn = false)]
-        public decimal? ItemQuantity { get; set; }
-
         [Column(Length = 100)]
         public string OrderNumber { get; set; }
 

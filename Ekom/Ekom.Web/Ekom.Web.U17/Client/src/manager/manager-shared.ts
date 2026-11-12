@@ -93,7 +93,6 @@ export type OrderListItem = {
   orderStatusCol?: string;
   customerName?: string;
   customerEmail?: string;
-  itemQuantity?: number | null;
   storeAlias?: string;
   createDate?: string;
   formattedTotal?: string;
@@ -1397,7 +1396,7 @@ export function renderRowsLoading(message: string, rows = 4): string {
 
 /** Placeholder rows for the orders list, laid out on the list's own grid. */
 export function renderOrderRowsLoading(rows = 6): string {
-  const row = `<div class="ekom-list-row ekom-list-skeleton-row" aria-hidden="true">${['60%', '70%', '55%', '80%', '70%', '60%', '50%'].map(width => skeletonBar(width)).join('')}<span></span></div>`;
+  const row = `<div class="ekom-list-row ekom-list-skeleton-row" aria-hidden="true">${['60%', '70%', '55%', '80%', '70%', '60%'].map(width => skeletonBar(width)).join('')}<span></span></div>`;
   return row.repeat(rows) + '<span class="ekom-sr-only" role="status">Loading orders…</span>';
 }
 

@@ -527,7 +527,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
   /** Opens the orders table; the caller closes it after the rows. */
   private renderOrderTableHead(): string {
-    return `<div class="ekom-list-table" role="table" aria-label="Orders"><div class="ekom-list-row ekom-list-head" role="row"><span role="columnheader">Order</span><span role="columnheader">Date</span><span role="columnheader">Customer</span><span role="columnheader" class="ekom-align-right">Total</span><span role="columnheader">Payment</span><span role="columnheader">Fulfillment</span><span role="columnheader" class="ekom-align-right">Items</span><span role="columnheader"><span class="ekom-sr-only">Open order</span></span></div>`;
+    return `<div class="ekom-list-table" role="table" aria-label="Orders"><div class="ekom-list-row ekom-list-head" role="row"><span role="columnheader">Order</span><span role="columnheader">Date</span><span role="columnheader">Customer</span><span role="columnheader" class="ekom-align-right">Total</span><span role="columnheader">Payment</span><span role="columnheader">Fulfillment</span><span role="columnheader"><span class="ekom-sr-only">Open order</span></span></div>`;
   }
 
   /** Placeholder rows while a different list is on its way; a refresh of the list on screen keeps its rows. */
@@ -544,7 +544,6 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       <strong role="cell" class="ekom-align-right">${escapeHtml(order.formattedTotal)}</strong>
       <div role="cell">${this.renderPaymentMenu(order)}</div>
       <div role="cell">${this.renderRowFulfillment(order)}</div>
-      <span role="cell" class="ekom-align-right ekom-muted">${escapeHtml(order.itemQuantity ?? '—')}</span>
       <button role="cell" type="button" class="ekom-row-open" data-action="view-order" data-order-id="${escapeHtml(order.uniqueId)}" aria-label="Open order ${escapeHtml(order.referenceId)}">›</button>
     </div>`;
   }
