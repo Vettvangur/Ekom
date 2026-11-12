@@ -7,7 +7,7 @@ Choose Ekom packages by the target Umbraco major version:
 | 13 | `Ekom.U10` | `Ekom.Web` | `Ekom.Payments.U10` |
 | 17 | `Ekom.U17` | `Ekom.Web.U17` | `Ekom.Payments.U17` |
 | 18 | `Ekom.U18` | `Ekom.Web.U18` | `Ekom.Payments.U18` |
-| 19 (release candidate) | `Ekom.U19` | `Ekom.Web.U19` | `Ekom.Payments.U18` |
+| 19 (release candidate) | `Ekom.U19` | `Ekom.Web.U19` | `Ekom.Payments.U19` |
 
 `Ekom.U10` is the legacy name retained by the current Umbraco 13 package, assembly, project, and payments dependency. Do not replace it with an assumed `Ekom.U13` package; this repository does not define one.
 
