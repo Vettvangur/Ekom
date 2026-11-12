@@ -67,12 +67,18 @@ export function useCatalogAsDefaultView(
       }
 
       if (isRouted(viewManager)) {
-        // Umbraco 17 and 18.0 route each view; the landing view is the fallback of those routes.
-        const layouts = collection.getConfig()?.layouts;
-        viewManager.setConfig({
-          defaultViewAlias: preferred.alias,
-          ...(layouts != null && layouts.length > 0 ? { viewsOverride: layouts } : {}),
-        } as never);
+        // Umbraco 17 and 18 route each view; the landing view is the fallback of those routes.
+        // Wait until every observer of this views update has run. Umbraco's view chooser resolves the
+        // current view against its own copy of the views, and hides itself when that copy is behind.
+        void Promise.resolve().then(() => {
+          if (viewManager.getCurrentView()?.alias === preferred.alias) return;
+
+          const layouts = collection.getConfig()?.layouts;
+          viewManager.setConfig({
+            defaultViewAlias: preferred.alias,
+            ...(layouts != null && layouts.length > 0 ? { viewsOverride: layouts } : {}),
+          } as never);
+        });
       } else {
         viewManager.setCurrentView(preferred as never);
       }

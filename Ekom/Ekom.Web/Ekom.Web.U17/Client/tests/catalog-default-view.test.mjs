@@ -146,23 +146,35 @@ test('the landing view Umbraco chose is never stored as a preference', () => {
   assert.equal(collection.storage.size, 0);
 });
 
-test('routed view managers get Catalog as their fallback view, keeping configured layouts', () => {
+test('routed view managers get Catalog as their fallback view, keeping configured layouts', async () => {
   const layouts = [{ collectionView: CATALOG }, { collectionView: TABLE }];
   const collection = setup({ routed: true, config: { layouts } });
   collection.land();
   collection.start();
+  assert.equal(collection.current(), TABLE, 'Routes change only after the other observers of the views have run');
+  await Promise.resolve();
   assert.equal(collection.setConfigCalls.length, 1);
   assert.equal(collection.setConfigCalls[0].defaultViewAlias, CATALOG);
   assert.deepEqual(collection.setConfigCalls[0].viewsOverride, layouts);
   assert.equal(collection.current(), CATALOG);
 });
 
-test('a collection is only set up once', () => {
+test('a collection is only set up once', async () => {
   const collection = setup({ routed: true });
   collection.land();
   collection.start();
+  await Promise.resolve();
   collection.pick(TABLE);
   collection.start();
   assert.equal(collection.setConfigCalls.length, 1);
   assert.equal(collection.current(), TABLE);
+});
+
+test('a routed manager that already shows the preferred view is not reconfigured', async () => {
+  const collection = setup({ routed: true });
+  collection.land();
+  collection.start();
+  collection.pick(CATALOG);
+  await Promise.resolve();
+  assert.deepEqual(collection.setConfigCalls, []);
 });
