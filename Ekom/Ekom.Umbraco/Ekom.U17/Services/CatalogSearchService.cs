@@ -1,3 +1,4 @@
+#if !UMBRACO_19
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -345,3 +346,4 @@ internal sealed class CatalogSearchService : ICatalogSearchService
         };
     }
 }
+#endif

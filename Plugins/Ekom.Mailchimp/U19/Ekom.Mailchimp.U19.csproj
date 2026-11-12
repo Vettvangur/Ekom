@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>Ekom.Mailchimp.U19</PackageId>
+    <Version>1.5.3</Version>
+    <Authors>Vettvangur</Authors>
+    <Company>Vettvangur</Company>
+    <Description>Mailchimp integration for Ekom on Umbraco 19.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+    <PackageTags>ekom;umbraco;mailchimp;ecommerce</PackageTags>
+    <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>images/Ekom_Logo.png</PackageIcon>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DefineConstants>$(DefineConstants);UMBRACO_18;UMBRACO_19</DefineConstants>
+    <EkomPackageVersion>0.2.276</EkomPackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http" Version="11.0.0"/>
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="11.0.0"/>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseProjectReferences)' == 'true'">
+    <ProjectReference Include="..\..\..\Ekom\Ekom.Umbraco\Ekom.U19\Ekom.U19.csproj"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseProjectReferences)' != 'true'">
+    <PackageReference Include="Ekom.U19" Version="$(EkomPackageVersion)"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\**\*.cs" Exclude="..\bin\**\*.cs;..\obj\**\*.cs;..\U18\**\*.cs;..\U19\**\*.cs"/>
+    <None Include="..\README.md" Pack="true" PackagePath="\"/>
+    <None Include="..\CHANGELOG.md" Pack="true" PackagePath="\"/>
+    <None Include="..\..\..\Ekom_Logo.png" Link="Ekom_Logo.png" Pack="true" PackagePath="images/"/>
+  </ItemGroup>
+
+</Project>

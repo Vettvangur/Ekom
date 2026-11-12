@@ -1,0 +1,21 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <EkomWebU19ContentFilesPath>$(MSBuildThisFileDirectory)..\App_Plugins\Ekom\**\*.*</EkomWebU19ContentFilesPath>
+  </PropertyGroup>
+
+  <Target Name="CopyEkomWebU19Assets" BeforeTargets="CoreBuild">
+    <ItemGroup>
+      <EkomWebU19ContentFiles Include="$(EkomWebU19ContentFilesPath)" />
+    </ItemGroup>
+    <Message Text="Copying Ekom U19 files: $(EkomWebU19ContentFilesPath) - #@(EkomWebU19ContentFiles->Count()) files" Importance="high" />
+    <Copy SourceFiles="@(EkomWebU19ContentFiles)" DestinationFiles="@(EkomWebU19ContentFiles->'$(MSBuildProjectDirectory)\wwwroot\App_Plugins\Ekom\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="ClearEkomWebU19Assets" BeforeTargets="Clean">
+    <ItemGroup>
+      <EkomWebU19Dir Include="$(MSBuildProjectDirectory)\wwwroot\App_Plugins\Ekom\" />
+    </ItemGroup>
+    <Message Text="Clear old Ekom U19 web assets" Importance="high" />
+    <RemoveDir Directories="@(EkomWebU19Dir)" />
+  </Target>
+</Project>

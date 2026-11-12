@@ -9,7 +9,7 @@
       <Authors>Vettvangur</Authors>
       <PackageLicenseExpression>MIT</PackageLicenseExpression>
       <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
-      <PackageIcon>images\VV_Logo.png</PackageIcon>
+      <PackageIcon>images/Ekom_Logo.png</PackageIcon>
       <Description>Ekom Web. This Package has all the web files that Ekom requires.</Description>
       <PackageReleaseNotes>Create nuget package</PackageReleaseNotes>
       <Copyright>Copyright 2022</Copyright>
@@ -40,7 +40,7 @@
 
     <!-- Package icon -->
     <ItemGroup>
-        <None Include="..\..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
+        <None Include="..\..\..\Ekom_Logo.png" Pack="true" PackagePath="images/" />
     </ItemGroup>
 
   <ItemGroup>

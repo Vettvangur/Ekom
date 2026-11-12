@@ -11,6 +11,10 @@ using System.Globalization;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Routing;
+#if UMBRACO_19
+using Umbraco.Cms.Core.Search.Indexing;
+using Umbraco.Cms.Core.Search.Indexing.Collection;
+#endif
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Cms.Infrastructure.Persistence.Querying;
@@ -33,6 +37,9 @@ internal sealed class AlgoliaContentIndexExecutor
     private readonly ILocalizationService _languageService;
 #endif
     private readonly PropertyEditorCollection _propertyEditors;
+#if UMBRACO_19
+    private readonly PropertyValueHandlerCollection _propertyValueHandlers;
+#endif
     private readonly IContentTypeService _contentTypeService;
     private readonly IPublishedUrlProvider _urlProvider;
     private readonly IUmbracoContextFactory _umbracoContextFactory;
@@ -53,6 +60,9 @@ internal sealed class AlgoliaContentIndexExecutor
         ILocalizationService languageService,
 #endif
         PropertyEditorCollection propertyEditors,
+#if UMBRACO_19
+        PropertyValueHandlerCollection propertyValueHandlers,
+#endif
         IContentTypeService contentTypeService,
         IPublishedUrlProvider urlProvider,
         IUmbracoContextFactory umbracoContextFactory,
@@ -70,6 +80,9 @@ internal sealed class AlgoliaContentIndexExecutor
         _contentService = contentService;
         _languageService = languageService;
         _propertyEditors = propertyEditors;
+#if UMBRACO_19
+        _propertyValueHandlers = propertyValueHandlers;
+#endif
         _contentTypeService = contentTypeService;
         _urlProvider = urlProvider;
         _umbracoContextFactory = umbracoContextFactory;
@@ -515,7 +528,7 @@ internal sealed class AlgoliaContentIndexExecutor
                 continue;
 
             var propertyCulture = property.PropertyType.Variations.VariesByCulture() ? culture : null;
-            var value = ReadPropertyValue(property, propertyCulture, availableCultures, contentTypes);
+            var value = ReadPropertyValue(content, property, propertyCulture, availableCultures, contentTypes);
             var converted = ConvertProperty(new AlgoliaContentPropertyContext(content, property, propertyCulture, culture, baseIndexName), value);
 
             converted = ApplyConfiguredTransform(converted, transform);
@@ -551,11 +564,45 @@ internal sealed class AlgoliaContentIndexExecutor
     }
 
     private object? ReadPropertyValue(
+        IContent content,
         IProperty property,
         string? culture,
         IEnumerable<string> availableCultures,
         IDictionary<Guid, IContentType> contentTypes)
     {
+#if UMBRACO_19
+        // Umbraco 19 replaced the property editors' index value factories with search property value handlers.
+        var handler = _propertyValueHandlers.GetPropertyValueHandler(property.PropertyType);
+        if (handler is null)
+            return null;
+
+        var texts = new List<string>();
+        foreach (var field in handler.GetIndexFields(property, culture, null, true, content))
+        {
+            if (field.Culture is not null && !field.Culture.Equals(culture, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var value = field.Value;
+            foreach (var group in new[] { value.TextsR1, value.TextsR2, value.TextsR3, value.Texts })
+            {
+                if (group is not null)
+                    texts.AddRange(group.Where(x => !string.IsNullOrWhiteSpace(x)));
+            }
+
+            if (texts.Count > 0)
+                continue;
+
+            object? first = value.Keywords?.FirstOrDefault();
+            first ??= value.Integers?.Cast<object>().FirstOrDefault();
+            first ??= value.Decimals?.Cast<object>().FirstOrDefault();
+            first ??= value.DateTimeOffsets?.Cast<object>().FirstOrDefault();
+
+            if (first is not null)
+                return Convert.ToString(first, CultureInfo.InvariantCulture) ?? string.Empty;
+        }
+
+        return string.Join(" ", texts);
+#else
         var propertyEditor = _propertyEditors.FirstOrDefault(x => x.Alias == property.PropertyType.PropertyEditorAlias);
         if (propertyEditor is null)
             return null;
@@ -570,6 +617,7 @@ internal sealed class AlgoliaContentIndexExecutor
             .FirstOrDefault();
 
         return firstValue?.ToString() ?? string.Empty;
+#endif
     }
 
     private Dictionary<string, AlgoliaContentFieldTransform> GetAllowedProperties(AlgoliaContentIndexOptions index, IContent content)

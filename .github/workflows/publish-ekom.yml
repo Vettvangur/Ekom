@@ -40,6 +40,7 @@ jobs:
           dotnet-version: |
             8.0.x
             10.0.x
+            11.0.x
 
       - uses: actions/setup-node@v4
         with:
@@ -101,6 +102,22 @@ jobs:
           dotnet build "Ekom/Ekom.Umbraco/Ekom.U18/Ekom.U18.csproj" -c Release --no-restore -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
           dotnet build "Ekom/Ekom.Web/Ekom.Web.U18/Ekom.Web.U18.csproj" -c Release --no-restore -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
 
+      - name: Restore U19 packages
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+          dotnet restore "Ekom/Ekom.Umbraco/Ekom.U19/Ekom.U19.csproj"
+          dotnet restore "Ekom/Ekom.Web/Ekom.Web.U19/Ekom.Web.U19.csproj"
+
+      - name: Build U19 packages (Release)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+          dotnet build "Ekom/Ekom.Umbraco/Ekom.U19/Ekom.U19.csproj" -c Release --no-restore
+          dotnet build "Ekom/Ekom.Web/Ekom.Web.U19/Ekom.Web.U19.csproj" -c Release --no-restore
+
       - name: Pack Ekom packages
         shell: pwsh
         run: |
@@ -140,6 +157,11 @@ jobs:
           dotnet pack "Ekom/Ekom.Umbraco/Ekom.U18/Ekom.U18.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
           dotnet pack "Ekom/Ekom.Web/Ekom.Web.U18/Ekom.Web.U18.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
 
+          dotnet restore "Ekom/Ekom.Umbraco/Ekom.U19/Ekom.U19.csproj"
+          dotnet restore "Ekom/Ekom.Web/Ekom.Web.U19/Ekom.Web.U19.csproj"
+          dotnet pack "Ekom/Ekom.Umbraco/Ekom.U19/Ekom.U19.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom/Ekom.Web/Ekom.Web.U19/Ekom.Web.U19.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+
           $expectedPackages = @(
             "Ekom.Common.$version.nupkg"
             "Ekom.Core.$version.nupkg"
@@ -150,6 +172,8 @@ jobs:
             "Ekom.Web.U17.$version.nupkg"
             "Ekom.U18.$version.nupkg"
             "Ekom.Web.U18.$version.nupkg"
+            "Ekom.U19.$version.nupkg"
+            "Ekom.Web.U19.$version.nupkg"
           )
           $missingPackages = $expectedPackages | Where-Object {
             -not (Test-Path (Join-Path "artifacts" $_) -PathType Leaf)

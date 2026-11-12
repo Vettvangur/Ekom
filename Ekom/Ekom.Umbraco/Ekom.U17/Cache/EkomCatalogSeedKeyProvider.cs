@@ -20,12 +20,20 @@ internal sealed class EkomCatalogSeedKeyProvider : IDocumentSeedKeyProvider
 
     private readonly IConfiguration _configuration;
     private readonly IDocumentNavigationQueryService _navigationService;
+#if UMBRACO_19
+    private readonly IDocumentPublishStatusQueryService _publishStatusQueryService;
+#else
     private readonly IPublishStatusQueryService _publishStatusQueryService;
+#endif
 
     public EkomCatalogSeedKeyProvider(
         IConfiguration configuration,
         IDocumentNavigationQueryService navigationService,
+#if UMBRACO_19
+        IDocumentPublishStatusQueryService publishStatusQueryService)
+#else
         IPublishStatusQueryService publishStatusQueryService)
+#endif
     {
         _configuration = configuration;
         _navigationService = navigationService;
@@ -47,7 +55,7 @@ internal sealed class EkomCatalogSeedKeyProvider : IDocumentSeedKeyProvider
 
         foreach (var ekomRootKey in ekomRootKeys)
         {
-            if (_publishStatusQueryService.IsDocumentPublishedInAnyCulture(ekomRootKey))
+            if (IsPublishedInAnyCulture(ekomRootKey))
             {
                 keys.Add(ekomRootKey);
             }
@@ -59,10 +67,19 @@ internal sealed class EkomCatalogSeedKeyProvider : IDocumentSeedKeyProvider
                     continue;
                 }
 
-                keys.UnionWith(descendantKeys.Where(_publishStatusQueryService.IsDocumentPublishedInAnyCulture));
+                keys.UnionWith(descendantKeys.Where(IsPublishedInAnyCulture));
             }
         }
 
         return keys;
+    }
+
+    private bool IsPublishedInAnyCulture(Guid documentKey)
+    {
+#if UMBRACO_19
+        return _publishStatusQueryService.IsPublishedInAnyCulture(documentKey);
+#else
+        return _publishStatusQueryService.IsDocumentPublishedInAnyCulture(documentKey);
+#endif
     }
 }

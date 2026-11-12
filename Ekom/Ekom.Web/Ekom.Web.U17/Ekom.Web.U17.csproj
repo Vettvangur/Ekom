@@ -9,7 +9,7 @@
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
-        <PackageIcon>images/VV_Logo.png</PackageIcon>
+        <PackageIcon>images/Ekom_Logo.png</PackageIcon>
         <Description>Ekom Web assets for Umbraco 17.</Description>
         <PackageReleaseNotes>Create NuGet package</PackageReleaseNotes>
         <Copyright>Copyright 2026</Copyright>
@@ -31,7 +31,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="../../../VV_Logo.png" Pack="true" PackagePath="images/" />
+        <None Include="../../../Ekom_Logo.png" Pack="true" PackagePath="images/" />
     </ItemGroup>
 
     <ItemGroup>

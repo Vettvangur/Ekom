@@ -16,9 +16,9 @@ The main test project targets both .NET 8 and .NET 10. To run one test area:
 dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj" --filter "FullyQualifiedName~PriceTests"
 ```
 
-`Ekom.Tests` targets both `net8.0` and `net10.0`; a normal test invocation runs both. `Ekom Build.sln` does not contain the U18 Ekom projects or `Ekom.Tests`. `Ekom Site.sln` includes all three sample lines and the main tests, but omits Mailchimp and is still not complete repository coverage. See [Contributor setup](setup.md) for the exact solution split.
+`Ekom.Tests` targets both `net8.0` and `net10.0`; a normal test invocation runs both. `Ekom Build.sln` does not contain the U18 or U19 Ekom projects or `Ekom.Tests`. `Ekom Site.sln` includes all four sample lines and the main tests, but omits Mailchimp and is still not complete repository coverage. See [Contributor setup](setup.md) for the exact solution split.
 
-The U17 and U18 web-assets projects require their declared Node/npm versions when built from source. Their MSBuild targets run `npm ci` when needed and then build the client assets.
+The U17, U18, and U19 web-assets projects require their declared Node/npm versions when built from source. Their MSBuild targets run `npm ci` when needed and then build the client assets.
 
 ## Package checks
 

@@ -70,6 +70,7 @@ For the product overview and ecosystem landing page, visit [ekomcommerce.com](ht
 - [Upgrade overview](upgrading/overview.md)
 - [Umbraco 13 to 17](upgrading/umbraco-13-to-17.md)
 - [Umbraco 17 to 18](upgrading/umbraco-17-to-18.md)
+- [Umbraco 18 to 19](upgrading/umbraco-18-to-19.md)
 - [Native reservation migration](upgrading/reservations.md)
 
 ## Contributing

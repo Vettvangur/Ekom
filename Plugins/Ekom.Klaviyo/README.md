@@ -18,11 +18,15 @@ Choose the package that matches the Ekom/Umbraco application:
 |-----|-----|-----|
 | `Ekom.Klaviyo` | .NET 8 (Ekom.U10/Umbraco 13) or .NET 10 (Umbraco 17) | `Ekom.U10` or `Ekom.U17`, selected by target framework |
 | `Ekom.Klaviyo.U18` | .NET 10 and Umbraco 18 | `Ekom.U18` |
+| `Ekom.Klaviyo.U19` | .NET 11 and Umbraco 19 | `Ekom.U19` |
 
 ```shell
 dotnet add package Ekom.Klaviyo
 # Umbraco 18:
 dotnet add package Ekom.Klaviyo.U18
+
+# Umbraco 19:
+dotnet add package Ekom.Klaviyo.U19
 ```
 
 Register the services during application startup. This is required for both packages; the Umbraco composers register controllers and event handlers, not the service collection.

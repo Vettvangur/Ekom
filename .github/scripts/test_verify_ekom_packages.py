@@ -30,9 +30,9 @@ class PackageGuardTests(unittest.TestCase):
         with zipfile.ZipFile(self.directory / f"{name}.{VERSION}.nupkg", "w") as package:
             package.writestr(f"{name}.nuspec", metadata(name, commit=commit))
 
-    def test_available_version_prepares_all_nine_packages(self):
+    def test_available_version_prepares_all_eleven_packages(self):
         plan = guard.preflight(self.directory, VERSION, COMMIT, lambda *_: None)
-        self.assertEqual(9, len(plan))
+        self.assertEqual(11, len(plan))
         self.assertTrue(all(not entry["alreadyPublished"] for entry in plan))
 
     def test_retry_skips_only_matching_source_commits(self):

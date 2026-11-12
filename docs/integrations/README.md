@@ -4,9 +4,9 @@ Ekom's optional integrations are maintained in this repository. Their package RE
 
 | Integration | Packages | Documentation |
 | --- | --- | --- |
-| Algolia | `Ekom.Algolia`, `Ekom.Algolia.U18` | [Algolia README](../../Plugins/Ekom.Algolia/README.md) |
-| Klaviyo | `Ekom.Klaviyo`, `Ekom.Klaviyo.U18` | [Klaviyo README](../../Plugins/Ekom.Klaviyo/README.md) |
-| Mailchimp | `Ekom.Mailchimp`, `Ekom.Mailchimp.U18` | [Mailchimp README](../../Plugins/Ekom.Mailchimp/README.md) |
+| Algolia | `Ekom.Algolia`, `Ekom.Algolia.U18`, `Ekom.Algolia.U19` | [Algolia README](../../Plugins/Ekom.Algolia/README.md) |
+| Klaviyo | `Ekom.Klaviyo`, `Ekom.Klaviyo.U18`, `Ekom.Klaviyo.U19` | [Klaviyo README](../../Plugins/Ekom.Klaviyo/README.md) |
+| Mailchimp | `Ekom.Mailchimp`, `Ekom.Mailchimp.U18`, `Ekom.Mailchimp.U19` | [Mailchimp README](../../Plugins/Ekom.Mailchimp/README.md) |
 
 Confirm each plugin's Umbraco, .NET, and Ekom compatibility before installation or upgrade. Plugin release histories are maintained in their own `CHANGELOG.md` files.
 

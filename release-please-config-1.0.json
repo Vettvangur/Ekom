@@ -5,7 +5,8 @@
       "groupName": "Ekom.Mailchimp",
       "components": [
         "Ekom.Mailchimp",
-        "Ekom.Mailchimp.U18"
+        "Ekom.Mailchimp.U18",
+        "Ekom.Mailchimp.U19"
       ]
     }
   ],
@@ -71,6 +72,21 @@
         {
           "type": "xml",
           "path": "Ekom.Mailchimp.U18.csproj",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ]
+    },
+    "Plugins/Ekom.Mailchimp/U19": {
+      "component": "Ekom.Mailchimp.U19",
+      "package-name": "Ekom.Mailchimp.U19",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "skip-changelog": true,
+      "initial-version": "1.0.0",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Ekom.Mailchimp.U19.csproj",
           "xpath": "/Project/PropertyGroup/Version"
         }
       ]

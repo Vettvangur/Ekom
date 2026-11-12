@@ -3,6 +3,7 @@
 [![Ekom.U10](https://img.shields.io/nuget/vpre/Ekom.U10?label=Ekom.U10)](https://www.nuget.org/packages/Ekom.U10/)
 [![Ekom.U17](https://img.shields.io/nuget/vpre/Ekom.U17?label=Ekom.U17)](https://www.nuget.org/packages/Ekom.U17/)
 [![Ekom.U18](https://img.shields.io/nuget/vpre/Ekom.U18?label=Ekom.U18)](https://www.nuget.org/packages/Ekom.U18/)
+[![Ekom.U19](https://img.shields.io/nuget/vpre/Ekom.U19?label=Ekom.U19)](https://www.nuget.org/packages/Ekom.U19/)
 [![Ekom.Algolia](https://img.shields.io/nuget/vpre/Ekom.Algolia?label=Algolia)](https://www.nuget.org/packages/Ekom.Algolia/)
 [![Ekom.Klaviyo](https://img.shields.io/nuget/vpre/Ekom.Klaviyo?label=Klaviyo)](https://www.nuget.org/packages/Ekom.Klaviyo/)
 [![Ekom.Mailchimp](https://img.shields.io/nuget/vpre/Ekom.Mailchimp?label=Mailchimp)](https://www.nuget.org/packages/Ekom.Mailchimp/)
@@ -23,6 +24,7 @@ Ekom is a free, open-source ecommerce platform for Umbraco. It provides a custom
 | 13 | 8 | `Ekom.U10` | `Ekom.Web` |
 | 17 | 10 | `Ekom.U17` | `Ekom.Web.U17` |
 | 18 | 10 | `Ekom.U18` | `Ekom.Web.U18` |
+| 19 (release candidate) | 11 | `Ekom.U19` | `Ekom.Web.U19` |
 
 `Ekom.U10` is the retained package name for the Umbraco 13 integration. It does not mean that the current package supports Umbraco 10.
 
@@ -31,6 +33,13 @@ See the [compatibility guide](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/
 ## Installation
 
 Install both the runtime package and matching web-assets package in the site's main project—the project that contains `wwwroot`.
+
+### Umbraco 19
+
+```bash
+dotnet add package Ekom.U19
+dotnet add package Ekom.Web.U19
+```
 
 ### Umbraco 18
 

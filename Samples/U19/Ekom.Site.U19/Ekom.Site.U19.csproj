@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <!-- Umbraco 19 ships precompressed backoffice assets; the SDK must not compress them again. -->
+        <CompressionEnabled>false</CompressionEnabled>
+        <UserSecretsId>dee6a38f-2842-4364-9bd9-d3573d9e138b</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Umbraco.Cms" Version="19.0.0-rc1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\Ekom\Printing\Ekom.Printer\Ekom.Printer.csproj" />
+        <ProjectReference Include="..\..\..\Ekom\Ekom.Umbraco\Ekom.U19\Ekom.U19.csproj" />
+        <ProjectReference Include="..\..\..\Ekom\Ekom.Web\Ekom.Web.U19\Ekom.Web.U19.csproj" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\..\..\Plugins\Ekom.Algolia\U19\Ekom.Algolia.U19.csproj" />
+        <ProjectReference Include="..\..\..\Plugins\Ekom.Klaviyo\U19\Ekom.Klaviyo.U19.csproj" />
+        <ProjectReference Include="..\..\..\Plugins\Ekom.Mailchimp\U19\Ekom.Mailchimp.U19.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\U17\Ekom.Site.U17\CustomProductFilterService.cs" Link="CustomProductFilterService.cs" />
+        <Compile Include="..\..\U17\Ekom.Site.U17\Controllers\AuthController.cs" Link="Controllers\AuthController.cs" />
+        <Compile Include="..\..\U17\Ekom.Site.U17\Models\Login.cs" Link="Models\Login.cs" />
+        <Compile Include="..\..\U17\Ekom.Site.U17\EkomIntegration\MemberProduct.cs" Link="EkomIntegration\MemberProduct.cs" />
+        <Compile Include="..\..\U17\Ekom.Site.U17\Utility\**\*.cs" Link="Utility\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Content Include="..\..\U17\Ekom.Site.U17\Views\**\*.cshtml" Exclude="..\..\U17\Ekom.Site.U17\Views\_ViewImports.cshtml" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+        <RazorGenerate Include="..\..\U17\Ekom.Site.U17\Views\**\*.cshtml" Exclude="..\..\U17\Ekom.Site.U17\Views\_ViewImports.cshtml" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <Import Project="..\..\..\Ekom\Ekom.Web\Ekom.Web.U19\buildTransitive\Ekom.Web.U19.targets" Condition="Exists('..\..\..\Ekom\Ekom.Web\Ekom.Web.U19\buildTransitive\Ekom.Web.U19.targets')" />
+
+</Project>

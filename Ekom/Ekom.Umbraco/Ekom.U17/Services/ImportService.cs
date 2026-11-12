@@ -2544,7 +2544,7 @@ WHERE n.trashed = 0
 
     private List<IContent> GetSyncEnabledChildren(int parentId)
     {
-        return _contentService.GetPagedChildren(parentId, 0, int.MaxValue, out _, new Query<IContent>(_scopeProvider.SqlContext)
+        return _contentService.GetPagedChildNodes(parentId, 0, int.MaxValue, out _, new Query<IContent>(_scopeProvider.SqlContext)
                 .Where(x => !x.Trashed))
             .Where(x => !x.GetValue<bool>("ekmDisableSync"))
             .ToList();

@@ -8,7 +8,7 @@
     <Description>Optional HTML picking-slip queue and rendering for Ekom.</Description>
     <Authors>Vettvangur</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageIcon>images/VV_Logo.png</PackageIcon>
+    <PackageIcon>images/Ekom_Logo.png</PackageIcon>
     <IsPackable>true</IsPackable>
     <EkomPackageVersion Condition="'$(EkomPackageVersion)' == ''">0.2.352</EkomPackageVersion>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
@@ -18,7 +18,7 @@
     <None Remove="..\..\CHANGELOG.md"/>
     <None Include="README.md" Pack="true" PackagePath=""/>
     <None Include="CHANGELOG.md" Pack="true" PackagePath=""/>
-    <None Include="..\..\..\VV_Logo.png" Pack="true" PackagePath="images/"/>
+    <None Include="..\..\..\Ekom_Logo.png" Pack="true" PackagePath="images/"/>
     <ProjectReference Include="..\..\Ekom.Core\Ekom\Ekom.csproj" Condition="'$(UseProjectReferences)' == 'true'"/>
     <PackageReference Include="Ekom.Core" Version="$(EkomPackageVersion)" Condition="'$(UseProjectReferences)' != 'true'"/>
     <FrameworkReference Include="Microsoft.AspNetCore.App"/>
