@@ -13,6 +13,13 @@
 
 - Keep the printer minimum Ekom.Core dependency at 0.2.352 independently of core releases and reject NuGet version substitution during publication.
 
+## [1.3.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Printer-v1.2.0...Ekom.Printer-v1.3.0) (2026-11-12)
+
+
+### Features
+
+* **u19:** add Umbraco 19 support ([#1170](https://github.com/Vettvangur/Ekom/issues/1170)) ([e724838](https://github.com/Vettvangur/Ekom/commit/e7248384f9161973955e5766bf7be8bea9e9711d))
+
 ## [1.2.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Printer-v1.1.1...Ekom.Printer-v1.2.0) (2026-11-11)
 
 
