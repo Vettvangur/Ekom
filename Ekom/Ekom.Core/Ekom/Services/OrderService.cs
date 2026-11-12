@@ -1344,6 +1344,11 @@ partial class OrderService
             OrderLine? orderLine;
             decimal existingStock;
             var orderLineLink = settings.OrderDynamicRequest?.OrderLineLink ?? Guid.Empty;
+            // A parent has an empty Link too; identify parents through their children.
+            var parentLineKeys = orderInfo.OrderLines
+                .Select(x => x.Settings.Link)
+                .Where(link => link != Guid.Empty)
+                .ToHashSet();
 
             if (variant != null)
             {
@@ -1352,7 +1357,7 @@ partial class OrderService
                 orderLine = orderInfo.OrderLines
                     .OfType<OrderLine>()
                     .FirstOrDefault(x =>
-                        x.Settings.Link == orderLineLink &&
+                        x.Settings.Link == orderLineLink && !parentLineKeys.Contains(x.Key) &&
                         x.Product.Key == product.Key &&
                         x.Product.VariantGroups.Any(g => g.Variants.Any(v => v.Key == variant.Key)));
             }
@@ -1362,7 +1367,7 @@ partial class OrderService
 
                 orderLine = orderInfo.OrderLines
                     .OfType<OrderLine>()
-                    .FirstOrDefault(x => x.Product.Key == product.Key && x.Settings.Link == orderLineLink);
+                    .FirstOrDefault(x => x.Product.Key == product.Key && x.Settings.Link == orderLineLink && !parentLineKeys.Contains(x.Key));
             }
 
             var isNewOrderLine = false;

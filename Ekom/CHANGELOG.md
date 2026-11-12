@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **orders:** exclude linked-group parents from order-line merging by checking child-to-parent references, keeping standalone additions separate even when the parent link is empty.
+
 * **orders:** match the parent link when adding order lines, so standalone products do not merge into linked child lines with the same product or variant.
 
 ### Features
