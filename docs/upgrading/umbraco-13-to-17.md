@@ -41,6 +41,15 @@ The repository does not define a separate general-purpose Ekom data migration or
 
 Complete the required Umbraco 13-to-17 host upgrade, allow Ekom's normal startup and schema initialization to run, and validate the application's Ekom extensions. If the application is moving from Hangfire-based stock rollback behavior to native reservations at the same time, read [Reservation compatibility](reservations.md) before deployment.
 
+## Data types
+
+Umbraco 13 data types have no editor UI, and its content pickers start from an XPath query that later versions ignore. On startup Ekom repairs both:
+
+- Every data type that uses an Ekom property editor (`Ekom.Property`, `Ekom.Coupon`, `Ekom.Price`, `Ekom.Stock` and the others) gets the matching editor UI. This is matched on the property editor, so data types you renamed or created yourself are included. Their settings, such as the wrapped data type of an Ekom Property Editor, are kept.
+- The **Ekom Catalog Picker**, **Ekom Product Picker**, **Ekom Category Picker** and **Ekom Variant Group Picker** are given a dynamic root and a filter of document type keys when they still have an XPath start node, no start node, or a filter of document type aliases.
+
+Content pickers you created yourself are not changed. Set their start node and allowed types again in the backoffice. An Ekom picker listed above that you deliberately leave without a start node is configured again on the next startup; rename it if you want it left alone.
+
 ## Verify
 
 Verify the application-specific checkout and payment callbacks as well as:

@@ -1567,6 +1567,7 @@ class EnsureNodesExist : IAsyncComponent
             EnsureDiscountPriceProperties();
             EnsureDisableDiscountsProperty();
             EnsureMigrationDataTypes();
+            EnsureCatalogContentPickersConfigured();
             EnsureOrderDiscountQuantityProperties();
             EnsureDiscountAndProviderFolderContentTypes();
             EnsureSkuProductPickerDataType();
@@ -2274,39 +2275,155 @@ class EnsureNodesExist : IAsyncComponent
         SaveDataType(dataType);
     }
 
+    /// <summary>
+    /// Editor UI for each Ekom property editor. Umbraco 13 had no editor UI alias, so data types
+    /// upgraded from it have none that the backoffice can resolve until one is set here.
+    /// </summary>
+    private static readonly Dictionary<string, string> EkomEditorUiAliases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Ekom.Cache"] = EkomCacheEditorUiAlias,
+        ["Ekom.Country"] = EkomCountryEditorUiAlias,
+        ["Ekom.Coupon"] = "Ekom.PropertyEditorUi.Coupon",
+        ["Ekom.Currency"] = EkomCurrencyEditorUiAlias,
+        ["Ekom.Metafield"] = "Ekom.PropertyEditorUi.Metafield",
+        ["Ekom.Metavalue"] = "Ekom.PropertyEditorUi.Metavalue",
+        ["Ekom.Price"] = EkomPriceEditorUiAlias,
+        ["Ekom.Property"] = EkomPropertyEditorUiAlias,
+        ["Ekom.Range"] = "Ekom.PropertyEditorUi.Range",
+        ["Ekom.SkuProductPicker"] = EkomSkuProductPickerEditorUiAlias,
+        ["Ekom.Stock"] = EkomStockEditorUiAlias,
+        ["Ekom.Warehouse"] = EkomWarehouseEditorUiAlias,
+        ["Ekom.WarehouseStock"] = EkomWarehouseStockEditorUiAlias,
+        ["Ekom.Zone"] = EkomZoneEditorUiAlias,
+    };
+
+    /// <summary>
+    /// Sets the editor UI on every data type that uses an Ekom property editor, whatever the data
+    /// type is called. Matching on the editor rather than the name also covers data types a site
+    /// created or renamed itself.
+    /// </summary>
     private void ConfigureExistingEkomEditorUis()
     {
-        var editorUiAliases = new Dictionary<string, string>
+        var repeatableTextstrings = GetDataType("Ekom Repeatable Textstrings");
+        if (repeatableTextstrings != null && repeatableTextstrings.EditorUiAlias != MultipleTextStringEditorUiAlias)
         {
-            ["Ekom Repeatable Textstrings"] = MultipleTextStringEditorUiAlias,
-            ["Ekom Property Editor - Textstring"] = EkomPropertyEditorUiAlias,
-            ["Ekom Property Editor - Boolean - Stores"] = EkomPropertyEditorUiAlias,
-            ["Ekom Property Editor - Boolean"] = EkomPropertyEditorUiAlias,
-            ["Ekom Property Editor - Numeric - Stores"] = EkomPropertyEditorUiAlias,
-            ["Ekom Property Editor - Richtext Editor"] = EkomPropertyEditorUiAlias,
-            ["Ekom Property Editor - Content Picker"] = EkomPropertyEditorUiAlias,
-            ["Ekom Property Editor - Textarea"] = EkomPropertyEditorUiAlias,
-            ["Ekom Stock Editor"] = EkomStockEditorUiAlias,
-            ["Ekom Warehouse Editor"] = EkomWarehouseEditorUiAlias,
-            ["Ekom Warehouse Stock Editor"] = EkomWarehouseStockEditorUiAlias,
-            ["Ekom Cache Editor"] = EkomCacheEditorUiAlias,
-            ["Ekom Currency Picker"] = EkomCurrencyEditorUiAlias,
-            ["Ekom Country Picker"] = EkomCountryEditorUiAlias,
-            ["Ekom Price Editor"] = EkomPriceEditorUiAlias,
-            ["Ekom Zone Picker"] = EkomZoneEditorUiAlias,
-        };
+            ConfigureEditorUi(repeatableTextstrings, MultipleTextStringEditorUiAlias);
+        }
 
-        foreach (var (name, editorUiAlias) in editorUiAliases)
+        foreach (var dataType in _dataTypeService.GetAllAsync().GetAwaiter().GetResult())
         {
-            var dataType = GetDataType(name);
-
-            if (dataType == null || dataType.EditorUiAlias == editorUiAlias)
+            if (!EkomEditorUiAliases.TryGetValue(dataType.EditorAlias, out var editorUiAlias)
+                || dataType.EditorUiAlias == editorUiAlias)
             {
                 continue;
             }
 
+            _logger.LogInformation(
+                "Setting editor UI {EditorUiAlias} on data type {Name}, was {PreviousEditorUiAlias}",
+                editorUiAlias,
+                dataType.Name,
+                dataType.EditorUiAlias);
             ConfigureEditorUi(dataType, editorUiAlias);
         }
+    }
+
+    /// <summary>
+    /// Moves the Ekom content pickers of an upgraded site to the configuration Umbraco 14 and later
+    /// understand. Umbraco 13 pickers started from an XPath query and filtered on document type
+    /// aliases; both are ignored now, which leaves the picker without a start node or filter.
+    /// Pickers that already have a start node and a key based filter are left as they are.
+    /// </summary>
+    private void EnsureCatalogContentPickersConfigured()
+    {
+        var catalogCt = _contentTypeService.Get("ekmCatalog");
+        var categoryCt = _contentTypeService.Get("ekmCategory");
+        var productCt = _contentTypeService.Get("ekmProduct");
+        var variantCt = _contentTypeService.Get("ekmProductVariant");
+        var variantGroupCt = _contentTypeService.Get("ekmProductVariantGroup");
+
+        if (catalogCt != null && categoryCt != null && productCt != null)
+        {
+            if (variantCt != null && GetLegacyPicker(GetCatalogPickerDataType()) is { } catalogPicker)
+            {
+                ConfigureCatalogContentPicker(catalogPicker, catalogCt, BuildContentTypeFilter(productCt, variantCt, categoryCt), originAlias: "Root", queryStepAlias: "NearestDescendantOrSelf");
+            }
+
+            if (GetLegacyPicker(GetDataType("Ekom Product Picker")) is { } productPicker)
+            {
+                ConfigureCatalogContentPicker(productPicker, catalogCt, BuildContentTypeFilter(productCt));
+            }
+
+            if (GetLegacyPicker(GetDataType("Ekom Category Picker")) is { } categoryPicker)
+            {
+                ConfigureCatalogContentPicker(categoryPicker, catalogCt, BuildContentTypeFilter(categoryCt));
+            }
+        }
+
+        if (variantGroupCt != null && GetLegacyPicker(GetDataType("Ekom Variant Group Picker")) is { } variantGroupPicker)
+        {
+            ConfigureVariantGroupContentPicker(variantGroupPicker, BuildContentTypeFilter(variantGroupCt));
+        }
+    }
+
+    private IDataType? GetLegacyPicker(IDataType? dataType)
+    {
+        if (dataType == null || !HasLegacyPickerConfiguration(dataType.ConfigurationData))
+        {
+            return null;
+        }
+
+        _logger.LogInformation("Updating content picker {Name} from its Umbraco 13 configuration", dataType.Name);
+        return dataType;
+    }
+
+    /// <summary>
+    /// True when a content picker still carries Umbraco 13 settings: an XPath start node query,
+    /// no start node at all, or a filter of document type aliases instead of keys.
+    /// </summary>
+    internal static bool HasLegacyPickerConfiguration(IDictionary<string, object> configuration)
+    {
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(JsonSerializer.Serialize(configuration, ConfigurationSerializerOptions));
+        }
+        catch (Exception ex) when (ex is JsonException or NotSupportedException)
+        {
+            return false;
+        }
+
+        using (document)
+        {
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("filter", out var filter) && filter.ValueKind == JsonValueKind.String)
+            {
+                var entries = (filter.GetString() ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (entries.Any(entry => !Guid.TryParse(entry, out _)))
+                {
+                    return true;
+                }
+            }
+
+            if (!root.TryGetProperty("startNode", out var startNode) || startNode.ValueKind != JsonValueKind.Object)
+            {
+                return true;
+            }
+
+            if (startNode.TryGetProperty("query", out var query)
+                && query.ValueKind == JsonValueKind.String
+                && !string.IsNullOrWhiteSpace(query.GetString()))
+            {
+                return true;
+            }
+
+            return !HasValue(startNode, "id") && !HasValue(startNode, "dynamicRoot");
+        }
+
+        static bool HasValue(JsonElement element, string propertyName)
+            => element.TryGetProperty(propertyName, out var value)
+                && value.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined)
+                && !(value.ValueKind == JsonValueKind.String && string.IsNullOrWhiteSpace(value.GetString()));
     }
 
     private void ConfigurePropertyDataType(IContentType contentType, string propertyAlias, IDataType dataType)
