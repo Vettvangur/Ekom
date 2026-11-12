@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ekom.Payments.Netgiro" Version="0.2.83" />
+        <PackageReference Include="Ekom.Payments.Netgiro" Version="1.0.0" />
         <PackageReference Include="Umbraco.Cms" Version="17.8.1" />
     </ItemGroup>
 

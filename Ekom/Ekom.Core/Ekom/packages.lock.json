@@ -21,9 +21,9 @@
       },
       "Ekom.Payments.Core": {
         "type": "Direct",
-        "requested": "[0.2.83, )",
-        "resolved": "0.2.83",
-        "contentHash": "6c0cHIcQmLBsDIGfOoiKYgZJQ/tEWw37dtB20HyfwesSaS4fhUB6aHlZEmUXKYpHbxyCU1tg0Au+qaI41+Q9xw==",
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "TcR7T/7M9o21S55iApuvpaZvXM4SpMKFE2jmtSpleq8JadnKV+9hNvlVJZyCpm9Qak/D4bioapM/7F/s1WiDkA==",
         "dependencies": {
           "Azure.Core": "1.51.0",
           "Azure.Identity": "1.17.1",
@@ -379,9 +379,9 @@
       },
       "Ekom.Payments.Core": {
         "type": "Direct",
-        "requested": "[0.2.83, )",
-        "resolved": "0.2.83",
-        "contentHash": "6c0cHIcQmLBsDIGfOoiKYgZJQ/tEWw37dtB20HyfwesSaS4fhUB6aHlZEmUXKYpHbxyCU1tg0Au+qaI41+Q9xw==",
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "TcR7T/7M9o21S55iApuvpaZvXM4SpMKFE2jmtSpleq8JadnKV+9hNvlVJZyCpm9Qak/D4bioapM/7F/s1WiDkA==",
         "dependencies": {
           "Azure.Core": "1.51.0",
           "Azure.Identity": "1.17.1",
