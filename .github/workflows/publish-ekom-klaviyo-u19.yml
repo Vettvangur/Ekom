@@ -20,6 +20,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
+            8.0.x
             10.0.x
             11.0.x
 
@@ -33,12 +34,17 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($version)) { throw "Could not read Ekom package version." }
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Pack Ekom U19 dependency locally
+      # Pack every Ekom package the plugin depends on, so the build never waits for NuGet.org to index
+      # an Ekom version that was released at the same time.
+      - name: Pack Ekom U19 dependencies locally
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           $version = "${{ steps.ekom-version.outputs.version }}"
           New-Item -ItemType Directory -Force -Path local-packages | Out-Null
+          dotnet pack "Ekom/Ekom.Core/Ekom.Common/Ekom.Common.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
+          dotnet pack "Ekom/Ekom.Core/Ekom/Ekom.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
+          dotnet pack "Ekom/Ekom.Core/Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
           dotnet pack "Ekom/Ekom.Umbraco/Ekom.U19/Ekom.U19.csproj" -c Release -o local-packages -p:PackageVersion=$version -p:UseProjectReferences=true
           dotnet nuget add source "$PWD/local-packages" --name local-ekom
 
