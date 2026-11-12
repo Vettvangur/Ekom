@@ -23,6 +23,8 @@ The filter chips (**All**, **Published**, **Unpublished**, **Out of stock**) and
 
 Umbraco 17.8 and 18.3 render a node's configured collection inside the document picker. Ekom's `Ekom.CollectionView.Catalog` uses the `Ekom.Condition.CatalogPicker` extension condition to exclude itself from picker collections by default. Ordinary workspace bulk selection does not hide the catalog view.
 
+New installs create an **Ekom Catalog Collection** Data Type with Catalog as the first layout and Table as the second, and assign it to the Category document type, so categories open on the Catalog view. Existing installs are not changed: assign a collection to the Category document type yourself to get the view.
+
 Keep at least one native view, such as `Umb.CollectionView.Document.Table`, enabled in the collection Data Type's layouts alongside Catalog. Umbraco filters the configured layouts against the permitted views; a collection configured with **only Catalog** would have no available picker view when Catalog is excluded. Catalog can remain the first/default layout for normal editing.
 
 To opt in later, change the condition on `Ekom.CollectionView.Catalog` in `Ekom/Ekom.Web/Ekom.Web.U17/Client/src/manifests.ts` and rebuild both web asset projects:
