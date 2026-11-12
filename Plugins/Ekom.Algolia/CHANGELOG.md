@@ -28,6 +28,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.72](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.71...Ekom.Algolia-v0.2.72) (2026-11-12)
+
+
+### Features
+
+* **u19:** add Umbraco 19 support ([#1170](https://github.com/Vettvangur/Ekom/issues/1170)) ([e724838](https://github.com/Vettvangur/Ekom/commit/e7248384f9161973955e5766bf7be8bea9e9711d))
+
 ## [0.2.71](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.70...Ekom.Algolia-v0.2.71) (2026-11-09)
 
 
