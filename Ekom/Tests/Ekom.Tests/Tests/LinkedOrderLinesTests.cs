@@ -120,6 +120,48 @@ public sealed class LinkedOrderLinesTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task AddOrderLineAsync_KeepsStandaloneAndParentLinesSeparate(bool withVariant)
+    {
+        using var fixture = new Fixture();
+        var parentProductKey = fixture.AddProduct();
+        var childProductKey = fixture.AddProduct();
+        Guid? variantKey = withVariant ? fixture.AddVariant(parentProductKey) : null;
+        var order = await fixture.Service.AddLinkedOrderLinesAsync(
+            parentProductKey, 1, "main",
+            [new LinkedOrderLineRequest { ProductId = childProductKey, Quantity = 2 }],
+            new AddOrderSettings { OrderInfo = fixture.Order, VariantKey = variantKey, FireEvents = false });
+        var parent = Assert.Single(order.OrderLines, x => x.ProductKey == parentProductKey);
+        var linked = Assert.Single(order.OrderLines, x => x.Settings.Link == parent.Key);
+
+        order = await fixture.Service.AddOrderLineAsync(parentProductKey, 3, "main",
+            new AddOrderSettings { OrderInfo = order, VariantKey = variantKey, FireEvents = false });
+
+        Assert.Equal(3, order.OrderLines.Count);
+        Assert.Equal(1, Assert.Single(order.OrderLines, x => x.Key == parent.Key).Quantity);
+        Assert.Equal(2, Assert.Single(order.OrderLines, x => x.Key == linked.Key).Quantity);
+        var standalone = Assert.Single(order.OrderLines, x => x.ProductKey == parentProductKey && x.Key != parent.Key && x.Settings.Link == Guid.Empty);
+        Assert.Equal(3, standalone.Quantity);
+
+        // Subsequent additions merge only with the matching standalone line.
+        order = await fixture.Service.AddOrderLineAsync(parentProductKey, 1, "main",
+            new AddOrderSettings { OrderInfo = order, VariantKey = variantKey, FireEvents = false });
+        Assert.Equal(3, order.OrderLines.Count);
+        Assert.Equal(1, Assert.Single(order.OrderLines, x => x.Key == parent.Key).Quantity);
+        Assert.Equal(4, Assert.Single(order.OrderLines, x => x.Key == standalone.Key).Quantity);
+        Assert.Equal(2, Assert.Single(order.OrderLines, x => x.Key == linked.Key).Quantity);
+
+        var reloaded = await fixture.ReloadAsync();
+        Assert.Equal(3, reloaded.OrderLines.Count);
+        Assert.Equal(1, Assert.Single(reloaded.OrderLines, x => x.Key == parent.Key).Quantity);
+        Assert.Equal(4, Assert.Single(reloaded.OrderLines, x => x.Key == standalone.Key).Quantity);
+        var reloadedLinked = Assert.Single(reloaded.OrderLines, x => x.Key == linked.Key);
+        Assert.Equal(2, reloadedLinked.Quantity);
+        Assert.Equal(parent.Key, reloadedLinked.Settings.Link);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task AddOrderLineAsync_KeepsStandaloneAndLinkedLinesSeparate(bool withVariant)
     {
         using var fixture = new Fixture();
