@@ -4,6 +4,8 @@
 
 * **catalog:** redesign the Umbraco 17/18/19 Catalog collection view: light and dark tokens that follow the backoffice theme, status filter chips with counts, subcategory health, variant counts, stock levels, discounted prices and Umbraco's standard actions menu on each card. A category also lists products connected to it through their categories picker, marked **Linked**. Counts, filters and sorting are answered from narrow database rows, and content is loaded only for the visible page. New installs give the Category document type a collection with Catalog as its first layout and Umbraco's table as the second; existing installs are not changed.
 
+* **orders:** exclude linked-group parents from order-line merging by checking child-to-parent references, keeping standalone additions separate even when the parent link is empty.
+
 * **orders:** match the parent link when adding order lines, so standalone products do not merge into linked child lines with the same product or variant.
 
 * **manager:** remove the Items column from the Umbraco 17/18 Orders table. The list query no longer parses `OrderInfo` to total line quantities, and `OrderData.ItemQuantity` is removed.
@@ -343,6 +345,13 @@
 * **discounts:** add a global product setting that disables product, coupon, and order discounts for the product and its variants, excluding protected lines from quantity and minimum-spend qualification.
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
+
+## [1.1.2](https://github.com/Vettvangur/Ekom/compare/Ekom-v1.1.1...Ekom-v1.1.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* **orders:** exclude linked parents from line merging ([#1187](https://github.com/Vettvangur/Ekom/issues/1187)) ([caeb097](https://github.com/Vettvangur/Ekom/commit/caeb09799f1e2a2f5b7828d42b837c2ed3f58014))
 
 ## [1.1.1](https://github.com/Vettvangur/Ekom/compare/Ekom-v1.1.0...Ekom-v1.1.1) (2026-11-12)
 
