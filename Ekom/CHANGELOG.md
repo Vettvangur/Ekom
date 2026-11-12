@@ -346,6 +346,13 @@
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
+## [1.1.3](https://github.com/Vettvangur/Ekom/compare/Ekom-v1.1.2...Ekom-v1.1.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* **upgrade:** repair Ekom data types on sites upgraded from Umbraco 13 ([#1190](https://github.com/Vettvangur/Ekom/issues/1190)) ([4009750](https://github.com/Vettvangur/Ekom/commit/400975058472cb36219b4211fb3336c7e0298016))
+
 ## [1.1.2](https://github.com/Vettvangur/Ekom/compare/Ekom-v1.1.1...Ekom-v1.1.2) (2026-11-12)
 
 
