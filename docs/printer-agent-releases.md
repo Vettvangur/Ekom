@@ -77,9 +77,9 @@ Pull requests targeting `Ekom` also build and smoke-test an unsigned installer u
 
 The server package uses `.github/workflows/publish-ekom-printer.yml`, independently of the Windows installer. PRs and manual runs test both frameworks and upload a package artifact without publishing. Pushing a reviewed `Ekom.Printer-v<major.minor.patch>` tag (optionally with a prerelease suffix) publishes through `NuGet/login@v1`.
 
-Release Please creates separate component release PRs (the linked Mailchimp
-packages remain grouped) and tracks `Ekom/Printing/Ekom.Printer` independently.
-Printer package changes create a separate release PR and advance its stable version
+Release Please keeps one combined release PR for all packages with pending changes
+and tracks `Ekom/Printing/Ekom.Printer` as its own component in it.
+Printer package changes add the printer to that release PR and advance its stable version
 (for example, `1.0.0` to `1.0.1`). Merging that PR updates the
 package version and changelog and creates the `Ekom.Printer-v...` release tag,
 which triggers the NuGet workflow. The existing `RELEASE_PLEASE_TOKEN` must be
