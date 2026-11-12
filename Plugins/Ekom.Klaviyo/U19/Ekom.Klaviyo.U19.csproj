@@ -8,6 +8,7 @@
         <DefineConstants>$(DefineConstants);UMBRACO_18;UMBRACO_19</DefineConstants>
 
         <PackageId>Ekom.Klaviyo.U19</PackageId>
+        <Version>0.2.104</Version>
         <Title>Ekom Klaviyo Plugin for Umbraco 19</Title>
         <Description>Ekom Klaviyo integration plugin for Umbraco 19.</Description>
         <Authors>Vettvangur</Authors>
