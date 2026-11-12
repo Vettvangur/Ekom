@@ -1414,15 +1414,37 @@ export function renderDateRange(): string {
   return `<ekom-date-range from="${escapeHtml(managerState.filters.dateFrom)}" to="${escapeHtml(managerState.filters.dateTo)}"></ekom-date-range>`;
 }
 
+// The store and currency menu shown in each document. Escape or a press anywhere outside the
+// open menu closes it, wherever focus is. Each render binds a new menu, so only the latest is kept.
+const storeMenus = new WeakMap<Document, HTMLDetailsElement>();
+
+function watchStoreMenu(menu: HTMLDetailsElement): void {
+  const page = menu.ownerDocument;
+  const watched = storeMenus.has(page);
+  storeMenus.set(page, menu);
+  if (watched) return;
+  const current = (): HTMLDetailsElement | undefined => {
+    const latest = storeMenus.get(page);
+    return latest?.open && latest.isConnected ? latest : undefined;
+  };
+  page.addEventListener('pointerdown', event => {
+    const open = current();
+    if (open && !event.composedPath().includes(open)) open.open = false;
+  }, true);
+  page.addEventListener('keydown', event => {
+    const open = current();
+    if (!open || event.key !== 'Escape') return;
+    open.open = false;
+    open.querySelector('summary')?.focus();
+    event.preventDefault();
+    event.stopPropagation();
+  }, true);
+}
+
 export function bindDateRange(host: HTMLElement | ShadowRoot, apply: () => void): void {
   registerDateRange();
-  host.querySelector('.ekom-store-currency')?.addEventListener('keydown', event => {
-    if ((event as KeyboardEvent).key !== 'Escape') return;
-    const details = event.currentTarget as HTMLDetailsElement;
-    details.open = false;
-    details.querySelector('summary')?.focus();
-    event.stopPropagation();
-  });
+  const storeMenu = host.querySelector<HTMLDetailsElement>('.ekom-store-currency');
+  if (storeMenu) watchStoreMenu(storeMenu);
   host.querySelectorAll<HTMLButtonElement>('[data-header-store]').forEach(button => button.addEventListener('click', () => {
     const select = host.querySelector<HTMLSelectElement>('[data-field="store"], [data-filter="store"]');
     if (!select) return;
