@@ -8,6 +8,24 @@
         "Ekom.Mailchimp.U18",
         "Ekom.Mailchimp.U19"
       ]
+    },
+    {
+      "type": "linked-versions",
+      "groupName": "Ekom.Klaviyo",
+      "components": [
+        "Ekom.Klaviyo",
+        "Ekom.Klaviyo.U18",
+        "Ekom.Klaviyo.U19"
+      ]
+    },
+    {
+      "type": "linked-versions",
+      "groupName": "Ekom.Algolia",
+      "components": [
+        "Ekom.Algolia",
+        "Ekom.Algolia.U18",
+        "Ekom.Algolia.U19"
+      ]
     }
   ],
   "packages": {
@@ -43,6 +61,38 @@
       "bump-patch-for-minor-pre-major": true,
       "bootstrap-sha": "135a8af01a63f7a55f4a730c82b8c1005d362d41"
     },
+    "Plugins/Ekom.Klaviyo/U18": {
+      "component": "Ekom.Klaviyo.U18",
+      "package-name": "Ekom.Klaviyo.U18",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "skip-changelog": true,
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Ekom.Klaviyo.U18.csproj",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ]
+    },
+    "Plugins/Ekom.Klaviyo/U19": {
+      "component": "Ekom.Klaviyo.U19",
+      "package-name": "Ekom.Klaviyo.U19",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "skip-changelog": true,
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Ekom.Klaviyo.U19.csproj",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ]
+    },
     "Plugins/Ekom.Algolia": {
       "component": "Ekom.Algolia",
       "package-name": "Ekom.Algolia",
@@ -52,6 +102,38 @@
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
       "bootstrap-sha": "135a8af01a63f7a55f4a730c82b8c1005d362d41"
+    },
+    "Plugins/Ekom.Algolia/U18": {
+      "component": "Ekom.Algolia.U18",
+      "package-name": "Ekom.Algolia.U18",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "skip-changelog": true,
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Ekom.Algolia.U18.csproj",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ]
+    },
+    "Plugins/Ekom.Algolia/U19": {
+      "component": "Ekom.Algolia.U19",
+      "package-name": "Ekom.Algolia.U19",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "skip-changelog": true,
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Ekom.Algolia.U19.csproj",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ]
     },
     "Plugins/Ekom.Mailchimp": {
       "component": "Ekom.Mailchimp",

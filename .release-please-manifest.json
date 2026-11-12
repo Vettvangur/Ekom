@@ -1,7 +1,11 @@
 {
   "Ekom": "1.1.0",
   "Plugins/Ekom.Klaviyo": "0.2.104",
+  "Plugins/Ekom.Klaviyo/U18": "0.2.104",
+  "Plugins/Ekom.Klaviyo/U19": "0.2.104",
   "Plugins/Ekom.Algolia": "0.2.72",
+  "Plugins/Ekom.Algolia/U18": "0.2.72",
+  "Plugins/Ekom.Algolia/U19": "0.2.72",
   "Plugins/Ekom.Mailchimp": "1.6.0",
   "Plugins/Ekom.Mailchimp/U18": "1.6.0",
   "Plugins/Ekom.Mailchimp/U19": "1.6.0",
