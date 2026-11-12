@@ -1,4 +1,4 @@
-import { renderManagerContent } from './manager-shared';
+import { renderManagerContent, setManagerLink } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
 import { UMB_NOTIFICATION_CONTEXT, type UmbNotificationColor } from '@umbraco-cms/backoffice/notification';
@@ -1479,6 +1479,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     }
 
     this.returnFocusOrderId = orderId;
+    if (!this.hasAttribute?.('classic')) setManagerLink({ orderId });
     this.orderTab = 'order';
     const requestId = ++this.orderRequestId;
     ++this.lockRequestId;
@@ -1817,6 +1818,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private closeOverlay(): void {
+    if (!this.hasAttribute?.('classic')) setManagerLink({ orderId: undefined });
     this.orderOpening = false;
     ++this.orderRequestId;
     ++this.lockRequestId;

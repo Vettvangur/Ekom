@@ -1,7 +1,7 @@
 var E = Object.defineProperty;
 var P = (s, o, t) => o in s ? E(s, o, { enumerable: !0, configurable: !0, writable: !0, value: t }) : s[o] = t;
 var h = (s, o, t) => P(s, typeof o != "symbol" ? o + "" : o, t);
-import { m as f, E as A, e as j, r as q, b as R, q as L, k as N, A as M } from "./manager-shared.js";
+import { m as f, E as A, e as j, r as q, b as R, q as L, k as N, B as M } from "./manager-shared.js";
 import { UmbElementMixin as T } from "@umbraco-cms/backoffice/element-api";
 const H = "/ekom/printer/manager", r = (s) => String(s ?? "").replace(/[&<>"']/g, (o) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[o]), b = (s) => {
   if (!s) return "Never";

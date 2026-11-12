@@ -106,6 +106,10 @@ class M {
   async shippingProviders(r) {
     return this.getJson(`/ekom/manager/shippingproviders/${encodeURIComponent(r)}`);
   }
+  /** The order and everything the drawer shows with it, in one request. */
+  async orderDrawer(r) {
+    return this.getJson(`/ekom/manager/OrderDrawer/${encodeURIComponent(r)}`);
+  }
   async orderInfo(r) {
     return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(r)}`);
   }

@@ -1,4 +1,4 @@
-import { renderManagerContent } from './manager-shared';
+import { renderManagerContent, setManagerLink } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
 import { EkomManagerApi, formatDay, renderSectionLoading, renderLoadingLine, renderDrawerLoading, renderDrawerClose, escapeHtml as esc, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, renderStatusBadge, type OrderStatusSnapshot } from './manager-shared';
@@ -57,6 +57,9 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
   }
 
   private async initialize(): Promise<void> {
+    // A link to a customer names the customer and the store they belong to.
+    const link = new URLSearchParams(this.classic || typeof location === 'undefined' ? '' : location.search);
+    if (link.get('customer') && link.get('store')) managerState.filters.store = link.get('store')!;
     this.busy = true;
     this.render();
     try {
@@ -69,7 +72,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
       // An order's "Open customer" link lands here with the customer to show.
       const pending = managerState.pendingCustomer;
       managerState.pendingCustomer = undefined;
-      const identity = (this.result?.identityField === 'CustomerUsername' ? pending?.username : pending?.email)?.trim();
+      const identity = (this.result?.identityField === 'CustomerUsername' ? pending?.username : pending?.email)?.trim() || link.get('customer');
       if (identity) await this.open(identity);
     } catch {
       this.error = 'Unable to load customers. Please try again.';
@@ -93,6 +96,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
     const request = ++this.request;
     this.detailRequest++;
     this.detail = undefined;
+    this.link();
     this.result = undefined;
     this.error = '';
     this.busy = true;
@@ -111,6 +115,7 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
   private async open(identity: string, page = 1): Promise<void> {
     const request = ++this.detailRequest;
     this.opener = identity;
+    this.link(identity);
     this.error = '';
     // Open the drawer on a loader. Paging inside an open drawer keeps what is on screen.
     if (!this.detail) { this.detailOpening = identity; this.render(); this.querySelector<HTMLButtonElement>('[data-close]')?.focus(); }
@@ -130,8 +135,14 @@ export class EkomCustomersSectionViewElement extends UmbElementMixin(HTMLElement
     this.detailRequest++;
     this.detailOpening = undefined;
     this.detail = undefined;
+    this.link();
     this.render();
     Array.from(this.querySelectorAll<HTMLButtonElement>('[data-customer]')).find(x => x.dataset.customer === this.opener)?.focus();
+  }
+
+  /** Puts the open customer in the address bar, or takes it out when none is open. */
+  private link(identity?: string): void {
+    if (!this.classic) setManagerLink({ customer: identity, store: identity ? managerState.filters.store : undefined });
   }
 
   private async export(): Promise<void> {
