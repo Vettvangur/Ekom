@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+* **manager:** remove the Items column from the Umbraco 17/18 Orders table. The list query no longer parses `OrderInfo` to total line quantities, and `OrderData.ItemQuantity` is removed.
+
+* **manager:** page the Umbraco 17/18 Orders table with the Left and Right arrow keys. The keys are ignored while typing, loading, using a menu or viewing an overlay; in the order drawer they still move between orders.
+
 * **manager:** open the order drawer with one request instead of six. A new `OrderDrawer` endpoint returns the order with its activity, actions, checkout lock, gift-card recovery and reviews after a single access check and order load; a section that fails to load is reported on its own and no longer hides the order.
 
 * **manager:** look up the signed-in backoffice user once per request instead of on every permission check. Each Manager request made two to four identical user queries before doing any work.

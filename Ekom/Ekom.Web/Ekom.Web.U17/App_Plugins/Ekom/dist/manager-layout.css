@@ -35,7 +35,7 @@
  .ekom-inline-totals span { color:var(--ekom-muted); font-size:12px; }
  .ekom-inline-totals strong { font-size:20px; font-weight:600; }
  .ekom-list-table { overflow-x:auto; }
- .ekom-list-row { display:grid; grid-template-columns:100px 130px minmax(150px,1fr) 130px 130px 150px 50px 28px; align-items:center; gap:16px; padding:14px 20px; min-width:1000px; border-bottom:1px solid var(--ekom-border); font-size:13px; }
+ .ekom-list-row { display:grid; grid-template-columns:100px 130px minmax(150px,1fr) 130px 130px 150px 28px; align-items:center; gap:16px; padding:14px 20px; min-width:934px; border-bottom:1px solid var(--ekom-border); font-size:13px; }
  .ekom-list-row:not(.ekom-list-head):hover { background:var(--ekom-surface-alt); }
  .ekom-list-head { background:var(--ekom-surface-alt); font-size:11px; color:var(--ekom-muted); font-weight:600; padding-block:10px; }
  .ekom-align-right { text-align:right; }

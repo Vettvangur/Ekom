@@ -106,24 +106,6 @@ public class ManagerRepositoryTests
     }
 
     [Theory]
-    [InlineData("{\"OrderLines\":[{\"Quantity\":2},{\"Quantity\":1.5}]}", 3.5)]
-    [InlineData("{\"OrderLines\":[]}", 0.0)]
-    [InlineData("invalid", null)]
-    [InlineData("{}", null)]
-    [InlineData("{\"OrderLines\":[\"bad\"]}", null)]
-    [InlineData("{\"OrderLines\":[{\"Quantity\":2},{}]}", null)]
-    public async Task OrderListCountsSavedQuantitiesAndPreservesUnknownHistory(string json, double? expected)
-    {
-        using var database = new OrderDatabase();
-        var id = database.Add(null, Guid.Empty, 10m);
-        database.SetPayload(id, json);
-        var result = await SearchAsync(database.Repository, null, null);
-        var order = Assert.Single(result.Orders);
-        Assert.Equal(expected.HasValue ? (decimal?)expected.Value : null, order.ItemQuantity);
-        Assert.Null(order.OrderInfo);
-    }
-
-    [Theory]
     [InlineData("AllOrders", 15)]
     [InlineData("CompletedOrders", 15)]
     [InlineData("ReadyForDispatch", 16)]
@@ -619,12 +601,6 @@ public class ManagerRepositoryTests
         {
             using var db = _factory.GetDatabase();
             db.Execute("UPDATE EkomOrders SET OrderStatusCol = @legacy, OrderStateCol = @state, PaymentStateCol = 'Pending', FulfillmentStateCol = 'Unfulfilled' WHERE UniqueId = @id", new { id, legacy, state });
-        }
-
-        public void SetPayload(Guid id, string json)
-        {
-            using var db = _factory.GetDatabase();
-            db.Execute("UPDATE EkomOrders SET OrderInfo = @json WHERE UniqueId = @id", new { id, json });
         }
 
         public void AddChartOrders(string status, bool dropOrderInfo = true)

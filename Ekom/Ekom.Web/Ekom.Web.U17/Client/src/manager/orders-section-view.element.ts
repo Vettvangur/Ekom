@@ -165,6 +165,16 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       if (button && !button.disabled) { event.preventDefault(); button.click(); }
       return;
     }
+    if ((event.key === 'ArrowLeft' || event.key === 'ArrowRight') && !this.overlay) {
+      const target = event.composedPath()[0] as HTMLElement | undefined;
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || this.loading ||
+          target?.closest?.('input, select, textarea, [contenteditable], [role="tablist"], details') ||
+          this.querySelector('details[open]')) return;
+      const direction = event.key === 'ArrowLeft' ? 'Previous page' : 'Next page';
+      const button = this.querySelector<HTMLButtonElement>(`.ekom-list-footer button[aria-label="${direction}"]`);
+      if (button && !button.disabled) { event.preventDefault(); button.click(); }
+      return;
+    }
     if (event.key === 'Tab' && this.overlay) {
       const dialogs = this.querySelectorAll<HTMLElement>('.ekmCustomerInformationModal__panel, .ekmOverlay__panel');
       const dialog = dialogs.item(dialogs.length - 1);
@@ -517,7 +527,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
   /** Opens the orders table; the caller closes it after the rows. */
   private renderOrderTableHead(): string {
-    return `<div class="ekom-list-table" role="table" aria-label="Orders"><div class="ekom-list-row ekom-list-head" role="row"><span role="columnheader">Order</span><span role="columnheader">Date</span><span role="columnheader">Customer</span><span role="columnheader" class="ekom-align-right">Total</span><span role="columnheader">Payment</span><span role="columnheader">Fulfillment</span><span role="columnheader" class="ekom-align-right">Items</span><span role="columnheader"><span class="ekom-sr-only">Open order</span></span></div>`;
+    return `<div class="ekom-list-table" role="table" aria-label="Orders"><div class="ekom-list-row ekom-list-head" role="row"><span role="columnheader">Order</span><span role="columnheader">Date</span><span role="columnheader">Customer</span><span role="columnheader" class="ekom-align-right">Total</span><span role="columnheader">Payment</span><span role="columnheader">Fulfillment</span><span role="columnheader"><span class="ekom-sr-only">Open order</span></span></div>`;
   }
 
   /** Placeholder rows while a different list is on its way; a refresh of the list on screen keeps its rows. */
@@ -534,7 +544,6 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       <strong role="cell" class="ekom-align-right">${escapeHtml(order.formattedTotal)}</strong>
       <div role="cell">${this.renderPaymentMenu(order)}</div>
       <div role="cell">${this.renderRowFulfillment(order)}</div>
-      <span role="cell" class="ekom-align-right ekom-muted">${escapeHtml(order.itemQuantity ?? '—')}</span>
       <button role="cell" type="button" class="ekom-row-open" data-action="view-order" data-order-id="${escapeHtml(order.uniqueId)}" aria-label="Open order ${escapeHtml(order.referenceId)}">›</button>
     </div>`;
   }
