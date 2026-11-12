@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **orders:** match the parent link when adding order lines, so standalone products do not merge into linked child lines with the same product or variant.
+
 ### Features
 
 * **orders:** add persistent order reviews, optional resolution comments, store-authorized manager endpoints, and indexed needs-review order filtering without UI changes. Automatically flag checkout completion failures and exhausted coupons for review.
