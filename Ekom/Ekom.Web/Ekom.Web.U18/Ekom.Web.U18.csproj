@@ -9,7 +9,7 @@
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
-        <PackageIcon>images/VV_Logo.png</PackageIcon>
+        <PackageIcon>images/Ekom_Logo.png</PackageIcon>
         <Description>Ekom Web assets for Umbraco 18.</Description>
         <Copyright>Copyright 2026</Copyright>
         <PackageTags>umbraco;ecommerce;ekom</PackageTags>
@@ -30,7 +30,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="../../../VV_Logo.png" Pack="true" PackagePath="images/" />
+        <None Include="../../../Ekom_Logo.png" Pack="true" PackagePath="images/" />
         <Content Include="App_Plugins\Ekom\**" ExcludeFromSingleFile="true" CopyToPublishDirectory="Always" />
         <None Include="buildTransitive/**" Pack="true" PackagePath="buildTransitive" />
     </ItemGroup>

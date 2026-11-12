@@ -14,7 +14,7 @@
     <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageIcon>VV_Logo.png</PackageIcon>
+    <PackageIcon>Ekom_Logo.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <PackageReleaseNotes></PackageReleaseNotes>
@@ -76,7 +76,7 @@
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
     <None Include="CHANGELOG.md" Pack="true" PackagePath="" />
-    <None Include="VV_Logo.png" Pack="true" PackagePath="" />
+    <None Include="Ekom_Logo.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <!-- Local dev: flip this to true (Directory.Build.props) -->

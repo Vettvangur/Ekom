@@ -14,7 +14,7 @@
       <Authors>Vettvangur</Authors>
       <PackageLicenseExpression>MIT</PackageLicenseExpression>
       <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
-      <PackageIcon>images\VV_Logo.png</PackageIcon>
+      <PackageIcon>images/Ekom_Logo.png</PackageIcon>
       <Description>Ekom ASP.NET Core - Vettvangur E-Commerce solution</Description>
       <PackageReleaseNotes></PackageReleaseNotes>
       <Copyright>Copyright 2022</Copyright>
@@ -45,7 +45,7 @@
 
     <ItemGroup>
         <!-- Package icon -->
-        <None Include="..\..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
+        <None Include="..\..\..\Ekom_Logo.png" Pack="true" PackagePath="images/" />
     </ItemGroup>
 
     <ItemGroup>

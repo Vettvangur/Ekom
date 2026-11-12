@@ -107,7 +107,7 @@ This file orients coding agents working in this repository.
 - Use `Fact`/`Theory` and clear arrange/act/assert sections.
 
 ## Docs and Packaging
-- Plugin packs README, CHANGELOG, and VV_Logo.png; update as needed.
+- Plugin packs README, CHANGELOG, and Ekom_Logo.png; update as needed.
 - Keep `CHANGELOG.md` current for user-facing changes.
 - When changing public APIs, update README or docs references.
 

@@ -18,7 +18,7 @@
     <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageIcon>images/VV_Logo.png</PackageIcon>
+    <PackageIcon>images/Ekom_Logo.png</PackageIcon>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -46,7 +46,7 @@
     <Compile Include="..\**\*.cs" Exclude="..\bin\**\*.cs;..\obj\**\*.cs;..\U18\bin\**\*.cs;..\U18\obj\**\*.cs"/>
     <None Include="..\README.md" Pack="true" PackagePath="\"/>
     <None Include="..\CHANGELOG.md" Pack="true" PackagePath="\"/>
-    <None Include="..\..\..\VV_Logo.png" Link="VV_Logo.png" Pack="true" PackagePath="images/"/>
+    <None Include="..\..\..\Ekom_Logo.png" Link="Ekom_Logo.png" Pack="true" PackagePath="images/"/>
   </ItemGroup>
 
 </Project>

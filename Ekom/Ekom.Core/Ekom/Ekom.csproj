@@ -22,7 +22,7 @@
         <PackageTags>umbraco;ecommerce;ekom;b2c;b2b</PackageTags>
 
         <!-- Icon & README -->
-        <PackageIcon>images/VV_Logo.png</PackageIcon>
+        <PackageIcon>images/Ekom_Logo.png</PackageIcon>
 
         <!-- Symbols & SourceLink -->
         <IncludeSymbols>true</IncludeSymbols>
@@ -47,7 +47,7 @@
 
     <ItemGroup>
         <!-- Package icon -->
-        <None Include="..\..\..\VV_Logo.png" Pack="true" PackagePath="images/" />
+        <None Include="..\..\..\Ekom_Logo.png" Pack="true" PackagePath="images/" />
     </ItemGroup>
 
     <ItemGroup>

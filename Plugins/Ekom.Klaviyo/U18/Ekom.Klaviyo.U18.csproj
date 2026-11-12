@@ -15,7 +15,7 @@
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <PackageIcon>images/VV_Logo.png</PackageIcon>
+        <PackageIcon>images/Ekom_Logo.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Copyright>Copyright 2026</Copyright>
         <PackageTags>umbraco;ecommerce;ekom;b2c;b2b;klaviyo;plugin;extension</PackageTags>
@@ -43,7 +43,7 @@
 
     <ItemGroup>
         <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="" />
-        <None Include="..\VV_Logo.png" Link="VV_Logo.png" Pack="true" PackagePath="images/" />
+        <None Include="..\Ekom_Logo.png" Link="Ekom_Logo.png" Pack="true" PackagePath="images/" />
         <None Include="..\CHANGELOG.md" Link="CHANGELOG.md" Pack="true" PackagePath="" />
     </ItemGroup>
 
