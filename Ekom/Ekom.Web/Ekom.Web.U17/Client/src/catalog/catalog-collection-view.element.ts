@@ -45,6 +45,8 @@ const SORT_STORAGE_KEY = 'ekomCatalogSort';
 const HISTORY_STATE_KEY = 'ekomCatalog';
 const THUMBNAIL_SIZE = 480;
 const DOCUMENT_ENTITY_TYPE = 'document';
+// The document collection is its own element in newer backoffice versions.
+const COLLECTION_HOST_SELECTOR = 'umb-collection-default, umb-document-collection';
 
 const folderIcon = svg`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
 const imageIcon = svg`<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="9" cy="9" r="1.8"/><path d="m21 15-4.6-4.6a1.5 1.5 0 0 0-2.1 0L5 20"/></svg>`;
@@ -488,7 +490,7 @@ class EkomCatalogCollectionViewElement extends UmbLitElement {
 
   private revealCollectionHost(): void {
     if (this.pickerMode) return;
-    for (const collection of this.getComposedAncestors('umb-collection-default')) {
+    for (const collection of this.getComposedAncestors(COLLECTION_HOST_SELECTOR)) {
       const collectionRoot = collection.shadowRoot;
       const router = collectionRoot?.querySelector<HTMLElement>('#router');
       const bodyLayout = collectionRoot?.querySelector<HTMLElement>('umb-body-layout');

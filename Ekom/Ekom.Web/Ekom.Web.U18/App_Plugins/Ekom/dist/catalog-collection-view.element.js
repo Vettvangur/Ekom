@@ -1,9 +1,9 @@
-var z = Object.defineProperty;
-var M = (r, a, e) => a in r ? z(r, a, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[a] = e;
-var l = (r, a, e) => M(r, typeof a != "symbol" ? a + "" : a, e);
-import { UMB_COLLECTION_CONTEXT as U } from "@umbraco-cms/backoffice/collection";
-import { UmbEntityContext as q } from "@umbraco-cms/backoffice/entity";
-import { UmbExtensionElementInitializer as O } from "@umbraco-cms/backoffice/extension-api";
+var O = Object.defineProperty;
+var z = (r, a, e) => a in r ? O(r, a, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[a] = e;
+var l = (r, a, e) => z(r, typeof a != "symbol" ? a + "" : a, e);
+import { UMB_COLLECTION_CONTEXT as M } from "@umbraco-cms/backoffice/collection";
+import { UmbEntityContext as U } from "@umbraco-cms/backoffice/entity";
+import { UmbExtensionElementInitializer as q } from "@umbraco-cms/backoffice/extension-api";
 import { umbExtensionsRegistry as N } from "@umbraco-cms/backoffice/extension-registry";
 import { css as A, svg as C, html as i, nothing as c, repeat as b } from "@umbraco-cms/backoffice/external/lit";
 import { UmbImagingRepository as R } from "@umbraco-cms/backoffice/imaging";
@@ -934,11 +934,11 @@ function G(r, a) {
 function Q(r) {
   return Number.isInteger(r) ? String(r) : String(Math.round(r * 100) / 100);
 }
-const X = 16, x = "ekomCatalogNode", Z = 4, J = "(max-width: 1100px)", ee = "ekomCatalogParent:", I = "ekomCatalogSort", g = "ekomCatalog", y = 480, te = "document", w = C`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`, se = C`<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="9" cy="9" r="1.8"/><path d="m21 15-4.6-4.6a1.5 1.5 0 0 0-2.1 0L5 20"/></svg>`;
-class oe extends P {
+const X = 16, x = "ekomCatalogNode", Z = 4, J = "(max-width: 1100px)", ee = "ekomCatalogParent:", I = "ekomCatalogSort", g = "ekomCatalog", y = 480, te = "document", se = "umb-collection-default, umb-document-collection", w = C`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`, oe = C`<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="9" cy="9" r="1.8"/><path d="m21 15-4.6-4.6a1.5 1.5 0 0 0-2.1 0L5 20"/></svg>`;
+class re extends P {
   constructor() {
     super(...arguments);
-    l(this, "entityContext", new q(this));
+    l(this, "entityContext", new U(this));
   }
   set unique(e) {
     this.entityContext.setEntityType(te), this.entityContext.setUnique(e);
@@ -988,7 +988,7 @@ class L extends P {
     });
   }
   connectedCallback() {
-    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), this.consumeContext(U, (e) => {
+    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), this.consumeContext(M, (e) => {
       var s;
       if (e == null) return;
       if (this.pickerMode = F(e.getConfig()), this.pickerMode) {
@@ -1003,7 +1003,7 @@ class L extends P {
     });
   }
   initializePickerView() {
-    this.pickerView == null && (this.pickerView = new O(
+    this.pickerView == null && (this.pickerView = new q(
       this,
       N,
       "Umb.CollectionView.Document.Table",
@@ -1113,7 +1113,7 @@ class L extends P {
     s !== this.query && (this.query = s, this.page = 1, this.storePageInHistory(), this.nodeId && this.load(this.data == null));
   }
   setSort(e) {
-    this.setOpenMenu(void 0), T(e) && (re(e), e !== this.sort && (this.sort = e, this.page = 1, this.storePageInHistory(), this.load(!1)));
+    this.setOpenMenu(void 0), T(e) && (ie(e), e !== this.sort && (this.sort = e, this.page = 1, this.storePageInHistory(), this.load(!1)));
   }
   setStatus(e) {
     e !== this.status && (this.status = e, this.page = 1, this.storePageInHistory(), this.load(!1));
@@ -1150,7 +1150,7 @@ class L extends P {
   }
   revealCollectionHost() {
     if (!this.pickerMode) {
-      for (const e of this.getComposedAncestors("umb-collection-default")) {
+      for (const e of this.getComposedAncestors(se)) {
         const t = e.shadowRoot, s = t == null ? void 0 : t.querySelector("#router"), o = t == null ? void 0 : t.querySelector("umb-body-layout"), n = t == null ? void 0 : t.querySelector("#empty-state");
         s == null || s.style.setProperty("visibility", "visible", "important"), n == null || n.style.setProperty("display", "none", "important"), o == null || o.classList.add("has-items");
       }
@@ -1413,7 +1413,7 @@ class L extends P {
           </umb-entity-actions-dropdown>
         </ekom-catalog-entity>
         <a class="tile" href=${s} tabindex="-1" aria-hidden="true">
-          ${o ? i`<img src=${o} alt="" loading="lazy" decoding="async" />` : se}
+          ${o ? i`<img src=${o} alt="" loading="lazy" decoding="async" />` : oe}
         </a>
         <div class="card-body">
           <a class="name" href=${s} title=${e.name}>${e.name}</a>
@@ -1491,13 +1491,13 @@ function S() {
     return f;
   }
 }
-function re(r) {
+function ie(r) {
   try {
     window.localStorage.setItem(I, r);
   } catch {
   }
 }
-customElements.define("ekom-catalog-entity", oe);
+customElements.define("ekom-catalog-entity", re);
 customElements.define("ekom-catalog-collection-view", L);
 export {
   L as default
