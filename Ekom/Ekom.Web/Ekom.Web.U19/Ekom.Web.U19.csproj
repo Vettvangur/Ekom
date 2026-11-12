@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ContentTargetFolders>.</ContentTargetFolders>
+
+        <PackageId>Ekom.Web.U19</PackageId>
+        <Title>Ekom.Web.U19</Title>
+        <Authors>Vettvangur</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+        <PackageIcon>images/Ekom_Logo.png</PackageIcon>
+        <Description>Ekom Web assets for Umbraco 19.</Description>
+        <Copyright>Copyright 2026</Copyright>
+        <PackageTags>umbraco;ecommerce;ekom</PackageTags>
+
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../../../Ekom_Logo.png" Pack="true" PackagePath="images/" />
+        <Content Include="App_Plugins\Ekom\**" ExcludeFromSingleFile="true" CopyToPublishDirectory="Always" />
+        <None Include="buildTransitive/**" Pack="true" PackagePath="buildTransitive" />
+    </ItemGroup>
+
+    <Target Name="NpmInstallEkomWebU19" BeforeTargets="Build" Condition="!Exists('Client/node_modules')">
+        <Exec WorkingDirectory="Client" Command="npm ci" />
+    </Target>
+
+    <Target Name="BuildEkomWebU19Assets" BeforeTargets="Build" DependsOnTargets="NpmInstallEkomWebU19">
+        <Exec WorkingDirectory="Client" Command="npm run build" />
+    </Target>
+
+    <PropertyGroup>
+        <EkomBuildAssetsTarget>BuildEkomWebU19Assets</EkomBuildAssetsTarget>
+    </PropertyGroup>
+    <Import Project="../AssetPackaging/VersionedAssets.targets" />
+</Project>

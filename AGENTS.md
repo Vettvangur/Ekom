@@ -23,11 +23,11 @@ This file orients coding agents working in this repository.
 - Format: no formatter configured; respect `.editorconfig`
 
 ## Dependencies / Restore Notes
-- SDKs: .NET 8 and .NET 10; target frameworks vary by Umbraco/package line.
-- Node.js/npm are required to build the U17 and U18 web-assets projects.
+- SDKs: .NET 8, .NET 10, and .NET 11 (Umbraco 19 projects only); target frameworks vary by Umbraco/package line.
+- Node.js/npm are required to build the U17, U18, and U19 web-assets projects.
 - Klaviyo uses a lock file; keep `Plugins/Ekom.Klaviyo/packages.lock.json`.
 - Plugin and Ekom `Directory.Build.props` files set `UseProjectReferences`.
-- With `UseProjectReferences=true`, plugin targets reference the matching local Ekom project: U10 or Core on .NET 8, U17 on .NET 10, and U18 from each plugin's U18 project. Otherwise they use NuGet packages.
+- With `UseProjectReferences=true`, plugin targets reference the matching local Ekom project: U10 or Core on .NET 8, U17 on .NET 10, and U18/U19 from each plugin's U18/U19 project. Otherwise they use NuGet packages.
 
 ## Repo-Specific Rules (Cursor/Copilot)
 - No `.cursor/rules/`, `.cursorrules`, or `.github/copilot-instructions.md` found.
@@ -146,6 +146,6 @@ dotnet pack "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj"
 ## Notes
 - If adding new projects, update solutions and lock files as needed.
 - Keep API revisions and base URLs configurable via options.
-- This repo supports Umbraco 13, 17, and 18. `Ekom.U10` is the retained package name for Umbraco 13.
+- This repo supports Umbraco 13, 17, 18, and 19 (release candidate). `Ekom.U19` compiles the shared `Ekom.U17` source with `UMBRACO_18;UMBRACO_19` defined and targets .NET 11. `Ekom.U10` is the retained package name for Umbraco 13.
 - For local dev with plugin, confirm UseProjectReferences value.
 - Update this file when build/test conventions change.

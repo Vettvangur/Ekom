@@ -38,7 +38,7 @@
 
   <ItemGroup>
     <Compile Include="..\**\*.cs"
-             Exclude="..\Umbraco\U10\**\*.cs;..\Umbraco\U17\**\*.cs;..\bin\**\*.cs;..\obj\**\*.cs;..\U18\bin\**\*.cs;..\U18\obj\**\*.cs" />
+             Exclude="..\Umbraco\U10\**\*.cs;..\Umbraco\U17\**\*.cs;..\bin\**\*.cs;..\obj\**\*.cs;..\U18\**\*.cs;..\U19\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>

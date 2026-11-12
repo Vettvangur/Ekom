@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Mailchimp", "Plugins\E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Mailchimp.U18", "Plugins\Ekom.Mailchimp\U18\Ekom.Mailchimp.U18.csproj", "{08F0465E-7D6E-46CA-88AD-3902F2B637AB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Mailchimp.U19", "Plugins\Ekom.Mailchimp\U19\Ekom.Mailchimp.U19.csproj", "{C63CF1B9-A992-4100-B959-3648245B9447}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Mailchimp.Tests", "Plugins\Ekom.Mailchimp.Tests\Ekom.Mailchimp.Tests.csproj", "{C625DD83-ADF7-42C2-9989-B88BB657FA9C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Printer", "Ekom\Printing\Ekom.Printer\Ekom.Printer.csproj", "{D2B76E40-1A49-4A09-9CED-F752E58AC98F}"
@@ -173,6 +175,18 @@ Global
 		{08F0465E-7D6E-46CA-88AD-3902F2B637AB}.Release|x64.Build.0 = Release|Any CPU
 		{08F0465E-7D6E-46CA-88AD-3902F2B637AB}.Release|x86.ActiveCfg = Release|Any CPU
 		{08F0465E-7D6E-46CA-88AD-3902F2B637AB}.Release|x86.Build.0 = Release|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Debug|x64.Build.0 = Debug|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Debug|x86.Build.0 = Debug|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Release|x64.ActiveCfg = Release|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Release|x64.Build.0 = Release|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Release|x86.ActiveCfg = Release|Any CPU
+		{C63CF1B9-A992-4100-B959-3648245B9447}.Release|x86.Build.0 = Release|Any CPU
 		{C625DD83-ADF7-42C2-9989-B88BB657FA9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C625DD83-ADF7-42C2-9989-B88BB657FA9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C625DD83-ADF7-42C2-9989-B88BB657FA9C}.Debug|x64.ActiveCfg = Debug|Any CPU

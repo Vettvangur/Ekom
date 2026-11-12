@@ -11,11 +11,15 @@ Choose the package that matches the application:
 | `Ekom.Mailchimp` | .NET 8 | Reusable services with `Ekom.Core`; no Umbraco event component |
 | `Ekom.Mailchimp` | .NET 10 and Umbraco 17 | Services plus the Ekom completed-checkout event component through `Ekom.U17` |
 | `Ekom.Mailchimp.U18` | .NET 10 and Umbraco 18 | Services plus the Ekom completed-checkout event component through `Ekom.U18` |
+| `Ekom.Mailchimp.U19` | .NET 11 and Umbraco 19 | Services plus the Ekom completed-checkout event component through `Ekom.U19` |
 
 ```shell
 dotnet add package Ekom.Mailchimp
 # Umbraco 18:
 dotnet add package Ekom.Mailchimp.U18
+
+# Umbraco 19:
+dotnet add package Ekom.Mailchimp.U19
 ```
 
 Both packages expose the same `AddMailchimp` registration and `Ekom:Mailchimp` options. Calling `AddMailchimp` is required in every host; the Umbraco packages automatically register only the completed-checkout event component.
@@ -148,7 +152,7 @@ builder.Services.AddMailchimp(options =>
 });
 ```
 
-The Umbraco 17 and Umbraco 18 packages automatically register the completed-checkout event component. Calling `AddMailchimp` is still required.
+The Umbraco 17, 18, and 19 packages automatically register the completed-checkout event component. Calling `AddMailchimp` is still required.
 
 ## Usage
 

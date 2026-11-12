@@ -61,7 +61,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="U18\**\*.cs;Umbraco\**\*.cs" />
+    <Compile Remove="U18\**\*.cs;U19\**\*.cs;Umbraco\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">

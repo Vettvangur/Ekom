@@ -7,6 +7,7 @@ Choose Ekom packages by the target Umbraco major version:
 | 13 | `Ekom.U10` | `Ekom.Web` | `Ekom.Payments.U10` |
 | 17 | `Ekom.U17` | `Ekom.Web.U17` | `Ekom.Payments.U17` |
 | 18 | `Ekom.U18` | `Ekom.Web.U18` | `Ekom.Payments.U18` |
+| 19 (release candidate) | `Ekom.U19` | `Ekom.Web.U19` | `Ekom.Payments.U18` |
 
 `Ekom.U10` is the legacy name retained by the current Umbraco 13 package, assembly, project, and payments dependency. Do not replace it with an assumed `Ekom.U13` package; this repository does not define one.
 
@@ -14,7 +15,7 @@ The web-assets package belongs in the site project that contains `wwwroot`. Keep
 
 ## Backoffice asset caching
 
-`Ekom.Web.U17` and `Ekom.Web.U18` package their scripts and shared chunks under
+`Ekom.Web.U17`, `Ekom.Web.U18`, and `Ekom.Web.U19` package their scripts and shared chunks under
 `/App_Plugins/Ekom/releases/<PackageVersion>/`. The root `umbraco-package.json`
 points Umbraco to that release. Build, publish, and pack generate this layout
 automatically; local `npm run build` retains the unversioned development output.
@@ -37,6 +38,7 @@ Record the Ekom packages and payment providers currently installed, and review a
 
 - [Umbraco 13 to 17](umbraco-13-to-17.md)
 - [Umbraco 17 to 18](umbraco-17-to-18.md)
+- [Umbraco 18 to 19](umbraco-18-to-19.md)
 - [Reservation compatibility](reservations.md)
 
 ## Verification after an upgrade

@@ -7,6 +7,7 @@ Install two packages into the Umbraco web application: the versioned Ekom runtim
 | 13 | `Ekom.U10` and `Ekom.Web` |
 | 17 | `Ekom.U17` and `Ekom.Web.U17` |
 | 18 | `Ekom.U18` and `Ekom.Web.U18` |
+| 19 (release candidate) | `Ekom.U19` and `Ekom.Web.U19` |
 
 ## Install the matching pair
 
@@ -31,13 +32,20 @@ dotnet add package Ekom.U18
 dotnet add package Ekom.Web.U18
 ```
 
+### Umbraco 19
+
+```bash
+dotnet add package Ekom.U19
+dotnet add package Ekom.Web.U19
+```
+
 Run the commands from the web project directory, or pass `--project path/to/site.csproj`. Package Manager Console users can use `Install-Package <package-name>` instead.
 
 The web-assets packages contain the Ekom backoffice extension. Reference them from the host project, not only from a class library. A separate class library may also reference the runtime package when it compiles against Ekom APIs, but that does not replace the host references.
 
 ## Startup registration
 
-No explicit `AddEkom(...)` call is required for a standard package installation. Each runtime package contains an Umbraco `IComposer`; Umbraco discovers it during composition. On Umbraco 17 and 18, keep the normal `AddComposers()` call in the host's Umbraco builder pipeline. The composer calls Ekom's internal registration extension and registers services, components, content finders, URL providers, notification handlers, and startup filters.
+No explicit `AddEkom(...)` call is required for a standard package installation. Each runtime package contains an Umbraco `IComposer`; Umbraco discovers it during composition. On Umbraco 17, 18, and 19, keep the normal `AddComposers()` call in the host's Umbraco builder pipeline. The composer calls Ekom's internal registration extension and registers services, components, content finders, URL providers, notification handlers, and startup filters.
 
 Do not call the public `AddEkom(...)` extension a second time in application startup. That extension is used by the composer and duplicate registration is not part of the supported installation path.
 

@@ -24,11 +24,15 @@ Choose the NuGet package that matches the Ekom/Umbraco application:
 | --- | --- | --- |
 | `Ekom.Algolia` | .NET 8 (Ekom.U10/Umbraco 13) or .NET 10 (Umbraco 17) | `Ekom.U10` or `Ekom.U17`, selected by target framework |
 | `Ekom.Algolia.U18` | .NET 10 and Umbraco 18 | `Ekom.U18` |
+| `Ekom.Algolia.U19` | .NET 11 and Umbraco 19 | `Ekom.U19` |
 
 ```shell
 dotnet add package Ekom.Algolia
 # Umbraco 18:
 dotnet add package Ekom.Algolia.U18
+
+# Umbraco 19:
+dotnet add package Ekom.Algolia.U19
 ```
 
 Both packages expose the same configuration and services. Register services explicitly; the Umbraco composers register notifications and Ekom event handlers, not the service collection:

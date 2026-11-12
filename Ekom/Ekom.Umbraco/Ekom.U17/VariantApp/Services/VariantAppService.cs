@@ -371,7 +371,7 @@ internal sealed class VariantAppService : IVariantAppService
 
     private IReadOnlyList<IContent> GetChildren(int parentId, string contentTypeAlias)
     {
-        return _contentService.GetPagedChildren(parentId, 0, int.MaxValue, out _)
+        return _contentService.GetPagedChildNodes(parentId, 0, int.MaxValue, out _)
             .Where(x => !x.Trashed && x.ContentType.Alias.Equals(contentTypeAlias, StringComparison.OrdinalIgnoreCase))
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)

@@ -137,7 +137,7 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
         var filter = new Query<IContent>(_scopeProvider.SqlContext)
             .Where(x => !x.Trashed && x.ContentTypeId == contentType.Id);
 
-        return _contentService.GetPagedChildren(
+        return _contentService.GetPagedChildNodes(
                 parentId,
                 0,
                 int.MaxValue,
@@ -159,7 +159,7 @@ internal sealed class CatalogCollectionService : ICatalogCollectionService
         var filter = new Query<IContent>(_scopeProvider.SqlContext)
             .Where(x => !x.Trashed && x.ContentTypeId == productType.Id);
 
-        return _contentService.GetPagedChildren(
+        return _contentService.GetPagedChildNodes(
                 parentId,
                 pageIndex,
                 pageSize,

@@ -10,7 +10,8 @@ import zipfile
 
 PACKAGE_IDS = (
     "Ekom.AspNetCore", "Ekom.Common", "Ekom.Core", "Ekom.U10", "Ekom.U17",
-    "Ekom.U18", "Ekom.Web", "Ekom.Web.U17", "Ekom.Web.U18",
+    "Ekom.U18", "Ekom.U19", "Ekom.Web", "Ekom.Web.U17", "Ekom.Web.U18",
+    "Ekom.Web.U19",
 )
 FEED = "https://api.nuget.org/v3-flatcontainer"
 

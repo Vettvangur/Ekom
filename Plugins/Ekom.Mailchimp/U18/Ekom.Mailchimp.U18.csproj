@@ -43,7 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\**\*.cs" Exclude="..\bin\**\*.cs;..\obj\**\*.cs;..\U18\bin\**\*.cs;..\U18\obj\**\*.cs"/>
+    <Compile Include="..\**\*.cs" Exclude="..\bin\**\*.cs;..\obj\**\*.cs;..\U18\**\*.cs;..\U19\**\*.cs"/>
     <None Include="..\README.md" Pack="true" PackagePath="\"/>
     <None Include="..\CHANGELOG.md" Pack="true" PackagePath="\"/>
     <None Include="..\..\..\Ekom_Logo.png" Link="Ekom_Logo.png" Pack="true" PackagePath="images/"/>

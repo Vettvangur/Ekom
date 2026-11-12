@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <DefineConstants>$(DefineConstants);UMBRACO_18;UMBRACO_19</DefineConstants>
+
+    <PackageId>Ekom.Algolia.U19</PackageId>
+    <Title>Ekom Algolia Plugin for Umbraco 19</Title>
+    <Description>Ekom Algolia integration plugin for Umbraco 19.</Description>
+    <Authors>Vettvangur</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>Ekom_Logo.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Copyright>Copyright 2026</Copyright>
+    <PackageTags>umbraco;ecommerce;ekom;algolia;search;plugin;extension</PackageTags>
+
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <EkomPackageVersion>0.2.255</EkomPackageVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\**\*.cs"
+             Exclude="..\Umbraco\U10\**\*.cs;..\Umbraco\U17\**\*.cs;..\bin\**\*.cs;..\obj\**\*.cs;..\U18\**\*.cs;..\U19\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="" />
+    <None Include="..\CHANGELOG.md" Link="CHANGELOG.md" Pack="true" PackagePath="" />
+    <None Include="..\Ekom_Logo.png" Link="Ekom_Logo.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Algolia.Search" Version="7.47.0" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.13.1" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="11.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="11.0.0" />
+    <!-- Algolia.Search caps Microsoft.Extensions.Logging below 11.0.0, while Umbraco 19 requires 11.x.
+         Referencing 11.x directly resolves the conflict; NU1608 reports the exceeded cap. -->
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="11.0.0" NoWarn="NU1608" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" NoWarn="NU1608" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="11.0.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="Umbraco.Cms.Api.Management" Version="[19.0.0-rc1,20.0.0)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseProjectReferences)' == 'true'">
+    <ProjectReference Include="..\..\..\Ekom\Ekom.Umbraco\Ekom.U19\Ekom.U19.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseProjectReferences)' != 'true'">
+    <PackageReference Include="Ekom.U19" Version="$(EkomPackageVersion)" />
+  </ItemGroup>
+
+</Project>
