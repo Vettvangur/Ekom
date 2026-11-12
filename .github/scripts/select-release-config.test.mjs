@@ -28,6 +28,8 @@ test('bootstrap changes only Ekom and maintenance cannot release plugins', () =>
         delete bootstrap.packages.Ekom['release-as'];
         assert.deepEqual(bootstrap, normal);
         assert.equal(normal.packages.Ekom.versioning, 'default');
+        // Separate release PRs all edit neighbouring manifest lines and conflict once one is merged.
+        assert.equal(normal['separate-pull-requests'], false);
     } else {
         assert.deepEqual(Object.keys(normal.packages), ['Ekom']);
         assert.equal(normal.packages.Ekom.versioning, 'always-bump-patch');

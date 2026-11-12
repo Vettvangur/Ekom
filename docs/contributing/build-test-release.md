@@ -60,6 +60,8 @@ fix: handle missing provider
 chore: update dependencies
 ```
 
+On `Ekom`, release-please keeps one combined release PR for every package with pending changes. Merging it releases all of those packages together and creates one tag per package. Separate release PRs are not used, because they all edit neighbouring lines of `.release-please-manifest.json` and conflict with each other as soon as one is merged.
+
 Merging a release-please release PR creates component tags. Tag-triggered publishing workflows build and pack the matching packages and push them to NuGet.org through trusted publishing. The Ekom workflow builds .NET 8 and .NET 10 package lines and uses Node.js 24.13.0 for web assets. Plugin workflows validate package references with `UseProjectReferences=false` before packing.
 
 Do not manually edit manifest versions, create release tags, or publish artifacts outside these workflows unless the maintainers explicitly request it. Before a release, inspect the generated changelog, ensure package lock files are current, and verify every changed target that is not covered by the selected solution.
