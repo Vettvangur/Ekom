@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **orders:** exclude linked-group parents from order-line merging by checking child-to-parent references, keeping standalone additions separate even when the parent link is empty.
+
 * **orders:** match the parent link when adding order lines, so standalone products do not merge into linked child lines with the same product or variant.
 
 * **manager:** remove the Items column from the Umbraco 17/18 Orders table. The list query no longer parses `OrderInfo` to total line quantities, and `OrderData.ItemQuantity` is removed.
