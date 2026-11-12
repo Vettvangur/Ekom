@@ -17,7 +17,13 @@ Products may belong to a primary category and additional categories. `IProduct.C
 
 ## Backoffice catalog collection and content pickers
 
+The Catalog view on a category shows its subcategories and its products as cards: the products that live directly under it and the products connected to it through their `categories` picker. Products shown through the picker carry a **Linked** pill. A product is listed once per category and counted once in branch totals. Picker connections are read from the relations Umbraco records when a product is saved, so a product whose picker value was written straight to the database appears after its next save. Each product card shows the image, name, SKU, price (with the original price struck through while a product discount applies), variant count, publish state, an **Edits** pill for published products with unpublished changes, and stock. A product with variants uses the combined stock of its variants; a product without variants uses its own stock. Subcategory cards show the product total for the whole branch and a short health note: `Empty`, `Nothing published`, `N out of stock` or `N live`.
+
+The filter chips (**All**, **Published**, **Unpublished**, **Out of stock**) and the sort menu apply to the direct products of the category; the search box in Umbraco's collection toolbar filters them by name, title or SKU. Checkboxes and **Select all** write to Umbraco's collection selection, so the standard selection bar and bulk actions apply. The `...` button on a card opens Umbraco's standard document actions. The view uses its own light and dark colours and follows the theme chosen in the backoffice user menu.
+
 Umbraco 17.8 and 18.3 render a node's configured collection inside the document picker. Ekom's `Ekom.CollectionView.Catalog` uses the `Ekom.Condition.CatalogPicker` extension condition to exclude itself from picker collections by default. Ordinary workspace bulk selection does not hide the catalog view.
+
+New installs create an **Ekom Catalog Collection** Data Type with Catalog as the first layout and Table as the second, and assign it to the Category document type, so categories open on the Catalog view. Existing installs are not changed: assign a collection to the Category document type yourself to get the view.
 
 Keep at least one native view, such as `Umb.CollectionView.Document.Table`, enabled in the collection Data Type's layouts alongside Catalog. Umbraco filters the configured layouts against the permitted views; a collection configured with **only Catalog** would have no available picker view when Catalog is excluded. Catalog can remain the first/default layout for normal editing.
 

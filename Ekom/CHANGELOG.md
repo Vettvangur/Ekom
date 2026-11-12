@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **catalog:** redesign the Umbraco 17/18/19 Catalog collection view: light and dark tokens that follow the backoffice theme, status filter chips with counts, subcategory health, variant counts, stock levels, discounted prices and Umbraco's standard actions menu on each card. A category also lists products connected to it through their categories picker, marked **Linked**. Counts, filters and sorting are answered from narrow database rows, and content is loaded only for the visible page. New installs give the Category document type a collection with Catalog as its first layout and Umbraco's table as the second; existing installs are not changed.
+
 * **install:** fix first-time installs that stopped before creating the Ekom root, Catalog and store nodes. The price save handler read Ekom's configuration while the installer was saving its first nodes, before Ekom had started, and the error ended the install on every startup.
 
 * **upgrade:** repair Ekom data types on sites upgraded from Umbraco 13. Every data type that uses an Ekom property editor now gets its editor UI on startup, matched on the editor instead of a fixed list of names, so Coupon, Range, Metafield, Metavalue, SKU Product Picker and renamed or site-created data types are covered. The Ekom Catalog, Product, Category and Variant Group pickers that still carry an XPath start node or an alias filter are moved to a dynamic root and a key-based filter.

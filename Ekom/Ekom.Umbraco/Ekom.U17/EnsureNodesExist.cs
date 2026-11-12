@@ -961,6 +961,8 @@ class EnsureNodesExist : IAsyncComponent
                     SaveContentType(categoryCt);
                 }
 
+                ConfigureCatalogCollection(categoryCt, ekmDtContainer.Id);
+
                 var catalogCt = EnsureContentTypeExists(new ContentType(_shortStringHelper, catalogContainer.Id)
                 {
                     Name = "Catalog",
@@ -1595,6 +1597,56 @@ class EnsureNodesExist : IAsyncComponent
 #else
         return _fileService.GetTemplates();
 #endif
+    }
+
+    /// <summary>
+    /// Gives categories a collection whose first layout is the Ekom Catalog view, so editors land
+    /// on it when opening a category. Umbraco's table stays available as the second layout, which
+    /// content pickers need because the Catalog view excludes itself from them.
+    /// A collection that is already configured on the document type is left as it is.
+    /// </summary>
+    private void ConfigureCatalogCollection(IContentType categoryContentType, int dataTypeContainerId)
+    {
+        if (categoryContentType.ListView != null)
+        {
+            return;
+        }
+
+        if (!_propertyEditorCollection.TryGet(Constants.PropertyEditors.Aliases.ListView, out IDataEditor? listViewEditor))
+        {
+            _logger.LogWarning("Unable to find the Umbraco list view property editor, skipping the Ekom catalog collection.");
+            return;
+        }
+
+        var collectionDt = EnsureDataTypeExists(new DataType(listViewEditor, _configurationEditorJsonSerializer, dataTypeContainerId)
+        {
+            Name = "Ekom Catalog Collection",
+            EditorUiAlias = "Umb.PropertyEditorUi.Collection",
+            ConfigurationData = ToConfigurationData(new
+            {
+                layouts = new[]
+                {
+                    new { name = "Catalog", icon = "icon-grid", collectionView = "Ekom.CollectionView.Catalog" },
+                    new { name = "Table", icon = "icon-list", collectionView = "Umb.CollectionView.Document.Table" },
+                },
+                includeProperties = new[]
+                {
+                    new { alias = "sku", header = "SKU", isSystem = 0 },
+                    new { alias = "updateDate", header = "Last edited", isSystem = 1 },
+                    new { alias = "creator", header = "Created by", isSystem = 1 },
+                    new { alias = "sortOrder", header = "Sort", isSystem = 1 },
+                },
+                orderBy = "sortOrder",
+                orderDirection = "asc",
+                pageSize = 50,
+                icon = "icon-thumbnail-list",
+                showContentFirst = false,
+            }),
+        });
+
+        categoryContentType.ListView = collectionDt.Key;
+        SaveContentType(categoryContentType);
+        _logger.LogInformation("Configured the Ekom catalog collection on {ContentTypeAlias}", categoryContentType.Alias);
     }
 
     private EntityContainer EnsureDataTypeContainerExists()

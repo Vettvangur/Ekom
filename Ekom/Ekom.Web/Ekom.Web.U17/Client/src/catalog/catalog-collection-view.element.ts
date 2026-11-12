@@ -1,52 +1,35 @@
 import { UMB_COLLECTION_CONTEXT } from '@umbraco-cms/backoffice/collection';
-import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
+import { UmbEntityContext } from '@umbraco-cms/backoffice/entity';
 import { UmbExtensionElementInitializer } from '@umbraco-cms/backoffice/extension-api';
 import { umbExtensionsRegistry } from '@umbraco-cms/backoffice/extension-registry';
+import { html, nothing, repeat, svg } from '@umbraco-cms/backoffice/external/lit';
+import type { TemplateResult } from '@umbraco-cms/backoffice/external/lit';
+import { UmbImagingRepository } from '@umbraco-cms/backoffice/imaging';
+import type { UmbImagingCropMode } from '@umbraco-cms/backoffice/imaging';
+import { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
+import { UMB_THEME_CONTEXT } from '@umbraco-cms/backoffice/themes';
 import { isCatalogPicker } from './catalog-picker-context';
-import '@umbraco-cms/backoffice/imaging';
-
-type CatalogNode = {
-  id: number;
-  key: string;
-  name: string;
-  title: string;
-  contentTypeAlias: string;
-  productCount: number;
-  subcategoryCount: number;
-  status: 'Published' | 'Pending changes' | 'Unpublished';
-  published: boolean;
-  pendingChanges: boolean;
-};
-
-type CatalogBreadcrumb = CatalogNode & {
-  siblings: CatalogNode[];
-};
-
-type CatalogProduct = CatalogNode & {
-  sku: string;
-  price: string;
-  available: boolean;
-  image: string;
-};
-
-type CatalogResponse = {
-  current: CatalogNode;
-  parent?: CatalogNode;
-  breadcrumbs: CatalogBreadcrumb[];
-  subcategories: CatalogNode[];
-  products: CatalogProduct[];
-  productCount: number;
-  subcategoryCount: number;
-  filteredProductCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-};
+import { catalogStyles } from './catalog-styles';
+import {
+  DEFAULT_SORT,
+  SORT_OPTIONS,
+  STATUS_CHIPS,
+  healthLabel,
+  isSortOption,
+  metaLine,
+  paginationItems,
+  plural,
+  publishLabel,
+  sortLabel,
+  stockLabel,
+  themeFromAlias,
+  toggleAll,
+} from './catalog-view-model';
+import type { CatalogBreadcrumb, CatalogNode, CatalogProduct, CatalogResponse, CatalogStatus } from './catalog-view-model';
 
 type CatalogSelection = {
   clearSelection(): void;
   getSelection(): string[];
-  isSelected(key: string): boolean;
   setMultiple(value: boolean): void;
   setSelectable(value: boolean): void;
   setSelection(selection: string[]): void;
@@ -54,32 +37,67 @@ type CatalogSelection = {
 };
 
 const DEFAULT_PAGE_SIZE = 16;
-const DEFAULT_SORT = 'sortOrderAsc';
 const CATALOG_NODE_QUERY = 'ekomCatalogNode';
-const GRID_GAP = 14;
-const GRID_MIN_CARD_WIDTH = 220;
 const MAX_PRODUCT_ROWS = 4;
+const NARROW_QUERY = '(max-width: 1100px)';
 const PARENT_STORAGE_PREFIX = 'ekomCatalogParent:';
 const SORT_STORAGE_KEY = 'ekomCatalogSort';
 const HISTORY_STATE_KEY = 'ekomCatalog';
+const THUMBNAIL_SIZE = 480;
+const DOCUMENT_ENTITY_TYPE = 'document';
+// The document collection is its own element in newer backoffice versions.
+const COLLECTION_HOST_SELECTOR = 'umb-collection-default, umb-document-collection';
 
-class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
+const folderIcon = svg`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
+const imageIcon = svg`<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="9" cy="9" r="1.8"/><path d="m21 15-4.6-4.6a1.5 1.5 0 0 0-2.1 0L5 20"/></svg>`;
+
+/** Gives the card's entity actions the document they act on. */
+class EkomCatalogEntityElement extends UmbLitElement {
+  private readonly entityContext = new UmbEntityContext(this);
+
+  set unique(value: string) {
+    this.entityContext.setEntityType(DOCUMENT_ENTITY_TYPE);
+    this.entityContext.setUnique(value);
+  }
+
+  override render(): TemplateResult {
+    return html`<slot></slot>`;
+  }
+}
+
+class EkomCatalogCollectionViewElement extends UmbLitElement {
+  static override styles = [catalogStyles];
+
   private pickerMode = false;
   private initialized = false;
   private pickerView?: UmbExtensionElementInitializer;
   private nodeId = '';
   private query = '';
   private sort = getStoredSort();
+  private status: CatalogStatus = 'all';
   private page = 1;
   private pageSize = DEFAULT_PAGE_SIZE;
   private loading = true;
+  private busy = false;
   private error = '';
   private data?: CatalogResponse;
+  private openMenu?: string;
+  private selected = new Set<string>();
+  private requestId = 0;
+  private request?: AbortController;
   private revealTimer?: number;
   private resizeTimer?: number;
   private collectionPaginationObserver?: MutationObserver;
   private selection?: CatalogSelection;
+  private readonly imaging = new UmbImagingRepository(this);
+  private readonly thumbnails = new Map<string, string>();
   private readonly onPopState = (): void => this.restoreNodeFromHistory();
+  private readonly onDocumentClick = (): void => this.setOpenMenu(undefined);
+  private readonly onKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+      this.setOpenMenu(undefined);
+    }
+  };
   private readonly onResize = (): void => {
     if (this.resizeTimer != null) {
       window.clearTimeout(this.resizeTimer);
@@ -91,6 +109,14 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
       }
     }, 150);
   };
+
+  constructor() {
+    super();
+    this.consumeContext(UMB_THEME_CONTEXT, context => {
+      this.observe(context?.theme, alias => this.setAttribute('data-theme', themeFromAlias(alias)), 'ekomCatalogTheme');
+    });
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.style.setProperty('display', 'block', 'important');
@@ -103,6 +129,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
       this.pickerMode = isCatalogPicker(context.getConfig());
       if (this.pickerMode) {
         this.initializePickerView();
+        this.requestUpdate();
         return;
       }
 
@@ -110,6 +137,8 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
         this.initialized = true;
         window.addEventListener('popstate', this.onPopState);
         window.addEventListener('resize', this.onResize);
+        document.addEventListener('click', this.onDocumentClick);
+        document.addEventListener('keydown', this.onKeyDown);
         this.revealCollectionHost();
         this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250);
         this.nodeId = this.getNodeIdFromUrl();
@@ -124,14 +153,19 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
       }
 
       if (context?.selection != null) {
+        // Selection belongs to Umbraco's collection: its selection bar and bulk actions
+        // react to whatever is written here.
         this.selection = context.selection as unknown as CatalogSelection;
         this.selection.setSelectable(true);
         this.selection.setMultiple(true);
-        this.observe(context.selection.selection, () => this.render(), 'ekomCatalogCollectionSelection');
+        this.observe(context.selection.selection, keys => {
+          this.selected = new Set((keys ?? []).filter((key): key is string => typeof key === 'string'));
+          this.requestUpdate();
+        }, 'ekomCatalogCollectionSelection');
       }
 
       this.observe(context?.filter, filter => this.setQueryFromCollectionFilter(filter), 'ekomCatalogCollectionFilter');
-      this.render();
+      this.requestUpdate();
       if (this.nodeId) {
         void this.load();
       }
@@ -161,8 +195,11 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     this.pickerView?.destroy();
     this.pickerView = undefined;
     this.initialized = false;
+    this.request?.abort();
     window.removeEventListener('popstate', this.onPopState);
     window.removeEventListener('resize', this.onResize);
+    document.removeEventListener('click', this.onDocumentClick);
+    document.removeEventListener('keydown', this.onKeyDown);
     if (this.revealTimer != null) {
       window.clearTimeout(this.revealTimer);
     }
@@ -180,38 +217,72 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     if (!this.nodeId) {
       this.loading = false;
       this.error = 'Unable to determine the current catalog node.';
-      this.render();
+      this.requestUpdate();
       return;
     }
 
+    // Only the newest request may update the view; older ones are cancelled.
+    this.request?.abort();
+    const request = new AbortController();
+    const requestId = ++this.requestId;
+    this.request = request;
     this.loading = showLoading;
+    this.busy = !showLoading;
     this.error = '';
     this.updatePageSizeForViewport();
-    if (showLoading) {
-      this.render();
-    }
+    this.requestUpdate();
 
     try {
       const params = new URLSearchParams({
         query: this.query,
         sort: this.sort,
+        status: this.status,
         page: String(this.page),
         pageSize: String(this.pageSize),
       });
-      this.data = await this.fetchJson<CatalogResponse>(`/ekom/backoffice/CatalogCollection/${encodeURIComponent(this.nodeId)}?${params}`);
-      this.page = this.data.page;
-      this.pageSize = this.data.pageSize;
-      this.storeParentNode(this.data);
+      const data = await this.fetchJson<CatalogResponse>(`/ekom/backoffice/CatalogCollection/${encodeURIComponent(this.nodeId)}?${params}`, request.signal);
+      if (requestId !== this.requestId) return;
+
+      this.data = data;
+      this.page = data.page;
+      this.pageSize = data.pageSize;
+      this.storeParentNode(data);
+      void this.loadThumbnails(data.products);
     } catch (error) {
+      if (requestId !== this.requestId || request.signal.aborted) return;
       if (error instanceof CatalogRequestError && error.status === 404 && this.redirectToParent()) {
         return;
       }
 
       this.error = error instanceof Error ? error.message : 'Unable to load catalog.';
-    } finally {
-      this.loading = false;
-      this.render();
     }
+
+    this.loading = false;
+    this.busy = false;
+    this.requestUpdate();
+  }
+
+  /** One request for every image on the page instead of one per card. */
+  private async loadThumbnails(products: CatalogProduct[]): Promise<void> {
+    const missing = [...new Set(products.map(product => product.image).filter(key => key && !this.thumbnails.has(key)))];
+    if (missing.length === 0) return;
+
+    try {
+      const { data } = await this.imaging.requestResizedItems(missing, {
+        width: THUMBNAIL_SIZE,
+        height: THUMBNAIL_SIZE,
+        mode: 'Max' as UmbImagingCropMode,
+      });
+      for (const item of data ?? []) {
+        if (item.url) {
+          this.thumbnails.set(item.unique, item.url);
+        }
+      }
+    } catch {
+      // Cards fall back to the placeholder when thumbnails cannot be resolved.
+    }
+
+    this.requestUpdate();
   }
 
   private drillTo(node: CatalogNode): void {
@@ -229,6 +300,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
 
     this.nodeId = nodeId;
     this.query = '';
+    this.status = 'all';
     this.page = 1;
     this.selection?.clearSelection();
     void this.load();
@@ -242,6 +314,7 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
 
     this.nodeId = nodeId;
     this.query = '';
+    this.status = 'all';
     this.page = 1;
     this.restorePageFromHistory();
     this.selection?.clearSelection();
@@ -312,25 +385,36 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     this.page = 1;
     this.storePageInHistory();
     if (this.nodeId) {
-      void this.load();
+      void this.load(this.data == null);
     }
   }
 
   private setSort(value: string): void {
+    this.setOpenMenu(undefined);
     if (!isSortOption(value)) {
       return;
     }
 
+    setStoredSort(value);
     if (value === this.sort) {
-      setStoredSort(value);
       return;
     }
 
     this.sort = value;
-    setStoredSort(value);
     this.page = 1;
     this.storePageInHistory();
-    void this.load();
+    void this.load(false);
+  }
+
+  private setStatus(value: CatalogStatus): void {
+    if (value === this.status) {
+      return;
+    }
+
+    this.status = value;
+    this.page = 1;
+    this.storePageInHistory();
+    void this.load(false);
   }
 
   private setPage(page: number): void {
@@ -340,16 +424,33 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
 
     this.page = page;
     this.storePageInHistory();
-    void this.load();
+    void this.load(false);
+  }
+
+  private setOpenMenu(menu: string | undefined): void {
+    if (menu === this.openMenu) {
+      return;
+    }
+
+    this.openMenu = menu;
+    this.requestUpdate();
+  }
+
+  private toggleMenu(event: Event, menu: string): void {
+    event.stopPropagation();
+    this.setOpenMenu(this.openMenu === menu ? undefined : menu);
   }
 
   private updatePageSizeForViewport(): boolean {
-    const width = Math.max(0, this.clientWidth - 48);
+    const narrow = window.matchMedia(NARROW_QUERY).matches;
+    const gap = narrow ? 10 : 14;
+    const minCardWidth = narrow ? 170 : 220;
+    const width = Math.max(0, this.clientWidth - (narrow ? 32 : 48));
     if (width === 0) {
       return false;
     }
 
-    const columns = Math.max(1, Math.floor((width + GRID_GAP) / (GRID_MIN_CARD_WIDTH + GRID_GAP)));
+    const columns = Math.max(1, Math.floor((width + gap) / (minCardWidth + gap)));
     const pageSize = columns * MAX_PRODUCT_ROWS;
     if (pageSize === this.pageSize) {
       return false;
@@ -359,28 +460,37 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     return true;
   }
 
-  private toggleProduct(product: CatalogProduct): void {
-    this.selection?.toggleSelect(product.key);
+  private visibleKeys(): string[] {
+    const data = this.data;
+    if (data == null) {
+      return [];
+    }
+
+    const subcategories = this.query ? [] : data.subcategories;
+    return [...subcategories.map(category => category.key), ...data.products.map(product => product.key)];
   }
 
-  private toggleCurrentPage(): void {
+  private toggleKey(event: MouseEvent, key: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.selection?.toggleSelect(key);
+  }
+
+  private toggleVisible(): void {
     if (this.selection == null) {
       return;
     }
 
-    const products = this.data?.products ?? [];
-    const productKeys = products.map(product => product.key);
-    const allSelected = productKeys.length > 0 && productKeys.every(key => this.selection!.isSelected(key));
-    const selection = this.selection.getSelection();
+    this.selection.setSelection(toggleAll(this.visibleKeys(), this.selection.getSelection()));
+  }
 
-    this.selection.setSelection(allSelected
-      ? selection.filter(key => !productKeys.includes(key))
-      : [...new Set([...selection, ...productKeys])]);
+  private clearFilter(): void {
+    this.setStatus('all');
   }
 
   private revealCollectionHost(): void {
     if (this.pickerMode) return;
-    for (const collection of this.getComposedAncestors('umb-collection-default')) {
+    for (const collection of this.getComposedAncestors(COLLECTION_HOST_SELECTOR)) {
       const collectionRoot = collection.shadowRoot;
       const router = collectionRoot?.querySelector<HTMLElement>('#router');
       const bodyLayout = collectionRoot?.querySelector<HTMLElement>('umb-body-layout');
@@ -440,82 +550,83 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     return [...roots];
   }
 
-  private render(): void {
-    if (this.pickerMode) return;
-    this.innerHTML = `
-      <style>${styles}</style>
-      <div class="catalog-shell">
-        ${this.renderContent()}
-      </div>
-    `;
-    this.revealCollectionHost();
-    this.bindEvents();
+  protected override updated(): void {
+    if (!this.pickerMode) {
+      this.revealCollectionHost();
+    }
   }
 
-  private renderContent(): string {
+  override render(): TemplateResult {
+    if (this.pickerMode) {
+      return html`<slot></slot>`;
+    }
+
+    return html`<div class="shell ${this.busy ? 'busy' : ''}" aria-busy=${this.loading || this.busy ? 'true' : 'false'}>${this.renderContent()}</div>`;
+  }
+
+  private renderContent(): TemplateResult {
     if (this.loading) {
       return this.renderLoading();
     }
 
-    if (this.error) {
-      return `<div class="surface state error"><strong>Catalog unavailable</strong><span>${escapeHtml(this.error)}</span><button type="button" data-action="retry">Retry</button></div>`;
-    }
-
-    if (this.data == null) {
-      return '<div class="surface state">No catalog data.</div>';
-    }
-
-    const isEmptyCategory = !this.query && this.data.productCount === 0 && this.data.subcategoryCount === 0;
-
-    if (isEmptyCategory) {
-      return `
-        ${this.renderBreadcrumbs(this.data)}
-        ${this.renderHeader(this.data)}
-        ${this.renderEmptyCategory()}
+    const data = this.data;
+    if (this.error || data == null) {
+      return html`
+        <div class="empty error" role="alert">
+          <strong>Could not load the catalog</strong>
+          <span>${this.error || 'No catalog data.'}</span>
+          <div class="actions">
+            ${data?.parent != null ? html`<button type="button" class="control" @click=${() => this.drillTo(data.parent!)}>Back</button>` : nothing}
+            <button type="button" class="control" @click=${() => void this.load()}>Retry</button>
+          </div>
+        </div>
       `;
     }
 
-    return `
-      ${this.renderBreadcrumbs(this.data)}
-      ${this.renderHeader(this.data)}
-      ${this.renderToolbar(this.data)}
-      ${!this.query && this.data.subcategories.length > 0 ? this.renderSubcategories(this.data.subcategories) : ''}
-      ${this.renderProducts(this.data)}
-      ${this.renderPagination(this.data)}
+    const showSubcategories = !this.query && data.subcategories.length > 0;
+
+    return html`
+      ${this.renderBreadcrumbs(data)}
+      ${this.renderHeader(data)}
+      <div class="content">
+        ${data.productCount > 0 ? this.renderFilters(data) : nothing}
+        ${showSubcategories ? this.renderSubcategories(data.subcategories) : nothing}
+        ${this.renderProducts(data)}
+        ${this.renderPagination(data)}
+      </div>
     `;
   }
 
-  private renderLoading(): string {
-    return `
-      <div class="catalog-loading" aria-busy="true" aria-label="Loading catalog" role="status">
-        <div class="loading-breadcrumbs">
-          <span class="skeleton skeleton-breadcrumb"></span>
-          <span class="skeleton skeleton-breadcrumb"></span>
-          <span class="skeleton skeleton-breadcrumb current"></span>
-        </div>
-        <div class="loading-header">
-          <span class="skeleton skeleton-back"></span>
-          <div>
-            <span class="skeleton skeleton-title"></span>
-            <span class="skeleton skeleton-summary"></span>
+  private renderLoading(): TemplateResult {
+    return html`
+      <div role="status" aria-label="Loading catalog">
+        <span class="skeleton" style="height:14px;width:220px;margin-bottom:18px"></span>
+        <div class="header">
+          <span class="skeleton" style="height:44px;width:44px;border-radius:8px"></span>
+          <div class="heading">
+            <span class="skeleton" style="height:28px;width:200px"></span>
+            <span class="skeleton" style="height:14px;width:160px;margin-top:8px"></span>
           </div>
         </div>
-        <div class="loading-toolbar">
-          <span class="skeleton skeleton-control"></span>
-          <span class="skeleton skeleton-control"></span>
-        </div>
-        <section class="loading-section">
-          <span class="skeleton skeleton-section-title"></span>
-          <div class="loading-chips">
-            <span class="skeleton skeleton-chip"></span>
-            <span class="skeleton skeleton-chip"></span>
-            <span class="skeleton skeleton-chip"></span>
+        <section class="section">
+          <span class="skeleton" style="height:11px;width:120px;margin-bottom:10px"></span>
+          <div class="subcats">
+            ${[0, 1, 2, 3].map(() => html`<span class="skeleton" style="height:56px;width:230px;border-radius:10px"></span>`)}
           </div>
         </section>
-        <section class="loading-section">
-          <span class="skeleton skeleton-section-title"></span>
-          <div class="loading-grid">
-            ${Array.from({ length: 8 }, () => `<article class="loading-card"><span class="skeleton skeleton-image"></span><div class="loading-card-body"><span class="skeleton skeleton-product-title"></span><span class="skeleton skeleton-product-meta"></span><span class="skeleton skeleton-product-status"></span></div></article>`).join('')}
+        <section class="section">
+          <span class="skeleton" style="height:11px;width:100px;margin-bottom:10px"></span>
+          <div class="grid">
+            ${Array.from({ length: 12 }, () => html`
+              <div class="skeleton-card">
+                <span class="skeleton image"></span>
+                <div class="lines">
+                  <span class="skeleton" style="height:16px;width:76%"></span>
+                  <span class="skeleton" style="height:12px;width:58%"></span>
+                  <span class="skeleton" style="height:22px;width:88%"></span>
+                </div>
+              </div>
+            `)}
           </div>
         </section>
         <span class="visually-hidden">Loading catalog…</span>
@@ -523,206 +634,241 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     `;
   }
 
-  private renderBreadcrumbs(data: CatalogResponse): string {
-    return `<nav class="breadcrumbs">${data.breadcrumbs.map((item, index) => {
-      const isCurrent = index === data.breadcrumbs.length - 1;
-      const label = escapeHtml(item.name);
-      const siblings = item.siblings.filter(sibling => sibling.key !== item.key);
-      const hasSiblings = item.contentTypeAlias === 'ekmCategory' && siblings.length > 0;
-      const breadcrumb = hasSiblings
-        ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(item.key)}" data-breadcrumb-link-key="${escapeHtml(item.key)}" ${isCurrent ? 'aria-current="page"' : ''}>${label}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${label}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${siblings.map(sibling => {
-          const siblingLabel = escapeHtml(sibling.name);
-          return `<button type="button" data-breadcrumb-category-key="${escapeHtml(sibling.key)}" role="menuitem">${siblingLabel}</button>`;
-        }).join('')}</div></details></div>`
-        : isCurrent ? `<span aria-current="page">${label}</span>` : `<a href="${this.getDocumentHref(item.key)}">${label}</a>`;
-      return `${index > 0 ? '<span class="sep">/</span>' : ''}${breadcrumb}`;
-    }).join('')}</nav>`;
+  private renderBreadcrumbs(data: CatalogResponse): TemplateResult | typeof nothing {
+    if (data.breadcrumbs.length <= 1) {
+      return nothing;
+    }
+
+    const last = data.breadcrumbs.length - 1;
+    return html`
+      <nav class="crumbs" aria-label="Catalog path">
+        ${data.breadcrumbs.map((item, index) => html`
+          ${index > 0 ? html`<span class="sep" aria-hidden="true">/</span>` : nothing}
+          ${this.renderBreadcrumb(item, index, last, data.breadcrumbs[index - 1])}
+        `)}
+      </nav>
+    `;
   }
 
-  private renderHeader(data: CatalogResponse): string {
-    return `
-      <header class="catalog-header">
-        <button type="button" class="back" data-action="back" ${data.parent == null ? 'disabled' : ''}>←</button>
-        <div>
-          <h1>${escapeHtml(data.current.name)}</h1>
-          <p>${data.productCount} products · ${data.subcategoryCount} subcategories</p>
+  private renderBreadcrumb(item: CatalogBreadcrumb, index: number, last: number, parent?: CatalogBreadcrumb): TemplateResult {
+    const isCurrent = index === last;
+    const menu = `crumb:${item.key}`;
+    const open = this.openMenu === menu;
+    const hasSiblings = item.contentTypeAlias === 'ekmCategory' && item.siblings.length > 1;
+
+    return html`
+      <span class="crumb">
+        <button
+          type="button"
+          class="crumb-link ${isCurrent ? 'current' : ''} ${index === 0 ? 'root' : ''}"
+          aria-current=${isCurrent ? 'page' : nothing}
+          @click=${() => (isCurrent ? undefined : this.drillTo(item))}>${item.name}</button>
+        ${hasSiblings ? html`
+          <button
+            type="button"
+            class="crumb-caret"
+            aria-haspopup="menu"
+            aria-expanded=${open ? 'true' : 'false'}
+            aria-label="Show sibling categories for ${item.name}"
+            @click=${(event: Event) => this.toggleMenu(event, menu)}>${open ? '▲' : '▼'}</button>
+          ${open ? html`
+            <div class="menu crumb-menu" role="menu">
+              ${parent != null ? html`<div class="menu-head">In ${parent.name}</div>` : nothing}
+              ${item.siblings.map(sibling => html`
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="menu-item ${sibling.key === item.key ? 'active' : ''}"
+                  @click=${() => (sibling.key === item.key ? this.setOpenMenu(undefined) : this.drillTo(sibling))}>
+                  ${folderIcon}
+                  <span class="grow">${sibling.name}</span>
+                  <span class="count">${sibling.totalProductCount}</span>
+                  <span class="tick">${sibling.key === item.key ? '✓' : ''}</span>
+                </button>
+              `)}
+            </div>
+          ` : nothing}
+        ` : nothing}
+      </span>
+    `;
+  }
+
+  private renderHeader(data: CatalogResponse): TemplateResult {
+    const visible = this.visibleKeys();
+    const allSelected = visible.length > 0 && visible.every(key => this.selected.has(key));
+    const sortOpen = this.openMenu === 'sort';
+
+    return html`
+      <header class="header">
+        ${data.parent != null ? html`<button type="button" class="back" aria-label="Back to ${data.parent.name}" @click=${() => this.drillTo(data.parent!)}>←</button>` : nothing}
+        <div class="heading">
+          <h1>${data.current.name}</h1>
+          <p class="meta">${metaLine(data.current.totalProductCount, data.subcategoryCount)}</p>
+        </div>
+        <div class="tools">
+          <div class="sort">
+            <button
+              type="button"
+              class="control ${sortOpen ? 'open' : ''}"
+              aria-haspopup="menu"
+              aria-expanded=${sortOpen ? 'true' : 'false'}
+              @click=${(event: Event) => this.toggleMenu(event, 'sort')}>${sortLabel(this.sort)}<span class="caret" aria-hidden="true">▼</span></button>
+            ${sortOpen ? html`
+              <div class="menu sort-menu" role="menu">
+                ${SORT_OPTIONS.map(option => html`
+                  <button type="button" role="menuitemradio" aria-checked=${option.value === this.sort ? 'true' : 'false'} class="menu-item ${option.value === this.sort ? 'active' : ''}" @click=${() => this.setSort(option.value)}>
+                    <span class="grow">${option.label}</span>
+                    <span class="tick">${option.value === this.sort ? '✓' : ''}</span>
+                  </button>
+                `)}
+              </div>
+            ` : nothing}
+          </div>
+          <button type="button" class="control" role="checkbox" aria-checked=${allSelected ? 'true' : 'false'} ?disabled=${visible.length === 0} @click=${() => this.toggleVisible()}>
+            <span class="box ${allSelected ? 'on' : ''}" aria-hidden="true">${allSelected ? '✓' : ''}</span>Select all
+          </button>
         </div>
       </header>
     `;
   }
 
-  private renderToolbar(data: CatalogResponse): string {
-    const currentPageSelected = data.products.length > 0 && data.products.every(product => this.selection?.isSelected(product.key));
-
-    return `
-      <div class="toolbar">
-        <select data-field="sort">
-          ${this.renderSortOption('sortOrderAsc', 'Sort order asc')}
-          ${this.renderSortOption('sortOrderDesc', 'Sort order desc')}
-          ${this.renderSortOption('nameAsc', 'Name asc')}
-          ${this.renderSortOption('nameDesc', 'Name desc')}
-          ${this.renderSortOption('createdAsc', 'Created asc')}
-          ${this.renderSortOption('createdDesc', 'Created desc')}
-          ${this.renderSortOption('updatedAsc', 'Updated asc')}
-          ${this.renderSortOption('updatedDesc', 'Updated desc')}
-        </select>
-        <button type="button" class="select-all" data-action="toggle-page"><span class="fake-checkbox ${currentPageSelected ? 'checked' : ''}"></span>Select all</button>
+  private renderFilters(data: CatalogResponse): TemplateResult {
+    return html`
+      <div class="filters">
+        ${STATUS_CHIPS.map(chip => html`
+          <button type="button" class="chip ${this.status === chip.value ? 'on' : ''}" title=${chip.title} aria-pressed=${this.status === chip.value ? 'true' : 'false'} @click=${() => this.setStatus(chip.value)}>
+            ${chip.label}<span class="count">${data.statusCounts[chip.count]}</span>
+          </button>
+        `)}
+        ${this.status !== 'all' ? html`<span class="showing">Showing ${data.filteredProductCount} of ${data.statusCounts.all}</span>` : nothing}
       </div>
     `;
   }
 
-  private renderSortOption(value: string, label: string): string {
-    return `<option value="${value}" ${this.sort === value ? 'selected' : ''}>${label}</option>`;
-  }
-
-  private renderSubcategories(subcategories: CatalogNode[]): string {
-    return `
+  private renderSubcategories(subcategories: CatalogNode[]): TemplateResult {
+    return html`
       <section class="section">
-        <h2>Subcategories</h2>
-        <div class="chips">${subcategories.map(category => `
-          <a class="chip" href="${this.getDocumentHref(category.key)}">
-            <span class="tile">▦</span><span class="chip-text"><strong>${escapeHtml(category.name)}<span class="chip-status ${statusClass(category.status)}" title="${category.status}" aria-label="${category.status}"></span></strong><small>${category.productCount} products · ${category.subcategoryCount} subcategories</small></span><span>›</span>
-          </a>
-        `).join('')}</div>
-      </section>
-    `;
-  }
-
-  private renderEmptyCategory(): string {
-    return `
-      <section class="section">
-        <div class="empty empty-category">
-          <strong>No catalog items in this category yet</strong>
-          <span>This category does not contain any direct products or subcategories.</span>
+        <h2>Subcategories<span>${subcategories.length}</span></h2>
+        <div class="subcats">
+          ${repeat(subcategories, category => category.key, category => this.renderSubcategory(category))}
         </div>
       </section>
     `;
   }
 
-  private renderProducts(data: CatalogResponse): string {
-    const empty = this.query ? `No products match &quot;${escapeHtml(this.query)}&quot;` : 'No products in this category yet';
+  private renderSubcategory(category: CatalogNode): TemplateResult {
+    const selected = this.selected.has(category.key);
+    const health = healthLabel(category);
 
-    return `
+    return html`
+      <a class="subcat ${selected ? 'selected' : ''}" href=${this.getDocumentHref(category.key)} @click=${(event: Event) => { event.preventDefault(); this.drillTo(category); }}>
+        <button type="button" class="box ${selected ? 'on' : ''}" role="checkbox" aria-checked=${selected ? 'true' : 'false'} aria-label="Select ${category.name}" @click=${(event: MouseEvent) => this.toggleKey(event, category.key)}>${selected ? '✓' : ''}</button>
+        <span class="subcat-icon">${folderIcon}</span>
+        <span class="subcat-text">
+          <span class="subcat-name">${category.name}<span class="dot ${category.published ? 'green' : 'grey'}" title=${category.published ? 'Category is published' : 'Category is not published'}></span></span>
+          <span class="subcat-meta">${metaLine(category.totalProductCount, category.subcategoryCount)} · <span class=${health.tone}>${health.text}</span></span>
+        </span>
+        <span class="chevron" aria-hidden="true">›</span>
+      </a>
+    `;
+  }
+
+  private renderProducts(data: CatalogResponse): TemplateResult {
+    return html`
       <section class="section">
-        <h2>Products (${data.filteredProductCount})</h2>
-        ${data.products.length === 0 ? `<div class="empty">${empty}</div>` : `<div class="grid">${data.products.map(product => this.renderProduct(product)).join('')}</div>`}
+        <h2>Products<span>${data.filteredProductCount}</span></h2>
+        ${data.products.length === 0
+          ? this.renderEmptyProducts(data)
+          : html`<div class="grid">${repeat(data.products, product => product.key, product => this.renderProduct(product))}</div>`}
       </section>
     `;
   }
 
-  private renderProduct(product: CatalogProduct): string {
-    const selected = this.selection?.isSelected(product.key) ?? false;
-    const href = `/umbraco/section/content/workspace/document/edit/${product.key}`;
+  private renderEmptyProducts(data: CatalogResponse): TemplateResult {
+    if (this.query) {
+      return html`<div class="empty"><strong>No products match “${this.query}”</strong><span>Try another name or SKU, or clear the search above.</span></div>`;
+    }
 
-    return `
+    if (this.status !== 'all' && data.productCount > 0) {
+      const chip = STATUS_CHIPS.find(item => item.value === this.status);
+      return html`
+        <div class="empty">
+          <strong>No ${chip?.label.toLowerCase()} products here</strong>
+          <span>None of the ${plural(data.productCount, 'product', 'products')} in this category match the filter.</span>
+          <div class="actions"><button type="button" class="control" @click=${() => this.clearFilter()}>Clear filter</button></div>
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="empty">
+        <strong>No products in this category yet</strong>
+        <span>Use Create to add a product here, or move products in from another category.</span>
+      </div>
+    `;
+  }
+
+  private renderProduct(product: CatalogProduct): TemplateResult {
+    const selected = this.selected.has(product.key);
+    const href = `/umbraco/section/content/workspace/document/edit/${product.key}`;
+    const thumbnail = product.image ? this.thumbnails.get(product.image) : undefined;
+    const publish = publishLabel(product);
+    const stock = stockLabel(product.stock);
+
+    return html`
       <article class="card ${selected ? 'selected' : ''}">
-        <button type="button" class="checkbox ${selected ? 'checked' : ''}" data-product-key="${product.key}">${selected ? '✓' : ''}</button>
-        <a class="image ${!product.published ? 'dimmed' : ''}" href="${href}">${product.image ? `<umb-imaging-thumbnail unique="${escapeHtml(product.image)}" width="320" height="160" alt="${escapeHtml(product.name)}"></umb-imaging-thumbnail>` : '<span>Product image</span>'}</a>
+        <button type="button" class="box ${selected ? 'on' : ''}" role="checkbox" aria-checked=${selected ? 'true' : 'false'} aria-label="Select ${product.name}" @click=${(event: MouseEvent) => this.toggleKey(event, product.key)}>${selected ? '✓' : ''}</button>
+        <ekom-catalog-entity class="card-actions" .unique=${product.key}>
+          <umb-entity-actions-dropdown compact label="Actions for ${product.name}">
+            <uui-symbol-more slot="label"></uui-symbol-more>
+          </umb-entity-actions-dropdown>
+        </ekom-catalog-entity>
+        <a class="tile" href=${href} tabindex="-1" aria-hidden="true">
+          ${thumbnail ? html`<img src=${thumbnail} alt="" loading="lazy" decoding="async" />` : imageIcon}
+        </a>
         <div class="card-body">
-          <a class="title" href="${href}">${escapeHtml(product.name)}</a>
-          <div class="meta"><span>${product.sku ? `SKU ${escapeHtml(product.sku)}` : 'No SKU'}</span><strong>${escapeHtml(product.price)}</strong></div>
-          <div class="status-row"><span class="pill ${statusClass(product.status)}"><i></i>${product.status}</span><strong class="availability ${product.available ? 'ok' : 'bad'}">${product.available ? '✓ Available' : '✕ Unavailable'}</strong></div>
+          <a class="name" href=${href} title=${product.name}>${product.name}</a>
+          <div class="row">
+            <span class="sku" title=${product.sku}>${product.sku || 'No SKU'}</span>
+            <span class="prices">
+              ${product.originalPrice ? html`<span class="was">${product.originalPrice}</span>` : nothing}
+              <span class="price">${product.price}</span>
+            </span>
+          </div>
+          <span class="variants">${product.variantCount > 0 ? plural(product.variantCount, 'variant', 'variants') : 'No variants'}</span>
+          <div class="foot">
+            <span class="badges">
+              <span class="badge ${publish.tone}"><i></i>${publish.text}</span>
+              ${product.pendingChanges ? html`<span class="badge amber edits" title="Published with unpublished edits">Edits</span>` : nothing}
+              ${product.linked ? html`<span class="badge grey edits" title="Lives in another category and is shown here through its categories picker">Linked</span>` : nothing}
+            </span>
+            <span class="stock ${stock.tone}">${stock.text}</span>
+          </div>
         </div>
       </article>
     `;
   }
 
-  private renderPagination(data: CatalogResponse): string {
+  private renderPagination(data: CatalogResponse): TemplateResult | typeof nothing {
     if (data.filteredProductCount === 0 || data.totalPages <= 1) {
-      return '';
+      return nothing;
     }
 
     const from = (data.page - 1) * data.pageSize + 1;
     const to = Math.min(data.page * data.pageSize, data.filteredProductCount);
 
-    return `
+    return html`
       <footer class="pagination">
         <div>
-          <button type="button" data-page="${data.page - 1}" ${data.page <= 1 ? 'disabled' : ''}>‹ Prev</button>
-          ${this.paginationItems(data.page, data.totalPages).map(item => item === '…' ? '<span>…</span>' : `<button type="button" class="${item === data.page ? 'current' : ''}" data-page="${item}">${item}</button>`).join('')}
-          <button type="button" data-page="${data.page + 1}" ${data.page >= data.totalPages ? 'disabled' : ''}>Next ›</button>
+          <button type="button" ?disabled=${data.page <= 1} @click=${() => this.setPage(data.page - 1)}>‹ Prev</button>
+          ${paginationItems(data.page, data.totalPages).map(item => item === '…'
+            ? html`<span>…</span>`
+            : html`<button type="button" class=${item === data.page ? 'current' : ''} aria-current=${item === data.page ? 'page' : nothing} @click=${() => this.setPage(item)}>${item}</button>`)}
+          <button type="button" ?disabled=${data.page >= data.totalPages} @click=${() => this.setPage(data.page + 1)}>Next ›</button>
         </div>
         <span>${from}–${to} of ${data.filteredProductCount}</span>
       </footer>
     `;
-  }
-
-  private paginationItems(page: number, total: number): Array<number | '…'> {
-    if (total <= 7) {
-      return Array.from({ length: total }, (_, index) => index + 1);
-    }
-
-    const items = new Set([1, total, page - 1, page, page + 1]);
-    const sorted = [...items].filter(item => item >= 1 && item <= total).sort((a, b) => a - b);
-    const result: Array<number | '…'> = [];
-
-    for (const item of sorted) {
-      const previous = result[result.length - 1];
-      if (typeof previous === 'number' && item - previous > 1) {
-        result.push('…');
-      }
-
-      result.push(item);
-    }
-
-    return result;
-  }
-
-  private bindEvents(): void {
-    this.querySelector('[data-action="retry"]')?.addEventListener('click', () => void this.load());
-    this.querySelector('[data-action="back"]')?.addEventListener('click', () => {
-      if (this.data?.parent != null) {
-        this.drillTo(this.data.parent);
-      }
-    });
-    this.querySelector('[data-action="toggle-page"]')?.addEventListener('click', () => this.toggleCurrentPage());
-    this.querySelector('[data-field="sort"]')?.addEventListener('input', event => this.setSort((event.target as HTMLSelectElement).value));
-    this.querySelector('[data-field="sort"]')?.addEventListener('change', event => this.setSort((event.target as HTMLSelectElement).value));
-    this.querySelectorAll<HTMLElement>('[data-product-key]').forEach(element => {
-      element.addEventListener('click', event => {
-        event.preventDefault();
-        const key = element.dataset.productKey;
-        const product = this.data?.products.find(item => item.key === key);
-        if (product != null) {
-          this.toggleProduct(product);
-        }
-      });
-    });
-    this.querySelectorAll<HTMLElement>('[data-page]').forEach(element => {
-      element.addEventListener('click', () => this.setPage(Number(element.dataset.page)));
-    });
-    this.querySelectorAll<HTMLAnchorElement>('[data-breadcrumb-link-key]').forEach(element => {
-      element.addEventListener('click', event => {
-        event.preventDefault();
-        const key = element.dataset.breadcrumbLinkKey;
-        const category = this.data?.breadcrumbs.find(item => item.key === key);
-        if (category != null) {
-          this.drillTo(category);
-        }
-      });
-    });
-    this.querySelectorAll<HTMLElement>('[data-breadcrumb-category-key]').forEach(element => {
-      element.addEventListener('click', () => {
-        const key = element.dataset.breadcrumbCategoryKey;
-        const category = this.data?.breadcrumbs
-          .flatMap(breadcrumb => breadcrumb.siblings)
-          .find(item => item.key === key);
-        if (category != null) {
-          this.drillTo(category);
-        }
-      });
-    });
-    this.querySelectorAll<HTMLDetailsElement>('.breadcrumb-menu').forEach(menu => {
-      menu.addEventListener('toggle', () => {
-        if (menu.open) {
-          this.querySelectorAll<HTMLDetailsElement>('.breadcrumb-menu').forEach(otherMenu => {
-            if (otherMenu !== menu) {
-              otherMenu.open = false;
-            }
-          });
-        }
-      });
-    });
   }
 
   private getNodeIdFromUrl(): string {
@@ -759,8 +905,8 @@ class EkomCatalogCollectionViewElement extends UmbElementMixin(HTMLElement) {
     return value && value.trim().length > 0 ? value : null;
   }
 
-  private async fetchJson<T>(url: string): Promise<T> {
-    const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+  private async fetchJson<T>(url: string, signal: AbortSignal): Promise<T> {
+    const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal });
     if (!response.ok) {
       throw new CatalogRequestError(await response.text() || `Request failed (${response.status}).`, response.status);
     }
@@ -773,31 +919,6 @@ class CatalogRequestError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);
   }
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char] ?? char);
-}
-
-function statusClass(status: CatalogProduct['status']): string {
-  if (status === 'Published') {
-    return 'published';
-  }
-
-  return status === 'Pending changes' ? 'pending' : 'unpublished';
-}
-
-function isSortOption(value: string): boolean {
-  return [
-    'sortOrderAsc',
-    'sortOrderDesc',
-    'nameAsc',
-    'nameDesc',
-    'createdAsc',
-    'createdDesc',
-    'updatedAsc',
-    'updatedDesc',
-  ].includes(value);
 }
 
 function getStoredSort(): string {
@@ -817,113 +938,7 @@ function setStoredSort(value: string): void {
   }
 }
 
-const styles = `
-  ekom-catalog-collection-view { color: #1f1f1f; display: block !important; font-family: Lato, sans-serif; visibility: visible !important; }
-  .catalog-shell { background: #f6f4f4; min-height: 100%; padding: 24px; }
-  .surface, .empty { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; }
-  .state { padding: 24px; display: grid; gap: 10px; }
-  .error { color: #d42054; }
-  .catalog-loading { animation: loading-enter .18s ease-out; }
-  .skeleton { animation: skeleton-shimmer 1.4s ease-in-out infinite; background: linear-gradient(100deg, #e9e9eb 35%, #f8f8f9 50%, #e9e9eb 65%); background-size: 200% 100%; border-radius: 3px; display: block; }
-  .loading-breadcrumbs { display: flex; gap: 8px; margin-bottom: 18px; }
-  .skeleton-breadcrumb { height: 13px; width: 58px; }
-  .skeleton-breadcrumb.current { width: 82px; }
-  .loading-header { align-items: center; display: flex; gap: 14px; margin-bottom: 18px; }
-  .skeleton-back { border-radius: 50%; height: 36px; width: 36px; }
-  .loading-header div { display: grid; gap: 8px; }
-  .skeleton-title { height: 28px; width: 176px; }
-  .skeleton-summary { height: 13px; width: 132px; }
-  .loading-toolbar { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 14px; }
-  .skeleton-control { height: 36px; width: 118px; }
-  .loading-section { margin-top: 22px; }
-  .skeleton-section-title { height: 11px; margin-bottom: 10px; width: 96px; }
-  .loading-chips { display: flex; flex-wrap: wrap; gap: 10px; }
-  .skeleton-chip { border-radius: 999px; height: 42px; width: 172px; }
-  .loading-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-  .loading-card { background: #fff; border: 1px solid #e9e9eb; border-radius: 4px; overflow: hidden; }
-  .skeleton-image { border-radius: 0; height: 160px; }
-  .loading-card-body { display: grid; gap: 12px; padding: 12px; }
-  .skeleton-product-title { height: 16px; width: 76%; }
-  .skeleton-product-meta { height: 13px; width: 58%; }
-  .skeleton-product-status { height: 24px; width: 88%; }
-  .visually-hidden { height: 1px; margin: -1px; overflow: hidden; position: absolute; width: 1px; clip: rect(0, 0, 0, 0); }
-  @keyframes loading-enter { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
-  @media (prefers-reduced-motion: reduce) { .catalog-loading, .skeleton { animation: none; } }
-  button, input, select { font: inherit; }
-  button { cursor: pointer; }
-  button:disabled { cursor: default; opacity: .45; }
-  .breadcrumbs { align-items: center; color: #777; display: flex; flex-wrap: wrap; font-size: 13px; gap: 8px; margin-bottom: 18px; }
-  .breadcrumbs a { color: #2152a3; text-decoration: none; }
-  .breadcrumbs a:hover { text-decoration: underline; }
-  .breadcrumb-category { align-items: center; display: flex; gap: 2px; }
-  .breadcrumb-menu { position: relative; }
-  .breadcrumb-menu summary { align-items: center; background: #fff; border: 1px solid #b8c7df; border-radius: 3px; box-sizing: border-box; color: #2152a3; cursor: pointer; display: flex; height: 22px; justify-content: center; list-style: none; padding: 0; width: 22px; }
-  .breadcrumb-menu summary::-webkit-details-marker { display: none; }
-  .breadcrumb-menu summary:hover { background: #e6edf9; border-color: #2152a3; }
-  .breadcrumb-menu summary:focus-visible { border-radius: 2px; outline: 2px solid #2152a3; outline-offset: 2px; }
-  .breadcrumb-menu summary span { border: solid currentColor; border-width: 0 1.5px 1.5px 0; display: block; height: 5px; transform: translateY(-1px) rotate(45deg); width: 5px; }
-  .breadcrumb-menu[open] summary span { transform: translateY(1px) rotate(225deg); }
-  .breadcrumb-menu-list { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; box-shadow: 0 6px 16px rgba(0,0,0,.12); display: grid; left: 0; max-height: 320px; min-width: 220px; overflow-y: auto; padding: 4px; position: absolute; top: calc(100% + 4px); z-index: 2; }
-  .breadcrumb-menu-list button { background: transparent; border: 0; color: #1f1f1f; padding: 8px 10px; text-align: left; white-space: nowrap; }
-  .breadcrumb-menu-list button:hover, .breadcrumb-menu-list button:focus-visible { background: #f0f4fc; border-radius: 2px; outline: none; }
-  .sep { color: #a5a5a5; }
-  .catalog-header { align-items: center; display: flex; gap: 14px; margin-bottom: 18px; }
-  .back { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; height: 36px; width: 36px; }
-  h1 { font-size: 24px; line-height: 1.2; margin: 0; }
-  p { color: #777; margin: 4px 0 0; }
-  .toolbar { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 14px; }
-  select, .select-all { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; height: 36px; padding: 0 10px; }
-  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, #777 50%), linear-gradient(135deg, #777 50%, transparent 50%); background-position: calc(100% - 16px) 15px, calc(100% - 11px) 15px; background-repeat: no-repeat; background-size: 5px 5px, 5px 5px; padding-right: 34px; }
-  .select-all { align-items: center; display: flex; gap: 8px; }
-  .fake-checkbox { border: 1px solid #b8b8b8; border-radius: 2px; height: 14px; width: 14px; }
-  .fake-checkbox.checked { background: #2152a3; border-color: #2152a3; }
-  .section { margin-top: 22px; }
-  h2 { color: #777; font-size: 11px; letter-spacing: .08em; margin: 0 0 10px; text-transform: uppercase; }
-  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
-  .chip { align-items: center; background: #fff; border: 1px solid #d8d7d9; border-radius: 999px; color: inherit; display: flex; gap: 10px; padding: 6px 11px 6px 6px; text-align: left; text-decoration: none; }
-  .chip-text { display: grid; gap: 1px; min-width: 0; }
-  .chip-text strong { align-items: center; display: flex; gap: 5px; }
-  .chip-text small { color: #777; font-size: 11px; }
-  .chip-status { border-radius: 50%; flex: 0 0 7px; height: 7px; width: 7px; }
-  .chip-status.published { background: #2bc37c; }
-  .chip-status.pending { background: #fbd142; }
-  .chip-status.unpublished { background: #c4c4c4; }
-  .tile { align-items: center; background: #f6f4f4; border-radius: 50%; color: #1b264f; display: inline-flex; height: 30px; justify-content: center; width: 30px; }
-  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-  .card { background: #fff; border: 1px solid #e9e9eb; border-radius: 4px; overflow: hidden; position: relative; transition: box-shadow .15s, border-color .15s; }
-  .card:hover { box-shadow: 0 6px 16px rgba(0,0,0,.08); }
-  .card.selected { border-color: #2152a3; box-shadow: 0 0 0 1px #2152a3; }
-   .checkbox { background: transparent; border: 0; color: transparent; height: 50px; left: -5px; padding: 0; position: absolute; top: -5px; width: 50px; z-index: 1; }
-   .checkbox::after { background: rgba(255,255,255,.76); border: 1px solid #d8d7d9; border-radius: 3px; box-sizing: border-box; color: #fff; content: ''; font-size: 14px; height: 20px; left: 15px; line-height: 18px; opacity: .6; position: absolute; top: 15px; width: 20px; }
-   .card:hover .checkbox::after, .checkbox.checked::after { opacity: 1; }
-   .checkbox.checked::after { background: #2152a3; border-color: #2152a3; content: '✓'; }
-  .image { align-items: center; background: linear-gradient(135deg, #f4f4f6, #e9e9eb); color: #888; display: flex; height: 160px; justify-content: center; text-decoration: none; }
-  .image.dimmed { opacity: .45; }
-  .image umb-imaging-thumbnail { height: 100%; width: 100%; }
-  .card-body { display: grid; gap: 10px; padding: 12px; }
-  .title { color: #1f1f1f; display: -webkit-box; font-size: 14px; font-weight: 700; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-decoration: none; }
-  .title:hover { text-decoration: underline; }
-  .meta, .status-row { align-items: center; display: flex; justify-content: space-between; gap: 10px; }
-  .meta span { color: #777; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .meta strong { font-size: 14px; white-space: nowrap; }
-  .pill { align-items: center; background: #f4f4f6; border-radius: 999px; color: #555; display: inline-flex; font-size: 12px; gap: 6px; padding: 4px 8px; }
-  .pill i { border-radius: 50%; display: inline-block; height: 7px; width: 7px; }
-  .published i { background: #2bc37c; }
-  .pending i { background: #fbd142; }
-  .unpublished i { background: #c4c4c4; }
-  .availability { font-size: 12px; white-space: nowrap; }
-  .availability.ok { color: #1c7d3c; }
-  .availability.bad { color: #d42054; }
-  .empty { border-style: dashed; color: #777; padding: 30px; text-align: center; }
-  .empty-category { display: grid; gap: 6px; }
-  .empty-category strong { color: #1f1f1f; font-size: 15px; }
-  .pagination { align-items: center; display: flex; gap: 18px; justify-content: center; margin-top: 24px; }
-  .pagination div { display: flex; gap: 6px; }
-  .pagination button { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; min-width: 34px; padding: 7px 10px; }
-  .pagination .current { background: #1b264f; border-color: #1b264f; color: #fff; }
-`;
-
+customElements.define('ekom-catalog-entity', EkomCatalogEntityElement);
 customElements.define('ekom-catalog-collection-view', EkomCatalogCollectionViewElement);
 
 export default EkomCatalogCollectionViewElement;

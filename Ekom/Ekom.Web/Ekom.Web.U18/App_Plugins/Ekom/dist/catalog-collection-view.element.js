@@ -1,55 +1,1011 @@
-var C = Object.defineProperty;
-var P = (o, d, e) => d in o ? C(o, d, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[d] = e;
-var n = (o, d, e) => P(o, typeof d != "symbol" ? d + "" : d, e);
-import { UMB_COLLECTION_CONTEXT as E } from "@umbraco-cms/backoffice/collection";
-import { UmbElementMixin as z } from "@umbraco-cms/backoffice/element-api";
-import { UmbExtensionElementInitializer as T } from "@umbraco-cms/backoffice/extension-api";
-import { umbExtensionsRegistry as I } from "@umbraco-cms/backoffice/extension-registry";
-import { i as q } from "./catalog-picker-context.js";
-import "@umbraco-cms/backoffice/imaging";
-const A = 16, m = "sortOrderAsc", f = "ekomCatalogNode", y = 14, O = 220, L = 4, N = "ekomCatalogParent:", S = "ekomCatalogSort", b = "ekomCatalog";
-class H extends z(HTMLElement) {
+var O = Object.defineProperty;
+var z = (r, a, e) => a in r ? O(r, a, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[a] = e;
+var l = (r, a, e) => z(r, typeof a != "symbol" ? a + "" : a, e);
+import { UMB_COLLECTION_CONTEXT as M } from "@umbraco-cms/backoffice/collection";
+import { UmbEntityContext as U } from "@umbraco-cms/backoffice/entity";
+import { UmbExtensionElementInitializer as q } from "@umbraco-cms/backoffice/extension-api";
+import { umbExtensionsRegistry as N } from "@umbraco-cms/backoffice/extension-registry";
+import { css as A, svg as C, html as i, nothing as c, repeat as b } from "@umbraco-cms/backoffice/external/lit";
+import { UmbImagingRepository as R } from "@umbraco-cms/backoffice/imaging";
+import { UmbLitElement as P } from "@umbraco-cms/backoffice/lit-element";
+import { UMB_THEME_CONTEXT as H } from "@umbraco-cms/backoffice/themes";
+import { i as F } from "./catalog-picker-context.js";
+const D = A`
+  :host {
+    --ekm-bg: #f0f1f4;
+    --ekm-sec: #f4f5f7;
+    --ekm-sf: #ffffff;
+    --ekm-sf2: #f6f7f9;
+    --ekm-bd: #e1e3e8;
+    --ekm-bd2: #eceef1;
+    --ekm-tx: #191b24;
+    --ekm-mu: #676b7b;
+    --ekm-ac: #10694a;
+    --ekm-acs: #e7f3ed;
+    --ekm-tile: #eef0f3;
+    --ekm-shadow: rgba(20, 22, 35, 0.12);
+    --ekm-bd-hover: rgba(28, 31, 43, 0.3);
+    --ekm-green-bg: #e7f3ed;
+    --ekm-green-fg: #0b5238;
+    --ekm-green-dot: #2f9e6b;
+    --ekm-grey-bg: #eef0f3;
+    --ekm-grey-fg: #4b5160;
+    --ekm-grey-dot: #9aa0ad;
+    --ekm-amber-bg: #fff4e2;
+    --ekm-amber-fg: #7a4e06;
+    --ekm-amber-dot: #c98a14;
+    --ekm-red-bg: #fdeceb;
+    --ekm-red-fg: #8c1d18;
+    --ekm-red-dot: #b3261e;
+    --ekm-on-accent: #ffffff;
+    --ekm-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    background: var(--ekm-sec);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 12px;
+    box-sizing: border-box;
+    color: var(--ekm-tx);
+    display: block;
+    font-family: Lato, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    min-height: 100%;
+  }
+
+  :host([data-theme='dark']) {
+    --ekm-bg: #1e232c;
+    --ekm-sec: #222831;
+    --ekm-sf: #262c36;
+    --ekm-sf2: #2d343f;
+    --ekm-bd: #3a414d;
+    --ekm-bd2: #323945;
+    --ekm-tx: #eef1f5;
+    --ekm-mu: #aab2bf;
+    --ekm-ac: #4cc38f;
+    --ekm-acs: #1f3a31;
+    --ekm-tile: #303743;
+    --ekm-shadow: rgba(0, 0, 0, 0.35);
+    --ekm-bd-hover: rgba(238, 241, 245, 0.4);
+    --ekm-green-bg: #1f3a31;
+    --ekm-green-fg: #8fe0bc;
+    --ekm-green-dot: #4cc38f;
+    --ekm-grey-bg: #333a46;
+    --ekm-grey-fg: #c3c9d3;
+    --ekm-grey-dot: #8f97a5;
+    --ekm-amber-bg: #413318;
+    --ekm-amber-fg: #ecc784;
+    --ekm-amber-dot: #ecc784;
+    --ekm-red-bg: #46211f;
+    --ekm-red-fg: #f3aaa3;
+    --ekm-red-dot: #e5756d;
+    --ekm-on-accent: #0e1512;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  button {
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  button:disabled {
+    cursor: default;
+    opacity: 0.45;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ekm-ac);
+    outline-offset: 2px;
+  }
+
+  .shell {
+    animation: fadein 0.18s ease-out;
+    padding: 24px;
+  }
+
+  .shell.busy .content {
+    opacity: 0.6;
+    transition: opacity 0.15s 0.12s;
+  }
+
+  .visually-hidden {
+    clip: rect(0, 0, 0, 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    position: absolute;
+    width: 1px;
+  }
+
+  /* Breadcrumb */
+  .crumbs {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    font: 400 14px/1.2 Lato, sans-serif;
+    gap: 4px 10px;
+    margin-bottom: 14px;
+  }
+
+  .crumb {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+    position: relative;
+  }
+
+  .crumb-link {
+    background: none;
+    border: 0;
+    color: var(--ekm-ac);
+    padding: 4px 0;
+  }
+
+  .crumb-link.root {
+    color: var(--ekm-tx);
+  }
+
+  .crumb-link.current {
+    color: var(--ekm-tx);
+    font-weight: 700;
+  }
+
+  .crumb-link:hover:not(.current) {
+    text-decoration: underline;
+  }
+
+  .crumb-caret {
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    color: var(--ekm-mu);
+    font-size: 10px;
+    line-height: 1;
+    padding: 5px 4px;
+  }
+
+  .crumb-caret:hover {
+    color: var(--ekm-tx);
+  }
+
+  .sep {
+    color: var(--ekm-mu);
+    opacity: 0.45;
+  }
+
+  .menu {
+    animation: fadein 0.12s ease-out;
+    background: var(--ekm-sf);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 8px;
+    box-shadow: 0 10px 28px var(--ekm-shadow);
+    padding: 6px;
+    position: absolute;
+    top: calc(100% + 6px);
+    z-index: 30;
+  }
+
+  .crumb-menu {
+    left: 0;
+    max-height: 360px;
+    overflow-y: auto;
+    width: 280px;
+  }
+
+  .menu-head {
+    color: var(--ekm-mu);
+    font: 700 11px/1 var(--ekm-mono);
+    letter-spacing: 0.12em;
+    overflow: hidden;
+    padding: 8px 10px 6px;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .menu-item {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-radius: 6px;
+    display: flex;
+    font: 400 14px/1.2 Lato, sans-serif;
+    gap: 9px;
+    padding: 8px 10px;
+    text-align: left;
+    width: 100%;
+  }
+
+  .menu-item:hover {
+    background: var(--ekm-sf2);
+  }
+
+  .menu-item svg {
+    color: var(--ekm-mu);
+    flex: 0 0 auto;
+  }
+
+  .menu-item .grow {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .menu-item .count {
+    color: var(--ekm-mu);
+    font: 500 12px/1 var(--ekm-mono);
+  }
+
+  .menu-item .tick {
+    color: var(--ekm-ac);
+    font-weight: 700;
+    width: 12px;
+  }
+
+  .menu-item.active {
+    font-weight: 700;
+  }
+
+  /* Header */
+  .header {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .back {
+    align-items: center;
+    background: var(--ekm-sf);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 8px;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 18px;
+    height: 44px;
+    justify-content: center;
+    width: 44px;
+  }
+
+  .back:hover:not(:disabled) {
+    border-color: var(--ekm-bd-hover);
+  }
+
+  .heading {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  h1 {
+    font: 900 26px/1.15 Lato, sans-serif;
+    letter-spacing: -0.01em;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .meta {
+    color: var(--ekm-mu);
+    font: 400 14px/1.3 Lato, sans-serif;
+    margin: 3px 0 0;
+  }
+
+  .tools {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+  }
+
+  .sort {
+    position: relative;
+  }
+
+  .control {
+    align-items: center;
+    background: var(--ekm-sf);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 8px;
+    display: inline-flex;
+    font: 400 14px/1 Lato, sans-serif;
+    gap: 10px;
+    height: 36px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  .control:hover {
+    border-color: var(--ekm-bd-hover);
+  }
+
+  .control.open {
+    border-color: var(--ekm-ac);
+  }
+
+  .control .caret {
+    color: var(--ekm-mu);
+    font-size: 9px;
+  }
+
+  .sort-menu {
+    right: 0;
+    width: 220px;
+  }
+
+  /* Checkboxes */
+  .box {
+    align-items: center;
+    background: var(--ekm-sf);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 4px;
+    color: var(--ekm-on-accent);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font: 700 10px/1 Lato, sans-serif;
+    height: 16px;
+    justify-content: center;
+    padding: 0;
+    width: 16px;
+  }
+
+  .box.on {
+    background: var(--ekm-ac);
+    border-color: var(--ekm-ac);
+  }
+
+  /* Filter chips */
+  .filters {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .chip {
+    align-items: center;
+    background: var(--ekm-sf);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 20px;
+    color: var(--ekm-tx);
+    display: inline-flex;
+    font: 700 13px/1 Lato, sans-serif;
+    gap: 7px;
+    height: 30px;
+    padding: 0 11px;
+  }
+
+  .chip:hover {
+    border-color: var(--ekm-bd-hover);
+  }
+
+  .chip .count {
+    color: var(--ekm-mu);
+    font: 500 12px/1 var(--ekm-mono);
+  }
+
+  .chip.on {
+    background: var(--ekm-acs);
+    border-color: var(--ekm-ac);
+    color: var(--ekm-ac);
+  }
+
+  .chip.on .count {
+    color: var(--ekm-ac);
+  }
+
+  .showing {
+    color: var(--ekm-mu);
+    font: 400 13px/1 Lato, sans-serif;
+    margin-left: 4px;
+  }
+
+  /* Sections */
+  .section {
+    margin-top: 20px;
+  }
+
+  .section:first-of-type {
+    margin-top: 0;
+  }
+
+  h2 {
+    color: var(--ekm-mu);
+    font: 700 11px/1 var(--ekm-mono);
+    letter-spacing: 0.12em;
+    margin: 0 0 10px;
+    text-transform: uppercase;
+  }
+
+  h2 span {
+    color: var(--ekm-tx);
+    margin-left: 6px;
+  }
+
+  /* Subcategory cards */
+  .subcats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .subcat {
+    align-items: center;
+    background: var(--ekm-sf);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    flex: 0 0 auto;
+    gap: 12px;
+    max-width: 100%;
+    min-width: 0;
+    padding: 10px 14px 10px 10px;
+  }
+
+  .subcat:hover {
+    background: var(--ekm-sf2);
+    border-color: var(--ekm-bd-hover);
+  }
+
+  .subcat.selected {
+    background: var(--ekm-acs);
+    border-color: var(--ekm-ac);
+  }
+
+  .subcat-icon {
+    align-items: center;
+    background: var(--ekm-sf2);
+    border: 1px solid var(--ekm-bd2);
+    border-radius: 7px;
+    color: var(--ekm-mu);
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
+  }
+
+  .subcat-text {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .subcat-name {
+    align-items: center;
+    display: flex;
+    font: 700 14px/1.2 Lato, sans-serif;
+    gap: 7px;
+  }
+
+  .dot {
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: 7px;
+    width: 7px;
+  }
+
+  .dot.green {
+    background: var(--ekm-green-dot);
+  }
+
+  .dot.grey {
+    background: var(--ekm-grey-dot);
+  }
+
+  .subcat-meta {
+    color: var(--ekm-mu);
+    font: 400 12px/1.2 Lato, sans-serif;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .subcat-meta .green {
+    color: var(--ekm-ac);
+  }
+
+  .subcat-meta .amber {
+    color: var(--ekm-amber-fg);
+    font-weight: 700;
+  }
+
+  .chevron {
+    color: var(--ekm-mu);
+    margin-left: 6px;
+  }
+
+  /* Product grid */
+  .grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  .card {
+    background: var(--ekm-sf);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 10px;
+    position: relative;
+  }
+
+  .card:hover {
+    border-color: var(--ekm-bd-hover);
+  }
+
+  .card.selected {
+    border-color: var(--ekm-ac);
+    box-shadow: 0 0 0 2px var(--ekm-acs);
+  }
+
+  .card .box {
+    border-radius: 5px;
+    box-shadow: 0 1px 3px var(--ekm-shadow);
+    font-size: 11px;
+    height: 22px;
+    left: 10px;
+    position: absolute;
+    top: 10px;
+    width: 22px;
+    z-index: 2;
+  }
+
+  .card-actions {
+    background: var(--ekm-sf);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 5px;
+    box-shadow: 0 1px 3px var(--ekm-shadow);
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 2;
+    --uui-button-height: 22px;
+    --uui-button-padding-left-factor: 0.8;
+    --uui-button-padding-right-factor: 0.8;
+    --uui-button-font-size: 12px;
+  }
+
+  .card-actions:empty {
+    display: none;
+  }
+
+  .tile {
+    align-items: center;
+    aspect-ratio: 1 / 1;
+    background: var(--ekm-tile);
+    border-bottom: 1px solid var(--ekm-bd2);
+    border-radius: 10px 10px 0 0;
+    color: var(--ekm-mu);
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    padding: 14px;
+  }
+
+  .tile img {
+    display: block;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    width: 100%;
+  }
+
+  .tile svg {
+    opacity: 0.6;
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px 14px;
+  }
+
+  .name {
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    font: 700 14px/1.3 Lato, sans-serif;
+    line-clamp: 2;
+    min-height: 36px;
+    overflow: hidden;
+  }
+
+  .name:hover {
+    text-decoration: underline;
+  }
+
+  .row {
+    align-items: baseline;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .sku {
+    color: var(--ekm-mu);
+    font: 400 12px/1.2 var(--ekm-mono);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .prices {
+    align-items: baseline;
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 6px;
+  }
+
+  .price {
+    font: 700 14px/1 Lato, sans-serif;
+  }
+
+  .was {
+    color: var(--ekm-mu);
+    font: 400 12px/1 Lato, sans-serif;
+    text-decoration: line-through;
+  }
+
+  .variants {
+    color: var(--ekm-mu);
+    font: 400 12px/1 Lato, sans-serif;
+  }
+
+  .foot {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    justify-content: space-between;
+    margin-top: 2px;
+  }
+
+  .badges {
+    align-items: center;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .badge {
+    align-items: center;
+    border-radius: 20px;
+    display: inline-flex;
+    font: 700 11px/1.3 Lato, sans-serif;
+    gap: 6px;
+    padding: 3px 8px;
+  }
+
+  .badge i {
+    border-radius: 50%;
+    height: 6px;
+    width: 6px;
+  }
+
+  .badge.green {
+    background: var(--ekm-green-bg);
+    color: var(--ekm-green-fg);
+  }
+
+  .badge.green i {
+    background: var(--ekm-green-dot);
+  }
+
+  .badge.amber {
+    background: var(--ekm-amber-bg);
+    color: var(--ekm-amber-fg);
+  }
+
+  .badge.amber i {
+    background: var(--ekm-amber-dot);
+  }
+
+  .badge.grey {
+    background: var(--ekm-grey-bg);
+    color: var(--ekm-grey-fg);
+  }
+
+  .badge.edits {
+    padding: 3px 7px;
+  }
+
+  .stock {
+    font: 700 12px/1 Lato, sans-serif;
+  }
+
+  .stock.green {
+    color: var(--ekm-ac);
+  }
+
+  .stock.amber {
+    color: var(--ekm-amber-fg);
+  }
+
+  .stock.red {
+    color: var(--ekm-red-dot);
+  }
+
+  /* States */
+  .empty {
+    border: 1px dashed var(--ekm-bd);
+    border-radius: 10px;
+    color: var(--ekm-mu);
+    display: grid;
+    font: 400 14px/1.4 Lato, sans-serif;
+    gap: 8px;
+    justify-items: center;
+    padding: 44px 24px;
+    text-align: center;
+  }
+
+  .empty strong {
+    color: var(--ekm-tx);
+    font: 700 15px/1.3 Lato, sans-serif;
+  }
+
+  .empty .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .empty.error strong {
+    color: var(--ekm-red-dot);
+  }
+
+  .skeleton {
+    animation: shim 1.2s linear infinite;
+    background: linear-gradient(90deg, var(--ekm-bd2) 0%, var(--ekm-sf2) 40%, var(--ekm-bd2) 80%);
+    background-size: 320px 100%;
+    border-radius: 6px;
+    display: block;
+  }
+
+  .skeleton-card {
+    background: var(--ekm-sf);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .skeleton-card .skeleton.image {
+    aspect-ratio: 1 / 1;
+    border-radius: 0;
+  }
+
+  .skeleton-card .lines {
+    display: grid;
+    gap: 10px;
+    padding: 12px 14px 14px;
+  }
+
+  /* Pagination */
+  .pagination {
+    align-items: center;
+    color: var(--ekm-mu);
+    display: flex;
+    flex-wrap: wrap;
+    font: 400 13px/1 Lato, sans-serif;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 24px;
+  }
+
+  .pagination div {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+  }
+
+  .pagination button {
+    background: var(--ekm-sf);
+    border: 1px solid var(--ekm-bd);
+    border-radius: 8px;
+    font: 700 13px/1 Lato, sans-serif;
+    height: 34px;
+    min-width: 34px;
+    padding: 0 10px;
+  }
+
+  .pagination button:hover:not(:disabled) {
+    border-color: var(--ekm-bd-hover);
+  }
+
+  .pagination .current {
+    background: var(--ekm-acs);
+    border-color: var(--ekm-ac);
+    color: var(--ekm-ac);
+  }
+
+  @keyframes fadein {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes shim {
+    from {
+      background-position: -320px 0;
+    }
+    to {
+      background-position: 320px 0;
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .shell {
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 22px;
+    }
+
+    .grid {
+      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    }
+
+    .subcat {
+      flex: 1 1 220px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shell,
+    .menu,
+    .skeleton {
+      animation: none;
+    }
+  }
+`, f = "sortOrderAsc", h = [
+  { value: "sortOrderAsc", label: "Sort order asc" },
+  { value: "sortOrderDesc", label: "Sort order desc" },
+  { value: "nameAsc", label: "Name A–Z" },
+  { value: "nameDesc", label: "Name Z–A" },
+  { value: "createdDesc", label: "Created newest" },
+  { value: "createdAsc", label: "Created oldest" },
+  { value: "updatedDesc", label: "Updated newest" },
+  { value: "updatedAsc", label: "Updated oldest" }
+], k = [
+  { value: "all", label: "All", title: "All products in this category", count: "all" },
+  { value: "published", label: "Published", title: "Includes products with pending edits", count: "published" },
+  { value: "unpublished", label: "Unpublished", title: "Draft and unpublished products", count: "unpublished" },
+  { value: "oos", label: "Out of stock", title: "No stock on any variant", count: "outOfStock" }
+], _ = 5;
+function T(r) {
+  return h.some((a) => a.value === r);
+}
+function j(r) {
+  var a;
+  return ((a = h.find((e) => e.value === r)) == null ? void 0 : a.label) ?? h[0].label;
+}
+function K(r) {
+  return r === "umb-dark-theme" ? "dark" : "light";
+}
+function m(r, a, e) {
+  return `${r} ${r === 1 ? a : e}`;
+}
+function v(r, a) {
+  return `${m(r, "product", "products")} · ${m(a, "subcategory", "subcategories")}`;
+}
+function V(r) {
+  if (!(r > 0))
+    return { text: "Out of stock", tone: "red" };
+  const a = Q(r);
+  return r < _ ? { text: `${a} left`, tone: "amber" } : { text: `${a} in stock`, tone: "green" };
+}
+function B(r) {
+  return r.totalProductCount === 0 ? { text: "Empty", tone: "amber" } : r.liveCount === 0 ? { text: "Nothing published", tone: "amber" } : r.outOfStockCount > 0 ? { text: `${r.outOfStockCount} out of stock`, tone: "muted" } : { text: `${r.liveCount} live`, tone: "green" };
+}
+function Y(r) {
+  return r.published ? { text: "Published", tone: "green" } : { text: "Draft", tone: "amber" };
+}
+function W(r, a) {
+  return r.length > 0 && r.every((e) => a.includes(e)) ? a.filter((e) => !r.includes(e)) : [.../* @__PURE__ */ new Set([...a, ...r])];
+}
+function G(r, a) {
+  if (a <= 7)
+    return Array.from({ length: a }, (s, o) => o + 1);
+  const e = [.../* @__PURE__ */ new Set([1, a, r - 1, r, r + 1])].filter((s) => s >= 1 && s <= a).sort((s, o) => s - o), t = [];
+  for (const s of e) {
+    const o = t[t.length - 1];
+    typeof o == "number" && s - o > 1 && t.push("…"), t.push(s);
+  }
+  return t;
+}
+function Q(r) {
+  return Number.isInteger(r) ? String(r) : String(Math.round(r * 100) / 100);
+}
+const X = 16, x = "ekomCatalogNode", Z = 4, J = "(max-width: 1100px)", ee = "ekomCatalogParent:", I = "ekomCatalogSort", g = "ekomCatalog", y = 480, te = "document", se = "umb-collection-default, umb-document-collection", w = C`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`, oe = C`<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="9" cy="9" r="1.8"/><path d="m21 15-4.6-4.6a1.5 1.5 0 0 0-2.1 0L5 20"/></svg>`;
+class re extends P {
   constructor() {
     super(...arguments);
-    n(this, "pickerMode", !1);
-    n(this, "initialized", !1);
-    n(this, "pickerView");
-    n(this, "nodeId", "");
-    n(this, "query", "");
-    n(this, "sort", v());
-    n(this, "page", 1);
-    n(this, "pageSize", A);
-    n(this, "loading", !0);
-    n(this, "error", "");
-    n(this, "data");
-    n(this, "revealTimer");
-    n(this, "resizeTimer");
-    n(this, "collectionPaginationObserver");
-    n(this, "selection");
-    n(this, "onPopState", () => this.restoreNodeFromHistory());
-    n(this, "onResize", () => {
+    l(this, "entityContext", new U(this));
+  }
+  set unique(e) {
+    this.entityContext.setEntityType(te), this.entityContext.setUnique(e);
+  }
+  render() {
+    return i`<slot></slot>`;
+  }
+}
+class L extends P {
+  constructor() {
+    super();
+    l(this, "pickerMode", !1);
+    l(this, "initialized", !1);
+    l(this, "pickerView");
+    l(this, "nodeId", "");
+    l(this, "query", "");
+    l(this, "sort", S());
+    l(this, "status", "all");
+    l(this, "page", 1);
+    l(this, "pageSize", X);
+    l(this, "loading", !0);
+    l(this, "busy", !1);
+    l(this, "error", "");
+    l(this, "data");
+    l(this, "openMenu");
+    l(this, "selected", /* @__PURE__ */ new Set());
+    l(this, "requestId", 0);
+    l(this, "request");
+    l(this, "revealTimer");
+    l(this, "resizeTimer");
+    l(this, "collectionPaginationObserver");
+    l(this, "selection");
+    l(this, "imaging", new R(this));
+    l(this, "thumbnails", /* @__PURE__ */ new Map());
+    l(this, "onPopState", () => this.restoreNodeFromHistory());
+    l(this, "onDocumentClick", () => this.setOpenMenu(void 0));
+    l(this, "onKeyDown", (e) => {
+      e.key === "Escape" && this.setOpenMenu(void 0);
+    });
+    l(this, "onResize", () => {
       this.resizeTimer != null && window.clearTimeout(this.resizeTimer), this.resizeTimer = window.setTimeout(() => {
         this.updatePageSizeForViewport() && this.nodeId && this.data != null && !this.loading && this.load(!1);
       }, 150);
     });
+    this.consumeContext(H, (e) => {
+      this.observe(e == null ? void 0 : e.theme, (t) => this.setAttribute("data-theme", K(t)), "ekomCatalogTheme");
+    });
   }
   connectedCallback() {
-    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), this.consumeContext(E, (e) => {
-      var i;
+    super.connectedCallback(), this.style.setProperty("display", "block", "important"), this.style.setProperty("visibility", "visible", "important"), this.consumeContext(M, (e) => {
+      var s;
       if (e == null) return;
-      if (this.pickerMode = q(e.getConfig()), this.pickerMode) {
-        this.initializePickerView();
+      if (this.pickerMode = F(e.getConfig()), this.pickerMode) {
+        this.initializePickerView(), this.requestUpdate();
         return;
       }
-      this.initialized || (this.initialized = !0, window.addEventListener("popstate", this.onPopState), window.addEventListener("resize", this.onResize), this.revealCollectionHost(), this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250), this.nodeId = this.getNodeIdFromUrl(), this.sort = v(), this.restorePageFromHistory());
-      const t = (i = e == null ? void 0 : e.getConfig()) == null ? void 0 : i.unique;
-      this.getCatalogNodeFromUrl() == null && t != null && t !== this.nodeId && (this.nodeId = t, this.restorePageFromHistory()), (e == null ? void 0 : e.selection) != null && (this.selection = e.selection, this.selection.setSelectable(!0), this.selection.setMultiple(!0), this.observe(e.selection.selection, () => this.render(), "ekomCatalogCollectionSelection")), this.observe(e == null ? void 0 : e.filter, (s) => this.setQueryFromCollectionFilter(s), "ekomCatalogCollectionFilter"), this.render(), this.nodeId && this.load();
+      this.initialized || (this.initialized = !0, window.addEventListener("popstate", this.onPopState), window.addEventListener("resize", this.onResize), document.addEventListener("click", this.onDocumentClick), document.addEventListener("keydown", this.onKeyDown), this.revealCollectionHost(), this.revealTimer = window.setTimeout(() => this.revealCollectionHost(), 250), this.nodeId = this.getNodeIdFromUrl(), this.sort = S(), this.restorePageFromHistory());
+      const t = (s = e == null ? void 0 : e.getConfig()) == null ? void 0 : s.unique;
+      this.getCatalogNodeFromUrl() == null && t != null && t !== this.nodeId && (this.nodeId = t, this.restorePageFromHistory()), (e == null ? void 0 : e.selection) != null && (this.selection = e.selection, this.selection.setSelectable(!0), this.selection.setMultiple(!0), this.observe(e.selection.selection, (o) => {
+        this.selected = new Set((o ?? []).filter((n) => typeof n == "string")), this.requestUpdate();
+      }, "ekomCatalogCollectionSelection")), this.observe(e == null ? void 0 : e.filter, (o) => this.setQueryFromCollectionFilter(o), "ekomCatalogCollectionFilter"), this.requestUpdate(), this.nodeId && this.load();
     });
   }
   initializePickerView() {
-    this.pickerView == null && (this.pickerView = new T(
+    this.pickerView == null && (this.pickerView = new q(
       this,
-      I,
+      N,
       "Umb.CollectionView.Document.Table",
       (e, t) => {
         e && t.component != null ? this.replaceChildren(t.component) : this.textContent = "The Umbraco document table view is unavailable.";
@@ -57,68 +1013,88 @@ class H extends z(HTMLElement) {
     ));
   }
   disconnectedCallback() {
-    var e, t;
-    (e = this.pickerView) == null || e.destroy(), this.pickerView = void 0, this.initialized = !1, window.removeEventListener("popstate", this.onPopState), window.removeEventListener("resize", this.onResize), this.revealTimer != null && window.clearTimeout(this.revealTimer), this.resizeTimer != null && window.clearTimeout(this.resizeTimer), (t = this.collectionPaginationObserver) == null || t.disconnect(), this.collectionPaginationObserver = void 0, super.disconnectedCallback();
+    var e, t, s;
+    (e = this.pickerView) == null || e.destroy(), this.pickerView = void 0, this.initialized = !1, (t = this.request) == null || t.abort(), window.removeEventListener("popstate", this.onPopState), window.removeEventListener("resize", this.onResize), document.removeEventListener("click", this.onDocumentClick), document.removeEventListener("keydown", this.onKeyDown), this.revealTimer != null && window.clearTimeout(this.revealTimer), this.resizeTimer != null && window.clearTimeout(this.resizeTimer), (s = this.collectionPaginationObserver) == null || s.disconnect(), this.collectionPaginationObserver = void 0, super.disconnectedCallback();
   }
   async load(e = !0) {
-    if (!this.pickerMode) {
-      if (!this.nodeId) {
-        this.loading = !1, this.error = "Unable to determine the current catalog node.", this.render();
+    var o;
+    if (this.pickerMode) return;
+    if (!this.nodeId) {
+      this.loading = !1, this.error = "Unable to determine the current catalog node.", this.requestUpdate();
+      return;
+    }
+    (o = this.request) == null || o.abort();
+    const t = new AbortController(), s = ++this.requestId;
+    this.request = t, this.loading = e, this.busy = !e, this.error = "", this.updatePageSizeForViewport(), this.requestUpdate();
+    try {
+      const n = new URLSearchParams({
+        query: this.query,
+        sort: this.sort,
+        status: this.status,
+        page: String(this.page),
+        pageSize: String(this.pageSize)
+      }), d = await this.fetchJson(`/ekom/backoffice/CatalogCollection/${encodeURIComponent(this.nodeId)}?${n}`, t.signal);
+      if (s !== this.requestId) return;
+      this.data = d, this.page = d.page, this.pageSize = d.pageSize, this.storeParentNode(d), this.loadThumbnails(d.products);
+    } catch (n) {
+      if (s !== this.requestId || t.signal.aborted || n instanceof $ && n.status === 404 && this.redirectToParent())
         return;
-      }
-      this.loading = e, this.error = "", this.updatePageSizeForViewport(), e && this.render();
+      this.error = n instanceof Error ? n.message : "Unable to load catalog.";
+    }
+    this.loading = !1, this.busy = !1, this.requestUpdate();
+  }
+  /** One request for every image on the page instead of one per card. */
+  async loadThumbnails(e) {
+    const t = [...new Set(e.map((s) => s.image).filter((s) => s && !this.thumbnails.has(s)))];
+    if (t.length !== 0) {
       try {
-        const t = new URLSearchParams({
-          query: this.query,
-          sort: this.sort,
-          page: String(this.page),
-          pageSize: String(this.pageSize)
+        const { data: s } = await this.imaging.requestResizedItems(t, {
+          width: y,
+          height: y,
+          mode: "Max"
         });
-        this.data = await this.fetchJson(`/ekom/backoffice/CatalogCollection/${encodeURIComponent(this.nodeId)}?${t}`), this.page = this.data.page, this.pageSize = this.data.pageSize, this.storeParentNode(this.data);
-      } catch (t) {
-        if (t instanceof x && t.status === 404 && this.redirectToParent())
-          return;
-        this.error = t instanceof Error ? t.message : "Unable to load catalog.";
-      } finally {
-        this.loading = !1, this.render();
+        for (const o of s ?? [])
+          o.url && this.thumbnails.set(o.unique, o.url);
+      } catch {
       }
+      this.requestUpdate();
     }
   }
   drillTo(e) {
-    var s;
-    const t = e.key || String(e.id), i = history.state != null && typeof history.state == "object" ? history.state : {};
+    var o;
+    const t = e.key || String(e.id), s = history.state != null && typeof history.state == "object" ? history.state : {};
     history.pushState({
-      ...i,
-      [b]: {
+      ...s,
+      [g]: {
         nodeId: t,
         page: 1
       }
-    }, "", this.getDocumentHref(t)), this.nodeId = t, this.query = "", this.page = 1, (s = this.selection) == null || s.clearSelection(), this.load();
+    }, "", this.getDocumentHref(t)), this.nodeId = t, this.query = "", this.status = "all", this.page = 1, (o = this.selection) == null || o.clearSelection(), this.load();
   }
   restoreNodeFromHistory() {
     var t;
     const e = this.getNodeIdFromUrl();
-    e && (this.nodeId = e, this.query = "", this.page = 1, this.restorePageFromHistory(), (t = this.selection) == null || t.clearSelection(), this.load());
+    e && (this.nodeId = e, this.query = "", this.status = "all", this.page = 1, this.restorePageFromHistory(), (t = this.selection) == null || t.clearSelection(), this.load());
   }
   storeParentNode(e) {
-    var i;
+    var s;
     const t = this.getParentStorageKey(e.current.key || String(e.current.id));
-    (i = e.parent) != null && i.key ? window.sessionStorage.setItem(t, e.parent.key) : window.sessionStorage.removeItem(t);
+    (s = e.parent) != null && s.key ? window.sessionStorage.setItem(t, e.parent.key) : window.sessionStorage.removeItem(t);
   }
   redirectToParent() {
-    var t, i;
-    const e = ((i = (t = this.data) == null ? void 0 : t.parent) == null ? void 0 : i.key) ?? window.sessionStorage.getItem(this.getParentStorageKey(this.nodeId));
+    var t, s;
+    const e = ((s = (t = this.data) == null ? void 0 : t.parent) == null ? void 0 : s.key) ?? window.sessionStorage.getItem(this.getParentStorageKey(this.nodeId));
     return e ? (window.location.replace(this.getDocumentHref(e)), !0) : !1;
   }
   getParentStorageKey(e) {
-    return `${N}${e}`;
+    return `${ee}${e}`;
   }
   restorePageFromHistory() {
-    const e = history.state, t = e == null ? void 0 : e[b];
+    const e = history.state, t = e == null ? void 0 : e[g];
     if (t == null || typeof t != "object")
       return;
-    const { nodeId: i, page: s } = t;
-    i === this.nodeId && typeof s == "number" && Number.isInteger(s) && s > 0 && (this.page = s);
+    const { nodeId: s, page: o } = t;
+    s === this.nodeId && typeof o == "number" && Number.isInteger(o) && o > 0 && (this.page = o);
   }
   storePageInHistory() {
     if (!this.nodeId)
@@ -126,51 +1102,57 @@ class H extends z(HTMLElement) {
     const e = history.state != null && typeof history.state == "object" ? history.state : {};
     history.replaceState({
       ...e,
-      [b]: {
+      [g]: {
         nodeId: this.nodeId,
         page: this.page
       }
     }, "", window.location.href);
   }
   setQueryFromCollectionFilter(e) {
-    const t = "filter" in (e ?? {}) ? e.filter : void 0, i = typeof t == "string" ? t : "";
-    i !== this.query && (this.query = i, this.page = 1, this.storePageInHistory(), this.nodeId && this.load());
+    const t = "filter" in (e ?? {}) ? e.filter : void 0, s = typeof t == "string" ? t : "";
+    s !== this.query && (this.query = s, this.page = 1, this.storePageInHistory(), this.nodeId && this.load(this.data == null));
   }
   setSort(e) {
-    if ($(e)) {
-      if (e === this.sort) {
-        w(e);
-        return;
-      }
-      this.sort = e, w(e), this.page = 1, this.storePageInHistory(), this.load();
-    }
+    this.setOpenMenu(void 0), T(e) && (ie(e), e !== this.sort && (this.sort = e, this.page = 1, this.storePageInHistory(), this.load(!1)));
+  }
+  setStatus(e) {
+    e !== this.status && (this.status = e, this.page = 1, this.storePageInHistory(), this.load(!1));
   }
   setPage(e) {
-    e < 1 || e === this.page || this.data != null && e > this.data.totalPages || (this.page = e, this.storePageInHistory(), this.load());
+    e < 1 || e === this.page || this.data != null && e > this.data.totalPages || (this.page = e, this.storePageInHistory(), this.load(!1));
+  }
+  setOpenMenu(e) {
+    e !== this.openMenu && (this.openMenu = e, this.requestUpdate());
+  }
+  toggleMenu(e, t) {
+    e.stopPropagation(), this.setOpenMenu(this.openMenu === t ? void 0 : t);
   }
   updatePageSizeForViewport() {
-    const e = Math.max(0, this.clientWidth - 48);
-    if (e === 0)
+    const e = window.matchMedia(J).matches, t = e ? 10 : 14, s = e ? 170 : 220, o = Math.max(0, this.clientWidth - (e ? 32 : 48));
+    if (o === 0)
       return !1;
-    const i = Math.max(1, Math.floor((e + y) / (O + y))) * L;
-    return i === this.pageSize ? !1 : (this.pageSize = i, !0);
+    const d = Math.max(1, Math.floor((o + t) / (s + t))) * Z;
+    return d === this.pageSize ? !1 : (this.pageSize = d, !0);
   }
-  toggleProduct(e) {
-    var t;
-    (t = this.selection) == null || t.toggleSelect(e.key);
+  visibleKeys() {
+    const e = this.data;
+    return e == null ? [] : [...(this.query ? [] : e.subcategories).map((s) => s.key), ...e.products.map((s) => s.key)];
   }
-  toggleCurrentPage() {
-    var a;
-    if (this.selection == null)
-      return;
-    const t = (((a = this.data) == null ? void 0 : a.products) ?? []).map((r) => r.key), i = t.length > 0 && t.every((r) => this.selection.isSelected(r)), s = this.selection.getSelection();
-    this.selection.setSelection(i ? s.filter((r) => !t.includes(r)) : [.../* @__PURE__ */ new Set([...s, ...t])]);
+  toggleKey(e, t) {
+    var s;
+    e.preventDefault(), e.stopPropagation(), (s = this.selection) == null || s.toggleSelect(t);
+  }
+  toggleVisible() {
+    this.selection != null && this.selection.setSelection(W(this.visibleKeys(), this.selection.getSelection()));
+  }
+  clearFilter() {
+    this.setStatus("all");
   }
   revealCollectionHost() {
     if (!this.pickerMode) {
-      for (const e of this.getComposedAncestors("umb-collection-default")) {
-        const t = e.shadowRoot, i = t == null ? void 0 : t.querySelector("#router"), s = t == null ? void 0 : t.querySelector("umb-body-layout"), a = t == null ? void 0 : t.querySelector("#empty-state");
-        i == null || i.style.setProperty("visibility", "visible", "important"), a == null || a.style.setProperty("display", "none", "important"), s == null || s.classList.add("has-items");
+      for (const e of this.getComposedAncestors(se)) {
+        const t = e.shadowRoot, s = t == null ? void 0 : t.querySelector("#router"), o = t == null ? void 0 : t.querySelector("umb-body-layout"), n = t == null ? void 0 : t.querySelector("#empty-state");
+        s == null || s.style.setProperty("visibility", "visible", "important"), n == null || n.style.setProperty("display", "none", "important"), o == null || o.classList.add("has-items");
       }
       for (const e of this.getComposedShadowRoots())
         this.hideDefaultCollectionPagination(e), this.observeDefaultCollectionPagination(e);
@@ -185,73 +1167,83 @@ class H extends z(HTMLElement) {
   }
   getComposedAncestors(e) {
     const t = [];
-    let i = this;
-    for (; i != null; )
-      i instanceof HTMLElement && i.matches(e) && t.push(i), i = i.parentNode ?? (i.getRootNode() instanceof ShadowRoot ? i.getRootNode().host : null);
+    let s = this;
+    for (; s != null; )
+      s instanceof HTMLElement && s.matches(e) && t.push(s), s = s.parentNode ?? (s.getRootNode() instanceof ShadowRoot ? s.getRootNode().host : null);
     return t;
   }
   getComposedShadowRoots() {
     const e = /* @__PURE__ */ new Set();
     let t = this;
     for (; t != null; ) {
-      const i = t.getRootNode();
-      i instanceof ShadowRoot && e.add(i), t = t.parentNode ?? (i instanceof ShadowRoot ? i.host : null);
+      const s = t.getRootNode();
+      s instanceof ShadowRoot && e.add(s), t = t.parentNode ?? (s instanceof ShadowRoot ? s.host : null);
     }
     return [...e];
   }
+  updated() {
+    this.pickerMode || this.revealCollectionHost();
+  }
   render() {
-    this.pickerMode || (this.innerHTML = `
-      <style>${D}</style>
-      <div class="catalog-shell">
-        ${this.renderContent()}
-      </div>
-    `, this.revealCollectionHost(), this.bindEvents());
+    return this.pickerMode ? i`<slot></slot>` : i`<div class="shell ${this.busy ? "busy" : ""}" aria-busy=${this.loading || this.busy ? "true" : "false"}>${this.renderContent()}</div>`;
   }
   renderContent() {
-    return this.loading ? this.renderLoading() : this.error ? `<div class="surface state error"><strong>Catalog unavailable</strong><span>${p(this.error)}</span><button type="button" data-action="retry">Retry</button></div>` : this.data == null ? '<div class="surface state">No catalog data.</div>' : !this.query && this.data.productCount === 0 && this.data.subcategoryCount === 0 ? `
-        ${this.renderBreadcrumbs(this.data)}
-        ${this.renderHeader(this.data)}
-        ${this.renderEmptyCategory()}
-      ` : `
-      ${this.renderBreadcrumbs(this.data)}
-      ${this.renderHeader(this.data)}
-      ${this.renderToolbar(this.data)}
-      ${!this.query && this.data.subcategories.length > 0 ? this.renderSubcategories(this.data.subcategories) : ""}
-      ${this.renderProducts(this.data)}
-      ${this.renderPagination(this.data)}
+    if (this.loading)
+      return this.renderLoading();
+    const e = this.data;
+    if (this.error || e == null)
+      return i`
+        <div class="empty error" role="alert">
+          <strong>Could not load the catalog</strong>
+          <span>${this.error || "No catalog data."}</span>
+          <div class="actions">
+            ${(e == null ? void 0 : e.parent) != null ? i`<button type="button" class="control" @click=${() => this.drillTo(e.parent)}>Back</button>` : c}
+            <button type="button" class="control" @click=${() => void this.load()}>Retry</button>
+          </div>
+        </div>
+      `;
+    const t = !this.query && e.subcategories.length > 0;
+    return i`
+      ${this.renderBreadcrumbs(e)}
+      ${this.renderHeader(e)}
+      <div class="content">
+        ${e.productCount > 0 ? this.renderFilters(e) : c}
+        ${t ? this.renderSubcategories(e.subcategories) : c}
+        ${this.renderProducts(e)}
+        ${this.renderPagination(e)}
+      </div>
     `;
   }
   renderLoading() {
-    return `
-      <div class="catalog-loading" aria-busy="true" aria-label="Loading catalog" role="status">
-        <div class="loading-breadcrumbs">
-          <span class="skeleton skeleton-breadcrumb"></span>
-          <span class="skeleton skeleton-breadcrumb"></span>
-          <span class="skeleton skeleton-breadcrumb current"></span>
-        </div>
-        <div class="loading-header">
-          <span class="skeleton skeleton-back"></span>
-          <div>
-            <span class="skeleton skeleton-title"></span>
-            <span class="skeleton skeleton-summary"></span>
+    return i`
+      <div role="status" aria-label="Loading catalog">
+        <span class="skeleton" style="height:14px;width:220px;margin-bottom:18px"></span>
+        <div class="header">
+          <span class="skeleton" style="height:44px;width:44px;border-radius:8px"></span>
+          <div class="heading">
+            <span class="skeleton" style="height:28px;width:200px"></span>
+            <span class="skeleton" style="height:14px;width:160px;margin-top:8px"></span>
           </div>
         </div>
-        <div class="loading-toolbar">
-          <span class="skeleton skeleton-control"></span>
-          <span class="skeleton skeleton-control"></span>
-        </div>
-        <section class="loading-section">
-          <span class="skeleton skeleton-section-title"></span>
-          <div class="loading-chips">
-            <span class="skeleton skeleton-chip"></span>
-            <span class="skeleton skeleton-chip"></span>
-            <span class="skeleton skeleton-chip"></span>
+        <section class="section">
+          <span class="skeleton" style="height:11px;width:120px;margin-bottom:10px"></span>
+          <div class="subcats">
+            ${[0, 1, 2, 3].map(() => i`<span class="skeleton" style="height:56px;width:230px;border-radius:10px"></span>`)}
           </div>
         </section>
-        <section class="loading-section">
-          <span class="skeleton skeleton-section-title"></span>
-          <div class="loading-grid">
-            ${Array.from({ length: 8 }, () => '<article class="loading-card"><span class="skeleton skeleton-image"></span><div class="loading-card-body"><span class="skeleton skeleton-product-title"></span><span class="skeleton skeleton-product-meta"></span><span class="skeleton skeleton-product-status"></span></div></article>').join("")}
+        <section class="section">
+          <span class="skeleton" style="height:11px;width:100px;margin-bottom:10px"></span>
+          <div class="grid">
+            ${Array.from({ length: 12 }, () => i`
+              <div class="skeleton-card">
+                <span class="skeleton image"></span>
+                <div class="lines">
+                  <span class="skeleton" style="height:16px;width:76%"></span>
+                  <span class="skeleton" style="height:12px;width:58%"></span>
+                  <span class="skeleton" style="height:22px;width:88%"></span>
+                </div>
+              </div>
+            `)}
           </div>
         </section>
         <span class="visually-hidden">Loading catalog…</span>
@@ -259,324 +1251,254 @@ class H extends z(HTMLElement) {
     `;
   }
   renderBreadcrumbs(e) {
-    return `<nav class="breadcrumbs">${e.breadcrumbs.map((t, i) => {
-      const s = i === e.breadcrumbs.length - 1, a = p(t.name), r = t.siblings.filter((c) => c.key !== t.key), h = t.contentTypeAlias === "ekmCategory" && r.length > 0 ? `<div class="breadcrumb-category"><a class="breadcrumb-link" href="${this.getDocumentHref(t.key)}" data-breadcrumb-link-key="${p(t.key)}" ${s ? 'aria-current="page"' : ""}>${a}</a><details class="breadcrumb-menu"><summary aria-label="Show sibling categories for ${a}"><span aria-hidden="true"></span></summary><div class="breadcrumb-menu-list" role="menu">${r.map((c) => {
-        const u = p(c.name);
-        return `<button type="button" data-breadcrumb-category-key="${p(c.key)}" role="menuitem">${u}</button>`;
-      }).join("")}</div></details></div>` : s ? `<span aria-current="page">${a}</span>` : `<a href="${this.getDocumentHref(t.key)}">${a}</a>`;
-      return `${i > 0 ? '<span class="sep">/</span>' : ""}${h}`;
-    }).join("")}</nav>`;
+    if (e.breadcrumbs.length <= 1)
+      return c;
+    const t = e.breadcrumbs.length - 1;
+    return i`
+      <nav class="crumbs" aria-label="Catalog path">
+        ${e.breadcrumbs.map((s, o) => i`
+          ${o > 0 ? i`<span class="sep" aria-hidden="true">/</span>` : c}
+          ${this.renderBreadcrumb(s, o, t, e.breadcrumbs[o - 1])}
+        `)}
+      </nav>
+    `;
+  }
+  renderBreadcrumb(e, t, s, o) {
+    const n = t === s, d = `crumb:${e.key}`, p = this.openMenu === d, E = e.contentTypeAlias === "ekmCategory" && e.siblings.length > 1;
+    return i`
+      <span class="crumb">
+        <button
+          type="button"
+          class="crumb-link ${n ? "current" : ""} ${t === 0 ? "root" : ""}"
+          aria-current=${n ? "page" : c}
+          @click=${() => n ? void 0 : this.drillTo(e)}>${e.name}</button>
+        ${E ? i`
+          <button
+            type="button"
+            class="crumb-caret"
+            aria-haspopup="menu"
+            aria-expanded=${p ? "true" : "false"}
+            aria-label="Show sibling categories for ${e.name}"
+            @click=${(u) => this.toggleMenu(u, d)}>${p ? "▲" : "▼"}</button>
+          ${p ? i`
+            <div class="menu crumb-menu" role="menu">
+              ${o != null ? i`<div class="menu-head">In ${o.name}</div>` : c}
+              ${e.siblings.map((u) => i`
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="menu-item ${u.key === e.key ? "active" : ""}"
+                  @click=${() => u.key === e.key ? this.setOpenMenu(void 0) : this.drillTo(u)}>
+                  ${w}
+                  <span class="grow">${u.name}</span>
+                  <span class="count">${u.totalProductCount}</span>
+                  <span class="tick">${u.key === e.key ? "✓" : ""}</span>
+                </button>
+              `)}
+            </div>
+          ` : c}
+        ` : c}
+      </span>
+    `;
   }
   renderHeader(e) {
-    return `
-      <header class="catalog-header">
-        <button type="button" class="back" data-action="back" ${e.parent == null ? "disabled" : ""}>←</button>
-        <div>
-          <h1>${p(e.current.name)}</h1>
-          <p>${e.productCount} products · ${e.subcategoryCount} subcategories</p>
+    const t = this.visibleKeys(), s = t.length > 0 && t.every((n) => this.selected.has(n)), o = this.openMenu === "sort";
+    return i`
+      <header class="header">
+        ${e.parent != null ? i`<button type="button" class="back" aria-label="Back to ${e.parent.name}" @click=${() => this.drillTo(e.parent)}>←</button>` : c}
+        <div class="heading">
+          <h1>${e.current.name}</h1>
+          <p class="meta">${v(e.current.totalProductCount, e.subcategoryCount)}</p>
+        </div>
+        <div class="tools">
+          <div class="sort">
+            <button
+              type="button"
+              class="control ${o ? "open" : ""}"
+              aria-haspopup="menu"
+              aria-expanded=${o ? "true" : "false"}
+              @click=${(n) => this.toggleMenu(n, "sort")}>${j(this.sort)}<span class="caret" aria-hidden="true">▼</span></button>
+            ${o ? i`
+              <div class="menu sort-menu" role="menu">
+                ${h.map((n) => i`
+                  <button type="button" role="menuitemradio" aria-checked=${n.value === this.sort ? "true" : "false"} class="menu-item ${n.value === this.sort ? "active" : ""}" @click=${() => this.setSort(n.value)}>
+                    <span class="grow">${n.label}</span>
+                    <span class="tick">${n.value === this.sort ? "✓" : ""}</span>
+                  </button>
+                `)}
+              </div>
+            ` : c}
+          </div>
+          <button type="button" class="control" role="checkbox" aria-checked=${s ? "true" : "false"} ?disabled=${t.length === 0} @click=${() => this.toggleVisible()}>
+            <span class="box ${s ? "on" : ""}" aria-hidden="true">${s ? "✓" : ""}</span>Select all
+          </button>
         </div>
       </header>
     `;
   }
-  renderToolbar(e) {
-    const t = e.products.length > 0 && e.products.every((i) => {
-      var s;
-      return (s = this.selection) == null ? void 0 : s.isSelected(i.key);
-    });
-    return `
-      <div class="toolbar">
-        <select data-field="sort">
-          ${this.renderSortOption("sortOrderAsc", "Sort order asc")}
-          ${this.renderSortOption("sortOrderDesc", "Sort order desc")}
-          ${this.renderSortOption("nameAsc", "Name asc")}
-          ${this.renderSortOption("nameDesc", "Name desc")}
-          ${this.renderSortOption("createdAsc", "Created asc")}
-          ${this.renderSortOption("createdDesc", "Created desc")}
-          ${this.renderSortOption("updatedAsc", "Updated asc")}
-          ${this.renderSortOption("updatedDesc", "Updated desc")}
-        </select>
-        <button type="button" class="select-all" data-action="toggle-page"><span class="fake-checkbox ${t ? "checked" : ""}"></span>Select all</button>
+  renderFilters(e) {
+    return i`
+      <div class="filters">
+        ${k.map((t) => i`
+          <button type="button" class="chip ${this.status === t.value ? "on" : ""}" title=${t.title} aria-pressed=${this.status === t.value ? "true" : "false"} @click=${() => this.setStatus(t.value)}>
+            ${t.label}<span class="count">${e.statusCounts[t.count]}</span>
+          </button>
+        `)}
+        ${this.status !== "all" ? i`<span class="showing">Showing ${e.filteredProductCount} of ${e.statusCounts.all}</span>` : c}
       </div>
     `;
   }
-  renderSortOption(e, t) {
-    return `<option value="${e}" ${this.sort === e ? "selected" : ""}>${t}</option>`;
-  }
   renderSubcategories(e) {
-    return `
+    return i`
       <section class="section">
-        <h2>Subcategories</h2>
-        <div class="chips">${e.map((t) => `
-          <a class="chip" href="${this.getDocumentHref(t.key)}">
-            <span class="tile">▦</span><span class="chip-text"><strong>${p(t.name)}<span class="chip-status ${k(t.status)}" title="${t.status}" aria-label="${t.status}"></span></strong><small>${t.productCount} products · ${t.subcategoryCount} subcategories</small></span><span>›</span>
-          </a>
-        `).join("")}</div>
-      </section>
-    `;
-  }
-  renderEmptyCategory() {
-    return `
-      <section class="section">
-        <div class="empty empty-category">
-          <strong>No catalog items in this category yet</strong>
-          <span>This category does not contain any direct products or subcategories.</span>
+        <h2>Subcategories<span>${e.length}</span></h2>
+        <div class="subcats">
+          ${b(e, (t) => t.key, (t) => this.renderSubcategory(t))}
         </div>
       </section>
     `;
   }
+  renderSubcategory(e) {
+    const t = this.selected.has(e.key), s = B(e);
+    return i`
+      <a class="subcat ${t ? "selected" : ""}" href=${this.getDocumentHref(e.key)} @click=${(o) => {
+      o.preventDefault(), this.drillTo(e);
+    }}>
+        <button type="button" class="box ${t ? "on" : ""}" role="checkbox" aria-checked=${t ? "true" : "false"} aria-label="Select ${e.name}" @click=${(o) => this.toggleKey(o, e.key)}>${t ? "✓" : ""}</button>
+        <span class="subcat-icon">${w}</span>
+        <span class="subcat-text">
+          <span class="subcat-name">${e.name}<span class="dot ${e.published ? "green" : "grey"}" title=${e.published ? "Category is published" : "Category is not published"}></span></span>
+          <span class="subcat-meta">${v(e.totalProductCount, e.subcategoryCount)} · <span class=${s.tone}>${s.text}</span></span>
+        </span>
+        <span class="chevron" aria-hidden="true">›</span>
+      </a>
+    `;
+  }
   renderProducts(e) {
-    const t = this.query ? `No products match &quot;${p(this.query)}&quot;` : "No products in this category yet";
-    return `
+    return i`
       <section class="section">
-        <h2>Products (${e.filteredProductCount})</h2>
-        ${e.products.length === 0 ? `<div class="empty">${t}</div>` : `<div class="grid">${e.products.map((i) => this.renderProduct(i)).join("")}</div>`}
+        <h2>Products<span>${e.filteredProductCount}</span></h2>
+        ${e.products.length === 0 ? this.renderEmptyProducts(e) : i`<div class="grid">${b(e.products, (t) => t.key, (t) => this.renderProduct(t))}</div>`}
       </section>
     `;
   }
+  renderEmptyProducts(e) {
+    if (this.query)
+      return i`<div class="empty"><strong>No products match “${this.query}”</strong><span>Try another name or SKU, or clear the search above.</span></div>`;
+    if (this.status !== "all" && e.productCount > 0) {
+      const t = k.find((s) => s.value === this.status);
+      return i`
+        <div class="empty">
+          <strong>No ${t == null ? void 0 : t.label.toLowerCase()} products here</strong>
+          <span>None of the ${m(e.productCount, "product", "products")} in this category match the filter.</span>
+          <div class="actions"><button type="button" class="control" @click=${() => this.clearFilter()}>Clear filter</button></div>
+        </div>
+      `;
+    }
+    return i`
+      <div class="empty">
+        <strong>No products in this category yet</strong>
+        <span>Use Create to add a product here, or move products in from another category.</span>
+      </div>
+    `;
+  }
   renderProduct(e) {
-    var s;
-    const t = ((s = this.selection) == null ? void 0 : s.isSelected(e.key)) ?? !1, i = `/umbraco/section/content/workspace/document/edit/${e.key}`;
-    return `
+    const t = this.selected.has(e.key), s = `/umbraco/section/content/workspace/document/edit/${e.key}`, o = e.image ? this.thumbnails.get(e.image) : void 0, n = Y(e), d = V(e.stock);
+    return i`
       <article class="card ${t ? "selected" : ""}">
-        <button type="button" class="checkbox ${t ? "checked" : ""}" data-product-key="${e.key}">${t ? "✓" : ""}</button>
-        <a class="image ${e.published ? "" : "dimmed"}" href="${i}">${e.image ? `<umb-imaging-thumbnail unique="${p(e.image)}" width="320" height="160" alt="${p(e.name)}"></umb-imaging-thumbnail>` : "<span>Product image</span>"}</a>
+        <button type="button" class="box ${t ? "on" : ""}" role="checkbox" aria-checked=${t ? "true" : "false"} aria-label="Select ${e.name}" @click=${(p) => this.toggleKey(p, e.key)}>${t ? "✓" : ""}</button>
+        <ekom-catalog-entity class="card-actions" .unique=${e.key}>
+          <umb-entity-actions-dropdown compact label="Actions for ${e.name}">
+            <uui-symbol-more slot="label"></uui-symbol-more>
+          </umb-entity-actions-dropdown>
+        </ekom-catalog-entity>
+        <a class="tile" href=${s} tabindex="-1" aria-hidden="true">
+          ${o ? i`<img src=${o} alt="" loading="lazy" decoding="async" />` : oe}
+        </a>
         <div class="card-body">
-          <a class="title" href="${i}">${p(e.name)}</a>
-          <div class="meta"><span>${e.sku ? `SKU ${p(e.sku)}` : "No SKU"}</span><strong>${p(e.price)}</strong></div>
-          <div class="status-row"><span class="pill ${k(e.status)}"><i></i>${e.status}</span><strong class="availability ${e.available ? "ok" : "bad"}">${e.available ? "✓ Available" : "✕ Unavailable"}</strong></div>
+          <a class="name" href=${s} title=${e.name}>${e.name}</a>
+          <div class="row">
+            <span class="sku" title=${e.sku}>${e.sku || "No SKU"}</span>
+            <span class="prices">
+              ${e.originalPrice ? i`<span class="was">${e.originalPrice}</span>` : c}
+              <span class="price">${e.price}</span>
+            </span>
+          </div>
+          <span class="variants">${e.variantCount > 0 ? m(e.variantCount, "variant", "variants") : "No variants"}</span>
+          <div class="foot">
+            <span class="badges">
+              <span class="badge ${n.tone}"><i></i>${n.text}</span>
+              ${e.pendingChanges ? i`<span class="badge amber edits" title="Published with unpublished edits">Edits</span>` : c}
+              ${e.linked ? i`<span class="badge grey edits" title="Lives in another category and is shown here through its categories picker">Linked</span>` : c}
+            </span>
+            <span class="stock ${d.tone}">${d.text}</span>
+          </div>
         </div>
       </article>
     `;
   }
   renderPagination(e) {
     if (e.filteredProductCount === 0 || e.totalPages <= 1)
-      return "";
-    const t = (e.page - 1) * e.pageSize + 1, i = Math.min(e.page * e.pageSize, e.filteredProductCount);
-    return `
+      return c;
+    const t = (e.page - 1) * e.pageSize + 1, s = Math.min(e.page * e.pageSize, e.filteredProductCount);
+    return i`
       <footer class="pagination">
         <div>
-          <button type="button" data-page="${e.page - 1}" ${e.page <= 1 ? "disabled" : ""}>‹ Prev</button>
-          ${this.paginationItems(e.page, e.totalPages).map((s) => s === "…" ? "<span>…</span>" : `<button type="button" class="${s === e.page ? "current" : ""}" data-page="${s}">${s}</button>`).join("")}
-          <button type="button" data-page="${e.page + 1}" ${e.page >= e.totalPages ? "disabled" : ""}>Next ›</button>
+          <button type="button" ?disabled=${e.page <= 1} @click=${() => this.setPage(e.page - 1)}>‹ Prev</button>
+          ${G(e.page, e.totalPages).map((o) => o === "…" ? i`<span>…</span>` : i`<button type="button" class=${o === e.page ? "current" : ""} aria-current=${o === e.page ? "page" : c} @click=${() => this.setPage(o)}>${o}</button>`)}
+          <button type="button" ?disabled=${e.page >= e.totalPages} @click=${() => this.setPage(e.page + 1)}>Next ›</button>
         </div>
-        <span>${t}–${i} of ${e.filteredProductCount}</span>
+        <span>${t}–${s} of ${e.filteredProductCount}</span>
       </footer>
     `;
-  }
-  paginationItems(e, t) {
-    if (t <= 7)
-      return Array.from({ length: t }, (r, l) => l + 1);
-    const s = [.../* @__PURE__ */ new Set([1, t, e - 1, e, e + 1])].filter((r) => r >= 1 && r <= t).sort((r, l) => r - l), a = [];
-    for (const r of s) {
-      const l = a[a.length - 1];
-      typeof l == "number" && r - l > 1 && a.push("…"), a.push(r);
-    }
-    return a;
-  }
-  bindEvents() {
-    var e, t, i, s, a;
-    (e = this.querySelector('[data-action="retry"]')) == null || e.addEventListener("click", () => void this.load()), (t = this.querySelector('[data-action="back"]')) == null || t.addEventListener("click", () => {
-      var r;
-      ((r = this.data) == null ? void 0 : r.parent) != null && this.drillTo(this.data.parent);
-    }), (i = this.querySelector('[data-action="toggle-page"]')) == null || i.addEventListener("click", () => this.toggleCurrentPage()), (s = this.querySelector('[data-field="sort"]')) == null || s.addEventListener("input", (r) => this.setSort(r.target.value)), (a = this.querySelector('[data-field="sort"]')) == null || a.addEventListener("change", (r) => this.setSort(r.target.value)), this.querySelectorAll("[data-product-key]").forEach((r) => {
-      r.addEventListener("click", (l) => {
-        var u;
-        l.preventDefault();
-        const h = r.dataset.productKey, c = (u = this.data) == null ? void 0 : u.products.find((g) => g.key === h);
-        c != null && this.toggleProduct(c);
-      });
-    }), this.querySelectorAll("[data-page]").forEach((r) => {
-      r.addEventListener("click", () => this.setPage(Number(r.dataset.page)));
-    }), this.querySelectorAll("[data-breadcrumb-link-key]").forEach((r) => {
-      r.addEventListener("click", (l) => {
-        var u;
-        l.preventDefault();
-        const h = r.dataset.breadcrumbLinkKey, c = (u = this.data) == null ? void 0 : u.breadcrumbs.find((g) => g.key === h);
-        c != null && this.drillTo(c);
-      });
-    }), this.querySelectorAll("[data-breadcrumb-category-key]").forEach((r) => {
-      r.addEventListener("click", () => {
-        var c;
-        const l = r.dataset.breadcrumbCategoryKey, h = (c = this.data) == null ? void 0 : c.breadcrumbs.flatMap((u) => u.siblings).find((u) => u.key === l);
-        h != null && this.drillTo(h);
-      });
-    }), this.querySelectorAll(".breadcrumb-menu").forEach((r) => {
-      r.addEventListener("toggle", () => {
-        r.open && this.querySelectorAll(".breadcrumb-menu").forEach((l) => {
-          l !== r && (l.open = !1);
-        });
-      });
-    });
   }
   getNodeIdFromUrl() {
     const e = this.getCatalogNodeFromUrl();
     if (e != null)
       return e;
-    const t = window.location.href, i = t.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-    if (i != null)
-      return i[0];
-    const s = t.match(/\/edit\/([^/?#]+)/i);
-    return (s == null ? void 0 : s[1]) ?? "";
+    const t = window.location.href, s = t.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    if (s != null)
+      return s[0];
+    const o = t.match(/\/edit\/([^/?#]+)/i);
+    return (o == null ? void 0 : o[1]) ?? "";
   }
   getDocumentHref(e) {
     const t = new URL(window.location.href);
-    return t.searchParams.delete(f), t.pathname.match(/\/edit\/[^/]+/i) != null ? (t.pathname = t.pathname.replace(/\/edit\/[^/]+/i, `/edit/${e}`), `${t.pathname}${t.search}${t.hash}`) : `/umbraco/section/content/workspace/document/edit/${e}`;
+    return t.searchParams.delete(x), t.pathname.match(/\/edit\/[^/]+/i) != null ? (t.pathname = t.pathname.replace(/\/edit\/[^/]+/i, `/edit/${e}`), `${t.pathname}${t.search}${t.hash}`) : `/umbraco/section/content/workspace/document/edit/${e}`;
   }
   getCatalogNodeFromUrl() {
-    const e = new URL(window.location.href).searchParams.get(f);
+    const e = new URL(window.location.href).searchParams.get(x);
     return e && e.trim().length > 0 ? e : null;
   }
-  async fetchJson(e) {
-    const t = await fetch(e, { credentials: "same-origin", headers: { Accept: "application/json" } });
-    if (!t.ok)
-      throw new x(await t.text() || `Request failed (${t.status}).`, t.status);
-    return await t.json();
+  async fetchJson(e, t) {
+    const s = await fetch(e, { credentials: "same-origin", headers: { Accept: "application/json" }, signal: t });
+    if (!s.ok)
+      throw new $(await s.text() || `Request failed (${s.status}).`, s.status);
+    return await s.json();
   }
 }
-class x extends Error {
-  constructor(d, e) {
-    super(d), this.status = e;
+l(L, "styles", [D]);
+class $ extends Error {
+  constructor(a, e) {
+    super(a), this.status = e;
   }
 }
-function p(o) {
-  return o.replace(/[&<>"]/g, (d) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[d] ?? d);
-}
-function k(o) {
-  return o === "Published" ? "published" : o === "Pending changes" ? "pending" : "unpublished";
-}
-function $(o) {
-  return [
-    "sortOrderAsc",
-    "sortOrderDesc",
-    "nameAsc",
-    "nameDesc",
-    "createdAsc",
-    "createdDesc",
-    "updatedAsc",
-    "updatedDesc"
-  ].includes(o);
-}
-function v() {
+function S() {
   try {
-    const o = window.localStorage.getItem(S);
-    return o != null && $(o) ? o : m;
+    const r = window.localStorage.getItem(I);
+    return r != null && T(r) ? r : f;
   } catch {
-    return m;
+    return f;
   }
 }
-function w(o) {
+function ie(r) {
   try {
-    window.localStorage.setItem(S, o);
+    window.localStorage.setItem(I, r);
   } catch {
   }
 }
-const D = `
-  ekom-catalog-collection-view { color: #1f1f1f; display: block !important; font-family: Lato, sans-serif; visibility: visible !important; }
-  .catalog-shell { background: #f6f4f4; min-height: 100%; padding: 24px; }
-  .surface, .empty { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; }
-  .state { padding: 24px; display: grid; gap: 10px; }
-  .error { color: #d42054; }
-  .catalog-loading { animation: loading-enter .18s ease-out; }
-  .skeleton { animation: skeleton-shimmer 1.4s ease-in-out infinite; background: linear-gradient(100deg, #e9e9eb 35%, #f8f8f9 50%, #e9e9eb 65%); background-size: 200% 100%; border-radius: 3px; display: block; }
-  .loading-breadcrumbs { display: flex; gap: 8px; margin-bottom: 18px; }
-  .skeleton-breadcrumb { height: 13px; width: 58px; }
-  .skeleton-breadcrumb.current { width: 82px; }
-  .loading-header { align-items: center; display: flex; gap: 14px; margin-bottom: 18px; }
-  .skeleton-back { border-radius: 50%; height: 36px; width: 36px; }
-  .loading-header div { display: grid; gap: 8px; }
-  .skeleton-title { height: 28px; width: 176px; }
-  .skeleton-summary { height: 13px; width: 132px; }
-  .loading-toolbar { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 14px; }
-  .skeleton-control { height: 36px; width: 118px; }
-  .loading-section { margin-top: 22px; }
-  .skeleton-section-title { height: 11px; margin-bottom: 10px; width: 96px; }
-  .loading-chips { display: flex; flex-wrap: wrap; gap: 10px; }
-  .skeleton-chip { border-radius: 999px; height: 42px; width: 172px; }
-  .loading-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-  .loading-card { background: #fff; border: 1px solid #e9e9eb; border-radius: 4px; overflow: hidden; }
-  .skeleton-image { border-radius: 0; height: 160px; }
-  .loading-card-body { display: grid; gap: 12px; padding: 12px; }
-  .skeleton-product-title { height: 16px; width: 76%; }
-  .skeleton-product-meta { height: 13px; width: 58%; }
-  .skeleton-product-status { height: 24px; width: 88%; }
-  .visually-hidden { height: 1px; margin: -1px; overflow: hidden; position: absolute; width: 1px; clip: rect(0, 0, 0, 0); }
-  @keyframes loading-enter { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
-  @media (prefers-reduced-motion: reduce) { .catalog-loading, .skeleton { animation: none; } }
-  button, input, select { font: inherit; }
-  button { cursor: pointer; }
-  button:disabled { cursor: default; opacity: .45; }
-  .breadcrumbs { align-items: center; color: #777; display: flex; flex-wrap: wrap; font-size: 13px; gap: 8px; margin-bottom: 18px; }
-  .breadcrumbs a { color: #2152a3; text-decoration: none; }
-  .breadcrumbs a:hover { text-decoration: underline; }
-  .breadcrumb-category { align-items: center; display: flex; gap: 2px; }
-  .breadcrumb-menu { position: relative; }
-  .breadcrumb-menu summary { align-items: center; background: #fff; border: 1px solid #b8c7df; border-radius: 3px; box-sizing: border-box; color: #2152a3; cursor: pointer; display: flex; height: 22px; justify-content: center; list-style: none; padding: 0; width: 22px; }
-  .breadcrumb-menu summary::-webkit-details-marker { display: none; }
-  .breadcrumb-menu summary:hover { background: #e6edf9; border-color: #2152a3; }
-  .breadcrumb-menu summary:focus-visible { border-radius: 2px; outline: 2px solid #2152a3; outline-offset: 2px; }
-  .breadcrumb-menu summary span { border: solid currentColor; border-width: 0 1.5px 1.5px 0; display: block; height: 5px; transform: translateY(-1px) rotate(45deg); width: 5px; }
-  .breadcrumb-menu[open] summary span { transform: translateY(1px) rotate(225deg); }
-  .breadcrumb-menu-list { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; box-shadow: 0 6px 16px rgba(0,0,0,.12); display: grid; left: 0; max-height: 320px; min-width: 220px; overflow-y: auto; padding: 4px; position: absolute; top: calc(100% + 4px); z-index: 2; }
-  .breadcrumb-menu-list button { background: transparent; border: 0; color: #1f1f1f; padding: 8px 10px; text-align: left; white-space: nowrap; }
-  .breadcrumb-menu-list button:hover, .breadcrumb-menu-list button:focus-visible { background: #f0f4fc; border-radius: 2px; outline: none; }
-  .sep { color: #a5a5a5; }
-  .catalog-header { align-items: center; display: flex; gap: 14px; margin-bottom: 18px; }
-  .back { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; height: 36px; width: 36px; }
-  h1 { font-size: 24px; line-height: 1.2; margin: 0; }
-  p { color: #777; margin: 4px 0 0; }
-  .toolbar { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 14px; }
-  select, .select-all { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; height: 36px; padding: 0 10px; }
-  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, #777 50%), linear-gradient(135deg, #777 50%, transparent 50%); background-position: calc(100% - 16px) 15px, calc(100% - 11px) 15px; background-repeat: no-repeat; background-size: 5px 5px, 5px 5px; padding-right: 34px; }
-  .select-all { align-items: center; display: flex; gap: 8px; }
-  .fake-checkbox { border: 1px solid #b8b8b8; border-radius: 2px; height: 14px; width: 14px; }
-  .fake-checkbox.checked { background: #2152a3; border-color: #2152a3; }
-  .section { margin-top: 22px; }
-  h2 { color: #777; font-size: 11px; letter-spacing: .08em; margin: 0 0 10px; text-transform: uppercase; }
-  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
-  .chip { align-items: center; background: #fff; border: 1px solid #d8d7d9; border-radius: 999px; color: inherit; display: flex; gap: 10px; padding: 6px 11px 6px 6px; text-align: left; text-decoration: none; }
-  .chip-text { display: grid; gap: 1px; min-width: 0; }
-  .chip-text strong { align-items: center; display: flex; gap: 5px; }
-  .chip-text small { color: #777; font-size: 11px; }
-  .chip-status { border-radius: 50%; flex: 0 0 7px; height: 7px; width: 7px; }
-  .chip-status.published { background: #2bc37c; }
-  .chip-status.pending { background: #fbd142; }
-  .chip-status.unpublished { background: #c4c4c4; }
-  .tile { align-items: center; background: #f6f4f4; border-radius: 50%; color: #1b264f; display: inline-flex; height: 30px; justify-content: center; width: 30px; }
-  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-  .card { background: #fff; border: 1px solid #e9e9eb; border-radius: 4px; overflow: hidden; position: relative; transition: box-shadow .15s, border-color .15s; }
-  .card:hover { box-shadow: 0 6px 16px rgba(0,0,0,.08); }
-  .card.selected { border-color: #2152a3; box-shadow: 0 0 0 1px #2152a3; }
-   .checkbox { background: transparent; border: 0; color: transparent; height: 50px; left: -5px; padding: 0; position: absolute; top: -5px; width: 50px; z-index: 1; }
-   .checkbox::after { background: rgba(255,255,255,.76); border: 1px solid #d8d7d9; border-radius: 3px; box-sizing: border-box; color: #fff; content: ''; font-size: 14px; height: 20px; left: 15px; line-height: 18px; opacity: .6; position: absolute; top: 15px; width: 20px; }
-   .card:hover .checkbox::after, .checkbox.checked::after { opacity: 1; }
-   .checkbox.checked::after { background: #2152a3; border-color: #2152a3; content: '✓'; }
-  .image { align-items: center; background: linear-gradient(135deg, #f4f4f6, #e9e9eb); color: #888; display: flex; height: 160px; justify-content: center; text-decoration: none; }
-  .image.dimmed { opacity: .45; }
-  .image umb-imaging-thumbnail { height: 100%; width: 100%; }
-  .card-body { display: grid; gap: 10px; padding: 12px; }
-  .title { color: #1f1f1f; display: -webkit-box; font-size: 14px; font-weight: 700; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-decoration: none; }
-  .title:hover { text-decoration: underline; }
-  .meta, .status-row { align-items: center; display: flex; justify-content: space-between; gap: 10px; }
-  .meta span { color: #777; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .meta strong { font-size: 14px; white-space: nowrap; }
-  .pill { align-items: center; background: #f4f4f6; border-radius: 999px; color: #555; display: inline-flex; font-size: 12px; gap: 6px; padding: 4px 8px; }
-  .pill i { border-radius: 50%; display: inline-block; height: 7px; width: 7px; }
-  .published i { background: #2bc37c; }
-  .pending i { background: #fbd142; }
-  .unpublished i { background: #c4c4c4; }
-  .availability { font-size: 12px; white-space: nowrap; }
-  .availability.ok { color: #1c7d3c; }
-  .availability.bad { color: #d42054; }
-  .empty { border-style: dashed; color: #777; padding: 30px; text-align: center; }
-  .empty-category { display: grid; gap: 6px; }
-  .empty-category strong { color: #1f1f1f; font-size: 15px; }
-  .pagination { align-items: center; display: flex; gap: 18px; justify-content: center; margin-top: 24px; }
-  .pagination div { display: flex; gap: 6px; }
-  .pagination button { background: #fff; border: 1px solid #d8d7d9; border-radius: 3px; min-width: 34px; padding: 7px 10px; }
-  .pagination .current { background: #1b264f; border-color: #1b264f; color: #fff; }
-`;
-customElements.define("ekom-catalog-collection-view", H);
+customElements.define("ekom-catalog-entity", re);
+customElements.define("ekom-catalog-collection-view", L);
 export {
-  H as default
+  L as default
 };

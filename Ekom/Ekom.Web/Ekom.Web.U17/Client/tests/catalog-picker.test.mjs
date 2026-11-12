@@ -85,18 +85,25 @@ function createView(config) {
     }
     destroy() { this.destroyed = true; }
   }
+  const template = () => ({});
   const modules = {
     '@umbraco-cms/backoffice/collection': { UMB_COLLECTION_CONTEXT: collectionToken },
-    '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => class extends Base {
+    '@umbraco-cms/backoffice/entity': { UmbEntityContext: class { setEntityType() {} setUnique() {} } },
+    '@umbraco-cms/backoffice/extension-api': { UmbExtensionElementInitializer: NativeViewInitializer },
+    '@umbraco-cms/backoffice/extension-registry': { umbExtensionsRegistry: {} },
+    '@umbraco-cms/backoffice/external/lit': { html: template, svg: template, nothing: null, repeat: () => [] },
+    '@umbraco-cms/backoffice/imaging': { UmbImagingRepository: class {} },
+    '@umbraco-cms/backoffice/lit-element': { UmbLitElement: class extends Element {
       consumers = new Map();
       connectedCallback() {}
       disconnectedCallback() {}
       consumeContext(token, callback) { this.consumers.set(token, callback); }
       observe() {}
+      requestUpdate() {}
     } },
-    '@umbraco-cms/backoffice/extension-api': { UmbExtensionElementInitializer: NativeViewInitializer },
-    '@umbraco-cms/backoffice/extension-registry': { umbExtensionsRegistry: {} },
-    '@umbraco-cms/backoffice/imaging': {},
+    '@umbraco-cms/backoffice/themes': { UMB_THEME_CONTEXT: Symbol('theme') },
+    './catalog-styles': { catalogStyles: '' },
+    './catalog-view-model': compile('catalog-view-model', {}),
     './catalog-picker-context': pickerContext,
   };
   const window = {
@@ -107,11 +114,11 @@ function createView(config) {
     removeEventListener() {}, setTimeout() { return 1; }, clearTimeout() {},
   };
   const history = { state: null, pushState(...args) { calls.history.push(args); }, replaceState(...args) { calls.history.push(args); } };
+  const document = { addEventListener() {}, removeEventListener() {} };
   const { default: View } = compile('catalog-collection-view.element', modules, {
-    HTMLElement: Element, customElements: { define() {} }, window, history, URL, URLSearchParams,
+    customElements: { define() {} }, window, document, history, URL, URLSearchParams, AbortController,
   });
   const view = new View();
-  view.render = () => {};
   view.revealCollectionHost = () => {};
   view.load = async () => { calls.loads.push(view.nodeId); };
   const selection = {
