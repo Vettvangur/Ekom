@@ -15,6 +15,9 @@ internal static class PriceSavingNotifications
 {
     public static async Task ApplyAsync(ContentSavingNotification notification, ISecurityService security, IManagerAccessService access, ILogger logger, IScopeProvider scopeProvider, IScopeAccessor scopeAccessor, CancellationToken ct)
     {
+        // Ekom's installer saves its first nodes before Ekom has started. Those nodes carry no prices,
+        // and reading the configuration this early would fail the whole install.
+        if (Configuration.Resolver == null) return;
         if (!Configuration.Instance.UseDatabasePrices || notification.Cancel) return;
         try
         {
