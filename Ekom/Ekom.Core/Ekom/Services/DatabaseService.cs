@@ -218,7 +218,34 @@ AND EXISTS (SELECT 1 FROM pragma_index_info(i.name) k WHERE k.name = 'UniqueId' 
         EnsureLookupIndex(db, "EkomCoupon", "IX_EkomCoupon_CouponKey", nameof(CouponData.CouponKey));
         EnsureLookupIndex(db, "EkomCheckoutPaymentAttempt", "IX_EkomCheckoutPaymentAttempt_OrderId", nameof(CheckoutPaymentAttemptData.OrderId));
         EnsureLookupIndex(db, "EkomStockReservation", "IX_EkomStockReservation_OrderId", nameof(StockReservationData.OrderId));
+        EnsureCustomerListIndex(db);
     }
+
+    /// <summary>
+    /// Lets the Manager Customers list read one store's orders from a narrow index instead of
+    /// scanning every row of EkomOrders, order JSON included. SQL Server only: SQLite has no
+    /// included columns. Like the other lookup indexes it is logged and skipped if it cannot be created.
+    /// </summary>
+    private void EnsureCustomerListIndex(Repositories.DbContext db)
+    {
+        if (!_databaseFactory.IsSqlServer)
+        {
+            return;
+        }
+
+        try
+        {
+            db.Execute($@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = '{CustomerListIndex}' AND object_id = OBJECT_ID('EkomOrders'))
+    CREATE NONCLUSTERED INDEX {CustomerListIndex} ON EkomOrders (StoreAlias) INCLUDE ({Repositories.CustomerRepository.HistoryColumns});");
+        }
+        catch (System.Data.Common.DbException ex)
+        {
+            _logger.LogWarning(ex, "Ekom could not create lookup index {IndexName} on {TableName}. Queries on that table stay correct but may be slow.", CustomerListIndex, "EkomOrders");
+        }
+    }
+
+    private const string CustomerListIndex = "IX_EkomOrders_StoreAlias_CustomerList";
 
     private void EnsureLookupIndex(Repositories.DbContext db, string tableName, string indexName, params string[] columns)
     {

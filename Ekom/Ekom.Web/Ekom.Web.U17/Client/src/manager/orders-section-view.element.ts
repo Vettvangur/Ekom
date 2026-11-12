@@ -1,4 +1,4 @@
-import { renderManagerContent } from './manager-shared';
+import { renderManagerContent, setManagerLink } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
 import { UMB_NOTIFICATION_CONTEXT, type UmbNotificationColor } from '@umbraco-cms/backoffice/notification';
@@ -476,7 +476,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     const scrollPositions = Array.from(this.querySelectorAll<HTMLElement>('.ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content')).map(node => node.scrollTop);
     renderManagerContent(this, `
       <style>${managerStyles}</style>
-      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261111-esc-close">
+      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261112-filter-count">
       <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
           ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
@@ -508,7 +508,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private renderOrders(): string {
     const filters = managerState.filters;
     return `${this.renderToolbar()}<section class="ekom-order-list" aria-label="Orders" aria-busy="${this.loading}">
-      <div class="ekom-list-toolbar"><nav class="ekom-order-views" aria-label="Order views">${orderViews.map(view => `<button type="button" data-action="select-order-view" data-view="${escapeHtml(view.key)}" ${view.key === 'NeedsReview' && !(this.viewCounts[view.key] > 0) ? 'hidden' : ''} aria-pressed="${filters.orderStatus === view.key}">${view.label}${this.viewCounts[view.key] === undefined ? '' : `<span>${this.viewCounts[view.key]}</span>`}</button>`).join('')}</nav><div class="ekom-list-search"><label class="ekom-search-field"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input type="search" data-field="query" value="${escapeHtml(filters.query)}" placeholder="Search orders" aria-label="Search orders"></label><button type="button" data-action="open-filter"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filter</button></div></div>
+      <div class="ekom-list-toolbar"><nav class="ekom-order-views" aria-label="Order views">${orderViews.map(view => `<button type="button" data-action="select-order-view" data-view="${escapeHtml(view.key)}" ${view.key === 'NeedsReview' && !(this.viewCounts[view.key] > 0) ? 'hidden' : ''} aria-pressed="${filters.orderStatus === view.key}">${view.label}${this.viewCounts[view.key] === undefined ? '' : `<span>${this.viewCounts[view.key]}</span>`}</button>`).join('')}</nav><div class="ekom-list-search"><label class="ekom-search-field"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input type="search" data-field="query" value="${escapeHtml(filters.query)}" placeholder="Search orders" aria-label="Search orders"></label><button type="button" data-action="open-filter"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filter${this.activeFilterCount() ? `<span aria-label="${this.activeFilterCount()} active">${this.activeFilterCount()}</span>` : ''}</button></div></div>
       <div class="ekom-inline-totals"><div><span>Orders</span><strong>${escapeHtml(this.result.count || 0)}</strong></div><div><span>Order amount</span><strong>${escapeHtml(this.result.grandTotal || '0')}</strong></div><div><span>Average</span><strong>${escapeHtml(this.result.averageAmount || '0')}</strong></div></div>
       ${this.error ? `<p class="status status--error" role="alert">${escapeHtml(this.error)}</p>` : ''}
       ${this.showOrdersLoading ? this.renderOrderTableHead() + renderOrderRowsLoading() + '</div>' : this.renderOrderTable()}
@@ -572,6 +572,15 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     }
 
     return '';
+  }
+
+  /** How many of the filter dialog's fields are set. A status picked through a tab is not counted: the tab already shows it. */
+  private activeFilterCount(): number {
+    const filters = managerState.filters;
+    const status = filters.orderStatus.startsWith('states:') && !orderViews.some(view => view.key === filters.orderStatus)
+      ? filters.orderStatus.slice(7).split(';').filter(Boolean).length : 0;
+    const fields = ['paymentProvider', 'shippingProvider', 'giftcardCode', 'productSku', 'couponCode', 'trackingSource', 'trackingMedium', 'trackingCampaign', 'trackingTerm', 'trackingContent', 'trackingClickId'] as const;
+    return status + fields.filter(field => filters[field]).length;
   }
 
   private renderFilterOverlay(): string {
@@ -1479,6 +1488,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     }
 
     this.returnFocusOrderId = orderId;
+    if (!this.hasAttribute?.('classic')) setManagerLink({ orderId });
     this.orderTab = 'order';
     const requestId = ++this.orderRequestId;
     ++this.lockRequestId;
@@ -1817,6 +1827,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private closeOverlay(): void {
+    if (!this.hasAttribute?.('classic')) setManagerLink({ orderId: undefined });
     this.orderOpening = false;
     ++this.orderRequestId;
     ++this.lockRequestId;

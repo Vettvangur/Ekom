@@ -1315,6 +1315,16 @@ export function renderStoreCurrencySelector(storeAttribute = 'data-field'): stri
   return `<div class="ekom-store-switch"><span>Store</span><details class="ekom-dropdown ekom-store-currency"><summary aria-label="Store and currency"><strong>${escapeHtml(selected?.title || 'Select store')}</strong>${currency ? `<span class="ekom-currency-code">${escapeHtml(currency)}</span>` : ''}<span class="ekom-store-chevron">▾</span></summary><div class="ekom-currency-popover"><div class="ekom-currency-heading"><strong>Store ·<br>Currency</strong><span>Amounts shown in the selected currency</span></div>${managerState.stores.map(store => `<section class="ekom-currency-store ${store.alias === selected?.alias ? 'is-selected' : ''}" aria-label="${escapeHtml(store.title)}"><h3>${escapeHtml(store.title)}</h3><div class="ekom-currency-choices">${(store.currencies || []).map(code => `<button type="button" data-header-store="${escapeHtml(store.alias)}" data-header-currency="${escapeHtml(code)}" aria-label="${escapeHtml(store.title)} — ${escapeHtml(code)}" aria-pressed="${store.alias === selected?.alias && code === currency}">${escapeHtml(code)}${store.alias === selected?.alias && code === currency ? '<span aria-hidden="true">✓</span>' : ''}</button>`).join('') || '<span class="ekom-currency-empty">No currencies configured or recorded</span>'}</div></section>`).join('')}</div></details><select hidden aria-label="Store" ${storeAttribute}="store">${managerState.stores.map(store => `<option value="${escapeHtml(store.alias)}" ${store.alias === selected?.alias ? 'selected' : ''}>${escapeHtml(store.title)}</option>`).join('')}</select></div>`;
 }
 
+/** Keeps the open order or customer in the address bar, so the page can be linked to. An empty value removes the parameter. */
+export function setManagerLink(params: Record<string, string | undefined>): void {
+  if (typeof location === 'undefined' || typeof history === 'undefined') return;
+  const url = new URL(location.href);
+  for (const [name, value] of Object.entries(params)) {
+    if (value) url.searchParams.set(name, value); else url.searchParams.delete(name);
+  }
+  history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+}
+
 export function renderManagerHeader(active: string, storeAttribute = 'data-field', showStore = true): string {
   if (typeof document !== 'undefined' && !document.querySelector('link[data-ekom-fonts]')) {
     const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = '/App_Plugins/Ekom/dist/manager-fonts.css'; link.dataset.ekomFonts = ''; document.head.append(link);
@@ -1404,15 +1414,37 @@ export function renderDateRange(): string {
   return `<ekom-date-range from="${escapeHtml(managerState.filters.dateFrom)}" to="${escapeHtml(managerState.filters.dateTo)}"></ekom-date-range>`;
 }
 
+// The store and currency menu shown in each document. Escape or a press anywhere outside the
+// open menu closes it, wherever focus is. Each render binds a new menu, so only the latest is kept.
+const storeMenus = new WeakMap<Document, HTMLDetailsElement>();
+
+function watchStoreMenu(menu: HTMLDetailsElement): void {
+  const page = menu.ownerDocument;
+  const watched = storeMenus.has(page);
+  storeMenus.set(page, menu);
+  if (watched) return;
+  const current = (): HTMLDetailsElement | undefined => {
+    const latest = storeMenus.get(page);
+    return latest?.open && latest.isConnected ? latest : undefined;
+  };
+  page.addEventListener('pointerdown', event => {
+    const open = current();
+    if (open && !event.composedPath().includes(open)) open.open = false;
+  }, true);
+  page.addEventListener('keydown', event => {
+    const open = current();
+    if (!open || event.key !== 'Escape') return;
+    open.open = false;
+    open.querySelector('summary')?.focus();
+    event.preventDefault();
+    event.stopPropagation();
+  }, true);
+}
+
 export function bindDateRange(host: HTMLElement | ShadowRoot, apply: () => void): void {
   registerDateRange();
-  host.querySelector('.ekom-store-currency')?.addEventListener('keydown', event => {
-    if ((event as KeyboardEvent).key !== 'Escape') return;
-    const details = event.currentTarget as HTMLDetailsElement;
-    details.open = false;
-    details.querySelector('summary')?.focus();
-    event.stopPropagation();
-  });
+  const storeMenu = host.querySelector<HTMLDetailsElement>('.ekom-store-currency');
+  if (storeMenu) watchStoreMenu(storeMenu);
   host.querySelectorAll<HTMLButtonElement>('[data-header-store]').forEach(button => button.addEventListener('click', () => {
     const select = host.querySelector<HTMLSelectElement>('[data-field="store"], [data-filter="store"]');
     if (!select) return;

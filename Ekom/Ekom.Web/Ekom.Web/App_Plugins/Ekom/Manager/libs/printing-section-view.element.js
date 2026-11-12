@@ -1,10 +1,10 @@
-var q = Object.defineProperty;
-var N = (a, t, r) => t in a ? q(a, t, { enumerable: !0, configurable: !0, writable: !0, value: r }) : a[t] = r;
-var g = (a, t, r) => N(a, typeof t != "symbol" ? t + "" : t, r);
-const P = /* @__PURE__ */ new Date(), F = new Date(P.getFullYear(), 0, 1), h = {
+var N = Object.defineProperty;
+var F = (a, e, r) => e in a ? N(a, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : a[e] = r;
+var g = (a, e, r) => F(a, typeof e != "symbol" ? e + "" : e, r);
+const T = /* @__PURE__ */ new Date(), I = new Date(T.getFullYear(), 0, 1), h = {
   filters: {
-    dateFrom: j(F),
-    dateTo: j(P),
+    dateFrom: j(I),
+    dateTo: j(T),
     orderStatus: "AllOrders",
     store: "",
     paymentProvider: "",
@@ -26,13 +26,13 @@ const P = /* @__PURE__ */ new Date(), F = new Date(P.getFullYear(), 0, 1), h = {
   shippingFilterProviders: []
 };
 class v {
-  async changeOrderStates(t, r, e, i, n) {
-    return this.postBody(`/ekom/manager/orderStates/${encodeURIComponent(t)}`, { expectedRevision: r, action: e, notify: i, fulfilledQuantities: n });
+  async changeOrderStates(e, r, t, n, i) {
+    return this.postBody(`/ekom/manager/orderStates/${encodeURIComponent(e)}`, { expectedRevision: r, action: t, notify: n, fulfilledQuantities: i });
   }
   async printingEnabled() {
     try {
-      const t = await fetch("/ekom/printer/manager/capabilities", { credentials: "same-origin" });
-      return t.ok && (await t.json()).enabled === !0;
+      const e = await fetch("/ekom/printer/manager/capabilities", { credentials: "same-origin" });
+      return e.ok && (await e.json()).enabled === !0;
     } catch {
       return !1;
     }
@@ -40,169 +40,173 @@ class v {
   async config() {
     return this.getJson("/ekom/backoffice/Config");
   }
-  async searchOrders(t, r, e = 20) {
+  async searchOrders(e, r, t = 20) {
     return this.getJson("/ekom/manager/SearchOrders", {
-      ...t,
-      start: t.dateFrom,
-      end: t.dateTo,
+      ...e,
+      start: e.dateFrom,
+      end: e.dateTo,
       page: r,
-      pageSize: e
+      pageSize: t
     });
   }
   /** Counts for several order views in one request, so the view tabs do not each run a search. */
-  async orderViewCounts(t, r) {
+  async orderViewCounts(e, r) {
     if (!r.length) return [];
-    const { orderStatus: e, ...i } = t;
+    const { orderStatus: t, ...n } = e;
     return this.getJson("/ekom/manager/OrderViewCounts", {
-      ...i,
-      start: t.dateFrom,
-      end: t.dateTo,
+      ...n,
+      start: e.dateFrom,
+      end: e.dateTo,
       views: r
     });
   }
-  async exportOrders(t, r, e) {
+  async exportOrders(e, r, t) {
     return this.getBlob("/ekom/manager/ExportOrders", {
-      ...t,
-      start: t.dateFrom,
-      end: t.dateTo,
+      ...e,
+      start: e.dateFrom,
+      end: e.dateTo,
       page: 1,
       pageSize: r,
-      includeOrderLines: e
+      includeOrderLines: t
     });
   }
-  async orderReviews(t) {
+  async orderReviews(e) {
     const r = [];
-    for (let e = 0; ; e += 200) {
-      const i = await this.getJson(`/ekom/manager/orders/${encodeURIComponent(t)}/reviews`, { skip: e, take: 200 });
-      if (r.push(...i), i.length < 200) return r;
+    for (let t = 0; ; t += 200) {
+      const n = await this.getJson(`/ekom/manager/orders/${encodeURIComponent(e)}/reviews`, { skip: t, take: 200 });
+      if (r.push(...n), n.length < 200) return r;
     }
   }
-  async reviewOrder(t, r, e, i) {
-    return this.postBody(`/ekom/manager/orders/${encodeURIComponent(t)}/reviews/${encodeURIComponent(r)}/review`, { comment: e, resolved: i });
+  async reviewOrder(e, r, t, n) {
+    return this.postBody(`/ekom/manager/orders/${encodeURIComponent(e)}/reviews/${encodeURIComponent(r)}/review`, { comment: t, resolved: n });
   }
   async statusList() {
     return this.getJson("/ekom/manager/StatusList");
   }
   async stores() {
-    const [t, r] = await Promise.all([this.getJson("/ekom/manager/stores"), this.getJson("/ekom/manager/store-currencies")]);
-    return t.map((e) => {
-      const i = r.find((n) => n.alias === e.alias);
-      return { ...e, currencies: (i == null ? void 0 : i.currencies) || [], currencyFormats: ((i == null ? void 0 : i.formats) || []).filter((n) => !!n), dateFormat: (i == null ? void 0 : i.dateFormat) || void 0 };
+    const [e, r] = await Promise.all([this.getJson("/ekom/manager/stores"), this.getJson("/ekom/manager/store-currencies")]);
+    return e.map((t) => {
+      const n = r.find((i) => i.alias === t.alias);
+      return { ...t, currencies: (n == null ? void 0 : n.currencies) || [], currencyFormats: ((n == null ? void 0 : n.formats) || []).filter((i) => !!i), dateFormat: (n == null ? void 0 : n.dateFormat) || void 0 };
     });
   }
-  async paymentProviders(t) {
-    return this.getJson(`/ekom/manager/paymentproviders/${encodeURIComponent(t)}`);
+  async paymentProviders(e) {
+    return this.getJson(`/ekom/manager/paymentproviders/${encodeURIComponent(e)}`);
   }
-  async shippingProviders(t) {
-    return this.getJson(`/ekom/manager/shippingproviders/${encodeURIComponent(t)}`);
+  async shippingProviders(e) {
+    return this.getJson(`/ekom/manager/shippingproviders/${encodeURIComponent(e)}`);
   }
-  async orderInfo(t) {
-    return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(t)}`);
+  /** The order and everything the drawer shows with it, in one request. */
+  async orderDrawer(e) {
+    return this.getJson(`/ekom/manager/OrderDrawer/${encodeURIComponent(e)}`);
   }
-  async orderLogs(t) {
-    return this.getJson(`/ekom/manager/OrderLogs/${encodeURIComponent(t)}`);
+  async orderInfo(e) {
+    return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(e)}`);
   }
-  async orderActions(t) {
-    return this.getJson(`/ekom/manager/OrderActions/${encodeURIComponent(t)}`);
+  async orderLogs(e) {
+    return this.getJson(`/ekom/manager/OrderLogs/${encodeURIComponent(e)}`);
   }
-  async orderLockStatus(t) {
-    return this.getJson(`/ekom/manager/orderLockStatus/${encodeURIComponent(t)}`);
+  async orderActions(e) {
+    return this.getJson(`/ekom/manager/OrderActions/${encodeURIComponent(e)}`);
   }
-  async releaseOrderLock(t, r) {
-    return this.postBody(`/ekom/manager/releaseOrderLock/${encodeURIComponent(t)}`, { releaseToken: r });
+  async orderLockStatus(e) {
+    return this.getJson(`/ekom/manager/orderLockStatus/${encodeURIComponent(e)}`);
   }
-  async giftcardRecovery(t) {
-    return this.getJson(`/ekom/manager/giftcardRecovery/${encodeURIComponent(t)}`);
+  async releaseOrderLock(e, r) {
+    return this.postBody(`/ekom/manager/releaseOrderLock/${encodeURIComponent(e)}`, { releaseToken: r });
   }
-  async releaseGiftcardRecovery(t, r, e, i) {
-    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(t)}/release`, { attemptId: r, claimId: e, token: i });
+  async giftcardRecovery(e) {
+    return this.getJson(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}`);
   }
-  async reconcileGiftcardRecovery(t, r, e) {
-    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(t)}/reconcile`, { attemptId: r, token: e });
+  async releaseGiftcardRecovery(e, r, t, n) {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}/release`, { attemptId: r, claimId: t, token: n });
   }
-  async executeOrderAction(t, r) {
-    const e = await fetch(`/ekom/manager/OrderActions/${encodeURIComponent(t)}/${encodeURIComponent(r)}`, {
+  async reconcileGiftcardRecovery(e, r, t) {
+    return this.postBody(`/ekom/manager/giftcardRecovery/${encodeURIComponent(e)}/reconcile`, { attemptId: r, token: t });
+  }
+  async executeOrderAction(e, r) {
+    const t = await fetch(`/ekom/manager/OrderActions/${encodeURIComponent(e)}/${encodeURIComponent(r)}`, {
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json, application/octet-stream" }
     });
-    if (!e.ok)
-      throw await v.createError(e, "Order action failed.");
-    return e;
+    if (!t.ok)
+      throw await v.createError(t, "Order action failed.");
+    return t;
   }
-  async changeOrderStatus(t, r, e) {
-    return this.postJson("/ekom/manager/changeOrderStatus", { orderId: t, orderStatus: r, notify: e });
+  async changeOrderStatus(e, r, t) {
+    return this.postJson("/ekom/manager/changeOrderStatus", { orderId: e, orderStatus: r, notify: t });
   }
-  async updateCustomerInformation(t, r, e) {
-    return this.postBody("/ekom/manager/UpdateCustomerInformation", { orderId: t, customer: r, shipping: e });
+  async updateCustomerInformation(e, r, t) {
+    return this.postBody("/ekom/manager/UpdateCustomerInformation", { orderId: e, customer: r, shipping: t });
   }
-  async addOrderLine(t, r, e, i) {
-    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(t)}/OrderLines`, { productId: r, variantId: e, quantity: i });
+  async addOrderLine(e, r, t, n) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines`, { productId: r, variantId: t, quantity: n });
   }
-  async updateShippingProvider(t, r, e) {
-    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(t)}/ShippingProvider`, { providerId: r, customData: e });
+  async updateShippingProvider(e, r, t) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/ShippingProvider`, { providerId: r, customData: t });
   }
-  async removeOrderLine(t, r) {
-    const e = await fetch(`/ekom/manager/Order/${encodeURIComponent(t)}/OrderLines/${encodeURIComponent(r)}`, {
+  async removeOrderLine(e, r) {
+    const t = await fetch(`/ekom/manager/Order/${encodeURIComponent(e)}/OrderLines/${encodeURIComponent(r)}`, {
       method: "DELETE",
       credentials: "same-origin",
       headers: { Accept: "application/json" }
     });
-    if (!e.ok)
-      throw await v.createError(e, "Error removing order line.");
-    return e.json();
+    if (!t.ok)
+      throw await v.createError(t, "Error removing order line.");
+    return t.json();
   }
-  async charts(t, r) {
+  async charts(e, r) {
     return this.getJson("/ekom/manager/charts", {
-      start: t.dateFrom,
-      end: t.dateTo,
-      orderStatus: t.orderStatus,
-      store: t.store,
-      currency: t.currency
+      start: e.dateFrom,
+      end: e.dateTo,
+      orderStatus: e.orderStatus,
+      store: e.store,
+      currency: e.currency
     }, r);
   }
-  async mostSoldProducts(t, r, e = 20, i) {
+  async mostSoldProducts(e, r, t = 20, n) {
     return this.getJson("/ekom/manager/MostSoldProducts", {
-      start: t.dateFrom,
-      end: t.dateTo,
-      orderStatus: t.orderStatus,
-      store: t.store,
-      currency: t.currency,
+      start: e.dateFrom,
+      end: e.dateTo,
+      orderStatus: e.orderStatus,
+      store: e.store,
+      currency: e.currency,
       page: r,
-      pageSize: e
-    }, i);
+      pageSize: t
+    }, n);
   }
-  async getJson(t, r, e) {
-    const i = await fetch(t + O(r), {
+  async getJson(e, r, t) {
+    const n = await fetch(e + O(r), {
       credentials: "same-origin",
-      signal: e,
+      signal: t,
       headers: { Accept: "application/json" }
     });
-    if (!i.ok)
-      throw await v.createError(i, "Request failed.");
-    return i.json();
+    if (!n.ok)
+      throw await v.createError(n, "Request failed.");
+    return n.json();
   }
-  async getBlob(t, r) {
-    const e = await fetch(t + O(r), {
+  async getBlob(e, r) {
+    const t = await fetch(e + O(r), {
       credentials: "same-origin",
       headers: { Accept: "text/csv, application/octet-stream" }
     });
-    if (!e.ok)
-      throw await v.createError(e, "Request failed.");
-    return e.blob();
+    if (!t.ok)
+      throw await v.createError(t, "Request failed.");
+    return t.blob();
   }
-  async postJson(t, r) {
-    const e = await fetch(t + O(r), {
+  async postJson(e, r) {
+    const t = await fetch(e + O(r), {
       method: "POST",
       credentials: "same-origin",
       headers: { Accept: "application/json" }
     });
-    if (!e.ok)
-      throw await v.createError(e, "Request failed.");
-    return e.json();
+    if (!t.ok)
+      throw await v.createError(t, "Request failed.");
+    return t.json();
   }
-  async postBody(t, r) {
-    const e = await fetch(t, {
+  async postBody(e, r) {
+    const t = await fetch(e, {
       method: "POST",
       credentials: "same-origin",
       headers: {
@@ -211,88 +215,88 @@ class v {
       },
       body: JSON.stringify(r)
     });
-    if (!e.ok)
-      throw await v.createError(e, "Request failed.");
-    return e.json();
+    if (!t.ok)
+      throw await v.createError(t, "Request failed.");
+    return t.json();
   }
-  static async createError(t, r) {
-    var n, s;
-    if (t.status === 401 || t.redirected && /\/Account\/Login/i.test(t.url))
+  static async createError(e, r) {
+    var i, s;
+    if (e.status === 401 || e.redirected && /\/Account\/Login/i.test(e.url))
       return new Error("Your session has expired. Sign in to Umbraco and reload the manager.");
-    if ((s = (n = t.headers) == null ? void 0 : n.get("content-type")) != null && s.includes("text/html"))
-      return new Error(`${r} Status ${t.status}. Reload the manager and try again.`);
-    const e = await t.text();
-    let i = e || r;
+    if ((s = (i = e.headers) == null ? void 0 : i.get("content-type")) != null && s.includes("text/html"))
+      return new Error(`${r} Status ${e.status}. Reload the manager and try again.`);
+    const t = await e.text();
+    let n = t || r;
     try {
-      i = JSON.parse(e).message || i;
+      n = JSON.parse(t).message || n;
     } catch {
     }
-    return new Error(i || `${r} Status ${t.status}.`);
+    return new Error(n || `${r} Status ${e.status}.`);
   }
 }
 function O(a) {
   if (!a)
     return "";
-  const t = new URLSearchParams();
-  for (const [e, i] of Object.entries(a))
-    Array.isArray(i) ? i.forEach((n) => t.append(e, String(n))) : t.set(e, i == null ? "" : String(i));
-  const r = t.toString();
+  const e = new URLSearchParams();
+  for (const [t, n] of Object.entries(a))
+    Array.isArray(n) ? n.forEach((i) => e.append(t, String(i))) : e.set(t, n == null ? "" : String(n));
+  const r = e.toString();
   return r ? `?${r}` : "";
 }
 function j(a) {
-  const t = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
-  return `${a.getFullYear()}-${t}-${r}`;
+  const e = String(a.getMonth() + 1).padStart(2, "0"), r = String(a.getDate()).padStart(2, "0");
+  return `${a.getFullYear()}-${e}-${r}`;
 }
-function w() {
+function x() {
   var a;
-  return (a = h.stores.find((t) => t.alias === h.filters.store)) == null ? void 0 : a.dateFormat;
+  return (a = h.stores.find((e) => e.alias === h.filters.store)) == null ? void 0 : a.dateFormat;
 }
-function L(a) {
+function E(a) {
   if (typeof a == "string" && /^\d{4}-\d{2}-\d{2}$/.test(a))
     return { year: Number(a.slice(0, 4)), month: Number(a.slice(5, 7)), day: Number(a.slice(8, 10)), hour: 0, minute: 0, second: 0 };
-  const t = a instanceof Date ? a : new Date(a);
-  if (!Number.isNaN(t.getTime()))
-    return { year: t.getFullYear(), month: t.getMonth() + 1, day: t.getDate(), hour: t.getHours(), minute: t.getMinutes(), second: t.getSeconds() };
+  const e = a instanceof Date ? a : new Date(a);
+  if (!Number.isNaN(e.getTime()))
+    return { year: e.getFullYear(), month: e.getMonth() + 1, day: e.getDate(), hour: e.getHours(), minute: e.getMinutes(), second: e.getSeconds() };
 }
-function _(a, t, r) {
-  const e = (i) => String(i).padStart(2, "0");
-  return t.replace(/'([^']*)'|\\(.)|d{1,4}|M{1,4}|y{1,5}|H{1,2}|h{1,2}|m{1,2}|s{1,2}|t{1,2}|\/|:/g, (i, n, s) => {
-    if (n !== void 0) return n;
+function _(a, e, r) {
+  const t = (n) => String(n).padStart(2, "0");
+  return e.replace(/'([^']*)'|\\(.)|d{1,4}|M{1,4}|y{1,5}|H{1,2}|h{1,2}|m{1,2}|s{1,2}|t{1,2}|\/|:/g, (n, i, s) => {
+    if (i !== void 0) return i;
     if (s !== void 0) return s;
-    switch (i) {
+    switch (n) {
       case "d":
         return String(a.day);
       case "dd":
-        return e(a.day);
+        return t(a.day);
       case "ddd":
       case "dddd":
         return r.shortestDayNames[new Date(a.year, a.month - 1, a.day).getDay()] || "";
       case "M":
         return String(a.month);
       case "MM":
-        return e(a.month);
+        return t(a.month);
       case "MMM":
         return r.abbreviatedMonthNames[a.month - 1] || String(a.month);
       case "MMMM":
         return r.monthNames[a.month - 1] || String(a.month);
       case "yy":
-        return e(a.year % 100);
+        return t(a.year % 100);
       case "H":
         return String(a.hour);
       case "HH":
-        return e(a.hour);
+        return t(a.hour);
       case "h":
         return String(a.hour % 12 || 12);
       case "hh":
-        return e(a.hour % 12 || 12);
+        return t(a.hour % 12 || 12);
       case "m":
         return String(a.minute);
       case "mm":
-        return e(a.minute);
+        return t(a.minute);
       case "s":
         return String(a.second);
       case "ss":
-        return e(a.second);
+        return t(a.second);
       case "t":
         return (a.hour < 12 ? r.amDesignator : r.pmDesignator).slice(0, 1);
       case "tt":
@@ -306,46 +310,46 @@ function _(a, t, r) {
     }
   });
 }
-function I(a) {
+function U(a) {
   if (!a) return "";
-  const t = L(a);
-  if (!t) return String(a);
-  const r = w();
-  return r ? _(t, r.shortDate, r) : new Date(t.year, t.month - 1, t.day).toLocaleDateString();
-}
-function U(a, t, r = !0) {
-  const e = L(a);
+  const e = E(a);
   if (!e) return String(a);
-  const i = w(), n = new Date(Date.UTC(e.year, e.month - 1, e.day));
-  if (!i)
-    return n.toLocaleDateString("en-GB", { timeZone: "UTC", month: r ? "short" : "long", year: "numeric" });
-  const s = i.yearMonth;
-  return _(e, r ? s.replace(/M{4}/g, "MMM") : s, i);
+  const r = x();
+  return r ? _(e, r.shortDate, r) : new Date(e.year, e.month - 1, e.day).toLocaleDateString();
 }
-function z(a) {
+function z(a, e, r = !0) {
+  const t = E(a);
+  if (!t) return String(a);
+  const n = x(), i = new Date(Date.UTC(t.year, t.month - 1, t.day));
+  if (!n)
+    return i.toLocaleDateString("en-GB", { timeZone: "UTC", month: r ? "short" : "long", year: "numeric" });
+  const s = n.yearMonth;
+  return _(t, r ? s.replace(/M{4}/g, "MMM") : s, n);
+}
+function G(a) {
   if (!a)
     return "";
-  const t = a instanceof Date ? a : new Date(a);
-  if (Number.isNaN(t.getTime()))
+  const e = a instanceof Date ? a : new Date(a);
+  if (Number.isNaN(e.getTime()))
     return String(a);
-  const r = w(), e = L(t);
-  return r && e ? `${_(e, r.shortDate, r)} ${_(e, r.shortTime, r)}` : new Intl.DateTimeFormat(void 0, {
+  const r = x(), t = E(e);
+  return r && t ? `${_(t, r.shortDate, r)} ${_(t, r.shortTime, r)}` : new Intl.DateTimeFormat(void 0, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit"
-  }).format(t);
+  }).format(e);
 }
 function y(a) {
   return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-const G = `
+const H = `
   .ekmOrderCustomData { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; padding: 14px 16px; border: 1px solid #e1e3e8; border-radius: 12px; }
   .ekmOrderCustomData__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 7px 12px; border: 1px solid #e1e3e8; border-radius: 8px; background: #f6f7f9; line-height: 1.5; break-inside: avoid; }
   .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
   .ekmOrderCustomData__value { margin: 0; min-width: 0; color: #252830; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
-`, H = `
+`, B = `
 .ekmOrderLineProduct { display: flex; align-items: flex-start; gap: 14px; min-width: 0; width: 100%; }
 .ekmOrderLineProduct__details { min-width: 0; overflow-wrap: anywhere; }
 .ekmOrderLineProduct__details > span:first-child, .ekmOrderLineProduct__details > div:first-child { font-weight: 600; }
@@ -357,7 +361,7 @@ const G = `
 .ekmOrderLineThumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f6f6f8; }
 .ekmOrderLineThumbnail img[hidden] { display: none; }
 
-  ${G}
+  ${H}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -497,7 +501,7 @@ const G = `
     .umb-table { border-color: #bbb; overflow: visible; }
     .umb-table-cell { border-color: #ddd; color: #000; padding: 7px 8px; }
   }
-`, M = {
+`, D = {
   "#fff": "--ekom-surface",
   "#f6f4f4": "--ekom-bg",
   "#f6f6f8": "--ekom-surface-alt",
@@ -522,60 +526,74 @@ const G = `
   "#247f45": "--ekom-positive",
   "#ad5f00": "--ekom-warning"
 };
-H.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (a) => M[a.toLowerCase()] ? `var(${M[a.toLowerCase()]})` : a);
+B.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (a) => D[a.toLowerCase()] ? `var(${D[a.toLowerCase()]})` : a);
 function R() {
   var r;
-  const a = h.stores.find((e) => e.alias === h.filters.store), t = (a == null ? void 0 : a.currencies) || [];
-  if (!t.includes(h.filters.currency || "")) {
-    const e = (r = a == null ? void 0 : a.currency) == null ? void 0 : r.isoCurrencySymbol;
-    h.filters.currency = t.find((i) => i === e) || t[0] || "";
+  const a = h.stores.find((t) => t.alias === h.filters.store), e = (a == null ? void 0 : a.currencies) || [];
+  if (!e.includes(h.filters.currency || "")) {
+    const t = (r = a == null ? void 0 : a.currency) == null ? void 0 : r.isoCurrencySymbol;
+    h.filters.currency = e.find((n) => n === t) || e[0] || "";
   }
 }
-function B(a = "data-field") {
-  const t = h.stores.find((e) => e.alias === h.filters.store), r = h.filters.currency || "";
-  return `<div class="ekom-store-switch"><span>Store</span><details class="ekom-dropdown ekom-store-currency"><summary aria-label="Store and currency"><strong>${y((t == null ? void 0 : t.title) || "Select store")}</strong>${r ? `<span class="ekom-currency-code">${y(r)}</span>` : ""}<span class="ekom-store-chevron">▾</span></summary><div class="ekom-currency-popover"><div class="ekom-currency-heading"><strong>Store ·<br>Currency</strong><span>Amounts shown in the selected currency</span></div>${h.stores.map((e) => `<section class="ekom-currency-store ${e.alias === (t == null ? void 0 : t.alias) ? "is-selected" : ""}" aria-label="${y(e.title)}"><h3>${y(e.title)}</h3><div class="ekom-currency-choices">${(e.currencies || []).map((i) => `<button type="button" data-header-store="${y(e.alias)}" data-header-currency="${y(i)}" aria-label="${y(e.title)} — ${y(i)}" aria-pressed="${e.alias === (t == null ? void 0 : t.alias) && i === r}">${y(i)}${e.alias === (t == null ? void 0 : t.alias) && i === r ? '<span aria-hidden="true">✓</span>' : ""}</button>`).join("") || '<span class="ekom-currency-empty">No currencies configured or recorded</span>'}</div></section>`).join("")}</div></details><select hidden aria-label="Store" ${a}="store">${h.stores.map((e) => `<option value="${y(e.alias)}" ${e.alias === (t == null ? void 0 : t.alias) ? "selected" : ""}>${y(e.title)}</option>`).join("")}</select></div>`;
+function J(a = "data-field") {
+  const e = h.stores.find((t) => t.alias === h.filters.store), r = h.filters.currency || "";
+  return `<div class="ekom-store-switch"><span>Store</span><details class="ekom-dropdown ekom-store-currency"><summary aria-label="Store and currency"><strong>${y((e == null ? void 0 : e.title) || "Select store")}</strong>${r ? `<span class="ekom-currency-code">${y(r)}</span>` : ""}<span class="ekom-store-chevron">▾</span></summary><div class="ekom-currency-popover"><div class="ekom-currency-heading"><strong>Store ·<br>Currency</strong><span>Amounts shown in the selected currency</span></div>${h.stores.map((t) => `<section class="ekom-currency-store ${t.alias === (e == null ? void 0 : e.alias) ? "is-selected" : ""}" aria-label="${y(t.title)}"><h3>${y(t.title)}</h3><div class="ekom-currency-choices">${(t.currencies || []).map((n) => `<button type="button" data-header-store="${y(t.alias)}" data-header-currency="${y(n)}" aria-label="${y(t.title)} — ${y(n)}" aria-pressed="${t.alias === (e == null ? void 0 : e.alias) && n === r}">${y(n)}${t.alias === (e == null ? void 0 : e.alias) && n === r ? '<span aria-hidden="true">✓</span>' : ""}</button>`).join("") || '<span class="ekom-currency-empty">No currencies configured or recorded</span>'}</div></section>`).join("")}</div></details><select hidden aria-label="Store" ${a}="store">${h.stores.map((t) => `<option value="${y(t.alias)}" ${t.alias === (e == null ? void 0 : e.alias) ? "selected" : ""}>${y(t.title)}</option>`).join("")}</select></div>`;
 }
-function J(a, t = "data-field", r = !0) {
+function Y(a, e = "data-field", r = !0) {
   if (typeof document < "u" && !document.querySelector("link[data-ekom-fonts]")) {
-    const n = document.createElement("link");
-    n.rel = "stylesheet", n.href = "/App_Plugins/Ekom/dist/manager-fonts.css", n.dataset.ekomFonts = "", document.head.append(n);
+    const i = document.createElement("link");
+    i.rel = "stylesheet", i.href = "/App_Plugins/Ekom/dist/manager-fonts.css", i.dataset.ekomFonts = "", document.head.append(i);
   }
-  const e = ["orders", "analytics", "customers", "printing"], i = typeof location > "u" ? "/umbraco/section/ekommanager" : location.pathname.replace(/\/view\/(orders|analytics|customers|printing)\/?$/, "").replace(/\/$/, "");
-  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${e.map((n) => `<a href="${y(i + "/view/" + n)}" ${n === a ? 'aria-current="page"' : ""}>${n[0].toUpperCase() + n.slice(1)}</a>`).join("")}</nav>${r ? B(t) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
+  const t = ["orders", "analytics", "customers", "printing"], n = typeof location > "u" ? "/umbraco/section/ekommanager" : location.pathname.replace(/\/view\/(orders|analytics|customers|printing)\/?$/, "").replace(/\/$/, "");
+  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${t.map((i) => `<a href="${y(n + "/view/" + i)}" ${i === a ? 'aria-current="page"' : ""}>${i[0].toUpperCase() + i.slice(1)}</a>`).join("")}</nav>${r ? J(e) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
 }
-function Y(a = /* @__PURE__ */ new Date()) {
-  const t = (i) => `${i.getFullYear()}-${String(i.getMonth() + 1).padStart(2, "0")}-${String(i.getDate()).padStart(2, "0")}`, r = (i) => new Date(a.getFullYear(), a.getMonth(), a.getDate() + i), e = t(a);
+function V(a = /* @__PURE__ */ new Date()) {
+  const e = (n) => `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`, r = (n) => new Date(a.getFullYear(), a.getMonth(), a.getDate() + n), t = e(a);
   return [
-    { label: "Today", from: e, to: e },
-    { label: "Yesterday", from: t(r(-1)), to: t(r(-1)) },
-    { label: "Last 7 days", from: t(r(-6)), to: e },
-    { label: "Last 30 days", from: t(r(-29)), to: e },
-    { label: "This month", from: t(new Date(a.getFullYear(), a.getMonth(), 1)), to: e },
-    { label: "Last month", from: t(new Date(a.getFullYear(), a.getMonth() - 1, 1)), to: t(new Date(a.getFullYear(), a.getMonth(), 0)) },
-    { label: "This quarter", from: t(new Date(a.getFullYear(), Math.floor(a.getMonth() / 3) * 3, 1)), to: e },
-    { label: "This year", from: t(new Date(a.getFullYear(), 0, 1)), to: e }
+    { label: "Today", from: t, to: t },
+    { label: "Yesterday", from: e(r(-1)), to: e(r(-1)) },
+    { label: "Last 7 days", from: e(r(-6)), to: t },
+    { label: "Last 30 days", from: e(r(-29)), to: t },
+    { label: "This month", from: e(new Date(a.getFullYear(), a.getMonth(), 1)), to: t },
+    { label: "Last month", from: e(new Date(a.getFullYear(), a.getMonth() - 1, 1)), to: e(new Date(a.getFullYear(), a.getMonth(), 0)) },
+    { label: "This quarter", from: e(new Date(a.getFullYear(), Math.floor(a.getMonth() / 3) * 3, 1)), to: t },
+    { label: "This year", from: e(new Date(a.getFullYear(), 0, 1)), to: t }
   ];
 }
-function V(a, t) {
-  var r, e;
-  W(), (r = a.querySelector(".ekom-store-currency")) == null || r.addEventListener("keydown", (i) => {
+const L = /* @__PURE__ */ new WeakMap();
+function W(a) {
+  const e = a.ownerDocument, r = L.has(e);
+  if (L.set(e, a), r) return;
+  const t = () => {
+    const n = L.get(e);
+    return n != null && n.open && n.isConnected ? n : void 0;
+  };
+  e.addEventListener("pointerdown", (n) => {
+    const i = t();
+    i && !n.composedPath().includes(i) && (i.open = !1);
+  }, !0), e.addEventListener("keydown", (n) => {
     var s;
-    if (i.key !== "Escape") return;
-    const n = i.currentTarget;
-    n.open = !1, (s = n.querySelector("summary")) == null || s.focus(), i.stopPropagation();
-  }), a.querySelectorAll("[data-header-store]").forEach((i) => i.addEventListener("click", () => {
+    const i = t();
+    !i || n.key !== "Escape" || (i.open = !1, (s = i.querySelector("summary")) == null || s.focus(), n.preventDefault(), n.stopPropagation());
+  }, !0);
+}
+function Z(a, e) {
+  var t;
+  Q();
+  const r = a.querySelector(".ekom-store-currency");
+  r && W(r), a.querySelectorAll("[data-header-store]").forEach((n) => n.addEventListener("click", () => {
     var s;
-    const n = a.querySelector('[data-field="store"], [data-filter="store"]');
-    n && (h.filters.currency = i.dataset.headerCurrency || "", (s = i.closest("details")) == null || s.removeAttribute("open"), n.value = i.dataset.headerStore || "", n.dispatchEvent(new Event("change", { bubbles: !0 })));
-  })), a.querySelectorAll("[data-shared-status]").forEach((i) => i.addEventListener("change", () => {
-    const n = [0, 1, 2].map((s) => Array.from(a.querySelectorAll(`[data-shared-status="${s}"]:checked`), (c) => c.value).join(","));
-    h.filters.orderStatus = n.some(Boolean) ? "states:" + n.join(";") : "AllOrders", t();
-  })), (e = a.querySelector("ekom-date-range")) == null || e.addEventListener("date-range-apply", (i) => {
-    const n = i.detail;
-    h.filters.dateFrom = n.from, h.filters.dateTo = n.to, t();
+    const i = a.querySelector('[data-field="store"], [data-filter="store"]');
+    i && (h.filters.currency = n.dataset.headerCurrency || "", (s = n.closest("details")) == null || s.removeAttribute("open"), i.value = n.dataset.headerStore || "", i.dispatchEvent(new Event("change", { bubbles: !0 })));
+  })), a.querySelectorAll("[data-shared-status]").forEach((n) => n.addEventListener("change", () => {
+    const i = [0, 1, 2].map((s) => Array.from(a.querySelectorAll(`[data-shared-status="${s}"]:checked`), (c) => c.value).join(","));
+    h.filters.orderStatus = i.some(Boolean) ? "states:" + i.join(";") : "AllOrders", e();
+  })), (t = a.querySelector("ekom-date-range")) == null || t.addEventListener("date-range-apply", (n) => {
+    const i = n.detail;
+    h.filters.dateFrom = i.from, h.filters.dateTo = i.to, e();
   });
 }
-function W() {
+function Q() {
   if (typeof customElements > "u" || !customElements.get || customElements.get("ekom-date-range")) return;
   class a extends HTMLElement {
     constructor() {
@@ -586,50 +604,50 @@ function W() {
       g(this, "to", "");
       g(this, "month", 0);
       g(this, "reposition", () => {
-        const e = this.root.querySelector(".popover"), i = this.root.querySelector(".anchor"), n = this.ownerDocument.defaultView;
-        if (!e || !i || !n) return;
-        if (n.innerWidth <= 650) {
-          e.style.left = "";
+        const t = this.root.querySelector(".popover"), n = this.root.querySelector(".anchor"), i = this.ownerDocument.defaultView;
+        if (!t || !n || !i) return;
+        if (i.innerWidth <= 650) {
+          t.style.left = "";
           return;
         }
-        const s = i.getBoundingClientRect().left;
-        e.style.left = `${Math.min(0, Math.max(24 - s, n.innerWidth - 24 - s - e.getBoundingClientRect().width))}px`;
+        const s = n.getBoundingClientRect().left;
+        t.style.left = `${Math.min(0, Math.max(24 - s, i.innerWidth - 24 - s - t.getBoundingClientRect().width))}px`;
       });
-      g(this, "outside", (e) => {
-        this.open && !e.composedPath().includes(this) && this.close(!1);
+      g(this, "outside", (t) => {
+        this.open && !t.composedPath().includes(this) && this.close(!1);
       });
     }
     connectedCallback() {
-      var e;
-      this.render(), this.ownerDocument.addEventListener("pointerdown", this.outside), (e = this.ownerDocument.defaultView) == null || e.addEventListener("resize", this.reposition);
+      var t;
+      this.render(), this.ownerDocument.addEventListener("pointerdown", this.outside), (t = this.ownerDocument.defaultView) == null || t.addEventListener("resize", this.reposition);
     }
     disconnectedCallback() {
-      var e;
-      this.ownerDocument.removeEventListener("pointerdown", this.outside), (e = this.ownerDocument.defaultView) == null || e.removeEventListener("resize", this.reposition);
+      var t;
+      this.ownerDocument.removeEventListener("pointerdown", this.outside), (t = this.ownerDocument.defaultView) == null || t.removeEventListener("resize", this.reposition);
     }
     reset() {
       this.from = this.getAttribute("from") || "", this.to = this.getAttribute("to") || "";
-      const e = /^\d{4}-\d{2}-\d{2}$/.test(this.from) ? /* @__PURE__ */ new Date(`${this.from}T12:00:00`) : /* @__PURE__ */ new Date();
-      this.month = e.getFullYear() * 12 + e.getMonth();
+      const t = /^\d{4}-\d{2}-\d{2}$/.test(this.from) ? /* @__PURE__ */ new Date(`${this.from}T12:00:00`) : /* @__PURE__ */ new Date();
+      this.month = t.getFullYear() * 12 + t.getMonth();
     }
-    close(e = !0) {
-      var i;
-      this.open = !1, this.render(), e && ((i = this.root.querySelector("[data-toggle]")) == null || i.focus());
+    close(t = !0) {
+      var n;
+      this.open = !1, this.render(), t && ((n = this.root.querySelector("[data-toggle]")) == null || n.focus());
     }
-    date(e) {
-      return e ? w() ? I(e) : `${e.slice(8, 10)}.${e.slice(5, 7)}.${e.slice(0, 4)}` : "Pick a date";
+    date(t) {
+      return t ? x() ? U(t) : `${t.slice(8, 10)}.${t.slice(5, 7)}.${t.slice(0, 4)}` : "Pick a date";
     }
-    calendar(e) {
-      const i = new Date(Math.floor(e / 12), e % 12, 1), n = (i.getDay() + 6) % 7, s = new Date(i.getFullYear(), i.getMonth() + 1, 0).getDate();
-      return `<section class="month"><h3>${y(w() ? U(i, "yearMonth", !1) : i.toLocaleDateString("en", { month: "long", year: "numeric" }))}</h3><div class="days">${(w() ? [1, 2, 3, 4, 5, 6, 0].map((c) => y(w().shortestDayNames[c] || "")) : ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]).map((c) => `<span class="weekday">${c}</span>`).join("")}${"<span></span>".repeat(n)}${Array.from({ length: s }, (c, u) => {
-        const p = `${i.getFullYear()}-${String(i.getMonth() + 1).padStart(2, "0")}-${String(u + 1).padStart(2, "0")}`, d = p === this.from || p === this.to, f = this.from && this.to && p > this.from && p < this.to;
+    calendar(t) {
+      const n = new Date(Math.floor(t / 12), t % 12, 1), i = (n.getDay() + 6) % 7, s = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+      return `<section class="month"><h3>${y(x() ? z(n, "yearMonth", !1) : n.toLocaleDateString("en", { month: "long", year: "numeric" }))}</h3><div class="days">${(x() ? [1, 2, 3, 4, 5, 6, 0].map((c) => y(x().shortestDayNames[c] || "")) : ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]).map((c) => `<span class="weekday">${c}</span>`).join("")}${"<span></span>".repeat(i)}${Array.from({ length: s }, (c, u) => {
+        const p = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(u + 1).padStart(2, "0")}`, d = p === this.from || p === this.to, f = this.from && this.to && p > this.from && p < this.to;
         return `<button type="button" data-day="${p}" aria-label="${p}" aria-pressed="${d || !!f}" class="day ${d ? "edge" : f ? "inside" : ""} ${p === this.from ? "start" : ""} ${p === this.to ? "end" : ""} ${!this.to || this.to === this.from ? "single" : ""}">${u + 1}</button>`;
       }).join("")}</div></section>`;
     }
     render() {
       var c, u, p, d, f;
-      const e = this.getAttribute("from") || "", i = this.getAttribute("to") || "", n = Y(), s = ((c = n.find((l) => l.from === e && l.to === i)) == null ? void 0 : c.label) || "Custom";
-      T(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${s}</strong><span class="dates">${this.date(e)} – ${this.date(i)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${n.map((l, b) => `<button type="button" data-preset="${b}" aria-pressed="${l.from === this.from && l.to === this.to}">${l.label}<span>${l.from === this.from && l.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (u = this.root.querySelector("link")) == null || u.addEventListener("load", this.reposition), this.reposition(), (p = this.root.querySelector("[data-toggle]")) == null || p.addEventListener("click", () => {
+      const t = this.getAttribute("from") || "", n = this.getAttribute("to") || "", i = V(), s = ((c = i.find((l) => l.from === t && l.to === n)) == null ? void 0 : c.label) || "Custom";
+      q(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${s}</strong><span class="dates">${this.date(t)} – ${this.date(n)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${i.map((l, b) => `<button type="button" data-preset="${b}" aria-pressed="${l.from === this.from && l.to === this.to}">${l.label}<span>${l.from === this.from && l.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (u = this.root.querySelector("link")) == null || u.addEventListener("load", this.reposition), this.reposition(), (p = this.root.querySelector("[data-toggle]")) == null || p.addEventListener("click", () => {
         var l;
         if (this.open) {
           this.close();
@@ -640,17 +658,17 @@ function W() {
         !this.from || !this.to || this.from > this.to || (this.setAttribute("from", this.from), this.setAttribute("to", this.to), this.close(), this.dispatchEvent(new CustomEvent("date-range-apply", { bubbles: !0, composed: !0, detail: { from: this.from, to: this.to } })));
       }), this.root.querySelectorAll("[data-preset]").forEach((l) => l.addEventListener("click", () => {
         var $;
-        const b = n[Number(l.dataset.preset)];
+        const b = i[Number(l.dataset.preset)];
         this.from = b.from, this.to = b.to;
-        const x = /* @__PURE__ */ new Date(`${this.from}T12:00:00`);
-        this.month = x.getFullYear() * 12 + x.getMonth(), this.render(), ($ = this.root.querySelector(`[data-preset="${l.dataset.preset}"]`)) == null || $.focus();
+        const w = /* @__PURE__ */ new Date(`${this.from}T12:00:00`);
+        this.month = w.getFullYear() * 12 + w.getMonth(), this.render(), ($ = this.root.querySelector(`[data-preset="${l.dataset.preset}"]`)) == null || $.focus();
       })), this.root.querySelectorAll("[data-month]").forEach((l) => l.addEventListener("click", () => {
         var b;
         this.month += Number(l.dataset.month), this.render(), (b = this.root.querySelector(`[data-month="${l.dataset.month}"]`)) == null || b.focus();
       })), this.root.querySelectorAll("[data-day]").forEach((l) => l.addEventListener("click", () => {
-        var x;
+        var w;
         const b = l.dataset.day;
-        !this.from || this.to || b < this.from ? (this.from = b, this.to = "") : this.to = b, this.render(), (x = this.root.querySelector(`[data-day="${b}"]`)) == null || x.focus();
+        !this.from || this.to || b < this.from ? (this.from = b, this.to = "") : this.to = b, this.render(), (w = this.root.querySelector(`[data-day="${b}"]`)) == null || w.focus();
       })), this.onkeydown = (l) => {
         l.key === "Escape" && this.open && (l.preventDefault(), l.stopPropagation(), this.close());
       };
@@ -658,37 +676,37 @@ function W() {
   }
   customElements.define("ekom-date-range", a);
 }
-let D;
-function Z(a) {
-  const t = a.querySelector(".ekom-design-logo");
-  t && (D ?? (D = new v().config().then((r) => r.ekomVersion).catch(() => {
-  })), D.then((r) => {
-    r && (t.title = `Ekom ${r}`, t.alt = `Ekom ${r}`);
+let P;
+function X(a) {
+  const e = a.querySelector(".ekom-design-logo");
+  e && (P ?? (P = new v().config().then((r) => r.ekomVersion).catch(() => {
+  })), P.then((r) => {
+    r && (e.title = `Ekom ${r}`, e.alt = `Ekom ${r}`);
   }));
 }
-function T(a, t) {
+function q(a, e) {
   const r = a.ownerDocument.createElement("template");
-  r.innerHTML = t;
-  const e = Array.from(a.children).filter((n) => n.matches('style, link[rel="stylesheet"]')), i = Array.from(r.content.children).filter((n) => n.matches('style, link[rel="stylesheet"]'));
-  for (const n of i) {
-    const s = e.find((c) => c.outerHTML === n.outerHTML);
-    s ? e.splice(e.indexOf(s), 1) : a.appendChild(n.cloneNode(!0)), n.remove();
+  r.innerHTML = e;
+  const t = Array.from(a.children).filter((i) => i.matches('style, link[rel="stylesheet"]')), n = Array.from(r.content.children).filter((i) => i.matches('style, link[rel="stylesheet"]'));
+  for (const i of n) {
+    const s = t.find((c) => c.outerHTML === i.outerHTML);
+    s ? t.splice(t.indexOf(s), 1) : a.appendChild(i.cloneNode(!0)), i.remove();
   }
-  for (const n of e) n.remove();
-  for (const n of Array.from(a.childNodes))
-    (n.nodeType !== 1 || !n.matches('style, link[rel="stylesheet"]')) && n.remove();
-  a.appendChild(r.content), Z(a);
+  for (const i of t) i.remove();
+  for (const i of Array.from(a.childNodes))
+    (i.nodeType !== 1 || !i.matches('style, link[rel="stylesheet"]')) && i.remove();
+  a.appendChild(r.content), X(a);
 }
-const Q = (a) => class extends a {
+const K = (a) => class extends a {
   connectedCallback() {
   }
   disconnectedCallback() {
   }
-}, X = "/ekom/printer/manager", m = (a) => String(a ?? "").replace(/[&<>"']/g, (t) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[t]), S = (a) => {
+}, ee = "/ekom/printer/manager", m = (a) => String(a ?? "").replace(/[&<>"']/g, (e) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[e]), S = (a) => {
   if (!a) return "Never";
-  const t = new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(a) ? a : a + "Z");
-  return w() ? z(t) : t.toLocaleString(void 0, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-}, K = (a) => ({
+  const e = new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(a) ? a : a + "Z");
+  return x() ? G(e) : e.toLocaleString(void 0, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}, te = (a) => ({
   PendingRender: "Generating slip",
   Ready: "Queued",
   Claimed: "With agent",
@@ -698,31 +716,31 @@ const Q = (a) => class extends a {
   Cancelled: "Cancelled",
   RenderFailed: "Generation failed"
 })[a] ?? a;
-function ee(a, t) {
+function re(a, e) {
   const r = a.hasHtml ? ["preview", "history"] : ["history"];
-  return t && (a.state === "RenderFailed" && r.push("retry"), ["PendingRender", "Ready", "RenderFailed"].includes(a.state) && r.push("cancel"), ["Submitted", "ConfirmedPrinted"].includes(a.state) && a.hasHtml && r.push("reprint"), a.state === "NeedsReview" && (r.push("resolve-printed"), a.hasHtml && r.push("resolve-reprint"))), r;
+  return e && (a.state === "RenderFailed" && r.push("retry"), ["PendingRender", "Ready", "RenderFailed"].includes(a.state) && r.push("cancel"), ["Submitted", "ConfirmedPrinted"].includes(a.state) && a.hasHtml && r.push("reprint"), a.state === "NeedsReview" && (r.push("resolve-printed"), a.hasHtml && r.push("resolve-reprint"))), r;
 }
-function te(a) {
-  const t = document.createElement("template");
-  t.innerHTML = a;
-  const r = document.implementation.createHTMLDocument("Picking slip"), e = new Set("div span p h1 h2 h3 h4 h5 h6 header footer main section article aside table thead tbody tfoot tr th td caption colgroup col ul ol li dl dt dd strong em b i u small br hr pre code blockquote img style".split(" ")), i = new Set("script iframe frame object embed svg math template meta link base form input button textarea select".split(" ")), n = new Set("class id style colspan rowspan scope width height alt title".split(" ")), s = (c, u) => {
+function ae(a) {
+  const e = document.createElement("template");
+  e.innerHTML = a;
+  const r = document.implementation.createHTMLDocument("Picking slip"), t = new Set("div span p h1 h2 h3 h4 h5 h6 header footer main section article aside table thead tbody tfoot tr th td caption colgroup col ul ol li dl dt dd strong em b i u small br hr pre code blockquote img style".split(" ")), n = new Set("script iframe frame object embed svg math template meta link base form input button textarea select".split(" ")), i = new Set("class id style colspan rowspan scope width height alt title".split(" ")), s = (c, u) => {
     if (c.nodeType === Node.TEXT_NODE) {
       u.appendChild(r.createTextNode(c.textContent ?? ""));
       return;
     }
     if (!(c instanceof Element) || c.namespaceURI !== "http://www.w3.org/1999/xhtml") return;
     const p = c.localName;
-    if (i.has(p)) return;
-    const d = e.has(p) ? r.createElement(p) : r.createElement("span");
+    if (n.has(p)) return;
+    const d = t.has(p) ? r.createElement(p) : r.createElement("span");
     for (const f of Array.from(c.attributes))
-      n.has(f.name) && d.setAttribute(f.name, f.value), p === "img" && f.name === "src" && /^data:image\/(png|jpeg|gif|webp);base64,/i.test(f.value) && d.setAttribute("src", f.value);
+      i.has(f.name) && d.setAttribute(f.name, f.value), p === "img" && f.name === "src" && /^data:image\/(png|jpeg|gif|webp);base64,/i.test(f.value) && d.setAttribute("src", f.value);
     for (const f of Array.from(c.childNodes)) s(f, d);
     u.appendChild(d);
   };
-  for (const c of Array.from(t.content.childNodes)) s(c, r.body);
+  for (const c of Array.from(e.content.childNodes)) s(c, r.body);
   return '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:; base-uri &#39;none&#39;; form-action &#39;none&#39;; connect-src &#39;none&#39;">' + r.head.innerHTML + "</head><body>" + r.body.innerHTML + "</body></html>";
 }
-class re extends Q(HTMLElement) {
+class ne extends K(HTMLElement) {
   constructor() {
     super(...arguments);
     g(this, "panel", this.attachShadow({ mode: "open" }));
@@ -742,9 +760,9 @@ class re extends Q(HTMLElement) {
   }
   connectedCallback() {
     var r;
-    super.connectedCallback(), this.hasAttribute("classic") || (r = this.consumeContext) == null || r.call(this, "umbThemeContext", (e) => {
-      e && this.observe(e.theme, (i) => {
-        this.toggleAttribute("data-ekom-dark", i === "umb-dark-theme");
+    super.connectedCallback(), this.hasAttribute("classic") || (r = this.consumeContext) == null || r.call(this, "umbThemeContext", (t) => {
+      t && this.observe(t.theme, (n) => {
+        this.toggleAttribute("data-ekom-dark", n === "umb-dark-theme");
       }, "ekom-manager-theme");
     }), this.render(), this.initialize();
   }
@@ -752,64 +770,64 @@ class re extends Q(HTMLElement) {
     var r;
     this.generation++, (r = this.cancelConfirmation) == null || r.call(this), super.disconnectedCallback();
   }
-  async json(r, e) {
-    const i = await fetch(X + r, {
+  async json(r, t) {
+    const n = await fetch(ee + r, {
       credentials: "same-origin",
-      ...e,
-      headers: { Accept: "application/json", ...e == null ? void 0 : e.headers }
+      ...t,
+      headers: { Accept: "application/json", ...t == null ? void 0 : t.headers }
     });
-    if (!i.ok) throw new Error(i.status === 404 ? "Printing is unavailable or the stored slip has expired." : i.status === 403 ? "You do not have permission to perform this action." : i.status === 409 ? "The job changed or cannot be updated. Refresh the list." : "Could not contact printing. Try refreshing.");
-    return i.json();
+    if (!n.ok) throw new Error(n.status === 404 ? "Printing is unavailable or the stored slip has expired." : n.status === 403 ? "You do not have permission to perform this action." : n.status === 409 ? "The job changed or cannot be updated. Refresh the list." : "Could not contact printing. Try refreshing.");
+    return n.json();
   }
   async initialize() {
     var r;
     try {
-      this.hasAttribute("classic") || (h.stores = await new v().stores(), h.stores.some((e) => e.alias === h.filters.store) || (h.filters.store = ((r = h.stores[0]) == null ? void 0 : r.alias) || ""), R()), this.capabilities = await this.json("/capabilities"), await this.load();
-    } catch (e) {
-      this.error = String(e.message), this.loading = !1, this.render();
+      this.hasAttribute("classic") || (h.stores = await new v().stores(), h.stores.some((t) => t.alias === h.filters.store) || (h.filters.store = ((r = h.stores[0]) == null ? void 0 : r.alias) || ""), R()), this.capabilities = await this.json("/capabilities"), await this.load();
+    } catch (t) {
+      this.error = String(t.message), this.loading = !1, this.render();
     }
   }
   async load() {
     const r = ++this.generation;
     this.loading = !0, this.error = "", this.render();
     try {
-      const e = new URLSearchParams({ page: String(this.page), state: this.state, station: this.station, search: this.search });
-      this.hasAttribute("classic") || (e.set("store", h.filters.store), e.set("currency", h.filters.currency || ""));
-      const [i, n] = await Promise.all([this.json("/jobs?" + e), this.json("/stations")]);
+      const t = new URLSearchParams({ page: String(this.page), state: this.state, station: this.station, search: this.search });
+      this.hasAttribute("classic") || (t.set("store", h.filters.store), t.set("currency", h.filters.currency || ""));
+      const [n, i] = await Promise.all([this.json("/jobs?" + t), this.json("/stations")]);
       if (r !== this.generation) return;
-      this.jobs = i, this.stations = this.hasAttribute("classic") ? n : n.filter((s) => s.stores.includes(h.filters.store));
-    } catch (e) {
-      r === this.generation && (this.error = e.message);
+      this.jobs = n, this.stations = this.hasAttribute("classic") ? i : i.filter((s) => s.stores.includes(h.filters.store));
+    } catch (t) {
+      r === this.generation && (this.error = t.message);
     } finally {
       r === this.generation && (this.loading = !1, this.render());
     }
   }
   render() {
-    var f, l, b, x, $, E, A;
-    const r = this.loading || this.busy ? "disabled" : "", e = this.stations.filter((o) => o.health.online && o.health.compatible).length, i = this.jobs.jobs.filter((o) => ["NeedsReview", "RenderFailed"].includes(o.state)).length, n = Math.max(1, Math.ceil(this.jobs.total / this.jobs.pageSize)), s = (o) => ({ NeedsReview: "warning", RenderFailed: "danger", Submitted: "success", ConfirmedPrinted: "success", Ready: "info", Claimed: "info" })[o] ?? "neutral", c = (o) => o.replace(/([a-z])([A-Z])/g, "$1 $2");
-    T(this.panel, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/printing-layout.css"><main aria-busy="${this.loading}">${J("printing", "data-field", !this.hasAttribute("classic"))}
-      <header class="page-heading"><div><p class="subtitle">Track picking slips and warehouse printer connections.</p></div><div class="heading-actions"><span class="connection"><span class="dot"></span>${this.loading ? "Checking stations…" : `${e} of ${this.stations.length} stations online`}</span><button data-reload ${r}>${this.loading ? "Refreshing…" : "Refresh"}</button></div></header>
+    var f, l, b, w, $, A, M;
+    const r = this.loading || this.busy ? "disabled" : "", t = this.stations.filter((o) => o.health.online && o.health.compatible).length, n = this.jobs.jobs.filter((o) => ["NeedsReview", "RenderFailed"].includes(o.state)).length, i = Math.max(1, Math.ceil(this.jobs.total / this.jobs.pageSize)), s = (o) => ({ NeedsReview: "warning", RenderFailed: "danger", Submitted: "success", ConfirmedPrinted: "success", Ready: "info", Claimed: "info" })[o] ?? "neutral", c = (o) => o.replace(/([a-z])([A-Z])/g, "$1 $2");
+    q(this.panel, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css"><link rel="stylesheet" href="/App_Plugins/Ekom/dist/printing-layout.css"><main aria-busy="${this.loading}">${Y("printing", "data-field", !this.hasAttribute("classic"))}
+      <header class="page-heading"><div><p class="subtitle">Track picking slips and warehouse printer connections.</p></div><div class="heading-actions"><span class="connection"><span class="dot"></span>${this.loading ? "Checking stations…" : `${t} of ${this.stations.length} stations online`}</span><button data-reload ${r}>${this.loading ? "Refreshing…" : "Refresh"}</button></div></header>
       <section class="card" aria-labelledby="jobs-heading"><div class="ekom-print-toolbar"><div class="section-heading"><div class="title-group"><h2 id="jobs-heading">Print jobs</h2><span class="count" aria-live="polite">${this.loading ? "Loading…" : `${this.jobs.total} ${this.jobs.total === 1 ? "job" : "jobs"}`}</span></div>${this.state || this.station || this.search ? "<button data-clear>Clear filters</button>" : ""}</div>
       <div class="filters"><label>Status<select data-filter="state">${[["", "All statuses"], ["attention", "Needs attention"], ["PendingRender", "Generating slip"], ["Ready", "Queued"], ["Claimed", "With agent"], ["Submitted", "Submitted to printer"], ["ConfirmedPrinted", "Confirmed printed"], ["Cancelled", "Cancelled"]].map(([o, k]) => `<option value="${o}" ${o === this.state ? "selected" : ""}>${k}</option>`).join("")}</select></label>
       <label>Station<select data-filter="station"><option value="">All stations</option>${this.stations.map((o) => `<option value="${m(o.alias)}" ${o.alias === this.station ? "selected" : ""}>${m(o.alias)}</option>`).join("")}</select></label>
       <label class="search">Order number<input data-filter="search" value="${m(this.search)}" placeholder="Search by order number" maxlength="100" type="search"></label></div></div>
       ${this.error ? `<p class="error" role="alert">${m(this.error)}</p>` : ""}
-      ${!this.loading && i ? `<div class="notice"><div><strong>${i} ${i === 1 ? "job on this page needs" : "jobs on this page need"} attention</strong>${this.jobs.jobs.some((o) => o.state === "NeedsReview") ? "Check the physical printer before arranging another copy of an uncertain print." : "Review the affected jobs and retry generating their picking slips."}</div>${this.state !== "attention" ? "<button data-attention>View all needing attention</button>" : ""}</div>` : ""}
+      ${!this.loading && n ? `<div class="notice"><div><strong>${n} ${n === 1 ? "job on this page needs" : "jobs on this page need"} attention</strong>${this.jobs.jobs.some((o) => o.state === "NeedsReview") ? "Check the physical printer before arranging another copy of an uncertain print." : "Review the affected jobs and retry generating their picking slips."}</div>${this.state !== "attention" ? "<button data-attention>View all needing attention</button>" : ""}</div>` : ""}
       <div class="table" tabindex="0" role="region" aria-label="Print jobs; scroll horizontally on small screens"><table><thead><tr><th scope="col">Order</th><th scope="col">Station</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead><tbody>
       ${this.jobs.jobs.map((o) => {
       var k;
       return `<tr><td><strong>${m(o.orderNumber || "Order unavailable")}</strong><small>${m(o.storeAlias)}</small></td><td>${m(o.stationAlias)}<small>${o.copies} ${o.copies === 1 ? "copy" : "copies"}</small></td>
-      <td class="status-cell"><span class="badge ${s(o.state)}"><span class="dot"></span>${m(K(o.state))}</span>${o.state === "NeedsReview" ? "<small>Printing could not be confirmed.</small>" : o.state === "RenderFailed" ? "<small>The picking slip could not be generated.</small>" : ""}</td><td class="created">${m(S(o.createdUtc))}</td>
-      <td><div class="actions">${ee(o, ((k = this.capabilities) == null ? void 0 : k.canManage) === !0).map((C) => `<button aria-label="${m({ preview: "Preview", history: "History for", retry: "Retry generation for", cancel: "Cancel", reprint: "Reprint", "resolve-printed": "Mark as printed", "resolve-reprint": "Print again after checking" }[C] + " " + o.orderNumber)}" data-job="${m(o.id)}" data-action="${C}" ${r}>${{ preview: "Preview", history: "History", retry: "Retry generation", cancel: "Cancel", reprint: "Reprint", "resolve-printed": "Mark as printed", "resolve-reprint": "Print again after checking" }[C]}</button>`).join("")}</div></td></tr>`;
+      <td class="status-cell"><span class="badge ${s(o.state)}"><span class="dot"></span>${m(te(o.state))}</span>${o.state === "NeedsReview" ? "<small>Printing could not be confirmed.</small>" : o.state === "RenderFailed" ? "<small>The picking slip could not be generated.</small>" : ""}</td><td class="created">${m(S(o.createdUtc))}</td>
+      <td><div class="actions">${re(o, ((k = this.capabilities) == null ? void 0 : k.canManage) === !0).map((C) => `<button aria-label="${m({ preview: "Preview", history: "History for", retry: "Retry generation for", cancel: "Cancel", reprint: "Reprint", "resolve-printed": "Mark as printed", "resolve-reprint": "Print again after checking" }[C] + " " + o.orderNumber)}" data-job="${m(o.id)}" data-action="${C}" ${r}>${{ preview: "Preview", history: "History", retry: "Retry generation", cancel: "Cancel", reprint: "Reprint", "resolve-printed": "Mark as printed", "resolve-reprint": "Print again after checking" }[C]}</button>`).join("")}</div></td></tr>`;
     }).join("")}
       ${this.jobs.jobs.length === 0 ? `<tr><td colspan="5"><div class="empty"><strong>${this.loading ? "Loading print jobs…" : "No print jobs to show"}</strong><p>${this.loading ? "Fetching the latest queue and station information." : this.state || this.station || this.search ? "Try a different order number or clear your filters." : "Picking slips appear here when orders reach a configured status."}</p></div></td></tr>` : ""}</tbody></table></div>
-      <div class="pager"><span>${this.jobs.total ? `${(this.page - 1) * this.jobs.pageSize + 1}–${Math.min(this.page * this.jobs.pageSize, this.jobs.total)} of ${this.jobs.total} jobs` : "0 jobs"}</span><div class="pager-controls"><button data-page="-1" ${this.page <= 1 || this.loading ? "disabled" : ""}>Previous</button><span>Page ${this.page} of ${n}</span><button data-page="1" ${this.page >= n || this.loading ? "disabled" : ""}>Next</button></div></div>
+      <div class="pager"><span>${this.jobs.total ? `${(this.page - 1) * this.jobs.pageSize + 1}–${Math.min(this.page * this.jobs.pageSize, this.jobs.total)} of ${this.jobs.total} jobs` : "0 jobs"}</span><div class="pager-controls"><button data-page="-1" ${this.page <= 1 || this.loading ? "disabled" : ""}>Previous</button><span>Page ${this.page} of ${i}</span><button data-page="1" ${this.page >= i || this.loading ? "disabled" : ""}>Next</button></div></div>
       <p class="footnote"><strong>Submitted to printer</strong> confirms delivery to the print queue. It does not confirm that paper was printed.</p></section>
       <div class="stations-heading"><div><h2 id="stations-heading">Printer stations</h2><p>Connection health and automatic printing rules.</p></div><span class="count">${this.stations.length} ${this.stations.length === 1 ? "station" : "stations"}</span></div>
       <section class="station-grid" aria-labelledby="stations-heading">${this.stations.map((o) => `<article class="station-card"><div class="station-top"><div><h3>${m(o.alias)}</h3><p class="printer-name">${m(o.health.printerName || "No printer reported")}</p></div><span class="badge ${o.health.online ? o.health.compatible ? "success" : "warning" : "neutral"}"><span class="dot"></span>${o.health.online ? o.health.compatible ? "Online" : "Update required" : "Offline"}</span></div><dl><dt>Store</dt><dd>${m(o.stores.join(", "))}</dd><dt>Print when</dt><dd><div class="chips">${o.triggerMode === "ExplicitCapture" ? '<span class="chip">Explicit capture API</span>' : o.statuses.map((k) => `<span class="chip">${m(c(k))}</span>`).join("") || "No statuses configured"}</div></dd><dt>Copies</dt><dd>${o.copies} ${o.copies === 1 ? "copy" : "copies"} · ${m(o.policy === "OncePerOrder" ? "Once per order" : o.policy === "OncePerStatus" ? "Once per status" : c(o.policy))}</dd><dt>Automation</dt><dd>${o.enabled ? "Enabled" : "Disabled"}</dd><dt>Last connected</dt><dd>${m(S(o.health.lastSeenUtc))}</dd></dl><div class="station-bottom"><span>${o.health.agentVersion ? `Agent ${m(o.health.agentVersion)}` : "Agent not connected"}</span><span>Settings managed externally</span></div></article>`).join("")}
       ${!this.loading && !this.stations.length ? '<div class="station-card empty"><strong>No printer stations</strong><p>No stations are available for your stores.</p></div>' : ""}</section>
       <details class="setup-help"><summary>How do I change printer settings?</summary><p>Change status rules and copies in the website’s Ekom printing configuration. Select the physical printer in the Windows agent. Station settings are read-only here.</p></details>
-      <dialog aria-labelledby="detail-heading"><div class="dialog-heading"><h2 id="detail-heading">Print job details</h2><button data-close>Close</button></div><div data-detail></div></dialog></main>`), V(this.panel, () => {
+      <dialog aria-labelledby="detail-heading"><div class="dialog-heading"><h2 id="detail-heading">Print job details</h2><button data-close>Close</button></div><div data-detail></div></dialog></main>`), Z(this.panel, () => {
       this.load();
     }), (f = this.panel.querySelector('[data-field="store"]')) == null || f.addEventListener("change", (o) => {
       h.filters.store = o.target.value, R(), this.station = "", this.page = 1, this.load();
@@ -821,13 +839,13 @@ class re extends Q(HTMLElement) {
       this.load();
     }), (b = this.panel.querySelector("[data-clear]")) == null || b.addEventListener("click", () => {
       this.state = "", this.station = "", this.search = "", this.page = 1, this.load();
-    }), (x = this.panel.querySelector("[data-attention]")) == null || x.addEventListener("click", () => {
+    }), (w = this.panel.querySelector("[data-attention]")) == null || w.addEventListener("click", () => {
       this.state = "attention", this.station = "", this.search = "", this.page = 1, this.load();
     });
     for (const o of ["state", "station"]) ($ = this.panel.querySelector(`[data-filter="${o}"]`)) == null || $.addEventListener("change", (k) => {
       this[o] = k.target.value, this.page = 1, this.load();
     });
-    (E = this.panel.querySelector('[data-filter="search"]')) == null || E.addEventListener("keydown", (o) => {
+    (A = this.panel.querySelector('[data-filter="search"]')) == null || A.addEventListener("keydown", (o) => {
       o.key === "Enter" && p();
     }), this.panel.querySelectorAll("[data-page]").forEach((o) => o.addEventListener("click", () => {
       this.page += Number(o.dataset.page), this.load();
@@ -835,7 +853,7 @@ class re extends Q(HTMLElement) {
       this.action(o.dataset.job, o.dataset.action);
     }));
     const d = this.panel.querySelector("dialog");
-    (A = this.panel.querySelector("[data-close]")) == null || A.addEventListener("click", () => d.close()), d.addEventListener("cancel", (o) => {
+    (M = this.panel.querySelector("[data-close]")) == null || M.addEventListener("click", () => d.close()), d.addEventListener("cancel", (o) => {
       o.preventDefault(), d.close();
     }), d.addEventListener("keydown", (o) => {
       o.key === "Escape" && (o.preventDefault(), o.stopPropagation(), d.close());
@@ -846,24 +864,24 @@ class re extends Q(HTMLElement) {
     });
   }
   confirmAction(r) {
-    return this.cancelConfirmation ? Promise.resolve(!1) : new Promise((e) => {
-      const i = document.createElement("dialog");
-      i.className = "action-confirmation", i.setAttribute("aria-labelledby", "print-action-title"), i.setAttribute("aria-describedby", "print-action-message"), i.innerHTML = `<h2 id="print-action-title">Confirm printing action</h2><p id="print-action-message">${m(r)}</p><div class="confirmation-actions"><button data-dismiss autofocus>Cancel</button><button class="primary" data-confirm>Confirm</button></div>`;
-      const n = (s) => {
-        this.cancelConfirmation = void 0, i.remove(), e(s);
+    return this.cancelConfirmation ? Promise.resolve(!1) : new Promise((t) => {
+      const n = document.createElement("dialog");
+      n.className = "action-confirmation", n.setAttribute("aria-labelledby", "print-action-title"), n.setAttribute("aria-describedby", "print-action-message"), n.innerHTML = `<h2 id="print-action-title">Confirm printing action</h2><p id="print-action-message">${m(r)}</p><div class="confirmation-actions"><button data-dismiss autofocus>Cancel</button><button class="primary" data-confirm>Confirm</button></div>`;
+      const i = (s) => {
+        this.cancelConfirmation = void 0, n.remove(), t(s);
       };
-      this.cancelConfirmation = () => n(!1), i.addEventListener("close", () => n(i.returnValue === "confirm"), { once: !0 }), i.querySelector("[data-dismiss]").addEventListener("click", () => i.close()), i.querySelector("[data-confirm]").addEventListener("click", () => i.close("confirm")), this.panel.append(i), i.showModal();
+      this.cancelConfirmation = () => i(!1), n.addEventListener("close", () => i(n.returnValue === "confirm"), { once: !0 }), n.querySelector("[data-dismiss]").addEventListener("click", () => n.close()), n.querySelector("[data-confirm]").addEventListener("click", () => n.close("confirm")), this.panel.append(n), n.showModal();
     });
   }
-  async action(r, e) {
-    var i;
+  async action(r, t) {
+    var n;
     if (!this.busy)
       try {
-        if (e === "preview" || e === "history") {
+        if (t === "preview" || t === "history") {
           const c = this.panel.querySelector("dialog"), u = this.panel.querySelector("[data-detail]");
-          if (e === "preview") {
+          if (t === "preview") {
             const p = await this.json(`/jobs/${r}/preview`), d = document.createElement("iframe");
-            d.title = "Picking slip preview", d.setAttribute("sandbox", ""), d.referrerPolicy = "no-referrer", d.srcdoc = te(p.html), u.replaceChildren(d), u.style.height = "90%";
+            d.title = "Picking slip preview", d.setAttribute("sandbox", ""), d.referrerPolicy = "no-referrer", d.srcdoc = ae(p.html), u.replaceChildren(d), u.style.height = "90%";
           } else {
             const p = await this.json(`/jobs/${r}/history`);
             u.style.height = "auto", u.innerHTML = `<h3>Job history</h3>${p.delivery ? `<p>Claimed: ${m(S(p.delivery.claimedUtc))}</p><p>Reported: ${m(S(p.delivery.reportedUtc))}</p><p>Windows queue reference: ${m(p.delivery.spoolJobId || "Not reported")}</p>` : "<p>Not yet claimed by an agent.</p>"}<ul>${p.actions.map((d) => `<li>${m(S(d.createdUtc))} — ${m({ "resolve-printed": "Confirmed physical printing", "resolve-reprint": "Closed uncertain job and queued replacement" }[d.action] ?? d.action)} by ${m(d.actor)}</li>`).join("")}</ul>`;
@@ -871,21 +889,21 @@ class re extends Q(HTMLElement) {
           c.showModal();
           return;
         }
-        if (!((i = this.capabilities) != null && i.canManage) || !await this.confirmAction(e === "resolve-printed" ? "Have you checked the physical output and confirmed this picking slip was printed? This records your confirmation without printing again." : e === "resolve-reprint" ? "Check the physical printer and clear any pending copy from the Windows print queue first. A delayed original may still print. Continue to close this uncertain job and queue one replacement job with the original copy count?" : e === "reprint" ? "Create another copy of this stored picking slip?" : e === "cancel" ? "Cancel this queued picking slip?" : "Retry generating this picking slip?")) return;
-        const n = r + ":" + e, s = this.requests.get(n) ?? crypto.randomUUID();
-        this.requests.set(n, s), this.busy = !0, this.render(), await this.json(`/jobs/${r}/actions`, { method: "POST", headers: {
+        if (!((n = this.capabilities) != null && n.canManage) || !await this.confirmAction(t === "resolve-printed" ? "Have you checked the physical output and confirmed this picking slip was printed? This records your confirmation without printing again." : t === "resolve-reprint" ? "Check the physical printer and clear any pending copy from the Windows print queue first. A delayed original may still print. Continue to close this uncertain job and queue one replacement job with the original copy count?" : t === "reprint" ? "Create another copy of this stored picking slip?" : t === "cancel" ? "Cancel this queued picking slip?" : "Retry generating this picking slip?")) return;
+        const i = r + ":" + t, s = this.requests.get(i) ?? crypto.randomUUID();
+        this.requests.set(i, s), this.busy = !0, this.render(), await this.json(`/jobs/${r}/actions`, { method: "POST", headers: {
           "Content-Type": "application/json",
           [this.capabilities.csrfHeader]: this.capabilities.csrfToken
-        }, body: JSON.stringify({ action: e, requestId: s }) }), this.requests.delete(n), this.busy = !1, await this.load();
-      } catch (n) {
-        this.busy = !1, this.error = n.message, this.render();
+        }, body: JSON.stringify({ action: t, requestId: s }) }), this.requests.delete(i), this.busy = !1, await this.load();
+      } catch (i) {
+        this.busy = !1, this.error = i.message, this.render();
       }
   }
 }
-customElements.get("ekom-printing-section-view") || customElements.define("ekom-printing-section-view", re);
+customElements.get("ekom-printing-section-view") || customElements.define("ekom-printing-section-view", ne);
 export {
-  ee as availableActions,
-  te as createPreviewDocument,
-  re as default,
-  K as stateLabel
+  re as availableActions,
+  ae as createPreviewDocument,
+  ne as default,
+  te as stateLabel
 };

@@ -360,6 +360,7 @@ ekom-orders-section-view:not([classic]), ekom-analytics-section-view:not([classi
  .ekom-search-field > svg { position:absolute; left:12px; color:var(--ekom-muted); pointer-events:none; }
  .ekom-search-field input { padding-left:33px; }
  [data-action="open-filter"] { display:inline-flex; align-items:center; gap:7px; }
+ [data-action="open-filter"] span { font:700 11px/1.2 'Ekom Mono',monospace; border-radius:10px; padding:2px 6px; color:var(--ekom-accent); background:color-mix(in srgb,var(--ekom-accent) 12%,var(--ekom-surface)); }
  .ekom-list-search svg { flex-shrink:0; }
 }
 
