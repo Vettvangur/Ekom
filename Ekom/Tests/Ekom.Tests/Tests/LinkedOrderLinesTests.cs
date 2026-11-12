@@ -117,6 +117,45 @@ public sealed class LinkedOrderLinesTests
         logger.VerifyNoOtherCalls();
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AddOrderLineAsync_KeepsStandaloneAndLinkedLinesSeparate(bool withVariant)
+    {
+        using var fixture = new Fixture();
+        var parentProductKey = fixture.AddProduct();
+        var childProductKey = fixture.AddProduct();
+        Guid? variantKey = withVariant ? fixture.AddVariant(childProductKey) : null;
+        var order = await fixture.Service.AddLinkedOrderLinesAsync(
+            parentProductKey, 1, "main",
+            [new LinkedOrderLineRequest { ProductId = childProductKey, VariantId = variantKey, Quantity = 2 }],
+            new AddOrderSettings { OrderInfo = fixture.Order, FireEvents = false });
+        var parent = Assert.Single(order.OrderLines, x => x.ProductKey == parentProductKey);
+        var linked = Assert.Single(order.OrderLines, x => x.Settings.Link == parent.Key);
+
+        order = await fixture.Service.AddOrderLineAsync(childProductKey, 3, "main",
+            new AddOrderSettings { OrderInfo = order, VariantKey = variantKey, FireEvents = false });
+
+        Assert.Equal(3, order.OrderLines.Count);
+        Assert.Equal(2, Assert.Single(order.OrderLines, x => x.Key == linked.Key).Quantity);
+        var standalone = Assert.Single(order.OrderLines, x => x.ProductKey == childProductKey && x.Settings.Link == Guid.Empty);
+        Assert.Equal(3, standalone.Quantity);
+
+        // Subsequent additions merge only with the matching standalone line.
+        order = await fixture.Service.AddOrderLineAsync(childProductKey, 1, "main",
+            new AddOrderSettings { OrderInfo = order, VariantKey = variantKey, FireEvents = false });
+        Assert.Equal(3, order.OrderLines.Count);
+        Assert.Equal(4, Assert.Single(order.OrderLines, x => x.Key == standalone.Key).Quantity);
+        Assert.Equal(2, Assert.Single(order.OrderLines, x => x.Key == linked.Key).Quantity);
+
+        var reloaded = await fixture.ReloadAsync();
+        Assert.Equal(3, reloaded.OrderLines.Count);
+        Assert.Equal(4, Assert.Single(reloaded.OrderLines, x => x.Key == standalone.Key).Quantity);
+        var reloadedLinked = Assert.Single(reloaded.OrderLines, x => x.Key == linked.Key);
+        Assert.Equal(2, reloadedLinked.Quantity);
+        Assert.Equal(parent.Key, reloadedLinked.Settings.Link);
+    }
+
     [Fact]
     public async Task AddLinkedOrderLinesAsync_AddsParentAndLinkedChildren()
     {
@@ -1113,7 +1152,7 @@ public sealed class LinkedOrderLinesTests
             variants.SetupGet(x => x.Cache).Returns(
                 new ConcurrentDictionary<string, ConcurrentDictionary<Guid, IVariant>>
                 {
-                    ["main"] = new(),
+                    ["main"] = _variants,
                 });
             var discounts = new Mock<IPerStoreCache<IDiscount>>();
             discounts.SetupGet(x => x.Cache).Returns(
@@ -1244,6 +1283,31 @@ public sealed class LinkedOrderLinesTests
         }
 
         public void RemoveShippingProvider(Guid key) => _shippingProviders.TryRemove(key, out _);
+
+        private readonly ConcurrentDictionary<Guid, IVariant> _variants = new();
+
+        public Guid AddVariant(Guid productKey)
+        {
+            var key = Guid.NewGuid();
+            var group = new Mock<IVariantGroup>();
+            group.SetupGet(x => x.Key).Returns(Guid.NewGuid());
+            group.SetupGet(x => x.Properties).Returns(new Dictionary<string, string>());
+            var variant = new Mock<IVariant>();
+            variant.SetupGet(x => x.Key).Returns(key);
+            variant.SetupGet(x => x.ProductKey).Returns(productKey);
+            variant.SetupGet(x => x.Stock).Returns(100);
+            variant.SetupGet(x => x.VariantGroup).Returns(group.Object);
+            variant.SetupGet(x => x.Properties).Returns(new Dictionary<string, string>
+            {
+                ["__Key"] = key.ToString(),
+                ["id"] = "1",
+                ["title"] = "Variant",
+                ["sku"] = key.ToString(),
+            });
+            variant.SetupGet(x => x.Prices).Returns([new Price(10, Order.StoreInfo.Currency, 0, false)]);
+            _variants[key] = variant.Object;
+            return key;
+        }
 
         public Guid AddProduct(decimal stock = 100, decimal price = 10)
         {
