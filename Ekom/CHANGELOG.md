@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **orders:** match the parent link when adding order lines, so standalone products do not merge into linked child lines with the same product or variant.
+
 * **manager:** remove the Items column from the Umbraco 17/18 Orders table. The list query no longer parses `OrderInfo` to total line quantities, and `OrderData.ItemQuantity` is removed.
 
 * **manager:** page the Umbraco 17/18 Orders table with the Left and Right arrow keys. The keys are ignored while typing, loading, using a menu or viewing an overlay; in the order drawer they still move between orders.

@@ -1343,6 +1343,7 @@ partial class OrderService
 
             OrderLine? orderLine;
             decimal existingStock;
+            var orderLineLink = settings.OrderDynamicRequest?.OrderLineLink ?? Guid.Empty;
 
             if (variant != null)
             {
@@ -1351,6 +1352,7 @@ partial class OrderService
                 orderLine = orderInfo.OrderLines
                     .OfType<OrderLine>()
                     .FirstOrDefault(x =>
+                        x.Settings.Link == orderLineLink &&
                         x.Product.Key == product.Key &&
                         x.Product.VariantGroups.Any(g => g.Variants.Any(v => v.Key == variant.Key)));
             }
@@ -1360,7 +1362,7 @@ partial class OrderService
 
                 orderLine = orderInfo.OrderLines
                     .OfType<OrderLine>()
-                    .FirstOrDefault(x => x.Product.Key == product.Key);
+                    .FirstOrDefault(x => x.Product.Key == product.Key && x.Settings.Link == orderLineLink);
             }
 
             var isNewOrderLine = false;
