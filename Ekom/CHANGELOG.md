@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **install:** fix first-time installs that stopped before creating the Ekom root, Catalog and store nodes. The price save handler read Ekom's configuration while the installer was saving its first nodes, before Ekom had started, and the error ended the install on every startup.
+
 * **upgrade:** repair Ekom data types on sites upgraded from Umbraco 13. Every data type that uses an Ekom property editor now gets its editor UI on startup, matched on the editor instead of a fixed list of names, so Coupon, Range, Metafield, Metavalue, SKU Product Picker and renamed or site-created data types are covered. The Ekom Catalog, Product, Category and Variant Group pickers that still carry an XPath start node or an alias filter are moved to a dynamic root and a key-based filter.
 
 * **orders:** exclude linked-group parents from order-line merging by checking child-to-parent references, keeping standalone additions separate even when the parent link is empty.
