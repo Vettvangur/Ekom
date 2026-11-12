@@ -353,7 +353,7 @@ class Ee extends $e(HTMLElement) {
   }
   /** Opens the orders table; the caller closes it after the rows. */
   renderOrderTableHead() {
-    return '<div class="ekom-list-table" role="table" aria-label="Orders"><div class="ekom-list-row ekom-list-head" role="row"><span role="columnheader">Order</span><span role="columnheader">Date</span><span role="columnheader">Customer</span><span role="columnheader" class="ekom-align-right">Total</span><span role="columnheader">Payment</span><span role="columnheader">Fulfillment</span><span role="columnheader" class="ekom-align-right">Items</span><span role="columnheader"><span class="ekom-sr-only">Open order</span></span></div>';
+    return '<div class="ekom-list-table" role="table" aria-label="Orders"><div class="ekom-list-row ekom-list-head" role="row"><span role="columnheader">Order</span><span role="columnheader">Date</span><span role="columnheader">Customer</span><span role="columnheader" class="ekom-align-right">Total</span><span role="columnheader">Payment</span><span role="columnheader">Fulfillment</span><span role="columnheader"><span class="ekom-sr-only">Open order</span></span></div>';
   }
   /** Placeholder rows while a different list is on its way; a refresh of the list on screen keeps its rows. */
   get showOrdersLoading() {
@@ -368,7 +368,6 @@ class Ee extends $e(HTMLElement) {
       <strong role="cell" class="ekom-align-right">${s(e.formattedTotal)}</strong>
       <div role="cell">${this.renderPaymentMenu(e)}</div>
       <div role="cell">${this.renderRowFulfillment(e)}</div>
-      <span role="cell" class="ekom-align-right ekom-muted">${s(e.itemQuantity ?? "—")}</span>
       <button role="cell" type="button" class="ekom-row-open" data-action="view-order" data-order-id="${s(e.uniqueId)}" aria-label="Open order ${s(e.referenceId)}">›</button>
     </div>`;
   }
