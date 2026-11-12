@@ -340,6 +340,14 @@
 * **tracking:** capture consent-aware, first-touch Mailchimp campaign attribution and persist it with orders.
 * **warehouse:** add cache-only balance reads, changed-only writes, explicit clearing, partial-success bulk updates, and SKU-level warehouse results.
 
+## [1.0.8](https://github.com/Vettvangur/Ekom/compare/Ekom-v1.0.7...Ekom-v1.0.8) (2026-11-12)
+
+
+### Bug Fixes
+
+* **manager:** page the Orders table with the Left and Right arrow keys ([edd5234](https://github.com/Vettvangur/Ekom/commit/edd5234f551465d89c3a1be3aa7d92eeb26d0429))
+* **manager:** remove the Items column from the Orders table ([edd5234](https://github.com/Vettvangur/Ekom/commit/edd5234f551465d89c3a1be3aa7d92eeb26d0429))
+
 ## [1.0.7](https://github.com/Vettvangur/Ekom/compare/Ekom-v1.0.6...Ekom-v1.0.7) (2026-11-11)
 
 
