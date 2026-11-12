@@ -1,10 +1,10 @@
 var ne = Object.defineProperty;
 var de = (o, p, e) => p in o ? ne(o, p, { enumerable: !0, configurable: !0, writable: !0, value: e }) : o[p] = e;
 var c = (o, p, e) => de(o, typeof p != "symbol" ? p + "" : p, e);
-import { E as le, m as v, z as F, e as ce, r as ue, a as he, c as a, b as pe, A as me, h as ve, B as E, y as A, v as fe, w as G, x as ge, C as z, D as q, q as ye, F as be, o as ke, u as W, k as $e } from "./manager-shared.js";
+import { E as le, m as v, z as T, e as ce, r as ue, a as he, c as a, b as pe, A as me, h as ve, B as E, y as A, v as fe, w as G, x as ge, C as z, D as q, q as ye, F as be, o as ke, u as W, k as $e } from "./manager-shared.js";
 import { UmbElementMixin as we } from "@umbraco-cms/backoffice/element-api";
-import { UMB_NOTIFICATION_CONTEXT as Oe } from "@umbraco-cms/backoffice/notification";
-const Se = [
+import { UMB_NOTIFICATION_CONTEXT as Se } from "@umbraco-cms/backoffice/notification";
+const Oe = [
   { key: "customerName", label: "Name", property: "name" },
   { key: "customerEmail", label: "Email", property: "email" },
   { key: "customerAddress", label: "Address", property: "address" },
@@ -166,7 +166,7 @@ class Ae extends we(HTMLElement) {
       t && this.observe(t.theme, (r) => {
         this.toggleAttribute("data-ekom-dark", r === "umb-dark-theme");
       }, "ekom-manager-theme");
-    }), this.consumeContext(Oe, (t) => {
+    }), this.consumeContext(Se, (t) => {
       this.notificationContext = t;
     }), document.addEventListener("keydown", this.handleKeyDown), document.addEventListener("pointerdown", this.dismissFulfillmentMenus, !0), this.render(), this.initialize();
   }
@@ -198,7 +198,7 @@ class Ae extends we(HTMLElement) {
           } catch {
           }
           if (e !== this.orderListRequest || !this.pollingSeconds || !this.isConnected || this.overlay || this.contains(document.activeElement)) return;
-          (JSON.stringify(i) !== JSON.stringify(this.result) || F.some((d) => n[d.key] !== this.viewCounts[d.key])) && (this.result = i, this.viewCounts = n, this.loading = !1, this.render());
+          (JSON.stringify(i) !== JSON.stringify(this.result) || T.some((d) => n[d.key] !== this.viewCounts[d.key])) && (this.result = i, this.viewCounts = n, this.loading = !1, this.render());
         }
         const s = this.querySelector(".ekom-polling summary");
         s && (s.classList.add("just-refreshed"), s.addEventListener("animationend", () => s.classList.remove("just-refreshed"), { once: !0 }));
@@ -266,7 +266,7 @@ class Ae extends we(HTMLElement) {
     ), v.filters.paymentProvider && (v.paymentProviders.some((m) => m.key === v.filters.paymentProvider) || (v.filters.paymentProvider = "")), v.filters.shippingProvider && !d.some((l) => l.key === v.filters.shippingProvider) && (v.filters.shippingProvider = ""), this.render();
   }
   otherViews(e) {
-    return F.map((t) => t.key).filter((t) => t !== e.orderStatus);
+    return T.map((t) => t.key).filter((t) => t !== e.orderStatus);
   }
   async loadOrders() {
     if (!v.filters.store) {
@@ -315,7 +315,7 @@ class Ae extends we(HTMLElement) {
     const e = this.querySelector("[data-review-comment]"), t = e && ((s = this.ownerDocument) == null ? void 0 : s.activeElement) === e ? { start: e.selectionStart, end: e.selectionEnd } : void 0, r = Array.from(this.querySelectorAll(".ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content")).map((d) => d.scrollTop);
     if (ue(this, `
       <style>${he}</style>
-      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261111-esc-close">
+      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261112-filter-count">
       <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
           ${this.configError ? `<p class="status status--error" role="alert">${a(this.configError)}</p>` : ""}
@@ -338,7 +338,7 @@ class Ae extends we(HTMLElement) {
   renderOrders() {
     const e = v.filters;
     return `${this.renderToolbar()}<section class="ekom-order-list" aria-label="Orders" aria-busy="${this.loading}">
-      <div class="ekom-list-toolbar"><nav class="ekom-order-views" aria-label="Order views">${F.map((t) => `<button type="button" data-action="select-order-view" data-view="${a(t.key)}" ${t.key === "NeedsReview" && !(this.viewCounts[t.key] > 0) ? "hidden" : ""} aria-pressed="${e.orderStatus === t.key}">${t.label}${this.viewCounts[t.key] === void 0 ? "" : `<span>${this.viewCounts[t.key]}</span>`}</button>`).join("")}</nav><div class="ekom-list-search"><label class="ekom-search-field"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input type="search" data-field="query" value="${a(e.query)}" placeholder="Search orders" aria-label="Search orders"></label><button type="button" data-action="open-filter"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filter</button></div></div>
+      <div class="ekom-list-toolbar"><nav class="ekom-order-views" aria-label="Order views">${T.map((t) => `<button type="button" data-action="select-order-view" data-view="${a(t.key)}" ${t.key === "NeedsReview" && !(this.viewCounts[t.key] > 0) ? "hidden" : ""} aria-pressed="${e.orderStatus === t.key}">${t.label}${this.viewCounts[t.key] === void 0 ? "" : `<span>${this.viewCounts[t.key]}</span>`}</button>`).join("")}</nav><div class="ekom-list-search"><label class="ekom-search-field"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input type="search" data-field="query" value="${a(e.query)}" placeholder="Search orders" aria-label="Search orders"></label><button type="button" data-action="open-filter"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filter${this.activeFilterCount() ? `<span aria-label="${this.activeFilterCount()} active">${this.activeFilterCount()}</span>` : ""}</button></div></div>
       <div class="ekom-inline-totals"><div><span>Orders</span><strong>${a(this.result.count || 0)}</strong></div><div><span>Order amount</span><strong>${a(this.result.grandTotal || "0")}</strong></div><div><span>Average</span><strong>${a(this.result.averageAmount || "0")}</strong></div></div>
       ${this.error ? `<p class="status status--error" role="alert">${a(this.error)}</p>` : ""}
       ${this.showOrdersLoading ? this.renderOrderTableHead() + me() + "</div>" : this.renderOrderTable()}
@@ -377,6 +377,11 @@ class Ae extends we(HTMLElement) {
   }
   renderOverlay() {
     return this.overlay === "filter" ? this.renderFilterOverlay() : this.overlay === "export" ? this.renderExportOverlay() : this.overlay === "order" && this.orderOpening ? this.renderOrderOpening() : this.overlay === "order" && this.selectedOrder ? this.renderOrderOverlay(this.selectedOrder) : "";
+  }
+  /** How many of the filter dialog's fields are set. A status picked through a tab is not counted: the tab already shows it. */
+  activeFilterCount() {
+    const e = v.filters;
+    return (e.orderStatus.startsWith("states:") && !T.some((i) => i.key === e.orderStatus) ? e.orderStatus.slice(7).split(";").filter(Boolean).length : 0) + ["paymentProvider", "shippingProvider", "giftcardCode", "productSku", "couponCode", "trackingSource", "trackingMedium", "trackingCampaign", "trackingTerm", "trackingContent", "trackingClickId"].filter((i) => e[i]).length;
   }
   renderFilterOverlay() {
     const e = v.filters;
@@ -551,25 +556,25 @@ class Ae extends we(HTMLElement) {
       </div>`).join("")}</dl>` : "";
   }
   renderPaymentCard(e) {
-    var n, d, l, m, f, g, h, u, y, O, w, L, I;
-    const t = (e.orderLines || []).reduce((S, $) => S + (Number($.quantity) || 0), 0), r = ((n = e.shippingProvider) == null ? void 0 : n.title) || ((l = (d = e.shippingProvider) == null ? void 0 : d.properties) == null ? void 0 : l.nodeName) || "", i = this.giftcardEligibleValue(e), s = (S, $, C, x = !1) => `<div${x ? ' class="ekom-money-total"' : ""}><dt>${a(S)}</dt><dd class="ekom-money-description">${a($)}</dd><dd>${a(C || "—")}</dd></div>`;
-    return `<section class="ekom-detail-card ekom-payment-card"><h3>Payment ${A((m = e.status) == null ? void 0 : m.paymentStatus)}</h3><dl class="ekom-money-summary">${s("Subtotal", `${t} ${t === 1 ? "item" : "items"}`, (g = (f = e.subTotal) == null ? void 0 : f.withVat) == null ? void 0 : g.currencyString)}${s("Discount", e.coupon || "—", (h = e.discountAmount) != null && h.currencyString ? `${Number(e.discountAmount.value) ? "-" : ""}${e.discountAmount.currencyString}` : "")}${s("Shipping", r, (O = (y = (u = e.shippingProvider) == null ? void 0 : u.price) == null ? void 0 : y.withVat) == null ? void 0 : O.currencyString)}${i ? s("Gift cards", "Eligible value, already applied to the total", this.formatGiftcardAmount(i, e)) : ""}${s("Tax", "Included in total", (w = e.chargedVat) == null ? void 0 : w.currencyString)}${s("Total", "", (L = e.chargedAmount) == null ? void 0 : L.currencyString, !0)}</dl>${(I = e.giftcards) != null && I.length ? `<div class="ekom-payment-breakdown">${this.renderGiftcards(e)}</div>` : ""}${this.renderPaymentDetails(e)}</section>`;
+    var n, d, l, m, f, g, h, u, y, S, w, L, I;
+    const t = (e.orderLines || []).reduce((O, $) => O + (Number($.quantity) || 0), 0), r = ((n = e.shippingProvider) == null ? void 0 : n.title) || ((l = (d = e.shippingProvider) == null ? void 0 : d.properties) == null ? void 0 : l.nodeName) || "", i = this.giftcardEligibleValue(e), s = (O, $, C, x = !1) => `<div${x ? ' class="ekom-money-total"' : ""}><dt>${a(O)}</dt><dd class="ekom-money-description">${a($)}</dd><dd>${a(C || "—")}</dd></div>`;
+    return `<section class="ekom-detail-card ekom-payment-card"><h3>Payment ${A((m = e.status) == null ? void 0 : m.paymentStatus)}</h3><dl class="ekom-money-summary">${s("Subtotal", `${t} ${t === 1 ? "item" : "items"}`, (g = (f = e.subTotal) == null ? void 0 : f.withVat) == null ? void 0 : g.currencyString)}${s("Discount", e.coupon || "—", (h = e.discountAmount) != null && h.currencyString ? `${Number(e.discountAmount.value) ? "-" : ""}${e.discountAmount.currencyString}` : "")}${s("Shipping", r, (S = (y = (u = e.shippingProvider) == null ? void 0 : u.price) == null ? void 0 : y.withVat) == null ? void 0 : S.currencyString)}${i ? s("Gift cards", "Eligible value, already applied to the total", this.formatGiftcardAmount(i, e)) : ""}${s("Tax", "Included in total", (w = e.chargedVat) == null ? void 0 : w.currencyString)}${s("Total", "", (L = e.chargedAmount) == null ? void 0 : L.currencyString, !0)}</dl>${(I = e.giftcards) != null && I.length ? `<div class="ekom-payment-breakdown">${this.renderGiftcards(e)}</div>` : ""}${this.renderPaymentDetails(e)}</section>`;
   }
   renderPaymentDetails(e) {
     var i, s, n, d, l, m, f;
-    const t = (g) => `<dl>${g.map((h) => `<div><dt>${a(h.label)}</dt><dd><span>${a(h.value)}</span>${h.label !== "Currency" && h.label !== "Paid date" && h.value && h.value !== "Not recorded" && h.value !== "—" ? `<button type="button" class="ekom-payment-copy" data-action="copy-provider-value" data-copy="${a(h.value)}" aria-label="Copy ${a(h.label)}" title="Copy ${a(h.label)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>` : ""}</dd></div>`).join("")}</dl>`, r = _((i = e.paymentProvider) == null ? void 0 : i.customData, "custompayment").map(([g, h]) => ({ label: T(R(g)), value: h }));
+    const t = (g) => `<dl>${g.map((h) => `<div><dt>${a(h.label)}</dt><dd><span>${a(h.value)}</span>${h.label !== "Currency" && h.label !== "Paid date" && h.value && h.value !== "Not recorded" && h.value !== "—" ? `<button type="button" class="ekom-payment-copy" data-action="copy-provider-value" data-copy="${a(h.value)}" aria-label="Copy ${a(h.label)}" title="Copy ${a(h.label)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>` : ""}</dd></div>`).join("")}</dl>`, r = D((i = e.paymentProvider) == null ? void 0 : i.customData, "custompayment").map(([g, h]) => ({ label: _(R(g)), value: h }));
     return r.push({ label: "Paid date", value: e.paidDate ? E(e.paidDate) : "Not recorded" }, { label: "Currency", value: e.currency || ((n = (s = e.storeInfo) == null ? void 0 : s.currency) == null ? void 0 : n.isoCurrencySymbol) || "Not recorded" }), `<section class="ekom-payment-details" aria-label="Payment details"><div class="ekom-payment-detail-grid"><section class="ekom-payment-detail-box"><header><span class="ekom-payment-kind">Payment</span><h4>${a(((d = e.paymentProvider) == null ? void 0 : d.title) || ((m = (l = e.paymentProvider) == null ? void 0 : l.properties) == null ? void 0 : m.nodeName) || "Not recorded")}</h4>${A((f = e.status) == null ? void 0 : f.paymentStatus)}</header>${t(r)}</section>${(e.giftcards || []).map((g) => {
-      const h = Q(g).filter((u) => u.label !== D("code")).map((u) => u.label === D("amount") ? { ...u, value: this.formatGiftcardAmount(g.amount, e) } : u);
+      const h = Q(g).filter((u) => u.label !== F("code")).map((u) => u.label === F("amount") ? { ...u, value: this.formatGiftcardAmount(g.amount, e) } : u);
       return `<section class="ekom-payment-detail-box"><header><span class="ekom-payment-kind ekom-payment-kind-gift">Gift card</span><h4>${a(g.code)}</h4><span class="ekom-gift-state">${a(Y(g).status)}</span></header>${t(h)}</section>`;
     }).join("")}</div></section>`;
   }
   renderShipment(e) {
-    var y, O, w, L, I;
-    const t = e.shippingProvider, r = (t == null ? void 0 : t.title) || ((y = t == null ? void 0 : t.properties) == null ? void 0 : y.nodeName) || "No shipping provider", i = _(t == null ? void 0 : t.customData, "customshipping"), s = (S) => {
+    var y, S, w, L, I;
+    const t = e.shippingProvider, r = (t == null ? void 0 : t.title) || ((y = t == null ? void 0 : t.properties) == null ? void 0 : y.nodeName) || "No shipping provider", i = D(t == null ? void 0 : t.customData, "customshipping"), s = (O) => {
       var $;
-      return (($ = i.find(([C]) => R(C).replace(/[_ -]/g, "").toLowerCase() === S.toLowerCase())) == null ? void 0 : $[1]) || "";
-    }, n = s("TrackingNumber"), d = s("ShipmentState"), l = s("TrackingUrl"), m = /^https?:\/\//i.test(l) ? l : "", f = ((O = e.customerInformation) == null ? void 0 : O.customer) || {}, g = ((w = e.customerInformation) == null ? void 0 : w.shipping) || {}, h = M(g) ? g : f, u = (S, $) => `<button type="button" class="ekom-shipment-copy" data-action="copy-provider-value" data-copy="${a(S)}" aria-label="Copy ${a($)}" title="Copy ${a($)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>`;
-    return `<section class="ekom-detail-card ekom-shipment"><div class="ekom-shipment-grid"><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Shipment</h4>${d ? `<span class="ekom-shipment-state">${a(d)}</span>` : ""}</div><div class="ekom-shipment-tracking"><span>Tracking number</span><div><strong>${a(n || "Not available")}</strong>${n ? u(n, "tracking number") : ""}${t ? '<button type="button" class="ekom-shipment-copy" data-action="open-shipping-provider-editor" aria-label="Edit shipping data" title="Edit shipping data"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 20h9M16 3l5 5L7 22l-5 1 1-5Z"/></svg></button>' : ""}${m ? `<a href="${a(m)}" target="_blank" rel="noopener noreferrer">Track shipment ↗</a>` : ""}</div></div></section><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Method</h4><strong>${a(((I = (L = t == null ? void 0 : t.price) == null ? void 0 : L.withVat) == null ? void 0 : I.currencyString) || "—")}</strong></div><h3>${a(r)}</h3><div class="ekom-shipment-address"><span>Deliver to</span><strong>${a([h.address, h.apartment].filter(Boolean).join(", ") || "No address recorded")}</strong><span>${a([h.zipCode, h.city].filter(Boolean).join(" "))}</span><span>${a(h.country)}</span></div><div><button type="button" data-action="open-shipping-provider-editor">${t ? "Change shipping provider" : "Add shipping provider"}</button></div></section></div>${i.length ? `<details class="ekom-shipment-data" open><summary><strong>Provider data</strong><span>${i.length} fields from ${a(r)}</span><span class="ekom-shipment-hide">Hide ▴</span><span class="ekom-shipment-show">Show ▾</span></summary><dl>${i.map(([S, $]) => `<div><dt>${a(T(R(S)))}</dt><dd><span>${a($ || "—")}</span>${$ ? u($, T(R(S))) : ""}</dd></div>`).join("")}</dl></details>` : ""}</section>`;
+      return (($ = i.find(([C]) => R(C).replace(/[_ -]/g, "").toLowerCase() === O.toLowerCase())) == null ? void 0 : $[1]) || "";
+    }, n = s("TrackingNumber"), d = s("ShipmentState"), l = s("TrackingUrl"), m = /^https?:\/\//i.test(l) ? l : "", f = ((S = e.customerInformation) == null ? void 0 : S.customer) || {}, g = ((w = e.customerInformation) == null ? void 0 : w.shipping) || {}, h = M(g) ? g : f, u = (O, $) => `<button type="button" class="ekom-shipment-copy" data-action="copy-provider-value" data-copy="${a(O)}" aria-label="Copy ${a($)}" title="Copy ${a($)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>`;
+    return `<section class="ekom-detail-card ekom-shipment"><div class="ekom-shipment-grid"><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Shipment</h4>${d ? `<span class="ekom-shipment-state">${a(d)}</span>` : ""}</div><div class="ekom-shipment-tracking"><span>Tracking number</span><div><strong>${a(n || "Not available")}</strong>${n ? u(n, "tracking number") : ""}${t ? '<button type="button" class="ekom-shipment-copy" data-action="open-shipping-provider-editor" aria-label="Edit shipping data" title="Edit shipping data"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 20h9M16 3l5 5L7 22l-5 1 1-5Z"/></svg></button>' : ""}${m ? `<a href="${a(m)}" target="_blank" rel="noopener noreferrer">Track shipment ↗</a>` : ""}</div></div></section><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Method</h4><strong>${a(((I = (L = t == null ? void 0 : t.price) == null ? void 0 : L.withVat) == null ? void 0 : I.currencyString) || "—")}</strong></div><h3>${a(r)}</h3><div class="ekom-shipment-address"><span>Deliver to</span><strong>${a([h.address, h.apartment].filter(Boolean).join(", ") || "No address recorded")}</strong><span>${a([h.zipCode, h.city].filter(Boolean).join(" "))}</span><span>${a(h.country)}</span></div><div><button type="button" data-action="open-shipping-provider-editor">${t ? "Change shipping provider" : "Add shipping provider"}</button></div></section></div>${i.length ? `<details class="ekom-shipment-data" open><summary><strong>Provider data</strong><span>${i.length} fields from ${a(r)}</span><span class="ekom-shipment-hide">Hide ▴</span><span class="ekom-shipment-show">Show ▾</span></summary><dl>${i.map(([O, $]) => `<div><dt>${a(_(R(O)))}</dt><dd><span>${a($ || "—")}</span>${$ ? u($, _(R(O))) : ""}</dd></div>`).join("")}</dl></details>` : ""}</section>`;
   }
   renderPrintableOrder(e) {
     var n, d, l, m, f, g;
@@ -598,10 +603,10 @@ class Ae extends we(HTMLElement) {
       </main>`;
   }
   renderAddress(e) {
-    return ["name", "email", "address", "apartment", "city", "country", "zipCode", "phone"].filter((t) => e[t]).map((t) => `<p>${T(t)}: ${a(q(e[t]))}</p>`).join("");
+    return ["name", "email", "address", "apartment", "city", "country", "zipCode", "phone"].filter((t) => e[t]).map((t) => `<p>${_(t)}: ${a(q(e[t]))}</p>`).join("");
   }
   renderExtraProperties(e, t) {
-    const r = _(e, t);
+    const r = D(e, t);
     return r.length ? `<h5 style="margin-top:20px; font-weight:bold;">${t === "customshipping" ? "Shipping Provider Custom" : `Extra ${t === "shipping" ? "Shipping" : "Customer"}`} Data</h5><ul>${r.map(([i, s]) => `<li><strong>${a(R(i))}</strong>: ${a(s)}</li>`).join("")}</ul>` : "";
   }
   renderProvider(e, t, r) {
@@ -668,8 +673,8 @@ class Ae extends we(HTMLElement) {
   renderDesignOrderLines(e) {
     const t = Array.isArray(e.orderLines) ? e.orderLines : [], r = t.reduce((i, s) => i + (Number(s.quantity) || 0), 0);
     return `<div class="ekom-card-heading ekom-lines-heading"><h3>Order lines</h3><span>${t.length} ${t.length === 1 ? "line" : "lines"} · ${r} ${r === 1 ? "item" : "items"}</span><button type="button" data-action="open-order-line-editor">Add order line</button></div><div class="ekom-lines-scroll"><table class="ekom-design-lines"><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>VAT</th><th>Discount</th><th>Total</th><th><span class="ekom-sr-only">Actions</span></th></tr></thead><tbody>${t.map((i) => {
-      var s, n, d, l, m, f, g, h, u, y, O, w;
-      return `<tr><td><div class="ekmOrderLineProduct">${J(i)}<div>${X(i.product)}<small>${a((s = i.product) == null ? void 0 : s.sku)}</small>${i.variant ? `<small>${a(i.variant.title)}${typeof i.variant.sku == "string" && i.variant.sku.trim() ? ` (${a(i.variant.sku)})` : ""}</small>` : ""}${ee(i)}</div></div></td><td>${a(i.quantity)}</td><td>${a((l = (d = (n = i.product) == null ? void 0 : n.price) == null ? void 0 : d.withVat) == null ? void 0 : l.currencyString)}</td><td>${a((f = (m = i.amount) == null ? void 0 : m.vat) == null ? void 0 : f.currencyString)}</td><td>${a((h = (g = i.amount) == null ? void 0 : g.discountAmount) == null ? void 0 : h.currencyString)}</td><td><strong>${a((y = (u = i.amount) == null ? void 0 : u.withVat) == null ? void 0 : y.currencyString)}</strong></td><td><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${a(i.key)}" data-product-title="${a((O = i.product) == null ? void 0 : O.title)}" ${this.removingOrderLineId === i.key ? "disabled" : ""} aria-label="Remove ${a((w = i.product) == null ? void 0 : w.title)}">×</button></td></tr>`;
+      var s, n, d, l, m, f, g, h, u, y, S, w;
+      return `<tr><td><div class="ekmOrderLineProduct">${J(i)}<div>${X(i.product)}<small>${a((s = i.product) == null ? void 0 : s.sku)}</small>${i.variant ? `<small>${a(i.variant.title)}${typeof i.variant.sku == "string" && i.variant.sku.trim() ? ` (${a(i.variant.sku)})` : ""}</small>` : ""}${ee(i)}</div></div></td><td>${a(i.quantity)}</td><td>${a((l = (d = (n = i.product) == null ? void 0 : n.price) == null ? void 0 : d.withVat) == null ? void 0 : l.currencyString)}</td><td>${a((f = (m = i.amount) == null ? void 0 : m.vat) == null ? void 0 : f.currencyString)}</td><td>${a((h = (g = i.amount) == null ? void 0 : g.discountAmount) == null ? void 0 : h.currencyString)}</td><td><strong>${a((y = (u = i.amount) == null ? void 0 : u.withVat) == null ? void 0 : y.currencyString)}</strong></td><td><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${a(i.key)}" data-product-title="${a((S = i.product) == null ? void 0 : S.title)}" ${this.removingOrderLineId === i.key ? "disabled" : ""} aria-label="Remove ${a((w = i.product) == null ? void 0 : w.title)}">×</button></td></tr>`;
     }).join("")}</tbody></table></div>`;
   }
   renderOrderLines(e) {
@@ -681,8 +686,8 @@ class Ae extends we(HTMLElement) {
         <div class="umb-table-head"><div class="umb-table-row"><div class="umb-table-cell"></div><div class="umb-table-cell not-fixed">Product</div><div class="umb-table-cell">Quantity</div><div class="umb-table-cell">Unit Price (inc VAT)</div><div class="umb-table-cell">Vat</div><div class="umb-table-cell">Discount</div><div class="umb-table-cell">Total (inc VAT)</div></div></div>
         <div class="umb-table-body">
           ${t.map((h) => {
-      var u, y, O, w, L, I, S, $, C, x, U, V, K, B;
-      return `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${a(h.key)}" data-product-title="${a((u = h.product) == null ? void 0 : u.title)}" ${this.removingOrderLineId === h.key ? "disabled" : ""} aria-label="Remove ${a((y = h.product) == null ? void 0 : y.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><div class="ekmOrderLineProduct">${J(h)}<div class="ekmOrderLineProduct__details"><span>${X(h.product)}${(w = (O = h.product) == null ? void 0 : O.sku) != null && w.trim() ? ` (${a(h.product.sku)})` : ""}</span>${h.variant ? `<small style="display:block; margin-top:3px;">${a(h.variant.title)} ${(L = h.variant.sku) != null && L.trim() ? `(${a(h.variant.sku)})` : ""}</small>` : ""}${ee(h)}</div></div></div><div class="umb-table-cell">${a(h.quantity)}</div><div class="umb-table-cell">${a(($ = (S = (I = h.product) == null ? void 0 : I.price) == null ? void 0 : S.withVat) == null ? void 0 : $.currencyString)}</div><div class="umb-table-cell">${a((x = (C = h.amount) == null ? void 0 : C.vat) == null ? void 0 : x.currencyString)}</div><div class="umb-table-cell">-${a((V = (U = h.amount) == null ? void 0 : U.discountAmount) == null ? void 0 : V.currencyString)}</div><div class="umb-table-cell"><strong>${a((B = (K = h.amount) == null ? void 0 : K.withVat) == null ? void 0 : B.currencyString)}</strong></div></div>`;
+      var u, y, S, w, L, I, O, $, C, x, U, V, K, B;
+      return `<div class="umb-table-row"><div class="umb-table-cell"><button type="button" class="btn-reset" data-action="remove-order-line" data-order-line-id="${a(h.key)}" data-product-title="${a((u = h.product) == null ? void 0 : u.title)}" ${this.removingOrderLineId === h.key ? "disabled" : ""} aria-label="Remove ${a((y = h.product) == null ? void 0 : y.title)}" title="Remove order line">&#128465;</button></div><div class="umb-table-cell not-fixed"><div class="ekmOrderLineProduct">${J(h)}<div class="ekmOrderLineProduct__details"><span>${X(h.product)}${(w = (S = h.product) == null ? void 0 : S.sku) != null && w.trim() ? ` (${a(h.product.sku)})` : ""}</span>${h.variant ? `<small style="display:block; margin-top:3px;">${a(h.variant.title)} ${(L = h.variant.sku) != null && L.trim() ? `(${a(h.variant.sku)})` : ""}</small>` : ""}${ee(h)}</div></div></div><div class="umb-table-cell">${a(h.quantity)}</div><div class="umb-table-cell">${a(($ = (O = (I = h.product) == null ? void 0 : I.price) == null ? void 0 : O.withVat) == null ? void 0 : $.currencyString)}</div><div class="umb-table-cell">${a((x = (C = h.amount) == null ? void 0 : C.vat) == null ? void 0 : x.currencyString)}</div><div class="umb-table-cell">-${a((V = (U = h.amount) == null ? void 0 : U.discountAmount) == null ? void 0 : V.currencyString)}</div><div class="umb-table-cell"><strong>${a((B = (K = h.amount) == null ? void 0 : K.withVat) == null ? void 0 : B.currencyString)}</strong></div></div>`;
     }).join("")}
         </div>
         <div class="umb-table-footer">
@@ -878,8 +883,8 @@ class Ae extends we(HTMLElement) {
     }
     if (r === "choose-fulfillment") {
       if (t.disabled) return;
-      const u = t.closest("details"), y = t.dataset.value || "", O = this.querySelector('[data-field="fulfillmentState"]');
-      O && (O.value = y), u.querySelector("[data-fulfillment-label]").textContent = y.replace(/([a-z])([A-Z])/g, "$1 $2"), u.querySelector("summary .ekom-state-dot").dataset.state = y, u.querySelectorAll("button[data-value]").forEach((w) => {
+      const u = t.closest("details"), y = t.dataset.value || "", S = this.querySelector('[data-field="fulfillmentState"]');
+      S && (S.value = y), u.querySelector("[data-fulfillment-label]").textContent = y.replace(/([a-z])([A-Z])/g, "$1 $2"), u.querySelector("summary .ekom-state-dot").dataset.state = y, u.querySelectorAll("button[data-value]").forEach((w) => {
         const L = w.dataset.value === y;
         w.setAttribute("aria-pressed", String(L)), w.querySelector(".ekom-status-check").textContent = L ? "✓" : "";
       }), u.removeAttribute("open"), (n = u.querySelector("summary")) == null || n.focus();
@@ -1328,7 +1333,7 @@ class Ae extends we(HTMLElement) {
       return;
     const t = ((i = e.customerInformation) == null ? void 0 : i.customer) || {}, r = ((s = e.customerInformation) == null ? void 0 : s.shipping) || {};
     this.customerEditModel = {
-      customer: ie(t, Se).concat(se(t.properties, "customer")),
+      customer: ie(t, Oe).concat(se(t.properties, "customer")),
       shipping: ie(r, Le).concat(se(r.properties, "shipping"))
     }, this.customerEditorOpen = !0, this.render();
   }
@@ -1440,7 +1445,7 @@ function k(o, p) {
 function P(o) {
   return o != null && (typeof o != "string" || o.trim() !== "");
 }
-function D(o) {
+function F(o) {
   if (o === "code") return "Gift-card number";
   if (o === "claimId") return "Reservation reference";
   if (o === "transactionId") return "Transaction reference";
@@ -1456,13 +1461,13 @@ function j(o) {
   if (Array.isArray(o)) return o.length ? o.map(j).join("; ") : "Empty list";
   if (typeof o == "object") {
     const p = Object.entries(o);
-    return p.length ? p.map(([e, t]) => `${D(e)}: ${j(t)}`).join("; ") : "Empty object";
+    return p.length ? p.map(([e, t]) => `${F(e)}: ${j(t)}`).join("; ") : "Empty object";
   }
   return String(o);
 }
 function Q(o) {
   const p = ["code", "amount", "claimId", "claimDate", "transactionId", "usedDate", "claimed", "validUntil"];
-  return [...p, ...Object.keys(o).filter((e) => !p.includes(e))].map((e) => ({ label: D(e), value: j(o[e]) }));
+  return [...p, ...Object.keys(o).filter((e) => !p.includes(e))].map((e) => ({ label: F(e), value: j(o[e]) }));
 }
 function Y(o, p = Date.now()) {
   const e = P(o.claimId), t = P(o.validUntil), r = t ? Date.parse(String(o.validUntil)) : NaN, i = r > p, s = o.claimed === !0 || P(o.transactionId) || P(o.claimDate) || P(o.usedDate), n = s ? "Used" : e && i ? "Reserved" : e && r <= p ? "Reservation expired" : e || t ? "Needs checking" : "Selected";
@@ -1475,7 +1480,7 @@ function Y(o, p = Date.now()) {
   }
   return { status: n, warning: d, expiryLabel: !s && e ? "Reservation ends" : "Saved expiry", expiry: l };
 }
-function T(o) {
+function _(o) {
   return o === "zipCode" ? "Zipcode" : o.charAt(0).toUpperCase() + o.slice(1);
 }
 function Ie(o) {
@@ -1484,7 +1489,7 @@ function Ie(o) {
 function R(o) {
   return o.replace(/^customshipping/i, "").replace(/^custompayment/i, "").replace(/^shipping/i, "").replace(/^customer/i, "");
 }
-function _(o, p) {
+function D(o, p) {
   return Object.entries(o || {}).filter(([e, t]) => (!!t || p === "customshipping" && t === "") && e.toLowerCase().startsWith(p) && !Ie(e)).map(([e, t]) => [e, q(t)]);
 }
 function M(o) {
@@ -1566,7 +1571,7 @@ function ie(o, p) {
   });
 }
 function se(o, p) {
-  return _(o, p).map(([e, t]) => ({
+  return D(o, p).map(([e, t]) => ({
     key: e,
     label: R(e).replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim() || e,
     value: t,
