@@ -8,7 +8,7 @@
         <DefineConstants>$(DefineConstants);UMBRACO_18;UMBRACO_19</DefineConstants>
 
         <PackageId>Ekom.Klaviyo.U19</PackageId>
-        <Version>0.2.104</Version>
+        <Version>0.2.105</Version>
         <Title>Ekom Klaviyo Plugin for Umbraco 19</Title>
         <Description>Ekom Klaviyo integration plugin for Umbraco 19.</Description>
         <Authors>Vettvangur</Authors>
@@ -38,31 +38,30 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="..\**\*.cs"
-                 Exclude="..\Umbraco\U10\**\*.cs;..\Umbraco\U17\**\*.cs;..\bin\**\*.cs;..\obj\**\*.cs;..\U18\**\*.cs;..\U19\**\*.cs" />
+        <Compile Include="..\**\*.cs" Exclude="..\Umbraco\U10\**\*.cs;..\Umbraco\U17\**\*.cs;..\bin\**\*.cs;..\obj\**\*.cs;..\U18\**\*.cs;..\U19\**\*.cs"/>
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="" />
-        <None Include="..\Ekom_Logo.png" Link="Ekom_Logo.png" Pack="true" PackagePath="images/" />
-        <None Include="..\CHANGELOG.md" Link="CHANGELOG.md" Pack="true" PackagePath="" />
+        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath=""/>
+        <None Include="..\Ekom_Logo.png" Link="Ekom_Logo.png" Pack="true" PackagePath="images/"/>
+        <None Include="..\CHANGELOG.md" Link="CHANGELOG.md" Pack="true" PackagePath=""/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Http" Version="11.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="11.0.0" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-        <PackageReference Include="Umbraco.Cms.Api.Management" Version="[19.0.0-rc1,20.0.0)" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="11.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Options" Version="11.0.0"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4"/>
+        <PackageReference Include="Umbraco.Cms.Api.Management" Version="[19.0.0-rc1,20.0.0)"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(UseProjectReferences)' == 'true'">
-        <ProjectReference Include="..\..\..\Ekom\Ekom.Umbraco\Ekom.U19\Ekom.U19.csproj" />
+        <ProjectReference Include="..\..\..\Ekom\Ekom.Umbraco\Ekom.U19\Ekom.U19.csproj"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Ekom.U19" Version="$(EkomPackageVersion)" />
+        <PackageReference Include="Ekom.U19" Version="$(EkomPackageVersion)"/>
     </ItemGroup>
 
 </Project>

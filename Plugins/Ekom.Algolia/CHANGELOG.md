@@ -28,6 +28,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.73](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.72...Ekom.Algolia-v0.2.73) (2026-11-12)
+
+
+### Miscellaneous Chores
+
+* **Ekom.Algolia:** Synchronize Ekom.Algolia versions
+
 ## [0.2.72](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.71...Ekom.Algolia-v0.2.72) (2026-11-12)
 
 
