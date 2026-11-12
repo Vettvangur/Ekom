@@ -5,8 +5,8 @@ The repository contains four sample Umbraco sites:
 | Sample | Umbraco package | Target | Data and wiring |
 | --- | --- | --- | --- |
 | `Samples/U10/Ekom.Site` | 13.13.0 | .NET 8 | Uses a configured SQL Server connection and checked-in `App_Plugins/Ekom` assets. |
-| `Samples/U17/Ekom.Site.U17` | 17.5.0 | .NET 10 | References U17 runtime/web projects and includes a local SQLite database. |
-| `Samples/U18/Ekom.Site.U18` | 18.1.1 | .NET 10 | References U18 runtime/web projects, includes SQLite, and links selected U17 source/views. |
+| `Samples/U17/Ekom.Site.U17` | 17.8.1 | .NET 10 | References U17 runtime/web projects and includes a local SQLite database. |
+| `Samples/U18/Ekom.Site.U18` | 18.3.1 | .NET 10 | References U18 runtime/web projects, includes SQLite, and links selected U17 source/views. |
 | `Samples/U19/Ekom.Site.U19` | 19.0.0-rc1 | .NET 11 | References U19 runtime/web projects, includes SQLite, and links selected U17 source/views. |
 
 The directory names preserve Ekom's package naming: `Samples/U10` is the Umbraco 13 sample because the compatible runtime package is still named `Ekom.U10`.
