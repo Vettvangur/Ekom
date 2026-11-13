@@ -184,7 +184,7 @@ Direct calls to `Order.CompleteOrderAsync` do not by themselves prove payment su
 
 ### Order finalisation
 
-`CheckoutService.CompleteAsync` loads the persisted order and raises `CompleteCheckout`/`CompleteCheckoutAsync`. It then completes stock processing, marks the coupon used when applicable, updates status unless disabled by an event handler, writes an activity log, and clears the customer order reference.
+`CheckoutService.CompleteAsync` loads the persisted order and raises `CompleteCheckout`/`CompleteCheckoutAsync`. The event arguments carry the payment the order was paid with in `Payment` (provider, transaction ID, authorization code, card and the provider's own details); see [Payments](payments.md#reading-the-payment-in-your-own-code). It then completes stock processing, marks the coupon used when applicable, updates status unless disabled by an event handler, writes an activity log, and clears the customer order reference.
 
 Completion stock work is idempotent through a native SQL completion receipt. Other effects, including event subscribers and external integrations, can be invoked again by callback retries and should therefore be idempotent.
 

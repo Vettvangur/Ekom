@@ -8,6 +8,8 @@
 
 * **payments:** BREAKING: Ekom no longer references the Ekom.Payments packages. `IPaymentProvider`, `PaymentSettings`, the provider registry and the Umbraco settings reader live in Ekom under the same `Ekom.Payments` namespace, and `IPaymentModule` lets an installed provider package register its services. Offline payments need Ekom alone; each online gateway is one `Ekom.Payments.<Provider>` package that the site references itself. Ekom.Payments 1.0 packages are not compatible. `Ekom.Payments.Events.SuccessAsync` no longer completes orders; follow payments with `OrderEvents.PaymentRecordedAsync`. See `docs/upgrading/payments.md`.
 
+* **payments:** `CompleteCheckoutEventArgs.Payment` gives completion handlers the payment the order was paid with: provider, transaction ID, authorization code, card brand and masked number, payment method, the provider's own details and its response. The same payment is available from `Order.Instance.GetPaymentAsync(orderId)` and `IOrderPayments.GetCurrentPaymentAsync(orderId)`, so integrations such as ERP exports no longer read payment tables themselves.
+
 * **payments:** payments made with Ekom.Payments 1.0 and earlier are copied onto their orders as payment history by a background job after startup. Only history is added, the old tables are left as they are, and payments without an order in the database are logged and left in place.
 
 * **manager:** show the order's payment in the Umbraco 17/18/19 order drawer: provider, status, transaction ID, authorized and captured times, amount, authorization code, card and the provider's own details, with an expandable list of every payment attempt and of manual status changes. Loaded with the order drawer; also available from `GET /ekom/manager/orderPayments/{orderId}`.

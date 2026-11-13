@@ -379,6 +379,8 @@ internal sealed class OrderPaymentService : IOrderPayments
                 PaymentId = payment.PaymentId,
                 AttemptId = payment.AttemptId,
                 Provider = payment.ProviderName,
+                ProviderType = payment.ProviderType,
+                RawData = Latest(x => x.RawData),
                 Status = PaymentStatusCalculator.DescribeAttempt(own),
                 Amount = payment.Amount,
                 Currency = payment.Currency,

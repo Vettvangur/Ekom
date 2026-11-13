@@ -62,6 +62,16 @@ public static class OrderPaymentsExtensions
         }, ct);
     }
 
+    /// <summary>
+    /// The payment an order was paid with: the captured or authorized payment, otherwise the latest attempt.
+    /// Null when no payment has been recorded on the order.
+    /// </summary>
+    public static async Task<OrderPaymentAttempt?> GetCurrentPaymentAsync(this IOrderPayments payments, Guid orderId, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(payments);
+        return (await payments.GetForOrderAsync(orderId, ct).ConfigureAwait(false)).Current;
+    }
+
     /// <summary>The payment settings the payment was requested with. Card details are never stored.</summary>
     public static PaymentSettings? GetPaymentSettings(this OrderPayment payment)
     {

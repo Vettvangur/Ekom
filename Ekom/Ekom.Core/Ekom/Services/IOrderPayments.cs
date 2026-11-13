@@ -80,11 +80,20 @@ public sealed record PaymentRecordResult(bool Recorded, PaymentStatus? PaymentSt
 public sealed record OrderPaymentEvent(string Type, decimal Amount, string? Currency, DateTime OccurredUtc,
     string? Message, string? Actor, string? TransactionId, string? ManualStatus);
 
+/// <summary>
+/// One payment attempt of an order with what is known about it: the provider, the gateway's transaction ID,
+/// the authorization code, the card and the provider's own details.
+/// </summary>
 public sealed record OrderPaymentAttempt
 {
     public Guid? PaymentId { get; init; }
     public Guid? AttemptId { get; init; }
+
+    /// <summary>The name of the payment provider node, e.g. "Card payment".</summary>
     public string? Provider { get; init; }
+
+    /// <summary>The base payment provider that handled the payment, e.g. "borgun" or "offline".</summary>
+    public string? ProviderType { get; init; }
     public required string Status { get; init; }
     public decimal Amount { get; init; }
     public string? Currency { get; init; }
@@ -99,6 +108,22 @@ public sealed record OrderPaymentAttempt
     public string? Message { get; init; }
     public IReadOnlyList<PaymentDetail> Details { get; init; } = Array.Empty<PaymentDetail>();
     public IReadOnlyList<OrderPaymentEvent> Events { get; init; } = Array.Empty<OrderPaymentEvent>();
+
+    /// <summary>
+    /// The provider's latest response as JSON, without signatures, secrets or full card numbers.
+    /// Left out when the payment is sent to the manager.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore, Newtonsoft.Json.JsonIgnore]
+    public string? RawData { get; init; }
+
+    /// <summary>Reads the provider's response as a type of your own, for fields that have no property here.</summary>
+    public T? GetData<T>() where T : class
+        => string.IsNullOrWhiteSpace(RawData) ? null : System.Text.Json.JsonSerializer.Deserialize<T>(RawData,
+            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+    /// <summary>The value of one of the provider's own details by its key, e.g. "contractNumber". Null when absent.</summary>
+    public string? GetDetail(string key)
+        => Details.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase))?.Value;
 }
 
 /// <summary>An order's payments, as shown in the manager.</summary>

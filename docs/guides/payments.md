@@ -74,6 +74,57 @@ When a `Captured` or `Authorized` transaction is recorded for an order that is s
 
 Offline checkout records a payment with a `Captured` transaction and completes the order itself, so offline orders are `Paid` at checkout as before. This records that checkout was accepted, not that funds were received.
 
+## Reading the payment in your own code
+
+Code that passes a completed order on, for example to an ERP system, usually needs the authorization code, card type or transaction ID with it. The completion event carries the payment the order was paid with, so nothing has to be read from the database by hand.
+
+```csharp
+CheckoutEvents.CompleteCheckoutAsync += async (sender, args) =>
+{
+    var payment = args.Payment;          // null when no payment is recorded on the order
+    if (payment == null) return;
+
+    await erp.SendOrderAsync(args.OrderInfo, new ErpPayment
+    {
+        Provider = payment.Provider,                 // the payment provider node, e.g. "Card payment"
+        ProviderType = payment.ProviderType,         // e.g. "borgun", "valitor", "offline"
+        TransactionId = payment.TransactionId,
+        AuthorizationCode = payment.AuthorizationCode,
+        CardType = payment.CardBrand,
+        MaskedCard = payment.MaskedCardNumber,
+        Method = payment.PaymentMethod,
+        Amount = payment.Amount,
+        Currency = payment.Currency,
+        PaidAtUtc = payment.CapturedUtc ?? payment.AuthorizedUtc,
+        ContractNumber = payment.GetDetail("contractNumber"),   // a provider's own detail, by key
+    });
+};
+```
+
+| Member | Holds |
+| --- | --- |
+| `Provider`, `ProviderType` | The provider node name and the base provider that handled the payment. |
+| `Status` | `Paid`, `Authorized`, `Failed`, `Cancelled`, `Pending`, `PartiallyRefunded`, `Refunded` or `Voided` for this payment. |
+| `TransactionId`, `AuthorizationCode` | The gateway's reference and authorization code. |
+| `CardBrand`, `MaskedCardNumber`, `PaymentMethod` | The card or method, when the provider reports it. |
+| `Amount`, `Currency` | The amount requested and its ISO currency code. |
+| `AuthorizedUtc`, `CapturedUtc`, `CreatedUtc` | When it was authorized, captured and requested. |
+| `Details`, `GetDetail(key)` | The provider's own labelled values. |
+| `GetData<T>()` | The provider's response read as a type of your own, for fields with no property. |
+| `PaymentId`, `AttemptId`, `Events` | The payment's id, its checkout attempt and everything recorded on it. |
+
+`args.Payment` is the captured or authorized payment of the order; when there is none it is the latest attempt. A failure to read it is logged and leaves it null rather than stopping an order from completing.
+
+Outside the event, the same payment is available from the order id:
+
+```csharp
+var payment = await Order.Instance.GetPaymentAsync(orderId);
+// or, with IOrderPayments injected:
+var payment = await orderPayments.GetCurrentPaymentAsync(orderId);
+```
+
+Which details a provider fills in differs. Card providers report an authorization code and a masked card; Netgíró reports an invoice number and Teya consumer loans a contract number as details; an offline payment has only its provider and amount.
+
 ## Recording payments: `IOrderPayments`
 
 `Ekom.Services.IOrderPayments` is the single entry point for providers and custom integrations.

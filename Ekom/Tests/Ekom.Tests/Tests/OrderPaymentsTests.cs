@@ -320,6 +320,68 @@ public sealed class OrderPaymentsTests
     }
 
     [Fact]
+    public async Task ThePaymentAnOrderWasPaidWithIsAvailableToCompletionHandlersWithItsProviderData()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var declined = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderType = "borgun" });
+        await fixture.Payments.RecordAsync(new PaymentTransaction { PaymentId = declined.PaymentId, Type = PaymentTransactionType.Failed });
+        var paid = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderType = "valitor", ProviderName = "Card payment" });
+        await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = paid.PaymentId,
+            Type = PaymentTransactionType.Captured,
+            TransactionId = "778899",
+            AuthorizationCode = "654321",
+            CardBrand = "VISA",
+            MaskedCardNumber = "************1111",
+            PaymentMethod = "Card",
+            Details = [new PaymentDetail("contractNumber", "Contract number", "12345", true)],
+            RawData = "{\"ContractType\":\"Debit\",\"TransactionNumber\":778899}",
+        });
+
+        var payment = await CheckoutService.LoadPaymentAsync(fixture.Payments, orderId, NullLogger.Instance);
+
+        Assert.NotNull(payment);
+        Assert.Equal(paid.PaymentId, payment.PaymentId);
+        Assert.Equal("Card payment", payment.Provider);
+        Assert.Equal("valitor", payment.ProviderType);
+        Assert.Equal("Paid", payment.Status);
+        Assert.Equal("778899", payment.TransactionId);
+        Assert.Equal("654321", payment.AuthorizationCode);
+        Assert.Equal("VISA", payment.CardBrand);
+        Assert.Equal("************1111", payment.MaskedCardNumber);
+        Assert.Equal("Card", payment.PaymentMethod);
+        Assert.Equal(100m, payment.Amount);
+        Assert.Equal("ISK", payment.Currency);
+        Assert.NotNull(payment.CapturedUtc);
+        Assert.Equal("12345", payment.GetDetail("contractnumber"));
+        Assert.Null(payment.GetDetail("missing"));
+        Assert.Equal("Debit", payment.GetData<ValitorFields>()!.ContractType);
+        // The provider's response is for code, not for the manager's order drawer.
+        Assert.DoesNotContain("ContractType", System.Text.Json.JsonSerializer.Serialize(payment), StringComparison.Ordinal);
+        Assert.DoesNotContain("ContractType", Newtonsoft.Json.JsonConvert.SerializeObject(payment), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnOrderWithoutARecordedPaymentOrAnUnreadablePaymentDoesNotStopCompletion()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var failing = new Mock<IOrderPayments>();
+        failing.Setup(x => x.GetForOrderAsync(orderId, It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("Database unavailable"));
+
+        Assert.Null(await CheckoutService.LoadPaymentAsync(fixture.Payments, orderId, NullLogger.Instance));
+        Assert.Null(await CheckoutService.LoadPaymentAsync(failing.Object, orderId, NullLogger.Instance));
+        Assert.Null(await CheckoutService.LoadPaymentAsync(null, orderId, NullLogger.Instance));
+    }
+
+    private sealed class ValitorFields
+    {
+        public string? ContractType { get; set; }
+    }
+
+    [Fact]
     public async Task RecordingForUnknownPaymentFails()
     {
         using var fixture = new Fixture();
