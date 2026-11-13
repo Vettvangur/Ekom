@@ -119,7 +119,6 @@ internal sealed class LegacyPaymentMigrationService
         var createdUtc = ToUtc(row.Date);
         var currency = Text(settings, "Currency");
         var providerName = Text(settings, "PaymentProviderName");
-        var isOrderId = Guid.TryParse(row.CustomData, out var customGuid) && customGuid == orderId.Value;
 
         await db.InsertAsync(new OrderPayment
         {
@@ -133,8 +132,8 @@ internal sealed class LegacyPaymentMigrationService
             ProviderType = Text(ParseObject(row.EkomPaymentProviderData), "ekomPaymentProvider"),
             Amount = row.Amount,
             Currency = currency,
-            // Some providers kept their own lookup key where others kept the order id.
-            ProviderReference = isOrderId || string.IsNullOrWhiteSpace(row.CustomData) ? null : Limit(row.CustomData, 200),
+            // What the provider looked its payment up by: its own key, or the order id (AltaPay).
+            ProviderReference = string.IsNullOrWhiteSpace(row.CustomData) ? null : Limit(row.CustomData, 200),
             Settings = row.EkomPaymentSettingsData,
             ProviderData = row.EkomPaymentProviderData,
             Member = row.Member,

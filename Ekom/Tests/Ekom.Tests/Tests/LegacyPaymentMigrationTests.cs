@@ -41,7 +41,7 @@ public sealed class LegacyPaymentMigrationTests
         Assert.Equal("ISK", copied.Currency);
         Assert.Equal("main", copied.StoreAlias);
         Assert.Equal(Fixture.AttemptId, copied.AttemptId);
-        Assert.Null(copied.ProviderReference);
+        Assert.Equal(orderId.ToString(), copied.ProviderReference);
         Assert.Equal(DateTimeKind.Utc, DateTime.SpecifyKind(copied.CreatedUtc, DateTimeKind.Utc).Kind);
 
         var rows = await db.OrderPaymentTransactions.OrderBy(x => x.Id).ToListAsync();
@@ -106,8 +106,8 @@ public sealed class LegacyPaymentMigrationTests
         using var db = fixture.Factory.GetDatabase();
         var copied = await db.OrderPayments.SingleAsync();
         Assert.Equal(orderId, copied.OrderUniqueId);
-        // A provider's own lookup key is kept so its callbacks still find the payment.
-        Assert.Equal(place == "customData" ? null : "siminn-order-key-77", copied.ProviderReference);
+        // What the provider looked its payment up by is kept, so its callbacks still find the payment.
+        Assert.Equal(place == "customData" ? orderId.ToString() : "siminn-order-key-77", copied.ProviderReference);
     }
 
     [Fact]

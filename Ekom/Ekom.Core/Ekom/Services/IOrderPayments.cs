@@ -119,7 +119,13 @@ public interface IOrderPayments
 
     Task<OrderPayment?> GetAsync(Guid paymentId, CancellationToken ct = default);
 
-    Task<OrderPayment?> GetByProviderReferenceAsync(string providerName, string providerReference, CancellationToken ct = default);
+    /// <summary>
+    /// Finds the latest payment by the provider's own lookup key, for gateways that do not echo the payment id.
+    /// </summary>
+    /// <param name="providerType">The base payment provider, e.g. "siminnPay".</param>
+    /// <param name="providerReference">The key the provider stored when it created the payment.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<OrderPayment?> GetByProviderReferenceAsync(string providerType, string providerReference, CancellationToken ct = default);
 
     Task<OrderPaymentsView> GetForOrderAsync(Guid orderId, CancellationToken ct = default);
 

@@ -317,12 +317,14 @@ internal sealed class OrderPaymentService : IOrderPayments
         return await db.OrderPayments.SingleOrDefaultAsync(x => x.PaymentId == paymentId, ct).ConfigureAwait(false);
     }
 
-    public async Task<OrderPayment?> GetByProviderReferenceAsync(string providerName, string providerReference, CancellationToken ct = default)
+    public async Task<OrderPayment?> GetByProviderReferenceAsync(string providerType, string providerReference, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(providerReference)) return null;
         await using var db = _factory.GetDatabase();
+        // Payments copied from rows older than provider stamps have no provider type.
         return await db.OrderPayments
-            .Where(x => x.ProviderReference == providerReference && x.ProviderName == providerName)
+            .Where(x => x.ProviderReference == providerReference
+                && (x.ProviderType == providerType || x.ProviderType == null || x.ProviderType == ""))
             .OrderByDescending(x => x.Sequence).FirstOrDefaultAsync(ct).ConfigureAwait(false);
     }
 

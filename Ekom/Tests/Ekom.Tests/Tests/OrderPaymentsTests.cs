@@ -273,6 +273,22 @@ public sealed class OrderPaymentsTests
     }
 
     [Fact]
+    public async Task PaymentIsFoundByTheProvidersOwnReferenceForThatProviderOnly()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var older = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderType = "siminnPay", ProviderReference = "key-1" });
+        var newer = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderType = "siminnPay", ProviderReference = "key-1" });
+        var unstamped = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderReference = "key-2" });
+
+        Assert.Equal(newer.PaymentId, (await fixture.Payments.GetByProviderReferenceAsync("siminnPay", "key-1"))!.PaymentId);
+        Assert.Null(await fixture.Payments.GetByProviderReferenceAsync("borgun", "key-1"));
+        Assert.Equal(unstamped.PaymentId, (await fixture.Payments.GetByProviderReferenceAsync("siminnPay", "key-2"))!.PaymentId);
+        Assert.Null(await fixture.Payments.GetByProviderReferenceAsync("siminnPay", ""));
+        Assert.NotEqual(older.PaymentId, newer.PaymentId);
+    }
+
+    [Fact]
     public async Task RecordingForUnknownPaymentFails()
     {
         using var fixture = new Fixture();
