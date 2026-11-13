@@ -77,6 +77,8 @@ static class Registrations
         services.AddTransient<IOrderStateService, OrderStateService>();
         services.AddTransient<IOrderPayments, OrderPaymentService>();
         services.AddTransient<ICheckoutCompletion, CheckoutCompletion>();
+        services.AddTransient<LegacyPaymentMigrationService>();
+        services.AddHostedService<LegacyPaymentMigrationHostedService>();
         // Installed payment provider packages register their own services.
         services.AddEkomPaymentModules(config);
         services.AddTransient<IOrderDiscountCalculationService>(f =>

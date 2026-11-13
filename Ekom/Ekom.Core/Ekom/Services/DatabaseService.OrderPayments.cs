@@ -13,6 +13,7 @@ internal partial class DatabaseService
         using var db = _databaseFactory.GetDatabase();
         db.CreateTable<OrderPayment>(tableOptions: TableOptions.CreateIfNotExists);
         db.CreateTable<OrderPaymentTransaction>(tableOptions: TableOptions.CreateIfNotExists);
+        db.CreateTable<OrderPaymentMigrationState>(tableOptions: TableOptions.CreateIfNotExists);
         EnsurePaymentColumn(db, "EkomOrderPayments", nameof(OrderPayment.ProviderType), _databaseFactory.IsSqlServer ? "nvarchar(100) NULL" : "TEXT NULL");
 
         EnsurePaymentIndex(db, "EkomOrderPayments", "IX_EkomOrderPayments_PaymentId", true, nameof(OrderPayment.PaymentId));
