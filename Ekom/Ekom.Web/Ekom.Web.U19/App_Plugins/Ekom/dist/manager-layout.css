@@ -542,6 +542,26 @@ ekom-orders-section-view:not([classic]) {
  .ekom-payment-detail-box dd > span { overflow-wrap:anywhere; white-space:pre-wrap; }
  .ekom-payment-detail-box .ekom-payment-copy { display:inline-flex; justify-content:center; align-items:center; flex:0 0 22px; width:22px; height:22px; min-height:0; padding:3px; border:0; border-radius:5px; background:transparent; color:var(--ekom-muted); }
  .ekom-payment-detail-box .ekom-payment-copy:hover { color:var(--ekom-accent); background:var(--ekom-surface-alt); }
+ .ekom-payment-attempts { margin-top:16px; border:1px solid var(--ekom-border); border-radius:10px; padding:12px 16px; font-size:13px; }
+ .ekom-payment-attempts > summary { cursor:pointer; font-weight:700; color:var(--ekom-text); }
+ .ekom-payment-attempts ul { list-style:none; margin:12px 0 0; padding:0; }
+ .ekom-payment-attempt { padding:12px 0; border-top:1px solid var(--ekom-border); }
+ .ekom-payment-attempt-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+ .ekom-payment-attempt-head > span:first-child { color:var(--ekom-muted); }
+ .ekom-payment-attempt-amount { margin-left:auto; font-weight:700; }
+ .ekom-payment-attempt-message { margin:6px 0 0; color:var(--ekom-muted); overflow-wrap:anywhere; }
+ .ekom-payment-attempt details { margin-top:8px; }
+ .ekom-payment-attempt details > summary { cursor:pointer; color:var(--ekom-muted); }
+ .ekom-payment-attempt .ekom-log-table { margin-top:8px; width:100%; }
+ .ekom-payment-attempt-ids { margin:8px 0 0; }
+ .ekom-payment-attempt-ids > div { display:grid; grid-template-columns:minmax(120px,.6fr) minmax(0,1.4fr); gap:12px; padding:6px 0; }
+ .ekom-payment-attempt-ids dt { color:var(--ekom-muted); }
+ .ekom-payment-attempt-ids dd { display:flex; align-items:center; gap:6px; margin:0; min-width:0; }
+ .ekom-payment-attempt-ids dd > span { overflow-wrap:anywhere; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+ .ekom-payment-attempts .ekom-payment-copy { display:inline-flex; justify-content:center; align-items:center; flex:0 0 22px; width:22px; height:22px; min-height:0; padding:3px; border:0; border-radius:6px; background:transparent; color:var(--ekom-muted); cursor:pointer; }
+ .ekom-payment-attempts .ekom-payment-copy:hover { color:var(--ekom-accent); background:var(--ekom-surface-alt); }
+ .ekom-payment-attempts h5 { margin:14px 0 6px; font-size:13px; }
+ .ekom-payment-manual li { padding:4px 0; }
 }
 @media(max-width:900px) { ekom-orders-section-view:not([classic]) .ekom-payment-detail-grid { grid-template-columns:minmax(0,1fr); } }
 

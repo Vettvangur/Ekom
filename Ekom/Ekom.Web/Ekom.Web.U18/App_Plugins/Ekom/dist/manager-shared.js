@@ -113,6 +113,9 @@ class A {
   async orderInfo(e) {
     return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(e)}`);
   }
+  async orderPayments(e) {
+    return this.getJson(`/ekom/manager/orderPayments/${encodeURIComponent(e)}`);
+  }
   async orderLogs(e) {
     return this.getJson(`/ekom/manager/OrderLogs/${encodeURIComponent(e)}`);
   }

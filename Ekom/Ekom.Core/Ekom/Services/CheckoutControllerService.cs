@@ -892,10 +892,7 @@ public class CheckoutControllerService
 
                 errorUrl = eventsArgs.PaymentSettings.ErrorUrl.ToString();
 
-                var paymentLog = _factory.GetRequiredService<PaymentSuccessLogService>();
-                await paymentLog.LogAsync(order.UniqueId, order.OrderNumber, amount,
-                    order.StoreInfo.Currency.ISOCurrencySymbol, ekomPP.Name, offlinePayment: true)
-                    .ConfigureAwait(false);
+                await RecordOfflinePaymentAsync(order, ekomPP, amount, memberKey, ct).ConfigureAwait(false);
 
                 CheckoutService checkoutSvc = _factory.GetRequiredService<CheckoutService>();
 
@@ -1210,6 +1207,56 @@ public class CheckoutControllerService
             ["attemptId"] = CurrentPaymentAttemptId?.ToString(),
             ["outcome"] = outcome
         });
+    }
+
+    /// <summary>
+    /// Stores the offline payment on the order. Offline orders count as paid at checkout, as before.
+    /// </summary>
+    private async Task RecordOfflinePaymentAsync(IOrderInfo order, Models.IPaymentProvider provider, decimal amount,
+        string? memberKey, CancellationToken ct)
+    {
+        try
+        {
+            var payments = _factory.GetService<IOrderPayments>();
+            if (payments == null)
+            {
+                var paymentLog = _factory.GetRequiredService<PaymentSuccessLogService>();
+                await paymentLog.LogAsync(order.UniqueId, order.OrderNumber, amount,
+                    order.StoreInfo.Currency.ISOCurrencySymbol, provider.Name, offlinePayment: true).ConfigureAwait(false);
+                return;
+            }
+
+            var payment = await payments.CreateAsync(new NewOrderPayment
+            {
+                OrderUniqueId = order.UniqueId,
+                OrderNumber = order.OrderNumber,
+                AttemptId = CurrentPaymentAttemptId,
+                StoreAlias = order.StoreInfo.Alias,
+                ProviderKey = provider.Key,
+                ProviderName = provider.Name,
+                Amount = amount,
+                Currency = order.StoreInfo.Currency.ISOCurrencySymbol,
+                Member = Guid.TryParse(memberKey, out var member) ? member : null,
+                IPAddress = _httpCtx.Connection.RemoteIpAddress?.ToString(),
+                UserAgent = _httpCtx.Request.Headers.UserAgent.ToString(),
+            }, ct).ConfigureAwait(false);
+
+            await payments.RecordAsync(new PaymentTransaction
+            {
+                PaymentId = payment.PaymentId,
+                Type = Models.Payments.PaymentTransactionType.Captured,
+                PaymentMethod = "Offline",
+                Actor = "Customer",
+            }, ct).ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // A payment-history failure must not block an offline order from completing.
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            Logger.LogError(ex,
+                "Failed to record offline payment. OrderNumber: {OrderNumber} OrderId: {OrderUniqueId}",
+                order.OrderNumber, order.UniqueId);
+        }
     }
 
 #pragma warning restore CA1062 // Validate arguments of public methods

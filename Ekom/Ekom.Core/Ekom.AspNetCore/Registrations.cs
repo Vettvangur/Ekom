@@ -70,6 +70,7 @@ static class Registrations
 
         services.AddTransient<OrderService>();
         services.AddTransient<IOrderStateService, OrderStateService>();
+        services.AddTransient<IOrderPayments, OrderPaymentService>();
         services.AddTransient<IOrderDiscountCalculationService>(f =>
             new OrderDiscountCalculationService(
                 f.GetRequiredService<Catalog>(),

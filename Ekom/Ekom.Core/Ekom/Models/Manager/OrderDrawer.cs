@@ -18,4 +18,7 @@ public sealed class OrderDrawer
     public IReadOnlyList<GiftcardRecoveryView>? GiftcardRecovery { get; set; }
 
     public IReadOnlyList<OrderReview>? Reviews { get; set; }
+
+    /// <summary>The order's payments. Null when they could not be loaded.</summary>
+    public Services.OrderPaymentsView? Payments { get; set; }
 }

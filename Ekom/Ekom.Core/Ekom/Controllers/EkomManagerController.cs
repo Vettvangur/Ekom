@@ -204,6 +204,11 @@ public class EkomManagerController : ControllerBase
             var response = GetOrderInfoResponse(order);
             var drawer = await LoadOrderDrawerSectionsAsync(orderId, order, recoveryService, reviewService, ct).ConfigureAwait(false);
             drawer.Order = response;
+            if (HttpContext?.RequestServices.GetService(typeof(IOrderPayments)) is IOrderPayments payments)
+            {
+                drawer.Payments = await LoadDrawerSectionAsync(orderId, "payments", true,
+                    () => payments.GetForOrderAsync(orderId, ct), ct).ConfigureAwait(false);
+            }
 
             return Ok(drawer);
         }
@@ -282,6 +287,32 @@ public class EkomManagerController : ControllerBase
             {
                 return reviews;
             }
+        }
+    }
+
+    /// <summary>The order's payments: the current payment, every attempt and manual status changes.</summary>
+    [HttpGet("orderPayments/{orderId:guid}")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> GetOrderPaymentsAsync(Guid orderId, [FromServices] IOrderPayments payments, CancellationToken ct = default)
+    {
+        try
+        {
+            var orderData = await _repo.GetOrderAsync(orderId, ct);
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
+            return Ok(await payments.GetForOrderAsync(orderId, ct).ConfigureAwait(false));
+        }
+#pragma warning disable CA1031 // Do not catch general exception types
+        catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+        {
+            _logger.LogError(ex, "Failed to get order payments. {OrderId}", orderId);
+
+            return StatusCode(500, "An unexpected error occurred.");
         }
     }
 
