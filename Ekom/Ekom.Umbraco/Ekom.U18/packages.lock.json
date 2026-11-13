@@ -2,17 +2,6 @@
   "version": 1,
   "dependencies": {
     "net10.0": {
-      "Ekom.Payments.U18": {
-        "type": "Direct",
-        "requested": "[1.0.0, )",
-        "resolved": "1.0.0",
-        "contentHash": "OQZpBHHDOKAO7AYaHfYvntXa0SMrmwgg70Xq1Pf8ZCC+CfuoTwQUYAUEfD0ZqH+8blWwJYD10x5vu2yUql4hKw==",
-        "dependencies": {
-          "Ekom.Payments.AspNetCore": "1.0.0",
-          "Umbraco.Cms.Core": "18.0.0",
-          "Umbraco.Cms.Web.Common": "18.0.0"
-        }
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[1.0.0, )",
@@ -217,12 +206,12 @@
       },
       "Azure.Core": {
         "type": "Transitive",
-        "resolved": "1.51.0",
-        "contentHash": "WzIcQzKPG/iDWYrl0F5YZH78ZYTfjCc2UVZ4HyVX9QxUYiiJmbCCled0NZGCp1XBMhlKC5ilUlU35Bfe68uKiA==",
+        "resolved": "1.50.0",
+        "contentHash": "GBNKZEhdIbTXxedvD3R7I/yDVFX9jJJEz02kCziFSJxspSQ5RMHc3GktulJ1s7+ffXaXD7kMgrtdQTaggyInLw==",
         "dependencies": {
-          "Microsoft.Bcl.AsyncInterfaces": "10.0.2",
-          "System.ClientModel": "1.9.0",
-          "System.Memory.Data": "10.0.1"
+          "Microsoft.Bcl.AsyncInterfaces": "8.0.0",
+          "System.ClientModel": "1.8.0",
+          "System.Memory.Data": "8.0.1"
         }
       },
       "Azure.Identity": {
@@ -261,27 +250,6 @@
         "type": "Transitive",
         "resolved": "3.1.0",
         "contentHash": "i6x0hDsFWg6Ke2isaNAcHQ9ChxBvTJu2cSmBY+Jtjiv2W4q6y9QlA3JKYuZqJ573TAZmpAn65Qf3sRpjvZ1gmw=="
-      },
-      "Ekom.Payments.AspNetCore": {
-        "type": "Transitive",
-        "resolved": "1.0.0",
-        "contentHash": "0/TyUgXp8mLcplM8idbfPjJ24avD67idx1KRHrk+W0qRiTJVdTvkrFemECg1yPBunQk5pRLkUgUXuzlXzWK7Kw==",
-        "dependencies": {
-          "Ekom.Payments.Core": "1.0.0"
-        }
-      },
-      "Ekom.Payments.Core": {
-        "type": "Transitive",
-        "resolved": "1.0.0",
-        "contentHash": "TcR7T/7M9o21S55iApuvpaZvXM4SpMKFE2jmtSpleq8JadnKV+9hNvlVJZyCpm9Qak/D4bioapM/7F/s1WiDkA==",
-        "dependencies": {
-          "Azure.Core": "1.51.0",
-          "Azure.Identity": "1.17.1",
-          "Microsoft.Data.SqlClient": "6.1.2",
-          "Microsoft.Data.Sqlite": "8.0.11",
-          "Newtonsoft.Json": "13.0.3",
-          "linq2db": "5.4.1"
-        }
       },
       "Examine": {
         "type": "Transitive",
@@ -549,8 +517,8 @@
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
-        "resolved": "10.0.2",
-        "contentHash": "qE5JhRoeJbAipLqpUCZyNfNwnpAvUttXgIQDnTiJ15d8ji+/bPgoPkB3xLzK5cQTobN2D2ditUesUlDHb7p3Pg=="
+        "resolved": "8.0.0",
+        "contentHash": "3WA9q9yVqJp222P3x1wYIGDAkpjAku0TMUaaQV22g6L67AI0LdOIrVS7Ht2vJfLHGSPVuqN94vIr15qn+HEkHw=="
       },
       "Microsoft.Bcl.Cryptography": {
         "type": "Transitive",
@@ -1530,13 +1498,11 @@
       },
       "System.ClientModel": {
         "type": "Transitive",
-        "resolved": "1.9.0",
-        "contentHash": "1wdwKtMMMEFEYsxJmtrOd3G+7zVOVO3MlVZAsbKv9H0PnIx6J27fYAarMn0eQS0vKJPQL018DOb7YRK1O97p0A==",
+        "resolved": "1.8.0",
+        "contentHash": "AqRzhn0v29GGGLj/Z6gKq4lGNtvPHT4nHdG5PDJh9IfVjv/nYUVmX11hwwws1vDFeIAzrvmn0dPu8IjLtu6fAw==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "10.0.2",
-          "Microsoft.Extensions.Hosting.Abstractions": "10.0.2",
-          "Microsoft.Extensions.Logging.Abstractions": "10.0.2",
-          "System.Memory.Data": "10.0.1"
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "System.Memory.Data": "8.0.1"
         }
       },
       "System.Configuration.ConfigurationManager": {
@@ -1577,8 +1543,8 @@
       },
       "System.Memory.Data": {
         "type": "Transitive",
-        "resolved": "10.0.1",
-        "contentHash": "BZC4mhdL569AXV56ep9YO6ShjhxFXGP7SwVX0Bc/e0dJPWnS6aBEXZJXqh64RVx8HquqWHkJUINBydLRQ1yq0g=="
+        "resolved": "8.0.1",
+        "contentHash": "BVYuec3jV23EMRDeR7Dr1/qhx7369dZzJ9IWy2xylvb4YfXsrUxspWc4UWYid/tj4zZK58uGZqn2WQiaDMhmAg=="
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
@@ -1744,7 +1710,7 @@
       "ekom.aspnetcore": {
         "type": "Project",
         "dependencies": {
-          "Ekom.Core": "[1.1.4, )"
+          "Ekom.Core": "[1.1.6, )"
         }
       },
       "ekom.common": {
@@ -1759,8 +1725,7 @@
         "dependencies": {
           "Azure.Identity": "[1.17.1, )",
           "CommonServiceLocator": "[2.0.7, )",
-          "Ekom.Common": "[1.1.4, )",
-          "Ekom.Payments.Core": "[1.0.0, )",
+          "Ekom.Common": "[1.1.6, )",
           "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "[8.0.11, )",
           "Microsoft.Data.SqlClient": "[6.1.2, )",
           "Microsoft.Data.Sqlite": "[8.0.11, )",

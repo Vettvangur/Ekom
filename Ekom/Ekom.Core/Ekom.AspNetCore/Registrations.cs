@@ -40,7 +40,12 @@ static class Registrations
         services.AddSingleton(sp => new Configuration(config));
         services.AddSingleton<IStartupFilter, EkomAspNetCoreStartupFilter>();
         services.AddSingleton<IAuthorizationHandler, UmbracoUserAuthorizationHandler>();
-        services.AddSingleton<PaymentsConfiguration>();
+        services.AddSingleton(_ =>
+        {
+            var paymentsConfiguration = new PaymentsConfiguration();
+            config.Bind("Ekom:Payments", paymentsConfiguration);
+            return paymentsConfiguration;
+        });
 
         services.AddSingleton<IStoreDomainCache, StoreDomainCache>();
         services.AddSingleton<IBaseCache<IStore>, StoreCache>();
@@ -71,6 +76,9 @@ static class Registrations
         services.AddTransient<OrderService>();
         services.AddTransient<IOrderStateService, OrderStateService>();
         services.AddTransient<IOrderPayments, OrderPaymentService>();
+        services.AddTransient<ICheckoutCompletion, CheckoutCompletion>();
+        // Installed payment provider packages register their own services.
+        services.AddEkomPaymentModules(config);
         services.AddTransient<IOrderDiscountCalculationService>(f =>
             new OrderDiscountCalculationService(
                 f.GetRequiredService<Catalog>(),

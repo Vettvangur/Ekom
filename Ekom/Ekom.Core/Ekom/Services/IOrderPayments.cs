@@ -15,6 +15,9 @@ public sealed record NewOrderPayment
     public string? StoreAlias { get; init; }
     public Guid? ProviderKey { get; init; }
     public string? ProviderName { get; init; }
+
+    /// <summary>The base payment provider handling the payment, e.g. "borgun".</summary>
+    public string? ProviderType { get; init; }
     public decimal Amount { get; init; }
 
     /// <summary>ISO 4217 currency code.</summary>
@@ -59,11 +62,17 @@ public sealed record PaymentTransaction
 
     /// <summary>The provider response as JSON, without secrets or full card numbers.</summary>
     public string? RawData { get; init; }
+
+    /// <summary>Set by checkout paths that complete the order themselves, such as offline payments.</summary>
+    internal bool SkipCheckoutCompletion { get; init; }
 }
 
 /// <param name="Recorded">False when the same transaction was already stored.</param>
 /// <param name="PaymentStatus">The order's payment status after recording.</param>
-public sealed record PaymentRecordResult(bool Recorded, PaymentStatus? PaymentStatus, OrderPaymentTransaction? Transaction);
+/// <param name="Transaction">The stored transaction.</param>
+/// <param name="CheckoutCompleted">True when this call completed the order's checkout.</param>
+public sealed record PaymentRecordResult(bool Recorded, PaymentStatus? PaymentStatus, OrderPaymentTransaction? Transaction,
+    bool CheckoutCompleted = false);
 
 public sealed record OrderPaymentEvent(string Type, decimal Amount, string? Currency, DateTime OccurredUtc,
     string? Message, string? Actor, string? TransactionId, string? ManualStatus);

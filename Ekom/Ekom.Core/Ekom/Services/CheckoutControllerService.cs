@@ -1234,6 +1234,7 @@ public class CheckoutControllerService
                 StoreAlias = order.StoreInfo.Alias,
                 ProviderKey = provider.Key,
                 ProviderName = provider.Name,
+                ProviderType = "offline",
                 Amount = amount,
                 Currency = order.StoreInfo.Currency.ISOCurrencySymbol,
                 Member = Guid.TryParse(memberKey, out var member) ? member : null,
@@ -1247,6 +1248,8 @@ public class CheckoutControllerService
                 Type = Models.Payments.PaymentTransactionType.Captured,
                 PaymentMethod = "Offline",
                 Actor = "Customer",
+                // The offline checkout completes the order itself right after this.
+                SkipCheckoutCompletion = true,
             }, ct).ConfigureAwait(false);
         }
 #pragma warning disable CA1031 // A payment-history failure must not block an offline order from completing.

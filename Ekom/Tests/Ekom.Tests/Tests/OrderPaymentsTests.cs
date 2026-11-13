@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -184,6 +185,58 @@ public sealed class OrderPaymentsTests
     }
 
     [Fact]
+    public async Task CaptureCompletesCheckoutOfAnOrderWaitingForPaymentOnce()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder(legacyStatus: "WaitingForPayment");
+        var attemptId = Guid.NewGuid();
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { AttemptId = attemptId });
+        var capture = new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, TransactionId = "TX-9" };
+
+        var first = await fixture.Payments.RecordAsync(capture);
+        var repeated = await fixture.Payments.RecordAsync(capture);
+
+        Assert.True(first.CheckoutCompleted);
+        Assert.False(repeated.CheckoutCompleted);
+        Assert.Equal((orderId, (Guid?)attemptId), Assert.Single(fixture.Completion.Calls));
+    }
+
+    [Fact]
+    public async Task RepeatedCaptureCompletesCheckoutWhenTheFirstDeliveryDidNot()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder(legacyStatus: "WaitingForPayment");
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+        var capture = new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured };
+        fixture.Completion.Fail = true;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Payments.RecordAsync(capture));
+        fixture.Completion.Fail = false;
+        var repeated = await fixture.Payments.RecordAsync(capture);
+
+        Assert.False(repeated.Recorded);
+        Assert.True(repeated.CheckoutCompleted);
+        using var db = fixture.Factory.GetDatabase();
+        Assert.Equal(1, await db.OrderPaymentTransactions.CountAsync(x => x.TypeCol == "Captured"));
+    }
+
+    [Fact]
+    public async Task FailedPaymentAndOfflineCaptureDoNotCompleteCheckout()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder(legacyStatus: "WaitingForPayment");
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+
+        await fixture.Payments.RecordAsync(new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Failed });
+        await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, SkipCheckoutCompletion = true,
+        });
+
+        Assert.Empty(fixture.Completion.Calls);
+    }
+
+    [Fact]
     public async Task RecordingForUnknownPaymentFails()
     {
         using var fixture = new Fixture();
@@ -223,6 +276,7 @@ public sealed class OrderPaymentsTests
         public DatabaseFactory Factory { get; }
         public IOrderPayments Payments { get; }
         public OrderStateService States { get; }
+        public FakeCompletion Completion { get; } = new();
 
         public Fixture()
         {
@@ -241,7 +295,10 @@ public sealed class OrderPaymentsTests
             schema.EnsureOrderPaymentTables();
             var configuration = new Configuration(root);
             var handlers = Array.Empty<IOrderStatusPersistenceHandler>();
-            Payments = new OrderPaymentService(Factory, configuration, _cache, handlers, NullLogger<OrderPaymentService>.Instance);
+            Completion.Factory = Factory;
+            var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
+                .AddSingleton<ICheckoutCompletion>(Completion).BuildServiceProvider();
+            Payments = new OrderPaymentService(Factory, configuration, _cache, handlers, NullLogger<OrderPaymentService>.Instance, services);
 
             var access = new Mock<IManagerAccessService>();
             access.Setup(x => x.CanAccessManager()).Returns(true);
@@ -259,7 +316,7 @@ public sealed class OrderPaymentsTests
             States = new OrderStateService(Factory, configuration, access.Object, _cache, attempts, http, handlers);
         }
 
-        public Guid AddOpenOrder(bool migrated = true)
+        public Guid AddOpenOrder(bool migrated = true, string legacyStatus = "Pending")
         {
             var id = Guid.NewGuid();
             using var db = Factory.GetDatabase();
@@ -268,11 +325,12 @@ public sealed class OrderPaymentsTests
                 UniqueId = id,
                 StoreAlias = "main",
                 OrderNumber = "IS-1042",
-                OrderStatusCol = "Pending",
+                OrderStatusCol = legacyStatus,
                 OrderInfo = "{}",
                 TotalAmount = 100m,
                 Currency = "is-IS",
-                OrderStateCol = migrated ? nameof(OrderStatus.Open) : null,
+                // An order still waiting for its payment is a draft; it opens when checkout completes.
+                OrderStateCol = !migrated ? null : legacyStatus == "WaitingForPayment" ? nameof(OrderStatus.Draft) : nameof(OrderStatus.Open),
                 PaymentStateCol = migrated ? nameof(PaymentStatus.Pending) : null,
                 FulfillmentStateCol = migrated ? nameof(FulfillmentStatus.Unfulfilled) : null,
                 StatusMappingVersion = migrated ? 1 : 0,
@@ -295,6 +353,23 @@ public sealed class OrderPaymentsTests
         {
             _cache.Dispose();
             _connection.Dispose();
+        }
+    }
+
+    /// <summary>Stands in for the real checkout completion, which moves the order on from WaitingForPayment.</summary>
+    private sealed class FakeCompletion : ICheckoutCompletion
+    {
+        public DatabaseFactory Factory { get; set; } = null!;
+        public List<(Guid OrderId, Guid? AttemptId)> Calls { get; } = [];
+        public bool Fail { get; set; }
+
+        public async Task<bool> CompleteAsync(Guid orderId, Guid? attemptId, CancellationToken ct = default)
+        {
+            if (Fail) throw new InvalidOperationException("Checkout completion failed.");
+            Calls.Add((orderId, attemptId));
+            await using var db = Factory.GetDatabase();
+            await db.OrderData.Where(x => x.UniqueId == orderId).Set(x => x.OrderStatusCol, "ReadyForDispatch").UpdateAsync(ct);
+            return true;
         }
     }
 }

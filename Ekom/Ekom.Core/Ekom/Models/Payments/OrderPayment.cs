@@ -38,6 +38,10 @@ public sealed class OrderPayment
     [Column(Length = 200)]
     public string? ProviderName { get; set; }
 
+    /// <summary>The base payment provider that handles this payment, e.g. "borgun". Callbacks check it.</summary>
+    [Column(Length = 100)]
+    public string? ProviderType { get; set; }
+
     [Column(Precision = 18, Scale = 2), NotNull]
     public decimal Amount { get; set; }
 

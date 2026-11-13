@@ -19,10 +19,13 @@ internal sealed class OrderPaymentService : IOrderPayments
     private readonly IMemoryCache _cache;
     private readonly IEnumerable<IOrderStatusPersistenceHandler> _handlers;
     private readonly ILogger<OrderPaymentService> _logger;
+    private readonly IServiceProvider? _services;
 
     public OrderPaymentService(DatabaseFactory factory, Configuration configuration, IMemoryCache cache,
-        IEnumerable<IOrderStatusPersistenceHandler> handlers, ILogger<OrderPaymentService> logger)
+        IEnumerable<IOrderStatusPersistenceHandler> handlers, ILogger<OrderPaymentService> logger,
+        IServiceProvider? services = null)
     {
+        _services = services;
         _factory = factory;
         _configuration = configuration;
         _cache = cache;
@@ -46,6 +49,7 @@ internal sealed class OrderPaymentService : IOrderPayments
             StoreAlias = payment.StoreAlias,
             ProviderKey = payment.ProviderKey,
             ProviderName = payment.ProviderName,
+            ProviderType = payment.ProviderType,
             Amount = payment.Amount,
             Currency = payment.Currency,
             ProviderReference = payment.ProviderReference,
@@ -104,8 +108,11 @@ internal sealed class OrderPaymentService : IOrderPayments
             var order = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == payment.OrderUniqueId, ct).ConfigureAwait(false);
             if (existing != null)
             {
-                // The same provider callback delivered again: nothing new happened.
-                return new PaymentRecordResult(false, order?.Status.PaymentStatus, existing);
+                // The same provider callback delivered again: nothing new is stored. If the first
+                // delivery stopped before the order was completed, this one finishes the job.
+                await dbTransaction.CommitAsync(ct).ConfigureAwait(false);
+                var completedOnRetry = await CompleteCheckoutAsync(payment, existing.Type, transaction.SkipCheckoutCompletion, ct).ConfigureAwait(false);
+                return new PaymentRecordResult(false, order?.Status.PaymentStatus, existing, completedOnRetry);
             }
 
             var now = DateTime.UtcNow;
@@ -172,7 +179,44 @@ internal sealed class OrderPaymentService : IOrderPayments
             PaymentStatus = status,
         }, ct).ConfigureAwait(false);
 
-        return new PaymentRecordResult(true, status, row);
+        var completed = await CompleteCheckoutAsync(payment, row.Type, transaction.SkipCheckoutCompletion, ct).ConfigureAwait(false);
+        if (completed)
+        {
+            // Completion moves the order on through the legacy status; report the status it ended with.
+            await using var db = _factory.GetDatabase();
+            var after = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == payment.OrderUniqueId, ct).ConfigureAwait(false);
+            status = after?.Status.PaymentStatus ?? status;
+        }
+
+        return new PaymentRecordResult(true, status, row, completed);
+    }
+
+    /// <summary>
+    /// A captured payment completes the checkout of an order that is still waiting for its payment.
+    /// The legacy status check makes this safe to call again for a repeated callback.
+    /// </summary>
+    private async Task<bool> CompleteCheckoutAsync(OrderPayment payment, PaymentTransactionType type, bool skip, CancellationToken ct)
+    {
+        if (skip || type != PaymentTransactionType.Captured) return false;
+        var completion = _services?.GetService(typeof(ICheckoutCompletion)) as ICheckoutCompletion;
+        if (completion == null) return false;
+
+        string? legacyStatus;
+        await using (var db = _factory.GetDatabase())
+        {
+            legacyStatus = await db.OrderData.Where(x => x.UniqueId == payment.OrderUniqueId)
+                .Select(x => x.OrderStatusCol).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+        }
+        if (legacyStatus != nameof(Utilities.OrderStatus.WaitingForPayment)) return false;
+
+        var completed = await completion.CompleteAsync(payment.OrderUniqueId, payment.AttemptId, ct).ConfigureAwait(false);
+        if (!completed)
+        {
+            _logger.LogWarning(
+                "Payment captured but checkout needs reconciliation. OrderNumber: {OrderNumber} OrderId: {OrderUniqueId} PaymentId: {PaymentId} AttemptId: {PaymentAttemptId}",
+                payment.OrderNumber, payment.OrderUniqueId, payment.PaymentId, payment.AttemptId);
+        }
+        return completed;
     }
 
     /// <summary>
