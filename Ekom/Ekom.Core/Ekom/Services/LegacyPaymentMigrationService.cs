@@ -133,7 +133,7 @@ internal sealed class LegacyPaymentMigrationService
             Amount = row.Amount,
             Currency = currency,
             // What the provider looked its payment up by: its own key, or the order id (AltaPay).
-            ProviderReference = string.IsNullOrWhiteSpace(row.CustomData) ? null : Limit(row.CustomData, 200),
+            ProviderReference = string.IsNullOrWhiteSpace(row.CustomData) ? null : Limit(row.CustomData, 450),
             Settings = row.EkomPaymentSettingsData,
             ProviderData = row.EkomPaymentProviderData,
             Member = row.Member,

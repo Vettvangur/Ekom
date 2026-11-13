@@ -54,7 +54,7 @@ public sealed class OrderPayment
     public string? TransactionId { get; set; }
 
     /// <summary>A provider-specific lookup key, for gateways that do not echo <see cref="PaymentId"/>.</summary>
-    [Column(Length = 200)]
+    [Column(Length = 450)]
     public string? ProviderReference { get; set; }
 
     /// <summary>Payment settings JSON. Never contains card data.</summary>
@@ -91,6 +91,12 @@ public enum PaymentTransactionType
 
     /// <summary>A payment status set by a manager user. Never moves money.</summary>
     Manual = 7,
+
+    /// <summary>
+    /// Something worth knowing about the payment that is not an outcome, such as "monitoring ended, check
+    /// with the provider". It never changes the payment status.
+    /// </summary>
+    Note = 8,
 }
 
 /// <summary>

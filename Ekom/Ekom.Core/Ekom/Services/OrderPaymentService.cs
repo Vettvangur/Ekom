@@ -39,7 +39,7 @@ internal sealed class OrderPaymentService : IOrderPayments
         if (payment.OrderUniqueId == Guid.Empty)
             throw new ArgumentException("A payment must belong to an order.", nameof(payment));
 
-        var now = DateTime.UtcNow;
+        var now = payment.CreatedUtc?.ToUniversalTime() ?? DateTime.UtcNow;
         var row = new OrderPayment
         {
             PaymentId = payment.PaymentId == Guid.Empty ? Guid.NewGuid() : payment.PaymentId,
@@ -302,6 +302,7 @@ internal sealed class OrderPaymentService : IOrderPayments
             PaymentTransactionType.Cancelled => "Payment cancelled",
             PaymentTransactionType.Voided => "Payment voided",
             PaymentTransactionType.Refunded => "Payment refunded",
+            PaymentTransactionType.Note => "Payment note",
             _ => "Payment requested",
         };
         var message = string.Create(CultureInfo.InvariantCulture,
@@ -326,6 +327,18 @@ internal sealed class OrderPaymentService : IOrderPayments
             .Where(x => x.ProviderReference == providerReference
                 && (x.ProviderType == providerType || x.ProviderType == null || x.ProviderType == ""))
             .OrderByDescending(x => x.Sequence).FirstOrDefaultAsync(ct).ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<OrderPayment>> GetOpenPaymentsAsync(string providerType, DateTime createdAfterUtc, CancellationToken ct = default)
+    {
+        await using var db = _factory.GetDatabase();
+        var requested = nameof(PaymentTransactionType.Requested);
+        // Payments copied from rows older than provider stamps have no provider type; the provider recognises its own.
+        return await db.OrderPayments
+            .Where(x => x.CreatedUtc > createdAfterUtc
+                && (x.ProviderType == providerType || x.ProviderType == null || x.ProviderType == "")
+                && !db.OrderPaymentTransactions.Any(t => t.PaymentId == x.PaymentId && t.TypeCol != requested))
+            .OrderBy(x => x.Sequence).ToListAsync(ct).ConfigureAwait(false);
     }
 
     public async Task<Guid?> FindOrderAsync(string paymentIdOrTransactionId, CancellationToken ct = default)

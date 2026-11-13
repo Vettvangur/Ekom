@@ -44,6 +44,10 @@ public sealed class OrderPaymentsTests
         { "A:Requested,A:Failed,Manual=Paid", PaymentStatus.Paid },
         { "A:Requested,Manual=Paid,A:Failed", PaymentStatus.Paid },
         { "A:Requested,A:Captured,Manual=Pending", PaymentStatus.Pending },
+        // A note never changes the status.
+        { "A:Requested,A:Note", PaymentStatus.Pending },
+        { "A:Requested,A:Captured,A:Note", PaymentStatus.Paid },
+        { "A:Requested,A:Failed,A:Note", PaymentStatus.Failed },
         // Real money movement after a manual choice counts again.
         { "A:Requested,Manual=Pending,A:Captured", PaymentStatus.Paid },
         { "A:Requested,A:Captured,Manual=Paid,A:Refunded", PaymentStatus.Refunded },
@@ -286,6 +290,33 @@ public sealed class OrderPaymentsTests
         Assert.Equal(unstamped.PaymentId, (await fixture.Payments.GetByProviderReferenceAsync("siminnPay", "key-2"))!.PaymentId);
         Assert.Null(await fixture.Payments.GetByProviderReferenceAsync("siminnPay", ""));
         Assert.NotEqual(older.PaymentId, newer.PaymentId);
+    }
+
+    [Fact]
+    public async Task OpenPaymentsAreThoseOfTheProviderWithNothingRecordedSinceTheRequest()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var teya = fixture.NewPayment(orderId) with { ProviderType = "teyaConsumerloans" };
+        var open = await fixture.Payments.CreateAsync(teya);
+        var noted = await fixture.Payments.CreateAsync(teya);
+        var failed = await fixture.Payments.CreateAsync(teya);
+        var otherProvider = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderType = "borgun" });
+        await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = noted.PaymentId, Type = PaymentTransactionType.Note, Message = "Monitoring ended; check with the provider",
+        });
+        await fixture.Payments.RecordAsync(new PaymentTransaction { PaymentId = failed.PaymentId, Type = PaymentTransactionType.Failed });
+
+        var result = await fixture.Payments.GetOpenPaymentsAsync("teyaConsumerloans", DateTime.UtcNow.AddHours(-1));
+
+        Assert.Equal(open.PaymentId, Assert.Single(result).PaymentId);
+        Assert.Empty(await fixture.Payments.GetOpenPaymentsAsync("teyaConsumerloans", DateTime.UtcNow.AddHours(1)));
+        Assert.NotEqual(otherProvider.PaymentId, open.PaymentId);
+        // The note is part of the payment's history and of the order's activity log, but not an outcome.
+        var view = await fixture.Payments.GetForOrderAsync(orderId);
+        Assert.Equal("Pending", view.Attempts.Single(x => x.PaymentId == noted.PaymentId).Status);
+        Assert.Contains(view.Attempts.Single(x => x.PaymentId == noted.PaymentId).Events, x => x.Type == "Note");
     }
 
     [Fact]

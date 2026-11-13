@@ -31,6 +31,9 @@ public sealed record NewOrderPayment
 
     /// <summary>"Customer" when empty.</summary>
     public string? Actor { get; init; }
+
+    /// <summary>When the payment was requested. Defaults to now; set when copying a payment that already exists elsewhere.</summary>
+    public DateTime? CreatedUtc { get; init; }
 }
 
 /// <summary>Something that happened to a payment, reported by a provider.</summary>
@@ -126,6 +129,15 @@ public interface IOrderPayments
     /// <param name="providerReference">The key the provider stored when it created the payment.</param>
     /// <param name="ct">Cancellation token.</param>
     Task<OrderPayment?> GetByProviderReferenceAsync(string providerType, string providerReference, CancellationToken ct = default);
+
+    /// <summary>
+    /// The payments of a provider that were requested and have had nothing recorded since. A provider that
+    /// polls its gateway uses this to pick its unfinished payments up again after a restart.
+    /// </summary>
+    /// <param name="providerType">The base payment provider, e.g. "teyaConsumerloans".</param>
+    /// <param name="createdAfterUtc">Only payments requested after this time.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<IReadOnlyList<OrderPayment>> GetOpenPaymentsAsync(string providerType, DateTime createdAfterUtc, CancellationToken ct = default);
 
     Task<OrderPaymentsView> GetForOrderAsync(Guid orderId, CancellationToken ct = default);
 

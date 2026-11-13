@@ -14,7 +14,9 @@ public static class PaymentStatusCalculator
     public static PaymentStatus? Calculate(IEnumerable<OrderPaymentTransaction> transactions, decimal orderTotal)
     {
         ArgumentNullException.ThrowIfNull(transactions);
-        var rows = transactions.OrderBy(x => x.OccurredUtc).ThenBy(x => x.Id).ToList();
+        // Notes describe a payment; they are not outcomes.
+        var rows = transactions.Where(x => x.Type != PaymentTransactionType.Note)
+            .OrderBy(x => x.OccurredUtc).ThenBy(x => x.Id).ToList();
         if (rows.Count == 0) return null;
 
         var manualIndex = rows.FindLastIndex(x => x.Type == PaymentTransactionType.Manual && x.ManualStatus.HasValue);
@@ -65,7 +67,7 @@ public static class PaymentStatusCalculator
             if (refunded > 0) return refunded >= captured ? nameof(PaymentStatus.Refunded) : nameof(PaymentStatus.PartiallyRefunded);
             return nameof(PaymentStatus.Paid);
         }
-        var last = rows.LastOrDefault(x => x.Type != PaymentTransactionType.Requested);
+        var last = rows.LastOrDefault(x => x.Type is not (PaymentTransactionType.Requested or PaymentTransactionType.Note));
         return last?.Type switch
         {
             PaymentTransactionType.Authorized => nameof(PaymentStatus.Authorized),

@@ -29,10 +29,11 @@ public static class OrderPaymentsExtensions
     /// <param name="providerReference">A lookup key for gateways that do not echo the payment id.</param>
     /// <param name="httpContext">The checkout request, for IP address and user agent.</param>
     /// <param name="paymentId">A specific payment id. Leave empty to have one generated.</param>
+    /// <param name="createdUtc">When the payment was requested, if not now. For payments copied from elsewhere.</param>
     /// <param name="ct">Cancellation token.</param>
     public static Task<OrderPayment> CreateAsync(this IOrderPayments payments, PaymentSettings settings, string providerType, decimal amount,
         object? providerSettings = null, string? providerReference = null, HttpContext? httpContext = null,
-        Guid paymentId = default, CancellationToken ct = default)
+        Guid paymentId = default, DateTime? createdUtc = null, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(payments);
         ArgumentNullException.ThrowIfNull(settings);
@@ -41,6 +42,7 @@ public static class OrderPaymentsExtensions
         return payments.CreateAsync(new NewOrderPayment
         {
             PaymentId = paymentId,
+            CreatedUtc = createdUtc,
             OrderUniqueId = settings.OrderUniqueId,
             OrderNumber = settings.OrderNumber,
             AttemptId = settings.OrderCustomData.TryGetValue("ekomPaymentAttemptId", out var attempt)
