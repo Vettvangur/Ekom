@@ -112,7 +112,10 @@ internal sealed class OrderPaymentService : IOrderPayments
                 // delivery stopped before the order was completed, this one finishes the job.
                 await dbTransaction.CommitAsync(ct).ConfigureAwait(false);
                 var completedOnRetry = await CompleteCheckoutAsync(payment, existing.Type, transaction.SkipCheckoutCompletion, ct).ConfigureAwait(false);
-                return new PaymentRecordResult(false, order?.Status.PaymentStatus, existing, completedOnRetry);
+                var statusOnRetry = completedOnRetry
+                    ? await ReapplyStatusAfterCompletionAsync(payment.OrderUniqueId, ct).ConfigureAwait(false)
+                    : order?.Status.PaymentStatus;
+                return new PaymentRecordResult(false, statusOnRetry, existing, completedOnRetry);
             }
 
             var now = DateTime.UtcNow;
@@ -182,22 +185,40 @@ internal sealed class OrderPaymentService : IOrderPayments
         var completed = await CompleteCheckoutAsync(payment, row.Type, transaction.SkipCheckoutCompletion, ct).ConfigureAwait(false);
         if (completed)
         {
-            // Completion moves the order on through the legacy status; report the status it ended with.
-            await using var db = _factory.GetDatabase();
-            var after = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == payment.OrderUniqueId, ct).ConfigureAwait(false);
-            status = after?.Status.PaymentStatus ?? status;
+            status = await ReapplyStatusAfterCompletionAsync(payment.OrderUniqueId, ct).ConfigureAwait(false) ?? status;
         }
 
         return new PaymentRecordResult(true, status, row, completed);
     }
 
     /// <summary>
-    /// A captured payment completes the checkout of an order that is still waiting for its payment.
-    /// The legacy status check makes this safe to call again for a repeated callback.
+    /// Completing checkout moves the order on through the legacy status, which assumes the order is paid.
+    /// An order completed by an authorization is not paid yet: put the calculated status back.
+    /// The legacy status is left as completion set it, so the order flows on exactly as it does today.
+    /// </summary>
+    private async Task<PaymentStatus?> ReapplyStatusAfterCompletionAsync(Guid orderId, CancellationToken ct)
+    {
+        PaymentStatus? status;
+        await using (var db = _factory.GetDatabase())
+        {
+            await using var dbTransaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
+            var order = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderId, ct).ConfigureAwait(false);
+            if (order == null) return null;
+            status = await ApplyStatusAsync(db, order, ct, projectLegacy: false).ConfigureAwait(false);
+            await dbTransaction.CommitAsync(ct).ConfigureAwait(false);
+        }
+        _cache.Remove(orderId);
+        _cache.Remove(orderId.ToString());
+        return status;
+    }
+
+    /// <summary>
+    /// A captured or authorized payment completes the checkout of an order that is still waiting for its
+    /// payment. The legacy status check makes this safe to call again for a repeated callback.
     /// </summary>
     private async Task<bool> CompleteCheckoutAsync(OrderPayment payment, PaymentTransactionType type, bool skip, CancellationToken ct)
     {
-        if (skip || type != PaymentTransactionType.Captured) return false;
+        if (skip || type is not (PaymentTransactionType.Captured or PaymentTransactionType.Authorized)) return false;
         var completion = _services?.GetService(typeof(ICheckoutCompletion)) as ICheckoutCompletion;
         if (completion == null) return false;
 
@@ -223,7 +244,7 @@ internal sealed class OrderPaymentService : IOrderPayments
     /// Writes the calculated payment status to the order. Orders that have not been moved to the
     /// independent statuses yet are left alone: their status still comes from the legacy record.
     /// </summary>
-    private async Task<PaymentStatus?> ApplyStatusAsync(DbContext db, OrderData order, CancellationToken ct)
+    private async Task<PaymentStatus?> ApplyStatusAsync(DbContext db, OrderData order, CancellationToken ct, bool projectLegacy = true)
     {
         var current = order.Status;
         if (order.StatusMappingVersion == 0 || current.RequiresReview) return current.PaymentStatus;
@@ -235,7 +256,7 @@ internal sealed class OrderPaymentService : IOrderPayments
         var previousLegacy = order.OrderStatusCol;
         order.PaymentStateCol = calculated.ToString();
         OrderStateRules.AutoClose(order, _configuration.AutoClosePaidAndFulfilledOrders(order.StoreAlias));
-        order.OrderStatusCol = OrderStateRules.Project(order);
+        if (projectLegacy) order.OrderStatusCol = OrderStateRules.Project(order);
         order.StatusRevision = checked(order.StatusRevision + 1);
         order.UpdateDate = DateTime.Now;
         await OrderStateService.WriteStateAsync(db, order, ct).ConfigureAwait(false);

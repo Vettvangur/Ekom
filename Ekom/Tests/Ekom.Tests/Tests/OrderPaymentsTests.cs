@@ -202,6 +202,42 @@ public sealed class OrderPaymentsTests
     }
 
     [Fact]
+    public async Task AuthorizationCompletesCheckoutButTheOrderIsOnlyPaidOnceCaptured()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder(legacyStatus: "WaitingForPayment");
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+
+        var authorized = await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = payment.PaymentId, Type = PaymentTransactionType.Authorized, TransactionId = "AUTH-1",
+        });
+
+        Assert.True(authorized.CheckoutCompleted);
+        // Completion moves the order on as if it were paid; the payment itself is only authorized.
+        Assert.Equal(PaymentStatus.Authorized, authorized.PaymentStatus);
+        using (var db = fixture.Factory.GetDatabase())
+        {
+            var order = await db.OrderData.SingleAsync(x => x.UniqueId == orderId);
+            Assert.Equal(PaymentStatus.Authorized, order.Status.PaymentStatus);
+            Assert.Equal(OrderStatus.Open, order.Status.OrderStatus);
+            Assert.Equal("ReadyForDispatch", order.OrderStatusCol);
+        }
+
+        var captured = await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, TransactionId = "CAP-1",
+        });
+
+        Assert.False(captured.CheckoutCompleted);
+        Assert.Equal(PaymentStatus.Paid, captured.PaymentStatus);
+        Assert.Single(fixture.Completion.Calls);
+        var view = await fixture.Payments.GetForOrderAsync(orderId);
+        Assert.NotNull(view.Current!.AuthorizedUtc);
+        Assert.NotNull(view.Current.CapturedUtc);
+    }
+
+    [Fact]
     public async Task RepeatedCaptureCompletesCheckoutWhenTheFirstDeliveryDidNot()
     {
         using var fixture = new Fixture();
@@ -368,7 +404,12 @@ public sealed class OrderPaymentsTests
             if (Fail) throw new InvalidOperationException("Checkout completion failed.");
             Calls.Add((orderId, attemptId));
             await using var db = Factory.GetDatabase();
-            await db.OrderData.Where(x => x.UniqueId == orderId).Set(x => x.OrderStatusCol, "ReadyForDispatch").UpdateAsync(ct);
+            // Like the real completion: the order opens and the legacy status marks it paid.
+            await db.OrderData.Where(x => x.UniqueId == orderId)
+                .Set(x => x.OrderStatusCol, "ReadyForDispatch")
+                .Set(x => x.OrderStateCol, nameof(OrderStatus.Open))
+                .Set(x => x.PaymentStateCol, nameof(PaymentStatus.Paid))
+                .UpdateAsync(ct);
             return true;
         }
     }
