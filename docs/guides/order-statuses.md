@@ -17,7 +17,7 @@ Checkout and existing order APIs move accepted orders from Draft to Open as thei
 
 ## Payment status
 
-These values describe the recorded payment classification. Manually changing a status does not perform a payment-provider operation.
+The payment status is calculated from the payments recorded on the order: payment providers record what happened (requested, authorized, captured, failed, cancelled, refunded) and Ekom derives the status. See [Payments](payments.md). A manager user can still set the status by hand; that is recorded as a manual change, overrides what was recorded before it, and does not perform a payment-provider operation.
 
 | Status | Meaning and use |
 | --- | --- |
@@ -27,7 +27,7 @@ These values describe the recorded payment classification. Manually changing a s
 | `PartiallyPaid` | Only part of the amount is classified as paid. Displayed as **Partially Paid**. |
 | `Failed` | A payment attempt failed. Check the provider and checkout history before deciding what to do next. |
 | `Voided` | A payment authorization has been voided. Selecting this manually records the classification; it does not void an authorization at the provider. |
-| `PartiallyRefunded`, `Refunded` | Reserved model values for partial/full refund classification. Refund execution and refund status editing are not available in this manager release. |
+| `PartiallyRefunded`, `Refunded` | Part or all of what was captured has been returned. Set when a provider records a refund, for example one made in the gateway's own portal. Refund execution and refund status editing are not available in the manager. |
 
 For legacy compatibility, `OfflinePayment` maps to Paid, including historical invoice-based orders. This migration convention is not proof that an invoice has been collected. For new accepted orders still awaiting payment, use Open / Pending until the store's payment process determines otherwise.
 

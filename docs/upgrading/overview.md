@@ -2,14 +2,16 @@
 
 Choose Ekom packages by the target Umbraco major version:
 
-| Umbraco | Ekom integration | Web assets | Ekom payments dependency used by the integration |
-| --- | --- | --- | --- |
-| 13 | `Ekom.U10` | `Ekom.Web` | `Ekom.Payments.U10` |
-| 17 | `Ekom.U17` | `Ekom.Web.U17` | `Ekom.Payments.U17` |
-| 18 | `Ekom.U18` | `Ekom.Web.U18` | `Ekom.Payments.U18` |
-| 19 (release candidate) | `Ekom.U19` | `Ekom.Web.U19` | `Ekom.Payments.U19` |
+| Umbraco | Ekom integration | Web assets |
+| --- | --- | --- |
+| 13 | `Ekom.U10` | `Ekom.Web` |
+| 17 | `Ekom.U17` | `Ekom.Web.U17` |
+| 18 | `Ekom.U18` | `Ekom.Web.U18` |
+| 19 (release candidate) | `Ekom.U19` | `Ekom.Web.U19` |
 
-`Ekom.U10` is the legacy name retained by the current Umbraco 13 package, assembly, project, and payments dependency. Do not replace it with an assumed `Ekom.U13` package; this repository does not define one.
+Ekom no longer depends on an Ekom.Payments package. Offline payments need Ekom alone; add one `Ekom.Payments.<Provider>` package for each online gateway. See [Upgrading payments](payments.md).
+
+`Ekom.U10` is the legacy name retained by the current Umbraco 13 package, assembly, and project. Do not replace it with an assumed `Ekom.U13` package; this repository does not define one.
 
 The web-assets package belongs in the site project that contains `wwwroot`. Keep its Umbraco suffix aligned with the Ekom integration package.
 

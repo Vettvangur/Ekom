@@ -26,6 +26,7 @@ For the product overview and ecosystem landing page, visit [ekomcommerce.com](ht
 - [Order, payment, and fulfillment statuses](guides/order-statuses.md)
 - [Order custom data](guides/order-custom-data.md)
 - [Checkout](guides/checkout.md)
+- [Payments](guides/payments.md)
 - [Providers](guides/providers.md)
 - [Discounts](guides/discounts.md)
   - [Editor overview](guides/discounts/editors.md)
@@ -72,6 +73,7 @@ For the product overview and ecosystem landing page, visit [ekomcommerce.com](ht
 - [Umbraco 17 to 18](upgrading/umbraco-17-to-18.md)
 - [Umbraco 18 to 19](upgrading/umbraco-18-to-19.md)
 - [Native reservation migration](upgrading/reservations.md)
+- [Upgrading payments](upgrading/payments.md)
 
 ## Contributing
 
