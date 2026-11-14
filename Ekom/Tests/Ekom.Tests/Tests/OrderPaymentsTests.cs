@@ -172,6 +172,20 @@ public sealed class OrderPaymentsTests
     }
 
     [Fact]
+    public async Task ManagerPaymentChangeIsSignedWithTheBackofficeUserWhenTheRequestIdentityHasNoName()
+    {
+        using var fixture = new Fixture(securityUserName: "gardar");
+        var orderId = fixture.AddOpenOrder();
+
+        await fixture.States.ChangeAsync(orderId, new OrderStateChangeRequest(1, "PaymentPaid"));
+
+        var view = await fixture.Payments.GetForOrderAsync(orderId);
+        Assert.Equal("gardar", Assert.Single(view.ManualChanges).Actor);
+        using var db = fixture.Factory.GetDatabase();
+        Assert.Equal("gardar", (await db.OrderActivityLog.SingleAsync(x => x.Key == orderId)).UserName);
+    }
+
+    [Fact]
     public async Task OrderNotYetOnIndependentStatusesKeepsItsStoredStatus()
     {
         using var fixture = new Fixture();
@@ -495,7 +509,7 @@ public sealed class OrderPaymentsTests
         public Configuration Configuration { get; }
         public FakeCompletion Completion { get; } = new();
 
-        public Fixture()
+        public Fixture(string? securityUserName = null)
         {
             var connectionString = $"Data Source=order-payments-{Guid.NewGuid():N};Mode=Memory;Cache=Shared;Pooling=False";
             _connection = new SqliteConnection(connectionString);
@@ -523,15 +537,19 @@ public sealed class OrderPaymentsTests
             access.Setup(x => x.CanAccessStore(It.IsAny<string>())).Returns(true);
             var attempts = new CheckoutPaymentAttemptService(Factory, Mock.Of<IStockReservationService>(),
                 new ActivityLogRepository(NullLogger<ActivityLogRepository>.Instance, Factory), NullLogger<CheckoutPaymentAttemptService>.Instance, _cache);
+            // Token-authenticated backoffices (Umbraco 17+) give the request identity no name.
             var http = new HttpContextAccessor
             {
                 HttpContext = new DefaultHttpContext
                 {
-                    User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(
-                        [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "anna")], "test")),
+                    User = securityUserName != null
+                        ? new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity())
+                        : new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(
+                            [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "anna")], "test")),
                 },
             };
-            States = new OrderStateService(Factory, configuration, access.Object, _cache, attempts, http, handlers);
+            var security = securityUserName == null ? null : Mock.Of<ISecurityService>(x => x.GetAuthenticatedUserName() == securityUserName);
+            States = new OrderStateService(Factory, configuration, access.Object, _cache, attempts, http, handlers, security);
         }
 
         public Guid AddOpenOrder(bool migrated = true, string legacyStatus = "Pending")

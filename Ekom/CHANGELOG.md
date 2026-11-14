@@ -10,6 +10,8 @@
 
 * **payments:** `CompleteCheckoutEventArgs.Payment` gives completion handlers the payment the order was paid with: provider, transaction ID, authorization code, card brand and masked number, payment method, the provider's own details and its response. The same payment is available from `Order.Instance.GetPaymentAsync(orderId)` and `IOrderPayments.GetCurrentPaymentAsync(orderId)`, so integrations such as ERP exports no longer read payment tables themselves.
 
+* **manager:** record the signed-in backoffice user on status changes made from the Umbraco 17/18/19 order drawer. The activity entry had an empty user name, because the request identity of a token-authenticated backoffice carries none.
+
 * **manager:** find an order in the Orders search by a payment gateway's transaction ID or by the payment id of one of its payment attempts.
 
 * **manager:** add payment columns to the Orders CSV export, after the existing columns: payment status, provider, provider type, transaction ID, authorization code, card type, masked card number, payment method and captured date. They are loaded for all exported orders together.

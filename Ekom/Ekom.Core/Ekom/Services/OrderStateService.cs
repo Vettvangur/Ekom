@@ -21,11 +21,13 @@ internal sealed class OrderStateService : IOrderStateService
     private readonly CheckoutPaymentAttemptService _attempts;
     private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _http;
     private readonly IEnumerable<IOrderStatusPersistenceHandler> _handlers;
+    private readonly ISecurityService? _security;
 
     public OrderStateService(DatabaseFactory factory, Configuration configuration, IManagerAccessService access,
         IMemoryCache cache, CheckoutPaymentAttemptService attempts, Microsoft.AspNetCore.Http.IHttpContextAccessor http,
-        IEnumerable<IOrderStatusPersistenceHandler> handlers)
+        IEnumerable<IOrderStatusPersistenceHandler> handlers, ISecurityService? security = null)
     {
+        _security = security;
         _factory = factory; _configuration = configuration; _access = access; _cache = cache;
         _attempts = attempts; _http = http; _handlers = handlers;
     }
@@ -57,15 +59,14 @@ internal sealed class OrderStateService : IOrderStateService
         if (request.Action.StartsWith("Payment", StringComparison.Ordinal) && data.Status.PaymentStatus is { } manualStatus)
         {
             // Manual payment changes join the order's payment history so the calculated status keeps honouring them.
-            await db.InsertAsync(OrderPaymentService.ManualTransaction(orderId, manualStatus,
-                _http.HttpContext?.User?.Identity?.Name), token: ct).ConfigureAwait(false);
+            await db.InsertAsync(OrderPaymentService.ManualTransaction(orderId, manualStatus, CurrentUserName()), token: ct).ConfigureAwait(false);
         }
         foreach (var handler in _handlers)
             if (previousLegacy != data.OrderStatus) await handler.PersistAsync(db, data, previousLegacy.ToString(), ct).ConfigureAwait(false);
         await db.InsertAsync(new OrderActivityLog
         {
             UniqueID = Guid.NewGuid(), Key = orderId, Date = DateTime.Now,
-            UserName = _http.HttpContext?.User?.Identity?.Name ?? string.Empty,
+            UserName = CurrentUserName() ?? string.Empty,
             LogType = OrderActivityLogType.Success,
             Log = $"{request.Action}: {before.OrderStatus}/{before.PaymentStatus}/{before.FulfillmentStatus} -> {data.Status.OrderStatus}/{data.Status.PaymentStatus}/{data.Status.FulfillmentStatus}"
                 + (request.Action != "Close" && before.OrderStatus != OrderStatus.Closed && data.Status.OrderStatus == OrderStatus.Closed ? ". Closed automatically." : string.Empty),
@@ -137,6 +138,16 @@ internal sealed class OrderStateService : IOrderStateService
                 return;
             default: throw Invalid("Unsupported order action.");
         }
+    }
+
+    /// <summary>
+    /// The signed-in backoffice user. On token-authenticated backoffices the request's identity has no name,
+    /// so the security service is asked first.
+    /// </summary>
+    private string? CurrentUserName()
+    {
+        var name = _security?.GetAuthenticatedUserName();
+        return string.IsNullOrWhiteSpace(name) ? _http.HttpContext?.User?.Identity?.Name : name;
     }
 
     private static EkomHttpException Invalid(string message) => new(HttpStatusCode.BadRequest, message);
