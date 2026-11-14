@@ -364,6 +364,33 @@ internal sealed class OrderPaymentService : IOrderPayments
         return BuildView(payments, rows);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, OrderPaymentAttempt>> GetCurrentPaymentsAsync(IReadOnlyCollection<Guid> orderIds, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(orderIds);
+        var result = new Dictionary<Guid, OrderPaymentAttempt>();
+        if (orderIds.Count == 0) return result;
+
+        await using var db = _factory.GetDatabase();
+        // Batches keep the id lists within what the database accepts in one query.
+        foreach (var chunk in orderIds.Distinct().Chunk(500))
+        {
+            // A list, so the provider translates Contains to SQL on every target framework.
+            var batch = chunk.ToList();
+            var payments = await db.OrderPayments.Where(x => batch.Contains(x.OrderUniqueId)).ToListAsync(ct).ConfigureAwait(false);
+            if (payments.Count == 0) continue;
+            var rows = await db.OrderPaymentTransactions.Where(x => batch.Contains(x.OrderUniqueId)).ToListAsync(ct).ConfigureAwait(false);
+            var rowsByOrder = rows.ToLookup(x => x.OrderUniqueId);
+            foreach (var group in payments.GroupBy(x => x.OrderUniqueId))
+            {
+                if (BuildView(group.ToList(), rowsByOrder[group.Key].ToList()).Current is { } current)
+                {
+                    result[group.Key] = current;
+                }
+            }
+        }
+        return result;
+    }
+
     internal static OrderPaymentsView BuildView(IReadOnlyCollection<OrderPayment> payments, IReadOnlyCollection<OrderPaymentTransaction> rows)
     {
         var attempts = payments.OrderByDescending(x => x.Sequence).Select(payment =>

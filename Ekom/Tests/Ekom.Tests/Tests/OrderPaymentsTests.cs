@@ -382,6 +382,48 @@ public sealed class OrderPaymentsTests
     }
 
     [Fact]
+    public async Task OrderExportCarriesThePaymentOfEachOrderAfterTheExistingColumns()
+    {
+        using var fixture = new Fixture();
+        var paidOrder = fixture.AddOpenOrder();
+        var unpaidOrder = fixture.AddOpenOrder();
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(paidOrder) with { ProviderType = "valitor", ProviderName = "Card, payment" });
+        await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, TransactionId = "778899",
+            AuthorizationCode = "654321", CardBrand = "VISA", MaskedCardNumber = "************1111", PaymentMethod = "Card",
+        });
+        List<OrderData> orders;
+        using (var db = fixture.Factory.GetDatabase())
+        {
+            orders = await db.OrderData.OrderBy(x => x.ReferenceId).ToListAsync();
+        }
+        // These test orders have no stored order lines.
+        orders.ForEach(x => x.OrderInfo = string.Empty);
+
+        var payments = await fixture.Payments.GetCurrentPaymentsAsync(orders.Select(x => x.UniqueId).ToList());
+        var lines = Ekom.Controllers.EkomManagerController.CreateOrderCsv(orders, includeOrderLines: false, payments)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        var withLines = Ekom.Controllers.EkomManagerController.CreateOrderCsv(orders, includeOrderLines: true, payments)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Single(payments);
+        // Existing columns keep their positions; the payment columns follow them.
+        Assert.StartsWith("uniqueId,referenceId,orderInfo,orderNumber,", lines[0], StringComparison.Ordinal);
+        Assert.EndsWith(",paidDate,paymentStatus,paymentProvider,paymentProviderType,paymentTransactionId,paymentAuthorizationCode,paymentCardType,paymentCardNumber,paymentMethod,paymentCapturedDate", lines[0], StringComparison.Ordinal);
+        Assert.StartsWith("rowType,uniqueId,", withLines[0], StringComparison.Ordinal);
+        Assert.Contains(",lineTotal,paymentStatus,", withLines[0], StringComparison.Ordinal);
+
+        var paid = lines.Single(x => x.StartsWith(paidOrder.ToString(), StringComparison.Ordinal));
+        Assert.Contains(",Paid,\"Card, payment\",valitor,778899,654321,VISA,************1111,Card,20", paid, StringComparison.Ordinal);
+        var unpaid = lines.Single(x => x.StartsWith(unpaidOrder.ToString(), StringComparison.Ordinal));
+        Assert.EndsWith(",Pending,,,,,,,,", unpaid, StringComparison.Ordinal);
+        // Without payments the export is unchanged apart from the empty columns.
+        Assert.EndsWith(",,,,,,,,", Ekom.Controllers.EkomManagerController.CreateOrderCsv(orders, false)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)[1], StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task RecordingForUnknownPaymentFails()
     {
         using var fixture = new Fixture();

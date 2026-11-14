@@ -49,6 +49,8 @@ Export uses the active date, status, store, search, provider, SKU, and tracking 
 - The standard `orders.csv` contains one row per order.
 - Selecting **Include order lines** produces `orders-with-orderlines.csv`, with an order row followed by a row for each line.
 
+Both files end with payment columns for bookkeeping: `paymentStatus`, `paymentProvider` (the provider node), `paymentProviderType` (for example `borgun` or `offline`), `paymentTransactionId`, `paymentAuthorizationCode`, `paymentCardType`, `paymentCardNumber` (masked), `paymentMethod` and `paymentCapturedDate` (UTC). They describe the payment the order was paid with and are empty, apart from the status, when no payment is recorded on the order. They come after the existing columns, so existing column positions do not move.
+
 The line export adds the line key, product and variant SKU/title, quantity, unit price, VAT, discount, and line total. Including lines requires loading the stored order information and can take longer for a large result set.
 
 ## Order details

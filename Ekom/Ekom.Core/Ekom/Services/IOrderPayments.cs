@@ -166,6 +166,12 @@ public interface IOrderPayments
 
     Task<OrderPaymentsView> GetForOrderAsync(Guid orderId, CancellationToken ct = default);
 
+    /// <summary>
+    /// The payment each of the orders was paid with (captured or authorized, otherwise the latest attempt),
+    /// loaded together. Orders without a recorded payment are left out.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, OrderPaymentAttempt>> GetCurrentPaymentsAsync(IReadOnlyCollection<Guid> orderIds, CancellationToken ct = default);
+
     /// <summary>Finds the order of a payment id or gateway transaction id.</summary>
     Task<Guid?> FindOrderAsync(string paymentIdOrTransactionId, CancellationToken ct = default);
 }

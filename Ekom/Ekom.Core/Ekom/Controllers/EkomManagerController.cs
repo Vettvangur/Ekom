@@ -583,7 +583,7 @@ public class EkomManagerController : ControllerBase
         try
         {
             List<OrderData> orders = await _repo.GetOrdersForExportAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, includeOrderLines, couponCode, shippingProvider, giftcardCode, currency).ConfigureAwait(false);
-            string csv = CreateOrderCsv(orders, includeOrderLines);
+            string csv = CreateOrderCsv(orders, includeOrderLines, await LoadExportPaymentsAsync(orders, ct).ConfigureAwait(false));
             string fileName = includeOrderLines ? "orders-with-orderlines.csv" : "orders.csv";
 
             return File(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray(), "text/csv", fileName);
@@ -1110,7 +1110,33 @@ public class EkomManagerController : ControllerBase
         }
     }
 
-    private static string CreateOrderCsv(IReadOnlyCollection<OrderData> orders, bool includeOrderLines)
+    /// <summary>
+    /// The payment of each exported order, for the payment columns. The export is still produced without
+    /// them when payments cannot be read.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<Guid, OrderPaymentAttempt>> LoadExportPaymentsAsync(IReadOnlyCollection<OrderData> orders, CancellationToken ct)
+    {
+        var empty = new Dictionary<Guid, OrderPaymentAttempt>();
+        if (HttpContext?.RequestServices.GetService(typeof(IOrderPayments)) is not IOrderPayments payments) return empty;
+        try
+        {
+            return await payments.GetCurrentPaymentsAsync(orders.Select(x => x.UniqueId).ToList(), ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+#pragma warning disable CA1031 // Do not catch general exception types
+        catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+        {
+            _logger.LogError(ex, "Failed to load payments for the order export. The export is produced without payment columns filled in.");
+            return empty;
+        }
+    }
+
+    internal static string CreateOrderCsv(IReadOnlyCollection<OrderData> orders, bool includeOrderLines,
+        IReadOnlyDictionary<Guid, OrderPaymentAttempt>? payments = null)
     {
         string[] headers = includeOrderLines
             ? OrderExportHeaders.LineExportHeaders
@@ -1121,7 +1147,8 @@ public class EkomManagerController : ControllerBase
 
         foreach (OrderData order in orders)
         {
-            AppendCsvRow(csv, headers, CreateOrderExportRow(order));
+            OrderPaymentAttempt? payment = payments != null && payments.TryGetValue(order.UniqueId, out var found) ? found : null;
+            AppendCsvRow(csv, headers, CreateOrderExportRow(order, payment));
 
             if (!includeOrderLines || string.IsNullOrWhiteSpace(order.OrderInfo))
             {
@@ -1132,14 +1159,14 @@ public class EkomManagerController : ControllerBase
 
             foreach (IOrderLine orderLine in orderInfo.OrderLines)
             {
-                AppendCsvRow(csv, headers, CreateOrderLineExportRow(order, orderLine));
+                AppendCsvRow(csv, headers, CreateOrderLineExportRow(order, orderLine, payment));
             }
         }
 
         return csv.ToString();
     }
 
-    private static Dictionary<string, string?> CreateOrderExportRow(OrderData order)
+    private static Dictionary<string, string?> CreateOrderExportRow(OrderData order, OrderPaymentAttempt? payment = null)
     {
         return new Dictionary<string, string?>
         {
@@ -1171,13 +1198,25 @@ public class EkomManagerController : ControllerBase
             ["unitPrice"] = string.Empty,
             ["vat"] = string.Empty,
             ["discount"] = string.Empty,
-            ["lineTotal"] = string.Empty
+            ["lineTotal"] = string.Empty,
+            // Payment columns, for bookkeeping. Empty when no payment is recorded on the order.
+            ["paymentStatus"] = order.Status.PaymentStatus?.ToString(),
+            ["paymentProvider"] = payment?.Provider,
+            ["paymentProviderType"] = payment?.ProviderType,
+            ["paymentTransactionId"] = payment?.TransactionId,
+            ["paymentAuthorizationCode"] = payment?.AuthorizationCode,
+            ["paymentCardType"] = payment?.CardBrand,
+            ["paymentCardNumber"] = payment?.MaskedCardNumber,
+            ["paymentMethod"] = payment?.PaymentMethod,
+            ["paymentCapturedDate"] = payment?.CapturedUtc is { } captured
+                ? FormatDate(DateTime.SpecifyKind(captured, DateTimeKind.Utc))
+                : string.Empty,
         };
     }
 
-    private static Dictionary<string, string?> CreateOrderLineExportRow(OrderData order, IOrderLine orderLine)
+    private static Dictionary<string, string?> CreateOrderLineExportRow(OrderData order, IOrderLine orderLine, OrderPaymentAttempt? payment = null)
     {
-        Dictionary<string, string?> row = CreateOrderExportRow(order);
+        Dictionary<string, string?> row = CreateOrderExportRow(order, payment);
 
         row["rowType"] = "OrderLine";
         row["orderLineKey"] = orderLine.Key.ToString();
@@ -1217,7 +1256,21 @@ public class EkomManagerController : ControllerBase
 
     private static class OrderExportHeaders
     {
-        public static readonly string[] OrderHeaders =
+        // Added after the existing columns in both exports, so existing column positions do not move.
+        private static readonly string[] PaymentHeaders =
+        {
+            "paymentStatus",
+            "paymentProvider",
+            "paymentProviderType",
+            "paymentTransactionId",
+            "paymentAuthorizationCode",
+            "paymentCardType",
+            "paymentCardNumber",
+            "paymentMethod",
+            "paymentCapturedDate"
+        };
+
+        private static readonly string[] OrderColumns =
         {
             "uniqueId",
             "referenceId",
@@ -1239,8 +1292,10 @@ public class EkomManagerController : ControllerBase
             "paidDate"
         };
 
+        public static readonly string[] OrderHeaders = OrderColumns.Concat(PaymentHeaders).ToArray();
+
         public static readonly string[] LineExportHeaders = new[] { "rowType" }
-            .Concat(OrderHeaders)
+            .Concat(OrderColumns)
             .Concat(new[]
             {
                 "orderLineKey",
@@ -1254,6 +1309,7 @@ public class EkomManagerController : ControllerBase
                 "discount",
                 "lineTotal"
             })
+            .Concat(PaymentHeaders)
             .ToArray();
     }
 
