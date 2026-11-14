@@ -424,6 +424,35 @@ public sealed class OrderPaymentsTests
     }
 
     [Fact]
+    public async Task ManagerSearchFindsAnOrderByPaymentIdOrTransactionId()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var otherOrder = fixture.AddOpenOrder();
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+        await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, TransactionId = "TX-7741-0926",
+        });
+        var stores = new Mock<IStoreService>();
+        stores.Setup(x => x.GetStoreByAlias("main")).Returns(Mock.Of<IStore>(x => x.Currency == new CurrencyModel { CurrencyValue = "en-US" }));
+        var repository = new ManagerRepository(NullLogger<ManagerRepository>.Instance, fixture.Configuration, fixture.Factory, stores.Object);
+
+        async Task<Guid[]> SearchAsync(string query)
+            => (await repository.SearchOrdersAsync(DateTime.Today, DateTime.Today, query, "main", "AllOrders",
+                "", "", "", "", "", "", "", "", "1", "20")).Orders.Select(x => x.UniqueId).ToArray();
+
+        Assert.Equal(new[] { orderId }, await SearchAsync(payment.PaymentId.ToString()));
+        Assert.Equal(new[] { orderId }, await SearchAsync("TX-7741-0926"));
+        Assert.Equal(new[] { orderId }, await SearchAsync(" TX-7741-0926 "));
+        // The order's own id still works, and a transaction ID is matched whole, not as a fragment.
+        Assert.Equal(new[] { otherOrder }, await SearchAsync(otherOrder.ToString()));
+        Assert.Empty(await SearchAsync("TX-7741"));
+        Assert.Empty(await SearchAsync(Guid.NewGuid().ToString()));
+        Assert.Equal(2, (await SearchAsync("")).Length);
+    }
+
+    [Fact]
     public async Task RecordingForUnknownPaymentFails()
     {
         using var fixture = new Fixture();
@@ -463,6 +492,7 @@ public sealed class OrderPaymentsTests
         public DatabaseFactory Factory { get; }
         public IOrderPayments Payments { get; }
         public OrderStateService States { get; }
+        public Configuration Configuration { get; }
         public FakeCompletion Completion { get; } = new();
 
         public Fixture()
@@ -481,6 +511,7 @@ public sealed class OrderPaymentsTests
             // Creating the payment tables is repeatable.
             schema.EnsureOrderPaymentTables();
             var configuration = new Configuration(root);
+            Configuration = configuration;
             var handlers = Array.Empty<IOrderStatusPersistenceHandler>();
             Completion.Factory = Factory;
             var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
@@ -513,6 +544,7 @@ public sealed class OrderPaymentsTests
                 StoreAlias = "main",
                 OrderNumber = "IS-1042",
                 OrderStatusCol = legacyStatus,
+                CreateDate = DateTime.Now,
                 OrderInfo = "{}",
                 TotalAmount = 100m,
                 Currency = "is-IS",

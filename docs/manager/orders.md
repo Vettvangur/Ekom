@@ -25,7 +25,9 @@ Free-text search matches:
 - customer ID;
 - customer username.
 
-If the search text is a GUID, Ekom also compares it with the order's unique ID.
+If the search text is a GUID, Ekom also compares it with the order's unique ID and with the payment id of each of the order's payment attempts.
+
+The search text is also compared, as a whole, with the transaction ID a payment gateway gave any of the order's payments. Paste the reference from the gateway's portal to find its order. The date range and the other filters still apply.
 
 The additional filter panel supports:
 
