@@ -25,7 +25,9 @@ Free-text search matches:
 - customer ID;
 - customer username.
 
-If the search text is a GUID, Ekom also compares it with the order's unique ID.
+If the search text is a GUID, Ekom also compares it with the order's unique ID and with the payment id of each of the order's payment attempts.
+
+The search text is also compared, as a whole, with the transaction ID a payment gateway gave any of the order's payments. Paste the reference from the gateway's portal to find its order. The date range and the other filters still apply.
 
 The additional filter panel supports:
 
@@ -49,6 +51,8 @@ Export uses the active date, status, store, search, provider, SKU, and tracking 
 - The standard `orders.csv` contains one row per order.
 - Selecting **Include order lines** produces `orders-with-orderlines.csv`, with an order row followed by a row for each line.
 
+Both files end with payment columns for bookkeeping: `paymentStatus`, `paymentProvider` (the provider node), `paymentProviderType` (for example `borgun` or `offline`), `paymentTransactionId`, `paymentAuthorizationCode`, `paymentCardType`, `paymentCardNumber` (masked), `paymentMethod` and `paymentCapturedDate` (UTC). They describe the payment the order was paid with and are empty, apart from the status, when no payment is recorded on the order. They come after the existing columns, so existing column positions do not move.
+
 The line export adds the line key, product and variant SKU/title, quantity, unit price, VAT, discount, and line total. Including lines requires loading the stored order information and can take longer for a large result set.
 
 ## Order details
@@ -57,7 +61,9 @@ Select **View** to open an order. The detail view includes:
 
 - unique ID, reference number, creation and paid dates, store, status, and charged amount;
 - billing and shipping information, including captured custom properties;
-- payment and shipping provider information and custom data;
+- the order's current payment: provider, status, transaction ID, authorized and captured times, amount, authorization code, card, and the details the provider recorded, each with a copy button;
+- an expandable **Payment attempts** list (Umbraco 17, 18 and 19) with every attempt at a provider, its events and its payment id, and the manual payment status changes with the user who made them;
+- shipping provider information and custom data;
 - product and variant lines, line properties, VAT, discounts, shipping, and totals;
 - captured tracking and consent data;
 - [activity logs](activity-logs.md);
@@ -152,6 +158,6 @@ If a user can open the manager but receives a forbidden response for a store or 
 
 ## Manual payment status
 
-Open orders support manual Pending, Authorized, Paid, Partially Paid, Failed and Voided classification from the payment menu in the table and order details. Selecting an option saves immediately. This only changes the recorded status; it does not charge, capture, void or refund through a provider, change amounts, or set a payment date. Refund status editing is not available. Closed orders must be explicitly reopened first.
+Open orders support manual Pending, Authorized, Paid, Partially Paid, Failed and Voided classification from the payment menu in the table and order details. Selecting an option saves immediately. This only changes the recorded status; it does not charge, capture, void or refund through a provider, change amounts, or set a payment date. The change is kept in the order's payment history with the user's name. It overrides what providers recorded before it, and a late failure from an older attempt does not undo it; a later capture, refund or void from a provider does change the status again. Refund status editing is not available. Closed orders must be explicitly reopened first.
 
 Updates use the current status revision, enforce checkout locks and store permissions, and are logged. The status-events checkbox controls configured notifications. Marking an already fulfilled order Paid can close it automatically under the store's auto-close setting. Save any pending fulfillment edits before changing payment.

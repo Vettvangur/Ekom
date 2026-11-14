@@ -66,4 +66,12 @@ public class CompleteCheckoutEventArgs : EventArgs
     public required IOrderInfo OrderInfo { get; set; }
     public bool StockValidation { get; set; } = true;
     public bool UpdateOrderStatus { get; set; } = true;
+
+    /// <summary>
+    /// The payment the order was paid with: provider, transaction ID, authorization code, card brand and
+    /// masked number, payment method, amounts and times, the provider's own details, and its response through
+    /// <see cref="Services.OrderPaymentAttempt.GetData{T}"/>. Null when no payment is recorded on the order,
+    /// for example when completion is called directly.
+    /// </summary>
+    public Services.OrderPaymentAttempt? Payment { get; set; }
 }

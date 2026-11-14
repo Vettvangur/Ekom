@@ -13,6 +13,9 @@ import {
   OrderInfo,
   OrderLockStatus,
   OrderListItem,
+  OrderPaymentAttempt,
+  OrderPaymentEvent,
+  OrderPaymentsView,
   OrderSearchResult,
   ShippingProviderItem,
   decodeHtml,
@@ -98,6 +101,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private returnFocusOrderId?: string;
   private selectedOrder?: OrderInfo;
   private orderLogs: OrderActivityLog[] = [];
+  private orderPayments: OrderPaymentsView | null = null;
   private orderLogsLoading = false;
   private orderLogsError = false;
   private activityLogExpandedIndexes = new Set<number>();
@@ -790,13 +794,52 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   }
 
   private renderPaymentDetails(order: OrderInfo): string {
-    const rows = (fields: Array<{ label: string; value: string }>): string => `<dl>${fields.map(field => `<div><dt>${escapeHtml(field.label)}</dt><dd><span>${escapeHtml(field.value)}</span>${field.label !== 'Currency' && field.label !== 'Paid date' && field.value && field.value !== 'Not recorded' && field.value !== '—' ? `<button type="button" class="ekom-payment-copy" data-action="copy-provider-value" data-copy="${escapeHtml(field.value)}" aria-label="Copy ${escapeHtml(field.label)}" title="Copy ${escapeHtml(field.label)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>` : ''}</dd></div>`).join('')}</dl>`;
-    const providerFields = parseProperties(order.paymentProvider?.customData, 'custompayment').map(([key, value]) => ({ label: labelFromKey(cleanKey(key)), value }));
-    providerFields.push({ label: 'Paid date', value: order.paidDate ? formatDate(order.paidDate) : 'Not recorded' }, { label: 'Currency', value: order.currency || order.storeInfo?.currency?.isoCurrencySymbol || 'Not recorded' });
+    const rows = (fields: Array<{ label: string; value: string }>): string => `<dl>${fields.map(field => `<div><dt>${escapeHtml(field.label)}</dt><dd><span>${escapeHtml(field.value)}</span>${!['Currency', 'Paid date', 'Authorised', 'Captured'].includes(field.label) && field.value && field.value !== 'Not recorded' && field.value !== '—' ? `<button type="button" class="ekom-payment-copy" data-action="copy-provider-value" data-copy="${escapeHtml(field.value)}" aria-label="Copy ${escapeHtml(field.label)}" title="Copy ${escapeHtml(field.label)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>` : ''}</dd></div>`).join('')}</dl>`;
+    const payment = this.orderPayments?.current;
+    const providerFields: Array<{ label: string; value: string }> = payment ? this.paymentFields(payment, order) : [];
+    providerFields.push(...parseProperties(order.paymentProvider?.customData, 'custompayment').map(([key, value]) => ({ label: labelFromKey(cleanKey(key)), value })));
+    if (!payment) providerFields.push({ label: 'Paid date', value: order.paidDate ? formatDate(order.paidDate) : 'Not recorded' });
+    providerFields.push({ label: 'Currency', value: payment?.currency || order.currency || order.storeInfo?.currency?.isoCurrencySymbol || 'Not recorded' });
     return `<section class="ekom-payment-details" aria-label="Payment details"><div class="ekom-payment-detail-grid"><section class="ekom-payment-detail-box"><header><span class="ekom-payment-kind">Payment</span><h4>${escapeHtml(order.paymentProvider?.title || order.paymentProvider?.properties?.nodeName || 'Not recorded')}</h4>${renderStatusBadge(order.status?.paymentStatus)}</header>${rows(providerFields)}</section>${(order.giftcards || []).map((card: Record<string, any>) => {
       const fields = giftcardDetails(card).filter(field => field.label !== giftcardFieldLabel('code')).map(field => field.label === giftcardFieldLabel('amount') ? { ...field, value: this.formatGiftcardAmount(card.amount, order) } : field);
       return `<section class="ekom-payment-detail-box"><header><span class="ekom-payment-kind ekom-payment-kind-gift">Gift card</span><h4>${escapeHtml(card.code)}</h4><span class="ekom-gift-state">${escapeHtml(giftcardSummary(card).status)}</span></header>${rows(fields)}</section>`;
-    }).join('')}</div></section>`;
+    }).join('')}</div>${this.renderPaymentAttempts(order)}</section>`;
+  }
+
+  /** The rows of the payment card that come from the order's recorded payment. */
+  private paymentFields(payment: OrderPaymentAttempt, order: OrderInfo): Array<{ label: string; value: string }> {
+    const fields = [
+      { label: 'Transaction ID', value: payment.transactionId || 'Not recorded' },
+      { label: 'Authorised', value: payment.authorizedUtc ? formatDate(payment.authorizedUtc) : '' },
+      { label: 'Captured', value: payment.capturedUtc ? formatDate(payment.capturedUtc) : 'Not captured' },
+      { label: 'Amount', value: this.formatPaymentAmount(payment.amount, payment.currency, order) },
+      { label: 'Authorization code', value: payment.authorizationCode || '' },
+      { label: 'Card', value: [payment.cardBrand, payment.maskedCardNumber].filter(Boolean).join(' ') },
+      { label: 'Payment method', value: payment.paymentMethod || '' },
+      ...(payment.details || []).map(detail => ({ label: detail.label, value: detail.value || '' })),
+    ];
+    return fields.filter(field => field.value);
+  }
+
+  private formatPaymentAmount(amount: number, currency: string | null | undefined, order: OrderInfo): string {
+    const locale = order.storeInfo?.currency?.currencyValue || 'en-US';
+    try {
+      return new Intl.NumberFormat(locale, { style: 'currency', currency: currency || order.storeInfo?.currency?.isoCurrencySymbol }).format(amount);
+    } catch {
+      return [amount, currency].filter(value => value !== null && value !== undefined && value !== '').join(' ');
+    }
+  }
+
+  /** Every payment attempt of the order and manual payment status changes, collapsed by default. */
+  private renderPaymentAttempts(order: OrderInfo): string {
+    const attempts = this.orderPayments?.attempts || [];
+    const manual = this.orderPayments?.manualChanges || [];
+    if (!attempts.length && !manual.length) return '';
+    const copy = (value: string, label: string): string => `<button type="button" class="ekom-payment-copy" data-action="copy-provider-value" data-copy="${escapeHtml(value)}" aria-label="Copy ${escapeHtml(label)}" title="Copy ${escapeHtml(label)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>`;
+    const events = (items: OrderPaymentEvent[]): string => `<table class="ekom-log-table"><thead><tr><th>Date</th><th>Event</th><th>Amount</th><th>By</th><th>Message</th></tr></thead><tbody>${items.map(item => `<tr><td>${escapeHtml(formatDate(item.occurredUtc))}</td><td>${escapeHtml(item.type)}</td><td>${escapeHtml(item.type === 'Manual' ? '' : this.formatPaymentAmount(item.amount, item.currency, order))}</td><td>${escapeHtml(item.actor)}</td><td>${escapeHtml(item.message)}</td></tr>`).join('')}</tbody></table>`;
+    const attemptList = attempts.map(attempt => `<li class="ekom-payment-attempt"><div class="ekom-payment-attempt-head"><span>${escapeHtml(formatDate(attempt.createdUtc))}</span><strong>${escapeHtml(attempt.provider || 'Not recorded')}</strong>${renderStatusBadge(attempt.status)}<span class="ekom-payment-attempt-amount">${escapeHtml(this.formatPaymentAmount(attempt.amount, attempt.currency, order))}</span></div>${attempt.message ? `<p class="ekom-payment-attempt-message">${escapeHtml(attempt.message)}</p>` : ''}<details><summary>Events and technical details</summary>${events(attempt.events || [])}<dl class="ekom-payment-attempt-ids">${attempt.transactionId ? `<div><dt>Transaction ID</dt><dd><span>${escapeHtml(attempt.transactionId)}</span>${copy(attempt.transactionId, 'Transaction ID')}</dd></div>` : ''}${attempt.paymentId ? `<div><dt>Payment ID</dt><dd><span>${escapeHtml(attempt.paymentId)}</span>${copy(attempt.paymentId, 'Payment ID')}</dd></div>` : ''}${attempt.attemptId ? `<div><dt>Checkout attempt ID</dt><dd><span>${escapeHtml(attempt.attemptId)}</span>${copy(attempt.attemptId, 'Checkout attempt ID')}</dd></div>` : ''}</dl></details></li>`).join('');
+    const manualList = manual.length ? `<h5>Manual status changes</h5><ul class="ekom-payment-manual">${manual.map(item => `<li>${escapeHtml(formatDate(item.occurredUtc))} · Set to ${renderStatusBadge(item.manualStatus)} by ${escapeHtml(item.actor || 'Unknown user')}</li>`).join('')}</ul>` : '';
+    return `<details class="ekom-payment-attempts"><summary>Payment attempts (${attempts.length})</summary>${attempts.length ? `<ul>${attemptList}</ul>` : ''}${manualList}</details>`;
   }
 
   private renderShipment(order: OrderInfo): string {
@@ -1527,6 +1570,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       this.selectedOrder = drawer.order;
       this.reviews = drawer.reviews || []; this.activeReview = undefined; this.reviewError = drawer.reviews ? '' : 'Could not load order reviews.';
       this.orderLogs = drawer.logs || [];
+      this.orderPayments = drawer.payments || null;
       this.orderLogsLoading = false;
       this.orderLogsError = !drawer.logs;
       this.activityLogExpandedIndexes.clear();
@@ -1602,9 +1646,11 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     if (!this.stateSaving) this.render();
 
     try {
-      const logs = await this.api.orderLogs(orderId);
+      // Payment history changes together with the activity log (status changes, order actions).
+      const [logs, payments] = await Promise.all([this.api.orderLogs(orderId), this.api.orderPayments(orderId).catch(() => this.orderPayments)]);
       if (requestId !== this.orderRequestId) return;
       this.orderLogs = logs;
+      this.orderPayments = payments;
     } catch {
       if (requestId !== this.orderRequestId) return;
       this.orderLogs = [];

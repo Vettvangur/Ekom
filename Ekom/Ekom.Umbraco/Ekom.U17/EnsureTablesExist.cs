@@ -272,6 +272,7 @@ internal sealed class EnsureTablesExist : IAsyncComponent
         _databaseService.EnsureOrderReviewsTable();
         _databaseService.EnsurePriceTable();
         _databaseService.EnsureOrderStateColumns();
+        _databaseService.EnsureOrderPaymentTables();
         _databaseService.EnsureStockReservationTable();
         _logger.LogDebug("Done");
     }

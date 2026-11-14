@@ -6,7 +6,6 @@ The verified Ekom package transition is:
 | --- | --- |
 | `Ekom.U10` | `Ekom.U17` |
 | `Ekom.Web` | `Ekom.Web.U17` |
-| `Ekom.Payments.U10` dependency | `Ekom.Payments.U17` dependency |
 
 Despite its name, `Ekom.U10` is the repository's current Umbraco 13 integration. Its project references Umbraco 13 packages and targets .NET 8. There is no `Ekom.U13` package in this repository.
 
@@ -27,7 +26,7 @@ dotnet add package Ekom.Web.U17
 
 Run each command against the project that owns that package reference, or pass the project path. If package versions are centrally managed, make the substitutions in the repository's existing package-management files instead.
 
-Review separately installed Ekom payment-provider packages for Umbraco 17 compatibility. The core `Ekom.U17` project itself depends on `Ekom.Payments.U17`; that does not prove compatibility for every provider package used by an application.
+Review separately installed Ekom payment-provider packages for Umbraco 17 compatibility. Ekom no longer depends on an Ekom.Payments package, so the site references each provider package itself. See [Upgrading payments](payments.md).
 
 ## Manager change
 

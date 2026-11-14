@@ -113,6 +113,9 @@ class M {
   async orderInfo(r) {
     return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(r)}`);
   }
+  async orderPayments(r) {
+    return this.getJson(`/ekom/manager/orderPayments/${encodeURIComponent(r)}`);
+  }
   async orderLogs(r) {
     return this.getJson(`/ekom/manager/OrderLogs/${encodeURIComponent(r)}`);
   }
@@ -662,18 +665,18 @@ function H(o, r) {
     ...t && /^[A-Z]{3}$/.test(t) ? { style: "currency", currency: t, ...i ? {} : { currencyDisplay: "code" } } : {}
   }).format(o);
 }
-function je(o, r, t, e = {}) {
+function Ue(o, r, t, e = {}) {
   var ie;
   const a = o.getBoundingClientRect(), i = window.devicePixelRatio || 1, n = a.width || 300, d = a.height || 320;
   o.width = n * i, o.height = d * i;
   const s = o.getContext("2d");
   if (!s) return;
   s.scale(i, i), s.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
-  const b = r.points || [], w = b.map((k) => k.y == null ? null : Number(k.y)), m = ((ie = e.comparison) == null ? void 0 : ie.points) || [], l = [...w, ...m.map((k) => k.y)].filter((k) => k != null), c = Math.min(0, ...l), y = Math.max(1, ...l), x = 10 ** (Math.floor(Math.log10(y / 4)) - 1), A = e.integer ? Math.ceil(y / 4) * 4 : e.templateStyle ? Math.ceil(y / 4 / x) * x * 4 : y, L = (k) => e.formatValue ? e.formatValue(k) : e.currency ? H(k, e.currency) : k.toLocaleString(void 0, { maximumFractionDigits: e.integer ? 0 : 2 }), re = e.formatAxisValue ?? L, ae = Array.from({ length: 5 }, (k, f) => A - (A - c) * f / 4), D = e.templateStyle ? 1 : Math.max(48, ...ae.map((k) => s.measureText(re(k)).width + 12)), F = n - (e.templateStyle ? 1 : 16), z = e.templateStyle ? 8 : 20, _ = d - (e.templateStyle ? 26 : 52), S = b.map((k, f) => {
+  const b = r.points || [], w = b.map((k) => k.y == null ? null : Number(k.y)), m = ((ie = e.comparison) == null ? void 0 : ie.points) || [], l = [...w, ...m.map((k) => k.y)].filter((k) => k != null), c = Math.min(0, ...l), y = Math.max(1, ...l), x = 10 ** (Math.floor(Math.log10(y / 4)) - 1), A = e.integer ? Math.ceil(y / 4) * 4 : e.templateStyle ? Math.ceil(y / 4 / x) * x * 4 : y, L = (k) => e.formatValue ? e.formatValue(k) : e.currency ? H(k, e.currency) : k.toLocaleString(void 0, { maximumFractionDigits: e.integer ? 0 : 2 }), re = e.formatAxisValue ?? L, ae = Array.from({ length: 5 }, (k, f) => A - (A - c) * f / 4), D = e.templateStyle ? 1 : Math.max(48, ...ae.map((k) => s.measureText(re(k)).width + 12)), F = n - (e.templateStyle ? 1 : 16), j = e.templateStyle ? 8 : 20, _ = d - (e.templateStyle ? 26 : 52), S = b.map((k, f) => {
     var O, T, R;
     return {
       x: b.length > 1 ? D + (F - D) * f / (b.length - 1) : (D + F) / 2,
-      y: w[f] == null ? null : _ - (w[f] - c) / (A - c) * (_ - z),
+      y: w[f] == null ? null : _ - (w[f] - c) / (A - c) * (_ - j),
       date: k.x || ((O = r.labels) == null ? void 0 : O[f]) || "",
       axisLabel: ((T = e.formatLabel) == null ? void 0 : T.call(e, f)) ?? k.x ?? ((R = r.labels) == null ? void 0 : R[f]) ?? "",
       value: w[f]
@@ -683,7 +686,7 @@ function je(o, r, t, e = {}) {
     s.clearRect(0, 0, n, d), s.font = e.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
     const f = typeof getComputedStyle == "function" ? getComputedStyle(o) : void 0, O = (f == null ? void 0 : f.getPropertyValue("--ekom-muted").trim()) || (f == null ? void 0 : f.getPropertyValue("--uui-color-text-alt").trim()) || "#555", T = (f == null ? void 0 : f.getPropertyValue("--ekom-border").trim()) || "#e5e5e5", R = (f == null ? void 0 : f.getPropertyValue("--uui-color-text").trim()) || "", V = (de = /^#([0-9a-f]{6})$/i.exec(R)) == null ? void 0 : de[1], B = V ? [0, 2, 4].reduce((v, g) => v + parseInt(V.slice(g, g + 2), 16), 0) > 420 : !1, G = e.templateStyle && !B ? "#10694a" : t;
     s.lineWidth = 1, s.textAlign = e.templateStyle ? "left" : "right", ae.forEach((v, g) => {
-      const $ = z + (_ - z) * g / 4;
+      const $ = j + (_ - j) * g / 4;
       s.fillStyle = O, s.fillText(re(v), e.templateStyle ? D : D - 8, e.templateStyle ? Math.min(_, $ + 3) : $ + 4), !(e.templateStyle && (g === 0 || g === 4)) && (s.globalAlpha = e.templateStyle ? 0.5 : 1, s.strokeStyle = T, s.beginPath(), s.moveTo(D, $), s.lineTo(F, $), s.stroke(), s.globalAlpha = 1);
     });
     const J = Math.max(90, ...S.map((v) => s.measureText(v.axisLabel).width + 32)), se = Math.max(2, Math.floor((F - D) / J)), $e = new Set(Array.from({ length: Math.min(se, S.length) }, (v, g) => Math.round(g * (S.length - 1) / Math.max(1, Math.min(se, S.length) - 1))));
@@ -703,7 +706,7 @@ function je(o, r, t, e = {}) {
       }), s.stroke(), (N = s.setLineDash) == null || N.call(s, []);
     };
     if (e.templateStyle && S.length > 1) {
-      const v = s.createLinearGradient(0, z, 0, _);
+      const v = s.createLinearGradient(0, j, 0, _);
       v.addColorStop(0, "rgba(16,105,74,.22)"), v.addColorStop(1, "rgba(16,105,74,0)"), s.fillStyle = v;
       let g = [];
       const $ = () => {
@@ -717,25 +720,25 @@ function je(o, r, t, e = {}) {
       var $;
       return {
         x: v.x,
-        y: (($ = m[g]) == null ? void 0 : $.y) == null ? null : _ - (Number(m[g].y) - c) / (A - c) * (_ - z)
+        y: (($ = m[g]) == null ? void 0 : $.y) == null ? null : _ - (Number(m[g].y) - c) / (A - c) * (_ - j)
       };
     }), !0), ne(S, !1), s.fillStyle = G, S.forEach((v, g) => {
       v.y == null || e.templateStyle && S.length > 1 && g !== k || (s.beginPath(), s.arc(v.x, v.y, g === k ? 5 : 3, 0, Math.PI * 2), s.fill());
     }), S.length || (s.textAlign = "center", s.fillText("No data for this period", (D + F) / 2, d / 2));
-    const U = S[k];
-    if (U) {
-      const v = [U.date, U.value == null ? "—" : L(U.value)];
+    const z = S[k];
+    if (z) {
+      const v = [z.date, z.value == null ? "—" : L(z.value)];
       if (m[k]) {
         const q = m[k];
         v.push(`Previous: ${q.x || ""}`, q.y == null ? "—" : L(q.y));
       }
-      const g = Math.max(...v.map((q) => s.measureText(q).width)) + 20, $ = Math.max(0, Math.min(n - g, U.x - g / 2)), C = v.length * 18 + 12, N = U.y ?? _, E = Math.max(0, Math.min(d - C, N > C + 20 ? N - C - 12 : N + 12));
+      const g = Math.max(...v.map((q) => s.measureText(q).width)) + 20, $ = Math.max(0, Math.min(n - g, z.x - g / 2)), C = v.length * 18 + 12, N = z.y ?? _, E = Math.max(0, Math.min(d - C, N > C + 20 ? N - C - 12 : N + 12));
       s.fillStyle = "#222", s.fillRect($, E, g, C), s.fillStyle = "#fff", s.textAlign = "left", v.forEach((q, Ce) => s.fillText(q, $ + 10, E + 19 + Ce * 18));
     }
   }, oe = (k) => {
     const f = o.getBoundingClientRect(), O = (k.clientX - f.left) * n / f.width, T = (k.clientY - f.top) * d / f.height;
     if (e.columnHover)
-      return !S.length || O < D || O > F || T < z || T > _ ? -1 : S.length === 1 ? 0 : Math.round((O - D) / (F - D) * (S.length - 1));
+      return !S.length || O < D || O > F || T < j || T > _ ? -1 : S.length === 1 ? 0 : Math.round((O - D) / (F - D) * (S.length - 1));
     let R = -1, V = 16;
     return S.forEach((B, G) => {
       if (B.y == null) return;
@@ -754,7 +757,7 @@ function je(o, r, t, e = {}) {
     o.style.cursor = "default", Q();
   }, Q();
 }
-const ze = [
+const je = [
   { key: "AllOrders", label: "All" },
   { key: "NeedsReview", label: "Needs review" },
   { key: "states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled", label: "Unfulfilled" },
@@ -762,7 +765,7 @@ const ze = [
   { key: "states:Open;;", label: "Open" },
   { key: "states:Closed;;", label: "Closed" }
 ];
-function Ue() {
+function ze() {
   var t;
   const o = p.stores.find((e) => e.alias === p.filters.store), r = (o == null ? void 0 : o.currencies) || [];
   if (!r.includes(p.filters.currency || "")) {
@@ -784,7 +787,7 @@ function Ie(o, r = "data-field", t = !0) {
 }
 function Ve(o) {
   var t;
-  const r = [...ze];
+  const r = [...je];
   return r.some((e) => e.key === o) || r.push({ key: o, label: o.startsWith("states:") ? "Custom status filters" : ((t = p.statusList.find((e) => Ae(e) === o)) == null ? void 0 : t.label) || o }), r.map((e) => `<option value="${u(e.key)}" ${e.key === o ? "selected" : ""}>${u(e.label)}</option>`).join("");
 }
 function xe(o = /* @__PURE__ */ new Date()) {
@@ -800,7 +803,7 @@ function xe(o = /* @__PURE__ */ new Date()) {
     { label: "This year", from: r(new Date(o.getFullYear(), 0, 1)), to: e }
   ];
 }
-const j = (o, r = 12) => `<span class="ekom-skeleton" style="width:${o};height:${r}px"></span>`;
+const U = (o, r = 12) => `<span class="ekom-skeleton" style="width:${o};height:${r}px"></span>`;
 function Be() {
   var t;
   const { dateFrom: o, dateTo: r } = p.filters;
@@ -813,13 +816,13 @@ function Je(o) {
   return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>${u(o)}</p>`;
 }
 function Ye(o, r, t) {
-  const e = `<div class="ekom-loading-card">${j("40%")}${j("55%", 22)}</div>`;
+  const e = `<div class="ekom-loading-card">${U("40%")}${U("55%", 22)}</div>`;
   return `<div class="ekom-loading">${Ge(o)}<div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(${r},minmax(0,1fr))">${e.repeat(r)}</div>
-    <div aria-hidden="true" class="ekom-loading-panel" style="height:${t}px">${j("30%")}<span class="ekom-skeleton ekom-skeleton-block"></span></div>
-    <div aria-hidden="true" class="ekom-loading-panel">${j("28%")}${j("100%").repeat(3)}</div></div>`;
+    <div aria-hidden="true" class="ekom-loading-panel" style="height:${t}px">${U("30%")}<span class="ekom-skeleton ekom-skeleton-block"></span></div>
+    <div aria-hidden="true" class="ekom-loading-panel">${U("28%")}${U("100%").repeat(3)}</div></div>`;
 }
 function He(o, r = 4) {
-  return `<div class="ekom-loading-rows">${`<div aria-hidden="true"><span class="ekom-skeleton" style="flex:1"></span>${j("60px")}${j("110px")}</div>`.repeat(r)}<p role="status">${u(o)}</p></div>`;
+  return `<div class="ekom-loading-rows">${`<div aria-hidden="true"><span class="ekom-skeleton" style="flex:1"></span>${U("60px")}${U("110px")}</div>`.repeat(r)}<p role="status">${u(o)}</p></div>`;
 }
 function We() {
   return `<ekom-date-range from="${u(p.filters.dateFrom)}" to="${u(p.filters.dateTo)}"></ekom-date-range>`;
@@ -1122,7 +1125,7 @@ class ot extends tt(HTMLElement) {
     try {
       const [e, a, i] = await Promise.all([this.api.statusList(), this.api.stores(), this.hasAttribute("classic") ? Promise.resolve(!1) : this.api.printingEnabled()]);
       if (p.printingEnabled = i, this.disposed) return;
-      p.statusList = e || [], p.stores = a || [], p.stores.some((n) => n.alias === p.filters.store) || (p.filters.store = ((t = p.stores[0]) == null ? void 0 : t.alias) || ""), this.hasAttribute("classic") || Ue(), await this.loadAnalytics();
+      p.statusList = e || [], p.stores = a || [], p.stores.some((n) => n.alias === p.filters.store) || (p.filters.store = ((t = p.stores[0]) == null ? void 0 : t.alias) || ""), this.hasAttribute("classic") || ze(), await this.loadAnalytics();
     } catch (e) {
       if (this.disposed) return;
       this.error = te(e, "Unable to load Analytics."), this.loading = !1, this.render();
@@ -1320,7 +1323,7 @@ class ot extends tt(HTMLElement) {
     const t = this.querySelector("#analytics-chart");
     if (!t || !this.chartData || this.table) return;
     const e = this.buckets, a = this.chartData.currency || ((d = this.previousData) == null ? void 0 : d.currency), i = a && /^[A-Z]{3}$/.test(a) ? this.currencyFor(a) : this.currency, n = this.previousData && (this.metric === "orders" || this.comparisonMoneyAvailable) ? { labels: [], points: e.map((s) => ({ x: this.range(s.previousStart, s.previousEnd), y: this.previousValue(s) })) } : void 0;
-    je(t, { labels: [], points: e.map((s) => ({ x: this.range(s.start, s.end), y: s[this.metric] })) }, getComputedStyle(t).getPropertyValue("--ekom-accent").trim() || "#10694a", {
+    Ue(t, { labels: [], points: e.map((s) => ({ x: this.range(s.start, s.end), y: s[this.metric] })) }, getComputedStyle(t).getPropertyValue("--ekom-accent").trim() || "#10694a", {
       templateStyle: !this.hasAttribute("classic"),
       formatAxisValue: (s) => s.toLocaleString(void 0, { notation: "compact", maximumFractionDigits: 1 }).replace("K", "k"),
       formatLabel: (s) => ke(String(e[s].start).slice(0, 10), this.grouping === "month" ? "month" : "monthDay"),

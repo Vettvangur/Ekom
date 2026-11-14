@@ -1,0 +1,599 @@
+using Ekom.Events;
+using Ekom.Models;
+using Ekom.Models.Orders;
+using Ekom.Models.Payments;
+using Ekom.Repositories;
+using Ekom.Services;
+using LinqToDB;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using Xunit;
+
+namespace Ekom.Tests.Tests;
+
+[Collection("Reservations")]
+public sealed class OrderPaymentsTests
+{
+    private static readonly Guid PaymentA = Guid.NewGuid();
+    private static readonly Guid PaymentB = Guid.NewGuid();
+
+    public static TheoryData<string, PaymentStatus?> CalculatorCases => new()
+    {
+        { "", null },
+        { "A:Requested", PaymentStatus.Pending },
+        { "A:Requested,A:Failed", PaymentStatus.Failed },
+        { "A:Requested,A:Cancelled", PaymentStatus.Pending },
+        { "A:Requested,A:Failed,B:Requested", PaymentStatus.Pending },
+        { "A:Requested,A:Authorized", PaymentStatus.Authorized },
+        { "A:Requested,A:Authorized,A:Voided", PaymentStatus.Voided },
+        { "A:Requested,A:Authorized,B:Requested,B:Failed", PaymentStatus.Authorized },
+        { "A:Requested,A:Captured", PaymentStatus.Paid },
+        { "A:Requested,A:Captured=40", PaymentStatus.PartiallyPaid },
+        { "A:Requested,A:Captured=40,B:Requested,B:Captured=60", PaymentStatus.Paid },
+        { "A:Requested,A:Captured,A:Refunded=30", PaymentStatus.PartiallyRefunded },
+        { "A:Requested,A:Captured,A:Refunded", PaymentStatus.Refunded },
+        // A late failure of an abandoned attempt never downgrades a paid order.
+        { "A:Requested,B:Requested,B:Captured,A:Failed", PaymentStatus.Paid },
+        // A manual choice overrides what came before it, and survives later failures.
+        { "A:Requested,A:Failed,Manual=Paid", PaymentStatus.Paid },
+        { "A:Requested,Manual=Paid,A:Failed", PaymentStatus.Paid },
+        { "A:Requested,A:Captured,Manual=Pending", PaymentStatus.Pending },
+        // A note never changes the status.
+        { "A:Requested,A:Note", PaymentStatus.Pending },
+        { "A:Requested,A:Captured,A:Note", PaymentStatus.Paid },
+        { "A:Requested,A:Failed,A:Note", PaymentStatus.Failed },
+        // Real money movement after a manual choice counts again.
+        { "A:Requested,Manual=Pending,A:Captured", PaymentStatus.Paid },
+        { "A:Requested,A:Captured,Manual=Paid,A:Refunded", PaymentStatus.Refunded },
+    };
+
+    [Theory]
+    [MemberData(nameof(CalculatorCases))]
+    public void CalculatorDerivesStatusFromTransactions(string history, PaymentStatus? expected)
+        => Assert.Equal(expected, PaymentStatusCalculator.Calculate(Rows(history), 100m));
+
+    [Fact]
+    public async Task CaptureMarksOrderPaidLogsWithOrderNumberAndIsStoredOnce()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var recorded = new List<PaymentRecordedEventArgs>();
+        Func<object, PaymentRecordedEventArgs, CancellationToken, Task> handler = (_, args, _) => { recorded.Add(args); return Task.CompletedTask; };
+        OrderEvents.PaymentRecordedAsync += handler;
+        try
+        {
+            var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+            var capture = new PaymentTransaction
+            {
+                PaymentId = payment.PaymentId,
+                Type = PaymentTransactionType.Captured,
+                TransactionId = "TX-1",
+                AuthorizationCode = "123456",
+                MaskedCardNumber = "5587-40**-****-0014",
+                CardBrand = "Mastercard",
+                Details = [new PaymentDetail("rrn", "RRN", "000000020512", true)],
+                RawData = "{\"status\":\"OK\"}",
+            };
+
+            var first = await fixture.Payments.RecordAsync(capture);
+            var second = await fixture.Payments.RecordAsync(capture);
+
+            Assert.True(first.Recorded);
+            Assert.Equal(PaymentStatus.Paid, first.PaymentStatus);
+            Assert.False(second.Recorded);
+            Assert.Equal(PaymentStatus.Paid, second.PaymentStatus);
+
+            using var db = fixture.Factory.GetDatabase();
+            Assert.Equal(2, await db.OrderPaymentTransactions.CountAsync(x => x.OrderUniqueId == orderId));
+            var order = await db.OrderData.SingleAsync(x => x.UniqueId == orderId);
+            Assert.Equal(PaymentStatus.Paid, order.Status.PaymentStatus);
+            Assert.Equal(2, order.StatusRevision);
+            Assert.Equal("ReadyForDispatch", order.OrderStatusCol);
+            Assert.Equal("TX-1", (await db.OrderPayments.SingleAsync()).TransactionId);
+
+            var log = await db.OrderActivityLog.SingleAsync(x => x.Key == orderId);
+            Assert.Equal(OrderActivityLogType.Success, log.LogType);
+            Assert.StartsWith("Payment successful. Order number: IS-1042;", log.Log, StringComparison.Ordinal);
+            Assert.Contains("Transaction ID: TX-1", log.Log, StringComparison.Ordinal);
+            Assert.Contains($"PaymentId: {payment.PaymentId}", log.Log, StringComparison.Ordinal);
+
+            var args = Assert.Single(recorded, x => x.Payment.PaymentId == payment.PaymentId);
+            Assert.Equal(PaymentStatus.Pending, args.PreviousPaymentStatus);
+            Assert.Equal(PaymentStatus.Paid, args.PaymentStatus);
+
+            var view = await fixture.Payments.GetForOrderAsync(orderId);
+            Assert.Equal("Paid", view.Current!.Status);
+            Assert.Equal("123456", view.Current.AuthorizationCode);
+            Assert.Equal("Mastercard", view.Current.CardBrand);
+            Assert.NotNull(view.Current.CapturedUtc);
+            Assert.Equal("RRN", Assert.Single(view.Current.Details).Label);
+            Assert.Equal(orderId, await fixture.Payments.FindOrderAsync("TX-1"));
+            Assert.Equal(orderId, await fixture.Payments.FindOrderAsync(payment.PaymentId.ToString()));
+        }
+        finally
+        {
+            OrderEvents.PaymentRecordedAsync -= handler;
+        }
+    }
+
+    [Fact]
+    public async Task DeclinedAttemptThenRetryShowsBothAttemptsAndLateFailureKeepsOrderPaid()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var declined = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+        var failed = await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = declined.PaymentId, Type = PaymentTransactionType.Failed, Message = "Declined: insufficient funds",
+        });
+        Assert.Equal(PaymentStatus.Failed, failed.PaymentStatus);
+
+        var retry = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+        await fixture.Payments.RecordAsync(new PaymentTransaction { PaymentId = retry.PaymentId, Type = PaymentTransactionType.Captured, TransactionId = "TX-2" });
+        var late = await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = declined.PaymentId, Type = PaymentTransactionType.Failed, TransactionId = "late", Message = "Timed out",
+        });
+
+        Assert.True(late.Recorded);
+        Assert.Equal(PaymentStatus.Paid, late.PaymentStatus);
+        var view = await fixture.Payments.GetForOrderAsync(orderId);
+        Assert.Equal(2, view.Attempts.Count);
+        Assert.Equal(retry.PaymentId, view.Current!.PaymentId);
+        Assert.Equal(retry.PaymentId, view.Attempts[0].PaymentId);
+        Assert.Equal("Failed", view.Attempts[1].Status);
+        Assert.Equal("Timed out", view.Attempts[1].Message);
+        using var db = fixture.Factory.GetDatabase();
+        Assert.Equal(OrderActivityLogType.Alert, (await db.OrderActivityLog.Where(x => x.Key == orderId).ToListAsync())[0].LogType);
+    }
+
+    [Fact]
+    public async Task ManagerPaymentChangeIsStoredAsManualRowAndSurvivesLateFailure()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+
+        var changed = await fixture.States.ChangeAsync(orderId, new OrderStateChangeRequest(1, "PaymentPaid"));
+        var late = await fixture.Payments.RecordAsync(new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Failed });
+
+        Assert.Equal(PaymentStatus.Paid, changed.PaymentStatus);
+        Assert.Equal(PaymentStatus.Paid, late.PaymentStatus);
+        var view = await fixture.Payments.GetForOrderAsync(orderId);
+        var manual = Assert.Single(view.ManualChanges);
+        Assert.Equal("Paid", manual.ManualStatus);
+        Assert.Equal("anna", manual.Actor);
+    }
+
+    [Fact]
+    public async Task OrderNotYetOnIndependentStatusesKeepsItsStoredStatus()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder(migrated: false);
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+
+        var result = await fixture.Payments.RecordAsync(new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured });
+
+        Assert.True(result.Recorded);
+        using var db = fixture.Factory.GetDatabase();
+        var order = await db.OrderData.SingleAsync(x => x.UniqueId == orderId);
+        Assert.Equal(0, order.StatusMappingVersion);
+        Assert.Equal("Pending", order.OrderStatusCol);
+        Assert.Null(order.PaymentStateCol);
+    }
+
+    [Fact]
+    public async Task CaptureCompletesCheckoutOfAnOrderWaitingForPaymentOnce()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder(legacyStatus: "WaitingForPayment");
+        var attemptId = Guid.NewGuid();
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { AttemptId = attemptId });
+        var capture = new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, TransactionId = "TX-9" };
+
+        var first = await fixture.Payments.RecordAsync(capture);
+        var repeated = await fixture.Payments.RecordAsync(capture);
+
+        Assert.True(first.CheckoutCompleted);
+        Assert.False(repeated.CheckoutCompleted);
+        Assert.Equal((orderId, (Guid?)attemptId), Assert.Single(fixture.Completion.Calls));
+    }
+
+    [Fact]
+    public async Task AuthorizationCompletesCheckoutButTheOrderIsOnlyPaidOnceCaptured()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder(legacyStatus: "WaitingForPayment");
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+
+        var authorized = await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = payment.PaymentId, Type = PaymentTransactionType.Authorized, TransactionId = "AUTH-1",
+        });
+
+        Assert.True(authorized.CheckoutCompleted);
+        // Completion moves the order on as if it were paid; the payment itself is only authorized.
+        Assert.Equal(PaymentStatus.Authorized, authorized.PaymentStatus);
+        using (var db = fixture.Factory.GetDatabase())
+        {
+            var order = await db.OrderData.SingleAsync(x => x.UniqueId == orderId);
+            Assert.Equal(PaymentStatus.Authorized, order.Status.PaymentStatus);
+            Assert.Equal(OrderStatus.Open, order.Status.OrderStatus);
+            Assert.Equal("ReadyForDispatch", order.OrderStatusCol);
+        }
+
+        var captured = await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, TransactionId = "CAP-1",
+        });
+
+        Assert.False(captured.CheckoutCompleted);
+        Assert.Equal(PaymentStatus.Paid, captured.PaymentStatus);
+        Assert.Single(fixture.Completion.Calls);
+        var view = await fixture.Payments.GetForOrderAsync(orderId);
+        Assert.NotNull(view.Current!.AuthorizedUtc);
+        Assert.NotNull(view.Current.CapturedUtc);
+    }
+
+    [Fact]
+    public async Task RepeatedCaptureCompletesCheckoutWhenTheFirstDeliveryDidNot()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder(legacyStatus: "WaitingForPayment");
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+        var capture = new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured };
+        fixture.Completion.Fail = true;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Payments.RecordAsync(capture));
+        fixture.Completion.Fail = false;
+        var repeated = await fixture.Payments.RecordAsync(capture);
+
+        Assert.False(repeated.Recorded);
+        Assert.True(repeated.CheckoutCompleted);
+        using var db = fixture.Factory.GetDatabase();
+        Assert.Equal(1, await db.OrderPaymentTransactions.CountAsync(x => x.TypeCol == "Captured"));
+    }
+
+    [Fact]
+    public async Task FailedPaymentAndOfflineCaptureDoNotCompleteCheckout()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder(legacyStatus: "WaitingForPayment");
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+
+        await fixture.Payments.RecordAsync(new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Failed });
+        await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, SkipCheckoutCompletion = true,
+        });
+
+        Assert.Empty(fixture.Completion.Calls);
+    }
+
+    [Fact]
+    public async Task PaymentIsFoundByTheProvidersOwnReferenceForThatProviderOnly()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var older = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderType = "siminnPay", ProviderReference = "key-1" });
+        var newer = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderType = "siminnPay", ProviderReference = "key-1" });
+        var unstamped = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderReference = "key-2" });
+
+        Assert.Equal(newer.PaymentId, (await fixture.Payments.GetByProviderReferenceAsync("siminnPay", "key-1"))!.PaymentId);
+        Assert.Null(await fixture.Payments.GetByProviderReferenceAsync("borgun", "key-1"));
+        Assert.Equal(unstamped.PaymentId, (await fixture.Payments.GetByProviderReferenceAsync("siminnPay", "key-2"))!.PaymentId);
+        Assert.Null(await fixture.Payments.GetByProviderReferenceAsync("siminnPay", ""));
+        Assert.NotEqual(older.PaymentId, newer.PaymentId);
+    }
+
+    [Fact]
+    public async Task OpenPaymentsAreThoseOfTheProviderWithNothingRecordedSinceTheRequest()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var teya = fixture.NewPayment(orderId) with { ProviderType = "teyaConsumerloans" };
+        var open = await fixture.Payments.CreateAsync(teya);
+        var noted = await fixture.Payments.CreateAsync(teya);
+        var failed = await fixture.Payments.CreateAsync(teya);
+        var otherProvider = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderType = "borgun" });
+        await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = noted.PaymentId, Type = PaymentTransactionType.Note, Message = "Monitoring ended; check with the provider",
+        });
+        await fixture.Payments.RecordAsync(new PaymentTransaction { PaymentId = failed.PaymentId, Type = PaymentTransactionType.Failed });
+
+        var result = await fixture.Payments.GetOpenPaymentsAsync("teyaConsumerloans", DateTime.UtcNow.AddHours(-1));
+
+        Assert.Equal(open.PaymentId, Assert.Single(result).PaymentId);
+        Assert.Empty(await fixture.Payments.GetOpenPaymentsAsync("teyaConsumerloans", DateTime.UtcNow.AddHours(1)));
+        Assert.NotEqual(otherProvider.PaymentId, open.PaymentId);
+        // The note is part of the payment's history and of the order's activity log, but not an outcome.
+        var view = await fixture.Payments.GetForOrderAsync(orderId);
+        Assert.Equal("Pending", view.Attempts.Single(x => x.PaymentId == noted.PaymentId).Status);
+        Assert.Contains(view.Attempts.Single(x => x.PaymentId == noted.PaymentId).Events, x => x.Type == "Note");
+    }
+
+    [Fact]
+    public async Task ThePaymentAnOrderWasPaidWithIsAvailableToCompletionHandlersWithItsProviderData()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var declined = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderType = "borgun" });
+        await fixture.Payments.RecordAsync(new PaymentTransaction { PaymentId = declined.PaymentId, Type = PaymentTransactionType.Failed });
+        var paid = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId) with { ProviderType = "valitor", ProviderName = "Card payment" });
+        await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = paid.PaymentId,
+            Type = PaymentTransactionType.Captured,
+            TransactionId = "778899",
+            AuthorizationCode = "654321",
+            CardBrand = "VISA",
+            MaskedCardNumber = "************1111",
+            PaymentMethod = "Card",
+            Details = [new PaymentDetail("contractNumber", "Contract number", "12345", true)],
+            RawData = "{\"ContractType\":\"Debit\",\"TransactionNumber\":778899}",
+        });
+
+        var payment = await CheckoutService.LoadPaymentAsync(fixture.Payments, orderId, NullLogger.Instance);
+
+        Assert.NotNull(payment);
+        Assert.Equal(paid.PaymentId, payment.PaymentId);
+        Assert.Equal("Card payment", payment.Provider);
+        Assert.Equal("valitor", payment.ProviderType);
+        Assert.Equal("Paid", payment.Status);
+        Assert.Equal("778899", payment.TransactionId);
+        Assert.Equal("654321", payment.AuthorizationCode);
+        Assert.Equal("VISA", payment.CardBrand);
+        Assert.Equal("************1111", payment.MaskedCardNumber);
+        Assert.Equal("Card", payment.PaymentMethod);
+        Assert.Equal(100m, payment.Amount);
+        Assert.Equal("ISK", payment.Currency);
+        Assert.NotNull(payment.CapturedUtc);
+        Assert.Equal("12345", payment.GetDetail("contractnumber"));
+        Assert.Null(payment.GetDetail("missing"));
+        Assert.Equal("Debit", payment.GetData<ValitorFields>()!.ContractType);
+        // The provider's response is for code, not for the manager's order drawer.
+        Assert.DoesNotContain("ContractType", System.Text.Json.JsonSerializer.Serialize(payment), StringComparison.Ordinal);
+        Assert.DoesNotContain("ContractType", Newtonsoft.Json.JsonConvert.SerializeObject(payment), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnOrderWithoutARecordedPaymentOrAnUnreadablePaymentDoesNotStopCompletion()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var failing = new Mock<IOrderPayments>();
+        failing.Setup(x => x.GetForOrderAsync(orderId, It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("Database unavailable"));
+
+        Assert.Null(await CheckoutService.LoadPaymentAsync(fixture.Payments, orderId, NullLogger.Instance));
+        Assert.Null(await CheckoutService.LoadPaymentAsync(failing.Object, orderId, NullLogger.Instance));
+        Assert.Null(await CheckoutService.LoadPaymentAsync(null, orderId, NullLogger.Instance));
+    }
+
+    private sealed class ValitorFields
+    {
+        public string? ContractType { get; set; }
+    }
+
+    [Fact]
+    public async Task OrderExportCarriesThePaymentOfEachOrderAfterTheExistingColumns()
+    {
+        using var fixture = new Fixture();
+        var paidOrder = fixture.AddOpenOrder();
+        var unpaidOrder = fixture.AddOpenOrder();
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(paidOrder) with { ProviderType = "valitor", ProviderName = "Card, payment" });
+        await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, TransactionId = "778899",
+            AuthorizationCode = "654321", CardBrand = "VISA", MaskedCardNumber = "************1111", PaymentMethod = "Card",
+        });
+        List<OrderData> orders;
+        using (var db = fixture.Factory.GetDatabase())
+        {
+            orders = await db.OrderData.OrderBy(x => x.ReferenceId).ToListAsync();
+        }
+        // These test orders have no stored order lines.
+        orders.ForEach(x => x.OrderInfo = string.Empty);
+
+        var payments = await fixture.Payments.GetCurrentPaymentsAsync(orders.Select(x => x.UniqueId).ToList());
+        var lines = Ekom.Controllers.EkomManagerController.CreateOrderCsv(orders, includeOrderLines: false, payments)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        var withLines = Ekom.Controllers.EkomManagerController.CreateOrderCsv(orders, includeOrderLines: true, payments)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Single(payments);
+        // Existing columns keep their positions; the payment columns follow them.
+        Assert.StartsWith("uniqueId,referenceId,orderInfo,orderNumber,", lines[0], StringComparison.Ordinal);
+        Assert.EndsWith(",paidDate,paymentStatus,paymentProvider,paymentProviderType,paymentTransactionId,paymentAuthorizationCode,paymentCardType,paymentCardNumber,paymentMethod,paymentCapturedDate", lines[0], StringComparison.Ordinal);
+        Assert.StartsWith("rowType,uniqueId,", withLines[0], StringComparison.Ordinal);
+        Assert.Contains(",lineTotal,paymentStatus,", withLines[0], StringComparison.Ordinal);
+
+        var paid = lines.Single(x => x.StartsWith(paidOrder.ToString(), StringComparison.Ordinal));
+        Assert.Contains(",Paid,\"Card, payment\",valitor,778899,654321,VISA,************1111,Card,20", paid, StringComparison.Ordinal);
+        var unpaid = lines.Single(x => x.StartsWith(unpaidOrder.ToString(), StringComparison.Ordinal));
+        Assert.EndsWith(",Pending,,,,,,,,", unpaid, StringComparison.Ordinal);
+        // Without payments the export is unchanged apart from the empty columns.
+        Assert.EndsWith(",,,,,,,,", Ekom.Controllers.EkomManagerController.CreateOrderCsv(orders, false)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)[1], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ManagerSearchFindsAnOrderByPaymentIdOrTransactionId()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var otherOrder = fixture.AddOpenOrder();
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+        await fixture.Payments.RecordAsync(new PaymentTransaction
+        {
+            PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, TransactionId = "TX-7741-0926",
+        });
+        var stores = new Mock<IStoreService>();
+        stores.Setup(x => x.GetStoreByAlias("main")).Returns(Mock.Of<IStore>(x => x.Currency == new CurrencyModel { CurrencyValue = "en-US" }));
+        var repository = new ManagerRepository(NullLogger<ManagerRepository>.Instance, fixture.Configuration, fixture.Factory, stores.Object);
+
+        async Task<Guid[]> SearchAsync(string query)
+            => (await repository.SearchOrdersAsync(DateTime.Today, DateTime.Today, query, "main", "AllOrders",
+                "", "", "", "", "", "", "", "", "1", "20")).Orders.Select(x => x.UniqueId).ToArray();
+
+        Assert.Equal(new[] { orderId }, await SearchAsync(payment.PaymentId.ToString()));
+        Assert.Equal(new[] { orderId }, await SearchAsync("TX-7741-0926"));
+        Assert.Equal(new[] { orderId }, await SearchAsync(" TX-7741-0926 "));
+        // The order's own id still works, and a transaction ID is matched whole, not as a fragment.
+        Assert.Equal(new[] { otherOrder }, await SearchAsync(otherOrder.ToString()));
+        Assert.Empty(await SearchAsync("TX-7741"));
+        Assert.Empty(await SearchAsync(Guid.NewGuid().ToString()));
+        Assert.Equal(2, (await SearchAsync("")).Length);
+    }
+
+    [Fact]
+    public async Task RecordingForUnknownPaymentFails()
+    {
+        using var fixture = new Fixture();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Payments.RecordAsync(
+            new PaymentTransaction { PaymentId = Guid.NewGuid(), Type = PaymentTransactionType.Captured }));
+    }
+
+    private static List<OrderPaymentTransaction> Rows(string history)
+    {
+        var rows = new List<OrderPaymentTransaction>();
+        var start = new DateTime(2026, 11, 12, 14, 0, 0, DateTimeKind.Utc);
+        foreach (var part in history.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var row = new OrderPaymentTransaction { Id = rows.Count + 1, OccurredUtc = start.AddMinutes(rows.Count), Amount = 100m };
+            if (part.StartsWith("Manual=", StringComparison.Ordinal))
+            {
+                row.Type = PaymentTransactionType.Manual;
+                row.ManualStatusCol = part[7..];
+                row.Amount = 0;
+            }
+            else
+            {
+                var pieces = part.Split(':', '=');
+                row.PaymentId = pieces[0] == "A" ? PaymentA : PaymentB;
+                row.Type = Enum.Parse<PaymentTransactionType>(pieces[1]);
+                if (pieces.Length > 2) row.Amount = decimal.Parse(pieces[2], System.Globalization.CultureInfo.InvariantCulture);
+            }
+            rows.Add(row);
+        }
+        return rows;
+    }
+
+    private sealed class Fixture : IDisposable
+    {
+        private readonly SqliteConnection _connection;
+        private readonly MemoryCache _cache = new(new MemoryCacheOptions());
+        public DatabaseFactory Factory { get; }
+        public IOrderPayments Payments { get; }
+        public OrderStateService States { get; }
+        public Configuration Configuration { get; }
+        public FakeCompletion Completion { get; } = new();
+
+        public Fixture()
+        {
+            var connectionString = $"Data Source=order-payments-{Guid.NewGuid():N};Mode=Memory;Cache=Shared;Pooling=False";
+            _connection = new SqliteConnection(connectionString);
+            _connection.Open();
+            var root = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:umbracoDbDSN"] = connectionString,
+                ["ConnectionStrings:umbracoDbDSN_ProviderName"] = "Microsoft.Data.Sqlite",
+            }).Build();
+            Factory = new DatabaseFactory(root, Mock.Of<IHostEnvironment>(x => x.ContentRootPath == AppContext.BaseDirectory));
+            var schema = new DatabaseService(Factory, NullLogger<DatabaseService>.Instance, new StockReservationReadiness());
+            schema.CreateTables();
+            // Creating the payment tables is repeatable.
+            schema.EnsureOrderPaymentTables();
+            var configuration = new Configuration(root);
+            Configuration = configuration;
+            var handlers = Array.Empty<IOrderStatusPersistenceHandler>();
+            Completion.Factory = Factory;
+            var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
+                .AddSingleton<ICheckoutCompletion>(Completion).BuildServiceProvider();
+            Payments = new OrderPaymentService(Factory, configuration, _cache, handlers, NullLogger<OrderPaymentService>.Instance, services);
+
+            var access = new Mock<IManagerAccessService>();
+            access.Setup(x => x.CanAccessManager()).Returns(true);
+            access.Setup(x => x.CanAccessStore(It.IsAny<string>())).Returns(true);
+            var attempts = new CheckoutPaymentAttemptService(Factory, Mock.Of<IStockReservationService>(),
+                new ActivityLogRepository(NullLogger<ActivityLogRepository>.Instance, Factory), NullLogger<CheckoutPaymentAttemptService>.Instance, _cache);
+            var http = new HttpContextAccessor
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(
+                        [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "anna")], "test")),
+                },
+            };
+            States = new OrderStateService(Factory, configuration, access.Object, _cache, attempts, http, handlers);
+        }
+
+        public Guid AddOpenOrder(bool migrated = true, string legacyStatus = "Pending")
+        {
+            var id = Guid.NewGuid();
+            using var db = Factory.GetDatabase();
+            db.Insert(new OrderData
+            {
+                UniqueId = id,
+                StoreAlias = "main",
+                OrderNumber = "IS-1042",
+                OrderStatusCol = legacyStatus,
+                CreateDate = DateTime.Now,
+                OrderInfo = "{}",
+                TotalAmount = 100m,
+                Currency = "is-IS",
+                // An order still waiting for its payment is a draft; it opens when checkout completes.
+                OrderStateCol = !migrated ? null : legacyStatus == "WaitingForPayment" ? nameof(OrderStatus.Draft) : nameof(OrderStatus.Open),
+                PaymentStateCol = migrated ? nameof(PaymentStatus.Pending) : null,
+                FulfillmentStateCol = migrated ? nameof(FulfillmentStatus.Unfulfilled) : null,
+                StatusMappingVersion = migrated ? 1 : 0,
+                StatusRevision = migrated ? 1 : 0,
+            });
+            return id;
+        }
+
+        public NewOrderPayment NewPayment(Guid orderId) => new()
+        {
+            OrderUniqueId = orderId,
+            OrderNumber = "IS-1042",
+            StoreAlias = "main",
+            ProviderName = "Borgun",
+            Amount = 100m,
+            Currency = "ISK",
+        };
+
+        public void Dispose()
+        {
+            _cache.Dispose();
+            _connection.Dispose();
+        }
+    }
+
+    /// <summary>Stands in for the real checkout completion, which moves the order on from WaitingForPayment.</summary>
+    private sealed class FakeCompletion : ICheckoutCompletion
+    {
+        public DatabaseFactory Factory { get; set; } = null!;
+        public List<(Guid OrderId, Guid? AttemptId)> Calls { get; } = [];
+        public bool Fail { get; set; }
+
+        public async Task<bool> CompleteAsync(Guid orderId, Guid? attemptId, CancellationToken ct = default)
+        {
+            if (Fail) throw new InvalidOperationException("Checkout completion failed.");
+            Calls.Add((orderId, attemptId));
+            await using var db = Factory.GetDatabase();
+            // Like the real completion: the order opens and the legacy status marks it paid.
+            await db.OrderData.Where(x => x.UniqueId == orderId)
+                .Set(x => x.OrderStatusCol, "ReadyForDispatch")
+                .Set(x => x.OrderStateCol, nameof(OrderStatus.Open))
+                .Set(x => x.PaymentStateCol, nameof(PaymentStatus.Paid))
+                .UpdateAsync(ct);
+            return true;
+        }
+    }
+}

@@ -311,6 +311,22 @@ public partial class Order
     }
 
     /// <summary>
+    /// The payment an order was paid with: provider, transaction ID, authorization code, card brand and masked
+    /// number, payment method, the provider's own details and its response. Returns the captured or authorized
+    /// payment, otherwise the latest attempt; null when no payment has been recorded on the order.
+    /// </summary>
+    public async Task<OrderPaymentAttempt?> GetPaymentAsync(Guid orderId, CancellationToken ct = default)
+    {
+        if (orderId == Guid.Empty)
+        {
+            throw new ArgumentException("Order id cannot be empty.", nameof(orderId));
+        }
+
+        var payments = Configuration.Resolver.GetService(typeof(IOrderPayments)) as IOrderPayments;
+        return payments == null ? null : (await payments.GetForOrderAsync(orderId, ct).ConfigureAwait(false)).Current;
+    }
+
+    /// <summary>
     /// Add an activity log entry to an existing order.
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when orderId or message is invalid.</exception>

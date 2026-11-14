@@ -183,6 +183,7 @@ public sealed class OrderPerformanceMigrationPlanTests
             Database.Setup(x => x.EnsureStockReservationTable());
             Database.Setup(x => x.EnsureOrderReviewsTable());
             Database.Setup(x => x.EnsureOrderStateColumns());
+            Database.Setup(x => x.EnsureOrderPaymentTables());
             Database.Setup(x => x.EnsurePriceTable());
             Database.Setup(x => x.EnsureOrderActivityLogTypeColumn());
 #if NET8_0

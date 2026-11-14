@@ -8,8 +8,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ekom.Payments.Netgiro" Version="1.0.0" />
         <PackageReference Include="Umbraco.Cms" Version="17.8.1" />
+    </ItemGroup>
+
+    <!--
+        Payment providers come from a local Ekom.Payments checkout beside this repository, so both can be developed together.
+        Set EkomPaymentsRoot in an untracked .csproj.user file to use a different folder. Without the folder the site has offline payments only.
+    -->
+    <PropertyGroup>
+        <EkomPaymentsRoot Condition="'$(EkomPaymentsRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\Ekom.Payments\</EkomPaymentsRoot>
+    </PropertyGroup>
+    <ItemGroup Condition="Exists('$(EkomPaymentsRoot)Core\Ekom.Payments.Core.csproj')">
+        <ProjectReference Include="$(EkomPaymentsRoot)PaymentProviders\Ekom.Payments.Netgiro\Ekom.Payments.Netgiro.csproj" />
+        <ProjectReference Include="$(EkomPaymentsRoot)PaymentProviders\Ekom.Payments.AsynchronousExample\Ekom.Payments.AsynchronousExample.csproj" />
     </ItemGroup>
 
     <ItemGroup>

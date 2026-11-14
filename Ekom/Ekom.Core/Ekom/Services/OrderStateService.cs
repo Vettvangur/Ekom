@@ -54,6 +54,12 @@ internal sealed class OrderStateService : IOrderStateService
         data.UpdateDate = DateTime.Now;
         // Only status fields are updated here. Checkout payload, money, and inventory are untouched.
         await WriteStateAsync(db, data, ct).ConfigureAwait(false);
+        if (request.Action.StartsWith("Payment", StringComparison.Ordinal) && data.Status.PaymentStatus is { } manualStatus)
+        {
+            // Manual payment changes join the order's payment history so the calculated status keeps honouring them.
+            await db.InsertAsync(OrderPaymentService.ManualTransaction(orderId, manualStatus,
+                _http.HttpContext?.User?.Identity?.Name), token: ct).ConfigureAwait(false);
+        }
         foreach (var handler in _handlers)
             if (previousLegacy != data.OrderStatus) await handler.PersistAsync(db, data, previousLegacy.ToString(), ct).ConfigureAwait(false);
         await db.InsertAsync(new OrderActivityLog
@@ -184,7 +190,7 @@ internal sealed class OrderStateService : IOrderStateService
         return new(items, items.LastOrDefault()?.ReferenceId ?? after, rows.Count > 100, changed.Count);
     }
 
-    private static Task<int> WriteStateAsync(DbContext db, OrderData data, CancellationToken ct)
+    internal static Task<int> WriteStateAsync(DbContext db, OrderData data, CancellationToken ct)
         => db.OrderData.Where(x => x.UniqueId == data.UniqueId)
             .Set(x => x.OrderStateCol, data.OrderStateCol).Set(x => x.PaymentStateCol, data.PaymentStateCol)
             .Set(x => x.FulfillmentStateCol, data.FulfillmentStateCol).Set(x => x.OriginalOrderStatusCol, data.OriginalOrderStatusCol)

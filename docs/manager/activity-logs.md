@@ -48,7 +48,7 @@ The dispatcher uses a bounded in-memory queue. Application shutdown or a process
 
 ## Built-in entries
 
-Ekom writes activity entries from core order and checkout workflows, including status and order-line changes and successful checkout. Tracking integrations also write selected GA4 and Meta outcomes. The exact messages visible on an order depend on the workflows and integrations used by the application.
+Ekom writes activity entries from core order and checkout workflows, including status and order-line changes and successful checkout. Every payment outcome recorded on the order (authorized, captured, failed, cancelled, refunded, or a note) writes an entry that starts with the order number and ends with the payment id. Tracking integrations also write selected GA4 and Meta outcomes. The exact messages visible on an order depend on the workflows and integrations used by the application.
 
 Custom manager actions and external integrations can add their own entries with `Order.Instance.AddActivityLogAsync`.
 

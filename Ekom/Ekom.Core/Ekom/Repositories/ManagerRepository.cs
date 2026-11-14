@@ -124,6 +124,7 @@ public class ManagerRepository
             startDate = start.Date,
             endDate = end.Date.AddDays(1).AddTicks(-1),
             query = "%" + query + "%",
+            queryExact = query?.Trim(),
             queryUniqueId,
             orderStatus,
             store,
@@ -196,6 +197,7 @@ public class ManagerRepository
             startDate = start.Date,
             endDate = end.Date.AddDays(1).AddTicks(-1),
             query = "%" + query + "%",
+            queryExact = query?.Trim(),
             queryUniqueId = Guid.TryParse(query?.Trim(), out Guid parsedQueryUniqueId) ? parsedQueryUniqueId : (Guid?)null,
             store,
             paymentProvider = Guid.TryParse(paymentProvider, out Guid parsedPaymentProvider) ? parsedPaymentProvider.ToString() : null,
@@ -259,6 +261,7 @@ public class ManagerRepository
             startDate = start.Date,
             endDate = end.Date.AddDays(1).AddTicks(-1),
             query = "%" + query + "%",
+            queryExact = query?.Trim(),
             queryUniqueId,
             orderStatus,
             store,
@@ -342,9 +345,15 @@ ORDER BY {bucketDateExpression}";
         {
             whereClause.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query");
 
+            // A gateway's transaction ID, as staff copy it from the gateway's portal. Matched exactly, on its index.
+            whereClause.Append(" OR UniqueId IN (SELECT OrderUniqueId FROM EkomOrderPaymentTransactions WHERE TransactionId = @queryExact)");
+            whereClause.Append(" OR UniqueId IN (SELECT OrderUniqueId FROM EkomOrderPayments WHERE TransactionId = @queryExact)");
+
             if (Guid.TryParse(query.Trim(), out _))
             {
                 whereClause.Append(" OR UniqueId = @queryUniqueId");
+                // The id of one of the order's payment attempts.
+                whereClause.Append(" OR UniqueId IN (SELECT OrderUniqueId FROM EkomOrderPayments WHERE PaymentId = @queryUniqueId)");
             }
 
             whereClause.Append(")");
