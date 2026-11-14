@@ -65,7 +65,7 @@ Cancelling a paid or partly fulfilled order preserves those dimensions. Review t
 
 1. Open Orders and select the correct store and currency.
 2. On an Open order, use the Payment or Fulfillment dropdown in the table for an immediate update. Escape or clicking outside dismisses the menu.
-3. In order details, payment selection saves immediately; choose the fulfillment action and use Save for the pending status edit. Save pending edits before changing payment or navigating to another order.
+3. In order details, the Order, Payment and Fulfillment menus each save as soon as an option is chosen. There is no separate Save step.
 4. Use the order controls to Close, Cancel, or explicitly Reopen a Closed order. Reopen first before correcting payment or fulfillment on a Closed order.
 5. Check the saved statuses and activity log. If another user or polling has exposed a newer revision, reload before retrying.
 

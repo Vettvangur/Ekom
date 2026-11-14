@@ -162,8 +162,6 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
           this.executingActionKey || this.releasingOrderLock || this.recoveryOperation ||
           target?.closest?.('input, select, textarea, [contenteditable], [role="tablist"], details') ||
           this.querySelector('details[open]')) return;
-      const pending = this.querySelector<HTMLInputElement>('[data-field="fulfillmentState"]');
-      if (pending && pending.value !== this.selectedOrder?.status?.fulfillmentStatus) return;
       const direction = ['ArrowLeft', 'ArrowUp'].includes(event.key) ? 'Previous order' : 'Next order';
       const button = this.querySelector<HTMLButtonElement>(`.ekom-order-navigation button[aria-label="${direction}"]`);
       if (button && !button.disabled) { event.preventDefault(); button.click(); }
@@ -480,7 +478,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     const scrollPositions = Array.from(this.querySelectorAll<HTMLElement>('.ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content')).map(node => node.scrollTop);
     renderManagerContent(this, `
       <style>${managerStyles}</style>
-      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261112-filter-count">
+      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261114-order-payments">
       <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
           ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
@@ -621,11 +619,16 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     `;
   }
 
+  /** The events switch shown at the bottom of each status menu in the order drawer. One setting, shared by the menus. */
+  private renderStatusEventsToggle(): string {
+    return `<label class="ekom-menu-events"><input type="checkbox" data-field="notifyOrderStatus" ${this.notifyOrderStatus ? 'checked' : ''}><span><strong>Trigger status events</strong><small>Runs any handlers set up for this status</small></span></label>`;
+  }
+
   private renderPaymentMenu(order: OrderListItem | OrderInfo, detail = false): string {
     const state = order.status;
     if (!this.config || this.configError || !state || state.requiresReview || state.orderStatus !== 'Open') return renderStatusBadge(state?.paymentStatus);
     const values = ['Pending', 'Authorized', 'Paid', 'PartiallyPaid', 'Failed', 'Voided'];
-    return `<details class="ekom-row-fulfillment ekom-payment-menu" name="ekom-row-fulfillment"><summary aria-label="Set payment for order ${escapeHtml(order.referenceId)}">${renderStatusBadge(state.paymentStatus)}<span aria-hidden="true">▾</span></summary><div class="ekom-row-fulfillment-menu"><h4>Set payment</h4>${values.map(value => `<button type="button" data-action="set-payment" data-detail="${detail}" data-order-id="${escapeHtml(order.uniqueId)}" data-value="${value}" aria-pressed="${state.paymentStatus === value}" ${this.stateSaving ? 'disabled' : ''}>${this.renderStateDot(value)}${value.replace(/([a-z])([A-Z])/g, '$1 $2')}<span class="ekom-status-check">${state.paymentStatus === value ? '✓' : ''}</span></button>`).join('')}<p class="ekom-payment-note">Updates the recorded status immediately. Does not move money through the payment provider.</p>${detail ? '' : `<label><input type="checkbox" data-row-events ${this.config.managerOrderStatusFireEventsByDefault ?? true ? 'checked' : ''}><span><strong>Trigger status events</strong><small>Runs any handlers set up for this status</small></span></label>`}</div></details>`;
+    return `<details class="ekom-row-fulfillment ekom-payment-menu" name="ekom-row-fulfillment"><summary aria-label="Set payment for order ${escapeHtml(order.referenceId)}">${renderStatusBadge(state.paymentStatus)}<span aria-hidden="true">▾</span></summary><div class="ekom-row-fulfillment-menu"><h4>Set payment</h4>${values.map(value => `<button type="button" data-action="set-payment" data-detail="${detail}" data-order-id="${escapeHtml(order.uniqueId)}" data-value="${value}" aria-pressed="${state.paymentStatus === value}" ${this.stateSaving ? 'disabled' : ''}>${this.renderStateDot(value)}${value.replace(/([a-z])([A-Z])/g, '$1 $2')}<span class="ekom-status-check">${state.paymentStatus === value ? '✓' : ''}</span></button>`).join('')}<p class="ekom-payment-note">Updates the recorded status immediately. Does not move money through the payment provider.</p>${detail ? this.renderStatusEventsToggle() : `<label><input type="checkbox" data-row-events ${this.config.managerOrderStatusFireEventsByDefault ?? true ? 'checked' : ''}><span><strong>Trigger status events</strong><small>Runs any handlers set up for this status</small></span></label>`}</div></details>`;
   }
 
   private async changePayment(button: HTMLButtonElement): Promise<void> {
@@ -637,11 +640,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     const menu = button.closest('details');
     if (order.status.paymentStatus === value) { menu?.removeAttribute('open'); return; }
     if (detail) {
-      const pending = this.querySelector<HTMLInputElement>('[data-field="fulfillmentState"]');
-      if (pending && pending.value !== order.status.fulfillmentStatus) {
-        this.showError('Save your fulfillment change before updating payment.');
-        return;
-      }
+      menu?.removeAttribute('open');
       await this.changeState(`Payment${value}`);
       return;
     }
@@ -736,7 +735,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       ${this.renderShipment(order)}
       ${Object.keys(order.customData || {}).length ? `<section class="ekom-detail-card"><h3>Notes</h3>${this.renderOrderCustomData(order)}</section>` : ''}
     </main><aside class="ekom-customer-sidebar"><section class="ekom-detail-card"><div class="ekom-card-heading"><h3>Customer</h3>${customer.email || customer.userName ? '<button type="button" class="ekom-customer-open" data-action="open-customer">Open customer</button>' : ''}</div>${customer.email || customer.userName ? `<button type="button" class="ekom-customer-open ekom-customer-name" data-action="open-customer">${escapeHtml(customer.name || customer.email || customer.userName)}</button>` : `<strong>${escapeHtml(customer.name)}</strong>`}<div class="ekom-card-heading"><h4>Contact information</h4><button type="button" class="btn-reset" data-action="open-customer-editor">Edit</button></div><p>${escapeHtml(customer.email)}</p><p>${escapeHtml(customer.phone)}</p><h4>Shipping address</h4>${hasShippingInfo(shipping) ? `${this.renderAddress(shipping)}${this.renderExtraProperties(shipping.properties, 'shipping')}` : '<p>Same as billing address</p>'}<h4>Billing address</h4>${this.renderAddress(customer)}${this.renderExtraProperties(customer.properties, 'customer')}</section></aside></div>`;
-    return `<div class="ekom-status-controls"><label>Order<details class="ekom-lifecycle-menu"><summary aria-label="Order status">${this.renderStateDot(state?.orderStatus)}${escapeHtml(state?.orderStatus || 'Needs review')} ▾</summary><div>${(state?.orderStatus === 'Closed' ? [['Reopen', 'Reopen order']] : [['Close', 'Close order'], ['Cancel', 'Cancel order']]).map(([action, label]) => `<button type="button" data-action="order-state-command" data-command="${action}" ${blocked ? 'disabled' : ''}>${label}</button>`).join('')}</div></details></label><div class="ekom-payment-control"><span>Payment</span>${this.renderPaymentMenu(order, true)}</div><div class="ekom-fulfillment-control"><span>Fulfillment</span><input type="hidden" data-field="fulfillmentState" value="${escapeHtml(state?.fulfillmentStatus || '')}"><details class="ekom-lifecycle-menu ekom-fulfillment-menu"><summary aria-label="Fulfillment status" ${blocked || state?.orderStatus !== 'Open' ? 'aria-disabled="true"' : ''}>${this.renderStateDot(state?.fulfillmentStatus)}<span data-fulfillment-label>${escapeHtml((state?.fulfillmentStatus || 'Needs review').replace(/([a-z])([A-Z])/g, '$1 $2'))}</span><span class="ekom-status-chevron">▾</span></summary><div>${['Unfulfilled', 'Picking', 'Picked', 'Packed', 'PartiallyFulfilled', 'Fulfilled'].map(value => `<button type="button" data-action="choose-fulfillment" data-value="${value}" aria-pressed="${state?.fulfillmentStatus === value}" ${blocked || state?.orderStatus !== 'Open' ? 'disabled' : ''}>${this.renderStateDot(value)}${value.replace(/([a-z])([A-Z])/g, '$1 $2')}<span class="ekom-status-check">${state?.fulfillmentStatus === value ? '✓' : ''}</span></button>`).join('')}</div></details></div><label class="ekmCheckboxLabel"><input type="checkbox" data-field="notifyOrderStatus" ${this.notifyOrderStatus ? 'checked' : ''}>Trigger status events</label><span class="ekom-events-help"><button type="button" class="ekom-events-help-button" aria-label="About trigger status events" aria-describedby="ekom-events-tooltip">i</button><span class="ekom-events-tooltip" id="ekom-events-tooltip" role="tooltip"><strong>Trigger status events ("Fire events")</strong><span><b>On</b> — saves the status and runs whatever handlers are set up for it. What happens depends on the status and your setup, for example an email or an ERP update.</span><span><b>Off</b> — saves the status only. Use for manual corrections so external actions don't repeat.</span><small>Either way the status is saved and logged. It doesn't release stock or replace the payment flow.</small></span></span><button type="button" data-action="save-fulfillment" class="btn-success" ${blocked || state?.orderStatus !== 'Open' ? 'disabled' : ''}>${this.stateSaving ? 'Saving...' : 'Save'}</button></div>
+    // Every status menu saves as soon as an option is chosen, and carries the events switch for that change.
+    const events = this.renderStatusEventsToggle();
+    const label = (value?: string): string => escapeHtml((value || 'Needs review').replace(/([a-z])([A-Z])/g, '$1 $2'));
+    const orderCommands = state?.orderStatus === 'Closed' ? [['Reopen', 'Reopen order']] : [['Close', 'Close order'], ['Cancel', 'Cancel order']];
+    const fulfillmentDisabled = blocked || state?.orderStatus !== 'Open';
+    return `<div class="ekom-status-controls"><div class="ekom-order-control"><span>Order</span><details class="ekom-lifecycle-menu"><summary aria-label="Order status">${this.renderStateDot(state?.orderStatus)}${label(state?.orderStatus)} ▾</summary><div>${orderCommands.map(([action, text]) => `<button type="button" data-action="order-state-command" data-command="${action}" ${blocked ? 'disabled' : ''}>${text}</button>`).join('')}${events}</div></details></div><div class="ekom-payment-control"><span>Payment</span>${this.renderPaymentMenu(order, true)}</div><div class="ekom-fulfillment-control"><span>Fulfillment</span><details class="ekom-lifecycle-menu ekom-fulfillment-menu"><summary aria-label="Fulfillment status" ${fulfillmentDisabled ? 'aria-disabled="true"' : ''}>${this.renderStateDot(state?.fulfillmentStatus)}<span data-fulfillment-label>${label(state?.fulfillmentStatus)}</span><span class="ekom-status-chevron">▾</span></summary><div>${['Unfulfilled', 'Picking', 'Picked', 'Packed', 'PartiallyFulfilled', 'Fulfilled'].map(value => `<button type="button" data-action="choose-fulfillment" data-value="${value}" aria-pressed="${state?.fulfillmentStatus === value}" ${fulfillmentDisabled ? 'disabled' : ''}>${this.renderStateDot(value)}${label(value)}<span class="ekom-status-check">${state?.fulfillmentStatus === value ? '✓' : ''}</span></button>`).join('')}${events}</div></details></div>${this.stateSaving ? '<span class="ekom-status-saving" role="status">Saving...</span>' : ''}</div>
       ${state?.requiresReview ? '<p class="status" role="status">Historical payment or fulfillment needs review before updating this order.</p>' : ''}
       ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
       <span class="ekom-sr-only">Payment: ${escapeHtml(order.chargedAmount?.currencyString)}</span>${this.renderOrderLockStatus()}${this.renderOrderActions()}${this.renderGiftcardRecovery()}${this.renderReviews()}
@@ -1266,28 +1270,13 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     if (action === 'set-payment') { await this.changePayment(target as HTMLButtonElement); return; }
     if (action === 'set-row-fulfillment') { await this.changeRowFulfillment(target as HTMLButtonElement); return; }
     if (action === 'choose-fulfillment') {
+      // Saves as soon as a status is chosen, like the order and payment menus.
       if ((target as HTMLButtonElement).disabled) return;
-      const menu = target.closest('details')!;
       const value = target.dataset.value || '';
-      const input = this.querySelector<HTMLInputElement>('[data-field="fulfillmentState"]');
-      if (input) input.value = value;
-      menu.querySelector('[data-fulfillment-label]')!.textContent = value.replace(/([a-z])([A-Z])/g, '$1 $2');
-      (menu.querySelector('summary .ekom-state-dot') as HTMLElement).dataset.state = value;
-      menu.querySelectorAll<HTMLButtonElement>('button[data-value]').forEach(button => {
-        const selected = button.dataset.value === value;
-        button.setAttribute('aria-pressed', String(selected));
-        button.querySelector('.ekom-status-check')!.textContent = selected ? '✓' : '';
-      });
-      menu.removeAttribute('open');
-      menu.querySelector('summary')?.focus();
-      return;
-    }
-    if (action === 'save-fulfillment') {
-      const value = this.querySelector<HTMLSelectElement>('[data-field="fulfillmentState"]')?.value;
+      target.closest('details')?.removeAttribute('open');
       if (value && value !== this.selectedOrder?.status?.fulfillmentStatus) await this.changeState(value === 'Fulfilled' ? 'Fulfill' : value);
       return;
     }
-
 
     if (action === 'select-order-tab') { this.selectOrderTab(target.dataset.tab || 'order'); return; }
 
@@ -1463,7 +1452,10 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     }
 
     if (field === 'notifyOrderStatus') {
-      this.notifyOrderStatusOverride = (target as HTMLInputElement).checked;
+      const checked = (target as HTMLInputElement).checked;
+      this.notifyOrderStatusOverride = checked;
+      // The switch appears in each status menu; keep them showing the same choice without closing the open menu.
+      this.querySelectorAll?.<HTMLInputElement>('[data-field="notifyOrderStatus"]').forEach(input => { input.checked = checked; });
       return;
     }
 

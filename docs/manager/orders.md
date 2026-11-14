@@ -75,7 +75,7 @@ In Umbraco 17 and 18, the Discount total includes the saved order-level coupon c
 
 ## Status changes
 
-In Umbraco 17/18, Payment and Fulfillment can be changed from the table on Open orders. Table selections save immediately. In order details, payment selections save immediately; use Save for pending fulfillment edits. Closed orders must be explicitly reopened before making these corrections.
+In Umbraco 17/18, Payment and Fulfillment can be changed from the table on Open orders. Table selections save immediately. In order details, the Order, Payment and Fulfillment menus each save as soon as an option is chosen; there is no Save button. Each menu has the **Trigger status events** switch at the bottom, and the three show the same setting. Closed orders must be explicitly reopened before making these corrections.
 
 Order controls support Close (requires Paid and Fulfilled), Cancel, and Reopen. Reopening preserves payment/fulfillment and suppresses automatic closing for that order. Draft acceptance continues through checkout; the new action endpoint does not offer Draft-to-Open or Cancelled-to-Open.
 
@@ -160,4 +160,4 @@ If a user can open the manager but receives a forbidden response for a store or 
 
 Open orders support manual Pending, Authorized, Paid, Partially Paid, Failed and Voided classification from the payment menu in the table and order details. Selecting an option saves immediately. This only changes the recorded status; it does not charge, capture, void or refund through a provider, change amounts, or set a payment date. The change is kept in the order's payment history with the user's name. It overrides what providers recorded before it, and a late failure from an older attempt does not undo it; a later capture, refund or void from a provider does change the status again. Refund status editing is not available. Closed orders must be explicitly reopened first.
 
-Updates use the current status revision, enforce checkout locks and store permissions, and are logged. The status-events checkbox controls configured notifications. Marking an already fulfilled order Paid can close it automatically under the store's auto-close setting. Save any pending fulfillment edits before changing payment.
+Updates use the current status revision, enforce checkout locks and store permissions, and are logged. The status-events checkbox controls configured notifications. Marking an already fulfilled order Paid can close it automatically under the store's auto-close setting.

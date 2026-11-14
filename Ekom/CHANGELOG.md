@@ -10,6 +10,8 @@
 
 * **payments:** `CompleteCheckoutEventArgs.Payment` gives completion handlers the payment the order was paid with: provider, transaction ID, authorization code, card brand and masked number, payment method, the provider's own details and its response. The same payment is available from `Order.Instance.GetPaymentAsync(orderId)` and `IOrderPayments.GetCurrentPaymentAsync(orderId)`, so integrations such as ERP exports no longer read payment tables themselves.
 
+* **manager:** save the order's status from the Umbraco 17/18/19 order drawer as soon as an option is chosen in the Order, Payment or Fulfillment menu. The separate Save button is removed, and the **Trigger status events** switch moves into each menu, as in the Orders table.
+
 * **manager:** record the signed-in backoffice user on status changes made from the Umbraco 17/18/19 order drawer. The activity entry had an empty user name, because the request identity of a token-authenticated backoffice carries none.
 
 * **manager:** find an order in the Orders search by a payment gateway's transaction ID or by the payment id of one of its payment attempts.

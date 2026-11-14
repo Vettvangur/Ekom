@@ -378,8 +378,8 @@ ekom-orders-section-view:not([classic]) {
  .ekom-order-heading-copy { flex:1; min-width:0; }
  .ekom-panel-heading h2 { flex-wrap:wrap; }
  .ekom-status-controls { margin:14px 0 12px; padding:8px 10px; border:1px solid var(--ekom-border); border-radius:10px; background:var(--ekom-surface-alt); gap:10px; }
- .ekom-status-controls > label:not(.ekmCheckboxLabel),.ekom-payment-control,.ekom-fulfillment-control { display:flex; flex-direction:column; align-items:stretch; gap:4px; font-size:11px; color:var(--ekom-muted); }
- .ekom-fulfillment-control { flex:1; min-width:180px; }
+ .ekom-status-controls > label:not(.ekmCheckboxLabel),.ekom-order-control,.ekom-payment-control,.ekom-fulfillment-control { display:flex; flex-direction:column; align-items:stretch; gap:4px; font-size:11px; color:var(--ekom-muted); }
+ .ekom-fulfillment-control { flex:0 1 260px; min-width:180px; }
  .ekom-status-controls summary,.ekom-payment-value { display:flex; align-items:center; gap:7px; min-height:28px; box-sizing:border-box; padding:6px 10px; font-size:13px; font-weight:700; color:var(--ekom-text); }
  .ekom-status-chevron,.ekom-status-check { margin-left:auto; color:var(--ekom-muted); }
  .ekom-status-check { color:var(--ekom-accent); }
@@ -403,7 +403,14 @@ ekom-orders-section-view:not([classic]) {
 }
 
 ekom-orders-section-view:not([classic]) .ekom-panel-heading { background:var(--ekom-bg); }
-ekom-orders-section-view:not([classic]) .ekom-status-controls [data-action="save-fulfillment"] { background:var(--ekom-accent); border-color:var(--ekom-accent); color:var(--ekom-surface); }
+ekom-orders-section-view:not([classic]) {
+ .ekom-menu-events { display:flex; align-items:flex-start; gap:8px; max-width:280px; padding:12px 10px 8px; margin-top:5px; border-top:1px solid var(--ekom-border); cursor:pointer; font-weight:400; color:var(--ekom-text); }
+ .ekom-menu-events input[type=checkbox] { flex:0 0 16px; width:16px; height:16px; min-height:0; margin:1px 0 0; padding:0; accent-color:var(--ekom-accent); }
+ .ekom-menu-events span { display:grid; gap:5px; }
+ .ekom-menu-events strong { font-size:12px; }
+ .ekom-menu-events small { font-size:12px; color:var(--ekom-muted); }
+ .ekom-status-saving { margin-left:auto; font-size:12px; color:var(--ekom-muted); }
+}
 
 ekom-orders-section-view:not([classic]) {
  .ekom-events-help { position:relative; display:inline-flex; align-items:center; }
