@@ -16,6 +16,9 @@ import {
   OrderPaymentAttempt,
   OrderPaymentEvent,
   OrderPaymentsView,
+  OrderShipment,
+  OrderShipmentEvent,
+  OrderShipmentsView,
   OrderSearchResult,
   ShippingProviderItem,
   decodeHtml,
@@ -103,6 +106,11 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private selectedOrder?: OrderInfo;
   private orderLogs: OrderActivityLog[] = [];
   private orderPayments: OrderPaymentsView | null = null;
+  private orderShipments: OrderShipmentsView | null = null;
+  private shipmentTrackingEditorOpen = false;
+  private shipmentTrackingSaving = false;
+  private shipmentTrackingNumber = '';
+  private shipmentTrackingUrl = '';
   private orderLogsLoading = false;
   private orderLogsError = false;
   private activityLogExpandedIndexes = new Set<number>();
@@ -720,7 +728,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       const label = direction < 0 ? 'Previous order' : 'Next order';
       return `<button type="button" data-action="view-order" data-order-id="${escapeHtml(neighbor?.uniqueId || '')}" aria-label="${label}" title="${label} on this page (${direction < 0 ? '← / ↑' : '→ / ↓'})" ${!neighbor || this.stateSaving || this.executingActionKey ? 'disabled' : ''}>${direction < 0 ? '‹' : '›'}</button>`;
     }).join('');
-    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><nav class="ekom-order-navigation" aria-label="Order navigation">${navigation}</nav><div class="ekom-order-heading-copy"><h2>#${escapeHtml(order.referenceId)} ${renderStatusBadge(order.status?.paymentStatus)} ${renderStatusBadge(order.status?.fulfillmentStatus)} ${renderStatusBadge(order.status?.orderStatus)}</h2><p>${escapeHtml(order.customerInformation?.customer?.name)} · ${escapeHtml(formatDate(order.createDate))} · ${escapeHtml(order.storeInfo?.alias || order.storeAlias)} · <span class="ekom-heading-order-id"><span>${escapeHtml(order.uniqueId)}</span><button type="button" class="ekom-copy-order-id" data-action="copy-order-id" aria-label="Copy order ID" title="Copy order ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></span></p></div>${renderDrawerClose('<button type="button" data-action="close-overlay" aria-label="Close order">×</button>')}</header><div class="ekmOverlay__content ekmOrder">${this.renderOrderDetails(order)}</div></div></div>${this.customerEditorOpen ? this.renderCustomerEditor() : ''}${this.orderLineEditorOpen ? this.renderOrderLineEditor() : ''}${this.shippingProviderEditorOpen ? this.renderShippingProviderEditor() : ''}${this.activeReview ? this.renderReviewDialog() : ''}`;
+    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><nav class="ekom-order-navigation" aria-label="Order navigation">${navigation}</nav><div class="ekom-order-heading-copy"><h2>#${escapeHtml(order.referenceId)} ${renderStatusBadge(order.status?.paymentStatus)} ${renderStatusBadge(order.status?.fulfillmentStatus)} ${renderStatusBadge(order.status?.orderStatus)}</h2><p>${escapeHtml(order.customerInformation?.customer?.name)} · ${escapeHtml(formatDate(order.createDate))} · ${escapeHtml(order.storeInfo?.alias || order.storeAlias)} · <span class="ekom-heading-order-id"><span>${escapeHtml(order.uniqueId)}</span><button type="button" class="ekom-copy-order-id" data-action="copy-order-id" aria-label="Copy order ID" title="Copy order ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></span></p></div>${renderDrawerClose('<button type="button" data-action="close-overlay" aria-label="Close order">×</button>')}</header><div class="ekmOverlay__content ekmOrder">${this.renderOrderDetails(order)}</div></div></div>${this.customerEditorOpen ? this.renderCustomerEditor() : ''}${this.orderLineEditorOpen ? this.renderOrderLineEditor() : ''}${this.shippingProviderEditorOpen ? this.renderShippingProviderEditor() : ''}${this.shipmentTrackingEditorOpen ? this.renderShipmentTrackingEditor() : ''}${this.activeReview ? this.renderReviewDialog() : ''}`;
   }
 
   private renderOrderDetails(order: OrderInfo): string {
@@ -850,17 +858,80 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private renderShipment(order: OrderInfo): string {
     const provider = order.shippingProvider;
     const name = provider?.title || provider?.properties?.nodeName || 'No shipping provider';
-    const fields = parseProperties(provider?.customData, 'customshipping');
-    const value = (key: string): string => fields.find(([field]) => cleanKey(field).replace(/[_ -]/g, '').toLowerCase() === key.toLowerCase())?.[1] || '';
-    const tracking = value('TrackingNumber');
-    const shipmentState = value('ShipmentState');
-    const trackingUrl = value('TrackingUrl');
+    const shipment = this.orderShipments?.current || null;
+    const customFields = parseProperties(provider?.customData, 'customshipping');
+    const custom = (key: string): string => customFields.find(([field]) => cleanKey(field).replace(/[_ -]/g, '').toLowerCase() === key.toLowerCase())?.[1] || '';
+    // Orders from before shipments had their own records keep reading the shipping custom data.
+    const tracking = shipment ? shipment.trackingNumber || '' : custom('TrackingNumber');
+    const shipmentState = shipment ? shipment.state : custom('ShipmentState');
+    const trackingUrl = shipment ? shipment.trackingUrl || '' : custom('TrackingUrl');
     const safeTrackingUrl = /^https?:\/\//i.test(trackingUrl) ? trackingUrl : '';
+    const carrier = shipmentCarrierName(shipment?.carrierAlias) || name;
     const customer = order.customerInformation?.customer || {};
     const shipping = order.customerInformation?.shipping || {};
     const address = hasShippingInfo(shipping) ? shipping : customer;
     const copy = (text: string, label: string): string => `<button type="button" class="ekom-shipment-copy" data-action="copy-provider-value" data-copy="${escapeHtml(text)}" aria-label="Copy ${escapeHtml(label)}" title="Copy ${escapeHtml(label)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>`;
-    return `<section class="ekom-detail-card ekom-shipment"><div class="ekom-shipment-grid"><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Shipment</h4>${shipmentState ? `<span class="ekom-shipment-state">${escapeHtml(shipmentState)}</span>` : ''}</div><div class="ekom-shipment-tracking"><span>Tracking number</span><div><strong>${escapeHtml(tracking || 'Not available')}</strong>${tracking ? copy(tracking, 'tracking number') : ''}${provider ? `<button type="button" class="ekom-shipment-copy" data-action="open-shipping-provider-editor" aria-label="Edit shipping data" title="Edit shipping data"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 20h9M16 3l5 5L7 22l-5 1 1-5Z"/></svg></button>` : ''}${safeTrackingUrl ? `<a href="${escapeHtml(safeTrackingUrl)}" target="_blank" rel="noopener noreferrer">Track shipment ↗</a>` : ''}</div></div></section><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Method</h4><strong>${escapeHtml(provider?.price?.withVat?.currencyString || '—')}</strong></div><h3>${escapeHtml(name)}</h3><div class="ekom-shipment-address"><span>Deliver to</span><strong>${escapeHtml([address.address, address.apartment].filter(Boolean).join(', ') || 'No address recorded')}</strong><span>${escapeHtml([address.zipCode, address.city].filter(Boolean).join(' '))}</span><span>${escapeHtml(address.country)}</span></div><div><button type="button" data-action="open-shipping-provider-editor">${provider ? 'Change shipping provider' : 'Add shipping provider'}</button></div></section></div>${fields.length ? `<details class="ekom-shipment-data" open><summary><strong>Provider data</strong><span>${fields.length} fields from ${escapeHtml(name)}</span><span class="ekom-shipment-hide">Hide ▴</span><span class="ekom-shipment-show">Show ▾</span></summary><dl>${fields.map(([key, text]) => `<div><dt>${escapeHtml(labelFromKey(cleanKey(key)))}</dt><dd><span>${escapeHtml(text || '—')}</span>${text ? copy(text, labelFromKey(cleanKey(key))) : ''}</dd></div>`).join('')}</dl></details>` : ''}</section>`;
+    const stateClass = shipmentState ? ` ekom-shipment-state--${shipmentStateTone(shipmentState)}` : '';
+    const facts = shipment ? shipmentFacts(shipment).map(([label, text]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(text)}</dd></div>`).join('') : '';
+    // Fields the shipment already shows as its own are left out of the provider's custom data.
+    const rows: Array<[string, string]> = shipment
+      ? [...shipmentDataRows(shipment, provider?.price?.withVat?.currencyString), ...customFields.filter(([key]) => !shipmentOwnedKeys.has(cleanKey(key).toLowerCase())).map(([key, text]): [string, string] => [formatOrderCustomDataKey(cleanKey(key)), text])]
+      : customFields.map(([key, text]): [string, string] => [labelFromKey(cleanKey(key)), text]);
+    return `<section class="ekom-detail-card ekom-shipment"><div class="ekom-shipment-grid"><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Shipment</h4>${shipmentState ? `<span class="ekom-shipment-state${stateClass}">${escapeHtml(shipmentStateLabel(shipmentState))}</span>` : ''}</div><div class="ekom-shipment-tracking"><span>Tracking number</span><div><strong>${escapeHtml(tracking || 'Not available')}</strong>${tracking ? copy(tracking, 'tracking number') : ''}${provider ? `<button type="button" class="ekom-shipment-copy" data-action="open-shipment-tracking-editor" aria-label="Edit tracking number" title="Edit tracking number"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 20h9M16 3l5 5L7 22l-5 1 1-5Z"/></svg></button>` : ''}${safeTrackingUrl ? `<a href="${escapeHtml(safeTrackingUrl)}" target="_blank" rel="noopener noreferrer">Track at ${escapeHtml(carrier)} ↗</a>` : ''}</div></div>${shipment?.lastError ? `<p class="ekom-shipment-error" role="alert">${escapeHtml(shipment.lastError)}</p>` : ''}${facts ? `<dl class="ekom-shipment-facts">${facts}</dl>` : ''}</section><section class="ekom-shipment-box"><div class="ekom-shipment-heading"><h4>Method</h4><strong>${escapeHtml(provider?.price?.withVat?.currencyString || '—')}</strong></div><h3>${escapeHtml(name)}</h3><div class="ekom-shipment-address"><span>Deliver to</span><strong>${escapeHtml([address.address, address.apartment].filter(Boolean).join(', ') || 'No address recorded')}</strong><span>${escapeHtml([address.zipCode, address.city].filter(Boolean).join(' '))}</span><span>${escapeHtml(address.country)}</span></div><div><button type="button" data-action="open-shipping-provider-editor">${provider ? 'Change shipping provider' : 'Add shipping provider'}</button></div></section></div>${rows.length ? `<details class="ekom-shipment-data" open><summary><strong>Provider data</strong><span>${rows.length} fields from ${escapeHtml(name)}</span><span class="ekom-shipment-hide">Hide ▴</span><span class="ekom-shipment-show">Show ▾</span></summary><dl>${rows.map(([label, text]) => `<div><dt>${escapeHtml(label)}</dt><dd><span>${escapeHtml(text || '—')}</span>${text ? copy(text, label) : ''}</dd></div>`).join('')}</dl></details>` : ''}${this.renderShipmentHistory()}</section>`;
+  }
+
+  /** What happened to the current shipment, and the shipments before it. */
+  private renderShipmentHistory(): string {
+    const view = this.orderShipments;
+    const current = view?.current;
+    if (!view || !current) return '';
+    const earlier = view.shipments.filter(shipment => shipment.shipmentId !== current.shipmentId);
+    const events = (shipment: OrderShipment): string => shipment.events.length
+      ? `<ul class="ekom-shipment-events">${shipment.events.map(event => `<li><span>${escapeHtml(formatDate(event.occurredUtc))}</span><strong>${escapeHtml(shipmentEventLabel(event))}</strong><span>${escapeHtml(event.actor || '')}</span>${event.message ? `<p>${escapeHtml(event.message)}</p>` : ''}</li>`).join('')}</ul>`
+      : '';
+    const earlierList = earlier.length
+      ? `<h5>Earlier shipments</h5><ul class="ekom-shipment-earlier">${earlier.map(shipment => `<li><div><span>${escapeHtml(formatDate(shipment.createdUtc))}</span><span class="ekom-shipment-state ekom-shipment-state--${shipmentStateTone(shipment.state)}">${escapeHtml(shipmentStateLabel(shipment.state))}</span><strong>${escapeHtml(shipment.trackingNumber || 'No tracking number')}</strong><span>${escapeHtml(shipmentCarrierName(shipment.carrierAlias) || shipment.provider || '')}</span></div><details><summary>Events</summary>${events(shipment)}</details></li>`).join('')}</ul>`
+      : '';
+    return `<details class="ekom-shipment-history"><summary>Shipment history (${current.events.length})</summary>${events(current)}${earlierList}</details>`;
+  }
+
+  private renderShipmentTrackingEditor(): string {
+    const disabled = this.shipmentTrackingSaving ? 'disabled' : '';
+    return `<div class="ekmCustomerInformationModal"><div class="ekmCustomerInformationModal__panel ekom-editor-shipment-tracking" role="dialog" aria-modal="true" aria-label="Tracking number"><div class="ekmOverlay__header"><h3>Tracking number</h3><button class="btn-reset" type="button" aria-label="Close tracking number" data-action="close-shipment-tracking-editor" ${disabled}>&times;</button></div><div class="ekmOverlay__content"><label class="control-group">Tracking number<input type="text" data-field="shipmentTrackingNumber" value="${escapeHtml(this.shipmentTrackingNumber)}" maxlength="200" ${disabled}></label><label class="control-group">Tracking link<input type="url" data-field="shipmentTrackingUrl" value="${escapeHtml(this.shipmentTrackingUrl)}" placeholder="https://" maxlength="2000" ${disabled}></label><p>The change is added to the shipment history and the activity log.</p></div><div class="ekmOverlay__footer"><button type="button" data-action="close-shipment-tracking-editor" ${disabled}>Cancel</button><button type="button" class="btn-primary" data-action="save-shipment-tracking" ${disabled}>${this.shipmentTrackingSaving ? 'Saving…' : 'Save'}</button></div></div></div>`;
+  }
+
+  private async saveShipmentTracking(): Promise<void> {
+    if (!this.selectedOrder?.uniqueId || this.shipmentTrackingSaving) {
+      return;
+    }
+
+    const trackingNumber = (this.querySelector<HTMLInputElement>('[data-field="shipmentTrackingNumber"]')?.value || '').trim();
+    const trackingUrl = (this.querySelector<HTMLInputElement>('[data-field="shipmentTrackingUrl"]')?.value || '').trim();
+    this.shipmentTrackingNumber = trackingNumber;
+    this.shipmentTrackingUrl = trackingUrl;
+    if (!trackingNumber && !this.orderShipments?.current) {
+      this.showError('Enter a tracking number.');
+      return;
+    }
+    if (trackingUrl && !/^https?:\/\//i.test(trackingUrl)) {
+      this.showError('The tracking link must start with http:// or https://.');
+      return;
+    }
+
+    const orderId = this.selectedOrder.uniqueId;
+    this.shipmentTrackingSaving = true;
+    this.render();
+    try {
+      this.orderShipments = await this.api.updateShipmentTracking(orderId, trackingNumber, trackingUrl);
+      this.shipmentTrackingEditorOpen = false;
+      this.showSuccess('Tracking number updated.');
+      await this.loadOrderLogs(orderId);
+    } catch (error) {
+      this.showError(getErrorMessage(error, 'Error updating the tracking number.'));
+    } finally {
+      this.shipmentTrackingSaving = false;
+      this.render();
+    }
   }
 
   private renderPrintableOrder(order: OrderInfo): string {
@@ -1424,6 +1495,30 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       return;
     }
 
+    if (action === 'open-shipment-tracking-editor') {
+      const shipment = this.orderShipments?.current;
+      const fields = parseProperties(this.selectedOrder?.shippingProvider?.customData, 'customshipping');
+      const legacy = (key: string): string => fields.find(([field]) => cleanKey(field).toLowerCase() === key)?.[1] || '';
+      this.shipmentTrackingNumber = shipment ? shipment.trackingNumber || '' : legacy('trackingnumber');
+      this.shipmentTrackingUrl = shipment ? shipment.trackingUrl || '' : legacy('trackingurl');
+      this.shipmentTrackingEditorOpen = true;
+      this.render();
+      return;
+    }
+
+    if (action === 'close-shipment-tracking-editor') {
+      if (!this.shipmentTrackingSaving) {
+        this.shipmentTrackingEditorOpen = false;
+        this.render();
+      }
+      return;
+    }
+
+    if (action === 'save-shipment-tracking') {
+      await this.saveShipmentTracking();
+      return;
+    }
+
     if (action === 'save-shipping-provider') {
       await this.saveShippingProvider();
       return;
@@ -1564,6 +1659,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
       this.reviews = drawer.reviews || []; this.activeReview = undefined; this.reviewError = drawer.reviews ? '' : 'Could not load order reviews.';
       this.orderLogs = drawer.logs || [];
       this.orderPayments = drawer.payments || null;
+      this.orderShipments = drawer.shipments || null;
       this.orderLogsLoading = false;
       this.orderLogsError = !drawer.logs;
       this.activityLogExpandedIndexes.clear();
@@ -1640,10 +1736,12 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
 
     try {
       // Payment history changes together with the activity log (status changes, order actions).
-      const [logs, payments] = await Promise.all([this.api.orderLogs(orderId), this.api.orderPayments(orderId).catch(() => this.orderPayments)]);
+      // Shipments change with it too: creating, retrying or deleting one is an order action.
+      const [logs, payments, shipments] = await Promise.all([this.api.orderLogs(orderId), this.api.orderPayments(orderId).catch(() => this.orderPayments), this.api.orderShipments(orderId).catch(() => this.orderShipments)]);
       if (requestId !== this.orderRequestId) return;
       this.orderLogs = logs;
       this.orderPayments = payments;
+      this.orderShipments = shipments;
     } catch {
       if (requestId !== this.orderRequestId) return;
       this.orderLogs = [];
@@ -2211,6 +2309,68 @@ function giftcardSummary(card: Record<string, unknown>, now = Date.now()) {
     }
   }
   return { status, warning, expiryLabel: !used && hasReference ? 'Reservation ends' : 'Saved expiry', expiry };
+}
+
+/** Shipping custom data that a shipment record shows as fields of its own. */
+const shipmentOwnedKeys = new Set(['shipmentstate', 'shipmentattempts', 'shipmentreference', 'shipmentid', 'trackingnumber', 'trackingurl', 'shipmentdocuments', 'shipmentlasterror', 'shipmentupdatedutc', 'carrieralias', 'accountreference', 'serviceid', 'servicename', 'pickuplocationid', 'pickuplocationname', 'pickuplocationaddress', 'pickuplocationpostalcode', 'pickuplocationcity']);
+
+/** A carrier alias as a name: "dhl-express" becomes "DHL Express". */
+function shipmentCarrierName(alias: string | null | undefined): string {
+  return (alias || '').split(/[-_ ]+/).filter(Boolean)
+    .map(word => word.length <= 3 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+function shipmentStateLabel(state: string): string {
+  const labels: Record<string, string> = { OutcomeUnknown: 'Outcome unknown', DeleteOutcomeUnknown: 'Deletion outcome unknown' };
+  return labels[state] || state;
+}
+
+function shipmentStateTone(state: string): string {
+  if (state === 'Failed' || state === 'OutcomeUnknown' || state === 'DeleteOutcomeUnknown') return 'alert';
+  if (state === 'Deleted' || state === 'Deleting') return 'muted';
+  if (state === 'Created') return 'ok';
+  return 'progress';
+}
+
+function shipmentEventLabel(event: OrderShipmentEvent): string {
+  if (event.type === 'Tracking') return [event.carrierStatus, event.location].filter(Boolean).join(' · ') || 'Carrier update';
+  if (event.type === 'Manual') return 'Changed by hand';
+  if (event.type === 'Note') return 'Note';
+  return shipmentStateLabel(event.state || 'Updated');
+}
+
+/** What staff need to see about a shipment at a glance. */
+function shipmentFacts(shipment: OrderShipment): Array<[string, string]> {
+  const pickup = [shipment.pickupLocationName, shipment.pickupLocationAddress, [shipment.pickupLocationPostalCode, shipment.pickupLocationCity].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  const facts: Array<[string, string | null | undefined]> = [
+    ['Carrier', shipmentCarrierName(shipment.carrierAlias)],
+    ['Service', shipment.serviceName || shipment.serviceId],
+    ['Pickup point', pickup],
+    ['Carrier status', shipment.carrierStatusText || shipment.carrierStatus],
+    ['Shipped', shipment.shippedUtc ? formatDate(shipment.shippedUtc) : ''],
+    ['Estimated delivery', shipment.estimatedDeliveryUtc && !shipment.deliveredUtc ? formatDate(shipment.estimatedDeliveryUtc) : ''],
+    ['Delivered', shipment.deliveredUtc ? formatDate(shipment.deliveredUtc) : ''],
+    ['Attempts', shipment.attempts > 1 ? String(shipment.attempts) : ''],
+  ];
+  return facts.filter((fact): fact is [string, string] => Boolean(fact[1]));
+}
+
+/** The shipment's own fields and the carrier's details, for the provider data list. */
+function shipmentDataRows(shipment: OrderShipment, price: string | undefined): Array<[string, string]> {
+  const rows: Array<[string, string | null | undefined]> = [
+    ['Service name', shipment.serviceName],
+    ['Service ID', shipment.serviceId],
+    ['Shipment ID', shipment.carrierShipmentId],
+    ['Tracking number', shipment.trackingNumber],
+    ['Shipment reference', shipment.shipmentReference],
+    ['Carrier alias', shipment.carrierAlias],
+    ['Account reference', shipment.accountReference],
+    ['Shipment state', shipmentStateLabel(shipment.state)],
+    ['Shipment updated', formatDate(shipment.updatedUtc)],
+    ['Price', price],
+    ...shipment.details.map((detail): [string, string | null | undefined] => [detail.label, detail.value]),
+  ];
+  return rows.filter((row): row is [string, string] => Boolean(row[1]));
 }
 
 function labelFromKey(key: string): string {

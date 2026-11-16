@@ -20,7 +20,7 @@ namespace Ekom.Controllers;
 
 [Route("ekom/manager")]
 [CamelCaseJson]
-public class EkomManagerController : ControllerBase
+public partial class EkomManagerController : ControllerBase
 {
     readonly ManagerRepository _repo;
     readonly IManagerAccessService _managerAccessService;
@@ -208,6 +208,11 @@ public class EkomManagerController : ControllerBase
             {
                 drawer.Payments = await LoadDrawerSectionAsync(orderId, "payments", true,
                     () => payments.GetForOrderAsync(orderId, ct), ct).ConfigureAwait(false);
+            }
+            if (HttpContext?.RequestServices.GetService(typeof(IOrderShipments)) is IOrderShipments shipments)
+            {
+                drawer.Shipments = await LoadDrawerSectionAsync(orderId, "shipments", true,
+                    () => LoadOrderShipmentsAsync(order, shipments, ct), ct).ConfigureAwait(false);
             }
 
             return Ok(drawer);

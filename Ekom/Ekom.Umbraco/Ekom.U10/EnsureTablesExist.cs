@@ -182,6 +182,7 @@ class EnsureTablesExist : IComponent
         _dbService.EnsurePriceTable();
         _dbService.EnsureOrderStateColumns();
         _dbService.EnsureOrderPaymentTables();
+        _dbService.EnsureOrderShipmentTables();
         _dbService.EnsureStockReservationTable();
 
         logger.LogDebug("Done");

@@ -27,7 +27,7 @@ Free-text search matches:
 
 If the search text is a GUID, Ekom also compares it with the order's unique ID and with the payment id of each of the order's payment attempts.
 
-The search text is also compared, as a whole, with the transaction ID a payment gateway gave any of the order's payments. Paste the reference from the gateway's portal to find its order. The date range and the other filters still apply.
+The search text is also compared, as a whole, with the transaction ID a payment gateway gave any of the order's payments. Paste the reference from the gateway's portal to find its order. A tracking number or a carrier's shipment ID finds the order of that shipment the same way. The date range and the other filters still apply.
 
 The additional filter panel supports:
 
@@ -63,6 +63,8 @@ Select **View** to open an order. The detail view includes:
 - billing and shipping information, including captured custom properties;
 - the order's current payment: provider, status, transaction ID, authorized and captured times, amount, authorization code, card, and the details the provider recorded, each with a copy button;
 - an expandable **Payment attempts** list (Umbraco 17, 18 and 19) with every attempt at a provider, its events and its payment id, and the manual payment status changes with the user who made them;
+- the order's shipment (Umbraco 17, 18 and 19): state, tracking number with a link to the carrier, carrier, service, pickup point, carrier status, and the details the carrier recorded, each with a copy button. The pencil next to the tracking number sets or corrects it, and the change is recorded with the user who made it;
+- an expandable **Shipment history** with every event of the shipment and every earlier shipment of the order, such as one that was deleted and replaced;
 - shipping provider information and custom data;
 - product and variant lines, line properties, VAT, discounts, shipping, and totals;
 - captured tracking and consent data;

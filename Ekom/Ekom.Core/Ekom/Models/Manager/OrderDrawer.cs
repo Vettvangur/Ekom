@@ -21,4 +21,7 @@ public sealed class OrderDrawer
 
     /// <summary>The order's payments. Null when they could not be loaded.</summary>
     public Services.OrderPaymentsView? Payments { get; set; }
+
+    /// <summary>The order's shipments. Null when they could not be loaded.</summary>
+    public Services.OrderShipmentsView? Shipments { get; set; }
 }

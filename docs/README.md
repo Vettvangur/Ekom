@@ -28,6 +28,7 @@ For the product overview and ecosystem landing page, visit [ekomcommerce.com](ht
 - [Order reviews](guides/order-reviews.md)
 - [Checkout](guides/checkout.md)
 - [Payments](guides/payments.md)
+- [Shipping and shipments](guides/shipping.md)
 - [Providers](guides/providers.md)
 - [Discounts](guides/discounts.md)
   - [Editor overview](guides/discounts/editors.md)

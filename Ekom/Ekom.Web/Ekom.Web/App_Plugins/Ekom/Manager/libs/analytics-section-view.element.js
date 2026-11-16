@@ -116,6 +116,12 @@ class M {
   async orderPayments(r) {
     return this.getJson(`/ekom/manager/orderPayments/${encodeURIComponent(r)}`);
   }
+  async orderShipments(r) {
+    return this.getJson(`/ekom/manager/orderShipments/${encodeURIComponent(r)}`);
+  }
+  async updateShipmentTracking(r, t, e) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(r)}/Shipment/Tracking`, { trackingNumber: t, trackingUrl: e });
+  }
   async orderLogs(r) {
     return this.getJson(`/ekom/manager/OrderLogs/${encodeURIComponent(r)}`);
   }

@@ -264,9 +264,60 @@ export interface OrderPaymentsView {
   manualChanges: OrderPaymentEvent[];
 }
 
+export interface OrderShipmentEvent {
+  type: string;
+  state?: string | null;
+  carrierStatus?: string | null;
+  location?: string | null;
+  message?: string | null;
+  actor?: string | null;
+  occurredUtc: string;
+}
+
+/** One shipment of an order. */
+export interface OrderShipment {
+  shipmentId: string;
+  kind: string;
+  state: string;
+  provider?: string | null;
+  carrierAlias?: string | null;
+  accountReference?: string | null;
+  serviceId?: string | null;
+  serviceName?: string | null;
+  trackingNumber?: string | null;
+  trackingUrl?: string | null;
+  carrierShipmentId?: string | null;
+  shipmentReference?: string | null;
+  carrierStatus?: string | null;
+  carrierStatusText?: string | null;
+  attempts: number;
+  lastError?: string | null;
+  pickupLocationId?: string | null;
+  pickupLocationName?: string | null;
+  pickupLocationAddress?: string | null;
+  pickupLocationPostalCode?: string | null;
+  pickupLocationCity?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  createdUtc: string;
+  updatedUtc: string;
+  shippedUtc?: string | null;
+  deliveredUtc?: string | null;
+  estimatedDeliveryUtc?: string | null;
+  details: OrderPaymentDetail[];
+  events: OrderShipmentEvent[];
+}
+
+/** An order's shipments: the current one and every shipment (newest first). */
+export interface OrderShipmentsView {
+  current?: OrderShipment | null;
+  shipments: OrderShipment[];
+}
+
 export interface OrderDrawerData {
   order: OrderInfo;
   payments?: OrderPaymentsView | null;
+  shipments?: OrderShipmentsView | null;
   logs: OrderActivityLog[] | null;
   actions: OrderAction[] | null;
   lockStatus: OrderLockStatus | null;
@@ -407,6 +458,14 @@ export class EkomManagerApi {
 
   async orderPayments(orderId: string): Promise<OrderPaymentsView> {
     return this.getJson(`/ekom/manager/orderPayments/${encodeURIComponent(orderId)}`);
+  }
+
+  async orderShipments(orderId: string): Promise<OrderShipmentsView> {
+    return this.getJson(`/ekom/manager/orderShipments/${encodeURIComponent(orderId)}`);
+  }
+
+  async updateShipmentTracking(orderId: string, trackingNumber: string, trackingUrl: string): Promise<OrderShipmentsView> {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(orderId)}/Shipment/Tracking`, { trackingNumber, trackingUrl });
   }
 
   async orderLogs(orderId: string): Promise<OrderActivityLog[]> {

@@ -106,6 +106,12 @@ class b {
   async orderPayments(r) {
     return this.getJson(`/ekom/manager/orderPayments/${encodeURIComponent(r)}`);
   }
+  async orderShipments(r) {
+    return this.getJson(`/ekom/manager/orderShipments/${encodeURIComponent(r)}`);
+  }
+  async updateShipmentTracking(r, t, e) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(r)}/Shipment/Tracking`, { trackingNumber: t, trackingUrl: e });
+  }
   async orderLogs(r) {
     return this.getJson(`/ekom/manager/OrderLogs/${encodeURIComponent(r)}`);
   }
@@ -254,14 +260,14 @@ function v() {
   var o;
   return (o = l.stores.find((r) => r.alias === l.filters.store)) == null ? void 0 : o.dateFormat;
 }
-function q(o) {
+function R(o) {
   if (typeof o == "string" && /^\d{4}-\d{2}-\d{2}$/.test(o))
     return { year: Number(o.slice(0, 4)), month: Number(o.slice(5, 7)), day: Number(o.slice(8, 10)), hour: 0, minute: 0, second: 0 };
   const r = o instanceof Date ? o : new Date(o);
   if (!Number.isNaN(r.getTime()))
     return { year: r.getFullYear(), month: r.getMonth() + 1, day: r.getDate(), hour: r.getHours(), minute: r.getMinutes(), second: r.getSeconds() };
 }
-function R(o, r, t) {
+function q(o, r, t) {
   const e = (a) => String(a).padStart(2, "0");
   return r.replace(/'([^']*)'|\\(.)|d{1,4}|M{1,4}|y{1,5}|H{1,2}|h{1,2}|m{1,2}|s{1,2}|t{1,2}|\/|:/g, (a, i, n) => {
     if (i !== void 0) return i;
@@ -315,19 +321,19 @@ function R(o, r, t) {
 }
 function S(o) {
   if (!o) return "";
-  const r = q(o);
+  const r = R(o);
   if (!r) return String(o);
   const t = v();
-  return t ? R(r, t.shortDate, t) : new Date(r.year, r.month - 1, r.day).toLocaleDateString();
+  return t ? q(r, t.shortDate, t) : new Date(r.year, r.month - 1, r.day).toLocaleDateString();
 }
 function B(o, r, t = !0) {
-  const e = q(o);
+  const e = R(o);
   if (!e) return String(o);
   const a = v(), i = new Date(Date.UTC(e.year, e.month - 1, e.day));
   if (!a)
     return i.toLocaleDateString("en-GB", { timeZone: "UTC", month: t ? "short" : "long", year: "numeric" });
   const n = a.yearMonth;
-  return R(e, t ? n.replace(/M{4}/g, "MMM") : n, a);
+  return q(e, t ? n.replace(/M{4}/g, "MMM") : n, a);
 }
 function d(o) {
   return String(o ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");

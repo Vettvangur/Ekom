@@ -470,6 +470,24 @@ ekom-orders-section-view:not([classic]) {
  .ekom-shipment-box h3 { margin:0; font-size:16px; }
  .ekom-shipment-state { display:inline-flex; align-items:center; gap:6px; border-radius:20px; padding:4px 9px; font-size:12px; font-weight:700; color:#1b8fbf; background:color-mix(in srgb,#1b8fbf 15%,var(--ekom-surface)); }
  .ekom-shipment-state::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+ .ekom-shipment-state--alert { color:#c0392b; background:color-mix(in srgb,#c0392b 14%,var(--ekom-surface)); }
+ .ekom-shipment-state--muted { color:var(--ekom-muted); background:var(--ekom-surface-alt); }
+ .ekom-shipment-state--ok { color:#1e8e5a; background:color-mix(in srgb,#1e8e5a 14%,var(--ekom-surface)); }
+ .ekom-shipment-error { margin:0; padding:8px 10px; border-radius:8px; font-size:13px; color:#c0392b; background:color-mix(in srgb,#c0392b 10%,var(--ekom-surface)); overflow-wrap:anywhere; }
+ .ekom-shipment-facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 16px; margin:0; border-top:1px solid var(--ekom-border); padding-top:12px; font-size:13px; }
+ .ekom-shipment-facts dt { color:var(--ekom-muted); font-size:12px; }
+ .ekom-shipment-facts dd { margin:2px 0 0; font-weight:700; overflow-wrap:anywhere; }
+ .ekom-shipment-history { border:1px solid var(--ekom-border); border-radius:10px; padding:12px 16px; font-size:13px; }
+ .ekom-shipment-history > summary { cursor:pointer; font-weight:700; color:var(--ekom-text); }
+ .ekom-shipment-history ul { list-style:none; margin:10px 0 0; padding:0; }
+ .ekom-shipment-events li { display:grid; grid-template-columns:minmax(120px,auto) minmax(0,1fr) auto; gap:4px 12px; padding:8px 0; border-top:1px solid var(--ekom-border); align-items:baseline; }
+ .ekom-shipment-events li > span { color:var(--ekom-muted); }
+ .ekom-shipment-events li > p { grid-column:1 / -1; margin:0; color:var(--ekom-muted); overflow-wrap:anywhere; }
+ .ekom-shipment-history h5 { margin:14px 0 0; font-size:13px; }
+ .ekom-shipment-earlier > li { padding:10px 0; border-top:1px solid var(--ekom-border); }
+ .ekom-shipment-earlier > li > div { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+ .ekom-shipment-earlier > li > div > span:first-child { color:var(--ekom-muted); }
+ .ekom-shipment-earlier details > summary { cursor:pointer; color:var(--ekom-muted); margin-top:6px; }
  .ekom-shipment-tracking > span,.ekom-shipment-address > span { color:var(--ekom-muted); font-size:12px; }
  .ekom-shipment-tracking > div { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:4px; }
  .ekom-shipment-tracking strong { font:700 20px/1.3 'Ekom Mono',monospace; overflow-wrap:anywhere; }

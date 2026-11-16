@@ -348,6 +348,9 @@ ORDER BY {bucketDateExpression}";
             // A gateway's transaction ID, as staff copy it from the gateway's portal. Matched exactly, on its index.
             whereClause.Append(" OR UniqueId IN (SELECT OrderUniqueId FROM EkomOrderPaymentTransactions WHERE TransactionId = @queryExact)");
             whereClause.Append(" OR UniqueId IN (SELECT OrderUniqueId FROM EkomOrderPayments WHERE TransactionId = @queryExact)");
+            // A tracking number or the carrier's shipment ID, as staff copy it from a label or the carrier's portal.
+            whereClause.Append(" OR UniqueId IN (SELECT OrderUniqueId FROM EkomOrderShipments WHERE TrackingNumber = @queryExact)");
+            whereClause.Append(" OR UniqueId IN (SELECT OrderUniqueId FROM EkomOrderShipments WHERE CarrierShipmentId = @queryExact)");
 
             if (Guid.TryParse(query.Trim(), out _))
             {
