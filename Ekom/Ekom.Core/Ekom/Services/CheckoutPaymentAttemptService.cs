@@ -1005,6 +1005,8 @@ internal sealed partial class CheckoutPaymentAttemptService
             foreach (var property in value.Properties().ToArray())
                 if (property.Name.Equals("OrderStatus", StringComparison.OrdinalIgnoreCase) ||
                     property.Name.Equals("OrderStatusCol", StringComparison.OrdinalIgnoreCase) ||
+                    // The status snapshot carries a revision that every save bumps; it is not part of the purchase.
+                    property.Name.Equals(nameof(OrderInfo.Status), StringComparison.OrdinalIgnoreCase) ||
                     property.Name.Equals("UpdateDate", StringComparison.OrdinalIgnoreCase) ||
                     property.Name.Equals("PaidDate", StringComparison.OrdinalIgnoreCase)) property.Remove();
             // Order metadata can change independently through the information-update API.

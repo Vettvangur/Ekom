@@ -1725,6 +1725,12 @@ partial class OrderService
                 }
                 orderInfo = cacheTarget;
             }
+            else
+            {
+                // The save bumps the status revision. Carry the persisted status so the cached and
+                // returned order does not make the next manager status change look stale.
+                orderInfo.ApplyPersistedStatus(orderData);
+            }
 
             if (removedShippingProviderMessage != null)
             {
