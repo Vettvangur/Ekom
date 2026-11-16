@@ -46,9 +46,7 @@ Offline payments, such as bank transfer, work with Ekom alone. Each online gatew
 dotnet add package Ekom.Payments.Borgun
 ```
 
-Available providers: `Ekom.Payments.AltaPay`, `Ekom.Payments.Borgun`, `Ekom.Payments.Netgiro`, `Ekom.Payments.PayTrail`, `Ekom.Payments.SiminnPay`, `Ekom.Payments.Straumur`, `Ekom.Payments.TeyaConsumerloans` and `Ekom.Payments.Valitor`. They require Ekom 1.2 or later.
-
-See [Payments](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/guides/payments.md) and [Providers](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/guides/providers.md). A site that used Ekom.Payments 1.0 or earlier should read [Upgrading payments](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/upgrading/payments.md) first.
+See [Payments](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/guides/payments.md) and [Providers](https://github.com/Vettvangur/Ekom/blob/Ekom/docs/guides/providers.md).
 
 ## Features
 
