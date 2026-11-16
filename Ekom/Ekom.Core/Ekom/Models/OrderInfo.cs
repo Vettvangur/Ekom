@@ -18,6 +18,16 @@ public class OrderInfo : IOrderInfo
     private OrderData _orderData;
     internal OrderData OrderDataClone() => _orderData.Clone() as OrderData;
 
+    internal void ApplyPersistedStatus(OrderData data)
+    {
+        if (UniqueId != data.UniqueId)
+        {
+            throw new InvalidOperationException("Cannot apply a different order's status.");
+        }
+
+        Orders.OrderStateRules.Copy(_orderData, data);
+    }
+
     internal void ApplyPersistedSnapshot(OrderInfo source, OrderData data)
     {
         if (UniqueId != source.UniqueId || UniqueId != data.UniqueId)

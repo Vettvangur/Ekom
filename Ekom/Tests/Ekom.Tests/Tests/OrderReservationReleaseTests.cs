@@ -867,6 +867,25 @@ public sealed class OrderReservationReleaseTests
     }
 
     [Fact]
+    public async Task ManagerCustomerInformationUpdateReturnsThePersistedStatusRevision()
+    {
+        using var fixture = new Fixture();
+        await fixture.SaveAsync();
+        var order = new OrderInfo((await fixture.Repository.GetOrderAsync(fixture.Order.UniqueId))!);
+
+        await using var operation = CheckoutPaymentOperationScope.BeginManagerOverride(order.UniqueId);
+        using var activation = operation.Enter();
+        var updated = await fixture.Service.UpdateCustomerInformationAsync(new Dictionary<string, string>
+        {
+            ["storeAlias"] = "main",
+            ["customerName"] = "Updated by manager action",
+        }, new OrderSettings { OrderInfo = order, FireEvents = false, FireOnOrderUpdatedEvent = false });
+
+        var persisted = (await fixture.Repository.GetOrderAsync(order.UniqueId))!;
+        Assert.Equal(persisted.StatusRevision, updated.Status.Revision);
+    }
+
+    [Fact]
     public async Task NestedCheckoutProviderUpdateDoesNotReleaseItsPreparingAttempt()
     {
         using var fixture = new Fixture();
