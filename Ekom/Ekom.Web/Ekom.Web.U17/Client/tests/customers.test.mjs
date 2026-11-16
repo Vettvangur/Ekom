@@ -76,6 +76,37 @@ test('customer snapshot text is escaped and missing reorder interval is not disp
   assert.ok(html.includes('Average reorder interval (days)</small><strong>—'));
 });
 
+test('customer names, emails and snapshot details are shown decoded, and the identity is left as stored', () => {
+  const dom = new JSDOM('');
+  const shared = module('../src/manager/manager-shared.ts', {}, { document: dom.window.document });
+  shared.renderManagerContent = (root, html) => { root.innerHTML = html; };
+  const { EkomCustomersSectionViewElement } = module('../src/manager/customers-section-view.element.ts', {
+    './manager-shared': shared, '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
+  });
+  const view = new EkomCustomersSectionViewElement();
+  view.bind = () => {};
+  shared.managerState.filters.store = 'main';
+  const name = '&#xDE;&#xF3;r&#xF0;ur &amp; Sons&#x27; &lt;b&gt;';
+  const email = 'jon&#x2B;test@example.com';
+  const shown = 'Þórður &amp; Sons&#39; &lt;b&gt;';
+  const customer = { identity: email, name, email, orders: 1, spend: [], firstOrder: '2026-01-01', lastOrder: '2026-01-01', daysSinceLastOrder: 1 };
+  const assertDecoded = html => {
+    assert.ok(html.includes(shown));
+    assert.ok(html.includes('jon+test@example.com'));
+    assert.ok(!html.includes('<b>'));
+    assert.ok(!html.replaceAll('data-customer="jon&amp;#x2B;test@example.com"', '').includes('#x'));
+  };
+  view.result = { ...emptyResult, customers: [customer] };
+  view.render();
+  assertDecoded(view.innerHTML);
+  // The identity is what the server looks the customer up by.
+  assert.ok(view.innerHTML.includes('data-customer="jon&amp;#x2B;test@example.com"'));
+  assert.ok(view.innerHTML.includes('<span class="customer-avatar" aria-hidden="true">Þ&amp;</span>'));
+  assertDecoded(view.renderDetailOpening(email) + '<p>jon+test@example.com</p>');
+  assertDecoded(view.renderDetail({ customer, orders: [], count: 0, page: 1, totalPages: 0, snapshot: { fields: { Company: name.replaceAll('&', '&amp;') }, date: '2026-01-01', orderNumber: '1' } }));
+  dom.window.close();
+});
+
 for (const [name, elementPath, sharedPath, sharedImport] of [
   ['source', '../src/manager/customers-section-view.element.ts', '../src/manager/manager-shared.ts', './manager-shared'],
   ['U17 bundle', '../../App_Plugins/Ekom/dist/customers-section-view.element.js', '../../App_Plugins/Ekom/dist/manager-shared.js', './manager-shared.js'],
