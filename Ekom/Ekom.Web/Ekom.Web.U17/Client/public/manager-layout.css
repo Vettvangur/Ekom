@@ -580,6 +580,7 @@ ekom-orders-section-view:not([classic]) .ekom-review-alert > div { flex:1; min-w
 ekom-orders-section-view:not([classic]) .ekom-review-alert p { margin:6px 0 0; color:var(--ekom-text); white-space:pre-wrap; overflow-wrap:anywhere; }
 ekom-orders-section-view:not([classic]) .ekom-review-alert small { display:inline-block; margin-left:8px; color:var(--ekom-muted); }
 ekom-orders-section-view:not([classic]) .ekom-review-alert > button { background:#d94335; border-color:#d94335; color:#fff; }
+ekom-orders-section-view:not([classic]) .ekom-review-alert > button:hover, ekom-orders-section-view:not([classic]) .ekom-review-alert > button:focus-visible { background:#b32d21; border-color:#b32d21; color:#fff; box-shadow:none; }
 ekom-orders-section-view:not([classic]) .ekom-review-panel { width:min(720px,calc(100vw - 40px)); max-height:90vh; overflow:auto; border-radius:16px; }
 ekom-orders-section-view:not([classic]) .ekom-review-panel header, ekom-orders-section-view:not([classic]) .ekom-review-panel footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:20px 24px; }
 ekom-orders-section-view:not([classic]) .ekom-review-panel header h2 { margin:0; }
