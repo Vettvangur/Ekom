@@ -1,6 +1,6 @@
 # Ekom Documentation
 
-This documentation covers the current Ekom packages for Umbraco 13, 17, and 18. Start with the compatibility and installation guides, then use the topic guides and references as needed.
+This documentation covers the current Ekom packages for Umbraco 13, 17, 18, and 19. Start with the compatibility and installation guides, then use the topic guides and references as needed.
 
 For the product overview and ecosystem landing page, visit [ekomcommerce.com](https://www.ekomcommerce.com/).
 
@@ -25,6 +25,7 @@ For the product overview and ecosystem landing page, visit [ekomcommerce.com](ht
 - [Orders and baskets](guides/orders-and-baskets.md)
 - [Order, payment, and fulfillment statuses](guides/order-statuses.md)
 - [Order custom data](guides/order-custom-data.md)
+- [Order reviews](guides/order-reviews.md)
 - [Checkout](guides/checkout.md)
 - [Payments](guides/payments.md)
 - [Providers](guides/providers.md)
@@ -56,6 +57,8 @@ For the product overview and ecosystem landing page, visit [ekomcommerce.com](ht
 - [Manager overview](manager/overview.md)
 - [Access and permissions](manager/access-and-permissions.md)
 - [Orders](manager/orders.md)
+- [Customers](manager/customers.md)
+- [Analytics](analytics.md)
 - [Activity logs](manager/activity-logs.md)
 
 ## Integrations
