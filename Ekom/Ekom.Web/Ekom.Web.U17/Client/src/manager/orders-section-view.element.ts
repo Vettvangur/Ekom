@@ -30,6 +30,7 @@ import {
   renderDateRange,
   bindDateRange,
   orderViews,
+  renderStatusFilterOptions,
   renderOrderRowsLoading,
   renderLoadingLine,
   renderDrawerLoading,
@@ -478,7 +479,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     const scrollPositions = Array.from(this.querySelectorAll<HTMLElement>('.ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content')).map(node => node.scrollTop);
     renderManagerContent(this, `
       <style>${managerStyles}</style>
-      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261116-review-hover">
+      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261116-drafts-view">
       <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
           ${this.configError ? `<p class="status status--error" role="alert">${escapeHtml(this.configError)}</p>` : ''}
@@ -592,7 +593,7 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
         <div class="ekmOverlay__panel ekom-filter-panel" role="dialog" aria-modal="true" aria-label="Filter orders">
           <div class="ekmOverlay__header"><div><h2>Filter orders</h2><p>Status filters also apply to Analytics and Customers</p></div><button class="btn-reset" type="button" data-action="close-overlay" aria-label="Close filters">&times;</button></div>
           <div class="ekmOverlay__content">
-            <h3>Status</h3><div class="ekom-status-filter-grid">${[['Order', ['Draft', 'Open', 'Closed', 'Cancelled']], ['Payment', ['Pending', 'Authorized', 'Paid', 'PartiallyPaid', 'Failed', 'Voided']], ['Fulfillment', ['Unfulfilled', 'Picking', 'Picked', 'Packed', 'PartiallyFulfilled', 'Fulfilled']]].map(([label, values], index) => `<label class="control-group">${label}<select data-status-dimension="${index}"><option value="">Any</option>${(values as string[]).map(value => `<option value="${value}" ${filters.orderStatus.startsWith('states:') && filters.orderStatus.slice(7).split(';')[index] === value ? 'selected' : ''}>${value.replace(/([a-z])([A-Z])/g, '$1 $2')}</option>`).join('')}</select></label>`).join('')}</div>
+            <h3>Status</h3><div class="ekom-status-filter-grid">${[['Order', ['Draft', 'Open', 'Closed', 'Cancelled']], ['Payment', ['Pending', 'Authorized', 'Paid', 'PartiallyPaid', 'Failed', 'Voided']], ['Fulfillment', ['Unfulfilled', 'Picking', 'Picked', 'Packed', 'PartiallyFulfilled', 'Fulfilled']]].map(([label, values], index) => `<label class="control-group">${label}<select data-status-dimension="${index}">${renderStatusFilterOptions(index, values as string[], filters.orderStatus.startsWith('states:') ? filters.orderStatus.slice(7).split(';')[index] || '' : '')}</select></label>`).join('')}</div>
             <h3>Payment &amp; shipping</h3><div class="ekom-filter-fields">
             <label class="control-group">Payment provider
               <select data-filter-field="paymentProvider" ${this.filterProvidersLoading ? 'disabled' : ''}>

@@ -1,10 +1,10 @@
 var ne = Object.defineProperty;
 var de = (n, m, e) => m in n ? ne(n, m, { enumerable: !0, configurable: !0, writable: !0, value: e }) : n[m] = e;
 var u = (n, m, e) => de(n, typeof m != "symbol" ? m + "" : m, e);
-import { E as le, m as v, z as T, e as ce, r as ue, a as he, c as a, b as pe, A as me, h as ve, B as S, y as A, v as fe, w as G, x as ye, C as z, D as x, q as ge, F as be, o as ke, u as W, k as $e } from "./manager-shared.js";
-import { UmbElementMixin as we } from "@umbraco-cms/backoffice/element-api";
-import { UMB_NOTIFICATION_CONTEXT as Oe } from "@umbraco-cms/backoffice/notification";
-const Se = [
+import { E as le, m as v, z as T, e as ce, r as ue, a as he, c as a, b as pe, A as me, h as ve, B as S, C as fe, y as A, v as ye, w as G, x as ge, D as z, F as x, q as be, G as ke, o as $e, u as W, k as we } from "./manager-shared.js";
+import { UmbElementMixin as Oe } from "@umbraco-cms/backoffice/element-api";
+import { UMB_NOTIFICATION_CONTEXT as Se } from "@umbraco-cms/backoffice/notification";
+const Le = [
   { key: "customerName", label: "Name", property: "name" },
   { key: "customerEmail", label: "Email", property: "email" },
   { key: "customerAddress", label: "Address", property: "address" },
@@ -13,7 +13,7 @@ const Se = [
   { key: "customerCountry", label: "Country", property: "country" },
   { key: "customerZipCode", label: "Zipcode", property: "zipCode" },
   { key: "customerPhone", label: "Phone", property: "phone" }
-], Le = [
+], Ee = [
   { key: "shippingName", label: "Name", property: "name" },
   { key: "shippingEmail", label: "Email", property: "email" },
   { key: "shippingAddress", label: "Address", property: "address" },
@@ -22,8 +22,8 @@ const Se = [
   { key: "shippingCountry", label: "Country", property: "country" },
   { key: "shippingZipCode", label: "Zipcode", property: "zipCode" },
   { key: "shippingPhone", label: "Phone", property: "phone" }
-], Ee = 180, H = 1, Z = 2;
-class Ie extends we(HTMLElement) {
+], Ie = 180, H = 1, Z = 2;
+class Ae extends Oe(HTMLElement) {
   constructor() {
     super(...arguments);
     u(this, "api", new le());
@@ -165,7 +165,7 @@ class Ie extends we(HTMLElement) {
       t && this.observe(t.theme, (r) => {
         this.toggleAttribute("data-ekom-dark", r === "umb-dark-theme");
       }, "ekom-manager-theme");
-    }), this.consumeContext(Oe, (t) => {
+    }), this.consumeContext(Se, (t) => {
       this.notificationContext = t;
     }), document.addEventListener("keydown", this.handleKeyDown), document.addEventListener("pointerdown", this.dismissFulfillmentMenus, !0), this.render(), this.initialize();
   }
@@ -314,7 +314,7 @@ class Ie extends we(HTMLElement) {
     const e = this.querySelector("[data-review-comment]"), t = e && ((s = this.ownerDocument) == null ? void 0 : s.activeElement) === e ? { start: e.selectionStart, end: e.selectionEnd } : void 0, r = Array.from(this.querySelectorAll(".ekmOverlay, .ekmOverlay__content, .ekmCustomerInformationModal .ekmOverlay__content")).map((d) => d.scrollTop);
     if (ue(this, `
       <style>${he}</style>
-      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261116-review-hover">
+      <link rel="stylesheet" href="/App_Plugins/Ekom/dist/manager-layout.css?v=20261116-drafts-view">
       <section class="ekmManager ekom-design">
         <div class="ekmManager__body">
           ${this.configError ? `<p class="status status--error" role="alert">${a(this.configError)}</p>` : ""}
@@ -389,7 +389,7 @@ class Ie extends we(HTMLElement) {
         <div class="ekmOverlay__panel ekom-filter-panel" role="dialog" aria-modal="true" aria-label="Filter orders">
           <div class="ekmOverlay__header"><div><h2>Filter orders</h2><p>Status filters also apply to Analytics and Customers</p></div><button class="btn-reset" type="button" data-action="close-overlay" aria-label="Close filters">&times;</button></div>
           <div class="ekmOverlay__content">
-            <h3>Status</h3><div class="ekom-status-filter-grid">${[["Order", ["Draft", "Open", "Closed", "Cancelled"]], ["Payment", ["Pending", "Authorized", "Paid", "PartiallyPaid", "Failed", "Voided"]], ["Fulfillment", ["Unfulfilled", "Picking", "Picked", "Packed", "PartiallyFulfilled", "Fulfilled"]]].map(([t, r], i) => `<label class="control-group">${t}<select data-status-dimension="${i}"><option value="">Any</option>${r.map((s) => `<option value="${s}" ${e.orderStatus.startsWith("states:") && e.orderStatus.slice(7).split(";")[i] === s ? "selected" : ""}>${s.replace(/([a-z])([A-Z])/g, "$1 $2")}</option>`).join("")}</select></label>`).join("")}</div>
+            <h3>Status</h3><div class="ekom-status-filter-grid">${[["Order", ["Draft", "Open", "Closed", "Cancelled"]], ["Payment", ["Pending", "Authorized", "Paid", "PartiallyPaid", "Failed", "Voided"]], ["Fulfillment", ["Unfulfilled", "Picking", "Picked", "Packed", "PartiallyFulfilled", "Fulfilled"]]].map(([t, r], i) => `<label class="control-group">${t}<select data-status-dimension="${i}">${fe(i, r, e.orderStatus.startsWith("states:") && e.orderStatus.slice(7).split(";")[i] || "")}</select></label>`).join("")}</div>
             <h3>Payment &amp; shipping</h3><div class="ekom-filter-fields">
             <label class="control-group">Payment provider
               <select data-filter-field="paymentProvider" ${this.filterProvidersLoading ? "disabled" : ""}>
@@ -496,7 +496,7 @@ class Ie extends we(HTMLElement) {
   renderOrderOpening() {
     var t;
     const e = (t = this.result.orders.find((r) => r.uniqueId === this.returnFocusOrderId)) == null ? void 0 : t.referenceId;
-    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details" aria-busy="true" data-order-opening="${a(this.returnFocusOrderId)}"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><div class="ekom-order-heading-copy"><h2>${e ? `#${a(e)}` : "Order"}</h2>${fe("Loading order…")}</div>${G('<button type="button" data-action="close-overlay" aria-label="Close order">×</button>')}</header><div class="ekmOverlay__content ekmOrder">${ye()}</div></div></div>`;
+    return `<div class="ekmOverlay ekom-order-drawer ekom-design-drawer" role="dialog" aria-modal="true" aria-label="Order details" aria-busy="true" data-order-opening="${a(this.returnFocusOrderId)}"><div class="ekmOverlay__panel ekmOrderOverlay__panel"><header class="ekom-panel-heading"><div class="ekom-order-heading-copy"><h2>${e ? `#${a(e)}` : "Order"}</h2>${ye("Loading order…")}</div>${G('<button type="button" data-action="close-overlay" aria-label="Close order">×</button>')}</header><div class="ekmOverlay__content ekmOrder">${ge()}</div></div></div>`;
   }
   renderOrderOverlay(e) {
     var i, s, o, d, l, p;
@@ -549,7 +549,7 @@ class Ie extends we(HTMLElement) {
     const t = Object.entries(e.customData || {}).filter(([r, i]) => r.trim() && typeof i == "string" && i.trim());
     return t.length ? `<dl class="ekmOrderCustomData" aria-label="Order custom data">${t.map(([r, i]) => `
       <div class="ekmOrderCustomData__item">
-        <dt class="ekmOrderCustomData__key">${a(Ce(r))}</dt>
+        <dt class="ekmOrderCustomData__key">${a(Pe(r))}</dt>
         <dd class="ekmOrderCustomData__value">${a(i)}</dd>
       </div>`).join("")}</dl>` : "";
   }
@@ -739,11 +739,11 @@ class Ie extends we(HTMLElement) {
   }
   renderTracking(e) {
     const t = e.tracking;
-    return Re(t) ? `<div class="ekmOrderTracking"><h4>Tracking</h4>${xe(t)}</div>` : '<div class="ekmOrderTracking"><h4>Tracking</h4><p>No tracking data was captured for this order.</p></div>';
+    return xe(t) ? `<div class="ekmOrderTracking"><h4>Tracking</h4>${qe(t)}</div>` : '<div class="ekmOrderTracking"><h4>Tracking</h4><p>No tracking data was captured for this order.</p></div>';
   }
   renderConsent(e) {
     const t = e.consent;
-    return qe(t) ? `<div class="ekmOrderTracking"><h4>Consent</h4>${$("Resolved", S(t.resolvedAtUtc))}${$("Source", t.source)}${$("Analytics", re(t.analytics))}${$("Marketing", re(t.marketing))}</div>` : '<div class="ekmOrderTracking"><h4>Consent</h4><p>No consent data was captured for this order.</p></div>';
+    return Te(t) ? `<div class="ekmOrderTracking"><h4>Consent</h4>${$("Resolved", S(t.resolvedAtUtc))}${$("Source", t.source)}${$("Analytics", re(t.analytics))}${$("Marketing", re(t.marketing))}</div>` : '<div class="ekmOrderTracking"><h4>Consent</h4><p>No consent data was captured for this order.</p></div>';
   }
   renderActivityLogs() {
     return this.orderLogsLoading ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Loading activity...</p></div>' : this.orderLogsError ? '<div class="ekmOrderActivityLog"><h4>Activity log</h4><p>Unable to load activity log.</p></div>' : this.orderLogs.length ? `<div class="ekmOrderActivityLog"><h4>Activity log</h4><div class="ekom-log-scroll"><table class="ekom-log-table"><thead><tr><th>Date</th><th>Type</th><th>Message</th></tr></thead><tbody>${this.orderLogs.map((t, r) => {
@@ -762,7 +762,7 @@ class Ie extends we(HTMLElement) {
     }
   }
   canExpandActivityLog(e) {
-    return e.length > Ee;
+    return e.length > Ie;
   }
   renderStateDot(e) {
     return `<span class="ekom-state-dot" data-state="${a(e || "")}" aria-hidden="true"></span>`;
@@ -834,7 +834,7 @@ class Ie extends we(HTMLElement) {
       if (o.key !== "Escape") return;
       const d = o.currentTarget;
       d.open = !1, (l = d.querySelector("summary")) == null || l.focus(), o.stopPropagation();
-    }), ge(this, () => {
+    }), be(this, () => {
       this.page = 1, this.loadOrders();
     }), this.querySelectorAll('[data-action="select-order-tab"]').forEach((o) => {
       o.addEventListener("keydown", (d) => {
@@ -961,7 +961,7 @@ class Ie extends we(HTMLElement) {
     if (r === "print-order") {
       if (this.selectedOrder)
         try {
-          await be(this.renderPrintableOrder(this.selectedOrder), `Order ${this.selectedOrder.referenceId}`);
+          await ke(this.renderPrintableOrder(this.selectedOrder), `Order ${this.selectedOrder.referenceId}`);
         } catch {
           this.showError("Unable to prepare the order for printing. Please try again.");
         }
@@ -1058,7 +1058,7 @@ class Ie extends we(HTMLElement) {
       this.exporting = !0, this.render();
       try {
         const e = await this.api.exportOrders(v.filters, this.result.count, this.exportIncludeOrderLines);
-        ke(e, this.exportIncludeOrderLines ? "orders-with-orderlines.csv" : "orders.csv"), this.overlay = "";
+        $e(e, this.exportIncludeOrderLines ? "orders-with-orderlines.csv" : "orders.csv"), this.overlay = "";
       } catch (e) {
         this.showError(w(e, "Error exporting orders."));
       } finally {
@@ -1335,7 +1335,7 @@ class Ie extends we(HTMLElement) {
           window.open(URL.createObjectURL(d), "_blank");
         else {
           const f = await d.text();
-          this.showSuccess(Te(f));
+          this.showSuccess(De(f));
         }
         if (i !== this.orderRequestId) return;
         const [c] = await Promise.all([this.api.orderInfo(r), this.loadOrderLockStatus(r), this.loadGiftcardRecovery(r)]);
@@ -1357,8 +1357,8 @@ class Ie extends we(HTMLElement) {
       return;
     const t = ((i = e.customerInformation) == null ? void 0 : i.customer) || {}, r = ((s = e.customerInformation) == null ? void 0 : s.shipping) || {};
     this.customerEditModel = {
-      customer: ie(t, Se).concat(se(t.properties, "customer")),
-      shipping: ie(r, Le).concat(se(r.properties, "shipping"))
+      customer: ie(t, Le).concat(se(t.properties, "customer")),
+      shipping: ie(r, Ee).concat(se(r.properties, "shipping"))
     }, this.customerEditorOpen = !0, this.render();
   }
   async saveCustomerInformation() {
@@ -1498,7 +1498,7 @@ function Y(n, m = Date.now()) {
   let d = "";
   !s && !e && t ? d = "An expiry time is saved, but the reservation reference is missing. Check the gift-card provider if an amount is still held." : !s && e && r <= m ? d = "The saved reservation expiry has passed. This does not confirm that the provider has released the hold." : !s && e && !t && (d = "No expiry time is saved. Check the gift-card provider if an amount is still held."), t && !Number.isFinite(r) && (d += `${d ? " " : ""}The saved expiry time could not be read. Check the gift-card provider.`);
   let l = "Not recorded";
-  if (t && (l = Number.isFinite(r) ? $e() ? S(new Date(r)) : new Intl.DateTimeFormat(void 0, { dateStyle: "medium", timeStyle: "long" }).format(new Date(r)) : String(n.validUntil), i)) {
+  if (t && (l = Number.isFinite(r) ? we() ? S(new Date(r)) : new Intl.DateTimeFormat(void 0, { dateStyle: "medium", timeStyle: "long" }).format(new Date(r)) : String(n.validUntil), i)) {
     const p = Math.ceil((r - m) / 6e4), c = p < 60 ? p : p < 1440 ? Math.ceil(p / 60) : Math.ceil(p / 1440), f = p < 60 ? "minute" : p < 1440 ? "hour" : "day";
     l += ` (in about ${c} ${f}${c === 1 ? "" : "s"})`;
   }
@@ -1507,19 +1507,19 @@ function Y(n, m = Date.now()) {
 function D(n) {
   return n === "zipCode" ? "Zipcode" : n.charAt(0).toUpperCase() + n.slice(1);
 }
-function Ae(n) {
+function Ce(n) {
   return (/* @__PURE__ */ new Set(["shippingname", "shippingaddress", "shippingcity", "shippingcountry", "shippingemail", "shippingapartment", "shippingzipcode", "shippingphone", "customeremail", "customername", "customeraddress", "customerapartment", "customercity", "customercountry", "customerzipcode", "customerphone"])).has(n.toLowerCase());
 }
 function R(n) {
   return n.replace(/^customshipping/i, "").replace(/^custompayment/i, "").replace(/^shipping/i, "").replace(/^customer/i, "");
 }
 function _(n, m) {
-  return Object.entries(n || {}).filter(([e, t]) => (!!t || m === "customshipping" && t === "") && e.toLowerCase().startsWith(m) && !Ae(e)).map(([e, t]) => [e, x(t)]);
+  return Object.entries(n || {}).filter(([e, t]) => (!!t || m === "customshipping" && t === "") && e.toLowerCase().startsWith(m) && !Ce(e)).map(([e, t]) => [e, x(t)]);
 }
 function M(n) {
   return !!(n != null && n.name || n != null && n.email || n != null && n.address || n != null && n.apartment || n != null && n.city || n != null && n.country || n != null && n.zipCode || n != null && n.phone);
 }
-function Ce(n) {
+function Pe(n) {
   return n.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Z])([A-Z][a-z])/g, "$1 $2").replace(/[_-]+/g, " ").trim().replace(/\b[a-z]/g, (m) => m.toUpperCase());
 }
 function N(n, m) {
@@ -1553,17 +1553,17 @@ function X(n) {
 function ee(n) {
   var e;
   const m = ((e = n.orderLineInfo) == null ? void 0 : e.properties) || {};
-  return Object.entries(m).filter(([, t]) => !!t).map(([t, r]) => `<small style="display:block; margin-top:3px;"><strong>${a(Pe(t))}</strong>: ${a(x(r))}</small>`).join("");
+  return Object.entries(m).filter(([, t]) => !!t).map(([t, r]) => `<small style="display:block; margin-top:3px;"><strong>${a(Re(t))}</strong>: ${a(x(r))}</small>`).join("");
 }
-function Pe(n) {
+function Re(n) {
   const m = n.replace(/^orderline/i, "").replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim();
   return m ? m.charAt(0).toUpperCase() + m.slice(1) : n;
 }
-function Re(n) {
+function xe(n) {
   var m, e, t, r;
   return !!(n && (n.source || n.medium || n.campaign || n.term || n.content || n.clickId || n.clickIdType || n.landingUrl || n.referrer || n.captureMethod || n.capturedAtUtc || n.hasCookieSupport !== null && n.hasCookieSupport !== void 0 || (m = n.ga4) != null && m.clientId || (e = n.ga4) != null && e.sessionId || (t = n.meta) != null && t.fbp || (r = n.meta) != null && r.fbc || oe(n.algolia)));
 }
-function xe(n) {
+function qe(n) {
   var s, o, d, l, p, c;
   const m = Object.entries(((s = n.ga4) == null ? void 0 : s.data) || {}), e = Object.entries(((o = n.meta) == null ? void 0 : o.data) || {}), t = n.algolia, r = Array.isArray(t == null ? void 0 : t.lines) ? t.lines : [], i = oe(t) ? `<div class="ekmOrderTracking__provider"><h5>Algolia</h5>${$("User token", t.userToken)}${r.length ? `<ul>${r.map((f) => `<li class="ekmOrderTracking__wrap"><strong>Order line key</strong>: ${a(f.orderLineKey)}<br><strong>Query ID</strong>: ${a(f.queryId)}</li>`).join("")}</ul>` : ""}</div>` : "";
   return `<div class="ekmSplit"><div class="ekmSplit__column">${$("Captured", S(n.capturedAtUtc))}${$("Capture method", n.captureMethod)}${n.hasCookieSupport !== null && n.hasCookieSupport !== void 0 ? `<p>Cookie support: ${n.hasCookieSupport ? "Yes" : "No"}</p>` : ""}${$("Source", n.source)}${$("Medium", n.medium)}${$("Campaign", n.campaign)}${$("Term", n.term)}${$("Content", n.content)}${$("Click ID", n.clickId)}${$("Click ID Type", n.clickIdType)}${$("Landing URL", n.landingUrl)}${$("Referrer", n.referrer)}</div><div class="ekmSplit__column"><h5>GA4</h5>${$("Client ID", (d = n.ga4) == null ? void 0 : d.clientId)}${$("Session ID", (l = n.ga4) == null ? void 0 : l.sessionId)}${te(m)}<h5>Meta</h5>${$("FBP", (p = n.meta) == null ? void 0 : p.fbp)}${$("FBC", (c = n.meta) == null ? void 0 : c.fbc)}${te(e)}${i}</div></div>`;
@@ -1577,7 +1577,7 @@ function $(n, m) {
 function te(n) {
   return n.length ? `<ul>${n.map(([m, e]) => `<li><strong>${a(m)}</strong>: ${a(e)}</li>`).join("")}</ul>` : "";
 }
-function qe(n) {
+function Te(n) {
   return !!(n && (n.resolvedAtUtc || n.source || n.analytics !== null && n.analytics !== void 0 || n.marketing !== null && n.marketing !== void 0));
 }
 function re(n) {
@@ -1605,15 +1605,15 @@ function se(n, m) {
 function ae(n) {
   return Object.fromEntries(n.map((m) => [m.key, m.value || ""]));
 }
-function Te(n) {
+function De(n) {
   try {
     return JSON.parse(n).message || n;
   } catch {
     return n;
   }
 }
-customElements.define("ekom-orders-section-view", Ie);
+customElements.define("ekom-orders-section-view", Ae);
 export {
-  Ie as EkomOrdersSectionViewElement,
-  Ie as default
+  Ae as EkomOrdersSectionViewElement,
+  Ae as default
 };

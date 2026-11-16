@@ -12,6 +12,8 @@
 
 * **payments:** flag a payment that does not match its order for review. A captured or authorized amount that differs from the order total, and a payment that arrives for a checkout that was changed before it arrived, each open an order review. The manager's **Needs review** view now also lists draft orders that have an open review, so a paid order whose checkout did not complete is seen.
 
+* **manager:** make it clear where draft orders are in the Umbraco 17/18/19 Orders list. A **Drafts** view lists unfinished checkouts, and the Order status filter now starts on **Open, closed and cancelled** instead of **Any**, with **All, including drafts** as a choice. What each view lists is unchanged.
+
 * **manager:** save the order's status from the Umbraco 17/18/19 order drawer as soon as an option is chosen in the Order, Payment or Fulfillment menu. The separate Save button is removed, and the **Trigger status events** switch moves into each menu, as in the Orders table.
 
 * **manager:** record the signed-in backoffice user on status changes made from the Umbraco 17/18/19 order drawer. The activity entry had an empty user name, because the request identity of a token-authenticated backoffice carries none.

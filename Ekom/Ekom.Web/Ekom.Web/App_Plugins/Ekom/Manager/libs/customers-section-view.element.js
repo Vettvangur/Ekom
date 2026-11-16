@@ -635,7 +635,9 @@ const W = [
   { key: "states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled", label: "Unfulfilled" },
   { key: "states:Open;Pending,Authorized,PartiallyPaid,Failed;", label: "Unpaid" },
   { key: "states:Open;;", label: "Open" },
-  { key: "states:Closed;;", label: "Closed" }
+  { key: "states:Closed;;", label: "Closed" },
+  // Unfinished checkouts. Every other view leaves them out, so they get a view of their own.
+  { key: "states:Draft;;", label: "Drafts" }
 ];
 function Z() {
   var t;

@@ -1344,7 +1344,24 @@ export const orderViews = [
   { key: 'states:Open;Pending,Authorized,PartiallyPaid,Failed;', label: 'Unpaid' },
   { key: 'states:Open;;', label: 'Open' },
   { key: 'states:Closed;;', label: 'Closed' },
+  // Unfinished checkouts. Every other view leaves them out, so they get a view of their own.
+  { key: 'states:Draft;;', label: 'Drafts' },
 ];
+
+/** Every order state. Without an order status the server lists Open, Closed and Cancelled: drafts are opt-in. */
+export const allOrderStatesIncludingDrafts = 'Draft,Open,Closed,Cancelled';
+
+/**
+ * The options of one status filter. Payment and fulfillment are not narrowed when empty, so "Any" is true there.
+ * The order status is: its empty option names what the server lists, and drafts can be asked for.
+ */
+export function renderStatusFilterOptions(dimension: number, values: string[], selected: string): string {
+  const option = (value: string, label: string) => `<option value="${value}" ${selected === value ? 'selected' : ''}>${label}</option>`;
+  return (dimension === 0
+    ? option('', 'Open, closed and cancelled') + option(allOrderStatesIncludingDrafts, 'All, including drafts')
+    : option('', 'Any'))
+    + values.map(value => option(value, value.replace(/([a-z])([A-Z])/g, '$1 $2'))).join('');
+}
 
 export function ensureManagerCurrency(): void {
   const store = managerState.stores.find(item => item.alias === managerState.filters.store);

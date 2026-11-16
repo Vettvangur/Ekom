@@ -68,6 +68,7 @@ public class ManagerRepositoryTests
         {
             "AllOrders", "NeedsReview", "states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled",
             "states:Open;Pending,Authorized,PartiallyPaid,Failed;", "states:Open;;", "states:Closed;;",
+            "states:Draft;;", "states:Draft,Open,Closed,Cancelled;;",
             "CompletedOrders", "Pending", "ReadyForDispatch",
         };
 
@@ -82,6 +83,10 @@ public class ManagerRepositoryTests
             Assert.Equal(search.Count, count.Count);
         }
         Assert.Contains(counts, count => count.Count > 0);
+        // Drafts are counted by their own view and by "All, including drafts", and by nothing else.
+        int Count(string view) => counts.Single(count => count.View == view).Count;
+        Assert.True(Count("states:Draft;;") > 0);
+        Assert.Equal(Count("AllOrders") + Count("states:Draft;;"), Count("states:Draft,Open,Closed,Cancelled;;"));
         Assert.Empty(await f.Repository.GetOrderViewCountsAsync(f.Date, f.Date, "", "main", Array.Empty<string>(), "", "", "", "", "", "", "", ""));
         Assert.All(await f.Repository.GetOrderViewCountsAsync(f.Date.AddYears(1), f.Date.AddYears(1), "", "main", views, "", "", "", "", "", "", "", ""),
             count => Assert.Equal(0, count.Count));
