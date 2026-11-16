@@ -2,12 +2,12 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 
-export function loadPrintFixture() {
+export function loadPrintFixture({ document = { createElement: () => ({ set innerHTML(value) { this.value = value; } }) } } = {}) {
   function load(name, modules = {}) {
     const source = readFileSync(new URL(`../../src/manager/${name}.ts`, import.meta.url), 'utf8');
     const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
     const exports = {};
-    runInNewContext(code, { exports, document: { createElement: () => ({ set innerHTML(value) { this.value = value; } }) }, require: name => modules[name], HTMLElement: class {}, customElements: { define() {} } });
+    runInNewContext(code, { exports, document, require: name => modules[name], HTMLElement: class {}, customElements: { define() {} } });
     return { exports, code };
   }
   const shared = load('manager-shared');

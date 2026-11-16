@@ -772,10 +772,27 @@ export function escapeHtml(value: unknown): string {
     .replaceAll("'", '&#39;');
 }
 
+/**
+ * Returns the readable text of a stored order value. Customer fields, provider custom data and
+ * order line properties are stored HTML-encoded, and some storefront paths encode them more than
+ * once, so this decodes until the text stops changing. The result is plain text, not markup:
+ * escape it again before putting it into HTML.
+ */
 export function decodeHtml(value: unknown): string {
-  const textArea = document.createElement('textarea');
-  textArea.innerHTML = String(value ?? '');
-  return textArea.value;
+  let text = String(value ?? '');
+  for (let pass = 0; pass < 5 && text.includes('&'); pass++) {
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = text;
+    const decoded = textArea.value;
+    if (decoded === text) break;
+    text = decoded;
+  }
+  return text;
+}
+
+/** Decodes a stored order value and escapes it for use in HTML text or an attribute. */
+export function escapeStoredHtml(value: unknown): string {
+  return escapeHtml(decodeHtml(value));
 }
 
 export function getStatusValue(status: StatusItem): string {

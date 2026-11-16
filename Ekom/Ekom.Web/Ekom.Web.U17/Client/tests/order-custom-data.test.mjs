@@ -21,7 +21,7 @@ test('custom data is plain text and long values are not truncated', () => {
   assert.ok(!html.includes('<script>'));
   assert.ok(!html.includes('<img'));
   assert.ok(html.includes('&lt;Script&gt;'));
-  assert.ok(html.includes('&amp;amp;'));
+  assert.ok(html.includes('&amp;'));
   assert.ok(html.includes(note));
 });
 
