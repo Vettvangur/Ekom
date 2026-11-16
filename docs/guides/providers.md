@@ -67,6 +67,8 @@ The checkout service passes customer information, currency, order number, total 
 
 ## Configure shipping providers
 
+Booking shipments with a carrier, tracking numbers and the shipment record are described in [Shipping and shipments](shipping.md).
+
 Shipping providers are store-scoped Umbraco nodes with a title, price, VAT behavior, zones, amount range, and arbitrary provider properties. Their ordered snapshot is saved onto the order when selected.
 
 List shipping methods against the merchandise amount expected by the storefront. The built-in HTTP endpoint calculates its amount from the current order's charged amount minus the currently selected shipping price.

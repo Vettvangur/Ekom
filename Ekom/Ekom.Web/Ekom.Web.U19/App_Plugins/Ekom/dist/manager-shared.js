@@ -116,6 +116,12 @@ class A {
   async orderPayments(e) {
     return this.getJson(`/ekom/manager/orderPayments/${encodeURIComponent(e)}`);
   }
+  async orderShipments(e) {
+    return this.getJson(`/ekom/manager/orderShipments/${encodeURIComponent(e)}`);
+  }
+  async updateShipmentTracking(e, a, t) {
+    return this.postBody(`/ekom/manager/Order/${encodeURIComponent(e)}/Shipment/Tracking`, { trackingNumber: a, trackingUrl: t });
+  }
   async orderLogs(e) {
     return this.getJson(`/ekom/manager/OrderLogs/${encodeURIComponent(e)}`);
   }
@@ -271,7 +277,7 @@ function X(r) {
   if (!Number.isNaN(e.getTime()))
     return { year: e.getFullYear(), month: e.getMonth() + 1, day: e.getDate(), hour: e.getHours(), minute: e.getMinutes(), second: e.getSeconds() };
 }
-function J(r, e, a) {
+function V(r, e, a) {
   const t = (o) => String(o).padStart(2, "0");
   return e.replace(/'([^']*)'|\\(.)|d{1,4}|M{1,4}|y{1,5}|H{1,2}|h{1,2}|m{1,2}|s{1,2}|t{1,2}|\/|:/g, (o, n, s) => {
     if (n !== void 0) return n;
@@ -328,7 +334,7 @@ function Q(r) {
   const e = X(r);
   if (!e) return String(r);
   const a = P();
-  return a ? J(e, a.shortDate, a) : new Date(e.year, e.month - 1, e.day).toLocaleDateString();
+  return a ? V(e, a.shortDate, a) : new Date(e.year, e.month - 1, e.day).toLocaleDateString();
 }
 function xe(r, e, a = !0) {
   const t = X(r);
@@ -338,7 +344,7 @@ function xe(r, e, a = !0) {
     return n.toLocaleDateString("en-GB", { timeZone: "UTC", month: a ? "short" : "long", ...e === "monthDay" ? { day: "numeric" } : e === "yearMonth" ? { year: "numeric" } : {} });
   if (e === "month") return (a ? o.abbreviatedMonthNames : o.monthNames)[t.month - 1] || String(t.month);
   const s = e === "monthDay" ? o.monthDay : o.yearMonth;
-  return J(t, a ? s.replace(/M{4}/g, "MMM") : s, o);
+  return V(t, a ? s.replace(/M{4}/g, "MMM") : s, o);
 }
 function je(r) {
   if (!r)
@@ -347,7 +353,7 @@ function je(r) {
   if (Number.isNaN(e.getTime()))
     return String(r);
   const a = P(), t = X(e);
-  return a && t ? `${J(t, a.shortDate, a)} ${J(t, a.shortTime, a)}` : new Intl.DateTimeFormat(void 0, {
+  return a && t ? `${V(t, a.shortDate, a)} ${V(t, a.shortTime, a)}` : new Intl.DateTimeFormat(void 0, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -611,7 +617,7 @@ const pe = `
   "#f0f0f0": "--ekom-border",
   "#247f45": "--ekom-positive",
   "#ad5f00": "--ekom-warning"
-}, Se = pe.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (r) => de[r.toLowerCase()] ? `var(${de[r.toLowerCase()]})` : r), _e = `
+}, Se = pe.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (r) => de[r.toLowerCase()] ? `var(${de[r.toLowerCase()]})` : r), $e = `
   .ekom-skeleton { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--ekom-border, #eceef1) 0%, var(--ekom-surface-alt, #f7f8fa) 40%, var(--ekom-border, #eceef1) 80%); background-size: 320px 100%; animation: ekom-shim 1.2s linear infinite; }
   .ekom-skeleton-block { flex: 1; height: auto; border-radius: 8px; background-image: linear-gradient(90deg, var(--ekom-surface-alt, #f7f8fa) 0%, var(--ekom-surface, #fff) 40%, var(--ekom-surface-alt, #f7f8fa) 80%); }
   .ekom-loading { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; }
@@ -640,7 +646,7 @@ const pe = `
 @keyframes ekom-spin { to { transform: rotate(360deg); } }
 ${se} {
   ${pe.replaceAll(":host", "&")}
-  ${_e}
+  ${$e}
 }
 ${se}:not([classic]) {
   ${Se}
@@ -724,7 +730,7 @@ function Ge(r) {
   const e = ["Paid", "Fulfilled", "Closed"].includes(r || "") ? "positive" : ["Failed", "Cancelled"].includes(r || "") ? "negative" : ["Pending", "PartiallyPaid", "PartiallyFulfilled", "PartiallyRefunded"].includes(r || "") ? "warning" : "neutral", a = r ? r.replace(/([a-z])([A-Z])/g, "$1 $2") : "Needs review";
   return `<span class="ekom-badge ekom-badge--${e}">${u(a)}</span>`;
 }
-function $e(r, e) {
+function _e(r, e) {
   if (e != null && e.format) return ke(r, e.format);
   const a = e == null ? void 0 : e.isoCurrencySymbol, t = (e == null ? void 0 : e.currencyDecimalDigits) ?? (a && /^[A-Z]{3}$/.test(a) ? new Intl.NumberFormat(void 0, { style: "currency", currency: a }).resolvedOptions().maximumFractionDigits : 2), o = e == null ? void 0 : e.currencyValue;
   let n;
@@ -738,21 +744,21 @@ function $e(r, e) {
     ...a && /^[A-Z]{3}$/.test(a) ? { style: "currency", currency: a, ...n ? {} : { currencyDisplay: "code" } } : {}
   }).format(r);
 }
-function Ve(r, e, a, t = {}) {
+function Je(r, e, a, t = {}) {
   var re;
   const o = r.getBoundingClientRect(), n = window.devicePixelRatio || 1, s = o.width || 300, g = o.height || 320;
   r.width = s * n, r.height = g * n;
   const i = r.getContext("2d");
   if (!i) return;
   i.scale(n, n), i.font = t.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
-  const y = e.points || [], $ = y.map((m) => m.y == null ? null : Number(m.y)), w = ((re = t.comparison) == null ? void 0 : re.points) || [], c = [...$, ...w.map((m) => m.y)].filter((m) => m != null), b = Math.min(0, ...c), O = Math.max(1, ...c), I = 10 ** (Math.floor(Math.log10(O / 4)) - 1), q = t.integer ? Math.ceil(O / 4) * 4 : t.templateStyle ? Math.ceil(O / 4 / I) * I * 4 : O, Y = (m) => t.formatValue ? t.formatValue(m) : t.currency ? $e(m, t.currency) : m.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), K = t.formatAxisValue ?? Y, ee = Array.from({ length: 5 }, (m, l) => q - (q - b) * l / 4), _ = t.templateStyle ? 1 : Math.max(48, ...ee.map((m) => i.measureText(K(m)).width + 12)), E = s - (t.templateStyle ? 1 : 16), F = t.templateStyle ? 8 : 20, S = g - (t.templateStyle ? 26 : 52), h = y.map((m, l) => {
+  const y = e.points || [], _ = y.map((m) => m.y == null ? null : Number(m.y)), w = ((re = t.comparison) == null ? void 0 : re.points) || [], c = [..._, ...w.map((m) => m.y)].filter((m) => m != null), b = Math.min(0, ...c), O = Math.max(1, ...c), I = 10 ** (Math.floor(Math.log10(O / 4)) - 1), q = t.integer ? Math.ceil(O / 4) * 4 : t.templateStyle ? Math.ceil(O / 4 / I) * I * 4 : O, Y = (m) => t.formatValue ? t.formatValue(m) : t.currency ? _e(m, t.currency) : m.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), K = t.formatAxisValue ?? Y, ee = Array.from({ length: 5 }, (m, l) => q - (q - b) * l / 4), $ = t.templateStyle ? 1 : Math.max(48, ...ee.map((m) => i.measureText(K(m)).width + 12)), E = s - (t.templateStyle ? 1 : 16), F = t.templateStyle ? 8 : 20, S = g - (t.templateStyle ? 26 : 52), h = y.map((m, l) => {
     var v, L, T;
     return {
-      x: y.length > 1 ? _ + (E - _) * l / (y.length - 1) : (_ + E) / 2,
-      y: $[l] == null ? null : S - ($[l] - b) / (q - b) * (S - F),
+      x: y.length > 1 ? $ + (E - $) * l / (y.length - 1) : ($ + E) / 2,
+      y: _[l] == null ? null : S - (_[l] - b) / (q - b) * (S - F),
       date: m.x || ((v = e.labels) == null ? void 0 : v[l]) || "",
       axisLabel: ((L = t.formatLabel) == null ? void 0 : L.call(t, l)) ?? m.x ?? ((T = e.labels) == null ? void 0 : T[l]) ?? "",
-      value: $[l]
+      value: _[l]
     };
   }), H = (m = -1) => {
     var ne;
@@ -760,9 +766,9 @@ function Ve(r, e, a, t = {}) {
     const l = typeof getComputedStyle == "function" ? getComputedStyle(r) : void 0, v = (l == null ? void 0 : l.getPropertyValue("--ekom-muted").trim()) || (l == null ? void 0 : l.getPropertyValue("--uui-color-text-alt").trim()) || "#555", L = (l == null ? void 0 : l.getPropertyValue("--ekom-border").trim()) || "#e5e5e5", T = (l == null ? void 0 : l.getPropertyValue("--uui-color-text").trim()) || "", U = (ne = /^#([0-9a-f]{6})$/i.exec(T)) == null ? void 0 : ne[1], N = U ? [0, 2, 4].reduce((p, d) => p + parseInt(U.slice(d, d + 2), 16), 0) > 420 : !1, B = t.templateStyle && !N ? "#10694a" : a;
     i.lineWidth = 1, i.textAlign = t.templateStyle ? "left" : "right", ee.forEach((p, d) => {
       const k = F + (S - F) * d / 4;
-      i.fillStyle = v, i.fillText(K(p), t.templateStyle ? _ : _ - 8, t.templateStyle ? Math.min(S, k + 3) : k + 4), !(t.templateStyle && (d === 0 || d === 4)) && (i.globalAlpha = t.templateStyle ? 0.5 : 1, i.strokeStyle = L, i.beginPath(), i.moveTo(_, k), i.lineTo(E, k), i.stroke(), i.globalAlpha = 1);
+      i.fillStyle = v, i.fillText(K(p), t.templateStyle ? $ : $ - 8, t.templateStyle ? Math.min(S, k + 3) : k + 4), !(t.templateStyle && (d === 0 || d === 4)) && (i.globalAlpha = t.templateStyle ? 0.5 : 1, i.strokeStyle = L, i.beginPath(), i.moveTo($, k), i.lineTo(E, k), i.stroke(), i.globalAlpha = 1);
     });
-    const G = Math.max(90, ...h.map((p) => i.measureText(p.axisLabel).width + 32)), ae = Math.max(2, Math.floor((E - _) / G)), ge = new Set(Array.from({ length: Math.min(ae, h.length) }, (p, d) => Math.round(d * (h.length - 1) / Math.max(1, Math.min(ae, h.length) - 1))));
+    const G = Math.max(90, ...h.map((p) => i.measureText(p.axisLabel).width + 32)), ae = Math.max(2, Math.floor((E - $) / G)), ge = new Set(Array.from({ length: Math.min(ae, h.length) }, (p, d) => Math.round(d * (h.length - 1) / Math.max(1, Math.min(ae, h.length) - 1))));
     i.fillStyle = v, h.forEach((p, d) => {
       ge.has(d) && (i.textAlign = h.length === 1 ? "center" : d === 0 ? "left" : d === h.length - 1 ? "right" : "center", i.fillText(p.axisLabel, p.x, S + 24));
     });
@@ -797,7 +803,7 @@ function Ve(r, e, a, t = {}) {
       };
     }), !0), oe(h, !1), i.fillStyle = B, h.forEach((p, d) => {
       p.y == null || t.templateStyle && h.length > 1 && d !== m || (i.beginPath(), i.arc(p.x, p.y, d === m ? 5 : 3, 0, Math.PI * 2), i.fill());
-    }), h.length || (i.textAlign = "center", i.fillText("No data for this period", (_ + E) / 2, g / 2));
+    }), h.length || (i.textAlign = "center", i.fillText("No data for this period", ($ + E) / 2, g / 2));
     const z = h[m];
     if (z) {
       const p = [z.date, z.value == null ? "—" : Y(z.value)];
@@ -811,7 +817,7 @@ function Ve(r, e, a, t = {}) {
   }, te = (m) => {
     const l = r.getBoundingClientRect(), v = (m.clientX - l.left) * s / l.width, L = (m.clientY - l.top) * g / l.height;
     if (t.columnHover)
-      return !h.length || v < _ || v > E || L < F || L > S ? -1 : h.length === 1 ? 0 : Math.round((v - _) / (E - _) * (h.length - 1));
+      return !h.length || v < $ || v > E || L < F || L > S ? -1 : h.length === 1 ? 0 : Math.round((v - $) / (E - $) * (h.length - 1));
     let T = -1, U = 16;
     return h.forEach((N, B) => {
       if (N.y == null) return;
@@ -841,7 +847,7 @@ const Oe = [
   // Unfinished checkouts. Every other view leaves them out, so they get a view of their own.
   { key: "states:Draft;;", label: "Drafts" }
 ], Ce = "Draft,Open,Closed,Cancelled";
-function Je(r, e, a) {
+function Ve(r, e, a) {
   const t = (o, n) => `<option value="${o}" ${a === o ? "selected" : ""}>${n}</option>`;
   return (r === 0 ? t("", "Open, closed and cancelled") + t(Ce, "All") : t("", "Any")) + e.map((o) => t(o, o.replace(/([a-z])([A-Z])/g, "$1 $2"))).join("");
 }
@@ -906,9 +912,9 @@ function Qe(r) {
   return `<div class="ekom-drawer-close"><span class="ekom-esc-hint" aria-hidden="true"><strong>Esc</strong> close</span>${r}</div>`;
 }
 function Xe() {
-  return `<div class="ekom-order-columns ekom-drawer-loading"><main class="ekom-order-main">${V(4)}${V(3)}${V(2)}</main><aside class="ekom-customer-sidebar">${V(5)}</aside></div>`;
+  return `<div class="ekom-order-columns ekom-drawer-loading"><main class="ekom-order-main">${J(4)}${J(3)}${J(2)}</main><aside class="ekom-customer-sidebar">${J(5)}</aside></div>`;
 }
-function V(r = 3) {
+function J(r = 3) {
   return `<div aria-hidden="true" class="ekom-loading-panel">${C("28%")}${C("100%").repeat(r)}</div>`;
 }
 function Ke(r, e, a) {
@@ -1006,12 +1012,12 @@ function Ee() {
     calendar(t) {
       const o = new Date(Math.floor(t / 12), t % 12, 1), n = (o.getDay() + 6) % 7, s = new Date(o.getFullYear(), o.getMonth() + 1, 0).getDate();
       return `<section class="month"><h3>${u(P() ? xe(o, "yearMonth", !1) : o.toLocaleDateString("en", { month: "long", year: "numeric" }))}</h3><div class="days">${(P() ? [1, 2, 3, 4, 5, 6, 0].map((g) => u(P().shortestDayNames[g] || "")) : ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]).map((g) => `<span class="weekday">${g}</span>`).join("")}${"<span></span>".repeat(n)}${Array.from({ length: s }, (g, i) => {
-        const y = `${o.getFullYear()}-${String(o.getMonth() + 1).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`, $ = y === this.from || y === this.to, w = this.from && this.to && y > this.from && y < this.to;
-        return `<button type="button" data-day="${y}" aria-label="${y}" aria-pressed="${$ || !!w}" class="day ${$ ? "edge" : w ? "inside" : ""} ${y === this.from ? "start" : ""} ${y === this.to ? "end" : ""} ${!this.to || this.to === this.from ? "single" : ""}">${i + 1}</button>`;
+        const y = `${o.getFullYear()}-${String(o.getMonth() + 1).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`, _ = y === this.from || y === this.to, w = this.from && this.to && y > this.from && y < this.to;
+        return `<button type="button" data-day="${y}" aria-label="${y}" aria-pressed="${_ || !!w}" class="day ${_ ? "edge" : w ? "inside" : ""} ${y === this.from ? "start" : ""} ${y === this.to ? "end" : ""} ${!this.to || this.to === this.from ? "single" : ""}">${i + 1}</button>`;
       }).join("")}</div></section>`;
     }
     render() {
-      var g, i, y, $, w;
+      var g, i, y, _, w;
       const t = this.getAttribute("from") || "", o = this.getAttribute("to") || "", n = ue(), s = ((g = n.find((c) => c.from === t && c.to === o)) == null ? void 0 : g.label) || "Custom";
       Re(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${s}</strong><span class="dates">${this.date(t)} – ${this.date(o)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${n.map((c, b) => `<button type="button" data-preset="${b}" aria-pressed="${c.from === this.from && c.to === this.to}">${c.label}<span>${c.from === this.from && c.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (i = this.root.querySelector("link")) == null || i.addEventListener("load", this.reposition), this.reposition(), (y = this.root.querySelector("[data-toggle]")) == null || y.addEventListener("click", () => {
         var c;
@@ -1020,7 +1026,7 @@ function Ee() {
           return;
         }
         this.reset(), this.open = !0, this.render(), (c = this.root.querySelector("[data-preset]")) == null || c.focus();
-      }), ($ = this.root.querySelector("[data-cancel]")) == null || $.addEventListener("click", () => this.close()), (w = this.root.querySelector("[data-apply]")) == null || w.addEventListener("click", () => {
+      }), (_ = this.root.querySelector("[data-cancel]")) == null || _.addEventListener("click", () => this.close()), (w = this.root.querySelector("[data-apply]")) == null || w.addEventListener("click", () => {
         !this.from || !this.to || this.from > this.to || (this.setAttribute("from", this.from), this.setAttribute("to", this.to), this.close(), this.dispatchEvent(new CustomEvent("date-range-apply", { bubbles: !0, composed: !0, detail: { from: this.from, to: this.to } })));
       }), this.root.querySelectorAll("[data-preset]").forEach((c) => c.addEventListener("click", () => {
         var I;
@@ -1077,7 +1083,7 @@ function Re(r, e) {
 export {
   tt as A,
   je as B,
-  Je as C,
+  Ve as C,
   ve as D,
   A as E,
   Ie as F,
@@ -1087,7 +1093,7 @@ export {
   u as c,
   Ze as d,
   Ye as e,
-  $e as f,
+  _e as f,
   ot as g,
   rt as h,
   Ke as i,
@@ -1095,7 +1101,7 @@ export {
   P as k,
   Q as l,
   f as m,
-  Ve as n,
+  Je as n,
   qe as o,
   Ue as p,
   at as q,

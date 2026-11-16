@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+* **shipping:** Ekom now owns shipments. Every shipment of an order and what happened to it (booked, failed, retried, deleted, carrier progress, manual change) is recorded in the new `EkomOrderShipments` and `EkomOrderShipmentEvents` tables, created at startup. Tracking number, tracking link, carrier, service, pickup point, carrier status and dates are columns of their own instead of keys in the order's shipping custom data. `IOrderShipments` reads and records shipments, and `OrderEvents.ShipmentRecordedAsync` is raised for each event. See `docs/guides/shipping.md`.
+
+* **shipping:** the shipping framework is part of Ekom. The carrier contracts (`IShippingCarrier`, `IShippingFulfillmentCarrier`), checkout selection, the pickup-locations endpoint, shipment booking and the order's shipment actions were the `Ekom.Shipping`, `Ekom.Shipping.Core` and `Ekom.Shipping.U10`/`U17`/`U18` packages. Remove those packages; carrier packages (`Ekom.Shipping.Dropp`, `Ekom.Shipping.IcelandicPost`, `Ekom.Shipping.DhlExpress`, `Ekom.Shipping.DhlLocationFinder`) 1.0 reference Ekom. BREAKING for sites on the framework packages: types from the `Ekom.Shipping.Ekom` namespace are in `Ekom.Shipping`, `ShippingFulfillmentState` is `Ekom.Models.Shipments.ShipmentState`, and the site no longer calls `AddEkomShipping()`.
+
+* **shipping:** a shipment no longer rewrites the order's stored information on every step, and new shipments no longer write `customshippingShipment*` keys. A failed booking keeps its history when retried, and an order whose shipment was deleted at the carrier can be given a new one; the deleted shipment stays in the history.
+
+* **shipping:** an order whose shipment is still on its shipping custom data has it copied to a shipment record the first time the order is opened in the manager or its shipment is read. The custom data is left as it is.
+
+* **manager:** show the order's shipment in the Umbraco 17/18/19 order drawer from its shipment record: state, tracking number with a "Track at" link to the carrier, carrier, service, pickup point, carrier status, attempts and the reason a booking failed, the carrier's own details, and an expandable history of every event and every earlier shipment. Orders without a shipment record keep showing their shipping custom data.
+
+* **manager:** set or correct a shipment's tracking number and tracking link from the Umbraco 17/18/19 order drawer. An order shipped with a courier Ekom does not book gets a shipment entered by hand. The change is recorded in the shipment history and the activity log with the user who made it.
+
+* **manager:** find an order in the Orders search by a shipment's tracking number or the carrier's shipment ID.
+
 * **payments:** Ekom now owns payments. Every payment attempt and what happened to it (requested, authorized, captured, failed, cancelled, voided, refunded, manual change, note) is recorded on its order in the new `EkomOrderPayments` and `EkomOrderPaymentTransactions` tables through `IOrderPayments`. The order's payment status is calculated from those records, so a provider's failure, authorization or refund now sets it. A late failure from an abandoned attempt does not downgrade a paid order, and a manual change is kept in the history and not undone by one. See `docs/guides/payments.md`.
 
 * **payments:** a recorded capture or authorization completes the checkout of an order that is waiting for its payment. A repeated gateway callback is stored once and finishes a completion that did not run. An order completed by an authorization stays Authorized until the capture is recorded.

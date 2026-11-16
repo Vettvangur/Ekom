@@ -133,10 +133,26 @@ public static class OrderEvents
     public static Task OnPaymentRecordedAsync(object sender, PaymentRecordedEventArgs args, CancellationToken ct = default)
         => AsyncEventInvoker.InvokeAsync(PaymentRecordedAsync, sender, args, ct);
 
+    /// <summary>Raised after a shipment was created or something that happened to it was stored.</summary>
+    public static event Func<object, ShipmentRecordedEventArgs, CancellationToken, Task>? ShipmentRecordedAsync;
+
+    public static Task OnShipmentRecordedAsync(object sender, ShipmentRecordedEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(ShipmentRecordedAsync, sender, args, ct);
+
     public static event Func<object, PaymentProviderAddedEventArgs, CancellationToken, Task>? PaymentProviderAddedAsync;
 
     public static Task OnPaymentProviderAddedAsync(object sender, PaymentProviderAddedEventArgs args, CancellationToken ct = default)
         => AsyncEventInvoker.InvokeAsync(PaymentProviderAddedAsync, sender, args, ct);
+}
+
+/// <summary>A shipment event recorded on an order.</summary>
+public sealed class ShipmentRecordedEventArgs : EventArgs
+{
+    public required Models.Shipments.OrderShipment Shipment { get; init; }
+    public required Models.Shipments.OrderShipmentEvent Event { get; init; }
+
+    /// <summary>The shipment's state before the event. Null when the shipment was just created.</summary>
+    public Models.Shipments.ShipmentState? PreviousState { get; init; }
 }
 
 /// <summary>A payment transaction recorded on an order.</summary>

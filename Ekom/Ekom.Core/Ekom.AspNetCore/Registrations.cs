@@ -76,6 +76,9 @@ static class Registrations
         services.AddTransient<OrderService>();
         services.AddTransient<IOrderStateService, OrderStateService>();
         services.AddTransient<IOrderPayments, OrderPaymentService>();
+        services.AddTransient<IOrderShipments, OrderShipmentService>();
+        // Carrier packages register their carriers themselves, e.g. AddDroppShipping.
+        Shipping.ServiceCollectionExtensions.AddEkomShipping(services);
         services.AddTransient<ICheckoutCompletion, CheckoutCompletion>();
         services.AddTransient<LegacyPaymentMigrationService>();
         services.AddHostedService<LegacyPaymentMigrationHostedService>();

@@ -74,6 +74,7 @@ internal partial class DatabaseService
         // Required order index failures must propagate, including during fresh installation.
         EnsureOrderStateColumns();
         EnsureOrderPaymentTables();
+        EnsureOrderShipmentTables();
         EnsureOrderIndexes();
         EnsureOrderPerformanceIndexes();
         EnsureOrderReviewsTable();
