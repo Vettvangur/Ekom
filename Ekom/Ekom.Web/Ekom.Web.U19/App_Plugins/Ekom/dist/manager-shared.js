@@ -1,7 +1,7 @@
 var he = Object.defineProperty;
 var be = (r, e, a) => e in r ? he(r, e, { enumerable: !0, configurable: !0, writable: !0, value: a }) : r[e] = a;
 var D = (r, e, a) => be(r, typeof e != "symbol" ? e + "" : e, a);
-function ze(r, e) {
+function je(r, e) {
   var t, o, n;
   if (e || (e = (t = r == null ? void 0 : r.currency) == null ? void 0 : t.isoCurrencySymbol), !e) return r == null ? void 0 : r.currency;
   const a = (o = r == null ? void 0 : r.currencyFormats) == null ? void 0 : o.find((s) => (s == null ? void 0 : s.code) === e);
@@ -346,7 +346,7 @@ function xe(r, e, a = !0) {
   const s = e === "monthDay" ? o.monthDay : o.yearMonth;
   return V(t, a ? s.replace(/M{4}/g, "MMM") : s, o);
 }
-function je(r) {
+function Ie(r) {
   if (!r)
     return "";
   const e = r instanceof Date ? r : new Date(r);
@@ -364,14 +364,24 @@ function je(r) {
 function u(r) {
   return String(r ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-function Ie(r) {
-  const e = document.createElement("textarea");
-  return e.innerHTML = String(r ?? ""), e.value;
-}
 function ve(r) {
+  let e = String(r ?? "");
+  for (let a = 0; a < 5 && e.includes("&"); a++) {
+    const t = document.createElement("textarea");
+    t.innerHTML = e;
+    const o = t.value;
+    if (o === e) break;
+    e = o;
+  }
+  return e;
+}
+function Ue(r) {
+  return u(ve(r));
+}
+function we(r) {
   return r.enumValue || r.value || "";
 }
-function Ue(r, e) {
+function Ne(r, e) {
   const t = [], o = Math.max(e || 1, 1);
   let n;
   r <= Math.floor(5 / 2) ? n = 1 : r + Math.floor(5 / 2) >= o ? n = Math.max(o - 5 + 1, 1) : n = r - Math.floor(5 / 2);
@@ -387,14 +397,14 @@ const me = `
   .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
   .ekmOrderCustomData__value { margin: 0; min-width: 0; color: #252830; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
 `;
-async function Ne(r, e) {
+async function qe(r, e) {
   const a = document.createElement("iframe");
   a.title = e, a.setAttribute("aria-hidden", "true"), a.style.cssText = "position:fixed;left:-10000px;top:0;width:800px;height:600px;border:0;";
   try {
     const t = new Promise((n, s) => {
       a.onload = () => n(), a.onerror = () => s(new Error("Unable to load the print document."));
     });
-    a.srcdoc = we(r, e), document.body.append(a), await t;
+    a.srcdoc = Se(r, e), document.body.append(a), await t;
     const o = a.contentWindow;
     if (!o) throw new Error("Print window unavailable.");
     await o.document.fonts.ready, o.addEventListener("afterprint", () => a.remove(), { once: !0 }), o.focus(), o.print();
@@ -402,7 +412,7 @@ async function Ne(r, e) {
     throw a.remove(), t;
   }
 }
-function we(r, e) {
+function Se(r, e) {
   const a = document.createElement("template");
   return a.innerHTML = r, a.content.querySelectorAll("button, input, select, .ekmOrderGiftcards__actions, .ekmOrderLineThumbnail").forEach((t) => t.remove()), a.content.querySelectorAll("details").forEach((t) => t.setAttribute("open", "")), a.content.querySelectorAll("summary").forEach((t) => t.remove()), a.content.querySelectorAll("a").forEach((t) => t.replaceWith(...Array.from(t.childNodes))), `<!doctype html><html><head><meta charset="utf-8"><title>${u(e)}</title><style>
     ${me}
@@ -437,7 +447,7 @@ function we(r, e) {
     dd { margin: 0 0 4px; white-space: pre-wrap; }
   </style></head><body>${a.innerHTML}</body></html>`;
 }
-function qe(r, e) {
+function Be(r, e) {
   const a = URL.createObjectURL(r), t = document.createElement("a");
   t.href = a, t.download = e, t.addEventListener("click", (o) => o.stopPropagation()), document.body.append(t), t.click(), t.remove(), URL.revokeObjectURL(a);
 }
@@ -617,7 +627,7 @@ const pe = `
   "#f0f0f0": "--ekom-border",
   "#247f45": "--ekom-positive",
   "#ad5f00": "--ekom-warning"
-}, Se = pe.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (r) => de[r.toLowerCase()] ? `var(${de[r.toLowerCase()]})` : r), $e = `
+}, $e = pe.replaceAll(":host", "&").replace(/#[0-9a-f]{3,8}\b/gi, (r) => de[r.toLowerCase()] ? `var(${de[r.toLowerCase()]})` : r), _e = `
   .ekom-skeleton { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--ekom-border, #eceef1) 0%, var(--ekom-surface-alt, #f7f8fa) 40%, var(--ekom-border, #eceef1) 80%); background-size: 320px 100%; animation: ekom-shim 1.2s linear infinite; }
   .ekom-skeleton-block { flex: 1; height: auto; border-radius: 8px; background-image: linear-gradient(90deg, var(--ekom-surface-alt, #f7f8fa) 0%, var(--ekom-surface, #fff) 40%, var(--ekom-surface-alt, #f7f8fa) 80%); }
   .ekom-loading { display: flex; flex-direction: column; gap: 14px; margin: 14px 0; }
@@ -642,14 +652,14 @@ const pe = `
   [hidden] { display: none !important; }
   @media (max-width: 720px) { .ekom-loading-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
   @media (prefers-reduced-motion: reduce) { .ekom-skeleton, .ekom-loading-spinner { animation: none; } }
-`, Be = `@keyframes ekom-shim { 0% { background-position: -320px 0; } 100% { background-position: 320px 0; } }
+`, Ge = `@keyframes ekom-shim { 0% { background-position: -320px 0; } 100% { background-position: 320px 0; } }
 @keyframes ekom-spin { to { transform: rotate(360deg); } }
 ${se} {
   ${pe.replaceAll(":host", "&")}
-  ${$e}
+  ${_e}
 }
 ${se}:not([classic]) {
-  ${Se}
+  ${$e}
   --ekom-bg: var(--uui-color-background, #f0f1f4);
   --ekom-surface: var(--uui-color-surface, #fff);
   --ekom-surface-alt: var(--uui-color-surface-alt, #f6f7f9);
@@ -726,11 +736,11 @@ ${se}:not([classic]) {
   }
   @media print { --ekom-text: #000; --ekom-muted: #444; --ekom-surface: #fff; --ekom-surface-alt: #fff; --ekom-border: #bbb; .ekom-order-tabs, .ekom-legacy-status { display: none; } }
 }`;
-function Ge(r) {
+function Je(r) {
   const e = ["Paid", "Fulfilled", "Closed"].includes(r || "") ? "positive" : ["Failed", "Cancelled"].includes(r || "") ? "negative" : ["Pending", "PartiallyPaid", "PartiallyFulfilled", "PartiallyRefunded"].includes(r || "") ? "warning" : "neutral", a = r ? r.replace(/([a-z])([A-Z])/g, "$1 $2") : "Needs review";
   return `<span class="ekom-badge ekom-badge--${e}">${u(a)}</span>`;
 }
-function _e(r, e) {
+function Oe(r, e) {
   if (e != null && e.format) return ke(r, e.format);
   const a = e == null ? void 0 : e.isoCurrencySymbol, t = (e == null ? void 0 : e.currencyDecimalDigits) ?? (a && /^[A-Z]{3}$/.test(a) ? new Intl.NumberFormat(void 0, { style: "currency", currency: a }).resolvedOptions().maximumFractionDigits : 2), o = e == null ? void 0 : e.currencyValue;
   let n;
@@ -744,14 +754,14 @@ function _e(r, e) {
     ...a && /^[A-Z]{3}$/.test(a) ? { style: "currency", currency: a, ...n ? {} : { currencyDisplay: "code" } } : {}
   }).format(r);
 }
-function Je(r, e, a, t = {}) {
+function Ve(r, e, a, t = {}) {
   var re;
   const o = r.getBoundingClientRect(), n = window.devicePixelRatio || 1, s = o.width || 300, g = o.height || 320;
   r.width = s * n, r.height = g * n;
   const i = r.getContext("2d");
   if (!i) return;
   i.scale(n, n), i.font = t.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
-  const y = e.points || [], _ = y.map((m) => m.y == null ? null : Number(m.y)), w = ((re = t.comparison) == null ? void 0 : re.points) || [], c = [..._, ...w.map((m) => m.y)].filter((m) => m != null), b = Math.min(0, ...c), O = Math.max(1, ...c), I = 10 ** (Math.floor(Math.log10(O / 4)) - 1), q = t.integer ? Math.ceil(O / 4) * 4 : t.templateStyle ? Math.ceil(O / 4 / I) * I * 4 : O, Y = (m) => t.formatValue ? t.formatValue(m) : t.currency ? _e(m, t.currency) : m.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), K = t.formatAxisValue ?? Y, ee = Array.from({ length: 5 }, (m, l) => q - (q - b) * l / 4), $ = t.templateStyle ? 1 : Math.max(48, ...ee.map((m) => i.measureText(K(m)).width + 12)), E = s - (t.templateStyle ? 1 : 16), F = t.templateStyle ? 8 : 20, S = g - (t.templateStyle ? 26 : 52), h = y.map((m, l) => {
+  const y = e.points || [], _ = y.map((m) => m.y == null ? null : Number(m.y)), w = ((re = t.comparison) == null ? void 0 : re.points) || [], c = [..._, ...w.map((m) => m.y)].filter((m) => m != null), b = Math.min(0, ...c), O = Math.max(1, ...c), I = 10 ** (Math.floor(Math.log10(O / 4)) - 1), q = t.integer ? Math.ceil(O / 4) * 4 : t.templateStyle ? Math.ceil(O / 4 / I) * I * 4 : O, H = (m) => t.formatValue ? t.formatValue(m) : t.currency ? Oe(m, t.currency) : m.toLocaleString(void 0, { maximumFractionDigits: t.integer ? 0 : 2 }), K = t.formatAxisValue ?? H, ee = Array.from({ length: 5 }, (m, l) => q - (q - b) * l / 4), $ = t.templateStyle ? 1 : Math.max(48, ...ee.map((m) => i.measureText(K(m)).width + 12)), E = s - (t.templateStyle ? 1 : 16), F = t.templateStyle ? 8 : 20, S = g - (t.templateStyle ? 26 : 52), h = y.map((m, l) => {
     var v, L, T;
     return {
       x: y.length > 1 ? $ + (E - $) * l / (y.length - 1) : ($ + E) / 2,
@@ -760,7 +770,7 @@ function Je(r, e, a, t = {}) {
       axisLabel: ((L = t.formatLabel) == null ? void 0 : L.call(t, l)) ?? m.x ?? ((T = e.labels) == null ? void 0 : T[l]) ?? "",
       value: _[l]
     };
-  }), H = (m = -1) => {
+  }), Y = (m = -1) => {
     var ne;
     i.clearRect(0, 0, s, g), i.font = t.templateStyle ? '10px "Ekom Mono", monospace' : "12px sans-serif";
     const l = typeof getComputedStyle == "function" ? getComputedStyle(r) : void 0, v = (l == null ? void 0 : l.getPropertyValue("--ekom-muted").trim()) || (l == null ? void 0 : l.getPropertyValue("--uui-color-text-alt").trim()) || "#555", L = (l == null ? void 0 : l.getPropertyValue("--ekom-border").trim()) || "#e5e5e5", T = (l == null ? void 0 : l.getPropertyValue("--uui-color-text").trim()) || "", U = (ne = /^#([0-9a-f]{6})$/i.exec(T)) == null ? void 0 : ne[1], N = U ? [0, 2, 4].reduce((p, d) => p + parseInt(U.slice(d, d + 2), 16), 0) > 420 : !1, B = t.templateStyle && !N ? "#10694a" : a;
@@ -806,10 +816,10 @@ function Je(r, e, a, t = {}) {
     }), h.length || (i.textAlign = "center", i.fillText("No data for this period", ($ + E) / 2, g / 2));
     const z = h[m];
     if (z) {
-      const p = [z.date, z.value == null ? "—" : Y(z.value)];
+      const p = [z.date, z.value == null ? "—" : H(z.value)];
       if (w[m]) {
         const R = w[m];
-        p.push(`Previous: ${R.x || ""}`, R.y == null ? "—" : Y(R.y));
+        p.push(`Previous: ${R.x || ""}`, R.y == null ? "—" : H(R.y));
       }
       const d = Math.max(...p.map((R) => i.measureText(R).width)) + 20, k = Math.max(0, Math.min(s - d, z.x - d / 2)), x = p.length * 18 + 12, j = z.y ?? S, M = Math.max(0, Math.min(g - x, j > x + 20 ? j - x - 12 : j + 12));
       i.fillStyle = "#222", i.fillRect(k, M, d, x), i.fillStyle = "#fff", i.textAlign = "left", p.forEach((R, fe) => i.fillText(R, k + 10, M + 19 + fe * 18));
@@ -827,16 +837,16 @@ function Je(r, e, a, t = {}) {
   };
   r.onmousemove = (m) => {
     const l = te(m);
-    r.style.cursor = l >= 0 ? "pointer" : "default", H(l);
+    r.style.cursor = l >= 0 ? "pointer" : "default", Y(l);
   }, r.onclick = t.onSelect ? (m) => {
     var v;
     const l = te(m);
     l >= 0 && ((v = t.onSelect) == null || v.call(t, l));
   } : null, r.onmouseleave = () => {
-    r.style.cursor = "default", H();
-  }, H();
+    r.style.cursor = "default", Y();
+  }, Y();
 }
-const Oe = [
+const Ce = [
   // Drafts are not orders yet, so this is every order while the filter's "All" is every status.
   { key: "AllOrders", label: "All orders" },
   { key: "NeedsReview", label: "Needs review" },
@@ -846,10 +856,10 @@ const Oe = [
   { key: "states:Closed;;", label: "Closed" },
   // Unfinished checkouts. Every other view leaves them out, so they get a view of their own.
   { key: "states:Draft;;", label: "Drafts" }
-], Ce = "Draft,Open,Closed,Cancelled";
-function Ve(r, e, a) {
+], Le = "Draft,Open,Closed,Cancelled";
+function He(r, e, a) {
   const t = (o, n) => `<option value="${o}" ${a === o ? "selected" : ""}>${n}</option>`;
-  return (r === 0 ? t("", "Open, closed and cancelled") + t(Ce, "All") : t("", "Any")) + e.map((o) => t(o, o.replace(/([a-z])([A-Z])/g, "$1 $2"))).join("");
+  return (r === 0 ? t("", "Open, closed and cancelled") + t(Le, "All") : t("", "Any")) + e.map((o) => t(o, o.replace(/([a-z])([A-Z])/g, "$1 $2"))).join("");
 }
 function Ye() {
   var a;
@@ -859,29 +869,29 @@ function Ye() {
     f.filters.currency = e.find((o) => o === t) || e[0] || "";
   }
 }
-function Le(r = "data-field") {
+function Me(r = "data-field") {
   const e = f.stores.find((t) => t.alias === f.filters.store), a = f.filters.currency || "";
   return `<div class="ekom-store-switch"><span>Store</span><details class="ekom-dropdown ekom-store-currency"><summary aria-label="Store and currency"><strong>${u((e == null ? void 0 : e.title) || "Select store")}</strong>${a ? `<span class="ekom-currency-code">${u(a)}</span>` : ""}<span class="ekom-store-chevron">▾</span></summary><div class="ekom-currency-popover"><div class="ekom-currency-heading"><strong>Store ·<br>Currency</strong><span>Amounts shown in the selected currency</span></div>${f.stores.map((t) => `<section class="ekom-currency-store ${t.alias === (e == null ? void 0 : e.alias) ? "is-selected" : ""}" aria-label="${u(t.title)}"><h3>${u(t.title)}</h3><div class="ekom-currency-choices">${(t.currencies || []).map((o) => `<button type="button" data-header-store="${u(t.alias)}" data-header-currency="${u(o)}" aria-label="${u(t.title)} — ${u(o)}" aria-pressed="${t.alias === (e == null ? void 0 : e.alias) && o === a}">${u(o)}${t.alias === (e == null ? void 0 : e.alias) && o === a ? '<span aria-hidden="true">✓</span>' : ""}</button>`).join("") || '<span class="ekom-currency-empty">No currencies configured or recorded</span>'}</div></section>`).join("")}</div></details><select hidden aria-label="Store" ${r}="store">${f.stores.map((t) => `<option value="${u(t.alias)}" ${t.alias === (e == null ? void 0 : e.alias) ? "selected" : ""}>${u(t.title)}</option>`).join("")}</select></div>`;
 }
-function He(r) {
+function We(r) {
   if (typeof location > "u" || typeof history > "u") return;
   const e = new URL(location.href);
   for (const [a, t] of Object.entries(r))
     t ? e.searchParams.set(a, t) : e.searchParams.delete(a);
   history.replaceState(history.state, "", e.pathname + e.search + e.hash);
 }
-function We(r, e = "data-field", a = !0) {
+function Ze(r, e = "data-field", a = !0) {
   if (typeof document < "u" && !document.querySelector("link[data-ekom-fonts]")) {
     const n = document.createElement("link");
     n.rel = "stylesheet", n.href = "/App_Plugins/Ekom/dist/manager-fonts.css", n.dataset.ekomFonts = "", document.head.append(n);
   }
   const t = ["orders", "analytics", "customers", ...f.printingEnabled || r === "printing" ? ["printing"] : []], o = typeof location > "u" ? "/umbraco/section/ekommanager" : location.pathname.replace(/\/view\/(orders|analytics|customers|printing)\/?$/, "").replace(/\/$/, "");
-  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${t.map((n) => `<a href="${u(o + "/view/" + n)}" ${n === r ? 'aria-current="page"' : ""}>${n[0].toUpperCase() + n.slice(1)}</a>`).join("")}</nav>${a ? Le(e) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
+  return `<header class="ekom-design-header"><img src="/App_Plugins/Ekom/dist/ekom-logo.svg" alt="Ekom" class="ekom-design-logo"><nav aria-label="Ekom sections" class="ekom-section-switch">${t.map((n) => `<a href="${u(o + "/view/" + n)}" ${n === r ? 'aria-current="page"' : ""}>${n[0].toUpperCase() + n.slice(1)}</a>`).join("")}</nav>${a ? Me(e) : '<span class="ekom-store-switch">Accessible stores</span>'}</header>`;
 }
-function Ze(r) {
+function Qe(r) {
   var a;
-  const e = [...Oe];
-  return e.some((t) => t.key === r) || e.push({ key: r, label: r.startsWith("states:") ? "Custom status filters" : ((a = f.statusList.find((t) => ve(t) === r)) == null ? void 0 : a.label) || r }), e.map((t) => `<option value="${u(t.key)}" ${t.key === r ? "selected" : ""}>${u(t.label)}</option>`).join("");
+  const e = [...Ce];
+  return e.some((t) => t.key === r) || e.push({ key: r, label: r.startsWith("states:") ? "Custom status filters" : ((a = f.statusList.find((t) => we(t) === r)) == null ? void 0 : a.label) || r }), e.map((t) => `<option value="${u(t.key)}" ${t.key === r ? "selected" : ""}>${u(t.label)}</option>`).join("");
 }
 function ue(r = /* @__PURE__ */ new Date()) {
   const e = (o) => `${o.getFullYear()}-${String(o.getMonth() + 1).padStart(2, "0")}-${String(o.getDate()).padStart(2, "0")}`, a = (o) => new Date(r.getFullYear(), r.getMonth(), r.getDate() + o), t = e(r);
@@ -897,43 +907,43 @@ function ue(r = /* @__PURE__ */ new Date()) {
   ];
 }
 const C = (r, e = 12) => `<span class="ekom-skeleton" style="width:${r};height:${e}px"></span>`;
-function Me() {
+function De() {
   var a;
   const { dateFrom: r, dateTo: e } = f.filters;
   return ((a = ue().find((t) => t.from === r && t.to === e)) == null ? void 0 : a.label) || (P() ? `${Q(r)} – ${Q(e)}` : `${r} – ${e}`);
 }
-function De(r) {
-  return Ae(`Loading ${r} for ${Me()}…`);
-}
 function Ae(r) {
+  return Pe(`Loading ${r} for ${De()}…`);
+}
+function Pe(r) {
   return `<p class="ekom-loading-status" role="status"><span class="ekom-loading-spinner" aria-hidden="true"></span>${u(r)}</p>`;
 }
-function Qe(r) {
+function Xe(r) {
   return `<div class="ekom-drawer-close"><span class="ekom-esc-hint" aria-hidden="true"><strong>Esc</strong> close</span>${r}</div>`;
 }
-function Xe() {
+function Ke() {
   return `<div class="ekom-order-columns ekom-drawer-loading"><main class="ekom-order-main">${J(4)}${J(3)}${J(2)}</main><aside class="ekom-customer-sidebar">${J(5)}</aside></div>`;
 }
 function J(r = 3) {
   return `<div aria-hidden="true" class="ekom-loading-panel">${C("28%")}${C("100%").repeat(r)}</div>`;
 }
-function Ke(r, e, a) {
+function et(r, e, a) {
   const t = `<div class="ekom-loading-card">${C("40%")}${C("55%", 22)}</div>`;
-  return `<div class="ekom-loading">${De(r)}<div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(${e},minmax(0,1fr))">${t.repeat(e)}</div>
+  return `<div class="ekom-loading">${Ae(r)}<div aria-hidden="true" class="ekom-loading-cards" style="grid-template-columns:repeat(${e},minmax(0,1fr))">${t.repeat(e)}</div>
     <div aria-hidden="true" class="ekom-loading-panel" style="height:${a}px">${C("30%")}<span class="ekom-skeleton ekom-skeleton-block"></span></div>
     <div aria-hidden="true" class="ekom-loading-panel">${C("28%")}${C("100%").repeat(3)}</div></div>`;
 }
-function et(r, e = 4) {
+function tt(r, e = 4) {
   return `<div class="ekom-loading-rows">${`<div aria-hidden="true"><span class="ekom-skeleton" style="flex:1"></span>${C("60px")}${C("110px")}</div>`.repeat(e)}<p role="status">${u(r)}</p></div>`;
 }
-function tt(r = 6) {
+function rt(r = 6) {
   return `<div class="ekom-list-row ekom-list-skeleton-row" aria-hidden="true">${["60%", "70%", "55%", "80%", "70%", "60%"].map((a) => C(a)).join("")}<span></span></div>`.repeat(r) + '<span class="ekom-sr-only" role="status">Loading orders…</span>';
 }
-function rt() {
+function at() {
   return `<ekom-date-range from="${u(f.filters.dateFrom)}" to="${u(f.filters.dateTo)}"></ekom-date-range>`;
 }
 const Z = /* @__PURE__ */ new WeakMap();
-function Pe(r) {
+function Ee(r) {
   const e = r.ownerDocument, a = Z.has(e);
   if (Z.set(e, r), a) return;
   const t = () => {
@@ -949,11 +959,11 @@ function Pe(r) {
     !n || o.key !== "Escape" || (n.open = !1, (s = n.querySelector("summary")) == null || s.focus(), o.preventDefault(), o.stopPropagation());
   }, !0);
 }
-function at(r, e) {
+function ot(r, e) {
   var t;
-  Ee();
+  Te();
   const a = r.querySelector(".ekom-store-currency");
-  a && Pe(a), r.querySelectorAll("[data-header-store]").forEach((o) => o.addEventListener("click", () => {
+  a && Ee(a), r.querySelectorAll("[data-header-store]").forEach((o) => o.addEventListener("click", () => {
     var s;
     const n = r.querySelector('[data-field="store"], [data-filter="store"]');
     n && (f.filters.currency = o.dataset.headerCurrency || "", (s = o.closest("details")) == null || s.removeAttribute("open"), n.value = o.dataset.headerStore || "", n.dispatchEvent(new Event("change", { bubbles: !0 })));
@@ -965,7 +975,7 @@ function at(r, e) {
     f.filters.dateFrom = n.from, f.filters.dateTo = n.to, e();
   });
 }
-function Ee() {
+function Te() {
   if (typeof customElements > "u" || !customElements.get || customElements.get("ekom-date-range")) return;
   class r extends HTMLElement {
     constructor() {
@@ -1019,7 +1029,7 @@ function Ee() {
     render() {
       var g, i, y, _, w;
       const t = this.getAttribute("from") || "", o = this.getAttribute("to") || "", n = ue(), s = ((g = n.find((c) => c.from === t && c.to === o)) == null ? void 0 : g.label) || "Custom";
-      Re(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${s}</strong><span class="dates">${this.date(t)} – ${this.date(o)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${n.map((c, b) => `<button type="button" data-preset="${b}" aria-pressed="${c.from === this.from && c.to === this.to}">${c.label}<span>${c.from === this.from && c.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (i = this.root.querySelector("link")) == null || i.addEventListener("load", this.reposition), this.reposition(), (y = this.root.querySelector("[data-toggle]")) == null || y.addEventListener("click", () => {
+      Fe(this.root, `<link rel="stylesheet" href="/App_Plugins/Ekom/dist/date-range.css"><div class="range"><span class="label">Date range</span><div class="anchor"><button type="button" class="trigger" data-toggle aria-haspopup="dialog" aria-expanded="${this.open}"><strong>${s}</strong><span class="dates">${this.date(t)} – ${this.date(o)}</span><span class="chevron">▾</span></button>${this.open ? `<div class="popover" role="dialog" aria-label="Choose date range"><nav aria-label="Date presets">${n.map((c, b) => `<button type="button" data-preset="${b}" aria-pressed="${c.from === this.from && c.to === this.to}">${c.label}<span>${c.from === this.from && c.to === this.to ? "✓" : ""}</span></button>`).join("")}</nav><div class="custom"><div class="draft"><div class="${this.from ? "" : "active"}"><span>From</span><strong>${this.date(this.from)}</strong></div><span>→</span><div class="${this.from && !this.to ? "active" : ""}"><span>To</span><strong>${this.date(this.to)}</strong></div></div><div class="calendars"><button type="button" class="previous" data-month="-1" aria-label="Previous month">‹</button><button type="button" class="next" data-month="1" aria-label="Next month">›</button>${this.calendar(this.month)}${this.calendar(this.month + 1)}</div><footer><span>${this.from && this.to ? `${this.date(this.from)} – ${this.date(this.to)}` : "Select an end date"}</span><button type="button" data-cancel>Cancel</button><button type="button" class="apply" data-apply ${!this.from || !this.to ? "disabled" : ""}>Apply</button></footer></div></div>` : ""}</div></div>`), (i = this.root.querySelector("link")) == null || i.addEventListener("load", this.reposition), this.reposition(), (y = this.root.querySelector("[data-toggle]")) == null || y.addEventListener("click", () => {
         var c;
         if (this.open) {
           this.close();
@@ -1048,7 +1058,7 @@ function Ee() {
   }
   customElements.define("ekom-date-range", r);
 }
-function ot() {
+function nt() {
   const r = f.filters.orderStatus.startsWith("states:") ? f.filters.orderStatus.slice(7).split(";") : ["", "", ""];
   return [
     { label: "Order", values: ["Draft", "Open", "Closed", "Cancelled"] },
@@ -1060,14 +1070,14 @@ function ot() {
   }).join("");
 }
 let le;
-function Te(r) {
+function Re(r) {
   const e = r.querySelector(".ekom-design-logo");
   e && (le ?? (le = new A().config().then((a) => a.ekomVersion).catch(() => {
   })), le.then((a) => {
     a && (e.title = `Ekom ${a}`, e.alt = `Ekom ${a}`);
   }));
 }
-function Re(r, e) {
+function Fe(r, e) {
   const a = r.ownerDocument.createElement("template");
   a.innerHTML = e;
   const t = Array.from(r.children).filter((n) => n.matches('style, link[rel="stylesheet"]')), o = Array.from(a.content.children).filter((n) => n.matches('style, link[rel="stylesheet"]'));
@@ -1078,40 +1088,41 @@ function Re(r, e) {
   for (const n of t) n.remove();
   for (const n of Array.from(r.childNodes))
     (n.nodeType !== 1 || !n.matches('style, link[rel="stylesheet"]')) && n.remove();
-  r.appendChild(a.content), Te(r);
+  r.appendChild(a.content), Re(r);
 }
 export {
-  tt as A,
-  je as B,
-  Ve as C,
-  ve as D,
+  rt as A,
+  Ie as B,
+  Ue as C,
+  He as D,
   A as E,
-  Ie as F,
-  Ne as G,
-  Be as a,
-  We as b,
+  we as F,
+  qe as G,
+  ve as H,
+  Ge as a,
+  Ze as b,
   u as c,
-  Ze as d,
+  Qe as d,
   Ye as e,
-  _e as f,
-  ot as g,
-  rt as h,
-  Ke as i,
-  et as j,
+  Oe as f,
+  nt as g,
+  at as h,
+  et as i,
+  tt as j,
   P as k,
   Q as l,
   f as m,
-  Je as n,
-  qe as o,
-  Ue as p,
-  at as q,
-  Re as r,
-  ze as s,
+  Ve as n,
+  Be as o,
+  Ne as p,
+  ot as q,
+  Fe as r,
+  je as s,
   xe as t,
-  He as u,
-  Ae as v,
-  Qe as w,
-  Xe as x,
-  Ge as y,
-  Oe as z
+  We as u,
+  Pe as v,
+  Xe as w,
+  Ke as x,
+  Je as y,
+  Ce as z
 };
