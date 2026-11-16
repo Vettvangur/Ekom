@@ -386,4 +386,6 @@ test('drafts have a view of their own, last, and All still leaves them out', () 
   assert.equal(last.key, 'states:Draft;;');
   assert.equal(last.label, 'Drafts');
   assert.equal(shared.orderViews[0].key, 'AllOrders');
+  // The filter's "All" includes drafts; this view does not, so it is named differently.
+  assert.equal(shared.orderViews[0].label, 'All orders');
 });

@@ -1,6 +1,6 @@
 # Order reviews
 
-Order reviews flag issues that require a person to review an order. They are independent of payment, fulfillment and order status. The Umbraco 17 and 18 manager displays open issues in the Needs review view, beside order numbers, and above the order detail tabs. The Needs review tab is hidden when its filtered count is zero. Resolving the last alert in that view returns to All. Counts, totals and exports use the same filtered order set. The Needs review view lists an order whatever its state, including drafts: an order that was paid but whose checkout did not complete is still a draft. Every other view excludes drafts as before.
+Order reviews flag issues that require a person to review an order. They are independent of payment, fulfillment and order status. The Umbraco 17 and 18 manager displays open issues in the Needs review view, beside order numbers, and above the order detail tabs. The Needs review tab is hidden when its filtered count is zero. Resolving the last alert in that view returns to All orders. Counts, totals and exports use the same filtered order set. The Needs review view lists an order whatever its state, including drafts: an order that was paid but whose checkout did not complete is still a draft. Every other view excludes drafts as before.
 
 ## Raise an issue from an integration
 

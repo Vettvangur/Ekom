@@ -1338,7 +1338,8 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
 }
 
 export const orderViews = [
-  { key: 'AllOrders', label: 'All' },
+  // Drafts are not orders yet, so this is every order while the filter's "All" is every status.
+  { key: 'AllOrders', label: 'All orders' },
   { key: 'NeedsReview', label: 'Needs review' },
   { key: 'states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled', label: 'Unfulfilled' },
   { key: 'states:Open;Pending,Authorized,PartiallyPaid,Failed;', label: 'Unpaid' },

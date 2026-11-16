@@ -104,7 +104,7 @@ Explicit Reopen preserves payment and fulfillment and suppresses automatic closi
 
 ## Find orders and understand totals
 
-- **All** includes Open, Closed, and Cancelled orders. Drafts appear only when explicitly selected in the Order status filter, even if you filter Pending payment or Unfulfilled fulfillment.
+- **All orders** includes Open, Closed, and Cancelled orders. Drafts appear in the **Drafts** view, or when **All** or **Draft** is selected in the Order status filter, even if you filter Pending payment or Unfulfilled fulfillment.
 - Counts, totals, and exports follow the active filter scope, including store and currency. Exports include all matching results, not only the current page.
 - Customer reporting includes qualifying Open and Closed orders even with Pending payment. It excludes Draft orders by default.
 - **Needs review** is an order-alert view, not another OrderStatus. It is hidden when there are no reviews to look at. Migration `RequiresReview` is a separate historical-evidence flag; it does not itself create an order-review alert.
