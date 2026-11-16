@@ -513,6 +513,11 @@ public sealed class OrderPaymentsTests
         using var db = fixture.Factory.GetDatabase();
         var review = await db.OrderReviews.SingleAsync(x => x.OrderId == orderId);
         Assert.Equal("paid-checkout-changed", review.Code);
+        // The draft shows what was paid, and still waits for its checkout so a later payment can complete it.
+        var order = await db.OrderData.SingleAsync(x => x.UniqueId == orderId);
+        Assert.Equal(nameof(PaymentStatus.Paid), order.PaymentStateCol);
+        Assert.Equal(nameof(OrderStatus.Draft), order.OrderStateCol);
+        Assert.Equal("WaitingForPayment", order.OrderStatusCol);
         Assert.Contains("was not completed", review.Message, StringComparison.Ordinal);
 
         var stores = new Mock<IStoreService>();
