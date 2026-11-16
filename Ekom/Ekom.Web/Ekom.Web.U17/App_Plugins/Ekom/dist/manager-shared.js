@@ -842,7 +842,7 @@ const Oe = [
 ], Ce = "Draft,Open,Closed,Cancelled";
 function Je(r, e, a) {
   const t = (o, n) => `<option value="${o}" ${a === o ? "selected" : ""}>${n}</option>`;
-  return (r === 0 ? t("", "Open, closed and cancelled") + t(Ce, "All, including drafts") : t("", "Any")) + e.map((o) => t(o, o.replace(/([a-z])([A-Z])/g, "$1 $2"))).join("");
+  return (r === 0 ? t("", "Open, closed and cancelled") + t(Ce, "All") : t("", "Any")) + e.map((o) => t(o, o.replace(/([a-z])([A-Z])/g, "$1 $2"))).join("");
 }
 function Ye() {
   var a;

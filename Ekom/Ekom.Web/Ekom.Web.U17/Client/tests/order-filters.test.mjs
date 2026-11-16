@@ -372,7 +372,7 @@ test('the order status filter names what it lists and offers drafts, while payme
 
   const order = labels(shared.renderStatusFilterOptions(0, ['Draft', 'Open', 'Closed', 'Cancelled'], ''));
   // Without an order status the server lists Open, Closed and Cancelled: "Any" would be untrue.
-  assert.deepEqual(order.slice(0, 2), [['', 'Open, closed and cancelled'], ['Draft,Open,Closed,Cancelled', 'All, including drafts']]);
+  assert.deepEqual(order.slice(0, 2), [['', 'Open, closed and cancelled'], ['Draft,Open,Closed,Cancelled', 'All']]);
   assert.ok(!order.some(([, label]) => label === 'Any'));
   assert.deepEqual(labels(shared.renderStatusFilterOptions(1, ['Pending', 'PartiallyPaid'], ''))
     , [['', 'Any'], ['Pending', 'Pending'], ['PartiallyPaid', 'Partially Paid']]);

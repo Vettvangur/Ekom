@@ -1358,7 +1358,7 @@ export const allOrderStatesIncludingDrafts = 'Draft,Open,Closed,Cancelled';
 export function renderStatusFilterOptions(dimension: number, values: string[], selected: string): string {
   const option = (value: string, label: string) => `<option value="${value}" ${selected === value ? 'selected' : ''}>${label}</option>`;
   return (dimension === 0
-    ? option('', 'Open, closed and cancelled') + option(allOrderStatesIncludingDrafts, 'All, including drafts')
+    ? option('', 'Open, closed and cancelled') + option(allOrderStatesIncludingDrafts, 'All')
     : option('', 'Any'))
     + values.map(value => option(value, value.replace(/([a-z])([A-Z])/g, '$1 $2'))).join('');
 }
