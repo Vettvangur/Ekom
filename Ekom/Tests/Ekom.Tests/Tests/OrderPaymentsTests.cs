@@ -466,6 +466,67 @@ public sealed class OrderPaymentsTests
         Assert.Equal(2, (await SearchAsync("")).Length);
     }
 
+    [Theory]
+    [InlineData(80, true)]
+    [InlineData(120, true)]
+    [InlineData(100, false)]
+    // Gateways round to whole currency units.
+    [InlineData(100.4, false)]
+    public async Task CaptureThatDoesNotMatchTheOrderTotalRaisesOneOrderReview(decimal captured, bool expectReview)
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+        var capture = new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, Amount = captured, TransactionId = "TX-1" };
+
+        await fixture.Payments.RecordAsync(capture);
+        await fixture.Payments.RecordAsync(capture);
+
+        using var db = fixture.Factory.GetDatabase();
+        var reviews = await db.OrderReviews.Where(x => x.OrderId == orderId).ToListAsync();
+        if (!expectReview)
+        {
+            Assert.Empty(reviews);
+            return;
+        }
+        var review = Assert.Single(reviews);
+        Assert.Equal("payment", review.Source);
+        Assert.Equal("amount-mismatch", review.Code);
+        Assert.Null(review.ResolvedUtc);
+        Assert.Contains("order total is 100", review.Message, StringComparison.Ordinal);
+        Assert.Contains(payment.PaymentId.ToString(), review.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PaymentForAChangedCheckoutIsFlaggedAndListedUnderNeedsReviewAlthoughTheOrderIsStillADraft()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder(legacyStatus: "WaitingForPayment");
+        fixture.AddOpenOrder();
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+        // The checkout attempt was released before the payment arrived.
+        fixture.Completion.NeedsReconciliation = true;
+
+        var result = await fixture.Payments.RecordAsync(new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured });
+
+        Assert.False(result.CheckoutCompleted);
+        using var db = fixture.Factory.GetDatabase();
+        var review = await db.OrderReviews.SingleAsync(x => x.OrderId == orderId);
+        Assert.Equal("paid-checkout-changed", review.Code);
+        Assert.Contains("was not completed", review.Message, StringComparison.Ordinal);
+
+        var stores = new Mock<IStoreService>();
+        stores.Setup(x => x.GetStoreByAlias("main")).Returns(Mock.Of<IStore>(x => x.Currency == new CurrencyModel { CurrencyValue = "en-US" }));
+        var repository = new ManagerRepository(NullLogger<ManagerRepository>.Instance, fixture.Configuration, fixture.Factory, stores.Object);
+        var needsReview = await repository.SearchOrdersAsync(DateTime.Today, DateTime.Today, "", "main", "NeedsReview",
+            "", "", "", "", "", "", "", "", "1", "20");
+        var all = await repository.SearchOrdersAsync(DateTime.Today, DateTime.Today, "", "main", "AllOrders",
+            "", "", "", "", "", "", "", "", "1", "20");
+        // The draft is hidden from the normal list but must be seen where staff look for problems.
+        Assert.Equal(orderId, Assert.Single(needsReview.Orders).UniqueId);
+        Assert.DoesNotContain(all.Orders, x => x.UniqueId == orderId);
+    }
+
     [Fact]
     public async Task RecordingForUnknownPaymentFails()
     {
@@ -529,7 +590,8 @@ public sealed class OrderPaymentsTests
             var handlers = Array.Empty<IOrderStatusPersistenceHandler>();
             Completion.Factory = Factory;
             var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
-                .AddSingleton<ICheckoutCompletion>(Completion).BuildServiceProvider();
+                .AddSingleton<ICheckoutCompletion>(Completion)
+                .AddSingleton<IOrderReviewService>(new OrderReviewService(Factory)).BuildServiceProvider();
             Payments = new OrderPaymentService(Factory, configuration, _cache, handlers, NullLogger<OrderPaymentService>.Instance, services);
 
             var access = new Mock<IManagerAccessService>();
@@ -600,9 +662,13 @@ public sealed class OrderPaymentsTests
         public List<(Guid OrderId, Guid? AttemptId)> Calls { get; } = [];
         public bool Fail { get; set; }
 
+        /// <summary>The payment's checkout attempt was released before the payment arrived.</summary>
+        public bool NeedsReconciliation { get; set; }
+
         public async Task<bool> CompleteAsync(Guid orderId, Guid? attemptId, CancellationToken ct = default)
         {
             if (Fail) throw new InvalidOperationException("Checkout completion failed.");
+            if (NeedsReconciliation) return false;
             Calls.Add((orderId, attemptId));
             await using var db = Factory.GetDatabase();
             // Like the real completion: the order opens and the legacy status marks it paid.

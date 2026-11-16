@@ -421,6 +421,10 @@ ORDER BY {bucketDateExpression}";
     /// The view dependent part of the filter, prefixed with AND. Returns null when
     /// <paramref name="inlineStatus"/> is set and the status is not a known value.
     /// </summary>
+    // An order that needs review is listed whatever its state: an order that was paid but whose checkout
+    // never completed is still a draft, and is exactly what staff need to see.
+    private const string NeedsReviewStates = "states:Draft,Open,Closed,Cancelled;;";
+
     private static string? StatusPredicate(string orderStatus, bool inlineStatus)
     {
         var whereClause = new StringBuilder();
@@ -428,7 +432,7 @@ ORDER BY {bucketDateExpression}";
         if (orderStatus == "NeedsReview")
         {
             whereClause.Append(" AND EXISTS (SELECT 1 FROM EkomOrderReviews r WHERE r.OrderId = EkomOrders.UniqueId AND r.ResolvedUtc IS NULL)");
-            orderStatus = "AllOrders";
+            orderStatus = NeedsReviewStates;
         }
         if (Models.Orders.OrderStateQuery.Predicate(orderStatus) is string statePredicate)
         {
@@ -516,7 +520,7 @@ ORDER BY {bucketDateExpression}";
         if (orderStatus == "NeedsReview")
         {
             whereClause += " AND EXISTS (SELECT 1 FROM EkomOrderReviews r WHERE r.OrderId = EkomOrders.UniqueId AND r.ResolvedUtc IS NULL)";
-            orderStatus = "AllOrders";
+            orderStatus = NeedsReviewStates;
         }
         if (Models.Orders.OrderStateQuery.Predicate(orderStatus) is string statePredicate)
         {

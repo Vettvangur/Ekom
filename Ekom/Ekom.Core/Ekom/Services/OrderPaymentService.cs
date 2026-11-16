@@ -94,6 +94,7 @@ internal sealed class OrderPaymentService : IOrderPayments
         OrderPaymentTransaction row;
         PaymentStatus? previousStatus = null;
         PaymentStatus? status = null;
+        string? amountMismatch = null;
 
         await using (var db = _factory.GetDatabase())
         {
@@ -152,6 +153,7 @@ internal sealed class OrderPaymentService : IOrderPayments
             {
                 previousStatus = order.Status.PaymentStatus;
                 status = await ApplyStatusAsync(db, order, ct).ConfigureAwait(false);
+                amountMismatch = await DescribeAmountMismatchAsync(db, order, row, ct).ConfigureAwait(false);
                 await db.InsertAsync(new OrderActivityLog
                 {
                     UniqueID = Guid.NewGuid(),
@@ -182,6 +184,11 @@ internal sealed class OrderPaymentService : IOrderPayments
             PaymentStatus = status,
         }, ct).ConfigureAwait(false);
 
+        if (amountMismatch != null)
+        {
+            await RaiseReviewAsync(payment, "amount-mismatch", "Paid amount differs from the order total", amountMismatch).ConfigureAwait(false);
+        }
+
         var completed = await CompleteCheckoutAsync(payment, row.Type, transaction.SkipCheckoutCompletion, ct).ConfigureAwait(false);
         if (completed)
         {
@@ -189,6 +196,49 @@ internal sealed class OrderPaymentService : IOrderPayments
         }
 
         return new PaymentRecordResult(true, status, row, completed);
+    }
+
+    /// <summary>
+    /// What was captured or authorized against what the order costs. Gateways round to whole currency units,
+    /// so only a difference of one unit or more counts.
+    /// </summary>
+    private static async Task<string?> DescribeAmountMismatchAsync(DbContext db, OrderData order, OrderPaymentTransaction row, CancellationToken ct)
+    {
+        if (row.Type is not (PaymentTransactionType.Captured or PaymentTransactionType.Authorized)) return null;
+
+        decimal paid = row.Amount;
+        if (row.Type == PaymentTransactionType.Captured)
+        {
+            var captured = nameof(PaymentTransactionType.Captured);
+            paid = await db.OrderPaymentTransactions.Where(x => x.OrderUniqueId == order.UniqueId && x.TypeCol == captured)
+                .SumAsync(x => x.Amount, ct).ConfigureAwait(false);
+        }
+
+        if (Math.Abs(paid - order.TotalAmount) < 1m) return null;
+
+        var verb = row.Type == PaymentTransactionType.Captured ? "captured" : "authorized";
+        return string.Create(CultureInfo.InvariantCulture,
+            $"{paid} {row.Currency} was {verb}, but the order total is {order.TotalAmount}. The order may have changed after the customer was sent to pay. Check the payment before the order is handled. PaymentId: {row.PaymentId}.");
+    }
+
+    /// <summary>
+    /// Flags the order for a person to look at, in the manager's Needs review view. A payment that does not
+    /// match its order must be seen; failing to flag it must not undo the payment record.
+    /// </summary>
+    private async Task RaiseReviewAsync(OrderPayment payment, string code, string title, string message)
+    {
+        if (_services?.GetService(typeof(IOrderReviewService)) is not IOrderReviewService reviews) return;
+        try
+        {
+            await reviews.RaiseAsync(payment.OrderUniqueId, "payment", code, title, message, CancellationToken.None).ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // See summary.
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            _logger.LogError(ex, "Could not record payment review {ReviewCode}. OrderNumber: {OrderNumber} OrderId: {OrderUniqueId} PaymentId: {PaymentId}",
+                code, payment.OrderNumber, payment.OrderUniqueId, payment.PaymentId);
+        }
     }
 
     /// <summary>
@@ -233,6 +283,10 @@ internal sealed class OrderPaymentService : IOrderPayments
         var completed = await completion.CompleteAsync(payment.OrderUniqueId, payment.AttemptId, ct).ConfigureAwait(false);
         if (!completed)
         {
+            await RaiseReviewAsync(payment, "paid-checkout-changed", "Payment received for a changed checkout",
+                string.Create(CultureInfo.InvariantCulture,
+                    $"A payment of {payment.Amount} {payment.Currency} through {payment.ProviderName} was received, but the checkout it was started from was changed or released before the payment arrived, so the order was not completed. Compare the payment with the order before completing or refunding it. PaymentId: {payment.PaymentId}."))
+                .ConfigureAwait(false);
             _logger.LogWarning(
                 "Payment captured but checkout needs reconciliation. OrderNumber: {OrderNumber} OrderId: {OrderUniqueId} PaymentId: {PaymentId} AttemptId: {PaymentAttemptId}",
                 payment.OrderNumber, payment.OrderUniqueId, payment.PaymentId, payment.AttemptId);

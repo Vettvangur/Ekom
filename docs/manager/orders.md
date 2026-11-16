@@ -4,7 +4,7 @@ The Ekom Manager Orders view searches, exports, and updates orders for stores av
 
 ## Default view
 
-In the Umbraco 17/18 manager, the initial date range runs from January 1 of the current year through today. **All** includes Open, Closed, and Cancelled orders. Drafts are excluded unless explicitly selected in the Order status filter.
+In the Umbraco 17/18 manager, the initial date range runs from January 1 of the current year through today. **All** includes Open, Closed, and Cancelled orders. Drafts are excluded unless explicitly selected in the Order status filter, except in **Needs review**, which lists every order with an open review.
 
 Select the store and currency to scope results. The summary count, order amount, average, and exports use the same active filters. Results are ordered by descending reference ID and paged. Use the previous/next buttons below the table, or the Left and Right arrow keys, to move between pages; the keys are ignored while a field or menu has focus. If the user has no allowed stores, the list remains empty.
 

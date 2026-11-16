@@ -72,6 +72,15 @@ When a `Captured` or `Authorized` transaction is recorded for an order that is s
 - An order completed by an authorization moves on through the legacy status exactly as a paid order does, but its payment status stays `Authorized` until the capture is recorded.
 - If the capture belongs to a checkout attempt that was already released, completion reports that the payment needs reconciliation instead of completing. See [Checkout](checkout.md).
 
+### Payments that do not match their order
+
+Two cases open an [order review](order-reviews.md), so the order appears in the manager's Needs review view until a person resolves it:
+
+- the captured or authorized amount differs from the order total by one currency unit or more (`amount-mismatch`);
+- a payment arrived for a checkout that was changed or released first, so the order stayed a draft (`paid-checkout-changed`).
+
+Nothing is blocked or reversed: the payment is recorded as the gateway reported it.
+
 Offline checkout records a payment with a `Captured` transaction and completes the order itself, so offline orders are `Paid` at checkout as before. This records that checkout was accepted, not that funds were received.
 
 ## Reading the payment in your own code

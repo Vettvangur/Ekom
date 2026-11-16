@@ -1,6 +1,6 @@
 # Order reviews
 
-Order reviews flag issues that require a person to review an order. They are independent of payment, fulfillment and order status. The Umbraco 17 and 18 manager displays open issues in the Needs review view, beside order numbers, and above the order detail tabs. The Needs review tab is hidden when its filtered count is zero. Resolving the last alert in that view returns to All. Counts, totals and exports use the same filtered order set; drafts remain excluded.
+Order reviews flag issues that require a person to review an order. They are independent of payment, fulfillment and order status. The Umbraco 17 and 18 manager displays open issues in the Needs review view, beside order numbers, and above the order detail tabs. The Needs review tab is hidden when its filtered count is zero. Resolving the last alert in that view returns to All. Counts, totals and exports use the same filtered order set. The Needs review view lists an order whatever its state, including drafts: an order that was paid but whose checkout did not complete is still a draft. Every other view excludes drafts as before.
 
 ## Raise an issue from an integration
 
@@ -80,10 +80,19 @@ The query uses indexed `EXISTS` checks, does not load review messages, and adds 
 
 Table/index creation is repeatable and runs during fresh setup and the existing startup schema checks on Umbraco 13, 17 and 18. Existing rows are preserved. Non-Umbraco hosts must provision the same schema before using these APIs, as with the other Ekom tables.
 
+## Automatic payment reviews
+
+Recording a payment raises reviews with source `payment` for:
+
+- `amount-mismatch`: the amount captured for the order, or the amount of an authorization, differs from the order total by one currency unit or more. Smaller differences are ignored because gateways round to whole units. The payment is still recorded and the order still completes.
+- `paid-checkout-changed`: a payment arrived for a checkout that was changed or released before it arrived, so the order was not completed and is still a draft. Compare the payment with the order, then complete or refund it.
+
+The message names the amounts and the payment id. A repeated gateway callback does not raise a second review. A failure to store the review is logged and does not undo the payment record. See [Payments](payments.md).
+
 ## Reviewing in the manager
 
 The Review dialog shows the original title, message, source and creation time. Staff can enter what was done and leave **Problem is resolved** checked to clear the alert, or uncheck it to record a note while leaving the issue open. A note is required when keeping an issue open. Every successful review action records the authenticated user and UTC timestamp in the order activity log. Resolution and activity logging commit atomically; repeated resolution does not duplicate the log or overwrite the first resolution.
 
 `POST /ekom/manager/orders/{orderId}/reviews/{reviewId}/review` accepts `{ "comment": "Checked invoice", "resolved": false }`. Omit `resolved` to resolve. No payment, fulfillment, refund or external integration action is performed.
 
-The order view key `NeedsReview` is supported by order search and export. It applies the normal All orders scope plus an unresolved-review predicate, so several alerts on one order still count as one order.
+The order view key `NeedsReview` is supported by order search and export. It covers orders in every state, drafts included, that have an unresolved review, so several alerts on one order still count as one order.
