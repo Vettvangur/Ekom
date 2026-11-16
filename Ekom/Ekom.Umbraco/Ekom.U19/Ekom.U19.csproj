@@ -59,7 +59,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ekom.Payments.U19" Version="1.0.0" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="Umbraco.Cms.Api.Common" Version="[19.0.0-rc1,20.0.0)" />
         <PackageReference Include="Umbraco.Cms.Core" Version="[19.0.0-rc1,20.0.0)" />

@@ -4,7 +4,7 @@ The Ekom Manager Orders view searches, exports, and updates orders for stores av
 
 ## Default view
 
-In the Umbraco 17/18 manager, the initial date range runs from January 1 of the current year through today. **All** includes Open, Closed, and Cancelled orders. Drafts are excluded unless explicitly selected in the Order status filter.
+In the Umbraco 17/18 manager, the initial date range runs from January 1 of the current year through today. **All orders** includes Open, Closed, and Cancelled orders. Drafts (unfinished checkouts) are left out of it and have their own **Drafts** view, last in the row. **Needs review** lists every order with an open review, drafts included. In the Filter dialog the Order status starts on **Open, closed and cancelled**; choose **All** (every order status, drafts included) or **Draft** to list drafts. Payment and Fulfillment start on **Any**.
 
 Select the store and currency to scope results. The summary count, order amount, average, and exports use the same active filters. Results are ordered by descending reference ID and paged. Use the previous/next buttons below the table, or the Left and Right arrow keys, to move between pages; the keys are ignored while a field or menu has focus. If the user has no allowed stores, the list remains empty.
 
@@ -25,7 +25,9 @@ Free-text search matches:
 - customer ID;
 - customer username.
 
-If the search text is a GUID, Ekom also compares it with the order's unique ID.
+If the search text is a GUID, Ekom also compares it with the order's unique ID and with the payment id of each of the order's payment attempts.
+
+The search text is also compared, as a whole, with the transaction ID a payment gateway gave any of the order's payments. Paste the reference from the gateway's portal to find its order. The date range and the other filters still apply.
 
 The additional filter panel supports:
 
@@ -49,6 +51,8 @@ Export uses the active date, status, store, search, provider, SKU, and tracking 
 - The standard `orders.csv` contains one row per order.
 - Selecting **Include order lines** produces `orders-with-orderlines.csv`, with an order row followed by a row for each line.
 
+Both files end with payment columns for bookkeeping: `paymentStatus`, `paymentProvider` (the provider node), `paymentProviderType` (for example `borgun` or `offline`), `paymentTransactionId`, `paymentAuthorizationCode`, `paymentCardType`, `paymentCardNumber` (masked), `paymentMethod` and `paymentCapturedDate` (UTC). They describe the payment the order was paid with and are empty, apart from the status, when no payment is recorded on the order. They come after the existing columns, so existing column positions do not move.
+
 The line export adds the line key, product and variant SKU/title, quantity, unit price, VAT, discount, and line total. Including lines requires loading the stored order information and can take longer for a large result set.
 
 ## Order details
@@ -57,7 +61,9 @@ Select **View** to open an order. The detail view includes:
 
 - unique ID, reference number, creation and paid dates, store, status, and charged amount;
 - billing and shipping information, including captured custom properties;
-- payment and shipping provider information and custom data;
+- the order's current payment: provider, status, transaction ID, authorized and captured times, amount, authorization code, card, and the details the provider recorded, each with a copy button;
+- an expandable **Payment attempts** list (Umbraco 17, 18 and 19) with every attempt at a provider, its events and its payment id, and the manual payment status changes with the user who made them;
+- shipping provider information and custom data;
 - product and variant lines, line properties, VAT, discounts, shipping, and totals;
 - captured tracking and consent data;
 - [activity logs](activity-logs.md);
@@ -69,7 +75,7 @@ In Umbraco 17 and 18, the Discount total includes the saved order-level coupon c
 
 ## Status changes
 
-In Umbraco 17/18, Payment and Fulfillment can be changed from the table on Open orders. Table selections save immediately. In order details, payment selections save immediately; use Save for pending fulfillment edits. Closed orders must be explicitly reopened before making these corrections.
+In Umbraco 17/18, Payment and Fulfillment can be changed from the table on Open orders. Table selections save immediately. In order details, the Order, Payment and Fulfillment menus each save as soon as an option is chosen; there is no Save button. Each menu has the **Trigger status events** switch at the bottom, and the three show the same setting. Closed orders must be explicitly reopened before making these corrections.
 
 Order controls support Close (requires Paid and Fulfilled), Cancel, and Reopen. Reopening preserves payment/fulfillment and suppresses automatic closing for that order. Draft acceptance continues through checkout; the new action endpoint does not offer Draft-to-Open or Cancelled-to-Open.
 
@@ -152,6 +158,6 @@ If a user can open the manager but receives a forbidden response for a store or 
 
 ## Manual payment status
 
-Open orders support manual Pending, Authorized, Paid, Partially Paid, Failed and Voided classification from the payment menu in the table and order details. Selecting an option saves immediately. This only changes the recorded status; it does not charge, capture, void or refund through a provider, change amounts, or set a payment date. Refund status editing is not available. Closed orders must be explicitly reopened first.
+Open orders support manual Pending, Authorized, Paid, Partially Paid, Failed and Voided classification from the payment menu in the table and order details. Selecting an option saves immediately. This only changes the recorded status; it does not charge, capture, void or refund through a provider, change amounts, or set a payment date. The change is kept in the order's payment history with the user's name. It overrides what providers recorded before it, and a late failure from an older attempt does not undo it; a later capture, refund or void from a provider does change the status again. Refund status editing is not available. Closed orders must be explicitly reopened first.
 
-Updates use the current status revision, enforce checkout locks and store permissions, and are logged. The status-events checkbox controls configured notifications. Marking an already fulfilled order Paid can close it automatically under the store's auto-close setting. Save any pending fulfillment edits before changing payment.
+Updates use the current status revision, enforce checkout locks and store permissions, and are logged. The status-events checkbox controls configured notifications. Marking an already fulfilled order Paid can close it automatically under the store's auto-close setting.

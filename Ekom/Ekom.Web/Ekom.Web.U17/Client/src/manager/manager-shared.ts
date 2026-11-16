@@ -223,8 +223,50 @@ export type CustomerInformationField = {
 export type OrderInfo = Record<string, any>;
 
 /** A section other than the order is null when the server could not load it. */
+export interface OrderPaymentDetail { key: string; label: string; value?: string | null; copyable?: boolean }
+
+export interface OrderPaymentEvent {
+  type: string;
+  amount: number;
+  currency?: string | null;
+  occurredUtc: string;
+  message?: string | null;
+  actor?: string | null;
+  transactionId?: string | null;
+  manualStatus?: string | null;
+}
+
+/** One payment attempt at a provider. */
+export interface OrderPaymentAttempt {
+  paymentId?: string | null;
+  attemptId?: string | null;
+  provider?: string | null;
+  status: string;
+  amount: number;
+  currency?: string | null;
+  transactionId?: string | null;
+  createdUtc: string;
+  authorizedUtc?: string | null;
+  capturedUtc?: string | null;
+  authorizationCode?: string | null;
+  maskedCardNumber?: string | null;
+  cardBrand?: string | null;
+  paymentMethod?: string | null;
+  message?: string | null;
+  details: OrderPaymentDetail[];
+  events: OrderPaymentEvent[];
+}
+
+/** An order's payments: the current one, every attempt (newest first) and manual status changes. */
+export interface OrderPaymentsView {
+  current?: OrderPaymentAttempt | null;
+  attempts: OrderPaymentAttempt[];
+  manualChanges: OrderPaymentEvent[];
+}
+
 export interface OrderDrawerData {
   order: OrderInfo;
+  payments?: OrderPaymentsView | null;
   logs: OrderActivityLog[] | null;
   actions: OrderAction[] | null;
   lockStatus: OrderLockStatus | null;
@@ -361,6 +403,10 @@ export class EkomManagerApi {
 
   async orderInfo(orderId: string): Promise<OrderInfo> {
     return this.getJson(`/ekom/manager/OrderInfo/${encodeURIComponent(orderId)}`);
+  }
+
+  async orderPayments(orderId: string): Promise<OrderPaymentsView> {
+    return this.getJson(`/ekom/manager/orderPayments/${encodeURIComponent(orderId)}`);
   }
 
   async orderLogs(orderId: string): Promise<OrderActivityLog[]> {
@@ -1292,13 +1338,31 @@ export function renderLineChart(canvas: HTMLCanvasElement, series: ChartSeries, 
 }
 
 export const orderViews = [
-  { key: 'AllOrders', label: 'All' },
+  // Drafts are not orders yet, so this is every order while the filter's "All" is every status.
+  { key: 'AllOrders', label: 'All orders' },
   { key: 'NeedsReview', label: 'Needs review' },
   { key: 'states:Open;;Unfulfilled,Picking,Picked,Packed,PartiallyFulfilled', label: 'Unfulfilled' },
   { key: 'states:Open;Pending,Authorized,PartiallyPaid,Failed;', label: 'Unpaid' },
   { key: 'states:Open;;', label: 'Open' },
   { key: 'states:Closed;;', label: 'Closed' },
+  // Unfinished checkouts. Every other view leaves them out, so they get a view of their own.
+  { key: 'states:Draft;;', label: 'Drafts' },
 ];
+
+/** Every order state. Without an order status the server lists Open, Closed and Cancelled: drafts are opt-in. */
+export const allOrderStatesIncludingDrafts = 'Draft,Open,Closed,Cancelled';
+
+/**
+ * The options of one status filter. Payment and fulfillment are not narrowed when empty, so "Any" is true there.
+ * The order status is: its empty option names what the server lists, and drafts can be asked for.
+ */
+export function renderStatusFilterOptions(dimension: number, values: string[], selected: string): string {
+  const option = (value: string, label: string) => `<option value="${value}" ${selected === value ? 'selected' : ''}>${label}</option>`;
+  return (dimension === 0
+    ? option('', 'Open, closed and cancelled') + option(allOrderStatesIncludingDrafts, 'All')
+    : option('', 'Any'))
+    + values.map(value => option(value, value.replace(/([a-z])([A-Z])/g, '$1 $2'))).join('');
+}
 
 export function ensureManagerCurrency(): void {
   const store = managerState.stores.find(item => item.alias === managerState.filters.store);

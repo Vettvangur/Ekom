@@ -126,7 +126,7 @@ The API accepts JSON or form data. Known fields are `PaymentProvider`, `Shipping
 
 Offline providers have `offlinePayment` enabled on the payment-provider node. Ekom sets `OfflinePayment`, raises payment events, completes checkout immediately, and redirects to the configured success URL.
 
-Online providers are resolved from `basePaymentProvider`, the order moves to `WaitingForPayment`, and Ekom calls the provider's `RequestAsync`. Success URLs include `orderId`. Error and cancel callbacks return through `GET|POST /ekom/checkout/payment-return`, which restores the order cookie and redirects to the provider node's configured error or cancel URL.
+Online providers are resolved from `basePaymentProvider`, the order moves to `WaitingForPayment`, and Ekom calls the provider's `RequestAsync`. The provider stores the payment on the order before sending the customer to the gateway. Success URLs include `orderId`. Error and cancel callbacks return through `GET|POST /ekom/checkout/payment-return`, which restores the order cookie and redirects to the provider node's configured error or cancel URL.
 
 ### Cancel, edit, and retry reservations
 
@@ -170,17 +170,21 @@ Do not call `CompleteOrderAsync` merely because a browser returned to the site. 
 
 ## Completion
 
-### Payment-success logging
+### Recorded payments complete the order
 
-The shared Ekom Payments success handler writes a `Success` order activity entry and an Information-level structured application log before calling checkout completion. Both include the payment amount, currency, provider node name, order number, and Ekom order `UniqueId`. New online payment requests save the provider name in their payment settings; older pending requests without a provider name use its key instead. No additional order lookup is needed for this logging. Online integrations must raise `Ekom.Payments.Events.SuccessAsync` after verifying payment; integrations that bypass this event do not reach the shared handler.
+An online provider verifies its gateway's callback and records the outcome on the order with `IOrderPayments.RecordAsync`. When a `Captured` or `Authorized` transaction is recorded for an order that is still waiting for its payment, Ekom completes that order's checkout. Providers do not call completion themselves, and nothing needs to subscribe to an Ekom.Payments success event. See [Payments](payments.md).
 
-Offline checkout writes the same fields with the message `Offline Payment Successfull` after payment events have accepted the checkout and before completion starts. This records offline checkout acceptance, not confirmation that funds have been received.
+Recording writes a `Success` order activity entry and an Information-level structured application log in the same database transaction as the payment record, before completion starts. Both lead with the order number and include the amount, currency, provider node name, the gateway's transaction ID and the payment id. A later checkout failure does not remove them.
 
-These payment entries are committed directly to the database rather than sent through the normal activity-log queue. A later checkout failure therefore does not roll back a successfully written payment entry. If the activity insert fails, Ekom emits an Error log and still attempts order completion; the Information log is emitted before the database write. Callback retries can produce repeated success entries, reflecting each received success notification. Direct calls to `Order.CompleteOrderAsync` do not by themselves prove payment success and do not create these entries.
+A gateway that repeats its callback does not record the payment twice. If the first delivery stopped before the order was completed, the repeat finishes the completion.
+
+Offline checkout records a payment with a `Captured` transaction after payment events have accepted the checkout, then completes the order. This records offline checkout acceptance, not confirmation that funds have been received.
+
+Direct calls to `Order.CompleteOrderAsync` do not by themselves prove payment success and do not record a payment.
 
 ### Order finalisation
 
-`CheckoutService.CompleteAsync` loads the persisted order and raises `CompleteCheckout`/`CompleteCheckoutAsync`. It then completes stock processing, marks the coupon used when applicable, updates status unless disabled by an event handler, writes an activity log, and clears the customer order reference.
+`CheckoutService.CompleteAsync` loads the persisted order and raises `CompleteCheckout`/`CompleteCheckoutAsync`. The event arguments carry the payment the order was paid with in `Payment` (provider, transaction ID, authorization code, card and the provider's own details); see [Payments](payments.md#reading-the-payment-in-your-own-code). It then completes stock processing, marks the coupon used when applicable, updates status unless disabled by an event handler, writes an activity log, and clears the customer order reference.
 
 Completion stock work is idempotent through a native SQL completion receipt. Other effects, including event subscribers and external integrations, can be invoked again by callback retries and should therefore be idempotent.
 

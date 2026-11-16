@@ -60,8 +60,6 @@ internal sealed class EkomStartup : IAsyncComponent
             orderRepository?.MigrateOrderTableAsync();
             orderRepository?.MigrateStockToDecimalAsync();
 
-            Payments.Events.SuccessAsync += CompleteCheckoutAsync;
-
             _logger.LogInformation("Ekom started");
         }
         catch (Exception ex)
@@ -74,38 +72,6 @@ internal sealed class EkomStartup : IAsyncComponent
 
     public Task TerminateAsync(bool isRestarting, CancellationToken cancellationToken)
     {
-        Payments.Events.SuccessAsync -= CompleteCheckoutAsync;
         return Task.CompletedTask;
-    }
-
-    private async Task CompleteCheckoutAsync(object sender, SuccessEventArgs args)
-    {
-        var orderStatus = args.OrderStatus;
-        var settings = orderStatus.EkomPaymentSettings;
-
-        if (settings.OrderCustomData.TryGetValue("ekomOrderUniqueId", out var value) &&
-            Guid.TryParse(value, out var orderId))
-        {
-            var paymentLog = _factory.GetRequiredService<PaymentSuccessLogService>();
-            await paymentLog.LogAsync(orderId, settings.OrderNumber, orderStatus.Amount, settings.Currency,
-                string.IsNullOrWhiteSpace(settings.PaymentProviderName)
-                    ? settings.PaymentProviderKey.ToString()
-                    : settings.PaymentProviderName).ConfigureAwait(false);
-
-            var checkoutService = _factory.GetRequiredService<CheckoutService>();
-
-            var attempts = _factory.GetService<CheckoutPaymentAttemptService>();
-            if (attempts == null)
-            {
-                await checkoutService.CompleteAsync(orderId);
-            }
-            else
-            {
-                Guid? attemptId = settings.OrderCustomData.TryGetValue("ekomPaymentAttemptId", out var attemptValue)
-                    && Guid.TryParse(attemptValue, out var parsedAttempt) ? parsedAttempt : null;
-                await attempts.CompleteAsync(orderId, attemptId, () => checkoutService.CompleteAsync(orderId), CancellationToken.None)
-                    .ConfigureAwait(false);
-            }
-        }
     }
 }

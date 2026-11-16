@@ -21,6 +21,7 @@ class CheckoutService
     readonly IMailService _mailService;
     readonly IOrderReviewService _orderReviewService;
     readonly CheckoutReservationService _checkoutReservations;
+    readonly IOrderPayments? _payments;
 
     public CheckoutService(
         ILogger<CheckoutService> logger,
@@ -33,8 +34,10 @@ class CheckoutService
         IMailService mailService,
         IStockReservationService reservations,
         CheckoutReservationService checkoutReservations,
-        IOrderReviewService orderReviewService)
+        IOrderReviewService orderReviewService,
+        IOrderPayments? payments = null)
     {
+        _payments = payments;
         _logger = logger;
         _orderRepo = orderRepo;
         _couponRepo = couponRepo;
@@ -43,6 +46,30 @@ class CheckoutService
         _mailService = mailService;
         _checkoutReservations = checkoutReservations;
         _orderReviewService = orderReviewService;
+    }
+
+    /// <summary>
+    /// The payment handed to completion handlers. Missing payment details must never stop a paid order
+    /// from completing, so a failure to read them is logged and the payment is left out.
+    /// </summary>
+    internal static async Task<OrderPaymentAttempt?> LoadPaymentAsync(IOrderPayments? payments, Guid orderId, ILogger logger, CancellationToken ct = default)
+    {
+        if (payments == null) return null;
+        try
+        {
+            return await Ekom.Payments.OrderPaymentsExtensions.GetCurrentPaymentAsync(payments, orderId, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+#pragma warning disable CA1031 // See summary.
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            logger.LogError(ex, "Could not read the payment of order {OrderUniqueId} for checkout completion.", orderId);
+            return null;
+        }
     }
 
     public async Task CompleteAsync(Guid key, CancellationToken ct = default)
@@ -68,7 +95,9 @@ class CheckoutService
                 OrderInfo = oi,
                 StockValidation = true,
                 UpdateOrderStatus = o.OrderStatus == OrderStatus.OfflinePayment ? false : true,
-                OrderData = o
+                OrderData = o,
+                // Handlers that pass the order on, for example to an ERP system, get the payment with it.
+                Payment = await LoadPaymentAsync(_payments, key, _logger, ct).ConfigureAwait(false),
             };
 
             CheckoutEvents.OnCompleteCheckout(this, model);

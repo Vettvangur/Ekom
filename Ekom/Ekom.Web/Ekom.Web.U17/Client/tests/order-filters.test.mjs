@@ -365,3 +365,27 @@ test('view counts are fetched in one request that repeats the views parameter', 
   assert.equal(request.searchParams.get('store'), 'main');
   assert.equal(request.searchParams.has('orderStatus'), false);
 });
+
+test('the order status filter names what it lists and offers drafts, while payment and fulfillment keep Any', () => {
+  const { shared } = createFixture();
+  const labels = html => [...html.matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => [match[1], match[2]]);
+
+  const order = labels(shared.renderStatusFilterOptions(0, ['Draft', 'Open', 'Closed', 'Cancelled'], ''));
+  // Without an order status the server lists Open, Closed and Cancelled: "Any" would be untrue.
+  assert.deepEqual(order.slice(0, 2), [['', 'Open, closed and cancelled'], ['Draft,Open,Closed,Cancelled', 'All']]);
+  assert.ok(!order.some(([, label]) => label === 'Any'));
+  assert.deepEqual(labels(shared.renderStatusFilterOptions(1, ['Pending', 'PartiallyPaid'], ''))
+    , [['', 'Any'], ['Pending', 'Pending'], ['PartiallyPaid', 'Partially Paid']]);
+  assert.match(shared.renderStatusFilterOptions(0, ['Draft'], 'Draft,Open,Closed,Cancelled'),
+    /value="Draft,Open,Closed,Cancelled" selected/);
+});
+
+test('drafts have a view of their own, last, and All still leaves them out', () => {
+  const { shared } = createFixture();
+  const last = shared.orderViews.at(-1);
+  assert.equal(last.key, 'states:Draft;;');
+  assert.equal(last.label, 'Drafts');
+  assert.equal(shared.orderViews[0].key, 'AllOrders');
+  // The filter's "All" includes drafts; this view does not, so it is named differently.
+  assert.equal(shared.orderViews[0].label, 'All orders');
+});

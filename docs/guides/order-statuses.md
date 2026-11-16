@@ -17,7 +17,7 @@ Checkout and existing order APIs move accepted orders from Draft to Open as thei
 
 ## Payment status
 
-These values describe the recorded payment classification. Manually changing a status does not perform a payment-provider operation.
+The payment status is calculated from the payments recorded on the order: payment providers record what happened (requested, authorized, captured, failed, cancelled, refunded) and Ekom derives the status. See [Payments](payments.md). A manager user can still set the status by hand; that is recorded as a manual change, overrides what was recorded before it, and does not perform a payment-provider operation.
 
 | Status | Meaning and use |
 | --- | --- |
@@ -27,7 +27,7 @@ These values describe the recorded payment classification. Manually changing a s
 | `PartiallyPaid` | Only part of the amount is classified as paid. Displayed as **Partially Paid**. |
 | `Failed` | A payment attempt failed. Check the provider and checkout history before deciding what to do next. |
 | `Voided` | A payment authorization has been voided. Selecting this manually records the classification; it does not void an authorization at the provider. |
-| `PartiallyRefunded`, `Refunded` | Reserved model values for partial/full refund classification. Refund execution and refund status editing are not available in this manager release. |
+| `PartiallyRefunded`, `Refunded` | Part or all of what was captured has been returned. Set when a provider records a refund, for example one made in the gateway's own portal. Refund execution and refund status editing are not available in the manager. |
 
 For legacy compatibility, `OfflinePayment` maps to Paid, including historical invoice-based orders. This migration convention is not proof that an invoice has been collected. For new accepted orders still awaiting payment, use Open / Pending until the store's payment process determines otherwise.
 
@@ -65,7 +65,7 @@ Cancelling a paid or partly fulfilled order preserves those dimensions. Review t
 
 1. Open Orders and select the correct store and currency.
 2. On an Open order, use the Payment or Fulfillment dropdown in the table for an immediate update. Escape or clicking outside dismisses the menu.
-3. In order details, payment selection saves immediately; choose the fulfillment action and use Save for the pending status edit. Save pending edits before changing payment or navigating to another order.
+3. In order details, the Order, Payment and Fulfillment menus each save as soon as an option is chosen. There is no separate Save step.
 4. Use the order controls to Close, Cancel, or explicitly Reopen a Closed order. Reopen first before correcting payment or fulfillment on a Closed order.
 5. Check the saved statuses and activity log. If another user or polling has exposed a newer revision, reload before retrying.
 
@@ -104,7 +104,7 @@ Explicit Reopen preserves payment and fulfillment and suppresses automatic closi
 
 ## Find orders and understand totals
 
-- **All** includes Open, Closed, and Cancelled orders. Drafts appear only when explicitly selected in the Order status filter, even if you filter Pending payment or Unfulfilled fulfillment.
+- **All orders** includes Open, Closed, and Cancelled orders. Drafts appear in the **Drafts** view, or when **All** or **Draft** is selected in the Order status filter, even if you filter Pending payment or Unfulfilled fulfillment.
 - Counts, totals, and exports follow the active filter scope, including store and currency. Exports include all matching results, not only the current page.
 - Customer reporting includes qualifying Open and Closed orders even with Pending payment. It excludes Draft orders by default.
 - **Needs review** is an order-alert view, not another OrderStatus. It is hidden when there are no reviews to look at. Migration `RequiresReview` is a separate historical-evidence flag; it does not itself create an order-review alert.

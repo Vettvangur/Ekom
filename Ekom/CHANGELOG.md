@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+* **payments:** Ekom now owns payments. Every payment attempt and what happened to it (requested, authorized, captured, failed, cancelled, voided, refunded, manual change, note) is recorded on its order in the new `EkomOrderPayments` and `EkomOrderPaymentTransactions` tables through `IOrderPayments`. The order's payment status is calculated from those records, so a provider's failure, authorization or refund now sets it. A late failure from an abandoned attempt does not downgrade a paid order, and a manual change is kept in the history and not undone by one. See `docs/guides/payments.md`.
+
+* **payments:** a recorded capture or authorization completes the checkout of an order that is waiting for its payment. A repeated gateway callback is stored once and finishes a completion that did not run. An order completed by an authorization stays Authorized until the capture is recorded.
+
+* **payments:** BREAKING: Ekom no longer references the Ekom.Payments packages. `IPaymentProvider`, `PaymentSettings`, the provider registry and the Umbraco settings reader live in Ekom under the same `Ekom.Payments` namespace, and `IPaymentModule` lets an installed provider package register its services. Offline payments need Ekom alone; each online gateway is one `Ekom.Payments.<Provider>` package that the site references itself. Ekom.Payments 1.0 packages are not compatible. `Ekom.Payments.Events.SuccessAsync` no longer completes orders; follow payments with `OrderEvents.PaymentRecordedAsync`. See `docs/upgrading/payments.md`.
+
+* **payments:** `CompleteCheckoutEventArgs.Payment` gives completion handlers the payment the order was paid with: provider, transaction ID, authorization code, card brand and masked number, payment method, the provider's own details and its response. The same payment is available from `Order.Instance.GetPaymentAsync(orderId)` and `IOrderPayments.GetCurrentPaymentAsync(orderId)`, so integrations such as ERP exports no longer read payment tables themselves.
+
+* **payments:** flag a payment that does not match its order for review. A captured or authorized amount that differs from the order total, and a payment that arrives for a checkout that was changed before it arrived, each open an order review. The manager's **Needs review** view now also lists draft orders that have an open review, so a paid order whose checkout did not complete is seen.
+
+* **manager:** make it clear where draft orders are in the Umbraco 17/18/19 Orders list. A **Drafts** view lists unfinished checkouts, and the Order status filter now starts on **Open, closed and cancelled** instead of **Any**, with **All** (drafts included) as a choice. The **All** view is renamed **All orders**. What each view lists is unchanged.
+
+* **manager:** save the order's status from the Umbraco 17/18/19 order drawer as soon as an option is chosen in the Order, Payment or Fulfillment menu. The separate Save button is removed, and the **Trigger status events** switch moves into each menu, as in the Orders table.
+
+* **manager:** record the signed-in backoffice user on status changes made from the Umbraco 17/18/19 order drawer. The activity entry had an empty user name, because the request identity of a token-authenticated backoffice carries none.
+
+* **manager:** find an order in the Orders search by a payment gateway's transaction ID or by the payment id of one of its payment attempts.
+
+* **manager:** add payment columns to the Orders CSV export, after the existing columns: payment status, provider, provider type, transaction ID, authorization code, card type, masked card number, payment method and captured date. They are loaded for all exported orders together.
+
+* **payments:** payments made with Ekom.Payments 1.0 and earlier are copied onto their orders as payment history by a background job after startup. Only history is added, the old tables are left as they are, and payments without an order in the database are logged and left in place.
+
+* **manager:** show the order's payment in the Umbraco 17/18/19 order drawer: provider, status, transaction ID, authorized and captured times, amount, authorization code, card and the provider's own details, with an expandable list of every payment attempt and of manual status changes. Loaded with the order drawer; also available from `GET /ekom/manager/orderPayments/{orderId}`.
+
+* **logging:** payment log lines and activity entries lead with the order number and order id; the payment attempt's id is named `PaymentId`. `PaymentLog.BeginScope` gives providers the same fields.
+
 * **catalog:** redesign the Umbraco 17/18/19 Catalog collection view: light and dark tokens that follow the backoffice theme, status filter chips with counts, subcategory health, variant counts, stock levels, discounted prices and Umbraco's standard actions menu on each card. A category also lists products connected to it through their categories picker, marked **Linked**. Counts, filters and sorting are answered from narrow database rows, and content is loaded only for the visible page. New installs give the Category document type a collection with Catalog as its first layout and Umbraco's table as the second; existing installs are not changed.
 
 * **install:** fix first-time installs that stopped before creating the Ekom root, Catalog and store nodes. The price save handler read Ekom's configuration while the installer was saving its first nodes, before Ekom had started, and the error ended the install on every startup.

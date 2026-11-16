@@ -127,10 +127,25 @@ public static class OrderEvents
     public static Task OnShippingProviderAddedAsync(object sender, ShippingProviderAddedEventArgs args, CancellationToken ct = default)
         => AsyncEventInvoker.InvokeAsync(ShippingProviderAddedAsync, sender, args, ct);
 
+    /// <summary>Raised after a payment transaction was stored and the order's payment status recalculated.</summary>
+    public static event Func<object, PaymentRecordedEventArgs, CancellationToken, Task>? PaymentRecordedAsync;
+
+    public static Task OnPaymentRecordedAsync(object sender, PaymentRecordedEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(PaymentRecordedAsync, sender, args, ct);
+
     public static event Func<object, PaymentProviderAddedEventArgs, CancellationToken, Task>? PaymentProviderAddedAsync;
 
     public static Task OnPaymentProviderAddedAsync(object sender, PaymentProviderAddedEventArgs args, CancellationToken ct = default)
         => AsyncEventInvoker.InvokeAsync(PaymentProviderAddedAsync, sender, args, ct);
+}
+
+/// <summary>A payment transaction recorded on an order.</summary>
+public sealed class PaymentRecordedEventArgs : EventArgs
+{
+    public required Models.Payments.OrderPayment Payment { get; init; }
+    public required Models.Payments.OrderPaymentTransaction Transaction { get; init; }
+    public Models.Orders.PaymentStatus? PreviousPaymentStatus { get; init; }
+    public Models.Orders.PaymentStatus? PaymentStatus { get; init; }
 }
 
 /// <summary>For changing and changed <see cref="OrderStatus"/> events</summary>

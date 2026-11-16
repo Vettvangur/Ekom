@@ -142,7 +142,7 @@ test('pending and failed config disable both status paths and failures remain vi
   await element.changeRowStatus({ dataset: { orderId: 'order-A' }, value: 'Processed' });
   await element.saveOverlayStatus();
   assert.doesNotMatch(element.renderOrderRow({ uniqueId: 'order-A' }), /data-action="change-row-status"/);
-  assert.match(element.renderOrderDetails(element.selectedOrder), /data-action="save-fulfillment"[^>]*disabled/);
+  assert.match(element.renderOrderDetails(element.selectedOrder), /data-action="choose-fulfillment"[^>]*disabled/);
   rejectConfig(new Error('offline'));
   await loading;
   await element.changeRowStatus({ dataset: { orderId: 'order-A' }, value: 'Processed' });
@@ -339,7 +339,6 @@ test('order arrow navigation respects direction, editing and unsaved status', ()
   press('ArrowLeft'); press('ArrowUp'); press('ArrowRight'); press('ArrowDown');
   assert.deepEqual(clicked, ['previous', 'previous', 'next', 'next']);
   editing = true; press('ArrowRight'); editing = false;
-  pending = 'Packed'; press('ArrowRight'); pending = 'Picked';
   view.customerEditorOpen = true; press('ArrowRight'); view.customerEditorOpen = false;
   view.stateSaving = true; press('ArrowRight');
   assert.equal(clicked.length, 4);
@@ -408,13 +407,49 @@ test('detail fulfillment saves directly without a blocking native confirmation',
 });
 
 
-test('manual payment table uses revision and event choice and detail preserves unsaved fulfillment', async () => {
+test('each status menu in the drawer saves when an option is chosen and carries the events switch', async () => {
+  const element = createElement();
+  element.config = { managerOrderStatusFireEventsByDefault: false };
+  element.selectedOrder = { uniqueId: 'order-A', referenceId: 3, status: { orderStatus: 'Open', paymentStatus: 'Paid', fulfillmentStatus: 'Picked', revision: 7 } };
+  const calls = [];
+  element.api.changeOrderStates = async (...args) => { calls.push(args); return { ...element.selectedOrder.status, revision: 8, fulfillmentStatus: 'Packed' }; };
+  element.api.orderInfo = async () => ({ uniqueId: 'order-A', referenceId: 3, status: { orderStatus: 'Open', paymentStatus: 'Paid', fulfillmentStatus: 'Packed', revision: 8 } });
+
+  const html = element.renderOrderDetails(element.selectedOrder);
+  // No separate save step: the Save button is gone and the switch sits in each of the three menus.
+  assert.doesNotMatch(html, /save-fulfillment|>Save</);
+  assert.equal(html.match(/data-field="notifyOrderStatus"/g).length, 3);
+
+  let closed = 0;
+  const menu = { removeAttribute: name => { if (name === 'open') closed++; } };
+  const choose = value => element.handleAction({ currentTarget: { dataset: { action: 'choose-fulfillment', value }, closest: () => menu }, preventDefault() {}, stopPropagation() {} });
+  await choose('Packed');
+  assert.deepEqual(calls, [['order-A', 7, 'Packed', false]]);
+  assert.equal(element.selectedOrder.status.fulfillmentStatus, 'Packed');
+
+  // Choosing the current status only closes the menu; Fulfilled uses the fulfill action.
+  await choose('Packed');
+  assert.equal(calls.length, 1);
+  await choose('Fulfilled');
+  assert.equal(calls[1][2], 'Fulfill');
+  assert.equal(closed, 3);
+
+  // The switch applies to the next change from any menu and is kept in step across the menus.
+  const others = [{ checked: false }, { checked: false }];
+  element.querySelectorAll = () => others;
+  await element.handleFieldChange({ currentTarget: { dataset: { field: 'notifyOrderStatus' }, checked: true } });
+  assert.deepEqual(others.map(x => x.checked), [true, true]);
+  await choose('Picking');
+  assert.equal(calls[2][3], true);
+});
+
+test('manual payment uses revision and event choice in the table and saves at once in the drawer', async () => {
   const element = createElement();
   element.config = {};
   const order = { uniqueId: 'order-A', referenceId: 3, status: { orderStatus: 'Open', paymentStatus: 'Pending', fulfillmentStatus: 'Picked', revision: 7 } };
   element.result = { orders: [order] };
   const calls = [];
-  element.api.changeOrderStates = async (...args) => { calls.push(args); };
+  element.api.changeOrderStates = async (...args) => { calls.push(args); return order.status; };
   let refreshes = 0;
   element.loadOrders = async () => { refreshes++; };
   const menu = { querySelector: () => ({ checked: false }), querySelectorAll: () => [], removeAttribute() {} };
@@ -428,12 +463,11 @@ test('manual payment table uses revision and event choice and detail preserves u
   element.selectedOrder = order;
   button.dataset.detail = 'true';
   button.dataset.value = 'Paid';
-  element.querySelector = () => ({ value: 'Packed' });
-  let error = '';
-  element.showError = message => { error = message; };
+  // In the drawer the payment menu saves at once, like the table's.
+  element.api.orderInfo = async () => order;
   await element.changePayment(button);
-  assert.match(error, /Save your fulfillment change/);
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1][2], 'PaymentPaid');
   const html = element.renderPaymentMenu(order);
   assert.ok(html.includes('Payment') || html.includes('payment'));
   assert.ok(!html.includes('Refunded'));

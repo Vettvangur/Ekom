@@ -71,6 +71,7 @@ Handlers run sequentially; the first rejection stops dispatch and preserves its 
 - `OrderStatusChangingAsync` and `OrderStatusChangedAsync`
 - `AddingOrderlineAsync`, `AddedOrderlineAsync`, `RemovedOrderlineAsync`, and `UpdatedOrderlineAsync`
 - `ShippingProviderAddedAsync` and `PaymentProviderAddedAsync`
+- `PaymentRecordedAsync`, raised after a payment transaction was stored on the order and the payment status recalculated. Its arguments carry the payment, the transaction, and the payment status before and after. See [Payments](../guides/payments.md).
 
 Legacy synchronous variants exist for order updated/updating, status changing/changed, adding/added/updated lines. They are distinct notifications; subscribing to both can run code twice when a workflow raises both.
 

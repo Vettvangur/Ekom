@@ -22,6 +22,10 @@ public sealed class EkomComposer : IComposer
 
         builder.Services.AddSingleton<IDocumentSeedKeyProvider, EkomCatalogSeedKeyProvider>();
 
+        // Payment providers read their settings from the Umbraco payment provider nodes.
+        builder.Services.AddTransient<Ekom.Payments.IUmbracoService, Ekom.Payments.Umb.UmbracoService>();
+        builder.Services.AddSingleton<Ekom.Payments.IPaymentExecutionContext, Ekom.Payments.Umb.UmbracoPaymentExecutionContext>();
+
         builder.Components()
             .Append<EnsureTablesExist>()
             .Append<EnsureNodesExist>()

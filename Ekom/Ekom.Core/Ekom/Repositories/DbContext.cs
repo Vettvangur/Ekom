@@ -13,6 +13,8 @@ public class DbContext : LinqToDB.Data.DataConnection
     public ITable<OrderActivityLog> OrderActivityLog => this.GetTable<OrderActivityLog>();
     public ITable<OrderReview> OrderReviews => this.GetTable<OrderReview>();
     public ITable<OrderData> OrderData => this.GetTable<OrderData>();
+    public ITable<Models.Payments.OrderPayment> OrderPayments => this.GetTable<Models.Payments.OrderPayment>();
+    public ITable<Models.Payments.OrderPaymentTransaction> OrderPaymentTransactions => this.GetTable<Models.Payments.OrderPaymentTransaction>();
     public ITable<PriceData> Prices => this.GetTable<PriceData>();
     public ITable<StockData> StockData => this.GetTable<StockData>();
     public ITable<StockReservationData> StockReservations => this.GetTable<StockReservationData>();

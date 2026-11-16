@@ -62,6 +62,9 @@ public class EkomComposer : IComposer
     /// </summary>
     public void Compose(IUmbracoBuilder builder)
     {
+        // Payment providers read their settings from the Umbraco payment provider nodes.
+        builder.Services.AddTransient<Ekom.Payments.IUmbracoService, Ekom.Payments.Umb.UmbracoService>();
+        builder.Services.AddSingleton<Ekom.Payments.IPaymentExecutionContext, Ekom.Payments.Umb.UmbracoPaymentExecutionContext>();
 
         builder.ContentFinders()
             .InsertBefore<ContentFinderByPageIdQuery, CatalogContentFinder>();
@@ -185,8 +188,6 @@ class EkomStartup : IComponent
             orderRepo?.MigrateStockToDecimalAsync();
             _factory.GetRequiredService<EkomCacheInitializer>().Initialize(false);
 
-            Payments.Events.SuccessAsync += CompleteCheckoutAsync;
-
             _logger.LogInformation("Ekom Started");
         }
         catch (Exception ex)
@@ -195,40 +196,7 @@ class EkomStartup : IComponent
         }
     }
 
-    private async Task CompleteCheckoutAsync(object sender, SuccessEventArgs args)
-    {
-        var o = args.OrderStatus;
-        var settings = o.EkomPaymentSettings;
-
-        if (settings.OrderCustomData.TryGetValue("ekomOrderUniqueId", out var value))
-        {
-            if (Guid.TryParse(value, out var orderId))
-            {
-                var paymentLog = _factory.GetRequiredService<PaymentSuccessLogService>();
-                await paymentLog.LogAsync(orderId, settings.OrderNumber, o.Amount, settings.Currency,
-                    string.IsNullOrWhiteSpace(settings.PaymentProviderName)
-                        ? settings.PaymentProviderKey.ToString()
-                        : settings.PaymentProviderName).ConfigureAwait(false);
-
-                var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
-                var attempts = _factory.GetService<CheckoutPaymentAttemptService>();
-                if (attempts == null)
-                {
-                    await checkoutSvc.CompleteAsync(orderId);
-                }
-                else
-                {
-                    Guid? attemptId = settings.OrderCustomData.TryGetValue("ekomPaymentAttemptId", out var attemptValue)
-                        && Guid.TryParse(attemptValue, out var parsedAttempt) ? parsedAttempt : null;
-                    await attempts.CompleteAsync(orderId, attemptId, () => checkoutSvc.CompleteAsync(orderId), CancellationToken.None)
-                        .ConfigureAwait(false);
-                }
-            }
-        }
-    }
-
     public void Terminate()
     {
-        Payments.Events.SuccessAsync -= CompleteCheckoutAsync;
     }
 }

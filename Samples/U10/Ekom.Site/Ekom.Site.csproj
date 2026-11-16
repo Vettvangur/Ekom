@@ -67,12 +67,22 @@
       <None Include="App_Plugins\Ekom\Variants\ekmVariants.controller.js" />
     </ItemGroup>
 
+    <!--
+        Payment providers come from a local Ekom.Payments checkout beside this repository, so both can be developed together.
+        Set EkomPaymentsRoot in an untracked .csproj.user file to use a different folder. Without the folder the site has offline payments only.
+    -->
+    <PropertyGroup>
+        <EkomPaymentsRoot Condition="'$(EkomPaymentsRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\Ekom.Payments\</EkomPaymentsRoot>
+    </PropertyGroup>
+    <ItemGroup Condition="Exists('$(EkomPaymentsRoot)Core\Ekom.Payments.Core.csproj')">
+        <ProjectReference Include="$(EkomPaymentsRoot)PaymentProviders\Ekom.Payments.Borgun\Ekom.Payments.Borgun.csproj" />
+        <ProjectReference Include="$(EkomPaymentsRoot)PaymentProviders\Ekom.Payments.Netgiro\Ekom.Payments.Netgiro.csproj" />
+        <ProjectReference Include="$(EkomPaymentsRoot)PaymentProviders\Ekom.Payments.Valitor\Ekom.Payments.Valitor.csproj" />
+    </ItemGroup>
+
     <ItemGroup>
         <!--<PackageReference Update="Ekom.U10" ExcludeAssets="all" />-->
         <PackageReference Include="Azure.Identity" Version="1.17.1" />
-        <PackageReference Include="Ekom.Payments.Borgun" Version="1.0.0" />
-        <PackageReference Include="Ekom.Payments.Netgiro" Version="1.0.0" />
-        <PackageReference Include="Ekom.Payments.Valitor" Version="1.0.0" />
         <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
         <PackageReference Include="Umbraco.Cms" Version="13.13.0" />
     </ItemGroup>

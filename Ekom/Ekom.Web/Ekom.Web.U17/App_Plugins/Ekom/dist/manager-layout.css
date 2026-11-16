@@ -378,8 +378,8 @@ ekom-orders-section-view:not([classic]) {
  .ekom-order-heading-copy { flex:1; min-width:0; }
  .ekom-panel-heading h2 { flex-wrap:wrap; }
  .ekom-status-controls { margin:14px 0 12px; padding:8px 10px; border:1px solid var(--ekom-border); border-radius:10px; background:var(--ekom-surface-alt); gap:10px; }
- .ekom-status-controls > label:not(.ekmCheckboxLabel),.ekom-payment-control,.ekom-fulfillment-control { display:flex; flex-direction:column; align-items:stretch; gap:4px; font-size:11px; color:var(--ekom-muted); }
- .ekom-fulfillment-control { flex:1; min-width:180px; }
+ .ekom-status-controls > label:not(.ekmCheckboxLabel),.ekom-order-control,.ekom-payment-control,.ekom-fulfillment-control { display:flex; flex-direction:column; align-items:stretch; gap:4px; font-size:11px; color:var(--ekom-muted); }
+ .ekom-fulfillment-control { flex:0 1 260px; min-width:180px; }
  .ekom-status-controls summary,.ekom-payment-value { display:flex; align-items:center; gap:7px; min-height:28px; box-sizing:border-box; padding:6px 10px; font-size:13px; font-weight:700; color:var(--ekom-text); }
  .ekom-status-chevron,.ekom-status-check { margin-left:auto; color:var(--ekom-muted); }
  .ekom-status-check { color:var(--ekom-accent); }
@@ -403,7 +403,14 @@ ekom-orders-section-view:not([classic]) {
 }
 
 ekom-orders-section-view:not([classic]) .ekom-panel-heading { background:var(--ekom-bg); }
-ekom-orders-section-view:not([classic]) .ekom-status-controls [data-action="save-fulfillment"] { background:var(--ekom-accent); border-color:var(--ekom-accent); color:var(--ekom-surface); }
+ekom-orders-section-view:not([classic]) {
+ .ekom-menu-events { display:flex; align-items:flex-start; gap:8px; max-width:280px; padding:12px 10px 8px; margin-top:5px; border-top:1px solid var(--ekom-border); cursor:pointer; font-weight:400; color:var(--ekom-text); }
+ .ekom-menu-events input[type=checkbox] { flex:0 0 16px; width:16px; height:16px; min-height:0; margin:1px 0 0; padding:0; accent-color:var(--ekom-accent); }
+ .ekom-menu-events span { display:grid; gap:5px; }
+ .ekom-menu-events strong { font-size:12px; }
+ .ekom-menu-events small { font-size:12px; color:var(--ekom-muted); }
+ .ekom-status-saving { margin-left:auto; font-size:12px; color:var(--ekom-muted); }
+}
 
 ekom-orders-section-view:not([classic]) {
  .ekom-events-help { position:relative; display:inline-flex; align-items:center; }
@@ -542,6 +549,26 @@ ekom-orders-section-view:not([classic]) {
  .ekom-payment-detail-box dd > span { overflow-wrap:anywhere; white-space:pre-wrap; }
  .ekom-payment-detail-box .ekom-payment-copy { display:inline-flex; justify-content:center; align-items:center; flex:0 0 22px; width:22px; height:22px; min-height:0; padding:3px; border:0; border-radius:5px; background:transparent; color:var(--ekom-muted); }
  .ekom-payment-detail-box .ekom-payment-copy:hover { color:var(--ekom-accent); background:var(--ekom-surface-alt); }
+ .ekom-payment-attempts { margin-top:16px; border:1px solid var(--ekom-border); border-radius:10px; padding:12px 16px; font-size:13px; }
+ .ekom-payment-attempts > summary { cursor:pointer; font-weight:700; color:var(--ekom-text); }
+ .ekom-payment-attempts ul { list-style:none; margin:12px 0 0; padding:0; }
+ .ekom-payment-attempt { padding:12px 0; border-top:1px solid var(--ekom-border); }
+ .ekom-payment-attempt-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+ .ekom-payment-attempt-head > span:first-child { color:var(--ekom-muted); }
+ .ekom-payment-attempt-amount { margin-left:auto; font-weight:700; }
+ .ekom-payment-attempt-message { margin:6px 0 0; color:var(--ekom-muted); overflow-wrap:anywhere; }
+ .ekom-payment-attempt details { margin-top:8px; }
+ .ekom-payment-attempt details > summary { cursor:pointer; color:var(--ekom-muted); }
+ .ekom-payment-attempt .ekom-log-table { margin-top:8px; width:100%; }
+ .ekom-payment-attempt-ids { margin:8px 0 0; }
+ .ekom-payment-attempt-ids > div { display:grid; grid-template-columns:minmax(120px,.6fr) minmax(0,1.4fr); gap:12px; padding:6px 0; }
+ .ekom-payment-attempt-ids dt { color:var(--ekom-muted); }
+ .ekom-payment-attempt-ids dd { display:flex; align-items:center; gap:6px; margin:0; min-width:0; }
+ .ekom-payment-attempt-ids dd > span { overflow-wrap:anywhere; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+ .ekom-payment-attempts .ekom-payment-copy { display:inline-flex; justify-content:center; align-items:center; flex:0 0 22px; width:22px; height:22px; min-height:0; padding:3px; border:0; border-radius:6px; background:transparent; color:var(--ekom-muted); cursor:pointer; }
+ .ekom-payment-attempts .ekom-payment-copy:hover { color:var(--ekom-accent); background:var(--ekom-surface-alt); }
+ .ekom-payment-attempts h5 { margin:14px 0 6px; font-size:13px; }
+ .ekom-payment-manual li { padding:4px 0; }
 }
 @media(max-width:900px) { ekom-orders-section-view:not([classic]) .ekom-payment-detail-grid { grid-template-columns:minmax(0,1fr); } }
 
@@ -553,6 +580,7 @@ ekom-orders-section-view:not([classic]) .ekom-review-alert > div { flex:1; min-w
 ekom-orders-section-view:not([classic]) .ekom-review-alert p { margin:6px 0 0; color:var(--ekom-text); white-space:pre-wrap; overflow-wrap:anywhere; }
 ekom-orders-section-view:not([classic]) .ekom-review-alert small { display:inline-block; margin-left:8px; color:var(--ekom-muted); }
 ekom-orders-section-view:not([classic]) .ekom-review-alert > button { background:#d94335; border-color:#d94335; color:#fff; }
+ekom-orders-section-view:not([classic]) .ekom-review-alert > button:hover, ekom-orders-section-view:not([classic]) .ekom-review-alert > button:focus-visible { background:#b32d21; border-color:#b32d21; color:#fff; box-shadow:none; }
 ekom-orders-section-view:not([classic]) .ekom-review-panel { width:min(720px,calc(100vw - 40px)); max-height:90vh; overflow:auto; border-radius:16px; }
 ekom-orders-section-view:not([classic]) .ekom-review-panel header, ekom-orders-section-view:not([classic]) .ekom-review-panel footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:20px 24px; }
 ekom-orders-section-view:not([classic]) .ekom-review-panel header h2 { margin:0; }

@@ -12,7 +12,7 @@ Replace the Umbraco 18 Ekom packages with their Umbraco 19 equivalents:
 
 The `Ekom.U19` project targets .NET 11 and accepts Umbraco package versions from 19.0.0-rc1 up to, but not including, 20.0.0. It compiles the shared Umbraco 17/18/19 source with the `UMBRACO_18` and `UMBRACO_19` compilation constants rather than maintaining a separate copy of that implementation.
 
-`Ekom.U19` depends on `Ekom.Payments.U19`. Verify separately installed payment-provider packages against Umbraco 19 before relying on them.
+`Ekom.U19` does not depend on an Ekom.Payments package. Verify separately installed payment-provider packages against Umbraco 19 before relying on them. See [Upgrading payments](payments.md).
 
 ## Replace the Ekom package references
 

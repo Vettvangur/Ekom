@@ -59,6 +59,8 @@ Payment providers are created below the store's payment-provider container in Um
 | `language` | Provider language; the online flow falls back to `is-IS`. |
 | zones/range | Country and amount availability constraints. |
 
+An offline provider needs nothing but Ekom. Each online gateway is one package, for example `Ekom.Payments.Borgun`; installing it is enough for Ekom to find the provider and register its services. See [Payments](payments.md).
+
 Provider-specific credentials live under `Ekom:Payments` and are consumed by the relevant payment implementation. There is no single universal credential shape; document and configure the implementation actually installed by the site.
 
 The checkout service passes customer information, currency, order number, total order item(s), success/error/cancel URLs, and provider-specific payment fields to the runtime provider. See [Checkout](checkout.md) for the handoff lifecycle.
