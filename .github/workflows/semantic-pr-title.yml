@@ -1,7 +1,9 @@
 name: semantic-pr-title
 
 on:
-  pull_request_target:
+  # GitHub blocks pull_request_target by default on public repositories. Reading the PR title
+  # needs no secrets or write access, so the plain pull_request event is enough.
+  pull_request:
     types: [opened, edited, synchronize, reopened]
     branches: ["Ekom", "release/0.2"]
 
