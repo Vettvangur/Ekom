@@ -6,6 +6,13 @@
 
 * Allow checkout customers to select email marketing, SMS marketing, or both using channel-specific fields. Include the customer's phone number in subscription requests. The legacy combined consent field remains an additional opt-in that subscribes both channels regardless of channel-specific values; clear it on existing carts when migrating to separate choices.
 
+## [0.2.107](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.106...Ekom.Klaviyo-v0.2.107) (2026-11-16)
+
+
+### Features
+
+* **payments:** record payments on the order and own the provider contracts ([#1198](https://github.com/Vettvangur/Ekom/issues/1198)) ([963c8c0](https://github.com/Vettvangur/Ekom/commit/963c8c02be45d8ed2009ab0420fe3870e7068b4a))
+
 ## [0.2.106](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.105...Ekom.Klaviyo-v0.2.106) (2026-11-12)
 
 

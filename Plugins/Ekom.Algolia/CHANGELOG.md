@@ -28,6 +28,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.75](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.74...Ekom.Algolia-v0.2.75) (2026-11-16)
+
+
+### Features
+
+* **payments:** record payments on the order and own the provider contracts ([#1198](https://github.com/Vettvangur/Ekom/issues/1198)) ([963c8c0](https://github.com/Vettvangur/Ekom/commit/963c8c02be45d8ed2009ab0420fe3870e7068b4a))
+
 ## [0.2.74](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.73...Ekom.Algolia-v0.2.74) (2026-11-12)
 
 
