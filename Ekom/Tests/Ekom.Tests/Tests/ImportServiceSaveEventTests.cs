@@ -121,6 +121,23 @@ public class ImportServiceSaveEventTests
         Assert.Single(fixture.PublishInvocations, x => x.Method.Name == "Unpublish");
     }
 
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    public void SaveOnlySavesAndNeverPublishes(bool create, bool published)
+    {
+        using var fixture = new Fixture(Fixture.LiveCategoryId);
+        var content = fixture.Content("ekmProductVariant");
+        content.SetupGet(x => x.Published).Returns(published);
+
+        fixture.SaveEvent(content.Object, Import(ImportSaveEntEnum.Save), create,
+            fixture.Recycle.Object, fixture.Processing.Object);
+
+        fixture.ContentService.Verify(x => x.Save(content.Object, Fixture.SyncUser, null), Times.Once);
+        Assert.Empty(fixture.PublishInvocations);
+    }
+
     [Fact]
     public void NoStagingContextKeepsExistingBehaviorWithoutParentLookups()
     {

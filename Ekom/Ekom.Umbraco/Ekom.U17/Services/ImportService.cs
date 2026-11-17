@@ -1327,9 +1327,9 @@ public class ImportService : IImportService
                 }
             }
 
-            if (importProduct.EnableBackorder)
+            if (importProduct.EnableBackorder.HasValue)
             {
-                productContent.SetValue("enableBackorder", importProduct.EnableBackorder);
+                productContent.SetValue("enableBackorder", importProduct.EnableBackorder.Value);
             }
 
             productContent.SetValue("comparer", compareValue);
@@ -1472,6 +1472,11 @@ public class ImportService : IImportService
         if (importVariant.Vat.HasValue)
         {
             variantContent.SetValue("vat", importVariant.Vat);
+        }
+
+        if (importVariant.EnableBackorder.HasValue && variantContent.HasProperty("enableBackorder"))
+        {
+            variantContent.SetValue("enableBackorder", importVariant.EnableBackorder.Value);
         }
 
         if (importVariant.AdditionalProperties != null && importVariant.AdditionalProperties.Any())
@@ -2121,6 +2126,10 @@ public class ImportService : IImportService
                     _contentService.Save(content, userId: syncUser);
                     _contentService.Unpublish(content, userId: syncUser);
                 }
+                return;
+
+            case ImportSaveEntEnum.Save:
+                _contentService.Save(content, userId: syncUser);
                 return;
 
             case ImportSaveEntEnum.SavePublish:
