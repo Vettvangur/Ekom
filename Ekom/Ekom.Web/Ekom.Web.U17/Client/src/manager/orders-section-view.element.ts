@@ -4,7 +4,7 @@ import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
 import { UMB_NOTIFICATION_CONTEXT, type UmbNotificationColor } from '@umbraco-cms/backoffice/notification';
 import {
   CustomerInformationField,
-  EkomManagerApi,
+  EkomManagerApi, PollChangeGate,
   GiftcardRecoveryAttempt,
   ManagerConfig,
   ManagerFilters,
@@ -78,6 +78,7 @@ const activityLogTypeAlert = 2;
 
 export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
   private readonly api = new EkomManagerApi();
+  private readonly pollGate = new PollChangeGate(() => this.api.orderChangeMarker());
   private notificationContext?: typeof UMB_NOTIFICATION_CONTEXT.TYPE;
   private result: OrderSearchResult = { orders: [], count: 0, totalPages: 0 };
   private page = 1;
@@ -275,12 +276,25 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
     this.render();
   }
 
+  private flashPolled(): void {
+    const control = this.querySelector('.ekom-polling summary');
+    if (!control) return;
+    control.classList.add('just-refreshed');
+    control.addEventListener('animationend', () => control.classList.remove('just-refreshed'), { once: true });
+  }
+
   private async pollOrders(): Promise<void> {
-    if (!this.pollingSeconds || !this.isConnected || document.hidden || this.loading || this.overlay || this.stateSaving ||
-        this.contains(document.activeElement) || this.querySelector('details[open]')) return;
-    const request = ++this.orderListRequest;
+    const paused = () => !this.pollingSeconds || !this.isConnected || document.hidden || this.loading || !!this.overlay || this.stateSaving ||
+        this.contains(document.activeElement) || !!this.querySelector('details[open]');
+    if (paused()) return;
     const filters = { ...managerState.filters };
     if (!filters.store) return;
+    // Nothing has changed since the list on screen was loaded: skip the search and the view counts.
+    const pollKey = JSON.stringify([filters, this.page]);
+    const unchanged = await this.pollGate.unchanged(pollKey);
+    if (paused() || pollKey !== JSON.stringify([managerState.filters, this.page])) return;
+    if (unchanged && !this.error) { this.flashPolled(); return; }
+    const request = ++this.orderListRequest;
     this.loading = true;
     try {
       const result = await this.api.searchOrders(filters, this.page);
@@ -302,11 +316,8 @@ export class EkomOrdersSectionViewElement extends UmbElementMixin(HTMLElement) {
           this.render();
         }
       }
-      const control = this.querySelector('.ekom-polling summary');
-      if (control) {
-        control.classList.add('just-refreshed');
-        control.addEventListener('animationend', () => control.classList.remove('just-refreshed'), { once: true });
-      }
+      this.pollGate.refreshed(pollKey);
+      this.flashPolled();
     } catch {
       // Retain the last successful list on a transient background failure.
     } finally {

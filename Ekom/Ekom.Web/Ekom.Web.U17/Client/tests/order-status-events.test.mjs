@@ -321,6 +321,43 @@ test('polling preserves unchanged rows and pauses for editing, hidden pages and 
   assert.ok(cleared.includes(1));
 });
 
+test('polling skips the order search while the change marker is the same', async () => {
+  const page = { hidden: false, activeElement: null };
+  const { EkomOrdersSectionViewElement: View } = loadModule('../src/manager/orders-section-view.element.ts', {
+    './manager-shared': shared,
+    '@umbraco-cms/backoffice/element-api': { UmbElementMixin: Base => Base },
+    '@umbraco-cms/backoffice/notification': { UMB_NOTIFICATION_CONTEXT: Symbol('notification') },
+  }, { document: page, window: { setInterval: () => 1, clearInterval() {} } });
+  const view = new View();
+  view.isConnected = true;
+  view.contains = () => false;
+  view.querySelector = () => null;
+  view.loading = false;
+  view.render = () => {};
+  shared.managerState.filters.store = 'Store';
+  let marker = 'a', searches = 0, counts = 0;
+  view.api.orderChangeMarker = async () => marker;
+  view.api.searchOrders = async () => { searches++; return { orders: [], count: 0, totalPages: 0 }; };
+  view.api.orderViewCounts = async (filters, views) => { counts++; return views.map(key => ({ view: key, count: 0 })); };
+  view.setPolling(5);
+  await view.pollOrders();
+  assert.deepEqual([searches, counts], [1, 1], 'the first poll has nothing to compare with');
+  await view.pollOrders();
+  await view.pollOrders();
+  assert.deepEqual([searches, counts], [1, 1]);
+  assert.equal(view.loading, false);
+  view.page = 2;
+  await view.pollOrders();
+  assert.equal(searches, 2, 'another page is not the list that was checked');
+  marker = 'b';
+  await view.pollOrders();
+  assert.equal(searches, 3, 'an order changed');
+  view.error = 'failed';
+  await view.pollOrders();
+  assert.equal(searches, 4, 'an error on screen is always retried');
+  view.setPolling(0);
+});
+
 test('order arrow navigation respects direction, editing and unsaved status', () => {
   const { EkomOrdersSectionViewElement: View } = loadModule('../src/manager/orders-section-view.element.ts', {
     './manager-shared': shared,

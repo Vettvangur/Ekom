@@ -499,6 +499,63 @@ public class ManagerRepositoryTests
         Assert.Equal(2, secondPage.Page);
     }
 
+    [Fact]
+    public async Task OrderChangeMarker_ChangesWhenAnOrderIsSavedOrAReviewIsAddedOrResolved()
+    {
+        using var database = new OrderDatabase();
+        var order = database.Add(null, Guid.Empty, 15m);
+        var seen = new HashSet<string> { await database.Repository.GetOrderChangeMarkerAsync() };
+
+        Assert.Contains(await database.Repository.GetOrderChangeMarkerAsync(), seen);
+
+        database.Touch(order, database.Date.AddHours(13));
+        Assert.True(seen.Add(await database.Repository.GetOrderChangeMarkerAsync()));
+
+        var review = database.AddReview(order);
+        Assert.True(seen.Add(await database.Repository.GetOrderChangeMarkerAsync()));
+
+        database.ResolveReview(review);
+        Assert.True(seen.Add(await database.Repository.GetOrderChangeMarkerAsync()));
+        Assert.Contains(await database.Repository.GetOrderChangeMarkerAsync(), seen);
+    }
+
+    [Fact]
+    public async Task MostSoldProducts_CountsProductsOnAPagePastTheEnd()
+    {
+        using var database = new OrderDatabase();
+        database.Add(null, Guid.Empty, 15m, productId: 1);
+        database.Add(null, Guid.Empty, 100m, productId: 2);
+
+        var pastTheEnd = await database.Repository.MostSoldProductsPaged(
+            database.Date, database.Date, "main", "AllOrders", 3, 1);
+        var empty = await database.Repository.MostSoldProductsPaged(
+            database.Date.AddYears(1), database.Date.AddYears(1), "main", "AllOrders", 1, 20);
+
+        Assert.Empty(pastTheEnd.Products);
+        Assert.Equal(2, pastTheEnd.Count);
+        Assert.Empty(empty.Products);
+        Assert.Equal(0, empty.Count);
+    }
+
+    [Fact]
+    public async Task MostSoldProducts_NeedsReviewOnlyIncludesOrdersWithAnOpenReview()
+    {
+        using var database = new OrderDatabase();
+        var reviewed = database.Add(null, Guid.Empty, 15m, productId: 1);
+        var resolved = database.Add(null, Guid.Empty, 20m, productId: 2);
+        var other = database.Add(null, Guid.Empty, 100m, productId: 3);
+        foreach (var id in new[] { reviewed, resolved, other })
+            database.SetState(id, "ReadyForDispatch", "Open");
+        database.AddReview(reviewed);
+        database.AddReview(resolved, resolved: true);
+
+        var result = await database.Repository.MostSoldProductsPaged(
+            database.Date, database.Date, "main", "NeedsReview", 1, 20);
+
+        Assert.Equal(1, Assert.Single(result.Products).Id);
+        Assert.Equal(1, result.Count);
+    }
+
     private static Task<OrderListData> SearchAsync(ManagerRepository repository, string? couponCode, string? shippingProvider,
         string pageSize = "30", string paymentProvider = "", string productSku = "", string trackingSource = "", string? giftcardCode = null)
         => repository.SearchOrdersAsync(OrderDatabase.OrderDate, OrderDatabase.OrderDate, "", "main", "AllOrders", paymentProvider,
@@ -600,6 +657,32 @@ public class ManagerRepositoryTests
                 }),
             });
             return id;
+        }
+
+        public Guid AddReview(Guid orderId, bool resolved = false)
+        {
+            var id = Guid.NewGuid();
+            using var db = _factory.GetDatabase();
+            db.Insert(new OrderReview
+            {
+                Id = id,
+                OrderId = orderId,
+                CreatedUtc = OrderDate,
+                ResolvedUtc = resolved ? OrderDate.AddHours(1) : null,
+            });
+            return id;
+        }
+
+        public void ResolveReview(Guid id)
+        {
+            using var db = _factory.GetDatabase();
+            db.GetTable<OrderReview>().Where(x => x.Id == id).Set(x => x.ResolvedUtc, OrderDate.AddHours(2)).Update();
+        }
+
+        public void Touch(Guid orderId, DateTime updateDate)
+        {
+            using var db = _factory.GetDatabase();
+            db.OrderData.Where(x => x.UniqueId == orderId).Set(x => x.UpdateDate, updateDate).Update();
         }
 
         public void SetState(Guid id, string legacy, string? state)

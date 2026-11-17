@@ -220,6 +220,9 @@ AND EXISTS (SELECT 1 FROM pragma_index_info(i.name) k WHERE k.name = 'UniqueId' 
         EnsureLookupIndex(db, "EkomCoupon", "IX_EkomCoupon_CouponKey", nameof(CouponData.CouponKey));
         EnsureLookupIndex(db, "EkomCheckoutPaymentAttempt", "IX_EkomCheckoutPaymentAttempt_OrderId", nameof(CheckoutPaymentAttemptData.OrderId));
         EnsureLookupIndex(db, "EkomStockReservation", "IX_EkomStockReservation_OrderId", nameof(StockReservationData.OrderId));
+        // Lets Manager polling read the latest order change with one seek. No order list filters on
+        // UpdateDate, so this does not compete with the date indexes deferred above.
+        EnsureLookupIndex(db, "EkomOrders", "IX_EkomOrders_UpdateDate", nameof(OrderData.UpdateDate));
         EnsureCustomerListIndex(db);
     }
 

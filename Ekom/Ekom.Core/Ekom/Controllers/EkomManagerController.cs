@@ -562,6 +562,17 @@ public partial class EkomManagerController : ControllerBase
         return Ok(await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, productSku, trackingSource, trackingMedium, trackingCampaign, trackingTerm, trackingContent, trackingClickId, page, pageSize, couponCode, shippingProvider, giftcardCode, currency, needsReview));
     }
 
+    /// <summary>
+    /// A cheap check for polling: the marker changes whenever an order or order review changes.
+    /// </summary>
+    [HttpGet]
+    [Route("OrderChangeMarker")]
+    [UmbracoUserAuthorize]
+    public async Task<IActionResult> GetOrderChangeMarkerAsync(CancellationToken ct)
+    {
+        return Ok(new { marker = await _repo.GetOrderChangeMarkerAsync(ct).ConfigureAwait(false) });
+    }
+
     [HttpGet]
     [Route("OrderViewCounts")]
     [UmbracoUserAuthorize]
