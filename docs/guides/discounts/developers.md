@@ -44,7 +44,7 @@ IEnumerable<IDiscount> automatic = discounts.GetGlobalDiscounts("Store");
 
 - These methods return order discounts only. Product discounts are not included.
 - A discount that is disabled for the store, directly or through its folder, is not returned for that store.
-- The overloads without a store alias use the store of the current request, and return an empty list when there is none.
+- The overloads without a store alias use the store of the current request. Outside a request Ekom falls back to the first store and gives no error, so pass the store alias in background code.
 - Reading discounts does not change any basket. To use a coupon, see [Apply and remove coupons](#apply-and-remove-coupons).
 
 ## Product discounts

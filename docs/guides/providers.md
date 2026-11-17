@@ -39,7 +39,7 @@ IShippingProvider? homeDelivery = await providers.GetShippingProviderAsync(homeD
 IPaymentProvider? cardPayment = await providers.GetPaymentProviderAsync(cardPaymentKey, "Store", ct);
 ```
 
-- Leave out `store` and Ekom uses the store of the current storefront request. Background jobs and other code without such a request must pass the store alias. If no store can be found, these methods throw `ArgumentNullException`.
+- Leave out `store` and Ekom uses the store of the current storefront request. Background jobs and other code without such a request must pass the store alias: without one, Ekom falls back to the first store and gives no error. These methods throw `ArgumentNullException` only when the site has no store at all.
 - The single-provider methods return `null` when the key does not belong to a provider of that store.
 - `GetAllCountries()` returns Ekom's list of countries. `GetAllZones()` returns the zones set up in Umbraco.
 

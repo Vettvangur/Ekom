@@ -214,7 +214,7 @@ The response depends on the payment provider and on what happened:
 | Status | Meaning | What your client does |
 | --- | --- | --- |
 | `230` | The body is a JSON string that holds the provider's HTML, for example a form that posts to the provider. | Parse the JSON string, then write the HTML into a document. |
-| `302` | A redirect to the provider's payment page. | Follow it. |
+| `302` | An offline payment, such as an invoice: the order is complete and the redirect goes to the receipt page. Online providers answer `230`, not `302`. | Follow it. |
 | `400` | The data is not valid, for example the customer has no name or email. If the chosen shipping provider no longer fits the basket, the body is a `ShippingValidationError` with the code `invalidShippingProvider`, a reason and a message. | Show the problem and let the customer fix it. |
 | `409` | The basket cannot go to payment right now. The body has `code`, `message` and `canRetry`. | Show the message. Retry only when `canRetry` is `true`. |
 | `530` | There is not enough stock. The body is a `StockError` with `OrderLineKey` (the line that is short) and `IsVariant`. | Show which line is short. |

@@ -33,7 +33,7 @@ using Ekom.Models;
 IOrderInfo? basket = await orderApi.GetOrderAsync("Store", ct);
 ```
 
-`GetOrderAsync()` without a store alias uses the store of the current storefront request, and returns `null` when there is none. Pass the store alias whenever you know it, and always outside a storefront request. If no store has that alias, `GetOrderAsync(storeAlias)` throws `ArgumentNullException`.
+`GetOrderAsync()` without a store alias uses the store of the current storefront request, and returns `null` when there is none. Pass the store alias whenever you know it, and always outside a storefront request. If no store has that alias, `GetOrderAsync(storeAlias)` throws `StoreNotFoundException`.
 
 Ekom finds the basket in one of two ways.
 

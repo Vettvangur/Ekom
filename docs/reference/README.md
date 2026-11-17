@@ -27,6 +27,7 @@ The pages are for developers who already know what they want to build. They do n
 
 - [Getting started](../getting-started/README.md): install and configure Ekom.
 - [Guides](../guides/README.md): how each part of Ekom works and how to use it.
+- [Examples](../examples/README.md): working code you can copy for common tasks.
 - [Manager](../manager/README.md): the backoffice area for orders, customers and analytics.
 - [Upgrading](../upgrading/README.md): move a site to a newer Umbraco or Ekom version.
 

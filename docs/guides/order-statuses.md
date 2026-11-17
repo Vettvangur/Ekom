@@ -243,7 +243,7 @@ For Cancelled orders, valid payment and fulfillment statuses and quantities alre
 5. Orders that were skipped stay unmigrated. When you have fixed their history or their payment state, run the migration again from an earlier cursor. Starting again at `0` is safe, because migrated orders are left out.
 6. Check counts, a sample of mapped orders and the automatic closing before you migrate the production database.
 
-The migration keeps the legacy status and the original status, the stored amounts, dates, order data and history. It does not run payment, stock, email or status handlers again. The preview shows the result after automatic closing. The migration has been rehearsed on SQLite but not on SQL Server. See the [rehearsal notes](../plans/status-migration-rehearsal.md).
+The migration keeps the legacy status and the original status, the stored amounts, dates, order data and history. It does not run payment, stock, email or status handlers again. The preview shows the result after automatic closing. The migration has been rehearsed on SQLite but not on SQL Server.
 
 ## Related pages
 

@@ -10,6 +10,7 @@ These docs cover Ekom on Umbraco 17, 18 and 19. Umbraco 19 is a release candidat
 | --- | --- |
 | Install Ekom on a site for the first time | [Getting started](getting-started/README.md) |
 | Build one part of a store, such as checkout or discounts | [Guides](guides/README.md) |
+| Copy working code for a common task | [Examples](examples/README.md) |
 | Look up a setting, method, event or endpoint | [Reference](reference/README.md) |
 | Work with orders and customers in the backoffice | [Manager](manager/README.md) |
 | Move a site to a newer Umbraco or Ekom version | [Upgrading](upgrading/README.md) |
@@ -27,6 +28,7 @@ Follow these in order. The first four take you from an empty Umbraco site to a w
 3. [Configuration](getting-started/configuration.md): set the main options.
 4. [Quick start](getting-started/quick-start.md): create a small catalog and add a product to a basket.
 5. [Guides](guides/README.md): build the rest of the store, one part at a time.
+6. [Examples](examples/README.md): copy working code for common tasks.
 
 ## Sections
 
@@ -43,6 +45,10 @@ One guide for each part of a store. Each explains what the feature does, how to 
 - **Checkout, payment and shipping:** [Checkout](guides/checkout.md), [Providers](guides/providers.md), [Payments](guides/payments.md), [Shipping](guides/shipping.md), [Stock reservations](guides/reservations.md), [Gift-card recovery](guides/giftcard-recovery.md)
 - **Discounts:** [Discounts and coupons](guides/discounts.md)
 - **Storefront integration:** [Headless storefronts](guides/headless.md), [Tracking and consent](guides/tracking-and-consent.md)
+
+### [Examples](examples/README.md)
+
+Working code you can copy: event handlers, your own product classes, imports with images and variants, storefront pages, Manager actions and background jobs.
 
 ### [Reference](reference/README.md)
 

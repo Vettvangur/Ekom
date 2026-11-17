@@ -68,6 +68,7 @@ Building a first storefront? Read these four in order. Together they cover the p
 ## Other sections
 
 - [Getting started](../getting-started/README.md): install and configure Ekom.
+- [Examples](../examples/README.md): working code you can copy for common tasks.
 - [Reference](../reference/README.md): the .NET API, HTTP API, events and settings.
 - [Manager](../manager/README.md): the backoffice area for orders, customers and analytics.
 - [Upgrading](../upgrading/README.md): move a site to a newer Umbraco or Ekom version.

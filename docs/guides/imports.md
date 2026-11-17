@@ -44,6 +44,10 @@ On this page:
 
 ## Before you start
 
+### Add the properties the import needs
+
+Ekom does not create the properties the import service reads and writes. Add them to your document types and media types before the first import. Without `comparer` and `ekmIdentifier`, every save throws. [Prepare Umbraco for imports](../examples/imports.md#prepare-umbraco-for-imports) lists each property and where it goes.
+
 ### Identify every item with a stable identifier
 
 Every import model inherits from `ImportBase`. These members are required:
@@ -64,7 +68,7 @@ Identifiers are compared exactly, so upper and lower case matter. Do not use a S
 | --- | --- |
 | `Categories` | The top categories. Each `ImportCategory` has `SubCategories`, so the list is a tree. |
 | `Products` | All products, as a flat list. |
-| `MediaRootKey` | Required. The media folder where new media is created. `Guid.Empty` means do not load media. |
+| `MediaRootKey` | Required. The media folder where new media is created. Always pass a folder that exists. |
 | `RecycleBinKey` | Optional. A category node to move removed products to, instead of deleting them. |
 | `ProductProcessKey` | Optional. A category node for products that come back from the recycle node. |
 
@@ -233,7 +237,7 @@ All types have `SortOrder` and `Action` (`ImportMediaAction.Add`, the default, o
 
 New media is created under `ImportData.MediaRootKey`, or under the `mediaRootKey` argument of the single-item methods.
 
-- `FullSync` and `CategorySync` load the whole media folder. With `MediaRootKey = Guid.Empty` they do not load the media folder.
+- `FullSync` and `CategorySync` load the whole media folder. `MediaRootKey = Guid.Empty` does not leave media alone: the import still processes each item's media list, so existing image fields can be cleared, and an item with URL, bytes or base64 media fails because there is no folder to create the media in.
 - `ProductSync`, `VariantGroupSync` and `VariantSync` load only the media the payload refers to. Media that a save handler adds later, for example an `ImportMediaFromUdi` added in `ProductSaveStarting`, is looked up under the media folder when it is needed.
 - The single-item methods need a `mediaRootKey` that exists.
 
@@ -497,7 +501,7 @@ A node is saved when the comparer changed, when the node is new, or when its ima
 | --- | --- |
 | `SaveEvent` | `SavePublish` (default), `Save` or `Unpublish`. See the next table. |
 | `PreservePublishStatus` | `true`: an existing published node is saved and published, an existing unpublished node is only saved, and a new node is saved but not published. |
-| `PreserveExistingValues` | `true`: keep the current value when the incoming value is empty. For products this covers the title (except on new products), summary, description, the extra categories and media. For variants it covers the description and media. |
+| `PreserveExistingValues` | `true`: the import does not write these values on an existing item, even when it sends new ones. For products this covers the title, summary, description and the extra categories; a new product still gets its title and extra categories. For variants it covers the description. Media is handled separately: the incoming media list is ignored when the field already holds any media. |
 | `PreservePrimaryCategory` | Products only. `true`: an existing product stays in its current category, and the first `Categories` value is used only when the product is created. |
 | `SortOrder` | Sets the Umbraco sort order among siblings. |
 | `CreateDate`, `UpdateDate` | Set the node's dates. When empty, the current dates stay. |

@@ -93,7 +93,7 @@ By default every store shares one count per product. Set `Ekom:PerStoreStock` to
 | `Ekom:PerStoreStock` | `false` | `false`: one count per product, and any store alias you pass is ignored. `true`: one count per product and store, and a store is required. |
 | `Ekom:DisableStock` | `false` | `true`: Ekom no longer rejects an order line because there is too little stock. |
 
-With per-store stock turned on, the methods that take no store alias use the store of the current storefront request. Background jobs, imports and message handlers have no such request, so pass the store alias there.
+With per-store stock turned on, the methods that take no store alias use the store of the current storefront request. Background jobs, imports and message handlers have no such request. There Ekom falls back to the first store without an error, so the wrong store's stock can be read or changed. Always pass the store alias in that code. See [Use Ekom outside a web request](../examples/background-jobs.md).
 
 `Ekom:DisableStock` does not make warehouse stock sellable. If you want to sell products that are out of stock, turn on backorder for those products instead of turning stock off for the whole site.
 
@@ -119,22 +119,24 @@ Checkout uses the same buffer rules.
 
 ### Changing which lines need stock
 
-By default a line needs stock unless its product has backorder turned on. To use a different rule, for example backorder for wholesale customers only, implement `ICheckoutStockPolicy`:
+By default a line needs stock unless its product has backorder turned on. To use a different rule at checkout, implement `ICheckoutStockPolicy`. This example lets only wholesale customers order a backorder product beyond its stock:
 
 ```csharp
 using Ekom.Models;
 using Ekom.Services;
 
-public sealed class WholesaleStockPolicy : ICheckoutStockPolicy
+public sealed class WholesaleBackorderPolicy : ICheckoutStockPolicy
 {
     public bool RequiresStock(IOrderInfo order, IOrderLine line)
     {
-        if (line.Product.Backorder) return false;
+        // A product without backorder always needs stock.
+        if (!line.Product.Backorder) return true;
 
         bool isWholesale =
             order.CustomData.TryGetValue("customerType", out string? customerType)
             && customerType == "wholesale";
 
+        // A backorder product needs stock unless the customer is wholesale.
         return !isWholesale;
     }
 }
@@ -143,10 +145,16 @@ public sealed class WholesaleStockPolicy : ICheckoutStockPolicy
 Register it in the site's service setup. Your registration replaces Ekom's default policy.
 
 ```csharp
-builder.Services.AddSingleton<ICheckoutStockPolicy, WholesaleStockPolicy>();
+builder.Services.AddSingleton<ICheckoutStockPolicy, WholesaleBackorderPolicy>();
 ```
 
-Ekom calls the policy when it prepares the checkout and again when it completes the order. The second call can happen without a web request, for example from a payment callback. Base the decision on data saved with the order, not on the current user or session.
+What to know:
+
+- The policy is used at checkout only. Adding a line to the basket has its own check, which always requires stock for a product without backorder. A policy therefore cannot let anyone order a product without backorder beyond its stock. It can only tighten the rule for backorder products.
+- Ekom calls the policy when it prepares the checkout and again when it completes the order. The second call can happen without a web request, for example from a payment callback. Base the decision on data saved with the order, not on the current user or session.
+- Only the product's backorder setting counts. A variant's own backorder setting is not checked here.
+
+For a version that reads the customer's member group, see [Replace Ekom services](../examples/replace-services.md).
 
 ## Discount stock
 

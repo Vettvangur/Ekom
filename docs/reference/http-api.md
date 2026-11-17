@@ -25,7 +25,7 @@ The storefront routes (`/ekom/api`, `/ekom/catalog`, `/ekom/provider`, `/ekom/or
 
 `GET /ekom/order/{orderId}` returns any order, including completed orders, to anyone who knows its key. If order keys must stay secret, protect that route.
 
-The basket is found through Ekom's basket cookie and the store of the current request. A `storeAlias` is a route, query or body value only on the routes that list it. There is no store alias header.
+The basket is found through Ekom's basket cookie and the store of the current request. On `/ekom` routes Ekom also sets the request's store from a `storeAlias` query value, form field or `storeAlias` request header when one is sent. Routes that list `storeAlias` as a route or body value use that value.
 
 ### Limits
 
@@ -223,7 +223,7 @@ The response depends on the checkout result:
 | Result | Response |
 | --- | --- |
 | Bad request | `400`. When shipping validation failed, the body says why. |
-| Redirect | `302` to the payment provider's URL. |
+| Offline payment completed | `302` to the receipt page. Online providers answer `230` with the provider's HTML. |
 | Anything else | That status code with the result as a JSON body. |
 
 ### Payment return
