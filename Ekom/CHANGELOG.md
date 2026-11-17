@@ -397,6 +397,11 @@
 
 * **manager:** show stored customer values decoded in the Customers section ([#1209](https://github.com/Vettvangur/Ekom/issues/1209)) ([18d8a89](https://github.com/Vettvangur/Ekom/commit/18d8a8922ae65d866872cddd5e019ca4778c77ca))
 
+
+### Performance Improvements
+
+* **catalog:** compute price totals and parsed node values once per entity ([#1212](https://github.com/Vettvangur/Ekom/issues/1212)) ([fc9a7e4](https://github.com/Vettvangur/Ekom/commit/fc9a7e49450364b2cc6d833d7bc153e849cd9268))
+
 ## [1.3.2](https://github.com/Vettvangur/Ekom/compare/Ekom-v1.3.1...Ekom-v1.3.2) (2026-11-16)
 
 
