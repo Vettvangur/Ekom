@@ -154,6 +154,37 @@ public sealed class OrderPaymentsTests
     }
 
     [Fact]
+    public async Task EveryPaymentStatusChangeRaisesItsOwnEvent()
+    {
+        using var fixture = new Fixture();
+        var orderId = fixture.AddOpenOrder();
+        var payment = await fixture.Payments.CreateAsync(fixture.NewPayment(orderId));
+        var raised = new List<string>();
+        Func<object, PaymentStatusChangedEventArgs, CancellationToken, Task> onPayment = (_, e, _) =>
+        {
+            if (e.OrderUniqueId == orderId) raised.Add($"{e.PreviousStatus}->{e.Status}");
+            return Task.CompletedTask;
+        };
+        OrderEvents.PaymentStatusChangedAsync += onPayment;
+        try
+        {
+            // A gateway callback, the same callback delivered again, then a manual change in the manager.
+            var capture = new PaymentTransaction { PaymentId = payment.PaymentId, Type = PaymentTransactionType.Captured, TransactionId = "tx-1" };
+            await fixture.Payments.RecordAsync(capture);
+            await fixture.Payments.RecordAsync(capture);
+            using var db = fixture.Factory.GetDatabase();
+            var revision = db.OrderData.Single(x => x.UniqueId == orderId).StatusRevision;
+            await fixture.States.ChangeAsync(orderId, new OrderStateChangeRequest(revision, "PaymentVoided", Notify: true));
+        }
+        finally
+        {
+            OrderEvents.PaymentStatusChangedAsync -= onPayment;
+        }
+
+        Assert.Equal(new[] { "Pending->Paid", "Paid->Voided" }, raised);
+    }
+
+    [Fact]
     public async Task ManagerPaymentChangeIsStoredAsManualRowAndSurvivesLateFailure()
     {
         using var fixture = new Fixture();

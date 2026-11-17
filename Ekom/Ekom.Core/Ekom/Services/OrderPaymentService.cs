@@ -95,6 +95,8 @@ internal sealed class OrderPaymentService : IOrderPayments
         PaymentStatus? previousStatus = null;
         PaymentStatus? status = null;
         string? amountMismatch = null;
+        OrderData? changedOrder = null;
+        OrderStatuses statusesBefore = default;
 
         await using (var db = _factory.GetDatabase())
         {
@@ -152,6 +154,8 @@ internal sealed class OrderPaymentService : IOrderPayments
             if (order != null)
             {
                 previousStatus = order.Status.PaymentStatus;
+                statusesBefore = OrderStateRules.Statuses(order);
+                changedOrder = order;
                 status = await ApplyStatusAsync(db, order, ct).ConfigureAwait(false);
                 amountMismatch = await DescribeAmountMismatchAsync(db, order, row, ct).ConfigureAwait(false);
                 await db.InsertAsync(new OrderActivityLog
@@ -183,6 +187,8 @@ internal sealed class OrderPaymentService : IOrderPayments
             PreviousPaymentStatus = previousStatus,
             PaymentStatus = status,
         }, ct).ConfigureAwait(false);
+        if (changedOrder != null)
+            await OrderEvents.RaiseStatusChangesAsync(this, changedOrder, statusesBefore, ct).ConfigureAwait(false);
 
         if (amountMismatch != null)
         {
@@ -249,16 +255,20 @@ internal sealed class OrderPaymentService : IOrderPayments
     private async Task<PaymentStatus?> ReapplyStatusAfterCompletionAsync(Guid orderId, CancellationToken ct)
     {
         PaymentStatus? status;
+        OrderData? order;
+        OrderStatuses statusesBefore;
         await using (var db = _factory.GetDatabase())
         {
             await using var dbTransaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
-            var order = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderId, ct).ConfigureAwait(false);
+            order = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderId, ct).ConfigureAwait(false);
             if (order == null) return null;
+            statusesBefore = OrderStateRules.Statuses(order);
             status = await ApplyStatusAsync(db, order, ct, projectLegacy: false).ConfigureAwait(false);
             await dbTransaction.CommitAsync(ct).ConfigureAwait(false);
         }
         _cache.Remove(orderId);
         _cache.Remove(orderId.ToString());
+        await OrderEvents.RaiseStatusChangesAsync(this, order, statusesBefore, ct).ConfigureAwait(false);
         return status;
     }
 

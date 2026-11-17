@@ -1,3 +1,4 @@
+using Ekom.Events;
 using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Models.Orders;
@@ -197,6 +198,65 @@ public sealed class OrderStateMigrationTests
         Assert.Equal(123.45m, saved.TotalAmount);
         Assert.Equal(expected, saved.Status.OrderStatus);
         fixture.Stock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task EveryStatusChangeRaisesItsOwnEvent()
+    {
+        using var basket = new CheckoutPaymentWindowFixture(reservations: false);
+        using var source = basket.Database.Factory.GetDatabase();
+        using var fixture = new Fixture(true);
+        var id = fixture.Add("ReadyForDispatch");
+        using var db = fixture.Factory.GetDatabase();
+        var payload = source.OrderData.Single(x => x.UniqueId == basket.OrderId).OrderInfo;
+        db.OrderData.Where(x => x.UniqueId == id).Set(x => x.OrderInfo, payload).Update();
+        await fixture.Service.MigrateAsync();
+
+        var raised = new List<string>();
+        Func<object, OrderStatusChangedEventArgs, CancellationToken, Task> onOrder = (_, e, _) =>
+        {
+            if (e.OrderUniqueId == id) raised.Add($"Order:{e.PreviousStatus}->{e.Status}:{e.OrderInfo?.UniqueId == id}");
+            return Task.CompletedTask;
+        };
+        Func<object, PaymentStatusChangedEventArgs, CancellationToken, Task> onPayment = (_, e, _) =>
+        {
+            if (e.OrderUniqueId == id) raised.Add($"Payment:{e.PreviousStatus}->{e.Status}:{e.OrderInfo?.UniqueId == id}");
+            return Task.CompletedTask;
+        };
+        Func<object, FulfillmentStatusChangedEventArgs, CancellationToken, Task> onFulfillment = (_, e, _) =>
+        {
+            if (e.OrderUniqueId == id) raised.Add($"Fulfillment:{e.PreviousStatus}->{e.Status}:{e.OrderInfo?.UniqueId == id}");
+            return Task.CompletedTask;
+        };
+        OrderEvents.OrderStatusChangedAsync += onOrder;
+        OrderEvents.PaymentStatusChangedAsync += onPayment;
+        OrderEvents.FulfillmentStatusChangedAsync += onFulfillment;
+        try
+        {
+            await fixture.Service.ChangeAsync(id, new(1, "Picking", Notify: true));
+            await fixture.Service.ChangeAsync(id, new(2, "Picking", Notify: true));
+            await fixture.Service.ChangeAsync(id, new(3, "Picked"));
+            await fixture.Service.ChangeAsync(id, new(4, "Packed", Notify: true));
+            await fixture.Service.ChangeAsync(id, new(5, "Fulfill", Notify: true));
+            await fixture.Service.ChangeAsync(id, new(6, "Reopen", Notify: true));
+        }
+        finally
+        {
+            OrderEvents.OrderStatusChangedAsync -= onOrder;
+            OrderEvents.PaymentStatusChangedAsync -= onPayment;
+            OrderEvents.FulfillmentStatusChangedAsync -= onFulfillment;
+        }
+
+        // Setting the status an order already has raises nothing, and neither does a change made with
+        // events switched off (Picked). Fulfilling a paid order also closes it.
+        Assert.Equal(new[]
+        {
+            "Fulfillment:Unfulfilled->Picking:True",
+            "Fulfillment:Picked->Packed:True",
+            "Order:Open->Closed:True",
+            "Fulfillment:Packed->Fulfilled:True",
+            "Order:Closed->Open:True",
+        }, raised);
     }
 
     [Fact]

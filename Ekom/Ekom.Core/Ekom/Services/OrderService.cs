@@ -387,31 +387,15 @@ partial class OrderService
         }
 
         OrderStatus oldStatus = order.OrderStatus;
-        
-        var OrderStatusEventModel = new OrderStatusEventArgs()
-        {
-            OrderUniqueId = uniqueId,
-            OrderInfo = new OrderInfo(order),
-            PreviousStatus = oldStatus,
-            Status = status,
-            ClearCustomerOrderReference = true
-        };
-
-        if (settings.FireOnOrderStatusChangingEvent)
-        {
-            OrderEvents.OnOrderStatusChanging(this, OrderStatusEventModel);
-            await OrderEvents.OnOrderStatusChangingAsync(this, OrderStatusEventModel, ct: ct);
-        }
 
         order.OrderStatus = status;
 
-        if (OrderStatusEventModel.ClearCustomerOrderReference)
-        {
-            ClearCustomerOrderReference(order);
-        }
+        ClearCustomerOrderReference(order);
 
         try
         {
+            // FireEvents = false (the manager's "Trigger status events" switch) keeps the status change events quiet.
+            using var quiet = settings.FireEvents ? null : OrderEvents.SuppressStatusChanges();
             await _orderRepository.UpdateOrderAsync(order, ct)
                 .ConfigureAwait(false);
         }
@@ -431,26 +415,6 @@ partial class OrderService
             uniqueId.ToString(),
             orderInfo,
             Configuration.orderInfoCacheTime);
-
-        if (settings.FireOnOrderStatusChangingEvent)
-        {
-            OrderEvents.OnOrderStatusChanged(this, new OrderStatusEventArgs
-            {
-                OrderUniqueId = uniqueId,
-                OrderInfo = orderInfo,
-                PreviousStatus = oldStatus,
-                Status = status,
-            });
-
-            await OrderEvents.OnOrderStatusChangedAsync(this, new OrderStatusEventArgs
-            {
-                OrderUniqueId = uniqueId,
-                OrderInfo = orderInfo,
-                PreviousStatus = oldStatus,
-                Status = status,
-            }, ct);
-
-        }
 
         await _orderActivityLogService.AddOrderLogAsync(
             uniqueId,

@@ -724,8 +724,7 @@ public sealed class OrderReservationReleaseTests
         }
 
         var error = await Assert.ThrowsAsync<CheckoutConflictException>(() => fixture.Service.ChangeOrderStatusAsync(
-            fixture.Order.UniqueId, OrderStatus.ReadyForDispatch,
-            settings: new ChangeOrderSettings { FireOnOrderStatusChangingEvent = false }));
+            fixture.Order.UniqueId, OrderStatus.ReadyForDispatch));
 
         Assert.Equal(paymentReview ? CheckoutConflictReason.PaymentReview : CheckoutConflictReason.Busy, error.Reason);
         var warning = Assert.Single(fixture.Logger.Entries, x => x.Level == LogLevel.Warning);
