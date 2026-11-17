@@ -95,6 +95,14 @@ internal static class OrderCustomData
         return result;
     }
 
+    /// <summary>
+    /// Provider custom data (customshipping*, custompayment*) is HTML-encoded once, when it is
+    /// stored on the ordered provider. Encoding it here as well would store it encoded twice.
+    /// </summary>
+    internal static bool IsProviderField(string name)
+        => name.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase)
+        || name.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase);
+
     private static string Encode(string key, string value, bool encodeOtherFields)
-        => encodeOtherFields && !IsField(key) ? HtmlEncoder.Default.Encode(value) : value;
+        => encodeOtherFields && !IsField(key) && !IsProviderField(key) ? HtmlEncoder.Default.Encode(value) : value;
 }

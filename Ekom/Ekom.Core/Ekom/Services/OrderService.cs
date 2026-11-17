@@ -2074,17 +2074,18 @@ partial class OrderService
                 continue;
             }
 
+            // Provider custom data is HTML-encoded once, by the ordered provider that stores it.
             if (key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
             {
                 customShippingData ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                customShippingData[key] = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(value);
+                customShippingData[key] = value;
                 continue;
             }
 
             if (key.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase))
             {
                 customPaymentData ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                customPaymentData[key] = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(value);
+                customPaymentData[key] = value;
                 continue;
             }
 
