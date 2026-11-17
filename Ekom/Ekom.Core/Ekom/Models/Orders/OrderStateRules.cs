@@ -3,6 +3,9 @@ using LegacyStatus = Ekom.Utilities.OrderStatus;
 
 namespace Ekom.Models.Orders;
 
+/// <summary>An order's three statuses at one moment, for telling what a save changed.</summary>
+internal readonly record struct OrderStatuses(OrderStatus? Order, PaymentStatus? Payment, FulfillmentStatus? Fulfillment);
+
 internal static class OrderStateRules
 {
     public static OrderStatusSnapshot Read(OrderData data)
@@ -48,6 +51,19 @@ internal static class OrderStateRules
 
     private static T? Parse<T>(string? value) where T : struct, Enum
         => Enum.TryParse<T>(value, out var result) && Enum.IsDefined(result) ? result : null;
+
+    /// <summary>The three statuses a stored order has, without reading its quantities. A null status is not known.</summary>
+    public static OrderStatuses Statuses(OrderData data)
+    {
+        var order = Parse<OrderStatus>(data.OrderStateCol);
+        var payment = Parse<PaymentStatus>(data.PaymentStateCol);
+        var fulfillment = Parse<FulfillmentStatus>(data.FulfillmentStateCol);
+        if (data.StatusMappingVersion != 0) return new(order, payment, fulfillment);
+        var mapped = LegacyOrderStatusMapper.Map(data.OrderStatusCol, data.PaidDate);
+        return mapped.OrderStatus == OrderStatus.Cancelled
+            ? new(mapped.OrderStatus, payment ?? mapped.PaymentStatus, fulfillment ?? mapped.FulfillmentStatus)
+            : new(mapped.OrderStatus, mapped.PaymentStatus, mapped.FulfillmentStatus);
+    }
 
     public static Dictionary<Guid, decimal> Quantities(OrderData data)
         => string.IsNullOrWhiteSpace(data.FulfilledQuantitiesJson) ? new()

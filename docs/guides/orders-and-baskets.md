@@ -286,13 +286,13 @@ The public `GET /ekom/order/{orderId}` endpoint has no authorization attribute i
 - `OrderUpdatingAsync` and `OrderUpdatedAsync`
 - `CustomerEmailAddedAsync`
 - `CustomerInformationUpdatingAsync` and `CustomerInformationUpdatedAsync`
-- `OrderStatusChangingAsync` and `OrderStatusChangedAsync`
+- `OrderStatusChangedAsync`, `PaymentStatusChangedAsync`, and `FulfillmentStatusChangedAsync`, raised every time the matching status changes. See [Events](../reference/events.md#status-change-events).
 - `AddingOrderlineAsync`, `AddedOrderlineAsync`, `UpdatedOrderlineAsync`, and `RemovedOrderlineAsync`
 - `ShippingProviderAddedAsync` and `PaymentProviderAddedAsync`
 
 Checkout has separate `CheckoutEvents` hooks for payment preparation, processing, payment items, and completion. These can modify pipeline behavior, including stock validation and status updates, so cover handlers with integration tests.
 
-`OrderSettings.FireEvents` is the mutation master switch. More specific flags can suppress order-updated or status-changing notifications. Handlers may run while Ekom holds an order mutation lock; avoid recursively mutating the same order unless deliberately using the event-handler settings path. Keep completion handlers idempotent because payment callbacks can retry, and unsubscribe static handlers during application shutdown.
+`OrderSettings.FireEvents` is the mutation master switch. A more specific flag can suppress order-updated notifications. A status change made with `FireEvents = false`, or in the manager with **Trigger status events** off, raises no status change events. Handlers may run while Ekom holds an order mutation lock; avoid recursively mutating the same order unless deliberately using the event-handler settings path. Keep completion handlers idempotent because payment callbacks can retry, and unsubscribe static handlers during application shutdown.
 
 See the [Events reference](../reference/events.md#order-events) for event arguments, mutable values, sync compatibility events, and handler guidance.
 

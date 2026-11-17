@@ -60,28 +60,101 @@ public static class OrderEvents
         => AsyncEventInvoker.InvokeAsync(OrderUpdatingAsync, sender, args, ct);
 
     // ----------------------------
-    // Order status changing/changed
+    // Status changed: order, payment, fulfilment
     // ----------------------------
 
-    public static event EventHandler<OrderStatusEventArgs>? OrderStatusChanging;
+    /// <summary>
+    /// Raised every time an order's status (Draft, Open, Closed, Cancelled) changes, after the change is stored.
+    /// The arguments carry the order and the status before and after.
+    /// </summary>
+    public static event Func<object, OrderStatusChangedEventArgs, CancellationToken, Task>? OrderStatusChangedAsync;
 
-    internal static void OnOrderStatusChanging(object sender, OrderStatusEventArgs args)
-        => OrderStatusChanging?.Invoke(sender, args);
-
-    public static event Func<object, OrderStatusEventArgs, CancellationToken, Task>? OrderStatusChangingAsync;
-
-    public static Task OnOrderStatusChangingAsync(object sender, OrderStatusEventArgs args, CancellationToken ct = default)
-        => AsyncEventInvoker.InvokeAsync(OrderStatusChangingAsync, sender, args, ct);
-
-    public static event EventHandler<OrderStatusEventArgs>? OrderStatusChanged;
-
-    internal static void OnOrderStatusChanged(object sender, OrderStatusEventArgs args)
-        => OrderStatusChanged?.Invoke(sender, args);
-
-    public static event Func<object, OrderStatusEventArgs, CancellationToken, Task>? OrderStatusChangedAsync;
-
-    public static Task OnOrderStatusChangedAsync(object sender, OrderStatusEventArgs args, CancellationToken ct = default)
+    public static Task OnOrderStatusChangedAsync(object sender, OrderStatusChangedEventArgs args, CancellationToken ct = default)
         => AsyncEventInvoker.InvokeAsync(OrderStatusChangedAsync, sender, args, ct);
+
+    /// <summary>
+    /// Raised every time an order's payment status changes, after the change is stored.
+    /// The arguments carry the order and the payment status before and after.
+    /// </summary>
+    public static event Func<object, PaymentStatusChangedEventArgs, CancellationToken, Task>? PaymentStatusChangedAsync;
+
+    public static Task OnPaymentStatusChangedAsync(object sender, PaymentStatusChangedEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(PaymentStatusChangedAsync, sender, args, ct);
+
+    /// <summary>
+    /// Raised every time an order's fulfilment status changes, after the change is stored.
+    /// The arguments carry the order and the fulfilment status before and after.
+    /// </summary>
+    public static event Func<object, FulfillmentStatusChangedEventArgs, CancellationToken, Task>? FulfillmentStatusChangedAsync;
+
+    public static Task OnFulfillmentStatusChangedAsync(object sender, FulfillmentStatusChangedEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(FulfillmentStatusChangedAsync, sender, args, ct);
+
+    private static readonly AsyncLocal<bool> _statusChangesSuppressed = new();
+
+    /// <summary>
+    /// Keeps the status change events quiet for the saves made until the result is disposed.
+    /// For a caller that was asked not to fire events, such as a manager change with events switched off.
+    /// </summary>
+    internal static IDisposable SuppressStatusChanges() => new StatusChangeSuppression();
+
+    private sealed class StatusChangeSuppression : IDisposable
+    {
+        private readonly bool _previous = _statusChangesSuppressed.Value;
+
+        public StatusChangeSuppression() => _statusChangesSuppressed.Value = true;
+
+        public void Dispose() => _statusChangesSuppressed.Value = _previous;
+    }
+
+    /// <summary>
+    /// Raises one event for each status of a stored order that differs from <paramref name="before"/>.
+    /// Call it after the change is committed.
+    /// </summary>
+    internal static async Task RaiseStatusChangesAsync(object sender, OrderData order, Models.Orders.OrderStatuses before, CancellationToken ct)
+    {
+        if (_statusChangesSuppressed.Value) return;
+        var after = Models.Orders.OrderStateRules.Statuses(order);
+        if (after == before) return;
+
+        // The change is already stored. An order whose stored content cannot be read still gets its events.
+        IOrderInfo? orderInfo;
+        try { orderInfo = new OrderInfo(order); }
+        catch (Exception) { orderInfo = null; }
+
+        if (after.Order is { } orderStatus && orderStatus != before.Order)
+        {
+            await OnOrderStatusChangedAsync(sender, new OrderStatusChangedEventArgs
+            {
+                OrderUniqueId = order.UniqueId,
+                OrderInfo = orderInfo,
+                PreviousStatus = before.Order,
+                Status = orderStatus,
+            }, ct).ConfigureAwait(false);
+        }
+
+        if (after.Payment is { } paymentStatus && paymentStatus != before.Payment)
+        {
+            await OnPaymentStatusChangedAsync(sender, new PaymentStatusChangedEventArgs
+            {
+                OrderUniqueId = order.UniqueId,
+                OrderInfo = orderInfo,
+                PreviousStatus = before.Payment,
+                Status = paymentStatus,
+            }, ct).ConfigureAwait(false);
+        }
+
+        if (after.Fulfillment is { } fulfillmentStatus && fulfillmentStatus != before.Fulfillment)
+        {
+            await OnFulfillmentStatusChangedAsync(sender, new FulfillmentStatusChangedEventArgs
+            {
+                OrderUniqueId = order.UniqueId,
+                OrderInfo = orderInfo,
+                PreviousStatus = before.Fulfillment,
+                Status = fulfillmentStatus,
+            }, ct).ConfigureAwait(false);
+        }
+    }
 
     // ----------------------------
     // Order lines
@@ -164,14 +237,49 @@ public sealed class PaymentRecordedEventArgs : EventArgs
     public Models.Orders.PaymentStatus? PaymentStatus { get; init; }
 }
 
-/// <summary>For changing and changed <see cref="OrderStatus"/> events</summary>
-public sealed class OrderStatusEventArgs : EventArgs
+/// <summary>An order's status (Draft, Open, Closed, Cancelled) changed and the change was stored.</summary>
+public sealed class OrderStatusChangedEventArgs : EventArgs
 {
-    public Guid OrderUniqueId { get; set; }
-    public IOrderInfo? OrderInfo { get; set; }
-    public OrderStatus PreviousStatus { get; set; }
-    public OrderStatus Status { get; set; } // keep settable if handlers can change the status
-    public bool ClearCustomerOrderReference { get; set; } = true;
+    public required Guid OrderUniqueId { get; init; }
+
+    /// <summary>The order as it was stored with the new status. Null when the stored order could not be read.</summary>
+    public IOrderInfo? OrderInfo { get; init; }
+
+    /// <summary>The order status before the change. Null when the order's history did not say.</summary>
+    public Models.Orders.OrderStatus? PreviousStatus { get; init; }
+
+    /// <summary>The order status the order has now.</summary>
+    public required Models.Orders.OrderStatus Status { get; init; }
+}
+
+/// <summary>An order's payment status changed and the change was stored.</summary>
+public sealed class PaymentStatusChangedEventArgs : EventArgs
+{
+    public required Guid OrderUniqueId { get; init; }
+
+    /// <summary>The order as it was stored with the new payment status. Null when the stored order could not be read.</summary>
+    public IOrderInfo? OrderInfo { get; init; }
+
+    /// <summary>The payment status before the change. Null when the order's history did not say.</summary>
+    public Models.Orders.PaymentStatus? PreviousStatus { get; init; }
+
+    /// <summary>The payment status the order has now.</summary>
+    public required Models.Orders.PaymentStatus Status { get; init; }
+}
+
+/// <summary>An order's fulfilment status changed and the change was stored.</summary>
+public sealed class FulfillmentStatusChangedEventArgs : EventArgs
+{
+    public required Guid OrderUniqueId { get; init; }
+
+    /// <summary>The order as it was stored with the new fulfilment status. Null when the stored order could not be read.</summary>
+    public IOrderInfo? OrderInfo { get; init; }
+
+    /// <summary>The fulfilment status before the change. Null when the order's history did not say.</summary>
+    public Models.Orders.FulfillmentStatus? PreviousStatus { get; init; }
+
+    /// <summary>The fulfilment status the order has now.</summary>
+    public required Models.Orders.FulfillmentStatus Status { get; init; }
 }
 
 public sealed class OrderUpdatedEventArgs : EventArgs

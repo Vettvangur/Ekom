@@ -68,23 +68,56 @@ Handlers run sequentially; the first rejection stops dispatch and preserves its 
 - `OrderUpdatingAsync` and `OrderUpdatedAsync`
 - `CustomerEmailAddedAsync`
 - `CustomerInformationUpdatingAsync` and `CustomerInformationUpdatedAsync`
-- `OrderStatusChangingAsync` and `OrderStatusChangedAsync`
+- `OrderStatusChangedAsync`, `PaymentStatusChangedAsync`, and `FulfillmentStatusChangedAsync`, one for each of an order's three statuses. See [Status change events](#status-change-events).
 - `AddingOrderlineAsync`, `AddedOrderlineAsync`, `RemovedOrderlineAsync`, and `UpdatedOrderlineAsync`
 - `ShippingProviderAddedAsync` and `PaymentProviderAddedAsync`
 - `PaymentRecordedAsync`, raised after a payment transaction was stored on the order and the payment status recalculated. Its arguments carry the payment, the transaction, and the payment status before and after. See [Payments](../guides/payments.md).
 - `ShipmentRecordedAsync`, raised after a shipment was created or something that happened to it was stored. Its arguments carry the shipment, the event, and the shipment state before it. See [Shipping and shipments](../guides/shipping.md).
 
-Legacy synchronous variants exist for order updated/updating, status changing/changed, adding/added/updated lines. They are distinct notifications; subscribing to both can run code twice when a workflow raises both.
+Legacy synchronous variants exist for order updated/updating and adding/added/updated lines. They are distinct notifications; subscribing to both can run code twice when a workflow raises both.
 
 Important mutable arguments:
 
-- `OrderStatusEventArgs.Status` can change the requested status; `ClearCustomerOrderReference` defaults to true.
-- `OrderStatusEventArgs.OrderInfo` provides the current order. The changing event receives it before persistence and the changed event receives it after persistence.
 - `AddingOrderlineEventArgs` can change settings, product, variant, quantity, action, and order.
 - Customer updating/updated arguments carry a replaceable `OrderInfo` and form dictionary.
-- `OrderSettings.FireEvents` is the master switch for mutations made through `Order`; `FireOnOrderUpdatedEvent` and `ChangeOrderSettings.FireOnOrderStatusChangingEvent` narrow it further.
+- `OrderSettings.FireEvents` is the master switch for mutations made through `Order`; `FireOnOrderUpdatedEvent` narrows it further. `Order.UpdateStatusAsync` with `FireEvents = false` raises no status change events.
 
 Order handlers may execute inside order mutation locking. Do not recursively mutate the same order unless using the intended `OrderSettings.IsEventHandler` path and understanding the lock behavior.
+
+### Status change events
+
+An order has three independent statuses, and each has its own event:
+
+| Event | Status | Values |
+| --- | --- | --- |
+| `OrderStatusChangedAsync` | Order status | `Draft`, `Open`, `Closed`, `Cancelled` |
+| `PaymentStatusChangedAsync` | Payment status | `Pending`, `Authorized`, `Paid`, `PartiallyPaid`, `Failed`, `PartiallyRefunded`, `Refunded`, `Voided` |
+| `FulfillmentStatusChangedAsync` | Fulfilment status | `Unfulfilled`, `Picking`, `Picked`, `Packed`, `PartiallyFulfilled`, `Fulfilled` |
+
+Each event is raised every time its status changes, whatever changed it: a manager action, a recorded payment, checkout completion, or code that sets the legacy status through `Order.UpdateStatusAsync`. It is raised after the change is stored, and not when a status is set to the value it already has.
+
+Two callers can keep a change quiet. In the manager, the **Trigger status events** switch on a status menu decides whether that change raises its events; `ManagerOrderStatusFireEventsByDefault` sets where the switch starts. In code, `Order.UpdateStatusAsync` with `ChangeOrderSettings.FireEvents = false` raises none. One save can raise more than one event: fulfilling a paid order that closes automatically raises `OrderStatusChangedAsync` and `FulfillmentStatusChangedAsync`.
+
+The arguments (`OrderStatusChangedEventArgs`, `PaymentStatusChangedEventArgs`, `FulfillmentStatusChangedEventArgs`) have the same shape:
+
+- `OrderUniqueId`: the order.
+- `PreviousStatus`: the status before the change. Null when the order's history did not say.
+- `Status`: the status the order has now.
+- `OrderInfo`: the order as it was stored. Null when the stored order could not be read.
+
+```csharp
+OrderEvents.FulfillmentStatusChangedAsync += async (sender, e, ct) =>
+{
+    if (e.Status == FulfillmentStatus.Fulfilled)
+    {
+        await SendShippedEmailAsync(e.OrderUniqueId, ct);
+    }
+};
+```
+
+The statuses are the enums in `Ekom.Models.Orders`. The events are notifications: a handler cannot change or cancel the status change.
+
+These events replace `OrderStatusChanging`, `OrderStatusChanged` and their async variants, which reported the legacy `Ekom.Utilities.OrderStatus`. `OrderStatusEventArgs` and `ChangeOrderSettings.FireOnOrderStatusChangingEvent` are removed with them.
 
 ## Checkout events
 

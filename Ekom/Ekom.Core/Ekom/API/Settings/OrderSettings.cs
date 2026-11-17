@@ -88,15 +88,6 @@ public class RemoveOrderSettings : OrderSettings
 /// </summary>
 public class ChangeOrderSettings : OrderSettings
 {
-    private bool _fireOnOrderStatusChangingEvent = true;
-    /// <summary>
-    /// Disable Ekom OnOrderStatusChanging event
-    /// </summary>
-    public bool FireOnOrderStatusChangingEvent
-    {
-        get => _fireOnOrderStatusChangingEvent && FireEvents;
-        set => _fireOnOrderStatusChangingEvent = value;
-    }
 }
 
 /// <summary>

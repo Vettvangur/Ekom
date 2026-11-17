@@ -73,11 +73,11 @@ internal sealed class OrderStateService : IOrderStateService
         }, token: ct).ConfigureAwait(false);
         await transaction.CommitAsync(ct).ConfigureAwait(false);
         Invalidate(orderId);
-        if (request.Notify && previousLegacy != data.OrderStatus)
+        // The manager's "Trigger status events" switch decides whether this change is announced.
+        if (request.Notify)
         {
-            var args = new OrderStatusEventArgs { OrderUniqueId = orderId, PreviousStatus = previousLegacy, Status = data.OrderStatus, OrderInfo = new OrderInfo(data) };
-            OrderEvents.OnOrderStatusChanged(this, args);
-            await OrderEvents.OnOrderStatusChangedAsync(this, args, ct).ConfigureAwait(false);
+            await OrderEvents.RaiseStatusChangesAsync(this, data,
+                new OrderStatuses(before.OrderStatus, before.PaymentStatus, before.FulfillmentStatus), ct).ConfigureAwait(false);
         }
         return data.Status;
     }

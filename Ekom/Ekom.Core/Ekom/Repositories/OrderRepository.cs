@@ -1,3 +1,4 @@
+using Ekom.Events;
 using Ekom.Models;
 using OrderStateRules = Ekom.Models.Orders.OrderStateRules;
 using Ekom.Services;
@@ -72,6 +73,7 @@ partial class OrderRepository
     {
         await using DbContext db = _databaseFactory.GetDatabase();
         CheckoutPaymentOperationScope.ForgetPersistedOrder(orderData.UniqueId);
+        Models.Orders.OrderStatuses? statusesBefore = null;
 
         if (_paymentAttempts == null)
         {
@@ -82,6 +84,7 @@ partial class OrderRepository
             if (previous != null && updated == 1)
                 await PersistStatusAsync(db, orderData, previous.OrderStatusCol, ct).ConfigureAwait(false);
             if (transaction != null) await transaction.CommitAsync(ct).ConfigureAwait(false);
+            if (previous != null && updated == 1) statusesBefore = OrderStateRules.Statuses(previous);
         }
         else
         {
@@ -130,6 +133,7 @@ partial class OrderRepository
                     await PersistStatusAsync(db, orderData, previous.OrderStatusCol, ct).ConfigureAwait(false);
                 commitStarted = true;
                 await transaction.CommitAsync(ct).ConfigureAwait(false);
+                if (previous != null) statusesBefore = OrderStateRules.Statuses(previous);
             }
             catch (Exception ex) when (ex is DbException or OperationCanceledException)
             {
@@ -147,13 +151,18 @@ partial class OrderRepository
                 _memoryCache.Remove(orderData.UniqueId);
                 _memoryCache.Remove(orderData.UniqueId.ToString());
                 return Task.CompletedTask;
-            }).ConfigureAwait(false);
+            }, () => RaiseStatusChangesAsync(orderData, statusesBefore, ct)).ConfigureAwait(false);
         else
         {
             _memoryCache.Remove(orderData.UniqueId);
             _memoryCache.Remove(orderData.UniqueId.ToString());
+            await RaiseStatusChangesAsync(orderData, statusesBefore, ct).ConfigureAwait(false);
         }
     }
+
+    // A save through the legacy order status can move the order, payment and fulfilment statuses.
+    private Task RaiseStatusChangesAsync(OrderData order, Models.Orders.OrderStatuses? before, CancellationToken ct)
+        => before == null ? Task.CompletedTask : OrderEvents.RaiseStatusChangesAsync(this, order, before.Value, ct);
 
     // A save only needs the stored state of the previous row; the order JSON can be large and is not read back.
     private static readonly Expression<Func<OrderData, OrderData>> PreviousState = x => new OrderData
