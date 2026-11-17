@@ -32,13 +32,13 @@ test('calendar groups are clipped and averages are weighted by orders',()=>{
  assert.equal(weeks[0].end,'2026-02-01');
  assert.equal(weeks[1].average,null);
 });
-function view() {
+function view(globals = {}) {
  const shared=module('manager-shared');
  shared.renderManagerContent=(root,html)=>{root.innerHTML=html;};
  const exports=module('analytics-section-view.element',{
  require:name=>name==='./manager-shared'?shared:name==='./analytics-data'?data:{UmbElementMixin:Base=>Base},
  HTMLElement:class {hasAttribute(){return true;} dispatchEvent(event){this.event=event;}},
- customElements:{define(){}},AbortController,CustomEvent:class {constructor(type,options){this.type=type;this.detail=options.detail;}}
+ customElements:{define(){}},AbortController,CustomEvent:class {constructor(type,options){this.type=type;this.detail=options.detail;}},...globals
  });
  const instance=new exports.EkomAnalyticsSectionViewElement();
  instance.querySelector=()=>null;instance.render=()=>{};instance.compare=false;
@@ -62,6 +62,38 @@ test('product queries are on demand and late failures do not replace current res
  pending[1].resolve({products:[{title:'latest'}],page:1});await latest;
  pending[0].reject(new Error('old error'));await old;
  assert.equal(instance.mostSoldProducts.products[0].title,'latest');assert.equal(instance.productError,'');
+});
+test('polling refreshes the charts and never asks for most-sold products',async()=>{
+ const {instance}=view({document:{hidden:false,activeElement:null}});
+ instance.contains=()=>false;instance.loading=false;instance.pollingSeconds=5;instance.productsVisible=true;instance.compare=true;
+ const products={products:[{title:'shown'}],page:1};instance.mostSoldProducts=products;instance.productError='kept';
+ let chartCalls=0,productCalls=0,renders=0;instance.render=()=>renders++;
+ const fresh=chart('2026-01-01',[5],[1]);
+ instance.api.charts=async()=>{chartCalls++;return fresh;};
+ instance.api.mostSoldProducts=async()=>{productCalls++;return {products:[{title:'polled'}],page:1};};
+ await instance.pollAnalytics();
+ assert.equal(chartCalls,2,'current and comparison period');assert.equal(productCalls,0);
+ assert.equal(instance.chartData,fresh);assert.equal(renders,1);
+ assert.equal(instance.mostSoldProducts,products);assert.equal(instance.productError,'kept');
+ instance.loadingMostSoldProducts=true;await instance.pollAnalytics();
+ assert.equal(chartCalls,3,'a product request in flight does not hold the charts back, and the comparison period is reused');
+ assert.equal(productCalls,0);assert.equal(instance.previousData,fresh);
+ instance.previousLoadedAt=0;await instance.pollAnalytics();
+ assert.equal(chartCalls,5,'the comparison period is refreshed once it is a minute old');
+});
+test('polling skips the chart queries while the change marker is the same',async()=>{
+ const {instance}=view({document:{hidden:false,activeElement:null}});
+ instance.contains=()=>false;instance.loading=false;instance.pollingSeconds=5;instance.compare=false;
+ let marker='a',chartCalls=0,markerCalls=0;
+ instance.api.orderChangeMarker=async()=>{markerCalls++;return marker;};
+ instance.api.charts=async()=>{chartCalls++;return chart('2026-01-01',[chartCalls],[1]);};
+ await instance.pollAnalytics();assert.equal(chartCalls,1,'the first poll has nothing to compare with');
+ await instance.pollAnalytics();await instance.pollAnalytics();
+ assert.equal(chartCalls,1);assert.equal(markerCalls,3);
+ marker='b';await instance.pollAnalytics();assert.equal(chartCalls,2,'an order changed');
+ instance.error='failed';await instance.pollAnalytics();assert.equal(chartCalls,3,'an error on screen is always retried');
+ instance.api.orderChangeMarker=async()=>{throw new Error('unavailable');};
+ await instance.pollAnalytics();assert.equal(chartCalls,4,'without a marker every poll refreshes');
 });
 test('drill through uses the selected bucket and clears hidden order filters',()=>{
  const {instance,shared}=view();instance.chartFilters={...shared.managerState.filters,store:'main',query:'hidden',productSku:'old'};

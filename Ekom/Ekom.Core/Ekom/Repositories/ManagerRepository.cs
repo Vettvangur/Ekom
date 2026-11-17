@@ -39,6 +39,21 @@ public class ManagerRepository
         return await db.QueryToListAsync<string>("SELECT DISTINCT Currency FROM EkomOrders WHERE StoreAlias = @store AND Currency IS NOT NULL", new { store }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A value that changes whenever an order is saved or an order review is added or resolved.
+    /// Polling compares it with the value it last saw and skips its queries while it is the same.
+    /// </summary>
+    public async Task<string> GetOrderChangeMarkerAsync(CancellationToken ct = default)
+    {
+        await using DbContext db = _databaseFactory.GetDatabase();
+        DateTime? latest = await db.OrderData.MaxAsync(x => (DateTime?)x.UpdateDate, ct).ConfigureAwait(false);
+        var reviews = db.GetTable<OrderReview>();
+        int reviewCount = await reviews.CountAsync(ct).ConfigureAwait(false);
+        int resolvedCount = await reviews.CountAsync(x => x.ResolvedUtc != null, ct).ConfigureAwait(false);
+
+        return FormattableString.Invariant($"{latest?.Ticks ?? 0}.{reviewCount}.{resolvedCount}");
+    }
+
     public async Task<IEnumerable<OrderData>> GetOrdersAsync(IReadOnlyCollection<string> allowedStoreAliases)
     {
         if (allowedStoreAliases.Count == 0)
@@ -522,7 +537,7 @@ ORDER BY {bucketDateExpression}";
 
         if (orderStatus == "NeedsReview")
         {
-            whereClause += " AND EXISTS (SELECT 1 FROM EkomOrderReviews r WHERE r.OrderId = EkomOrders.UniqueId AND r.ResolvedUtc IS NULL)";
+            whereClause += " AND EXISTS (SELECT 1 FROM EkomOrderReviews r WHERE r.OrderId = O.UniqueId AND r.ResolvedUtc IS NULL)";
             orderStatus = NeedsReviewStates;
         }
         if (Models.Orders.OrderStateQuery.Predicate(orderStatus) is string statePredicate)
@@ -559,7 +574,8 @@ ORDER BY {bucketDateExpression}";
                 MAX(json_extract(OL.value, '$.Product.Title')) as Title,
                 json_extract(OL.value, '$.Product.Id') as Id,
                 SUM(CAST(json_extract(OL.value, '$.Quantity') AS REAL)) AS ProductCount,
-                SUM(COALESCE(CAST(json_extract(OL.value, '$.Amount.Value') AS REAL), 0)) AS Total
+                SUM(COALESCE(CAST(json_extract(OL.value, '$.Amount.Value') AS REAL), 0)) AS Total,
+                COUNT(*) OVER () AS GroupCount
             FROM
                 EkomOrders O
             JOIN
@@ -570,7 +586,8 @@ ORDER BY {bucketDateExpression}";
                 MAX(OL.Title) as Title,
                 OL.Id,
                 SUM(OL.Quantity) AS ProductCount,
-                SUM(COALESCE(OL.Amount, 0)) AS Total
+                SUM(COALESCE(OL.Amount, 0)) AS Total,
+                COUNT(*) OVER () AS GroupCount
             FROM
                 EkomOrders O
             CROSS APPLY
@@ -611,13 +628,30 @@ ORDER BY {bucketDateExpression}";
 
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        var products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString(), param).ConfigureAwait(false);
-        var totals = db.Execute<MostSoldProductTotals>(sqlCount, param);
+        // Each row carries the number of products, so the order JSON is unpacked once instead of once more for a count.
+        var rows = await db.QueryToListAsync<MostSoldProductRow>(sqlBuilder.ToString(), param).ConfigureAwait(false);
+        var products = new List<MostSoldProduct>(rows.Count);
+        foreach (var row in rows)
+        {
+            products.Add(new MostSoldProduct
+            {
+                SKU = row.SKU,
+                Title = row.Title,
+                Id = row.Id,
+                ProductCount = row.ProductCount,
+                Total = row.Total,
+            });
+        }
+
+        // A page past the end has no row to carry the count.
+        int count = rows.Count > 0
+            ? rows[0].GroupCount
+            : offset == 0 ? 0 : (await db.QueryToListAsync<MostSoldProductTotals>(sqlCount, param).ConfigureAwait(false))[0].Count;
 
         return new MostSoldProductListData
         {
             Products = products,
-            Count = totals.Count,
+            Count = count,
             Page = currentPage,
             PageSize = currentPageSize
         };
@@ -626,6 +660,16 @@ ORDER BY {bucketDateExpression}";
     public class MostSoldProductTotals
     {
         public int Count { get; set; }
+    }
+
+    private sealed class MostSoldProductRow
+    {
+        public string SKU { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public int Id { get; set; }
+        public decimal ProductCount { get; set; }
+        public decimal Total { get; set; }
+        public int GroupCount { get; set; }
     }
 
     public object GetStatusList()

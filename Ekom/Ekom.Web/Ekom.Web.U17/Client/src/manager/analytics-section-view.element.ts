@@ -1,11 +1,15 @@
 import { renderManagerContent } from './manager-shared';
 import type { UmbThemeContext } from '@umbraco-cms/backoffice/themes';
 import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-import { formatDay, formatDayPart, storeDateFormat, renderSectionLoading, renderRowsLoading, storeCurrency, ChartData, EkomManagerApi, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
+import { formatDay, formatDayPart, storeDateFormat, renderSectionLoading, renderRowsLoading, storeCurrency, ChartData, EkomManagerApi, PollChangeGate, ManagerFilters, MostSoldProductsResult, escapeHtml, formatAnalyticsAmount, managerState, managerStyles, renderManagerHeader, ensureManagerCurrency, renderDateRange, bindDateRange, renderOrderViewOptions, renderStatusFilters, pageRange, renderLineChart, downloadBlob } from './manager-shared';
 import { AnalyticsBucket, AnalyticsMetric, analyticsSummary, groupAnalytics, percentageChange, matchingPreset, presetRange, previousPeriod } from './analytics-data';
+
+/** How long a poll keeps using the comparison period it already has. */
+const comparisonRefreshMs = 60_000;
 
 export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement) {
   private readonly api = new EkomManagerApi();
+  private readonly pollGate = new PollChangeGate(() => this.api.orderChangeMarker());
   private loading = true;
   private loadingMostSoldProducts = false;
   private error = '';
@@ -32,6 +36,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
   private pollingSeconds = 0;
   private pollingTimer = 0;
   private polling = false;
+  private previousLoadedAt = 0;
 
   private setPolling(seconds: number): void {
     if (![0, 2, 5, 10, 20, 30].includes(seconds)) return;
@@ -41,40 +46,58 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
     this.render();
   }
 
+  private flashPolled(): void {
+    const control = this.querySelector('.ekom-polling summary');
+    control?.classList.add('just-refreshed');
+    control?.addEventListener('animationend', event => {
+      if (event.target === control) control.classList.remove('just-refreshed');
+    }, { once: true });
+  }
+
+  /** Refreshes the charts only. Most-sold products are loaded on demand and never polled. */
   private async pollAnalytics(): Promise<void> {
-    if (!this.pollingSeconds || this.polling || this.disposed || document.hidden || this.loading || this.loadingMostSoldProducts ||
+    if (!this.pollingSeconds || this.polling || this.disposed || document.hidden || this.loading ||
         this.contains(document.activeElement) || this.querySelector('details[open], dialog[open], [role="dialog"]')) return;
     const filters = { ...managerState.filters };
     if (!filters.store) return;
     const request = this.chartRequest;
-    const productRequest = this.productRequest;
     const compare = this.compare;
-    const productsVisible = this.productsVisible;
+    const pollKey = JSON.stringify([filters, compare]);
     this.polling = true;
     try {
-      const [current, previous, products] = await Promise.all([
+      // Nothing has changed since the charts on screen were loaded: skip the chart queries.
+      const unchanged = await this.pollGate.unchanged(pollKey);
+      if (this.disposed || !this.pollingSeconds || request !== this.chartRequest || this.loading) return;
+      if (unchanged && !this.error && this.chartData && JSON.stringify(filters) === JSON.stringify(this.chartFilters)) {
+        this.flashPolled();
+        return;
+      }
+    } finally {
+      this.polling = false;
+    }
+    // The comparison period lies in the past and rarely changes, so a poll reuses it for a while.
+    const reusePrevious = compare && !!this.previousData && Date.now() - this.previousLoadedAt < comparisonRefreshMs &&
+      JSON.stringify(filters) === JSON.stringify(this.chartFilters);
+    this.polling = true;
+    try {
+      const [current, previous] = await Promise.all([
         this.api.charts(filters),
-        compare ? this.api.charts({ ...filters, ...previousPeriod(filters.dateFrom, filters.dateTo) }) : Promise.resolve(undefined),
-        productsVisible ? this.api.mostSoldProducts(filters, this.pageMostSoldProducts, 20) : Promise.resolve(undefined),
+        !compare ? Promise.resolve(undefined) : reusePrevious ? Promise.resolve(this.previousData)
+          : this.api.charts({ ...filters, ...previousPeriod(filters.dateFrom, filters.dateTo) }),
       ]);
-      if (this.disposed || !this.pollingSeconds || request !== this.chartRequest || productRequest !== this.productRequest ||
-          compare !== this.compare || productsVisible !== this.productsVisible || JSON.stringify(filters) !== JSON.stringify(managerState.filters) ||
+      if (this.disposed || !this.pollingSeconds || request !== this.chartRequest ||
+          compare !== this.compare || JSON.stringify(filters) !== JSON.stringify(managerState.filters) ||
           this.contains(document.activeElement) || this.querySelector('details[open], dialog[open], [role="dialog"]')) return;
-      const nextProducts = products ? { ...products, products: products.products || [] } : this.mostSoldProducts;
-      const changed = this.error || this.productError || JSON.stringify([current, previous, nextProducts]) !== JSON.stringify([this.chartData, this.previousData, this.mostSoldProducts]);
+      const changed = this.error || JSON.stringify([current, previous]) !== JSON.stringify([this.chartData, this.previousData]);
       this.chartData = current;
       this.previousData = previous;
+      if (!reusePrevious) this.previousLoadedAt = Date.now();
       this.chartFilters = filters;
-      this.mostSoldProducts = nextProducts;
       this.error = '';
-      this.productError = '';
       if (current.mixedCurrencies) this.metric = 'orders';
       if (changed) this.render();
-      const control = this.querySelector('.ekom-polling summary');
-      control?.classList.add('just-refreshed');
-      control?.addEventListener('animationend', event => {
-        if (event.target === control) control.classList.remove('just-refreshed');
-      }, { once: true });
+      this.pollGate.refreshed(pollKey);
+      this.flashPolled();
     } catch {
       // Keep the last successful analytics visible after a background failure.
     } finally {
@@ -171,6 +194,7 @@ export class EkomAnalyticsSectionViewElement extends UmbElementMixin(HTMLElement
       if (request !== this.chartRequest || this.disposed) return;
       this.chartData = current;
       this.previousData = previous;
+      this.previousLoadedAt = Date.now();
       this.chartFilters = filters;
       if (current.mixedCurrencies) this.metric = 'orders';
     } catch (error) {

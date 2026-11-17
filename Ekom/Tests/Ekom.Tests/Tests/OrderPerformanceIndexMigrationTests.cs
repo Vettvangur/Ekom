@@ -45,7 +45,12 @@ public sealed class OrderPerformanceIndexMigrationTests
         string[] schema = fixture.Schema();
         fixture.Service.CreateTables();
         fixture.Service.EnsureOrderPerformanceIndexes();
-        Assert.Equal(schema, fixture.Schema());
+        // CreateTables also installs the lookup indexes, one of which is on the orders table.
+        string[] complete = fixture.Schema();
+        Assert.All(schema, definition => Assert.Contains(definition, complete));
+        fixture.Service.CreateTables();
+        fixture.Service.EnsureOrderPerformanceIndexes();
+        Assert.Equal(complete, fixture.Schema());
         using var check = fixture.Factory.GetDatabase();
         Assert.Equal(existing ? 1 : 0, check.OrderData.Count());
         if (existing)
@@ -122,12 +127,13 @@ public sealed class OrderPerformanceIndexMigrationTests
             Assert.Equal(new[] { "CouponKey" }, Keys("IX_EkomCoupon_CouponKey"));
             Assert.Equal(new[] { "OrderId" }, Keys("IX_EkomCheckoutPaymentAttempt_OrderId"));
             Assert.Equal(new[] { "OrderId" }, Keys("IX_EkomStockReservation_OrderId"));
+            Assert.Equal(new[] { "UpdateDate" }, Keys("IX_EkomOrders_UpdateDate"));
         }
 
         AssertLookupIndexes();
 
         // A table from before this migration: rows present, lookup indexes absent.
-        foreach (string index in new[] { "IX_EkomCoupon_CouponCode", "IX_EkomCoupon_DiscountId_CouponCode", "IX_EkomCoupon_CouponKey", "IX_EkomCheckoutPaymentAttempt_OrderId", "IX_EkomStockReservation_OrderId" })
+        foreach (string index in new[] { "IX_EkomCoupon_CouponCode", "IX_EkomCoupon_DiscountId_CouponCode", "IX_EkomCoupon_CouponKey", "IX_EkomCheckoutPaymentAttempt_OrderId", "IX_EkomStockReservation_OrderId", "IX_EkomOrders_UpdateDate" })
         {
             db.Execute($"DROP INDEX [{index}]");
         }

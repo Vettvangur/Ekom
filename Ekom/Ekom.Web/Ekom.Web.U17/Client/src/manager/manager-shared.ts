@@ -365,6 +365,36 @@ export const managerState: ManagerState = {
   shippingFilterProviders: [],
 };
 
+/** How long polling may keep skipping its queries before it refreshes anyway. */
+const pollFullRefreshMs = 60_000;
+
+/**
+ * Lets a poll skip its queries while nothing has changed. The marker is read before the data, so a
+ * change that lands in between is picked up by the next poll.
+ */
+export class PollChangeGate {
+  private marker = '';
+  private key = '';
+  private refreshedAt = 0;
+  private pending = '';
+
+  constructor(private readonly readMarker: () => Promise<string>) {}
+
+  /** True when the data last refreshed for `key` is still current. */
+  async unchanged(key: string): Promise<boolean> {
+    try { this.pending = await this.readMarker(); }
+    catch { this.pending = ''; }
+    return !!this.pending && this.pending === this.marker && key === this.key && Date.now() - this.refreshedAt < pollFullRefreshMs;
+  }
+
+  /** Records that the data for `key` was refreshed after the last `unchanged` check. */
+  refreshed(key: string): void {
+    this.marker = this.pending;
+    this.key = key;
+    this.refreshedAt = Date.now();
+  }
+}
+
 export class EkomManagerApi {
   async changeOrderStates(orderId: string, expectedRevision: number, action: string, notify: boolean, fulfilledQuantities?: Record<string, number>): Promise<OrderStatusSnapshot> {
     return this.postBody(`/ekom/manager/orderStates/${encodeURIComponent(orderId)}`, { expectedRevision, action, notify, fulfilledQuantities });
@@ -389,6 +419,12 @@ export class EkomManagerApi {
       page,
       pageSize,
     });
+  }
+
+  /** A value that changes whenever an order or order review changes; empty when the server has none. */
+  async orderChangeMarker(): Promise<string> {
+    const result = await this.getJson<{ marker?: string; Marker?: string }>('/ekom/manager/OrderChangeMarker');
+    return result.marker ?? result.Marker ?? '';
   }
 
   /** Counts for several order views in one request, so the view tabs do not each run a search. */

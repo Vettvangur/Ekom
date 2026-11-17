@@ -49,6 +49,11 @@ class v {
       pageSize: t
     });
   }
+  /** A value that changes whenever an order or order review changes; empty when the server has none. */
+  async orderChangeMarker() {
+    const e = await this.getJson("/ekom/manager/OrderChangeMarker");
+    return e.marker ?? e.Marker ?? "";
+  }
   /** Counts for several order views in one request, so the view tabs do not each run a search. */
   async orderViewCounts(e, r) {
     if (!r.length) return [];
@@ -326,7 +331,7 @@ function F(a) {
   const r = x();
   return r ? _(e, r.shortDate, r) : new Date(e.year, e.month - 1, e.day).toLocaleDateString();
 }
-function z(a, e, r = !0) {
+function J(a, e, r = !0) {
   const t = E(a);
   if (!t) return String(a);
   const n = x(), i = new Date(Date.UTC(t.year, t.month - 1, t.day));
@@ -335,7 +340,7 @@ function z(a, e, r = !0) {
   const s = n.yearMonth;
   return _(t, r ? s.replace(/M{4}/g, "MMM") : s, n);
 }
-function G(a) {
+function z(a) {
   if (!a)
     return "";
   const e = a instanceof Date ? a : new Date(a);
@@ -353,7 +358,7 @@ function G(a) {
 function y(a) {
   return String(a ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
-const J = `
+const G = `
   .ekmOrderCustomData { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; padding: 14px 16px; border: 1px solid #e1e3e8; border-radius: 12px; }
   .ekmOrderCustomData__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; max-width: 100%; padding: 7px 12px; border: 1px solid #e1e3e8; border-radius: 8px; background: #f6f7f9; line-height: 1.5; break-inside: avoid; }
   .ekmOrderCustomData__key { margin: 0; color: #686d7c; font-weight: 400; overflow-wrap: anywhere; }
@@ -370,7 +375,7 @@ const J = `
 .ekmOrderLineThumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #f6f6f8; }
 .ekmOrderLineThumbnail img[hidden] { display: none; }
 
-  ${J}
+  ${G}
   :host { display: block; height: 100%; color: var(--uui-color-text, #1b264f); }
   .ekmManager { min-height: 100%; background: var(--uui-color-surface, #f6f4f4); }
   .ekmManager__body { padding: 24px; }
@@ -648,7 +653,7 @@ function Q() {
     }
     calendar(t) {
       const n = new Date(Math.floor(t / 12), t % 12, 1), i = (n.getDay() + 6) % 7, s = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
-      return `<section class="month"><h3>${y(x() ? z(n, "yearMonth", !1) : n.toLocaleDateString("en", { month: "long", year: "numeric" }))}</h3><div class="days">${(x() ? [1, 2, 3, 4, 5, 6, 0].map((c) => y(x().shortestDayNames[c] || "")) : ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]).map((c) => `<span class="weekday">${c}</span>`).join("")}${"<span></span>".repeat(i)}${Array.from({ length: s }, (c, u) => {
+      return `<section class="month"><h3>${y(x() ? J(n, "yearMonth", !1) : n.toLocaleDateString("en", { month: "long", year: "numeric" }))}</h3><div class="days">${(x() ? [1, 2, 3, 4, 5, 6, 0].map((c) => y(x().shortestDayNames[c] || "")) : ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]).map((c) => `<span class="weekday">${c}</span>`).join("")}${"<span></span>".repeat(i)}${Array.from({ length: s }, (c, u) => {
         const p = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(u + 1).padStart(2, "0")}`, d = p === this.from || p === this.to, f = this.from && this.to && p > this.from && p < this.to;
         return `<button type="button" data-day="${p}" aria-label="${p}" aria-pressed="${d || !!f}" class="day ${d ? "edge" : f ? "inside" : ""} ${p === this.from ? "start" : ""} ${p === this.to ? "end" : ""} ${!this.to || this.to === this.from ? "single" : ""}">${u + 1}</button>`;
       }).join("")}</div></section>`;
@@ -714,7 +719,7 @@ const K = (a) => class extends a {
 }, ee = "/ekom/printer/manager", m = (a) => String(a ?? "").replace(/[&<>"']/g, (e) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[e]), S = (a) => {
   if (!a) return "Never";
   const e = new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(a) ? a : a + "Z");
-  return x() ? G(e) : e.toLocaleString(void 0, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return x() ? z(e) : e.toLocaleString(void 0, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }, te = (a) => ({
   PendingRender: "Generating slip",
   Ready: "Queued",
