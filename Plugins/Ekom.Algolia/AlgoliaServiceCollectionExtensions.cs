@@ -52,17 +52,23 @@ public static class AlgoliaServiceCollectionExtensions
             var key = string.IsNullOrWhiteSpace(opt.InsightsApiKey) ? opt.AdminApiKey : opt.InsightsApiKey;
 
             client.BaseAddress = new Uri("https://insights.algolia.io/1/");
+            client.Timeout = TimeSpan.FromSeconds(30);
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.Add("X-Algolia-Application-Id", opt.ApplicationId);
             client.DefaultRequestHeaders.Add("X-Algolia-API-Key", key);
         });
 
-        services.AddSingleton<IAlgoliaInsightsClient>(sp =>
+        services.AddSingleton(sp =>
         {
             var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("AlgoliaInsights");
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AlgoliaInsightsClient>>();
             return new AlgoliaInsightsClient(http, logger);
         });
+        // Events are queued and sent by the worker, so storefront requests never wait on Algolia.
+        services.AddSingleton(sp => new AlgoliaInsightsQueue(
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AlgoliaInsightsQueue>>()));
+        services.AddSingleton<IAlgoliaInsightsClient>(sp => sp.GetRequiredService<AlgoliaInsightsQueue>());
+        services.AddHostedService<AlgoliaInsightsWorker>();
 
         services.AddSingleton<IndexNameBuilder>();
         services.AddSingleton<ContentIndexNameResolver>();
@@ -74,7 +80,9 @@ public static class AlgoliaServiceCollectionExtensions
         services.AddSingleton<IAlgoliaFacetAttributeSelector, AlgoliaFacetAttributeSelector>();
         services.AddSingleton<IAlgoliaProductIndexMapper, ProductIndexMapper>();
         services.AddSingleton<IAlgoliaCategoryIndexMapper, CategoryIndexMapper>();
-        services.AddSingleton<AlgoliaAvailabilityUpdateService>();
+        services.AddSingleton<IAlgoliaAvailabilityUpdateService, AlgoliaAvailabilityUpdateService>();
+        services.AddSingleton<AlgoliaAvailabilityQueue>();
+        services.AddHostedService<AlgoliaAvailabilityWorker>();
 
         services.AddSingleton<IAlgoliaProductIndexQueue, AlgoliaProductIndexQueue>();
         services.AddSingleton<AlgoliaPriceIndexQueue>();

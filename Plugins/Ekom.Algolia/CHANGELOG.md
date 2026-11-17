@@ -21,6 +21,7 @@
 
 ### Bug Fixes
 
+* **algolia:** send Insights events and stock availability updates from background workers so add-to-cart, checkout, and stock changes no longer wait on Algolia.
 * **algolia:** delete previously indexed product records when an incremental index filter rejects the product, scoped to the affected locale and currency target.
 * **algolia:** classify add-to-cart and purchase Insights conversions with ecommerce event subtypes.
 * **algolia:** send ecommerce conversion object data using Algolia's per-item schema.

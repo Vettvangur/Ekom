@@ -495,6 +495,8 @@ await fetch('/ekom/order/add', {
 
 The stored token is used for Ekom's add-to-cart, checkout, and purchase Insights events. Add-to-cart and purchase conversions use Algolia's `addToCart` and `purchase` event subtypes so they are classified as ecommerce events. Ekom sends the persisted query ID with its matching order-line object data, together with VAT-inclusive unit price, optional unit discount, quantity, and the order currency. Checkout and purchase events group up to 20 order lines per Algolia event. The Order Info tracking view shows an Algolia subsection only when this data exists.
 
+Insights events are queued in memory and sent by a background worker, so the storefront request does not wait on Algolia. Each event keeps the time it was queued. The queue holds up to 10,000 events; events are dropped with a warning when it is full or when a request to Algolia fails, and events still queued when the application stops get one short send attempt.
+
 ### Stock availability updates
 
 Enable partial product-record updates when stock changes:
@@ -515,6 +517,8 @@ Enable partial product-record updates when stock changes:
 ```
 
 Ekom updates `Available` only for stores with `Stores[*]:EnableAvailabilityUpdates` enabled, and only when effective sellable availability changes, including stock-buffer, backorder, and variant availability rules. For products with variants, the parent record becomes unavailable only when every variant is unavailable. If `Stores[*]:IncludeStock` is `true`, every stock change also partially updates `Stock`; indexed variant records additionally update `variantStock`. Existing records are updated only—stock changes never create incomplete Algolia records.
+
+Stock changes are queued in memory and applied to Algolia in order by a background worker, so the request that changed the stock, such as a checkout, does not wait on Algolia. The queue uses `Indexing.Dispatching.MaxQueueSize`; a change that does not fit is dropped with a warning, and pending changes are lost if the application stops. Run a product rebuild to reconcile.
 
 ### Filter indexed products
 

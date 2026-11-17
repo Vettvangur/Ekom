@@ -2,6 +2,7 @@ using Ekom.Events;
 using Ekom.Algolia.Indexing;
 using Ekom.Algolia.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
@@ -113,15 +114,21 @@ internal sealed class AlgoliaEkomEvents : IComponent
             throw new InvalidOperationException("Algolia price update queue is full. Reconcile the affected product.");
     }
 
-    private async Task OnStockChangedAsync(object sender, StockChangedEventArgs args, CancellationToken ct)
+    private Task OnStockChangedAsync(object sender, StockChangedEventArgs args, CancellationToken ct)
     {
-        if (AlgoliaIndexingScope.IsSuppressed || !_options.Enabled)
-            return;
+        if (AlgoliaIndexingScope.IsSuppressed || !_options.Enabled || !_options.Stores.Any(store => store.EnableAvailabilityUpdates))
+            return Task.CompletedTask;
 
+        // The stock change is often part of a checkout, so Algolia is updated by the worker instead of here.
         using var scope = _scopeFactory.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<AlgoliaAvailabilityUpdateService>();
+        var queue = scope.ServiceProvider.GetRequiredService<AlgoliaAvailabilityQueue>();
+        if (!queue.TryEnqueue(args))
+        {
+            scope.ServiceProvider.GetRequiredService<ILogger<AlgoliaEkomEvents>>()
+                .LogWarning("Algolia availability queue is full; the update for stock item {Key} was dropped.", args.Key);
+        }
 
-        await service.UpdateAsync(args, ct).ConfigureAwait(false);
+        return Task.CompletedTask;
     }
 
     private async Task OnCustomerEmailAddedAsync(object sender, CustomerEmailAddedEventArgs args, CancellationToken ct)

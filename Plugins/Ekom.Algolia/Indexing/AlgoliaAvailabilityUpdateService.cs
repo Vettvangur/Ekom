@@ -9,7 +9,12 @@ using Microsoft.Extensions.Options;
 
 namespace Ekom.Algolia.Indexing;
 
-internal sealed class AlgoliaAvailabilityUpdateService
+internal interface IAlgoliaAvailabilityUpdateService
+{
+    Task UpdateAsync(StockChangedEventArgs args, CancellationToken ct);
+}
+
+internal sealed class AlgoliaAvailabilityUpdateService : IAlgoliaAvailabilityUpdateService
 {
     private readonly ISearchClient _client;
     private readonly AlgoliaOptions _options;
