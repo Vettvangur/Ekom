@@ -198,9 +198,9 @@ If a step fails, Ekom sets the order status to `PaymentFailed` and the request f
 ### Online payment
 
 1. Ekom sets the order status to `WaitingForPayment`.
-2. It finds the payment provider implementation by the node's `basePaymentProvider` value, or by the node name when that is empty.
+2. It finds the payment provider implementation by the node's `basePaymentProvider` value, or by the node name when that is empty. If no installed package has that name, checkout fails with `PaymentProviderNotFoundException`.
 3. It raises `CheckoutEvents.PayAsync` with the `PaymentSettings` it will send. After the handlers run, Ekom sets `ekomOrderUniqueId`, `ekomOrderReferenceId` and `ekomPaymentAttemptId` in `PaymentSettings.OrderCustomData` again, so a handler cannot remove them.
-4. It calls the provider's `RequestAsync` and returns what the provider returns, usually HTML that sends the customer to the gateway.
+4. It calls the provider's `RequestAsync` and returns the string the provider returns. Every Ekom.Payments package except Siminn Pay returns an HTML page that sends the customer on to the gateway. Siminn Pay instead sets a redirect to the provider's success URL with `siminnPayOrderKey` added, and returns an empty string.
 
 The settings tell the gateway where to send the customer back:
 

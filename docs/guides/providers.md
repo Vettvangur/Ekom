@@ -72,7 +72,7 @@ Create payment providers under the store's payment provider container (document 
 | Property | Effect |
 | --- | --- |
 | `offlinePayment` | When turned on, checkout completes the order without contacting a gateway. |
-| `basePaymentProvider` | The name of the payment provider implementation to use, for example the one in `Ekom.Payments.Borgun`. When empty, Ekom uses the node name. Not used for offline payment. |
+| `basePaymentProvider` | The name of the payment provider implementation to use, for example `borgun` for `Ekom.Payments.Borgun`. The names are in the table below. When empty, Ekom uses the node name. Not used for offline payment. |
 | `successUrl` | Where the customer goes after a successful payment. Ekom adds `?orderId=<order id>`. |
 | `errorUrl` | Where the customer goes after a failed payment. |
 | `cancelUrl` | Where the customer goes after cancelling the payment. |
@@ -81,7 +81,32 @@ Create payment providers under the store's payment provider container (document 
 
 `successUrl`, `errorUrl` and `cancelUrl` can be a content picker or a text value. Ekom reads the value for the order's culture or its store.
 
-An offline provider needs nothing but Ekom. Each online gateway is one package. Installing it is enough for Ekom to find the provider and register its services. Configure the gateway as its package describes. See [Payments](payments.md) for how a provider package plugs in.
+An offline provider needs nothing but Ekom. Each online gateway is one package from the [Ekom.Payments repository](https://github.com/Vettvangur/Ekom.Payments). Installing it is enough for Ekom to find the provider and register its services. Use version 1.1.0 or later of the packages with Ekom 1.2.0 or later. The packages target .NET 8 and reference `Ekom.Core`, not an Umbraco package, so the same package works with Ekom on Umbraco 17, 18 and 19. See [Payments](payments.md) for how a provider package plugs in.
+
+Set the node's `basePaymentProvider` to the name in this table. Ekom ignores upper and lower case in the name.
+
+| Gateway | Package | `basePaymentProvider` |
+| --- | --- | --- |
+| Borgun (Teya cards) | `Ekom.Payments.Borgun` | `borgun` |
+| Valitor | `Ekom.Payments.Valitor` | `valitor` |
+| Netgiro | `Ekom.Payments.Netgiro` | `netgiro` |
+| Straumur | `Ekom.Payments.Straumur` | `straumur` |
+| AltaPay | `Ekom.Payments.AltaPay` | `altaPay` |
+| PayTrail | `Ekom.Payments.PayTrail` | `payTrail` |
+| Siminn Pay | `Ekom.Payments.SiminnPay` | `siminnPay` |
+| Teya Consumer Loans | `Ekom.Payments.TeyaConsumerloans` | `teyaConsumerloans` |
+
+### Where a gateway's settings come from
+
+Each package reads its settings, such as merchant IDs and secret keys, into its own settings class, for example `BorgunSettings` in `Ekom.Payments.Borgun`. The setting names are the public properties of that class, written in camelCase (`merchantId`, `secretCode`). For each setting, Ekom takes the first value it finds:
+
+1. A value already set in code, for example with `paymentSettings.SetBorgunSettings(...)` in a `CheckoutEvents.PayAsync` handler. Each package has a `Set<Provider>Settings` extension method.
+2. The property with that name on the payment provider node. Some settings, such as Borgun's `merchantId`, hold one value per store, and Ekom reads the value for the order's store.
+3. The configuration key `Ekom:Payments:<base provider name>:<setting>`, for example `Ekom:Payments:borgun:secretCode`.
+
+If the node has a `configurationKey` value, Ekom reads step 3 from `Ekom:Payments:<configurationKey>` instead. Use it when two nodes use the same gateway with different accounts.
+
+Because step 3 reads standard .NET configuration, you can keep secret keys out of source control in user secrets or environment variables, for example `Ekom__Payments__borgun__secretCode`.
 
 At payment, Ekom gives the provider the customer's details, the currency, the order number, the payment items, the success, error and cancel URLs, and any card fields in the request. [Checkout](checkout.md#what-ekom-does-when-you-submit-payment) describes the whole hand-over.
 

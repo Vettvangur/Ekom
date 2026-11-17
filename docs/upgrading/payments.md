@@ -22,7 +22,7 @@ On this page:
 
 Your site needs this page if it references any `Ekom.Payments` package from version 1.0 or earlier, if it handles `Ekom.Payments.Events.SuccessAsync` or `ErrorAsync`, or if it has its own payment provider.
 
-Ekom and the Ekom.Payments provider packages must be upgraded together. A provider package built for Ekom.Payments 1.0 does not work with this version of Ekom, and the new provider packages do not work with an older Ekom.
+Ekom and the Ekom.Payments provider packages must be upgraded together. Ekom records payments on the order from version 1.2.0. The provider packages built for it are version 1.1.0, and they require Ekom 1.2.0 or later. Ekom.Payments packages 1.0 and earlier do not work with Ekom 1.2.0 or later, and the 1.1.0 provider packages do not work with an earlier Ekom.
 
 ## What changes
 
@@ -31,22 +31,37 @@ Ekom and the Ekom.Payments provider packages must be upgraded together. A provid
 | Site takes | Install |
 | --- | --- |
 | Offline payments only | The Ekom package for your Umbraco version, for example `Ekom.U17`. Nothing else. |
-| One online gateway | Ekom plus that provider, for example `Ekom.Payments.Borgun`. |
-| Several gateways | Ekom plus each provider package. |
+| One online gateway | Ekom plus that provider's package at version 1.1.0, for example `Ekom.Payments.Borgun`. |
+| Several gateways | Ekom plus each provider package at version 1.1.0. |
+
+These provider packages exist at version 1.1.0:
+
+| Gateway | Package |
+| --- | --- |
+| Borgun (Teya cards) | `Ekom.Payments.Borgun` |
+| Valitor | `Ekom.Payments.Valitor` |
+| Netgiro | `Ekom.Payments.Netgiro` |
+| Straumur | `Ekom.Payments.Straumur` |
+| AltaPay | `Ekom.Payments.AltaPay` |
+| PayTrail | `Ekom.Payments.PayTrail` |
+| Siminn Pay | `Ekom.Payments.SiminnPay` |
+| Teya Consumer Loans | `Ekom.Payments.TeyaConsumerloans` |
+
+There are no separate packages per Umbraco version. One package per gateway is used with Ekom on Umbraco 13, 17, 18 and 19: the packages target .NET 8 and reference `Ekom.Core`, not an Umbraco package. The [Ekom.Payments repository](https://github.com/Vettvangur/Ekom.Payments) holds their source.
 
 These packages no longer exist. Remove every reference to them:
 
-- `Ekom.Payments.U17`, `Ekom.Payments.U18`, `Ekom.Payments.U19`
+- `Ekom.Payments.U10` (Umbraco 13), `Ekom.Payments.U17`, `Ekom.Payments.U18`, `Ekom.Payments.U19`
 - `Ekom.Payments.AspNetCore`
 
-`Ekom.Payments.Core` remains as a small shared library. Provider packages bring it in. Reference it directly only if you write a provider.
+`Ekom.Payments.Core` remains as a small shared library, also at version 1.1.0. Every provider package brings it in. Reference it directly only if your own provider uses it, as the `AsynchronousExample` provider does.
 
-Previously Ekom brought the Ekom.Payments packages in for you. It no longer references them, so the site must reference its provider packages itself. A site without them has no online providers, and checkout fails with `PaymentProviderNotFoundException` and the message `Base Payment Provider not found. DLL possibly missing.`
+Previously Ekom brought the Ekom.Payments packages in for you. It no longer references them, so the site must reference its provider packages itself. A site without them has no online providers, and checkout fails with `PaymentProviderNotFoundException` and the message `Base Payment Provider not found. DLL possibly missing. Name: <name>`.
 
 ### What keeps working without changes
 
 - Provider nodes in Umbraco, their `basePaymentProvider` names and their settings.
-- Configuration under `Ekom:Payments`.
+- Configuration under `Ekom:Payments`: `SendEmailAlerts`, and provider settings kept under `Ekom:Payments:<base provider name>`. See [Where a gateway's settings come from](../guides/providers.md#where-a-gateways-settings-come-from).
 - Provider callback addresses under `/ekom/payments/`.
 - Everything gateways receive, including the reference a payment was started with. A payment a customer started before the upgrade still completes when its callback arrives after it.
 - Receipt page query strings such as `?reference=` and `?siminnPayOrderKey=`.
@@ -82,13 +97,13 @@ The events raised when an order status changes are a separate change in the same
 1. Back up the database. The upgrade only adds tables, but the backup lets you compare and roll back.
 2. List the `Ekom.Payments` packages the site references, and the base payment provider of each payment provider node in Umbraco.
 3. Search the site's code for `Ekom.Payments.Events`, `Events.Success`, `Events.Error`, `EkomPayments.GetOrder`, `IOrderService` and `OrderStatus`. Each hit is in the table above.
-4. Check that each provider you use has a package for the new model. Ask the provider's author if it is not one of the packages listed above.
+4. Check that each base payment provider you use is one of the eight packages under [Packages](#packages). Any other provider has no 1.1.0 package in the Ekom.Payments repository. Convert it as described in [Convert a custom payment provider](#convert-a-custom-payment-provider), or ask its author.
 
 ## Upgrade the site
 
-1. Update the Ekom package to the version that records payments on the order.
+1. Update the Ekom package to version 1.2.0 or later.
 2. Remove the package references listed under [Packages](#packages).
-3. Add one `Ekom.Payments.<Provider>` package for each online gateway the site uses, at the version built for this Ekom version.
+3. Add one `Ekom.Payments.<Provider>` package for each online gateway the site uses, at version 1.1.0.
 4. Change the code found in step 3 of [Before you start](#before-you-start), as the table under [Code that must change](#code-that-must-change) shows.
 5. If the site has its own provider, convert it as described in [Convert a custom payment provider](#convert-a-custom-payment-provider).
 6. Build, and start the site against a copy of the production database. Ekom creates the payment tables at startup and then copies old payments in the background.
@@ -110,16 +125,20 @@ When the job has copied something, the log has a line that starts with `Copied o
 
 ## Convert a custom payment provider
 
-A provider written against Ekom.Payments 1.0 must be recompiled, and you should convert it:
+A provider written against Ekom.Payments 1.0 must be recompiled against Ekom 1.2.0, because `IPaymentProvider`, `PaymentSettings` and the other payment contracts moved from `Ekom.Payments.Core` into Ekom. They kept the `Ekom.Payments` namespace. Then convert it:
 
 1. Replace `IOrderService.InsertAsync` with `IOrderPayments.CreateAsync`. Send `payment.PaymentId` to the gateway where the old row's `UniqueId` was sent.
 2. In the callback, find the payment with `IOrderPayments.GetAsync`, check `payment.BelongsTo(...)`, and verify the response. Then call `RecordAsync` with what the response means: `Captured`, `Authorized`, `Failed`, `Cancelled` or `Refunded`.
 3. Remove the code that marked the row paid, stored `PaymentData` and raised the success event.
 4. Log with `PaymentLog.BeginScope`, so log lines carry the order number, order id and payment id.
 
-The `AsynchronousExample` provider in the Ekom.Payments repository shows a converted provider.
+The [`AsynchronousExample` provider](https://github.com/Vettvangur/Ekom.Payments/tree/main/PaymentProviders/Ekom.Payments.AsynchronousExample) in the Ekom.Payments repository shows a converted provider. The repository's [README](https://github.com/Vettvangur/Ekom.Payments#writing-a-provider) lists the same steps.
 
-Until a provider is converted, it keeps working. Its requests and captures reach Ekom through a bridge in `Ekom.Payments.Core`, and its orders complete. Its failures are not recorded, because an error raised by an unconverted provider can come from a callback that could not be verified.
+Until a provider is converted, it keeps working through a bridge in `Ekom.Payments.Core` 1.1.0:
+
+- A row it creates with `IOrderService.InsertAsync` is also stored as a payment on the order.
+- A success it raises through `Ekom.Payments.Events` is recorded as a capture, which completes the order.
+- Its failures are not recorded, because an error raised by an unconverted provider can come from a callback that could not be verified.
 
 ## Check that it worked
 

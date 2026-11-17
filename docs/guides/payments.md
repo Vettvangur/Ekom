@@ -4,7 +4,7 @@
 
 Ekom keeps a record of every payment on an order: each attempt at a payment provider and everything that happened to it. From that record Ekom works out the order's payment status, completes the checkout when a payment goes through, and shows the history in the Manager. Read this page when you add a payment gateway, write a payment provider, or pass payment details on to another system.
 
-A store that only takes offline payments, such as pay on delivery, needs nothing but Ekom. Each online gateway is one extra package, for example `Ekom.Payments.Borgun`. To set up the payment options a customer can choose, see [Payment and shipping providers](providers.md). For the request flow, see [Checkout](checkout.md).
+A store that only takes offline payments, such as pay on delivery, needs nothing but Ekom. Each online gateway is one extra package, for example `Ekom.Payments.Borgun`. To set up the payment options a customer can choose, and for the list of gateway packages, see [Payment and shipping providers](providers.md#set-up-a-payment-provider). For the request flow, see [Checkout](checkout.md).
 
 On this page:
 
@@ -53,7 +53,7 @@ Ekom creates two tables at startup.
 A transaction holds the provider's data in three layers:
 
 1. **Common fields** that any provider can fill: `TransactionId`, `AuthorizationCode`, `MaskedCardNumber`, `CardBrand`, `PaymentMethod`.
-2. **`Details`**: labelled values the provider wants staff to see, such as an invoice number. They are stored with the transaction, so the Manager can show them without knowing the provider.
+2. **`Details`**: labelled values the provider wants staff to see, such as the invoice number Netgiro reports (key `invoiceNumber`) or the loan contract number of Teya Consumer Loans (key `contractNumber`). They are stored with the transaction, so the Manager can show them without knowing the provider.
 3. **`RawData`**: the provider's response as JSON, without signatures, secrets or full card numbers. Read it as your own type with `transaction.GetData<T>()`.
 
 ## How the payment status is worked out
@@ -125,7 +125,7 @@ CheckoutEvents.CompleteCheckoutAsync += async (sender, args, ct) =>
         Amount = payment.Amount,
         Currency = payment.Currency,
         PaidAtUtc = payment.CapturedUtc ?? payment.AuthorizedUtc,
-        ContractNumber = payment.GetDetail("contractNumber"), // one of the provider's own details
+        ContractNumber = payment.GetDetail("contractNumber"), // set by Teya Consumer Loans and Valitor
     }, ct);
 };
 ```
@@ -238,7 +238,9 @@ public sealed class MyGatewayModule : IPaymentModule
 }
 ```
 
-Providers read their settings from the payment provider node with `Ekom.Payments.IUmbracoService.PopulatePaymentProviderProperties`. Ekom's Umbraco packages implement this service.
+Providers read their settings with `Ekom.Payments.IUmbracoService.PopulatePaymentProviderProperties`, which Ekom's Umbraco packages implement. It fills each property of the provider's settings class that is still empty, first from the payment provider node and then from `Ekom:Payments:<base provider name>` in configuration. See [Where a gateway's settings come from](providers.md#where-a-gateways-settings-come-from).
+
+The [`AsynchronousExample` provider](https://github.com/Vettvangur/Ekom.Payments/tree/main/PaymentProviders/Ekom.Payments.AsynchronousExample) in the Ekom.Payments repository is a complete provider built this way.
 
 ## React to recorded payments
 
@@ -274,7 +276,7 @@ The order drawer shows the order's current payment: provider, status, transactio
 
 ## Moving from Ekom.Payments 1.0
 
-Ekom and the payment provider packages must be upgraded together. After startup, a background job copies the rows of the old `EkomPaymentOrders` and `EkomPayments` tables onto their orders as payment history. It does not change order statuses and does not drop the old tables. [Upgrade payments](../upgrading/payments.md) lists the package, code and behaviour changes.
+Ekom and the payment provider packages must be upgraded together: Ekom 1.2.0 or later with the provider packages at 1.1.0. Ekom.Payments 1.0 packages do not work with this Ekom. After startup, a background job copies the rows of the old `EkomPaymentOrders` and `EkomPayments` tables onto their orders as payment history. It does not change order statuses and does not drop the old tables. [Upgrade payments](../upgrading/payments.md) lists the package, code and behaviour changes.
 
 ## Related pages
 

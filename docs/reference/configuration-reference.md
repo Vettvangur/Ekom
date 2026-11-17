@@ -266,13 +266,22 @@ Keep `ApiSecret` and `AccessToken` out of source control and logs.
 
 ## Payments
 
-Payment provider packages read their settings from `Ekom:Payments`. Each package defines its own keys, so read the documentation of the package you install. See [Payment and shipping providers](../guides/providers.md).
+A gateway's settings, such as its merchant ID and secret key, are read from the payment provider node first. A setting that is empty on the node is read from `Ekom:Payments:<base provider name>:<setting>`, for example `Ekom:Payments:borgun:secretCode`, or from `Ekom:Payments:<configurationKey>:<setting>` when the node has a `configurationKey`. The setting names are the properties of each package's settings class, such as `BorgunSettings`. See [Where a gateway's settings come from](../guides/providers.md#where-a-gateways-settings-come-from).
 
-Ekom defines one key that the provider packages share:
+Ekom defines one key that the provider packages share. Ekom binds it into `Ekom.Payments.PaymentsConfiguration`, and only the provider packages act on it:
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `Ekom:Payments:SendEmailAlerts` | bool | `true` | `true`: a payment provider package sends an email when its callback handling fails. Ekom's own code does not read this key; the provider packages do. |
+| `Ekom:Payments:SendEmailAlerts` | bool | `true` | `true`: when handling a gateway callback throws an exception, the provider package emails the exception and the request URL. This applies to the callbacks of Borgun, Valitor, Netgiro, Straumur, AltaPay (success and fail), PayTrail and Siminn Pay, and to Teya Consumer Loans when recording an approved loan fails. `false`: no email; the error is still logged. A callback that cannot be verified throws no exception, so it sends no email. |
+
+The email is sent through `Ekom.Payments.Core`'s mail service. It uses the SMTP server in `Umbraco:CMS:Global:Smtp` (`Host`, `Port`, `Username`, `Password`, `From`) and sends to `Umbraco:CMS:Content:Notifications:Email`.
+
+Two packages read further keys of their own:
+
+| Key | Read by |
+| --- | --- |
+| `Ekom:Payments:Valitor:VerificationCode` | `ValitorResponseHelper.Verify`, when you call it without a verification code. |
+| `Ekom:Payments:altapay:BaseAddress`, `ApiUserName`, `ApiPassword`, `HostOverride` | The `AltaPay` HTTP client and `AltaService`, which are registered only when your site calls `services.AddAltaPay(configuration)`. The AltaPay payment request itself does not use them. |
 
 ## Printing
 
