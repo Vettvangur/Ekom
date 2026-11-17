@@ -138,22 +138,42 @@ public class Store : NodeEntity, IStore
         return CookieHelper.GetCurrencyCookieValue(Currencies, Alias);
     }
 
-    public virtual List<CurrencyModel> Currencies
+    private sealed record ParsedCurrencies(string Json, List<CurrencyModel> Currencies);
+
+    // Every price read asks for the store currency, parse the currency value once instead of per read.
+    private ParsedCurrencies? _parsedCurrencies;
+
+    /// <summary>
+    /// The store currencies. The list is shared between reads, treat it as read only.
+    /// </summary>
+    public virtual List<CurrencyModel> Currencies => GetCurrencies();
+
+    private List<CurrencyModel> GetCurrencies()
     {
-        get
+        // Retrieve the currency property value once
+        Properties.TryGetValue("currency", out string? currencyJson);
+
+        if (string.IsNullOrEmpty(currencyJson))
         {
-            // Retrieve the currency property value once
-            Properties.TryGetValue("currency", out string? currencyJson);
-
-            // Check if the value is JSON array format
-            if (!string.IsNullOrEmpty(currencyJson) && currencyJson.Contains("[", StringComparison.InvariantCultureIgnoreCase))
-            {
-                return TryDeserializeCurrencyList(currencyJson);
-            }
-
-            // Default single currency scenario
+            // Falls back to the request culture, which differs between requests.
             return CreateDefaultCurrencyList(currencyJson);
         }
+
+        ParsedCurrencies? parsed = _parsedCurrencies;
+        if (parsed != null && string.Equals(parsed.Json, currencyJson, StringComparison.Ordinal))
+        {
+            return parsed.Currencies;
+        }
+
+        // Check if the value is JSON array format
+        List<CurrencyModel> currencies = currencyJson.Contains("[", StringComparison.InvariantCultureIgnoreCase)
+            ? TryDeserializeCurrencyList(currencyJson)
+            // Default single currency scenario
+            : CreateDefaultCurrencyList(currencyJson);
+
+        _parsedCurrencies = new ParsedCurrencies(currencyJson, currencies);
+
+        return currencies;
     }
 
     private List<CurrencyModel> TryDeserializeCurrencyList(string json)

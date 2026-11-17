@@ -147,8 +147,6 @@ public class Price : IPrice
         HasDiscount = discount != null;
     }
 
-    bool perUnit => Configuration.Instance.VatRoundingScope == VatRoundingScope.PerUnit;
-
     private CalculatedPrice CreateSimplePrice(decimal price)
         => new CalculatedPrice(price, Currency);
 
@@ -163,67 +161,95 @@ public class Price : IPrice
     {
         get
         {
-            var (net, vat, gross) = ComputeLineTotals(applyDiscount: false);
+            var (net, _, gross) = GetTotals().BeforeDiscount;
             return CreateSimplePrice(_storeVatIncludedInPrices ? gross : net);
         }
     }
 
     public ICalculatedPrice BeforeDiscountWithOutVat
-    {
-        get
-        {
-            var (net, _, _) = ComputeLineTotals(applyDiscount: false);
-            return CreateSimplePrice(net);
-        }
-    }
+        => CreateSimplePrice(GetTotals().BeforeDiscount.Net);
 
     public ICalculatedPrice AfterDiscount
     {
         get
         {
-            var (net, vat, gross) = ComputeLineTotals(applyDiscount: true);
+            var (net, _, gross) = GetTotals().AfterDiscount;
             return CreateSimplePrice(_storeVatIncludedInPrices ? gross : net);
         }
     }
+
     public ICalculatedPrice AfterDiscountWithOutVat
-    {
-        get
-        {
-            var (net, _, _) = ComputeLineTotals(applyDiscount: true);
-            return CreateSimplePrice(net);
-        }
-    }
+        => CreateSimplePrice(GetTotals().AfterDiscount.Net);
+
     public ICalculatedPrice WithoutVat
-    {
-        get
-        {
-            var (net, _, _) = ComputeLineTotals(applyDiscount: true);
-            return CreateSimplePrice(net);
-        }
-    }
+        => CreateSimplePrice(GetTotals().AfterDiscount.Net);
 
     public ICalculatedPrice WithVat
-    {
-        get
-        {
-            var (_, _, gross) = ComputeLineTotals(applyDiscount: true);
-            return CreateSimplePrice(gross);
-        }
-    }
+        => CreateSimplePrice(GetTotals().AfterDiscount.Gross);
 
-    public decimal Value => WithVat.Value;
+    public decimal Value => GetTotals().AfterDiscount.Gross;
 
     public ICalculatedPrice Vat
+        => CreateSimplePrice(GetTotals().AfterDiscount.Vat);
+
+    public ICalculatedPrice DiscountAmount
     {
         get
         {
-            var (_, vat, _) = ComputeLineTotals(applyDiscount: true);
-            return CreateSimplePrice(vat);
+            Totals totals = GetTotals();
+            var before = _storeVatIncludedInPrices ? totals.BeforeDiscount.Gross : totals.BeforeDiscount.Net;
+            var after = _storeVatIncludedInPrices ? totals.AfterDiscount.Gross : totals.AfterDiscount.Net;
+            return CreateSimplePrice(before - after);
         }
     }
 
-    public ICalculatedPrice DiscountAmount
-        => CreateSimplePrice(BeforeDiscount.Value - AfterDiscount.Value);
+    /// <summary>
+    /// Everything the totals depend on that can change after construction.
+    /// </summary>
+    private readonly record struct TotalsKey(
+        VatRoundingScope RoundingScope,
+        VatIncludedPerUnitPolicy PerUnitPolicy,
+        Rounding Rounding,
+        bool DiscountAlwaysBeforeVat,
+        string? CurrencyValue,
+        DiscountType? DiscountType,
+        decimal? DiscountAmount);
+
+    private sealed record Totals(
+        TotalsKey Key,
+        (decimal Net, decimal Vat, decimal Gross) BeforeDiscount,
+        (decimal Net, decimal Vat, decimal Gross) AfterDiscount);
+
+    // Every price property used to redo the whole VAT calculation, serializing one price ran it about ten times.
+    private Totals? _totals;
+
+    private Totals GetTotals()
+    {
+        Configuration config = Configuration.Instance;
+        var key = new TotalsKey(
+            config.VatRoundingScope,
+            config.VatIncludedPerUnitPolicy,
+            config.VatCalculationRounding,
+            DiscountAlwaysBeforeVAT,
+            Currency?.CurrencyValue,
+            Discount?.Type,
+            Discount?.Amount);
+
+        Totals? totals = _totals;
+        if (totals != null && totals.Key == key)
+        {
+            return totals;
+        }
+
+        bool perUnit = key.RoundingScope == VatRoundingScope.PerUnit;
+        totals = new Totals(
+            key,
+            ComputeLineTotals(applyDiscount: false, perUnit, key.PerUnitPolicy),
+            ComputeLineTotals(applyDiscount: true, perUnit, key.PerUnitPolicy));
+        _totals = totals;
+
+        return totals;
+    }
 
     private decimal DiscountedValue
     {
@@ -263,29 +289,29 @@ public class Price : IPrice
         }
     }
 
-    private (decimal Net, decimal Vat, decimal Gross) ComputeLineTotals(bool applyDiscount)
+    private (decimal Net, decimal Vat, decimal Gross) ComputeLineTotals(bool applyDiscount, bool perUnit, VatIncludedPerUnitPolicy perUnitPolicy)
     {
         if (!applyDiscount || Discount == null || DiscountedQuantity >= Quantity)
         {
-            return ComputeTotals(applyDiscount ? DiscountedValue : OriginalValue, Quantity);
+            return ComputeTotals(applyDiscount ? DiscountedValue : OriginalValue, Quantity, perUnit, perUnitPolicy);
         }
 
         if (!perUnit)
         {
             var total = DiscountedValue * DiscountedQuantity
                 + OriginalValue * (Quantity - DiscountedQuantity);
-            return ComputeTotals(total, 1);
+            return ComputeTotals(total, 1, perUnit, perUnitPolicy);
         }
 
-        var discountedTotals = ComputeTotals(DiscountedValue, DiscountedQuantity);
-        var fullPriceTotals = ComputeTotals(OriginalValue, Quantity - DiscountedQuantity);
+        var discountedTotals = ComputeTotals(DiscountedValue, DiscountedQuantity, perUnit, perUnitPolicy);
+        var fullPriceTotals = ComputeTotals(OriginalValue, Quantity - DiscountedQuantity, perUnit, perUnitPolicy);
         return (
             discountedTotals.Net + fullPriceTotals.Net,
             discountedTotals.Vat + fullPriceTotals.Vat,
             discountedTotals.Gross + fullPriceTotals.Gross);
     }
 
-    private (decimal Net, decimal Vat, decimal Gross) ComputeTotals(decimal unit, decimal quantity)
+    private (decimal Net, decimal Vat, decimal Gross) ComputeTotals(decimal unit, decimal quantity, bool perUnit, VatIncludedPerUnitPolicy perUnitPolicy)
     {
         string iso = Currency.ISOCurrencySymbol;
 
@@ -293,7 +319,7 @@ public class Price : IPrice
         {
             if (perUnit)
             {
-                switch (Configuration.Instance.VatIncludedPerUnitPolicy)
+                switch (perUnitPolicy)
                 {
                     case VatIncludedPerUnitPolicy.LineLevelVat:
                         {

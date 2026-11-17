@@ -54,7 +54,7 @@ public static class Calculator
 
     private static decimal PerformVatRounding(decimal val, string currency)
     {
-        if (currency.ToUpperInvariant() == "ISK")
+        if (string.Equals(currency, "ISK", StringComparison.OrdinalIgnoreCase))
         {
             return EkomRounding(val, Configuration.Instance.VatCalculationRounding);
         }
