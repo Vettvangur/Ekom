@@ -76,7 +76,7 @@ partial class OrderRepository
         if (_paymentAttempts == null)
         {
             await using var transaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
-            var previous = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderData.UniqueId, ct).ConfigureAwait(false);
+            var previous = await db.OrderData.Where(x => x.UniqueId == orderData.UniqueId).Select(PreviousState).SingleOrDefaultAsync(ct).ConfigureAwait(false);
             OrderStateRules.SynchronizeLegacy(orderData, previous, _config.AutoClosePaidAndFulfilledOrders(orderData.StoreAlias));
             var updated = await db.UpdateAsync(orderData, token: ct).ConfigureAwait(false);
             if (previous != null && updated == 1)
@@ -90,7 +90,7 @@ partial class OrderRepository
             try
             {
                 await _paymentAttempts.EnsureWriteAllowedAsync(db, orderData.UniqueId, ct).ConfigureAwait(false);
-                var previous = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderData.UniqueId, ct).ConfigureAwait(false);
+                var previous = await db.OrderData.Where(x => x.UniqueId == orderData.UniqueId).Select(PreviousState).SingleOrDefaultAsync(ct).ConfigureAwait(false);
                 OrderStateRules.SynchronizeLegacy(orderData, previous, _config.AutoClosePaidAndFulfilledOrders(orderData.StoreAlias));
                 var capability = CheckoutPaymentOperationScope.Current;
                 var isManagerOverride = capability?.OrderId == orderData.UniqueId && capability.IsManagerOverride;
@@ -154,6 +154,21 @@ partial class OrderRepository
             _memoryCache.Remove(orderData.UniqueId.ToString());
         }
     }
+
+    // A save only needs the stored state of the previous row; the order JSON can be large and is not read back.
+    private static readonly Expression<Func<OrderData, OrderData>> PreviousState = x => new OrderData
+    {
+        UniqueId = x.UniqueId,
+        OrderStatusCol = x.OrderStatusCol,
+        OrderStateCol = x.OrderStateCol,
+        PaymentStateCol = x.PaymentStateCol,
+        FulfillmentStateCol = x.FulfillmentStateCol,
+        OriginalOrderStatusCol = x.OriginalOrderStatusCol,
+        StatusMappingVersion = x.StatusMappingVersion,
+        StatusRevision = x.StatusRevision,
+        AutoCloseSuppressed = x.AutoCloseSuppressed,
+        FulfilledQuantitiesJson = x.FulfilledQuantitiesJson,
+    };
 
     private async Task PersistStatusAsync(DbContext database, OrderData order, string? previousStatus, CancellationToken ct)
     {

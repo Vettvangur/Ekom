@@ -65,13 +65,20 @@ public class OrderInfo : IOrderInfo
     }
 
     public OrderInfo(OrderData orderData)
+        : this(orderData, string.IsNullOrEmpty(orderData.OrderInfo) ? null : JObject.Parse(orderData.OrderInfo))
+    {
+    }
+
+    /// <summary>
+    /// For callers that have already parsed <see cref="OrderData.OrderInfo"/>, so it is not parsed again.
+    /// The parsed object is only read.
+    /// </summary>
+    internal OrderInfo(OrderData orderData, JObject? orderInfoJObject)
     {
         _orderData = orderData;
 
-        if (!string.IsNullOrEmpty(orderData.OrderInfo))
+        if (orderInfoJObject != null)
         {
-            JObject orderInfoJObject = JObject.Parse(orderData.OrderInfo);
-
             if (orderInfoJObject[nameof(Culture)] != null)
             {
                 Culture = orderInfoJObject[nameof(Culture)].ToString();
