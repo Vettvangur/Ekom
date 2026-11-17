@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 
 namespace Ekom.Models;
@@ -40,6 +41,9 @@ public class CurrencyModel
         }
     }
 
+    // Constructing a RegionInfo loads culture data, far too slow to repeat for every price calculation.
+    private static readonly ConcurrentDictionary<string, RegionInfo?> _regions = new(StringComparer.Ordinal);
+
     private RegionInfo? TryGetRegionInfo()
     {
         if (string.IsNullOrWhiteSpace(CurrencyValue))
@@ -47,13 +51,16 @@ public class CurrencyModel
             return null;
         }
 
-        try
+        return _regions.GetOrAdd(CurrencyValue, static value =>
         {
-            return new RegionInfo(CurrencyValue);
-        }
-        catch (ArgumentException)
-        {
-            return null;
-        }
+            try
+            {
+                return new RegionInfo(value);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        });
     }
 }

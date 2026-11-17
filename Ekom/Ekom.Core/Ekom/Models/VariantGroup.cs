@@ -58,11 +58,23 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
         {
             string _images = GetValue(Configuration.Instance.CustomImage);
 
+            ResolvedImages? resolved = _resolvedImages;
+            if (resolved != null && string.Equals(resolved.Value, _images, StringComparison.Ordinal))
+            {
+                return resolved.Images;
+            }
+
             IEnumerable<Image> imageNodes = _images.GetImages();
+            _resolvedImages = new ResolvedImages(_images, imageNodes);
 
             return imageNodes;
         }
     }
+
+    private sealed record ResolvedImages(string Value, IEnumerable<Image> Images);
+
+    // Resolving images costs a service scope and a media lookup per image, keep the result like Variant does.
+    private ResolvedImages? _resolvedImages;
 
     /// <summary>
     /// Get all variants in this group

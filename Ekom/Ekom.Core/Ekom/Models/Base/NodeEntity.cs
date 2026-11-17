@@ -58,54 +58,27 @@ public abstract class NodeEntity : INodeEntity
     /// Node Guid Key
     /// </summary>
     public virtual Guid Key
-    {
-        get
+        => GetParsed(ref _key, Properties["__Key"], static key =>
         {
-            string key = Properties["__Key"];
-
-            Guid _key = new Guid();
-
-            if (!Guid.TryParse(key, out _key))
+            if (!Guid.TryParse(key, out Guid _key))
             {
                 throw new NodeEntityException("No key present for node.");
             }
 
             return _key;
-        }
-    }
+        });
 
     /// <summary>
     /// 
     /// </summary>
     public virtual int SortOrder
-    {
+        => GetParsed(ref _sortOrder, Properties["sortOrder"], static value => int.TryParse(value, out int _value) ? _value : 0);
 
-        get
-        {
-            if (int.TryParse(Properties["sortOrder"], out int _value))
-            {
-                return _value;
-            }
-
-            return 0;
-        }
-
-    }
     /// <summary>
     /// Level of node in Umbraco content tree hierarchy
     /// </summary>
     public virtual int Level
-    {
-        get
-        {
-            if (int.TryParse(Properties["level"], out int _value))
-            {
-                return _value;
-            }
-
-            return 0;
-        }
-    }
+        => GetParsed(ref _level, Properties["level"], static value => int.TryParse(value, out int _value) ? _value : 0);
 
     /// <summary>
     ///
@@ -143,7 +116,7 @@ public abstract class NodeEntity : INodeEntity
     {
         get
         {
-            return UtilityService.ConvertToDatetime(Properties["createDate"]);
+            return GetParsed(ref _createDate, Properties["createDate"], UtilityService.ConvertToDatetime);
         }
     }
     /// <summary>
@@ -153,7 +126,7 @@ public abstract class NodeEntity : INodeEntity
     {
         get
         {
-            return UtilityService.ConvertToDatetime(Properties["updateDate"]);
+            return GetParsed(ref _updateDate, Properties["updateDate"], UtilityService.ConvertToDatetime);
         }
     }
     /// <summary>
@@ -167,7 +140,53 @@ public abstract class NodeEntity : INodeEntity
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public IReadOnlyDictionary<string, string> Properties => new ReadOnlyDictionary<string, string>(_properties);
+    public IReadOnlyDictionary<string, string> Properties
+    {
+        get
+        {
+            Dictionary<string, string> properties = _properties;
+            PropertiesView? view = _propertiesView;
+
+            // Derived types may swap the dictionary, only then is a new wrapper needed.
+            if (view == null || !ReferenceEquals(view.Source, properties))
+            {
+                view = new PropertiesView(properties, new ReadOnlyDictionary<string, string>(properties));
+                _propertiesView = view;
+            }
+
+            return view.ReadOnly;
+        }
+    }
+
+    private sealed record PropertiesView(Dictionary<string, string> Source, ReadOnlyDictionary<string, string> ReadOnly);
+
+    private PropertiesView? _propertiesView;
+
+    private sealed record Parsed<T>(string Raw, T Value);
+
+    private Parsed<Guid>? _key;
+    private Parsed<int>? _sortOrder;
+    private Parsed<int>? _level;
+    private Parsed<DateTime>? _createDate;
+    private Parsed<DateTime>? _updateDate;
+
+    /// <summary>
+    /// Parses a property value once and reuses the result until the stored value changes.
+    /// Listings sort by these values, so they are read once per comparison.
+    /// </summary>
+    private static T GetParsed<T>(ref Parsed<T>? slot, string raw, Func<string, T> parse)
+    {
+        Parsed<T>? parsed = slot;
+        if (parsed != null && string.Equals(parsed.Raw, raw, StringComparison.Ordinal))
+        {
+            return parsed.Value;
+        }
+
+        T value = parse(raw);
+        slot = new Parsed<T>(raw, value);
+
+        return value;
+    }
 
     /// <summary>
     /// All node properties

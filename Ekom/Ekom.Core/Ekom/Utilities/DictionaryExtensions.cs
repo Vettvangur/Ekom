@@ -67,7 +67,7 @@ public static class DictionaryExtensions
         
         return !string.IsNullOrEmpty(val)
             ? val
-            : properties.FirstOrDefault(x => string.IsNullOrEmpty(x.Key)).Value ?? string.Empty;
+            : properties.TryGetValue(string.Empty, out string? emptyKeyValue) ? emptyKeyValue ?? string.Empty : string.Empty;
     }
 
     private static string GetRawBasePropertyValue(IReadOnlyDictionary<string, string> properties, string propertyAlias)
@@ -79,7 +79,7 @@ public static class DictionaryExtensions
 
         return !string.IsNullOrEmpty(val)
             ? val
-            : properties.FirstOrDefault(x => string.IsNullOrEmpty(x.Key)).Value ?? string.Empty;
+            : properties.TryGetValue(string.Empty, out string? emptyKeyValue) ? emptyKeyValue ?? string.Empty : string.Empty;
     }
 
     /// <summary>
