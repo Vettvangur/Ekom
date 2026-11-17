@@ -104,15 +104,23 @@ internal sealed class CheckoutReservationService
     {
         var rows = new List<StockReservationData>();
         var expected = requirements.ToDictionary(Identity);
-        foreach (var id in ids.Distinct(StringComparer.Ordinal))
+        // A list, not an array: on .NET 10 array.Contains binds to a span overload that cannot be translated to SQL.
+        var distinctIds = ids.Distinct(StringComparer.Ordinal).ToList();
+        // One query for all reservations instead of one per reservation.
+        var stored = distinctIds.Count == 0
+            ? new Dictionary<string, StockReservationData>(StringComparer.Ordinal)
+            : (await db.StockReservations.Where(x => distinctIds.Contains(x.Id)).ToListAsync(ct).ConfigureAwait(false))
+                .ToDictionary(x => x.Id, StringComparer.Ordinal);
+        string? fingerprint = null;
+        foreach (var id in distinctIds)
         {
-            var row = await db.StockReservations.SingleOrDefaultAsync(x => x.Id == id, ct).ConfigureAwait(false);
+            stored.TryGetValue(id, out var row);
             if (row == null || row.OrderId != orderId.ToString() ||
                 !expected.TryGetValue(Identity(row), out var request) || row.Key != request.Key ||
                 row.Coupon != request.Coupon || row.StoreAlias != request.StoreAlias || row.Quantity <= 0)
                 throw new StockException($"Reservation {id} does not match order {orderId} stock requirements.");
             if (row.PaymentAttemptId?.StartsWith("checkout-stock:", StringComparison.Ordinal) == true &&
-                row.PaymentAttemptId != Fingerprint(requirements))
+                row.PaymentAttemptId != (fingerprint ??= Fingerprint(requirements)))
                 throw new StockException("Order stock requirements changed after reservation; payment requires reconciliation.");
             if (row.State is not (StockReservationState.Active or StockReservationState.Consumed) ||
                 (row.State == StockReservationState.Active && row.ExpiresUtc <= DateTime.UtcNow))
@@ -158,6 +166,8 @@ internal sealed class CheckoutReservationService
         validateDiscounts |= existing.Count != 0;
 
         var created = new List<string>();
+        // Ended checkout holds of this order, read once when the first new hold is needed.
+        List<(string StockUniqueId, bool IsDiscount)>? ended = null;
         try
         {
             foreach (var request in requirements)
@@ -175,10 +185,12 @@ internal sealed class CheckoutReservationService
                         throw new NotEnoughStockException($"Not enough stock for {stockId}.");
                     continue;
                 }
-                var generation = await db.StockReservations.CountAsync(x => x.OrderId == orderId.ToString() &&
-                    x.PaymentAttemptId != null && x.PaymentAttemptId.StartsWith("checkout-stock:") && x.StockUniqueId == stockId &&
-                    x.IsDiscount == request.IsDiscount &&
-                    (x.State == StockReservationState.Released || x.State == StockReservationState.Expired), ct).ConfigureAwait(false);
+                ended ??= (await db.StockReservations.Where(x => x.OrderId == orderId.ToString() &&
+                    x.PaymentAttemptId != null && x.PaymentAttemptId.StartsWith("checkout-stock:") &&
+                    (x.State == StockReservationState.Released || x.State == StockReservationState.Expired))
+                    .Select(x => new { x.StockUniqueId, x.IsDiscount }).ToListAsync(ct).ConfigureAwait(false))
+                    .Select(x => (x.StockUniqueId, x.IsDiscount)).ToList();
+                var generation = ended.Count(x => x.StockUniqueId == stockId && x.IsDiscount == request.IsDiscount);
                 var result = await _reservations.ReserveAsync(request with
                 {
                     Quantity = remaining, OrderId = orderId.ToString(), PaymentAttemptId = fingerprint,
@@ -301,12 +313,14 @@ internal sealed class CheckoutReservationService
                 .Select(x => x.Id).ToListAsync(ct).ConfigureAwait(false);
             var rows = await ReadAndVerifyAsync(db, orderId, requirements, ids.Concat(recovered), ct).ConfigureAwait(false);
             var now = DateTime.UtcNow;
-            foreach (var row in rows.Where(x => x.State == StockReservationState.Active))
+            var activeIds = rows.Where(x => x.State == StockReservationState.Active).Select(x => x.Id).ToList();
+            if (activeIds.Count != 0)
             {
-                var affected = await db.StockReservations.Where(x => x.Id == row.Id &&
+                // One statement consumes every hold; a hold that changed in the meantime makes the count fall short.
+                var affected = await db.StockReservations.Where(x => activeIds.Contains(x.Id) &&
                     x.State == StockReservationState.Active && x.ExpiresUtc > now)
                     .Set(x => x.State, StockReservationState.Consumed).Set(x => x.CompletedUtc, now).UpdateAsync(ct).ConfigureAwait(false);
-                if (affected != 1) throw new DBConcurrencyException("Checkout reservation changed concurrently.");
+                if (affected != activeIds.Count) throw new DBConcurrencyException("Checkout reservation changed concurrently.");
             }
             foreach (var request in requirements)
             {

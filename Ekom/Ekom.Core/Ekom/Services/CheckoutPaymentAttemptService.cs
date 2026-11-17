@@ -383,9 +383,11 @@ internal sealed partial class CheckoutPaymentAttemptService
             using var activation = scope.Enter();
             await using var db = _factory.GetDatabase();
             var data = await ReadOrderAsync(db, order.UniqueId, ct).ConfigureAwait(false);
-            if (await RequiresReconciliationAsync(db, order.UniqueId, ct).ConfigureAwait(false))
+            // Every basket edit passes through here, read the operation row once for both checks.
+            var operation = await ReadOperationAsync(db, order.UniqueId, ct).ConfigureAwait(false);
+            if (await RequiresReconciliationAsync(db, order.UniqueId, operation, ct).ConfigureAwait(false))
                 throw Conflict("A payment callback requires manual reconciliation before editing.", CheckoutConflictReason.PaymentReview);
-            var active = await ReadActiveAsync(db, order.UniqueId, ct).ConfigureAwait(false);
+            var active = await ReadActiveAsync(db, order.UniqueId, operation, ct).ConfigureAwait(false);
             if (active?.State == CheckoutPaymentAttemptState.Completed)
                 throw Conflict("The current payment attempt is completed.", CheckoutConflictReason.Completed);
             if (active?.State is CheckoutPaymentAttemptState.CompletionPending or CheckoutPaymentAttemptState.ReconciliationRequired)
@@ -396,15 +398,18 @@ internal sealed partial class CheckoutPaymentAttemptService
             }
             if (await IsPaidOrCompletedAsync(db, data, ct).ConfigureAwait(false))
                 throw Conflict("Paid or completed orders cannot be edited as an unpaid cart.", CheckoutConflictReason.Completed);
+            // Parsed once and shared by the hold, giftcard and snapshot reads below.
+            var parsed = ParseOrderInfo(data.OrderInfo);
             if (active != null && active.State != CheckoutPaymentAttemptState.Released ||
-                await HasOwnedHoldsAsync(db, data, ct).ConfigureAwait(false) || HasClaims(ReadGiftcards(data.OrderInfo)))
+                await HasOwnedHoldsAsync(db, data, parsed, ct).ConfigureAwait(false) || HasClaims(ReadGiftcards(parsed)))
             {
                 data = await ReleaseOwnedAsync(db, scope, active, data, reason, ct).ConfigureAwait(false);
-                Apply(order, data);
+                // The release rewrote the stored purchase.
+                parsed = ParseOrderInfo(data.OrderInfo);
             }
             // Nested scopes returned above deliberately preserve in-progress
             // mutations; outer edits always start from the durable purchase.
-            Apply(order, data);
+            Apply(order, data, parsed);
             // Ownership keeps other writers out, so the edit can save from this row instead of reading it again.
             scope.PersistedOrder = data;
             return scope;
@@ -570,7 +575,7 @@ internal sealed partial class CheckoutPaymentAttemptService
             throw Conflict("The order is owned by another checkout operation.", CheckoutConflictReason.Busy);
         if (ambient?.OrderId == orderId && operation?.Owner != ambient.Owner)
             throw Conflict("Checkout operation ownership was lost.");
-        var active = await ReadActiveAsync(db, orderId, ct).ConfigureAwait(false);
+        var active = await ReadActiveAsync(db, orderId, operation, ct).ConfigureAwait(false);
         if (active != null && active.State != CheckoutPaymentAttemptState.Released && active.State != CheckoutPaymentAttemptState.Completed &&
             (operation?.Owner == null || ambient?.OrderId != orderId))
             throw Conflict("Release the current payment attempt under an edit operation before changing this order.",
@@ -907,19 +912,29 @@ internal sealed partial class CheckoutPaymentAttemptService
     private static Task<OrderData> ReadOrderAsync(DbContext db, Guid orderId, CancellationToken ct)
         => db.GetTable<OrderData>().SingleAsync(x => x.UniqueId == orderId, ct);
 
+    private static Task<CheckoutPaymentOperationData?> ReadOperationAsync(DbContext db, Guid orderId, CancellationToken ct)
+        => db.GetTable<CheckoutPaymentOperationData>().SingleOrDefaultAsync(x => x.OrderId == orderId, ct);
+
     private static async Task<CheckoutPaymentAttemptData?> ReadActiveAsync(DbContext db, Guid orderId, CancellationToken ct)
-    {
-        var operation = await db.GetTable<CheckoutPaymentOperationData>().SingleOrDefaultAsync(x => x.OrderId == orderId, ct).ConfigureAwait(false);
-        return operation?.ActiveAttemptId is Guid id
+        => await ReadActiveAsync(db, orderId, await ReadOperationAsync(db, orderId, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+
+    /// <summary>Reads the active attempt of an operation row the caller has just read on the same connection.</summary>
+    private static async Task<CheckoutPaymentAttemptData?> ReadActiveAsync(DbContext db, Guid orderId,
+        CheckoutPaymentOperationData? operation, CancellationToken ct)
+        => operation?.ActiveAttemptId is Guid id
             ? await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync(x => x.AttemptId == id && x.OrderId == orderId, ct).ConfigureAwait(false)
             : null;
-    }
 
     private static Task<int> SetStateAsync(DbContext db, Guid attemptId, CheckoutPaymentAttemptState state, CancellationToken ct)
         => db.GetTable<CheckoutPaymentAttemptData>().Where(x => x.AttemptId == attemptId).Set(x => x.State, state).UpdateAsync(ct);
 
     private static Task<bool> RequiresReconciliationAsync(DbContext db, Guid orderId, CancellationToken ct)
         => RequiresGiftcardOrPaymentReconciliationAsync(db, orderId, ct);
+
+    /// <summary>Same check for an operation row the caller has just read on the same connection.</summary>
+    private static async Task<bool> RequiresReconciliationAsync(DbContext db, Guid orderId,
+        CheckoutPaymentOperationData? operation, CancellationToken ct)
+        => await HasUnresolvedGiftcardRecoveryAsync(db, orderId, ct).ConfigureAwait(false) || operation?.ReconciliationRequired == true;
 
     private static async Task<bool> RequiresGiftcardOrPaymentReconciliationAsync(DbContext db, Guid orderId, CancellationToken ct)
         => await HasUnresolvedGiftcardRecoveryAsync(db, orderId, ct).ConfigureAwait(false) ||
@@ -937,37 +952,52 @@ internal sealed partial class CheckoutPaymentAttemptService
 
     private static async Task<bool> HoldsActiveAsync(DbContext db, IReadOnlyCollection<string> ids, bool allowConsumed, CancellationToken ct)
     {
-        foreach (var id in ids)
+        if (ids.Count == 0) return true;
+        // One query for all holds instead of one per hold.
+        // A list, not an array: on .NET 10 array.Contains binds to a span overload that cannot be translated to SQL.
+        var distinct = ids.Distinct(StringComparer.Ordinal).ToList();
+        var holds = (await db.GetTable<StockReservationData>().Where(x => distinct.Contains(x.Id))
+            .Select(x => new { x.Id, x.State, x.ExpiresUtc }).ToListAsync(ct).ConfigureAwait(false))
+            .ToDictionary(x => x.Id, StringComparer.Ordinal);
+        foreach (var id in distinct)
         {
-            var hold = await db.GetTable<StockReservationData>().SingleOrDefaultAsync(x => x.Id == id, ct).ConfigureAwait(false);
-            if (hold == null || (hold.State != StockReservationState.Active || hold.ExpiresUtc <= DateTime.UtcNow) &&
+            if (!holds.TryGetValue(id, out var hold) || (hold.State != StockReservationState.Active || hold.ExpiresUtc <= DateTime.UtcNow) &&
                 !(allowConsumed && hold.State == StockReservationState.Consumed)) return false;
         }
         return true;
     }
 
-    private static List<string> ReadIds(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json)) return [];
-        var value = JObject.Parse(json);
-        return (value[nameof(OrderInfo.ReservationIds)] ?? value[nameof(OrderInfo.HangfireJobs)])?.ToObject<List<string>>() ?? [];
-    }
+    private static JObject? ParseOrderInfo(string? json)
+        => string.IsNullOrWhiteSpace(json) ? null : JObject.Parse(json);
 
-    private static async Task<List<string>> ReadOwnedIdsAsync(DbContext db, OrderData data, CancellationToken ct)
+    private static List<string> ReadIds(string? json) => ReadIds(ParseOrderInfo(json));
+
+    private static List<string> ReadIds(JObject? value)
+        => value == null ? []
+            : (value[nameof(OrderInfo.ReservationIds)] ?? value[nameof(OrderInfo.HangfireJobs)])?.ToObject<List<string>>() ?? [];
+
+    private static Task<List<string>> ReadOwnedIdsAsync(DbContext db, OrderData data, CancellationToken ct)
+        => ReadOwnedIdsAsync(db, data, ParseOrderInfo(data.OrderInfo), ct);
+
+    private static async Task<List<string>> ReadOwnedIdsAsync(DbContext db, OrderData data, JObject? parsed, CancellationToken ct)
     {
         var orderId = data.UniqueId.ToString();
         var owned = await db.GetTable<StockReservationData>()
             .Where(x => x.OrderId == orderId && x.State == StockReservationState.Active)
             .Select(x => x.Id).ToListAsync(ct).ConfigureAwait(false);
-        return ReadIds(data.OrderInfo).Concat(owned).Distinct(StringComparer.Ordinal).ToList();
+        return ReadIds(parsed).Concat(owned).Distinct(StringComparer.Ordinal).ToList();
     }
 
-    private static async Task<bool> HasOwnedHoldsAsync(DbContext db, OrderData data, CancellationToken ct)
-        => (await ReadOwnedIdsAsync(db, data, ct).ConfigureAwait(false)).Count > 0;
+    private static Task<bool> HasOwnedHoldsAsync(DbContext db, OrderData data, CancellationToken ct)
+        => HasOwnedHoldsAsync(db, data, ParseOrderInfo(data.OrderInfo), ct);
 
-    private static List<Giftcard> ReadGiftcards(string? json)
-        => string.IsNullOrWhiteSpace(json) ? []
-            : JObject.Parse(json)[nameof(OrderInfo.Giftcards)]?.ToObject<List<Giftcard>>() ?? [];
+    private static async Task<bool> HasOwnedHoldsAsync(DbContext db, OrderData data, JObject? parsed, CancellationToken ct)
+        => (await ReadOwnedIdsAsync(db, data, parsed, ct).ConfigureAwait(false)).Count > 0;
+
+    private static List<Giftcard> ReadGiftcards(string? json) => ReadGiftcards(ParseOrderInfo(json));
+
+    private static List<Giftcard> ReadGiftcards(JObject? value)
+        => value?[nameof(OrderInfo.Giftcards)]?.ToObject<List<Giftcard>>() ?? [];
 
     private static bool HasClaims(IEnumerable<Giftcard> selections)
         => selections.Any(x => x.Claimed || !string.IsNullOrWhiteSpace(x.ClaimId) ||
@@ -988,13 +1018,13 @@ internal sealed partial class CheckoutPaymentAttemptService
         => IsPaid(data) || await db.GetTable<CheckoutStockCompletionData>()
             .AnyAsync(x => x.OrderId == data.UniqueId, ct).ConfigureAwait(false);
 
-    private static void Apply(IOrderInfo order, OrderData data)
+    private static void Apply(IOrderInfo order, OrderData data, JObject? parsed = null)
     {
         if (order is not OrderInfo concrete) throw Conflict("Checkout payment operations require a mutable OrderInfo snapshot.");
         // A newly inserted empty cart has no serialized purchase yet; its caller
         // supplies the store snapshot needed for the first mutation.
         if (string.IsNullOrWhiteSpace(data.OrderInfo)) return;
-        concrete.ApplyPersistedSnapshot(new OrderInfo(data), data);
+        concrete.ApplyPersistedSnapshot(parsed == null ? new OrderInfo(data) : new OrderInfo(data, parsed), data);
     }
 
     internal static bool SamePurchase(string left, string right)
