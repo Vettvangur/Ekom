@@ -1,72 +1,106 @@
+[Ekom docs](../README.md) / [Getting started](README.md) / Installation
+
 # Installation
 
-Install two packages into the Umbraco web application: the versioned Ekom runtime package and its matching web-assets package. The web application is the executable project that hosts Umbraco and owns `wwwroot`.
+This page shows how to add Ekom to an Umbraco 17, 18 or 19 site, what Ekom does the first time the site starts, and how to check that it is running. You install two NuGet packages in the site's web project. There is no setup code to write.
 
-| Umbraco version | Install |
-| --- | --- |
-| 13 | `Ekom.U10` and `Ekom.Web` |
-| 17 | `Ekom.U17` and `Ekom.Web.U17` |
-| 18 | `Ekom.U18` and `Ekom.Web.U18` |
-| 19 (release candidate) | `Ekom.U19` and `Ekom.Web.U19` |
+The web project is the project that hosts Umbraco: it has `Program.cs` and the `wwwroot` folder.
 
-## Install the matching pair
+On this page:
 
-### Umbraco 13
+- [Before you start](#before-you-start)
+- [Install the packages](#install-the-packages)
+- [What Ekom does when the site starts](#what-ekom-does-when-the-site-starts)
+- [Check that Ekom is running](#check-that-ekom-is-running)
+- [Fix common installation problems](#fix-common-installation-problems)
 
-```bash
-dotnet add package Ekom.U10
-dotnet add package Ekom.Web
-```
+## Before you start
 
-### Umbraco 17
+- The site runs Umbraco 17, 18 or 19, and you know which package pair it needs. See [Compatibility](compatibility.md).
+- The site uses a SQL Server or SQLite database.
+- The .NET SDK for the site's target framework is installed: .NET 10 for Umbraco 17 and 18, .NET 11 for Umbraco 19.
 
-```bash
-dotnet add package Ekom.U17
-dotnet add package Ekom.Web.U17
-```
+## Install the packages
 
-### Umbraco 18
+1. Open a terminal in the web project's folder.
+2. Add the runtime package and the web-assets package for your Umbraco version:
 
-```bash
-dotnet add package Ekom.U18
-dotnet add package Ekom.Web.U18
-```
+   | Umbraco | Commands |
+   | --- | --- |
+   | 17 | `dotnet add package Ekom.U17` and `dotnet add package Ekom.Web.U17` |
+   | 18 | `dotnet add package Ekom.U18` and `dotnet add package Ekom.Web.U18` |
+   | 19 | `dotnet add package Ekom.U19` and `dotnet add package Ekom.Web.U19` |
 
-### Umbraco 19
+   For example, on Umbraco 17:
 
-```bash
-dotnet add package Ekom.U19
-dotnet add package Ekom.Web.U19
-```
+   ```bash
+   dotnet add package Ekom.U17
+   dotnet add package Ekom.Web.U17
+   ```
 
-Run the commands from the web project directory, or pass `--project path/to/site.csproj`. Package Manager Console users can use `Install-Package <package-name>` instead.
+   To run the commands from another folder, add `--project path/to/YourSite.csproj`. In the Visual Studio Package Manager Console, use `Install-Package Ekom.U17` and `Install-Package Ekom.Web.U17` instead.
+3. Check that `Program.cs` still calls `AddComposers()` on the Umbraco builder. New Umbraco sites have this call by default:
 
-The web-assets packages contain the Ekom backoffice extension. Reference them from the host project, not only from a class library. A separate class library may also reference the runtime package when it compiles against Ekom APIs, but that does not replace the host references.
+   ```csharp
+   builder.CreateUmbracoBuilder()
+       .AddBackOffice()
+       .AddWebsite()
+       .AddComposers()
+       .Build();
+   ```
 
-## Startup registration
+4. Build the site.
 
-No explicit `AddEkom(...)` call is required for a standard package installation. Each runtime package contains an Umbraco `IComposer`; Umbraco discovers it during composition. On Umbraco 17, 18, and 19, keep the normal `AddComposers()` call in the host's Umbraco builder pipeline. The composer calls Ekom's internal registration extension and registers services, components, content finders, URL providers, notification handlers, and startup filters.
+Install the web-assets package in the web project itself. When the web project builds, the package copies Ekom's backoffice files into `wwwroot/App_Plugins/Ekom`. A class library in your solution can also reference the runtime package if it calls the Ekom API, but the web project still needs both packages.
 
-Do not call the public `AddEkom(...)` extension a second time in application startup. That extension is used by the composer and duplicate registration is not part of the supported installation path.
+### Why there is no setup code
 
-## First run
+The runtime package contains an Umbraco composer, `EkomComposer`. Umbraco finds it through `AddComposers()` and runs it at startup. The composer registers Ekom's catalog routing and URLs, its startup steps and its handlers for Umbraco content changes. It then calls `AddEkom`, which registers Ekom's services and adds Ekom's middleware to the request pipeline: session, a request size limit, and Ekom's request and tracking handling.
 
-After Umbraco reaches its running state, Ekom:
+Do not call `AddEkom` yourself. The composer already calls it, and registering Ekom twice is not supported.
 
-- creates or updates its database tables through the Ekom migration plan;
-- creates the Ekom data types, document types, and root content when they do not exist;
-- initializes catalog, store, provider, discount, and stock caches;
-- wires content and language notifications that keep those caches synchronized.
+## What Ekom does when the site starts
 
-Ekom skips this initialization while Umbraco itself is installing or upgrading. Restart the application after completing Umbraco's installer if the Ekom root and schema are not yet present. See [Startup and data](../architecture/startup-and-data.md) for details.
+Ekom waits until Umbraco is fully running. While Umbraco's installer or an Umbraco upgrade is running, Ekom skips all of the steps below.
 
-## Verify the installation
+When Umbraco is running, Ekom:
 
-1. Restore and run the site.
-2. Complete Umbraco's normal installation when this is a new site, then let the application reach the running state.
-3. Sign in to the backoffice and confirm that Ekom root content and manager features are available.
-4. Create and publish a store before adding catalog content or implementing checkout.
+1. Creates its database tables, or updates them to the current version. See [Startup and data](../architecture/startup-and-data.md) for the tables and indexes.
+2. Creates the Ekom document types and data types, and the **Ekom** root content node with these folders under it: Catalog, Shipping Providers, Payment Providers, Discounts (with Product Discounts and Order Discounts), Stores, Zones and Metafields. It does this only when no **Ekom** root node exists, so your content is not replaced on later starts.
+3. Loads stores, the catalog, providers, discounts, zones, prices and stock into memory.
+4. From then on, refreshes that memory copy when content, domains or languages change in Umbraco.
 
-If the runtime starts but Ekom's backoffice UI is missing, verify that the matching `Ekom.Web*` package is referenced directly by the host and that its `App_Plugins/Ekom` content was copied to the build or publish output.
+If you create a new Umbraco site and install Ekom before running Umbraco's installer, Ekom does none of this during the installer. If the **Ekom** root node and the Ekom tables are not there after the installer finishes, restart the site.
 
-Continue with [Configuration](configuration.md) and [Quick start](quick-start.md).
+## Check that Ekom is running
+
+1. Start the site. On a new site, finish Umbraco's installer first.
+2. Sign in to the Umbraco backoffice.
+3. In the **Content** section, check that the **Ekom** root node and its folders exist.
+4. In **Users**, open your user group and add the **Ekom** section to its allowed sections. Reload the backoffice and check that the **Ekom** section appears.
+5. In the site's log, look for `Ekom started` and `Ekom cache rebuild published successfully`.
+
+You can now set up your first store. Continue with [Configuration](configuration.md), then [Quick start](quick-start.md).
+
+## Fix common installation problems
+
+| What you see | Cause | What to do |
+| --- | --- | --- |
+| The **Ekom** section is not in the backoffice. | Your user group does not have the section, or the web-assets files are missing. | Add the **Ekom** section to your user group. Then check that the web project references the `Ekom.Web.*` package that matches the runtime package, and that `wwwroot/App_Plugins/Ekom` exists in the build or publish output. |
+| The log says `Ekom cache initialization failed`, with the error `Ekom root node not found.` | The **Ekom** root node does not exist or is not published. | Publish the existing node, or restart the site so Ekom can create it. If Ekom could not create it, the log also says `Failed to Initialize EnsureNodesExist`. |
+| The log says `Ekom cache initialization failed` with another error. | Ekom could not load the catalog into memory. | Read the error logged with it. If content kept changing while Ekom loaded it at startup, Ekom retries by itself. Otherwise fix the cause, then rebuild the Ekom caches from the backoffice or restart the site. |
+| The log says `Ekom startup failed`. | Ekom's last startup step failed: setting up request cultures or updating the order table. | Read the error logged with it. The website keeps running, so do not take a running site as proof that Ekom started. |
+| The site does not start and the error mentions `EkomOrders`. | The database is not SQL Server or SQLite, or the existing order table cannot get its required index. | See [Startup and data](../architecture/startup-and-data.md#required-order-index). |
+| The site does not start with an `ArgumentOutOfRangeException` for `PollInterval`, `BatchSize` or `CompletedRetention`. | A value under `Ekom:Reservations` is out of range. | See [Configuration](configuration.md#stock-reservations). |
+| The site does not start with `Ekom:Manager:Customers:IdentityField must be CustomerEmail or CustomerUsername.` | The setting has another value. | Set it to `CustomerEmail` (the default) or `CustomerUsername`, or remove it. |
+
+## Related pages
+
+- [Compatibility](compatibility.md): which packages match your Umbraco version.
+- [Configuration](configuration.md): the settings to set after installing.
+- [Startup and data](../architecture/startup-and-data.md): the database changes and memory loading in detail.
+- [Access and permissions](../manager/access-and-permissions.md): who can use the **Ekom** section.
+
+Next: [Configuration](configuration.md)
+
+[Back to Getting started](README.md)

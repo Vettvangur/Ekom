@@ -1,56 +1,76 @@
+[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Configure discounts in Umbraco
+
 # Configure discounts in Umbraco
 
-[Discounts overview](../discounts.md) | [Developer guide](developers.md)
+This page helps you, as a store editor, choose the right kind of discount for an offer and plan it before you open the backoffice. Each kind has its own page with step-by-step instructions.
 
-Start with the offer you want customers to receive, then choose the discount type below. These guides explain the editor fields and show how to check the offer before making it available to customers.
+On this page:
 
-## Choose the right discount
+- [Choose the right kind of discount](#choose-the-right-kind-of-discount)
+- [Find discounts in the backoffice](#find-discounts-in-the-backoffice)
+- [Plan the offer before you start](#plan-the-offer-before-you-start)
+- [Usage limits are not a customer limit](#usage-limits-are-not-a-customer-limit)
+- [Check the offer before customers see it](#check-the-offer-before-customers-see-it)
 
-| Your goal | Use | Example |
+## Choose the right kind of discount
+
+| What you want | Use | Example |
 | --- | --- | --- |
-| Put selected products on sale without a code. | [Product discount](product-discounts.md) | 15% off a category, except one excluded product. |
-| Give one product a specific selling price. | [Native discount price](product-discounts.md#set-a-target-selling-price) | Sell an item normally priced at 100 for 85. |
-| Apply an offer automatically when a basket qualifies. | [Order discount](order-discounts.md) with Global Discount on | 20% off eligible items when buying at least three qualifying units. |
-| Require customers to enter a code for an offer. | [Order discount](order-discounts.md) with a [coupon](coupons.md) | Enter SPRING10 for 10% off selected items. |
-| Limit how many times a particular code can be used. | [Coupon usage limit](coupons.md#understand-usage-limits) | A shared campaign code with 100 uses available in total. |
+| Put chosen products on sale, without a code. | [Product discount](product-discounts.md) | 15% off a category, except one product. |
+| Sell one product at a set sale price. | [Discount Price field](product-discounts.md#set-a-sale-price-on-one-product) | A product that normally costs 100 sells for 85. |
+| Give an offer automatically when the basket qualifies. | [Order discount](order-discounts.md) with **Global Discount** on | 20% off when the customer buys at least 3 bundle items. |
+| Give an offer only to customers who enter a code. | [Order discount](order-discounts.md) with a [coupon](coupons.md) | The code `SPRING10` gives 10% off selected products. |
+| Limit how many times a code can be used. | [Usage limits on a coupon](coupons.md#understand-usage-limits) | A campaign code that can be used 100 times in total. |
 
-**Coupons are not a third discount type.** A code activates an order discount; the discount defines the amount, eligible items, and conditions.
+A coupon is not a separate kind of discount. A coupon code switches on one order discount. The order discount holds the amount, the products and the conditions.
 
-## Decide the offer before editing
+## Find discounts in the backoffice
 
-Write down:
+Discounts are content nodes in the **Content** section:
 
-1. **Where it applies:** the store and currency.
-2. **What customers receive:** a percentage reduction, a fixed amount off eligible units, or a target selling price.
-3. **Which items receive it:** selected products or categories, with any exclusions.
-4. **What activates it:** automatic evaluation, a coupon, or a minimum qualifying quantity.
-5. **Whether it combines with a sale price:** an order discount's Stackable setting controls interaction with product discounts.
-6. **Any restrictions:** configured ranges, disabled state, usage limits, or discount stock.
+- **Ekom > Discounts > Product Discounts** holds product discounts.
+- **Ekom > Discounts > Order Discounts** holds order discounts and their coupon codes.
 
-Global Discount means a couponless order offer is evaluated automatically **and bypasses the Discount Items inclusion selection**. It can reward all eligible, non-excluded basket lines, but it still respects its store, qualification, and other restrictions. Read the [global targeting warning](order-discounts.md#global-discount-changes-the-reward-selection) before configuring a category-specific automatic offer.
+Inside each of these you can create the discount itself, or a folder (**Product Discounts Folder** or **Order Discounts Folder**) to group discounts. A folder has its own **Disable** setting per store on its **Stores** tab. Turning on **Disable** for a store on a folder turns off every discount inside that folder in that store.
 
-## Important: usage is not a customer restriction
+A new discount is active in every store. To keep it out of a store, open the **Stores** tab on the discount (or on its folder) and turn on **Disable** for that store.
 
-A coupon usage limit counts how many times **that code** can be used in total. It is not based on the customer, email address, or logged-in account. A single-use code is single-use overall, not once per customer.
+## Plan the offer before you start
 
-If you need "first order only", "members only", or "once per customer", ask your developer about custom eligibility rules. Naming a coupon WELCOME or MEMBERS does not enforce those rules. Read the [coupon guide](coupons.md) before planning a customer-specific campaign.
+Write down these six things first. Each one maps to a field.
 
-## Follow the relevant setup guide
+1. **Stores and currencies.** Which stores the offer runs in. Amounts are entered per store and per currency.
+2. **What the customer gets.** A percentage off (for example 15%), a fixed amount off each discounted unit (for example 10 off each item), or a set sale price on one product.
+3. **Which products get it.** The products or categories you select, and any you want to leave out.
+4. **What switches it on.** Always on (product discount), automatic on the basket (Global Discount), a coupon code, or a minimum quantity.
+5. **Whether it adds to a sale price.** On an order discount, **Stackable** decides whether it applies on top of a product discount or competes with it.
+6. **Limits.** A price or basket range, how many times a code can be used, and whether the offer is disabled in some stores.
 
-- [Product discounts](product-discounts.md): product sales and target selling prices.
-- [Order discounts](order-discounts.md): automatic offers, quantity rules, and stacking.
-- [Coupons](coupons.md): code-based offers, generation, and usage limits.
+**Global Discount** does more than remove the need for a code. When it is on, the offer can reward every product in the basket that is not excluded, even products that are not in **Discount Items**. Read [Global Discount rewards more than Discount Items](order-discounts.md#global-discount-rewards-more-than-discount-items) before you set up an automatic offer for one category.
 
-The guides use generic store, product, and price examples. Replace them with your own values. Node locations and publishing actions can differ between Umbraco versions and site setups; use the matching store container and available content type in your editor.
+## Usage limits are not a customer limit
 
-## Check the customer experience
+The **Usage limits** value on a coupon code counts uses of that code, for all customers together. It does not look at who the customer is, their email address or whether they are logged in. A code with a limit of `1` can be used once in total, not once per customer.
 
-After saving and publishing the relevant discount content:
+Ekom has no setting for "first order only", "members only" or "once per customer". Naming a code `WELCOME` or `MEMBERS` does not limit who can use it. If you need such a rule, ask your developer to add it. Read [Coupons](coupons.md) before you plan a campaign for certain customers only.
 
-- Check a basket that should qualify and one that should not.
-- Add an unrelated or excluded product and inspect its price.
-- Check another store and any other configured currencies.
-- Test a product that already has a discount.
-- Check the final basket totals, not only a promotional label.
+## Check the offer before customers see it
 
-Order discounts apply to eligible order lines. Do not assume they reduce shipping or installation fees; configure and test those services separately.
+After you save and publish the discount, check it on the storefront:
+
+1. Fill a basket that meets the offer's conditions, and one that does not. Compare the totals.
+2. Add a product that is excluded or not selected. Check that its price did not change.
+3. Add a product that already has a sale price. Check which price wins.
+4. Switch to another store, and to each currency the store uses. Check that the offer only appears where you want it.
+5. Look at the basket total, not only a label or badge on the page.
+
+Order discounts lower the price of order lines only. They do not lower shipping or payment fees.
+
+## Related pages
+
+- [Product discounts](product-discounts.md): put products on sale and set sale prices.
+- [Order discounts](order-discounts.md): automatic offers, quantity rules and Stackable.
+- [Coupons](coupons.md): add and generate codes, and understand usage limits.
+- [Discount APIs and behavior](developers.md): the developer page, for custom rules such as "once per customer".
+
+[Back to Guides](../README.md)

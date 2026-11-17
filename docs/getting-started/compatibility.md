@@ -1,32 +1,71 @@
+[Ekom docs](../README.md) / [Getting started](README.md) / Compatibility
+
 # Compatibility
 
-Ekom supports the following Umbraco lines in this branch. The runtime and web-assets packages must match the site's Umbraco major version.
+Ekom ships one pair of packages for each Umbraco major version: a runtime package and a web-assets package. Use this page to find the pair for your site before you install anything.
 
-| Umbraco | Application target | Runtime package | Web-assets package |
+These docs cover Umbraco 17, 18 and 19. They do not cover Umbraco 13.
+
+On this page:
+
+- [Find your packages](#find-your-packages)
+- [Umbraco versions each package accepts](#umbraco-versions-each-package-accepts)
+- [What differs between Umbraco 17, 18 and 19](#what-differs-between-umbraco-17-18-and-19)
+- [Tools and databases you need](#tools-and-databases-you-need)
+
+## Find your packages
+
+| Umbraco | Site target framework | Runtime package | Web-assets package |
 | --- | --- | --- | --- |
-| 13 | .NET 8 (`net8.0`) | `Ekom.U10` | `Ekom.Web` |
 | 17 | .NET 10 (`net10.0`) | `Ekom.U17` | `Ekom.Web.U17` |
 | 18 | .NET 10 (`net10.0`) | `Ekom.U18` | `Ekom.Web.U18` |
 | 19 (release candidate) | .NET 11 (`net11.0`) | `Ekom.U19` | `Ekom.Web.U19` |
 
-The U17 runtime references Umbraco packages in the `[17.0.0,18.0.0)` range. The U18 runtime references `[18.0.0,19.0.0)`. The U19 runtime references `[19.0.0-rc1,20.0.0)` while Umbraco 19 is a release candidate. The U10 project currently builds against Umbraco 13.13 packages.
+The runtime package contains the Ekom API, the Umbraco integration and the database setup. The web-assets package contains the Ekom backoffice user interface: the **Ekom** section and Ekom's property editors.
 
-## Why Umbraco 13 uses `Ekom.U10`
+Install both packages of one row, with the same version number. Ekom publishes all of these packages together, with one version number, from the same release. Do not mix packages from different rows.
 
-`Ekom.U10` is a historical package and project name retained from the first ASP.NET Core Umbraco implementation. The current project targets .NET 8 and references Umbraco 13, so the suffix does not describe its current Umbraco compatibility. For an Umbraco 13 site, install `Ekom.U10` with `Ekom.Web`.
+## Umbraco versions each package accepts
 
-Do not replace `Ekom.U10` with `Ekom.U17` based only on the package name. `Ekom.U17` requires Umbraco 17 and .NET 10.
+Each runtime package declares the range of Umbraco versions it accepts. NuGet refuses to restore the package when the site's Umbraco version is outside that range.
 
-## U17, U18, and U19 implementation sharing
+| Runtime package | Accepted Umbraco versions |
+| --- | --- |
+| `Ekom.U17` | 17.0.0 or later, below 18.0.0 |
+| `Ekom.U18` | 18.0.0 or later, below 19.0.0 |
+| `Ekom.U19` | 19.0.0-rc1 or later, below 20.0.0 |
 
-`Ekom.U18` compiles the U17 integration source against Umbraco 18 dependencies with an `UMBRACO_18` compile constant. `Ekom.U19` compiles the same source against Umbraco 19 dependencies with both `UMBRACO_18` and `UMBRACO_19` defined. This reduces duplication, but the output packages are not interchangeable. Install the pair that matches the site's Umbraco major version.
+Umbraco 19 is a release candidate. The `Ekom.U19` range starts at the first release candidate and also includes the final 19.x releases.
 
-Umbraco 19 replaced the legacy Examine indexes with its provider-based search. On Umbraco 19, Ekom catalog search therefore runs through Umbraco's search abstraction; see [Umbraco 18 to 19](../upgrading/umbraco-18-to-19.md) for the behavior differences.
+## What differs between Umbraco 17, 18 and 19
 
-## Tooling requirements
+The three runtime packages are built from the same source code, and the three web-assets packages are built from the same backoffice client. A feature described in these docs works on all three versions unless the page says otherwise.
 
-Package consumers need an SDK capable of building the site's target framework: .NET 8 for Umbraco 13, .NET 10 for Umbraco 17 and 18, or .NET 11 for Umbraco 19. The repository has no `global.json`, so it does not pin an SDK patch version.
+The one difference that affects storefront code is catalog search:
 
-Node.js is not required to consume the published NuGet packages. It is required only when building the U17, U18, or U19 web-assets projects from source; see [Contributor setup](../contributing/setup.md) for their declared Node.js and npm versions.
+- On Umbraco 17 and 18, Ekom searches the Examine index named in `Ekom:ExamineSearchIndex` (default `ExternalIndex`).
+- On Umbraco 19, the Examine indexes of earlier versions no longer exist. Ekom searches through Umbraco's search provider instead. Field boosts, fuzzy matching and wildcard settings on a search request are not applied.
 
-Continue with [Installation](installation.md), or see [Packages](../architecture/packages.md) for package and project boundaries.
+See [Upgrade from Umbraco 18 to 19](../upgrading/umbraco-18-to-19.md#catalog-search) for the full list of search differences.
+
+## Tools and databases you need
+
+| Tool | Needed for |
+| --- | --- |
+| .NET 10 SDK | A site on Umbraco 17 or 18. |
+| .NET 11 SDK | A site on Umbraco 19. |
+
+You do not need Node.js to use Ekom. The published web-assets packages already contain the built backoffice files. Node.js is needed only to build Ekom itself from source; see [Set up a development environment](../contributing/setup.md).
+
+Ekom supports SQL Server and SQLite databases. On any other database provider, startup fails with `Unsupported database provider for EkomOrders indexes.`
+
+## Related pages
+
+- [Installation](installation.md): add the packages to your site.
+- [Packages](../architecture/packages.md): every Ekom package and what it contains.
+- [Integrations](../integrations/README.md): the matching Algolia, Klaviyo and Mailchimp packages for each Umbraco version.
+- [Upgrading](../upgrading/README.md): move a site from one Umbraco version to the next.
+
+Next: [Installation](installation.md)
+
+[Back to Getting started](README.md)

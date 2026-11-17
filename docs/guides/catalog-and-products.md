@@ -1,48 +1,44 @@
+[Ekom docs](../README.md) / [Guides](README.md) / Catalog and products
+
 # Catalog and products
 
-Ekom stores its catalog in Umbraco content and exposes the published catalog through `Ekom.API.Catalog`, product/category models, and public HTTP endpoints. Catalog reads are served from Ekom's per-store caches; pass a store alias explicitly when code does not run in a routed storefront request.
+The catalog is the categories, products and variants that a store sells. Editors build it as Umbraco content, and your code reads the published catalog through `Ekom.API.Catalog` or Ekom's HTTP endpoints. This page shows how to find products and categories, list and filter them, search them, and change what Ekom returns.
 
-## Catalog structure
+Ekom reads the catalog from memory, with a separate copy for each store. In code that does not run inside a storefront request, pass the store alias to every call. See [Stores](stores.md).
 
-The standard content types are:
+On this page:
 
-| Content type | Purpose |
+- [How the catalog is organized](#how-the-catalog-is-organized)
+- [Find a product or category](#find-a-product-or-category)
+- [List and filter products](#list-and-filter-products)
+- [Variants and related products](#variants-and-related-products)
+- [Search](#search)
+- [Change what the catalog returns](#change-what-the-catalog-returns)
+- [HTTP catalog API](#http-catalog-api)
+- [Show products in Razor views](#show-products-in-razor-views)
+- [Browse the catalog in the backoffice](#browse-the-catalog-in-the-backoffice)
+
+## How the catalog is organized
+
+| Content type | What it is |
 | --- | --- |
-| `ekmCategory` | Hierarchical catalog category. |
-| `ekmProduct` | Sellable product and the parent of variant groups. |
-| `ekmProductVariantGroup` | Groups selectable variants, such as a color. |
-| `ekmProductVariant` | A sellable variant with its own SKU, price and stock. |
+| `ekmCatalog` | The root of a catalog. Categories go under it. |
+| `ekmCategory` | A category. Categories can contain categories and products. |
+| `ekmProduct` | A product. It is the parent of its variant groups. |
+| `ekmProductVariantGroup` | A group of variants, for example one color. |
+| `ekmProductVariant` | A variant the customer can buy, with its own SKU, price and stock. |
 
-Products may belong to a primary category and additional categories. `IProduct.Categories` and `CategoryAncestors` expose those relationships. A product with variants is available when at least one variant is available; a product without variants uses its own stock. Backorder and stock-buffer behavior is covered in [Stock](stock.md).
+A product lives under one category, its primary category. It can also be linked to more categories with its `categories` picker. `IProduct.Categories` and `IProduct.CategoryAncestors` give you those categories.
 
-## Backoffice catalog collection and content pickers
+A product with variants is available when at least one of its variants is available. A product without variants uses its own stock. Backorder and the stock buffer are covered in [Stock](stock.md#how-ekom-decides-that-a-product-is-available).
 
-The Catalog view on a category shows its subcategories and its products as cards: the products that live directly under it and the products connected to it through their `categories` picker. Products shown through the picker carry a **Linked** pill. A product is listed once per category and counted once in branch totals. Picker connections are read from the relations Umbraco records when a product is saved, so a product whose picker value was written straight to the database appears after its next save. Each product card shows the image, name, SKU, price (with the original price struck through while a product discount applies), variant count, publish state, an **Edits** pill for published products with unpublished changes, and stock. A product with variants uses the combined stock of its variants; a product without variants uses its own stock. Subcategory cards show the product total for the whole branch and a short health note: `Empty`, `Nothing published`, `N out of stock` or `N live`.
+## Find a product or category
 
-The filter chips (**All**, **Published**, **Unpublished**, **Out of stock**) and the sort menu apply to the direct products of the category; the search box in Umbraco's collection toolbar filters them by name, title or SKU. Checkboxes and **Select all** write to Umbraco's collection selection, so the standard selection bar and bulk actions apply. The `...` button on a card opens Umbraco's standard document actions. The view uses its own light and dark colours and follows the theme chosen in the backoffice user menu.
+Inject `Ekom.API.Catalog`. `Catalog.Instance` also works, but injection is easier to test.
 
-Umbraco 17.8 and 18.3 render a node's configured collection inside the document picker. Ekom's `Ekom.CollectionView.Catalog` uses the `Ekom.Condition.CatalogPicker` extension condition to exclude itself from picker collections by default. Ordinary workspace bulk selection does not hide the catalog view.
+### On a product or category page
 
-New installs create an **Ekom Catalog Collection** Data Type with Catalog as the first layout and Table as the second, and assign it to the Category document type, so categories open on the Catalog view. Existing installs are not changed: assign a collection to the Category document type yourself to get the view.
-
-Keep at least one native view, such as `Umb.CollectionView.Document.Table`, enabled in the collection Data Type's layouts alongside Catalog. Umbraco filters the configured layouts against the permitted views; a collection configured with **only Catalog** would have no available picker view when Catalog is excluded. Catalog can remain the first/default layout for normal editing.
-
-To opt in later, change the condition on `Ekom.CollectionView.Catalog` in `Ekom/Ekom.Web/Ekom.Web.U17/Client/src/manifests.ts` and rebuild both web asset projects:
-
-```typescript
-{
-  alias: 'Ekom.Condition.CatalogPicker',
-  allowInPickers: true,
-},
-```
-
-When enabled in a picker, Catalog hosts Umbraco's native document table using the existing collection context. Umbraco owns the browsed category, allowed item filters, single/multiple selection, pagination, and picker navigation. Ekom does not load its custom catalog data, modify browser history, force multiple selection, or hide the native pagination in this mode. The custom catalog cards, sorting, breadcrumbs, and navigation remain in normal workspace collections.
-
-Picker detection uses the explicit `selectionConfiguration.selectOnly: true` configuration, not the live `selectOnly` state (which also becomes true during workspace bulk selection). U18 shares the U17 client source.
-
-## Read the routed catalog
-
-Inject `Ekom.API.Catalog` for application code. `Catalog.Instance` remains available, but constructor injection is easier to test.
+On a page that Ekom routed to a product or category, call the methods without arguments:
 
 ```csharp
 using Ekom.API;
@@ -55,7 +51,11 @@ public sealed class ProductPageService(Catalog catalog)
 }
 ```
 
-`GetProductAsync()` and `GetCategoryAsync()` read the `ContentRequest` attached to the current HTTP request. For custom routes, background work, or integrations, use an explicit lookup:
+`GetProductAsync()` and `GetCategoryAsync()` read the product or category that Ekom found for the current HTTP request. They return `null` when the request is not for a product or category page.
+
+### By SKU, key, ID or route
+
+In custom routes, background jobs and integrations, look the item up directly:
 
 ```csharp
 IProduct? bySku = await catalog.GetProductAsync("SKU-123", "Store", ct: ct);
@@ -67,51 +67,122 @@ ICategory? category = await catalog.GetCategoryAsync(categoryKey, "Store", ct: c
 ICategory? byCategoryRoute = await catalog.GetCategoryByRouteAsync("/shop/shoes", "Store", ct: ct);
 ```
 
-Product key, ID and SKU lookups can fall back to another store when `global` is `true`, or when `Ekom:GlobalCatalog` is enabled and `global` is omitted. Route lookup does not use that fallback. Category lookup has its own `global` argument and honors the requesting store's category `disable` value when falling back.
+- Each method returns `null` when nothing matches.
+- When you leave out the store alias, Ekom uses the store of the current request, or the first store if there is none.
+- An unknown store alias throws `StoreNotFoundException`.
+- `GetCategoryAsync(string id, ...)` accepts an integer ID, a GUID key or an Umbraco UDI as a string.
 
-## Product collections
+### Find a product or category in another store
 
-Use `ProductQuery` for filtering, ordering and paging:
+By default a lookup only searches the store you name. A product lookup by key, ID or SKU also searches the other stores when you pass `global: true`, or when `Ekom:GlobalCatalog` is `true` and you leave `global` out.
 
 ```csharp
+IProduct? anyStore = await catalog.GetProductAsync("SKU-123", "Store", global: true, ct: ct);
+```
+
+A category lookup by key or ID searches the other stores when you pass `global: true` or when `Ekom:GlobalCatalog` is `true`. If the category found in another store has its `disable` value set for the store you asked for, Ekom returns `null`.
+
+Lookups by route never search other stores.
+
+## List and filter products
+
+Use a `ProductQuery` to filter, sort and page a list of products:
+
+```csharp
+using Ekom.Utilities;
+
 ProductResponse response = await catalog.GetAllProductsAsync(new ProductQuery
 {
     StoreAlias = "Store",
     Page = 1,
     PageSize = 24,
-    OrderBy = Ekom.Utilities.OrderBy.PriceAsc,
+    OrderBy = OrderBy.PriceAsc,
     MetaFilters = new Dictionary<string, List<string>>
     {
         ["brand"] = ["Ekom"],
     },
 }, ct);
+
+foreach (IProduct product in response.Products)
+{
+    // render the product
+}
 ```
 
-Important members are `Ids`, `Keys`, `Skus`, `StoreAlias`, `Page`, `PageSize`, `SearchQuery`, `MetaFilters`, `PropertyFilters`, `PropertySelectors`, `OrderBy`, `FilterOutZeroPriceProducts`, `Filter`, and `RaiseEvents`. `Filter` is a server-side delegate and cannot be supplied over JSON.
+### Where to get the list from
 
-Collection entry points include:
-
-| API | Result |
+| Method | Products |
 | --- | --- |
-| `GetAllProductsAsync(...)` | All products in a store. |
-| `GetProductsByIdsAsync(...)` | Products matching `ProductQuery.Ids`. |
-| `GetProductsByKeysAsync(...)` | Products matching `ProductQuery.Keys`. |
-| `GetProductsBySkusAsync(...)` | Products matching `ProductQuery.Skus`. |
-| `category.ProductsAsync(...)` | Direct products of a category. |
-| `category.ProductsRecursiveAsync(...)` | Products in a category and descendants. |
-| `GetProductsRescursiveByRouteAsync(...)` | Recursive category products by route. The public method name is spelled `Rescursive`. |
+| `catalog.GetAllProductsAsync(query, ct)` | All products in the store. |
+| `catalog.GetProductsByIdsAsync(query, ct)` | The products in `query.Ids`. |
+| `catalog.GetProductsByKeysAsync(query, ct)` | The products in `query.Keys`. |
+| `catalog.GetProductsBySkusAsync(query, ct)` | The products in `query.Skus`. |
+| `category.ProductsAsync(query, ct)` | The products directly in a category. |
+| `category.ProductsRecursiveAsync(query, ct)` | The products in a category and all categories below it. |
+| `catalog.GetProductsRescursiveByRouteAsync(route, query, ct)` | The products in the category at that route and all categories below it. The method name is spelled `Rescursive`. |
 
-`ProductResponse` exposes `Products`, counts, paging information, filters and property selectors.
+### ProductQuery members
 
-`new ProductQuery(HttpContext.Request.Query)` recognizes `filter_*`, `property_*`, `q`, `page`/`p`, and `orderby` query values. This is the pattern used by the sample category view.
+| Member | What it does |
+| --- | --- |
+| `StoreAlias` | The store to read from. Empty means the store of the current request. |
+| `Ids`, `Keys`, `Skus` | The products to return, for the methods that take them. |
+| `Page`, `PageSize` | Paging. Ekom pages the result only when both are set. |
+| `OrderBy` | The sort order. The default is the `Ekom:DefaultProductOrderBy` setting, which is `DateDesc` when not set. `NoOrder` keeps the original order. |
+| `MetaFilters` | Filters on metafields, as field alias to allowed values. |
+| `PropertyFilters` | Filters on product properties, as property alias to allowed values. |
+| `PropertySelectors`, `PropertySelectorsSeparator` | Count the values of a property across the result, for building filter menus. The key `category` counts categories. |
+| `SearchQuery`, `SearchFields` | Keep only products that the search service finds for this text. See [Search](#search). |
+| `AllFiltersVisible` | `true`: build `Filters` from all products before filtering. `false`: build them from the filtered products. |
+| `FilterOutZeroPriceProducts` | `true`: leave out products whose price (or primary variant price) is not above zero. |
+| `Filter` | A `Func<IProduct, bool>` you supply in C#. It cannot be sent over JSON. |
+| `RaiseEvents` | `false`: do not run the [catalog events](#change-what-the-catalog-returns) on this list. The default is `true`. |
+
+`OrderBy` values: `UmbracoSortOrderAsc`, `UmbracoSortOrderDesc`, `TitleAsc`, `TitleDesc`, `PriceAsc`, `PriceDesc`, `DateAsc`, `DateDesc`, `SkuAsc`, `SkuDesc`, `Score`, `NoOrder`.
+
+### What you get back
+
+`ProductResponse` has:
+
+- `Products`: the products on the requested page, or all of them when you do not page.
+- `ProductCount` and `TotalProductCount`: the number of products after filtering.
+- `Page`, `PageSize`, `PageCount`: set when the result is paged.
+- `Filters`: the metafield values you can filter on, grouped by field.
+- `PropertySelectors`: the counted values for each property selector.
+
+### Build a query from the URL
+
+`new ProductQuery(HttpContext.Request.Query)` reads these query string values:
+
+| Query string | Sets |
+| --- | --- |
+| `filter_{alias}` | `MetaFilters[alias]` |
+| `property_{alias}` | `PropertyFilters[alias]` |
+| `q` | `SearchQuery` |
+| `page` or `p` | `Page`. The default is `1`. |
+| `orderby` | `OrderBy`. An unknown value is ignored. |
+
+It does not set `PageSize`, so set it yourself if you want paging. The sample category view does this:
+
+```csharp
+ProductResponse products = await category.ProductsRecursiveAsync(new ProductQuery(Context.Request.Query)
+{
+    PageSize = 6,
+    AllFiltersVisible = true,
+});
+```
 
 ## Variants and related products
 
 ```csharp
 IVariant? variant = await catalog.GetVariantAsync(variantKey, "Store", ct);
 IVariant? variantBySku = await catalog.GetVariantAsync("VAR-123", "Store", ct);
+
 IVariantGroup? group = await catalog.GetVariantGroupAsync(groupKey, "Store", ct);
-IEnumerable<IVariant> groupVariants = await catalog.GetVariantsByGroupAsync(group.Id, "Store", ct);
+if (group != null)
+{
+    IEnumerable<IVariant> groupVariants = await catalog.GetVariantsByGroupAsync(group.Id, "Store", ct);
+}
 
 IReadOnlyList<IProduct> related = await catalog.GetRelatedProductsAsync(
     productKey,
@@ -120,11 +191,15 @@ IReadOnlyList<IProduct> related = await catalog.GetRelatedProductsAsync(
     ct: ct);
 ```
 
-Products also expose `PrimaryVariant`, `PrimaryVariantGroup`, `VariantGroups`, and `AllVariants`. Render a real variant key in add-to-order requests when the product requires a variant.
+`GetVariantAsync` by SKU throws `ArgumentException` when the SKU is empty. `GetRelatedProductsAsync` returns an empty list when the product is not found. `GetRelatedProductsBySkuAsync` does the same by SKU.
+
+A product also gives you its variants directly: `PrimaryVariant`, `PrimaryVariantGroup`, `VariantGroups` and `AllVariants`.
+
+When a product has variants, the customer must pick one. Send the key of a real variant when you add the product to the basket.
 
 ## Search
 
-`Catalog.ProductSearchAsync(SearchRequest, ct)` delegates matching to `ICatalogSearchService`, then resolves returned IDs through the Ekom product cache. If `NodeTypeAlias` is empty, Ekom searches `ekmProduct` and `ekmVariant`.
+`catalog.ProductSearchAsync(request, ct)` passes the search to the registered `ICatalogSearchService`, then returns the matching products from the store's catalog.
 
 ```csharp
 ProductResponse result = await catalog.ProductSearchAsync(new SearchRequest
@@ -136,19 +211,59 @@ ProductResponse result = await catalog.ProductSearchAsync(new SearchRequest
 }, ct);
 ```
 
-The default Umbraco implementation uses the configured Examine index (`Ekom:ExamineSearchIndex`, default `ExternalIndex`). To replace search, register an `ICatalogSearchService` after the normal Umbraco composition pipeline has built; do not call `AddEkom(...)` manually in a standard package installation. Its async methods are `ProductQueryAsync`, `PublicQueryAsync`, and `InternalQueryAsync`.
+- An empty `SearchQuery` returns an empty result.
+- When `NodeTypeAlias` is empty, Ekom searches the node types `ekmProduct` and `ekmVariant`.
+- `Page` and `PageSize` go to the search service, which returns that page of hits.
+- `MetaFilters`, `PropertyFilters` and `OrderBy` on the request are applied to the products found. The default `OrderBy` of a `SearchRequest` is `NoOrder`.
+- If no `ICatalogSearchService` is registered, the result is empty. Ekom's own search service logs a search error and returns no hits instead of throwing.
 
-## Catalog events
+The search service that Ekom registers depends on the Umbraco version:
 
-The async catalog events can replace a single result or filter a collection before it is returned:
+| Umbraco | How Ekom searches |
+| --- | --- |
+| 17 and 18 | Examine, using the index named in `Ekom:ExamineSearchIndex` (default `ExternalIndex`). The `SearchFields` settings (exact, wildcard, fuzzy, boost) apply. |
+| 19 | Umbraco's search provider. `ExternalIndex`, or no index setting, means Umbraco's published content index. The search provider decides matching and relevance, so the `SearchFields` settings do not apply. |
 
-- `CatalogEvents.BeforeReturnProductAsync`
-- `CatalogEvents.BeforeReturnProductsAsync`
-- `CatalogEvents.BeforeReturnCategoryAsync`
-- `CatalogEvents.BeforeReturnCategoriesAsync`
-- `CatalogEvents.CurrencyStringFormat` for synchronous currency formatting
+`SearchRequest.ExamineIndex` overrides the index for one request.
+
+### Use your own search
+
+Implement `Ekom.Services.ICatalogSearchService`. It has three methods: `ProductQueryAsync`, `PublicQueryAsync` and `InternalQueryAsync`. Ekom registers its own implementation in `EkomComposer`, so register yours in a composer that runs after it:
 
 ```csharp
+using Ekom.Services;
+using Ekom.Umb;
+using Microsoft.Extensions.DependencyInjection;
+using Umbraco.Cms.Core.Composing;
+using Umbraco.Cms.Core.DependencyInjection;
+
+[ComposeAfter(typeof(EkomComposer))]
+public sealed class SearchComposer : IComposer
+{
+    public void Compose(IUmbracoBuilder builder)
+        => builder.Services.AddScoped<ICatalogSearchService, AlgoliaCatalogSearchService>();
+}
+```
+
+`AlgoliaCatalogSearchService` stands for your own class. Do not call `AddEkom(...)` yourself in a normal package install; `EkomComposer` already does that.
+
+## Change what the catalog returns
+
+Ekom raises an event before it returns a product, a list of products, a category or a list of categories. A handler can replace a single item or change a list. The events are static and live in `Ekom.Events.CatalogEvents`:
+
+| Event | Arguments |
+| --- | --- |
+| `BeforeReturnProductAsync` | `ProductEventArgs.Product` |
+| `BeforeReturnProductsAsync` | `ProductsEventArgs.Products` |
+| `BeforeReturnCategoryAsync` | `CategoryEventArgs.Category` |
+| `BeforeReturnCategoriesAsync` | `CategoriesEventArgs.Categories` |
+| `CurrencyStringFormat` | `CurrencyStringEventArgs`, a synchronous event for formatting a price as text |
+
+This handler hides products that cannot be bought:
+
+```csharp
+using Ekom.Events;
+
 CatalogEvents.BeforeReturnProductsAsync += (args, ct) =>
 {
     args.Products = args.Products.Where(product => product.Available);
@@ -156,43 +271,119 @@ CatalogEvents.BeforeReturnProductsAsync += (args, ct) =>
 };
 ```
 
-Unsubscribe static event handlers during application termination. Set `raiseEvent: false` on supported single-item lookups, or `ProductQuery.RaiseEvents = false` for collection processing, when internal code needs the unmodified cached model.
+- Handlers run one after another, in the order they were added.
+- Static events keep a reference to your handler. Remove the handler when the application shuts down.
+- To get the cached item without the events, pass `raiseEvent: false` to a single-item lookup, or set `ProductQuery.RaiseEvents = false` for a list.
+
+The older synchronous events `BeforeReturnProduct`, `BeforeReturnProducts`, `BeforeReturnCategory` and `BeforeReturnCategories` still run, after the async ones. They are marked obsolete; use the async events.
 
 ## HTTP catalog API
 
-Public routes are under `/ekom/catalog`:
+The public catalog routes are under `/ekom/catalog`:
 
-| Method and route | Purpose |
+| Method and route | Returns |
 | --- | --- |
-| `GET /product/{guid|int}` | Product by key or ID. |
-| `GET /product/sku/{sku}` | Product by SKU. |
-| `GET /product/route?route=...` | Product by route. |
-| `GET|POST /category/{guid|int}` | Category by key or ID. |
-| `GET|POST /category/route?route=...` | Category by route. |
-| `GET|POST /allproducts` | Product listing; a JSON `ProductQuery` may be posted. |
-| `GET|POST /products/{guid|int}` | Direct category products. |
-| `GET|POST /productsrecursive/{guid|int}` | Recursive category products. |
-| `GET|POST /productsrecursive/route?route=...` | Recursive products by route. |
-| `GET|POST /productsbyids` | `ProductQuery` with `Ids`. |
-| `GET|POST /productsbykeys` | `ProductQuery` with `Keys`. |
-| `GET|POST /productsbyskus` | `ProductQuery` with `Skus`. |
-| `GET|POST /productsearch` | `SearchRequest`. |
-| `GET|POST /rootcategories` | Categories at `Ekom:CategoryRootLevel`. |
-| `GET|POST /allcategories` | All store categories. |
-| `GET|POST /categoriesbyids` | JSON array of integer IDs. |
-| `GET|POST /categoriesbykeys` | JSON array of GUID keys. |
-| `GET|POST /subcategories...` | Direct or recursive child categories. |
-| `GET|POST /categoryfilters/{guid|int}` | Category filter data. |
-| `GET|POST /relatedproducts...` | Related products by key(s) or SKU(s). |
-| `GET|POST /metafields` | Configured metafields. |
+| `GET /product/{key or id}` | One product by GUID key or integer ID. |
+| `GET /product/sku/{sku}` | One product by SKU. |
+| `GET /product/route?route=...` | One product by route. |
+| `GET` or `POST /category/{key or id}` | One category by GUID key or integer ID. |
+| `GET` or `POST /category/route?route=...` | One category by route. |
+| `GET` or `POST /allproducts` | All products. Post a `ProductQuery` as JSON to filter. |
+| `GET` or `POST /products/{key or id}` | The products directly in a category. |
+| `GET` or `POST /productsrecursive/{key or id}` | The products in a category and below it. |
+| `GET` or `POST /productsrecursive/route?route=...` | The same, by category route. |
+| `GET` or `POST /productsbyids` | A `ProductQuery` with `Ids`. |
+| `GET` or `POST /productsbykeys` | A `ProductQuery` with `Keys`. |
+| `GET` or `POST /productsbyskus` | A `ProductQuery` with `Skus`. |
+| `GET` or `POST /productsearch` | A `SearchRequest`. |
+| `GET` or `POST /rootcategories` | The categories at level `Ekom:CategoryRootLevel` (default `3`). |
+| `GET` or `POST /allcategories` | All categories in the store. |
+| `GET` or `POST /categoriesbyids` | A JSON array of integer IDs. |
+| `GET` or `POST /categoriesbykeys` | A JSON array of GUID keys. |
+| `GET` or `POST /subcategories/{key or id}` | The direct child categories. |
+| `GET` or `POST /subcategoriesrecursive/{key or id}` | All categories below a category. |
+| `GET` or `POST /categoryfilters/{key or id}` | The filter data of a category. |
+| `GET` or `POST /relatedproducts/{key}/{count}` | Related products of one product. |
+| `GET` or `POST /relatedproducts?ids=...&count=...` | Related products of several products, at most `count` in total. |
+| `GET` or `POST /relatedproductsbysku/{sku}/{count}` | Related products by SKU. |
+| `GET` or `POST /relatedproductsbyskus?skus=...&count=...` | Related products of several SKUs, at most `count` in total. |
+| `GET` or `POST /metafields` | The metafields set up in Ekom. |
 
-Although several actions advertise both verbs, actions with `[FromBody]` are most reliably called with `POST` and JSON. A missing single product/category returns `404`; collection routes normally return an empty result.
+- Routes that take a JSON body read it with `[FromBody]`. Call them with `POST` and a JSON body.
+- A single product or category that is not found returns `404`.
+- `productsbyids`, `productsbykeys` and `productsbyskus` without a body return `400`. So do `categoriesbykeys` with an empty array and `category/route` without a route.
+- A list that matches nothing returns an empty result.
 
-## Razor patterns
+## Show products in Razor views
 
-The repository samples use `await _catalog.GetCategoryAsync()` followed by `category.ProductsRecursiveAsync(new ProductQuery(Context.Request.Query) { ... })`, and `await _catalog.GetProductAsync()` followed by `product.Price`, `product.Available`, images and variant groups. Use `Html.BeginEkomForm(FormType.AddToOrderProduct, ...)` or `POST /ekom/order/add` with `productId`, optional `variantId`, `storeAlias`, and a positive `quantity`.
+The U17 sample site shows the pattern:
 
+- The category view calls `await _catalog.GetCategoryAsync()`, then `category.ProductsRecursiveAsync(new ProductQuery(Context.Request.Query) { ... })`.
+- The product view calls `await _catalog.GetProductAsync()`, then reads `product.Price`, `product.Available`, `product.Images`, `product.PrimaryVariantGroup` and `product.PrimaryVariant`.
 
-## Database price storage
+To add a product to the basket, use `Html.BeginEkomForm(FormType.AddToOrderProduct, ...)`, or send `POST /ekom/order/add` with `productId`, `variantId` (when the product has variants), `storeAlias` and `quantity` (default `1`). See [Orders and baskets](orders-and-baskets.md#add-order-lines).
 
-See the [database price storage guide](database-price-storage.md) for setup, ERP updates, migration, and tradeoffs.
+## Browse the catalog in the backoffice
+
+Ekom adds a **Catalog** view to the collection of catalog and category nodes in the Umbraco backoffice. It shows the subcategories and products of a category as cards.
+
+### What the Catalog view shows
+
+A category lists:
+
+- the products directly under it,
+- the products linked to it through their `categories` picker. These have a **Linked** label.
+
+A product is listed once per category and counted once in the totals of a branch. Linked products are read from the relations Umbraco records when a product is saved. A product whose picker value was written straight to the database appears after its next save.
+
+Each product card shows the image, name, SKU, price (with the original price struck through while a product discount applies), number of variants, publish state, and stock. Published products with unpublished changes have an **Edits** label. A product with variants shows the total stock of its variants; a product without variants shows its own stock.
+
+Each subcategory card shows the number of products in the whole branch and a short status: `Empty`, `Nothing published`, `N out of stock` or `N live`.
+
+### Work with the products
+
+- The filters **All**, **Published**, **Unpublished** and **Out of stock**, and the sort menu, apply to the products directly in the category.
+- The search box in Umbraco's collection toolbar filters them by name, title or SKU.
+- The checkboxes and **Select all** use Umbraco's own collection selection, so the normal selection bar and bulk actions work.
+- The `...` button on a card opens Umbraco's normal document actions.
+- The view has its own light and dark colors and follows the theme chosen in the backoffice user menu.
+
+When you open an `ekmCatalog` or `ekmCategory` node whose collection has the Catalog layout, the backoffice opens on the Catalog view. If you switch to another view, your browser remembers that choice and opens that view next time.
+
+### Set up the Catalog view
+
+New installs create a data type called **Ekom Catalog Collection**, with Catalog as the first layout and Table as the second, and assign it to the Category document type.
+
+Ekom does not change an existing install. To get the view there, assign a collection to the Category document type yourself and add the Catalog layout (`Ekom.CollectionView.Catalog`).
+
+Keep at least one of Umbraco's own views, such as `Umb.CollectionView.Document.Table`, in the layouts of the collection data type next to Catalog. The reason is in the next section.
+
+### The Catalog view in content pickers
+
+Umbraco can show a node's collection inside a document picker. The Catalog view does not appear in pickers: its condition `Ekom.Condition.CatalogPicker` hides it there. A collection set up with only the Catalog layout would then have no view in the picker, which is why you keep a native view next to it.
+
+Ekom treats a collection as a picker when its configuration has `selectionConfiguration.selectOnly: true`. Selecting items in a normal workspace does not count as a picker, so it does not hide the Catalog view.
+
+To show the Catalog view in pickers too, change the condition on `Ekom.CollectionView.Catalog` in `Ekom/Ekom.Web/Ekom.Web.U17/Client/src/manifests.ts`:
+
+```typescript
+{
+  alias: 'Ekom.Condition.CatalogPicker',
+  allowInPickers: true,
+},
+```
+
+Then rebuild the web asset projects for Umbraco 17, 18 and 19. All three build from the same client source in `Ekom.Web.U17/Client/src`.
+
+In a picker, the Catalog view shows Umbraco's own document table. Umbraco keeps control of the browsed category, the allowed items, single or multiple selection, paging and navigation. Ekom does not load its catalog data, change the browser history, force multiple selection or hide paging there. The cards, sorting, breadcrumbs and navigation of the Catalog view appear only in normal workspace collections.
+
+## Related pages
+
+- [Stores](stores.md): pick the right store for each catalog call.
+- [Stock](stock.md): how Ekom decides that a product is available.
+- [Variant App](variant-app.md): manage the variants of a product in one view.
+- [Database price storage](database-price-storage.md): keep prices in a database table instead of on the product nodes.
+- [Catalog imports](imports.md): create and update the catalog from another system.
+- [HTTP API reference](../reference/http-api.md#catalog): all catalog endpoints.
+
+[Back to Guides](README.md)

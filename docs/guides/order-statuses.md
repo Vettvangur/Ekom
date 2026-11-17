@@ -1,89 +1,113 @@
+[Ekom docs](../README.md) / [Guides](README.md) / Order, payment, and fulfillment statuses
+
 # Order, payment, and fulfillment statuses
 
-Ekom 1.0 separates three questions: **Is the order still being worked on? Has it been paid? Have its items been fulfilled?** Read the three statuses together. For example, `Open / Paid / Packed` means payment is recorded as complete, the items are packed, and fulfillment is not yet complete.
+Every Ekom order has three separate statuses. Each one answers one question:
 
-This guide describes the status model and the new manager in Umbraco 17 and 18. The legacy enum and APIs remain available for compatibility; the Umbraco 13 manager retains its legacy interface.
+- **Order status:** is the order still being worked on?
+- **Payment status:** has it been paid?
+- **Fulfillment status:** have its items been fulfilled?
+
+Read the three together. For example, `Open / Paid / Packed` means the payment is complete and the items are packed, but they have not been handed over yet.
+
+This page explains each status, how to change them in the manager of Umbraco 17, 18 and 19, how orders close automatically, and how to read and change the statuses from code. It also covers the older single status that Ekom keeps for compatibility, and how existing orders move from it to the three statuses.
+
+On this page:
+
+- [Order status](#order-status)
+- [Payment status](#payment-status)
+- [Fulfillment status](#fulfillment-status)
+- [Examples](#examples)
+- [Change statuses in the manager](#change-statuses-in-the-manager)
+- [Automatic closing and reopening](#automatic-closing-and-reopening)
+- [Find orders by status in the manager](#find-orders-by-status-in-the-manager)
+- [Read and change statuses from code](#read-and-change-statuses-from-code)
+- [The legacy status and migration](#the-legacy-status-and-migration)
 
 ## Order status
 
-| Status | Meaning and use |
+| Status | Meaning |
 | --- | --- |
-| `Draft` | An unfinished basket or checkout, not yet an operational order. A failed or waiting checkout can remain Draft. Excluded from the default order list. |
-| `Open` | An order that needs operational work. It may still be Pending payment or already Paid. Use the separate payment and fulfillment statuses to decide what remains. |
-| `Closed` | Operational work is complete. Normal closing requires Paid and Fulfilled. Reopen explicitly when more work is needed. Closed does not mean Cancelled. |
-| `Cancelled` | The order is no longer being processed. Cancellation retains payment and fulfillment history; it does not mean a payment was voided or money was returned. |
+| `Draft` | An unfinished basket or checkout. It is not an order to work on yet. A checkout that failed or is waiting for payment can stay a Draft. Drafts are not in the default order list. |
+| `Open` | An order that needs work. The payment can still be Pending or already Paid. Use the payment and fulfillment statuses to see what is left. |
+| `Closed` | All work is done. A normal close needs Paid and Fulfilled. Reopen the order when more work is needed. Closed does not mean Cancelled. |
+| `Cancelled` | The order is no longer being processed. It keeps its payment and fulfillment statuses. Cancelling does not void a payment or return money. |
 
-Checkout and existing order APIs move accepted orders from Draft to Open as their legacy status advances. The new manager status-action endpoint does not offer a generic Draft-to-Open or Cancelled-to-Open action. Do not mark an unfinished checkout Paid just to make it appear in All orders.
+Checkout and the order APIs move an accepted order from Draft to Open when its legacy status moves past the basket stage. The manager has no action that moves an order from Draft to Open, or from Cancelled to Open. Do not mark an unfinished checkout as Paid to make it show in **All orders**.
 
 ## Payment status
 
-The payment status is calculated from the payments recorded on the order: payment providers record what happened (requested, authorized, captured, failed, cancelled, refunded) and Ekom derives the status. See [Payments](payments.md). A manager user can still set the status by hand; that is recorded as a manual change, overrides what was recorded before it, and does not perform a payment-provider operation.
+Ekom calculates the payment status from the payments recorded on the order. Payment providers record what happened (requested, authorized, captured, failed, cancelled, refunded), and Ekom works out the status. See [Payments](payments.md).
 
-| Status | Meaning and use |
+A manager user can also set the payment status by hand. Ekom records that as a manual entry in the order's payment history, so it replaces what was recorded before it. A manual change never contacts the payment provider.
+
+| Status | Meaning |
 | --- | --- |
-| `Pending` | Payment is not yet recorded as complete or authorized. An accepted order can be Open / Pending. |
-| `Authorized` | Funds are authorized, but capture is not recorded as complete. Authorization is not the same as Paid. |
-| `Paid` | Payment is classified as complete under the store's payment process. Together with Fulfilled, this can close the order automatically. |
-| `PartiallyPaid` | Only part of the amount is classified as paid. Displayed as **Partially Paid**. |
-| `Failed` | A payment attempt failed. Check the provider and checkout history before deciding what to do next. |
-| `Voided` | A payment authorization has been voided. Selecting this manually records the classification; it does not void an authorization at the provider. |
-| `PartiallyRefunded`, `Refunded` | Part or all of what was captured has been returned. Set when a provider records a refund, for example one made in the gateway's own portal. Refund execution and refund status editing are not available in the manager. |
-
-For legacy compatibility, `OfflinePayment` maps to Paid, including historical invoice-based orders. This migration convention is not proof that an invoice has been collected. For new accepted orders still awaiting payment, use Open / Pending until the store's payment process determines otherwise.
+| `Pending` | The payment is not recorded as complete or authorized. An accepted order can be Open / Pending. |
+| `Authorized` | The money is authorized, but the capture is not recorded. Authorized is not Paid. |
+| `Paid` | The payment counts as complete for the store's payment process. Together with Fulfilled, it can close the order automatically. |
+| `PartiallyPaid` | Only part of the amount counts as paid. Shown as **Partially Paid**. |
+| `Failed` | A payment attempt failed. Look at the provider and the checkout history before you decide what to do. |
+| `Voided` | The authorization was voided. Choosing it by hand only records the status. It does not void anything at the provider. |
+| `PartiallyRefunded`, `Refunded` | Part or all of the captured amount was returned. Ekom sets these when a provider records a refund, for example one made in the gateway's own portal. The manager cannot make refunds or set these statuses. |
 
 ## Fulfillment status
 
-| Status | Meaning and use |
+| Status | Meaning |
 | --- | --- |
-| `Unfulfilled` | No fulfillment is recorded. Payment can already be Paid. |
-| `Picking` | Warehouse picking is in progress. |
-| `Picked` | Items have been picked but are not yet recorded as packed. |
-| `Packed` | Items are packed and ready for dispatch or pickup. This does not mean they have been handed over. |
-| `PartiallyFulfilled` | Some items have been fulfilled, but the order is not fully fulfilled. Displayed as **Partially Fulfilled**. |
-| `Fulfilled` | All items have been fulfilled, for example dispatched or handed to the customer. This describes fulfillment, not carrier-confirmed delivery. |
+| `Unfulfilled` | No fulfillment is recorded. The payment can already be Paid. |
+| `Picking` | The warehouse is picking the items. |
+| `Picked` | The items are picked but not recorded as packed. |
+| `Packed` | The items are packed and ready to send or collect. They have not been handed over. |
+| `PartiallyFulfilled` | Some items are fulfilled, not all. Shown as **Partially Fulfilled**. |
+| `Fulfilled` | All items are fulfilled, for example sent or handed to the customer. It does not mean the carrier confirmed delivery. |
 
-There is no new `ReadyForDispatch` status. Use Packed for packed orders awaiting handover. Legacy ReadyForDispatch maps to Unfulfilled because that historical status alone does not establish that picking or packing happened. Legacy ReadyForPickup maps to Packed.
+There is no "ready for dispatch" fulfillment status. Use Packed for a packed order that is waiting to be handed over.
 
-The manager allows corrections in either direction while the order is Open, including Packed back to Unfulfilled. A manual summary correction clears incompatible previously recorded fulfillment quantities. Multi-warehouse split fulfillment and separate shipment labels per group are not included.
+While the order is Open, the manager lets you correct the fulfillment status in either direction, for example from Packed back to Unfulfilled. A manual correction removes any recorded fulfilled quantities that no longer fit the new status.
 
-## Everyday examples
+Ekom does not split fulfillment across warehouses, and does not create separate shipping labels per group of items.
+
+## Examples
 
 | Situation | Order / Payment / Fulfillment |
 | --- | --- |
-| Customer has not finished checkout | Draft / Pending / Unfulfilled |
-| Accepted invoice order awaiting payment | Open / Pending / Unfulfilled |
-| Paid order waiting to be picked | Open / Paid / Unfulfilled |
-| Paid order being packed | Open / Paid / Picked |
-| Ready for customer pickup | Open / Paid / Packed |
+| The customer has not finished checkout | Draft / Pending / Unfulfilled |
+| An accepted invoice order waiting for payment | Open / Pending / Unfulfilled |
+| A paid order waiting to be picked | Open / Paid / Unfulfilled |
+| A paid order being packed | Open / Paid / Picked |
+| Ready for the customer to collect | Open / Paid / Packed |
 | All items handed over, payment still outstanding | Open / Pending / Fulfilled |
-| Paid and fully fulfilled, with automatic closing enabled | Closed / Paid / Fulfilled |
+| Paid and fully fulfilled, with automatic closing on | Closed / Paid / Fulfilled |
 | Cancelled before payment or fulfillment | Cancelled / Pending / Unfulfilled |
 
-Cancelling a paid or partly fulfilled order preserves those dimensions. Review the actual payment and warehouse work separately.
+When you cancel an order that is paid or partly fulfilled, those statuses stay. Check the real payment and warehouse work separately.
 
 ## Change statuses in the manager
 
-1. Open Orders and select the correct store and currency.
-2. On an Open order, use the Payment or Fulfillment dropdown in the table for an immediate update. Escape or clicking outside dismisses the menu.
-3. In order details, the Order, Payment and Fulfillment menus each save as soon as an option is chosen. There is no separate Save step.
-4. Use the order controls to Close, Cancel, or explicitly Reopen a Closed order. Reopen first before correcting payment or fulfillment on a Closed order.
-5. Check the saved statuses and activity log. If another user or polling has exposed a newer revision, reload before retrying.
+1. Open **Orders** and choose the store and currency.
+2. On an Open order, use the **Payment** or **Fulfillment** menu in the table to change the status at once. Press Escape or click outside to close the menu.
+3. In the order details, the **Order**, **Payment** and **Fulfillment** menus save as soon as you choose an option. There is no separate Save button.
+4. Use the order controls to **Close**, **Cancel** or **Reopen** the order. To correct the payment or fulfillment of a Closed order, reopen it first.
+5. Check the saved statuses and the activity log. If someone else changed the order in the meantime, reload it before you try again.
 
-Updates enforce store permissions, status revisions, and checkout/payment locks. A lock or unresolved historical conflict cannot be bypassed by choosing a different status.
+Every change checks that you have access to the order's store, that the order has not changed since you loaded it, and that no checkout or payment is holding the order. Choosing a different status does not get around a lock, or around an order whose history needs review.
 
 ### Trigger status events
 
-The **Trigger status events** checkbox controls optional legacy status-change notifications. Use it when configured integrations should receive the change. Turn it off for a manual correction that should not repeat those notifications.
+Each status change can raise Ekom's status change events: `OrderStatusChangedAsync`, `PaymentStatusChangedAsync` and `FulfillmentStatusChangedAsync`, one for each status that changed. Integrations subscribe to these, for example to send an email when an order is fulfilled. See [Events](../reference/events.md).
 
-The status is still saved and logged with either choice. Persistence handlers still run when the projected legacy status changes; the checkbox does not disable them. Notifications are also conditional on that legacy value changing, so not every independent payment or fulfillment edit emits a legacy status event.
+The **Trigger status events** checkbox decides whether a change raises them. Leave it on when your integrations should hear about the change. Turn it off for a correction that should not repeat their work.
 
-By default, table updates enable notifications and detail updates leave them unchecked. `Ekom:Manager:OrderStatusFireEventsByDefault` sets a common default; the editor can change the checkbox for an individual update. See [configuration](../reference/configuration-reference.md#manager-order-status-events).
+- The status is saved and logged either way.
+- Status persistence handlers (`IOrderStatusPersistenceHandler`) still run when the change alters the legacy status. The checkbox does not turn them off.
+- By default the checkbox is on for changes in the table and off in the order details. `Ekom:Manager:OrderStatusFireEventsByDefault` sets one starting value for both. You can still change the checkbox for each change. See the [configuration reference](../reference/configuration-reference.md#manager-order-status-events).
 
-Manual status edits do not charge, capture, void, or refund money, rewrite payment amounts or paid dates, or themselves execute warehouse/shipping work. Separately configured handlers may perform application-specific actions. Use the actual payment, shipping, or reservation operation when that work is required.
+A manual status change does not charge, capture, void or refund money. It does not change payment amounts or the paid date, and it does not do any warehouse or shipping work. Handlers you have configured may do work of their own. When the real payment, shipping or reservation work has to happen, use the operation for that work.
 
 ## Automatic closing and reopening
 
-Automatic closing defaults to enabled. An Open order becomes Closed when Payment is Paid and Fulfillment is Fulfilled. Picking, Picked, Packed, and PartiallyFulfilled do not qualify. A manual Close action also requires Paid and Fulfilled.
+Automatic closing is on by default. An Open order becomes Closed as soon as its payment is Paid and its fulfillment is Fulfilled. Picking, Picked, Packed and PartiallyFulfilled do not count. The manual **Close** action also needs Paid and Fulfilled.
 
 ```json
 {
@@ -98,67 +122,135 @@ Automatic closing defaults to enabled. An Open order becomes Closed when Payment
 }
 ```
 
-Replace `Wholesale` with the store alias. The store setting overrides the global setting; absent both, the default is true.
+Replace `Wholesale` with your store alias. The store setting wins over the global setting. When neither is set, automatic closing is on.
 
-Explicit Reopen preserves payment and fulfillment and suppresses automatic closing for that order, so it does not immediately close again. Close it explicitly once work is complete and it is Paid / Fulfilled. Cancelled orders are not automatically closed, even when both other dimensions indicate completion.
+**Reopen** keeps the payment and fulfillment statuses, and turns off automatic closing for that order, so it does not close again straight away. Close it yourself when the work is done and it is Paid / Fulfilled. Cancelled orders never close automatically, even when they are Paid and Fulfilled.
 
-## Find orders and understand totals
+## Find orders by status in the manager
 
-- **All orders** includes Open, Closed, and Cancelled orders. Drafts appear in the **Drafts** view, or when **All** or **Draft** is selected in the Order status filter, even if you filter Pending payment or Unfulfilled fulfillment.
-- Counts, totals, and exports follow the active filter scope, including store and currency. Exports include all matching results, not only the current page.
-- Customer reporting includes qualifying Open and Closed orders even with Pending payment. It excludes Draft orders by default.
-- **Needs review** is an order-alert view, not another OrderStatus. It is hidden when there are no reviews to look at. Migration `RequiresReview` is a separate historical-evidence flag; it does not itself create an order-review alert.
+- **All orders** shows Open, Closed and Cancelled orders. Drafts appear in the **Drafts** view, or when you choose **All** or **Draft** in the order status filter. Filtering on Pending payment or Unfulfilled does not bring in drafts.
+- Counts, totals and exports follow the active filter, including store and currency. An export contains every matching order, not only the current page.
+- Customer reports count Open and Closed orders, whatever their payment status. They leave out Draft and Cancelled orders unless you filter for them.
+- **Needs review** lists orders with an open [order review](order-reviews.md). It is a view, not an order status, and it is hidden when no order needs review. The `RequiresReview` flag from the migration below is a different thing and does not create an order review.
 
-## Legacy migration mapping
+## Read and change statuses from code
 
-The following table shows the initial mapping before configured automatic closing. A recorded paid date takes precedence over Pending/Failed defaults; PaymentFailed with a paid date is flagged for review rather than silently migrated.
+The three statuses are in `OrderStatusSnapshot` in the `Ekom.Models.Orders` namespace. Read it from `OrderInfo.Status` or `OrderData.Status`. `IOrderInfo` does not have it, so cast to `OrderInfo`.
+
+```csharp
+using Ekom.Models;
+using Ekom.Models.Orders;
+
+IOrderInfo? order = await orderApi.GetOrderAsync(orderId, ct);
+
+if (order is OrderInfo { Status: var status }
+    && status.PaymentStatus == PaymentStatus.Paid
+    && status.FulfillmentStatus == FulfillmentStatus.Unfulfilled)
+{
+    // Paid and waiting to be picked.
+}
+```
+
+`Ekom.Models.Orders.OrderStatus` (Draft, Open, Closed, Cancelled) and the legacy `Ekom.Utilities.OrderStatus` have the same name. When a file uses both namespaces, write the full name or use an alias.
+
+`OrderStatusSnapshot` has:
+
+| Property | What it holds |
+| --- | --- |
+| `OrderStatus`, `PaymentStatus`, `FulfillmentStatus` | The three statuses. `null` when the order's history does not say. |
+| `RequiresReview` | `true` when the history is missing or contradicts itself. It is not a status. |
+| `LegacyStatus` | The legacy status, as text. |
+| `Revision` | A number that goes up every time Ekom saves the order or changes a status. You pass it back when you change a status. |
+| `AutoCloseSuppressed` | `true` after Reopen, when automatic closing is off for this order. |
+| `FulfilledQuantities` | The fulfilled quantity per order line key, when quantities were recorded. |
+
+In JSON the statuses are written as names, such as `PartiallyPaid`.
+
+### Change a status
+
+Use `IOrderStateService.ChangeAsync` in C# (inject `Ekom.Services.IOrderStateService`; the example calls it `orderStates`), or `POST /ekom/manager/orderStates/{orderId}` over HTTP. Both check that the current backoffice user has manager access to the order's store. Code that runs without a signed-in backoffice user, such as a background job, is refused with `403`.
+
+```json
+{
+  "expectedRevision": 3,
+  "action": "PaymentPaid",
+  "notify": false
+}
+```
+
+```csharp
+OrderStatusSnapshot updated = await orderStates.ChangeAsync(
+    orderId,
+    new OrderStateChangeRequest(ExpectedRevision: 3, Action: "Packed", Notify: true),
+    ct);
+```
+
+- `expectedRevision` is the order's current `Revision`. Read it from the order. Do not guess it.
+- `notify` is the **Trigger status events** checkbox. The default is `false`.
+- Actions: `PaymentPending`, `PaymentAuthorized`, `PaymentPaid`, `PaymentPartiallyPaid`, `PaymentFailed`, `PaymentVoided`, `Unfulfilled`, `Picking`, `Picked`, `Packed`, `PartiallyFulfilled`, `Fulfill`, `Close`, `Cancel` and `Reopen`.
+- `Reopen` needs a Closed order. Every other action needs an Open order.
+
+`Fulfill` takes an optional `fulfilledQuantities`: a map from order line key to the total quantity fulfilled so far. Leave it out to fulfill every line in full. Each line must belong to the order, a quantity cannot be more than the ordered quantity, and it cannot go down. Ekom works out Fulfilled, PartiallyFulfilled or Unfulfilled from the quantities. The `PartiallyFulfilled` action only sets the status. It does not record shipments or line quantities.
+
+Every action writes the change to the activity log and returns the updated snapshot. These are the errors. The HTTP endpoint returns the status code. In C#, `ChangeAsync` throws `EkomHttpException` with that status code, or `CheckoutConflictException` when a checkout or payment is holding the order.
+
+| Status code | When |
+| --- | --- |
+| 400 | The action is unknown, the order is not in the status the action needs, Close without Paid and Fulfilled, or invalid quantities. |
+| 403 | No manager access to the order's store. |
+| 404 | No order with that ID. |
+| 409 | The revision is out of date, a checkout or payment is holding the order, or the order's history needs review. |
+
+After a `409`, reload the order and deal with the cause. Do not retry with a revision you made up.
+
+## The legacy status and migration
+
+Before the three statuses, Ekom had one status, `Ekom.Utilities.OrderStatus`. It is still available, together with the APIs that use it, such as `Order.UpdateStatusAsync`. When code changes the legacy status, Ekom translates the change to the three statuses. The legacy status cannot express every combination of the three, so prefer the three statuses in new code.
+
+Orders saved before the three statuses existed keep their legacy status until they are migrated. Until then, Ekom works out their three statuses when it reads them. Reading does not save anything. An order is migrated the next time Ekom saves it, or when you run the migration below. An order whose history needs review is not migrated automatically.
+
+### How legacy statuses map
+
+This is the first mapping, before automatic closing is applied. A recorded paid date makes the payment Paid instead of Pending or Failed. `PaymentFailed` with a paid date is marked for review instead of being migrated.
 
 | Legacy status | Order | Payment | Fulfillment | Notes |
 | --- | --- | --- | --- | --- |
 | `Incomplete` | Draft | Pending | Unfulfilled | Unfinished basket |
-| `Wishlist` | Draft | Pending | Unfulfilled | Retained compatibility mapping |
-| `WaitingForPayment` | Draft | Pending | Unfulfilled | Eligible only when no active checkout/payment prevents migration |
-| `PaymentFailed` | Draft | Failed | Unfulfilled | Paid-date conflict requires review |
+| `Wishlist` | Draft | Pending | Unfulfilled | Kept for compatibility |
+| `WaitingForPayment` | Draft | Pending | Unfulfilled | Migrated only when no checkout or payment is in progress |
+| `PaymentFailed` | Draft | Failed | Unfulfilled | A paid date means review |
 | `Pending` | Open | Pending | Unfulfilled | Accepted order |
-| `OfflinePayment` | Open | Paid | Unfulfilled | Includes historical invoice-based orders |
-| `ReadyForDispatch` | Open | Paid | Unfulfilled | Does not prove fulfillment |
-| `ReadyForDispatchWhenStockArrives` | Open | Paid | Unfulfilled | No separate new waiting-for-stock status |
-| `ReadyForPickup` | Open | Paid | Packed | Awaiting pickup |
-| `Dispatched` | Open | Paid | Fulfilled | Becomes Closed during migration when automatic closing is enabled |
-| `Closed` | Closed | Paid | Fulfilled | Explicit agreed legacy mapping |
-| `Cancelled` | Cancelled | Pending | Unfulfilled | Preserve recorded payment/fulfillment evidence; conflicts require review |
-| `Returned` | Closed | Paid if a paid date exists; otherwise unknown | Fulfilled | Requires review; not automatically migrated and does not imply a refund |
-| Unknown/invalid value | Unknown | Unknown | Unknown | Requires review; not automatically migrated |
+| `OfflinePayment` | Open | Paid | Unfulfilled | Includes older invoice orders |
+| `ReadyForDispatch` | Open | Paid | Unfulfilled | Does not prove that anything was picked or packed |
+| `ReadyForDispatchWhenStockArrives` | Open | Paid | Unfulfilled | There is no separate "waiting for stock" status |
+| `ReadyForPickup` | Open | Paid | Packed | Waiting to be collected |
+| `Dispatched` | Open | Paid | Fulfilled | Becomes Closed during migration when automatic closing is on |
+| `Closed` | Closed | Paid | Fulfilled | |
+| `Cancelled` | Cancelled | Pending | Unfulfilled | Payment and fulfillment already stored on the order are kept |
+| `Returned` | Closed | Paid if there is a paid date, otherwise unknown | Fulfilled | Needs review. Not migrated automatically. A return does not mean a refund. |
+| Unknown or invalid value | Unknown | Unknown | Unknown | Needs review. Not migrated automatically. |
 
-For Cancelled orders, valid stored payment and fulfillment statuses and quantities are preserved. Invalid values, inconsistent quantities, or a paid date contradicting a recorded non-Paid payment status block migration. Active checkout ownership and unsettled payment attempts also block migration, independently of the legacy status name.
+`OfflinePayment` maps to Paid, including older invoice orders. That is a migration rule, not proof that the invoice was paid. For a new accepted order that is still waiting for payment, use Open / Pending until the store's payment process says otherwise.
 
-### Rollout procedure
+For Cancelled orders, valid payment and fulfillment statuses and quantities already stored on the order are kept. Invalid values, quantities that do not fit, or a paid date that contradicts a stored payment status that is not Paid, mark the order for review. An order that a checkout is holding, or that has an unfinished payment attempt, is not migrated, whatever its legacy status.
 
-1. Back up the database and rehearse on a copy. Reading a projected status does not itself backfill the order.
-2. Preview with `GET /ekom/manager/statusMigration?afterReferenceId=0` using an authorized backoffice session. Inspect `Eligible`, `Status.RequiresReview`, and the resulting three statuses.
-3. Apply the reviewed page with `POST /ekom/manager/statusMigration?afterReferenceId=0`. Apply rechecks eligibility; it does not blindly apply a previous preview.
-4. Continue using each response's `NextReferenceId` while `HasMore` is true. Pages contain at most 100 orders accessible to the current user.
-5. Revisit skipped records from an earlier cursor after resolving their evidence or payment state. Starting again at zero is safe: already migrated orders are excluded.
-6. Verify counts, sample mappings, and automatic-close behavior before enabling the rollout for the production database.
+### Migrate existing orders
 
-Migration preserves the legacy value and original status, stored amounts, dates, payloads, and evidence. It does not replay payment, stock, email, or status handlers. Preview includes the configured automatic-close result. SQLite rehearsals are documented; SQL Server rehearsal has not been performed. See [rehearsal evidence](../plans/status-migration-rehearsal.md).
+1. Back up the database and rehearse on a copy first.
+2. Preview with `GET /ekom/manager/statusMigration?afterReferenceId=0`, signed in to the backoffice. For each order, check `eligible`, `status.requiresReview` and the three statuses.
+3. Apply the page you checked with `POST /ekom/manager/statusMigration?afterReferenceId=0`. Applying checks each order again. It does not reuse the preview.
+4. While `hasMore` is `true`, repeat with `afterReferenceId` set to the `nextReferenceId` of the last response. A page holds at most 100 orders, from the stores you have access to. `migrated` tells you how many orders the page changed.
+5. Orders that were skipped stay unmigrated. When you have fixed their history or their payment state, run the migration again from an earlier cursor. Starting again at `0` is safe, because migrated orders are left out.
+6. Check counts, a sample of mapped orders and the automatic closing before you migrate the production database.
 
-## Developer usage
+The migration keeps the legacy status and the original status, the stored amounts, dates, order data and history. It does not run payment, stock, email or status handlers again. The preview shows the result after automatic closing. The migration has been rehearsed on SQLite but not on SQL Server. See the [rehearsal notes](../plans/status-migration-rehearsal.md).
 
-Read `OrderData.Status` or concrete `OrderInfo.Status` for the independent `OrderStatusSnapshot` in `Ekom.Models.Orders`. JSON uses enum names such as `PartiallyPaid`. Null dimensions plus `RequiresReview` mean insufficient or conflicting historical evidence, not an additional status. Existing `Ekom.Utilities.OrderStatus` and legacy APIs remain available; legacy changes are projected into the canonical state and cannot represent every new dimension independently.
+## Related pages
 
-Use `IOrderStateService.ChangeAsync` or the authenticated `POST /ekom/manager/orderStates/{orderId}` endpoint to change statuses with the current snapshot revision:
+- [Manager orders](../manager/orders.md): the order list and order details where staff change statuses.
+- [Payments](payments.md): how recorded payments set the payment status.
+- [Order reviews](order-reviews.md): flag an order that a person must look at.
+- [Events](../reference/events.md): the status change events and their arguments.
+- [Configuration reference](../reference/configuration-reference.md): automatic closing and the manager event default.
 
-```json
-{
-  "ExpectedRevision": 3,
-  "Action": "PaymentPaid",
-  "Notify": false
-}
-```
-
-Use the order's actual revision instead of the example value. Supported actions are `PaymentPending`, `PaymentAuthorized`, `PaymentPaid`, `PaymentPartiallyPaid`, `PaymentFailed`, `PaymentVoided`, `Unfulfilled`, `Picking`, `Picked`, `Packed`, `PartiallyFulfilled`, `Fulfill`, `Close`, `Cancel`, and `Reopen`. All except Reopen require Open; Reopen requires Closed.
-
-`Fulfill` optionally accepts `FulfilledQuantities`, a dictionary of order-line GUIDs to cumulative quantities. Omit it to fulfill every line. Quantities must belong to the order, cannot exceed ordered quantities, and cannot decrease within this action. The resulting summary is calculated from the quantities. A manual `PartiallyFulfilled` action only sets the summary; it does not allocate shipments or invent line quantities.
-
-Status actions log changes and return the updated snapshot. A stale revision or protected checkout produces a conflict response. Reload and resolve the cause rather than retrying with an invented revision.
+[Back to Guides](README.md)

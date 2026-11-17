@@ -1,108 +1,156 @@
-# Coupons for editors
+[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Coupons
 
-[Editor overview](editors.md) | [Order discounts](order-discounts.md) | [Developer guide](developers.md)
+# Coupons
 
-A coupon code activates an **order discount**. The code does not define the percentage, eligible items, or quantity rule: those come from the discount it belongs to.
+A coupon code switches on an order discount when the customer enters it. The code itself holds no amount and no products: those come from the order discount it belongs to. Use coupons for a shared campaign code such as `SPRING10`, for single-use codes that you send to customers, or for any offer that the customer must ask for.
 
-Use coupons for a shared campaign such as SPRING10, individually issued single-use codes, or offers that customers must explicitly activate.
+On this page:
 
-## Configure the offer first
+- [Set up the order discount first](#set-up-the-order-discount-first)
+- [Add a shared code](#add-a-shared-code)
+- [Understand usage limits](#understand-usage-limits)
+- [Generate many codes at once](#generate-many-codes-at-once)
+- [Find, export and delete codes](#find-export-and-delete-codes)
+- [Usage limits are not discount stock](#usage-limits-are-not-discount-stock)
+- [Test before you send out codes](#test-before-you-send-out-codes)
 
-1. Create an [Order Discount](order-discounts.md#create-the-discount) under the intended store.
-2. Set Type, Discount, Discount Items, exclusions, and any quantity rule.
-3. Leave **Global Discount off** for an ordinary code-based offer.
-4. Confirm the store/currency values and save the discount before adding codes. If the editor asks you to refresh after saving, do so.
-5. Open the discount's **Coupons** tab.
+## Set up the order discount first
 
-Automatic global discounts should be couponless. Adding codes to a global discount prevents automatic application; Global Discount also broadens reward targeting. Use separate discounts when you need separate automatic and code-based offers.
+1. Create an order discount as described in [Create an order discount](order-discounts.md#create-an-order-discount).
+2. Fill in **Type**, **Discount**, **Discount Items**, any exclusions and any quantity rule.
+3. Leave **Global Discount** off.
+4. Save the discount. The **Coupons** tab shows "You need to save the order discount before you can add coupon codes" until you do. After the first save, refresh the page.
+5. Open the **Coupons** tab.
+
+Do not add codes to an automatic offer (Global Discount on). An order discount with any code is never applied automatically. If you need both an automatic offer and a code offer, create two order discounts.
 
 ## Add a shared code
 
-Choose **Add Code** (or the equivalent action in your editor), then fill in:
+1. On the **Coupons** tab, select **Add Code**.
+2. Fill in the two fields:
 
-| Field | Meaning | Example |
-| --- | --- | --- |
-| Coupon Code | The code customers enter. | `SPRING10` |
-| Usage limits | How many uses remain for this code across all customers. | `100` for 100 uses in total. |
+   | Field | What it means | Example |
+   | --- | --- | --- |
+   | Coupon Code | The code customers enter. | `SPRING10` |
+   | Usage limits | How many uses the code has left, for all customers together. The default is `1`. | `100` for 100 uses in total |
 
-Confirm with **Add**. Save and publish the underlying discount content as needed before testing on the storefront. Code records are managed through the coupon editor; publishing the discount is not a substitute for adding a code.
+3. Select **Add**. The code appears in the list with the message "Coupon Code added successfully."
 
-### Example: 10% off selected items for the first 100 code uses
+The code is saved as soon as you select **Add**. You do not need to publish the discount again for the code. The discount itself must be published.
 
-**Goal:** a shared campaign offering 10% off selected items, with 100 uses available in total.
+Each code can exist only once, across all discounts. If the code is already in use, you see "Coupon Code already exists on this or another discount."
 
-| Setting | Value |
+Ekom saves codes in lower case. Customers can type the code in upper or lower case: `SPRING10`, `spring10` and `Spring10` are the same code.
+
+A code works in a store only when its order discount runs in that store. If **Disable** is on for a store, the code does not work there.
+
+### Example: 10% off selected products for the first 100 uses
+
+**Goal:** a shared campaign code that gives 10% off selected products and can be used 100 times in total.
+
+| Field | Value |
 | --- | --- |
-| Order discount Type | Percentage |
+| Type (order discount) | Percentage |
 | Discount | `10` |
-| Discount Items | The campaign products/category |
+| Discount Items | The campaign products or category |
 | Global Discount | Off |
-| Stackable | Off, unless an additional reduction on sale prices is intended |
+| Stackable | Off, unless the 10% must also apply on top of sale prices |
 | Quantity Discount Mode | None |
 | Coupon Code | `SPRING10` |
 | Usage limits | `100` |
 
-**Expected result:** entering the code on a qualifying basket offers 10% off the selected eligible items, unless a better discount or other restriction prevents it. Other items are not discounted by this non-global offer. Under the standard completion flow, a completed order using the order-level code consumes one use.
+**Result:** when a customer enters `SPRING10` on a basket with campaign products, those products get 10% off. Other products do not change. If the basket already has an order discount that gives a lower total, the code is not applied. When an order with the code completes, the code has one use less.
 
-This is **not** 100 uses per customer or a guarantee that exactly 100 distinct people receive it. For a hard campaign cap during concurrent checkouts or a custom checkout integration, ask your developer to verify the end-to-end validation and usage workflow.
+This does not mean 100 uses per customer, and it does not mean 100 different customers. One customer can use the code on several orders.
 
 ## Understand usage limits
 
-> **Usage limits belong to the coupon code, not to a customer.** Ekom does not use customer ID, email, username, or login state to make this a per-customer allowance. A limit of 1 means single-use overall, not once per customer.
+> **Usage limits belong to the code, not to a customer.** Ekom does not look at the customer, the email address, the user name or the login when it counts uses. A limit of `1` means one use in total, not one use per customer.
 
-The value shown is the code's **remaining uses**. It decreases when the code is marked used. For example, a code starting with 10 uses has 9 left after one use is recorded.
+The **Usage limits** column shows how many uses the code has left. It goes down by 1 each time an order that used the code completes. A code that starts at `10` shows `9` after one completed order.
 
-| Remaining uses | Meaning |
+| Usage limits shows | Meaning |
 | --- | --- |
-| `1` | The code has one use left in total. Another customer does not receive a separate allowance. |
-| `10` | The code has ten uses left in total. The counter itself does not prevent one customer from using it on multiple orders. |
-| `0` | The code is exhausted and cannot be newly applied. **Zero does not mean unlimited.** |
+| `1` | One use left, in total. |
+| `10` | Ten uses left, in total. The same customer can use several of them. |
+| `0` | No uses left. Customers cannot enter the code. `0` does not mean unlimited. |
 
-Entering a code in a basket does not itself consume a use. In the standard checkout flow, completion marks the order-level coupon used. Merely displaying or previewing the discount is not a recorded use. Custom checkout systems can have their own integration workflow; check with your developer before relying on it.
+When does a use count?
 
-### What usage limits do not enforce
+- Entering the code in the basket does not use it. Seeing the lower price does not use it either.
+- The use is counted when the order completes.
+- Because entering a code does not use it, two customers can both have the last use of a code in their basket. The first order to complete gets the use. The other order still completes with the discount. Ekom then flags that order for review ("Coupon could not be claimed") and writes an alert in the order's activity log, so your staff can decide what to do. See [Order reviews](../order-reviews.md).
 
-Usage limits alone do not mean:
+If the basket changes and no longer fits the offer, Ekom removes the code from the basket. The customer must enter it again.
 
-- Once per customer or logged-in account.
-- First order only.
-- Members-only or a particular customer group.
-- A code can only be used by the person it was emailed to.
+### What usage limits do not do
 
-These restrictions need additional custom validation. A code named WELCOME or MEMBERS does not enforce them. Guest and logged-in checkouts draw from the same code allowance; the site can impose other restrictions separately.
+Usage limits alone do not give you:
 
-## Generate individual codes
+- one use per customer or per account,
+- first order only,
+- members only, or one customer group only,
+- a code that only the person you emailed can use.
 
-Use **Generate Coupons** when you need several different codes for the same discount. The modern editor provides:
+These rules need custom work by a developer. A code called `WELCOME` or `MEMBERS` does not limit who can use it. Guest customers and logged-in customers use the same uses of a code.
 
-| Field | Meaning | Example |
-| --- | --- | --- |
-| Amount | Number of different codes to generate, not the discount value. | `50` generates 50 codes. |
-| Usage limits | Remaining-use allowance assigned to **each** generated code. | `1` makes each code single-use overall. |
-| Prefix | Optional text at the start of each code; a hyphen separates it from the random portion. | Enter `SPRING`, not `SPRING-`, for codes such as `spring-abcdefgh`. |
-| Random length | Length of the generated random portion. | `8` produces an eight-character random portion. |
-| Character set | Characters allowed in the random portion. | Uppercase letters and numbers, numbers only, or letters only. |
+## Generate many codes at once
 
-Choose **Generate**, then inspect the list and confirm the number actually created; duplicate attempts can reduce the result. Generated codes are stored in lowercase, and coupon input is normalized to lowercase. Labels and generation options can differ between Umbraco versions; use the options available in your editor. Use **Export** where available to download the codes and remaining-use values.
+Use **Generate Coupons** when you need many different codes for the same discount, for example one code per newsletter subscriber.
 
-**Example:** Amount = 50 and Usage limits = 1 gives 50 different codes, each with its own one-use allowance. Using one code does not consume another code's usage allowance. Other discount or stock restrictions can still prevent a code from applying.
+1. On the **Coupons** tab, select **Generate Coupons**.
+2. Fill in the fields:
 
-Sending each code to one person does not bind it to that person. Anyone who has the code could use its allowance unless your site adds recipient validation.
+   | Field | What it means | Example |
+   | --- | --- | --- |
+   | Amount | How many different codes to create. This is not the discount amount. The default is `10`. | `50` |
+   | Usage limits | The uses each code gets. The default is `1`. | `1` makes every code single-use |
+   | Prefix | Optional text at the start of each code. Ekom adds a hyphen after it. | `SPRING` gives codes such as `spring-k7rm2xpa` |
+   | Random length | How many random characters come after the prefix. The default is `8`. | `8` |
+   | Character set | Which characters the random part uses: **Uppercase letters and numbers**, **Numbers only** or **Letters only**. | **Uppercase letters and numbers** |
+
+3. Select **Generate**. The message "Generated N coupon codes." tells you how many were created.
+
+Enter the prefix without a hyphen: `SPRING`, not `SPRING-`.
+
+Ekom skips a random code that already exists and tries again, up to 10 tries per code you asked for. With a short random length, it can create fewer codes than you asked for. Always check the number in the message.
+
+Generated codes are saved in lower case. The random part leaves out characters that are easy to confuse: the letters I and O, and the numbers 0 and 1.
+
+**Example:** Amount `50` and Usage limits `1` give 50 different codes, each with one use. Using one code does not use up another code.
+
+Sending a code to one person does not tie the code to that person. Anyone who has the code can use it.
+
+## Find, export and delete codes
+
+- **Search:** type in the search box above the list to find codes. The list shows 10 codes per page.
+- **Export:** select **Export** to download a CSV file with every code of this discount, its uses left and the date it was created.
+- **Delete:** select **Delete** on a row to remove that code. The code is removed at once, without a confirmation step.
 
 ## Usage limits are not discount stock
 
-Coupon usage counts uses of a code. Discount stock is a separate allowance managed through checkout/stock integration, and can block an offer even when the code has remaining uses.
+Discount stock is a different limit from **Usage limits**. It is not a field on the order discount: a developer sets it up and changes it from code. It can stop an order at checkout even when the code still has uses left.
 
-Do not treat Usage limits as a stock quantity, a discounted-unit count, or a shared pool for every code attached to a discount. Master-discount and coupon-specific stock are separate developer-managed mechanisms; they are not the standard Usage limits field. Ask your developer if your campaign requires both types of limit.
+- **Usage limits** counts completed orders that used one code.
+- **Discount stock** is a separate count for a whole discount, or for one code of a discount. Changing **Usage limits** does not change discount stock.
 
-## Test before distributing codes
+Do not use **Usage limits** as a count of products or as a shared pool for all codes of a discount. Each code has its own uses. If your campaign needs a limit on the whole discount, ask your developer about discount stock. See [Discount stock](../stock.md#discount-stock).
 
-- Apply the code to a basket with eligible items, then to one containing only unrelated items.
-- Test existing sale prices and your Stackable choice.
-- Test another store and any configured quantity or amount requirements.
-- Using a dedicated test code, complete a test order and check that its remaining uses decrease. Do not consume live single-use codes just to test.
-- Test a code with no uses left; it must not be newly applied.
-- Where your storefront supports both, test guest and logged-in checkout. Login should not be mistaken for a separate usage allowance.
-- For generated codes, test two different codes to confirm each has its own usage count.
+## Test before you send out codes
 
-For API access, custom customer restrictions, and trusted integration behavior, see the [developer guide](developers.md#apply-and-remove-coupons).
+1. Enter the code on a basket with campaign products. Then try it on a basket with only other products.
+2. Test products that are already on sale, to check your **Stackable** choice.
+3. Test another store, and any quantity or basket amount you set.
+4. Use a separate test code to complete a test order. Check that **Usage limits** went down by 1. Do not spend real single-use codes on tests.
+5. Test a code with `0` uses left. Customers must not be able to enter it.
+6. If your shop has guest and logged-in checkout, test both. Both use the same uses of the code.
+7. For generated codes, test two different codes. Each one has its own uses.
+
+## Related pages
+
+- [Order discounts](order-discounts.md): the offer that a code switches on.
+- [Configure discounts in Umbraco](editors.md): choose the right kind of discount.
+- [Order reviews](../order-reviews.md): orders flagged because a code ran out.
+- [Discount APIs and behavior](developers.md#apply-and-remove-coupons): apply codes from code, and add rules such as "once per customer", for developers.
+
+[Back to Guides](../README.md)

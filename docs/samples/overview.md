@@ -1,41 +1,65 @@
+[Ekom docs](../README.md) / Samples
+
 # Samples
 
-The repository contains four sample Umbraco sites:
+The repository contains a sample Umbraco site for each supported Umbraco version. The Ekom team uses them to develop and test Ekom, and you can read them to see how a storefront, a checkout and the optional packages fit together in a real site. They are examples to learn from, not templates to start a shop from.
 
-| Sample | Umbraco package | Target | Data and wiring |
+On this page:
+
+- [The sample sites](#the-sample-sites)
+- [What the samples show](#what-the-samples-show)
+- [Run a sample](#run-a-sample)
+- [What the samples do not do](#what-the-samples-do-not-do)
+
+## The sample sites
+
+| Sample | Umbraco | .NET | Ekom projects it uses |
 | --- | --- | --- | --- |
-| `Samples/U10/Ekom.Site` | 13.13.0 | .NET 8 | Uses a configured SQL Server connection and checked-in `App_Plugins/Ekom` assets. |
-| `Samples/U17/Ekom.Site.U17` | 17.8.1 | .NET 10 | References U17 runtime/web projects and includes a local SQLite database. |
-| `Samples/U18/Ekom.Site.U18` | 18.3.1 | .NET 10 | References U18 runtime/web projects, includes SQLite, and links selected U17 source/views. |
-| `Samples/U19/Ekom.Site.U19` | 19.0.0-rc1 | .NET 11 | References U19 runtime/web projects, includes SQLite, and links selected U17 source/views. |
+| `Samples/U17/Ekom.Site.U17` | 17.8.1 | .NET 10 | `Ekom.U17`, `Ekom.Web.U17`, `Ekom.Printer`, and the main Algolia, Klaviyo and Mailchimp projects |
+| `Samples/U18/Ekom.Site.U18` | 18.3.1 | .NET 10 | `Ekom.U18`, `Ekom.Web.U18`, `Ekom.Printer`, and the U18 Algolia, Klaviyo and Mailchimp projects |
+| `Samples/U19/Ekom.Site.U19` | 19.0.0-rc1 | .NET 11 | `Ekom.U19`, `Ekom.Web.U19`, `Ekom.Printer`, and the U19 Algolia, Klaviyo and Mailchimp projects |
 
-The directory names preserve Ekom's package naming: `Samples/U10` is the Umbraco 13 sample because the compatible runtime package is still named `Ekom.U10`.
+Each sample references the Ekom and plugin projects in the repository directly, not the NuGet packages. Each has its own SQLite database, checked in under `umbraco/Data`.
 
-## What samples demonstrate
+The U18 and U19 samples are not complete sites on their own. They link most of their code and views from the U17 sample: the custom product filter, the member login controller, the utility code and all views except `_ViewImports.cshtml`. A change in the U17 sample changes them too.
 
-Samples show how local project references, an Umbraco host, Ekom configuration, views, checkout pages, and optional integrations can be assembled while developing Ekom. U17, U18, and U19 call the standard `AddComposers()` pipeline, which discovers Ekom's composer automatically; their explicit `AddAlgolia()`, `AddKlaviyo()`, and `AddMailchimp()` calls are plugin registration, not core Ekom registration.
+## What the samples show
 
-All four samples are listed in `Ekom Site.sln`; none is in `Ekom Build.sln`. To run a sample from the repository root:
+- **Startup.** `Program.cs` uses Umbraco's normal builder with `AddComposers()`, which sets Ekom up. It does not call `AddEkom`. The explicit calls `AddAlgolia()`, `AddKlaviyo()`, `AddMailchimp()` and `AddEkomPrinter(...)` register the optional packages, which need their own registration.
+- **Replacing an Ekom service.** The sample registers its own `IProductFilterService`, `CustomProductFilterService`. In the Development environment it also replaces the product and variant factories with versions for members.
+- **A storefront and checkout.** The views cover a front page, category and product pages, and a checkout in steps: basket, contact information, delivery options, payment options and receipt.
+- **Member login**, through a small `AuthController`.
+- **Printing.** Printing is set up in `appsettings.json` with a placeholder station. See `Samples/PRINTING.md` in the repository and the [Ekom.Printer README](../../Ekom/Printing/Ekom.Printer/README.md).
+- **Settings.** The `Ekom` section of each sample's `appsettings.json` shows many of the settings described in [Configuration](../getting-started/configuration.md).
+
+## Run a sample
+
+From the repository root:
 
 ```bash
 dotnet run --project "Samples/U17/Ekom.Site.U17/Ekom.Site.U17.csproj"
 ```
 
-Use .NET 8 for U10, .NET 10 for U17/U18, or .NET 11 for U19. Building U17, U18, or U19 also builds the matching web-assets project and therefore requires the Node.js/npm version listed in [Contributor setup](../contributing/setup.md).
+You need the .NET SDK for the sample's version, and Node.js for its web-assets project, because running a sample also builds the Ekom backoffice client. The versions are in [Set up a development environment](../contributing/setup.md#install-the-tools).
 
-## Limitations
+All three samples are in `Ekom Site.sln`. None is in `Ekom Build.sln`.
 
-Samples are not turnkey commerce applications:
+The U17 sample can use payment providers from a local checkout of the Ekom.Payments repository, in a folder named `Ekom.Payments` next to this repository's folder. Without it, the sample has offline payment only. See [Run a sample site](../contributing/setup.md#run-a-sample-site).
 
-- U17, U18, and U19 include checked-in SQLite databases and development runtime settings. Treat their data as disposable local data.
-- U10 is configured for an environment-specific SQL Server and does not include a local database. Replace that connection before running it outside its original environment.
-- Sample configuration contains test, placeholder, or environment-specific payment and integration values. Do not treat any checked-in value as a usable or safe production credential.
-- U10 keeps Ekom backoffice assets in the sample tree instead of referencing the `Ekom.Web` project; consumers should still install `Ekom.Web` as described in [Installation](../getting-started/installation.md).
-- U18 and U19 link their custom product filter, utility code, and most views from U17. They are not standalone templates and changes in the U17 sample can affect them.
-- Optional integrations may be registered while disabled or incompletely configured. Enable them only after supplying valid credentials through secure configuration.
+## What the samples do not do
 
-The samples do not provide payment-provider onboarding, production deployment settings, secret management, monitoring, accessibility assurance, or a security review for a real storefront.
+- **The data is test data.** The SQLite databases are in Git. Changes you make while running a sample show up as changes to those files.
+- **The settings are not safe to copy.** The checked-in configuration has test, placeholder and development values for payments, printing and the integrations. None of them is a real credential, and none is safe for production.
+- **Integrations may be registered but not configured.** An integration can be registered in `Program.cs` without working settings. Turn one on only after you add real credentials through user secrets or environment variables.
+- **No production setup.** The samples have no payment provider onboarding, production deployment settings, secret management, monitoring, accessibility review or security review.
 
-Treat a sample as a reference: install the matching package pair in the actual site, configure stores and providers for that environment, and implement the storefront and checkout policies required by the project.
+To build a real shop, install the package pair for your Umbraco version in your own site, as described in [Installation](../getting-started/installation.md). Then set up stores and providers for your environment, and build the storefront and checkout your project needs.
 
-For local prerequisites and solution coverage limitations, see [Contributor setup](../contributing/setup.md). For consumer installation, see [Installation](../getting-started/installation.md).
+## Related pages
+
+- [Installation](../getting-started/installation.md): install Ekom in your own site.
+- [Set up a development environment](../contributing/setup.md): tools, solutions and running a sample.
+- [Checkout](../guides/checkout.md): the checkout flow the sample views use.
+- [Integrations](../integrations/README.md): the Algolia, Klaviyo and Mailchimp packages the samples register.
+
+[Back to the documentation home](../README.md)

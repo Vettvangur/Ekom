@@ -1,48 +1,101 @@
+[Ekom docs](../README.md) / [Architecture](README.md) / Packages
+
 # Packages
 
-Install the runtime and web-assets package that exactly matches the Umbraco major version of the site.
+Ekom is published as a set of NuGet packages. A site installs two of them, and those bring in the rest. This page lists every package, what it contains, which project in the repository builds it, and how the packages depend on each other.
+
+On this page:
+
+- [Packages a site installs](#packages-a-site-installs)
+- [How the packages depend on each other](#how-the-packages-depend-on-each-other)
+- [How the packages are released](#how-the-packages-are-released)
+- [Optional packages](#optional-packages)
+- [Projects in the repository](#projects-in-the-repository)
+
+## Packages a site installs
 
 | Umbraco | Runtime package | Web-assets package | Target framework |
 | --- | --- | --- | --- |
-| 13 | `Ekom.U10` | `Ekom.Web` | .NET 8 |
 | 17 | `Ekom.U17` | `Ekom.Web.U17` | .NET 10 |
 | 18 | `Ekom.U18` | `Ekom.Web.U18` | .NET 10 |
 | 19 (release candidate) | `Ekom.U19` | `Ekom.Web.U19` | .NET 11 |
 
-The runtime package owns the Umbraco integration and automatic composition. The web-assets package supplies Ekom backoffice assets and belongs in the web host project. The `Ekom.U10` package name is legacy terminology for the Umbraco 13 implementation.
+- The **runtime package** contains the Umbraco integration: the composer that sets Ekom up, database setup, Ekom's document types, memory cache loading and catalog routing. It depends on the core packages, so a site does not install those itself.
+- The **web-assets package** contains the built backoffice files for the **Ekom** section and Ekom's property editors. It has no code dependencies. When the site's web project builds, the package copies its files into `wwwroot/App_Plugins/Ekom`. Install it in the web project.
 
-## Repository projects
+Installation steps are in [Installation](../getting-started/installation.md).
 
-The runtime package chain is composed from these repository projects:
+## How the packages depend on each other
 
-| Project | NuGet package | Role |
+```text
+Ekom.U17 / Ekom.U18 / Ekom.U19
+  -> Ekom.AspNetCore
+       -> Ekom.Core
+            -> Ekom.Common
+```
+
+| Package | Target frameworks | Contents |
 | --- | --- | --- |
-| `Ekom/Ekom.Core/Ekom.Common` | `Ekom.Common` | Shared primitives. |
-| `Ekom/Ekom.Core/Ekom` | `Ekom.Core` | Commerce domain, APIs, services, persistence, and caches. |
-| `Ekom/Ekom.Core/Ekom.AspNetCore` | `Ekom.AspNetCore` | ASP.NET Core hosting integration. |
-| `Ekom/Ekom.Umbraco/Ekom.U10` | `Ekom.U10` | Umbraco 13 integration. |
-| `Ekom/Ekom.Umbraco/Ekom.U17` | `Ekom.U17` | Umbraco 17 integration. |
-| `Ekom/Ekom.Umbraco/Ekom.U18` | `Ekom.U18` | Umbraco 18 integration built from shared U17/U18 source. |
-| `Ekom/Ekom.Umbraco/Ekom.U19` | `Ekom.U19` | Umbraco 19 integration built from the same shared source. |
+| `Ekom.Common` | .NET 8, .NET 10 | Shared primitives used by the other core packages. |
+| `Ekom.Core` | .NET 8, .NET 10 | The `Ekom.API` classes, models, services, caches, database access, HTTP controllers, tracking and background services. |
+| `Ekom.AspNetCore` | .NET 8, .NET 10 | Dependency injection registrations for the core, and the mail service. |
+| `Ekom.U17` | .NET 10 | Umbraco 17 integration. Accepts Umbraco 17.0.0 or later, below 18.0.0. |
+| `Ekom.U18` | .NET 10 | Umbraco 18 integration. Accepts Umbraco 18.0.0 or later, below 19.0.0. |
+| `Ekom.U19` | .NET 11 | Umbraco 19 integration. Accepts Umbraco 19.0.0-rc1 or later, below 20.0.0. |
 
-`Ekom.Web`, `Ekom.Web.U17`, `Ekom.Web.U18`, and `Ekom.Web.U19` package the corresponding backoffice assets. Consumers should install the versioned runtime and web-assets pair rather than assembling the lower-level core packages themselves.
+A class library that only calls the Ekom API can reference the runtime package for its Umbraco version. Do not assemble Ekom from the core packages on an Umbraco site: without the runtime package nothing registers Ekom with Umbraco.
 
-The U17, U18, and U19 web projects build their client assets with `npm ci` and `npm run build` when built from source. Their declared tool requirements are:
+## How the packages are released
 
-| Web-assets project | Node.js | npm |
+`Ekom.Common`, `Ekom.Core`, `Ekom.AspNetCore`, the three runtime packages and the three web-assets packages are released together, from one Git tag, with the same version number. Use the same version for the runtime and web-assets package on a site.
+
+Each package includes the Ekom `README.md` and `CHANGELOG.md`. The release history is in [`Ekom/CHANGELOG.md`](../../Ekom/CHANGELOG.md).
+
+## Optional packages
+
+These packages are released on their own, with their own version numbers.
+
+| Package | What it does | Documentation |
 | --- | --- | --- |
-| `Ekom.Web.U17` | `>=22.17.1` | `>=10.9.2` |
-| `Ekom.Web.U18` | `>=24.13.0` | `>=11` |
-| `Ekom.Web.U19` | `>=24.13.0` | `>=11` |
+| `Ekom.Printer` | Prints picking slips for orders on a warehouse printer, through a Windows agent. Targets .NET 8 and .NET 10, and depends on `Ekom.Core`. | [Ekom.Printer README](../../Ekom/Printing/Ekom.Printer/README.md) |
+| `Ekom.Algolia`, `Ekom.Algolia.U18`, `Ekom.Algolia.U19` | Indexes products, categories and content in Algolia, searches them, and sends Algolia Insights events. | [Integrations](../integrations/README.md) |
+| `Ekom.Klaviyo`, `Ekom.Klaviyo.U18`, `Ekom.Klaviyo.U19` | Sends order events and catalog data to Klaviyo, and manages subscriptions. | [Integrations](../integrations/README.md) |
+| `Ekom.Mailchimp`, `Ekom.Mailchimp.U18`, `Ekom.Mailchimp.U19` | Mailchimp audience tags and subscriptions, purchase tracking, and transactional email. | [Integrations](../integrations/README.md) |
 
-Published packages contain their assets, so these Node/npm requirements apply to contributors building those projects, not ordinary NuGet consumers.
+Installing Ekom does not install, configure or turn on any of these.
 
-## Integrations
+## Projects in the repository
 
-The repository also contains optional Algolia, Klaviyo, and Mailchimp integrations. The main plugin projects multi-target .NET 8 and .NET 10 for Umbraco 13 and 17; separate U18 and U19 projects produce the Umbraco 18 and 19 packages. They have their own registration, configuration, release workflows, and documentation. Installing Ekom does not configure credentials or enable an external integration.
+| Project | Package it builds |
+| --- | --- |
+| `Ekom/Ekom.Core/Ekom.Common` | `Ekom.Common` |
+| `Ekom/Ekom.Core/Ekom` | `Ekom.Core` |
+| `Ekom/Ekom.Core/Ekom.AspNetCore` | `Ekom.AspNetCore` |
+| `Ekom/Ekom.Umbraco/Ekom.U17` | `Ekom.U17`. Its source is shared with U18 and U19. |
+| `Ekom/Ekom.Umbraco/Ekom.U18` | `Ekom.U18`, compiled from the `Ekom.U17` source. |
+| `Ekom/Ekom.Umbraco/Ekom.U19` | `Ekom.U19`, compiled from the `Ekom.U17` source. |
+| `Ekom/Ekom.Web/Ekom.Web.U17` | `Ekom.Web.U17`. Its `Client` folder holds the backoffice source shared with U18 and U19. |
+| `Ekom/Ekom.Web/Ekom.Web.U18` | `Ekom.Web.U18`, built from the `Ekom.Web.U17` client source. |
+| `Ekom/Ekom.Web/Ekom.Web.U19` | `Ekom.Web.U19`, built from the `Ekom.Web.U17` client source. |
+| `Ekom/Printing/Ekom.Printer` | `Ekom.Printer` |
+| `Plugins/Ekom.Algolia`, `Plugins/Ekom.Klaviyo`, `Plugins/Ekom.Mailchimp` and their `U18` and `U19` folders | The integration packages. |
 
-## Source references versus package references
+The repository also contains the older `Ekom/Ekom.Umbraco/Ekom.U10` and `Ekom/Ekom.Web/Ekom.Web` projects, which these docs do not cover. They are part of both solutions and need the .NET 8 SDK to build.
 
-Core projects reference each other directly. Plugin projects switch between local source and published-style package references with the `UseProjectReferences` MSBuild property. It defaults to `true` in each plugin's `Directory.Build.props`; setting it to `false` makes the plugin consume an Ekom NuGet package at `EkomPackageVersion`. See [Contributor setup](../contributing/setup.md) before changing this property.
+### Local project references in plugins
 
-For local source development, see [Contributing setup](../contributing/setup.md).
+The plugin projects and `Ekom.Printer` can reference Ekom in two ways, chosen by the MSBuild property `UseProjectReferences`:
+
+- `true` (the default in `Ekom/Directory.Build.props` and in each plugin's `Directory.Build.props`): they reference the Ekom projects in this repository. Use this when you change Ekom and a plugin together.
+- `false`: they reference the published Ekom NuGet packages, at the version in the `EkomPackageVersion` property. The release workflows build plugins this way.
+
+See [Set up a development environment](../contributing/setup.md#use-local-ekom-projects-or-published-packages-in-plugins).
+
+## Related pages
+
+- [Compatibility](../getting-started/compatibility.md): which pair to install for each Umbraco version.
+- [Architecture overview](overview.md): what each layer does at runtime.
+- [Integrations](../integrations/README.md): install and configure the Algolia, Klaviyo and Mailchimp packages.
+- [Build, test and release](../contributing/build-test-release.md): how the packages are built and published.
+
+[Back to Architecture](README.md)

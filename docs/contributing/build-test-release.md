@@ -1,79 +1,159 @@
-# Build, Test, and Release
+[Ekom docs](../README.md) / [Contributing](README.md) / Build, test and release
 
-## Build and test
+# Build, test and release
 
-Run the narrowest useful command first:
+This page shows how to test a change to Ekom, how to check a package before it is released, and how releases work: which branch releases what, how the version number is chosen, and what the publishing workflow checks. It is for people who change Ekom itself.
+
+On this page:
+
+- [Run the tests](#run-the-tests)
+- [Check a package](#check-a-package)
+- [Write the pull request title](#write-the-pull-request-title)
+- [How a release happens](#how-a-release-happens)
+- [Release branches](#release-branches)
+- [What the Ekom publishing workflow checks](#what-the-ekom-publishing-workflow-checks)
+
+## Run the tests
+
+Start with the narrowest command that covers your change.
 
 ```bash
-dotnet restore "Ekom Build.sln"
-dotnet build "Ekom Build.sln"
 dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj"
+dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj" --filter "FullyQualifiedName~PriceTests"
+dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj" --filter "FullyQualifiedName=Ekom.Tests.Tests.PriceTests.Can_Calculate"
 ```
 
-The main test project targets both .NET 8 and .NET 10. To run one test area:
+`Ekom.Tests` targets .NET 8 and .NET 10, and a plain `dotnet test` runs the tests on both. It covers `Ekom.Core` and the main `Ekom.Algolia` project. The tests use xUnit and Moq.
+
+The tests marked `[Trait("Category", "Benchmark")]` are manual benchmarks. They are skipped unless the environment variable `EKOM_BENCH` is `1`.
+
+Other test projects:
+
+| Project | Covers | Target frameworks |
+| --- | --- | --- |
+| `Plugins/Ekom.Klaviyo.Tests` | `Ekom.Klaviyo` | .NET 8, .NET 10 |
+| `Plugins/Ekom.Mailchimp.Tests` | `Ekom.Mailchimp` | .NET 10 |
+| `Ekom/Tests/Ekom.Printer.Tests` | `Ekom.Printer` | .NET 8, .NET 10 |
+| `Ekom/Tests/Ekom.Printer.Agent.Tests` | The printer agent client | .NET 8, .NET 10 |
+
+`Ekom.Tests` is in `Ekom Site.sln` and not in `Ekom Build.sln`, so `dotnet test "Ekom Site.sln"` runs it and `dotnet test "Ekom Build.sln"` does not. See [Choose a solution](setup.md#choose-a-solution).
+
+The backoffice client has its own checks. In `Ekom/Ekom.Web/Ekom.Web.U17/Client`:
 
 ```bash
-dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj" --filter "FullyQualifiedName~PriceTests"
+npm run typecheck
+npm test
 ```
 
-`Ekom.Tests` targets both `net8.0` and `net10.0`; a normal test invocation runs both. `Ekom Build.sln` does not contain the U18 or U19 Ekom projects or `Ekom.Tests`. `Ekom Site.sln` includes all four sample lines and the main tests, but omits Mailchimp and is still not complete repository coverage. See [Contributor setup](setup.md) for the exact solution split.
+`Ekom.Web.U18/Client` and `Ekom.Web.U19/Client` have `npm run typecheck`, which checks the shared source against the Umbraco 18 and 19 backoffice packages.
 
-The U17, U18, and U19 web-assets projects require their declared Node/npm versions when built from source. Their MSBuild targets run `npm ci` when needed and then build the client assets.
+A change in the shared `Ekom.U17` source also builds into `Ekom.U18` and `Ekom.U19`. Build those projects directly when your change touches code inside `#if UMBRACO_18` or `#if UMBRACO_19`, because `Ekom Build.sln` does not contain them.
 
-## Package checks
+## Check a package
 
-Build or pack the changed project directly when changing a package:
+Build or pack the project you changed:
 
 ```bash
 dotnet build "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj"
 dotnet pack "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj"
 ```
 
-Keep lock files current for projects that use them. Test plugin projects with `UseProjectReferences=true` for local source development, then use `-p:UseProjectReferences=false -p:EkomPackageVersion=<version>` when validating package references.
+For a plugin, also build it against the published Ekom packages, as a site would use it:
 
-There is no standalone lint task. Compiler diagnostics, analyzers, TypeScript type checking, and tests provide the checks. The web client packages expose `npm run typecheck`; their MSBuild projects run `npm ci` when `node_modules` is absent and run `npm run build` before every build.
+```bash
+dotnet build "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj" -p:UseProjectReferences=false -p:EkomPackageVersion=1.4.0
+```
 
-## Releases
+Many projects restore with a lock file (`packages.lock.json`). When you change a package reference, commit the updated lock file. Do not delete a lock file.
 
-Ekom has two release branches:
+## Write the pull request title
 
-| Branch | Release line | Purpose |
-| --- | --- | --- |
-| `Ekom` | `1.x.x` | New manager, status changes, and ongoing development |
-| `release/0.2` | `0.2.x` | Hotfixes for existing installations |
+Pull requests are squash-merged, and the pull request title becomes the commit message. Release-please reads these commit messages to decide what to release, so the title must follow Conventional Commits. A check on pull requests to `Ekom` and `release/0.2` rejects other titles.
 
-The maintenance branch starts at published tag `Ekom-v0.2.378`. Its next release is `0.2.379`; it uses patch-only increments and tracks only the Ekom package group. Plugin and printer releases remain on `Ekom`.
-
-On `Ekom`, while the published manifest still contains `0.2.x`, the workflow selects `release-please-config-1.0.json` to prepare exactly `1.0.0`. Once the release PR updates the manifest to `1.0.0`, subsequent runs select the normal configuration and use semantic versioning. Keep the bootstrap configuration identical to the normal configuration except for Ekom's `release-as` override until 1.0.0 ships. Do not manually bump the manifest to 1.0.0 before the release PR.
-
-Release-please explicitly targets the triggering branch. Publishing requires a stable `Ekom-v0.2.x` or `Ekom-v1.x.x` tag matching both the Ekom build version and manifest. The maintenance branch's publishing guard permits only `0.2.x`. A future major release requires an explicit guard change.
-
-For a hotfix, branch from `release/0.2`, open a `fix:` PR targeting `release/0.2`, then review and merge the generated release PR when ready to publish. Port applicable source fixes to `Ekom` separately; do not merge maintenance manifests, version files, or release configuration into `Ekom`.
-
-Validate workflow changes with `actionlint` and `node --test .github/scripts/select-release-config.test.mjs`. Creating a branch or merging ordinary changes does not publish packages; merging the generated release PR creates the release tag and starts publishing.
-
-Use Conventional Commit-style pull request titles so release-please can determine the release change. Examples:
+Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. A scope is optional.
 
 ```text
 feat: add checkout setting
-fix: handle missing provider
+fix(orders): handle missing provider
 chore: update dependencies
 ```
 
-On `Ekom`, release-please keeps one combined release PR for every package with pending changes. Merging it releases all of those packages together and creates one tag per package. Separate release PRs are not used, because they all edit neighbouring lines of `.release-please-manifest.json` and conflict with each other as soon as one is merged.
+The type decides the version change for a package on version 1.0 or later, such as Ekom:
 
-Merging a release-please release PR creates component tags. Tag-triggered publishing workflows build and pack the matching packages and push them to NuGet.org through trusted publishing. The Ekom workflow builds .NET 8 and .NET 10 package lines and uses Node.js 24.13.0 for web assets. Plugin workflows validate package references with `UseProjectReferences=false` before packing.
+- `fix` gives a patch release, for example 1.4.0 to 1.4.1.
+- `feat` gives a minor release, for example 1.4.0 to 1.5.0.
+- A breaking change, marked with `!` after the type or a `BREAKING CHANGE:` footer, gives a major release.
 
-Do not manually edit manifest versions, create release tags, or publish artifacts outside these workflows unless the maintainers explicitly request it. Before a release, inspect the generated changelog, ensure package lock files are current, and verify every changed target that is not covered by the selected solution.
+Use `fix` for small changes and `feat` only for a new feature, because `feat` starts a minor release.
 
-See [Contributor setup](setup.md) for environment requirements.
+The Algolia and Klaviyo packages are still below 1.0. For them, a `feat` gives a patch release.
 
-## 1.0.1 recovery and package collision checks
+## How a release happens
 
-NuGet version 1.0.0 is already occupied by unlisted Ekom packages built from commit `b418047bb29fd7d220c2b7158e2f3a3756a5dab7`, not the new manager release. The 1.0.0 GitHub release exists, but its publishing run skipped those older packages. Do not install that package version expecting the new manager. The next release is 1.0.1; all nine package IDs were checked as absent on 2026-11-11. Availability is not a reservation and is checked again by publishing.
+Each package is a release-please component with its own path, version and tag. A change is released for a component when a commit touches its path:
 
-The corrective PR leaves the manifest/build version at 1.0.0. Its `fix:` change under `Ekom/` causes release-please to prepare the next patch release, 1.0.1. Review that generated release PR and merge it only when ready to publish. Do not retag or overwrite 1.0.0.
+| Component | Path | Tag |
+| --- | --- | --- |
+| Ekom | `Ekom/`, except `Ekom/Tests` and `Ekom/Printing` | `Ekom-v<version>` |
+| Ekom.Printer | `Ekom/Printing/Ekom.Printer` | `Ekom.Printer-v<version>` |
+| Ekom.Algolia, Ekom.Klaviyo, Ekom.Mailchimp | `Plugins/<plugin>`, with separate components for its `U18` and `U19` folders | `<component>-v<version>` |
 
-Before obtaining NuGet credentials or uploading any package, `verify-ekom-packages.py` validates all nine local package IDs, versions and full repository commit SHAs against the tag checkout. It checks the NuGet flat-container endpoint, including unlisted versions. Existing packages are skipped only when their source commit matches; missing or different source metadata fails the entire preflight. Only HTTP 404 means absent; other HTTP/network failures stop the release. Uploads do not use `--skip-duplicate`, so a collision after preflight also fails instead of silently succeeding. A retry revalidates packages already uploaded from the same source commit.
+The `U18` and `U19` components of a plugin share one version with the main plugin component.
 
-Run the guard tests with `python -m unittest discover -s .github/scripts -p 'test_*.py' -v`. PR validation runs them on Linux and Windows. The guard compares source provenance, not byte-for-byte reproducibility. This change covers the Ekom package group; the independently versioned printer/plugin publishers have separate workflows.
+1. You merge a pull request into `Ekom`.
+2. The `release-please` workflow updates one combined release pull request. It lists every component with unreleased changes, bumps their versions in `.release-please-manifest.json` and in the project files, and updates their changelogs.
+3. When a maintainer merges the release pull request, release-please creates one tag per released component.
+4. Each tag starts that component's publishing workflow, which builds, packs and pushes the packages to NuGet.org. The workflows sign in to NuGet.org with trusted publishing, so no API key is stored in the repository. The Ekom workflow builds with the .NET 8, 10 and 11 SDKs and Node.js 24.13.0. The plugin workflows first build the plugin with `UseProjectReferences=false`, against Ekom packages packed in the same run.
+
+Creating a branch or merging an ordinary pull request does not publish anything. Only merging the release pull request does.
+
+Do not edit the versions in `.release-please-manifest.json` by hand, create release tags yourself, or publish packages outside these workflows, unless the maintainers ask for it. Before you merge a release pull request, read the generated changelog.
+
+To change the release workflows, check them with `actionlint` and run `node --test .github/scripts/select-release-config.test.mjs`.
+
+## Release branches
+
+| Branch | Version line | Releases |
+| --- | --- | --- |
+| `Ekom` | `1.x.x` | Ongoing development. Releases Ekom, Ekom.Printer and the plugins. |
+| `release/0.2` | `0.2.x` | Hotfixes for sites that still run 0.2. Releases only the Ekom packages, and only patch versions. |
+
+The `release-please` workflow runs on both branches and opens release pull requests against the branch it runs on. On `Ekom` it uses `release-please-config.json`. The file `release-please-config-1.0.json` was used only to move the `Ekom` branch from 0.2 to 1.0.0; the workflow picks it only when the `Ekom` manifest version is a 0.2 version.
+
+To release a hotfix on 0.2:
+
+1. Create a branch from `release/0.2`.
+2. Open a pull request with a `fix:` title that targets `release/0.2`.
+3. Merge it, then review and merge the release pull request that release-please opens on `release/0.2`.
+4. If the fix also applies to `Ekom`, port it with a separate pull request. Do not merge the 0.2 manifest, version files or release configuration into `Ekom`.
+
+## What the Ekom publishing workflow checks
+
+The `publish-ekom` workflow runs on an `Ekom-v*` tag. Before it uploads anything, it checks:
+
+1. The tag is a stable `Ekom-v0.2.x` or `Ekom-v1.x.x` version. On `release/0.2`, only `Ekom-v0.2.x` is accepted. Another major version needs a change to this check.
+2. The tag version matches the `Version` in `Ekom/Directory.Build.props` and the Ekom version in `.release-please-manifest.json`.
+3. The packed set is exactly these 11 packages, all with the tag version: `Ekom.Common`, `Ekom.Core`, `Ekom.AspNetCore`, `Ekom.U10`, `Ekom.Web`, `Ekom.U17`, `Ekom.Web.U17`, `Ekom.U18`, `Ekom.Web.U18`, `Ekom.U19` and `Ekom.Web.U19`.
+4. Each package records the full commit SHA of the tagged source.
+5. For each package, the script `.github/scripts/verify-ekom-packages.py` asks NuGet.org whether that version already exists, unlisted versions included. If it exists and was built from the same commit, the package is skipped. If it exists from another commit or without source information, the whole release stops before any upload. Only an HTTP 404 answer counts as "does not exist"; any other error stops the release.
+
+The upload does not use `--skip-duplicate`, so a version that appears on NuGet.org between the check and the upload makes the release fail instead of passing silently. Running the workflow again checks again, and skips packages already uploaded from the same commit.
+
+Never reuse a version number for different source code. If a version on NuGet.org is taken by a wrong build, release the next version.
+
+Run the tests for this script with:
+
+```bash
+python -m unittest discover -s .github/scripts -p 'test_*.py' -v
+```
+
+Pull requests that change `.github/scripts` or the publishing workflow run these tests on Linux and Windows. The check compares where a package came from, not whether two builds are byte for byte the same. The printer and plugin packages have their own publishing workflows. They do not run this check, and they push with `--skip-duplicate`, so a version that already exists on NuGet.org is skipped.
+
+## Related pages
+
+- [Set up a development environment](setup.md): tools, solutions and local project references.
+- [Packages](../architecture/packages.md): which project builds which package.
+- [Integrations](../integrations/README.md): the plugin packages and their changelogs.
+- [Upgrading](../upgrading/README.md): changes in a release that need action from sites.
+
+[Back to Contributing](README.md)

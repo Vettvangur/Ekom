@@ -1,127 +1,307 @@
-# Models and Behavior
+[Ekom docs](../README.md) / [Reference](README.md) / Models and behavior
 
-Ekom APIs return interfaces and read models backed by catalog caches and persisted order/stock data. This page documents the contracts callers most often depend on and behavior that is not obvious from property names.
+# Models and behavior
+
+Ekom's APIs return interfaces such as `IStore`, `IProduct`, `IPrice` and `IOrderInfo`. This page lists the members you use most, and the behavior that the member names do not tell you.
+
+Catalog objects come from Ekom's in-memory cache. Order and stock objects come from the database. Treat both as read-only: change data through the [.NET API](dotnet-api.md), not by setting properties on these objects.
+
+On this page:
+
+- [Catalog entities](#catalog-entities)
+- [Prices](#prices)
+- [Product queries and responses](#product-queries-and-responses)
+- [Orders](#orders)
+- [Discounts](#discounts)
+- [Sellable stock and reservations](#sellable-stock-and-reservations)
+- [Warehouse stock](#warehouse-stock)
+- [Serialization over HTTP](#serialization-over-http)
 
 ## Catalog entities
 
-Most catalog contracts inherit node metadata such as key, integer ID, alias, values, sort order, and store context.
+Guide: [Catalog and products](../guides/catalog-and-products.md).
+
+Catalog objects share node data from Umbraco: key, node ID, title, sort order, property values and the store they belong to. A product, category or variant exists once for each store.
 
 ### `IStore`
 
-Important members include `Alias`, `Vat`, primary `Culture` and all `Cultures`, primary `Currency` and all `Currencies`, domains/root node, URL and order-number configuration, plus effective `VatIncludedInPrice`, `UserBasket`, `ShareBasketBetweenStores`, and `ApplyVatOnShipping` flags. `GetCurrentCurrency()` accounts for the active Ekom currency cookie/context.
+| Member | Type | Description |
+| --- | --- | --- |
+| `Alias` | `string` | The store alias, used throughout the APIs. |
+| `Vat` | `decimal` | The store's VAT rate. |
+| `VatIncludedInPrice` | `bool` | Whether prices entered in Umbraco include VAT. |
+| `Culture`, `Cultures` | `CultureInfoDto`, `List<CultureInfoDto>` | The request's culture when the store has it, otherwise the store's first culture; and all the store's cultures. |
+| `Currency`, `Currencies` | `CurrencyModel`, `List<CurrencyModel>` | The active currency and all currencies of the store. |
+| `GetCurrentCurrency()` | `CurrencyModel` | The currency in the customer's `EkomCurrency-{alias}` cookie; otherwise the currency that matches the request's culture; otherwise the store's first currency. `Currency` returns the same value. |
+| `Domains` | `IEnumerable<UmbracoDomain>` | The store's Umbraco domains. |
+| `StoreRootNode`, `StoreRootNodeId` | | The store's root content node. |
+| `Url`, `UrlPrefix(string culture)` | `string` | The store URL and the URL prefix for a culture. |
+| `OrderNumberPrefix`, `OrderNumberTemplate` | `string` | How order numbers are built. |
+| `UserBasket` | `bool` | The store's `userBasket` property, or `Ekom:UserBasket` when the property is not set. |
+| `ShareBasketBetweenStores` | `bool` | The store's `shareBasketBetweenStores` property, or `Ekom:ShareBasket`. |
+| `ApplyVatOnShipping` | `bool` | The store's `applyVatOnShipping` property, or `Ekom:ApplyVatOnShipping`. |
+
+Guide: [Stores](../guides/stores.md).
 
 ### `IProduct`
 
-`Price` is the effective price; `OriginalPrice` and `Prices` expose underlying price data. `DisableDiscounts` suppresses product/variant discounting. `ProductDiscountAsync` resolves the applicable product discount.
+| Member | Description |
+| --- | --- |
+| `Price` | The price to show, with discounts applied. An `IPrice`. |
+| `OriginalPrice`, `Prices` | The underlying price data. Not included in JSON. |
+| `DisableDiscounts` | `true` when discounts must not apply to the product and its variants. |
+| `ProductDiscountAsync(string? price = null, CancellationToken ct = default)` | The product discount that applies, or `null`. |
+| `Available` | Whether the product can be bought. See [How Ekom decides that a product is available](../guides/stock.md#how-ekom-decides-that-a-product-is-available). |
+| `Backorder` | `true` when the product can be bought without stock. The default checkout stock policy skips these lines. |
+| `Stock`, `StockBuffer` | Not included in JSON. Read stock through `Ekom.API.Stock`. |
+| `SKU`, `Summary`, `Description`, `Images`, `Metafields`, `Vat` | Product data. |
+| `VariantGroups` | The product's variant groups. |
+| `PrimaryVariantGroup`, `AllVariants` | Not included in JSON. |
+| `PrimaryVariant` | The first available variant in the primary variant group, or its first variant when none is available. |
+| `Categories`, `CategoriesIds`, `CategoryAncestors` | The categories the product is in. Not included in JSON. |
+| `RelatedProductsAsync(int count = 4, CancellationToken ct = default)` | Related products. |
 
-`Available` combines product/variant availability rules. `Stock` and `StockBuffer` are intentionally JSON-ignored; obtain authoritative stock through `Ekom.API.Stock`. `Backorder` causes the default checkout policy to skip stock enforcement. `PrimaryVariant` chooses the first available variant in the configured primary group, falling back to its first variant.
-
-Products expose direct/related category relationships, images, metadata, variant groups, SKU, summary/description, and related-product methods. Several graph/navigation properties are JSON-ignored to prevent large recursive HTTP payloads.
-
-### Custom Date/Time properties
-
-Ekom's Umbraco adapters serialize custom Date/Time properties into the string-based catalog cache using invariant round-trip (`O`) format, rather than the server's display culture. This covers `Umbraco.DateTime` in Umbraco 13, 17, and 18, plus `Umbraco.DateTimeUnspecified` and `Umbraco.DateTimeWithTimeZone` in 17/18. For example, a UTC value is stored as `2026-04-10T14:03:55.0000000Z`. This prevents day/month ambiguity when consumers such as Algolia convert cached dates to Unix timestamps.
-
-UTC/offset information is retained when supplied by a typed source value. An unspecified `DateTime` remains unspecified: serialization does not assign a timezone or convert the time. Modern JSON-backed Date/Time editors use their converted date value (or their stored ISO date in the `IContent` path); the unspecified editor retains wall-clock time and the timezone-aware editor retains its offset. Date-only/time-only editors, custom editors, and text properties containing date-like strings are not reinterpreted. Algolia's existing text-parsing and unspecified-timezone behavior remain unchanged.
-
-**Compatibility:** custom Date/Time values read as strings through Ekom are now ISO-formatted. Format them explicitly for display rather than relying on culture-formatted cache text. Rebuild Ekom's catalog cache and reindex Algolia after upgrading so existing cached/indexed values are replaced.
+Navigation members are left out of JSON so that HTTP responses do not grow large or loop.
 
 ### `ICategory`
 
-`Products`/`ProductsAsync` returns direct products; `ProductsRecursive` includes descendant categories. `SubCategories` is direct, while `SubCategoriesRecursive` and `Ancestors` traverse the tree. `Filters[Async]` derives metafield filters. A category stock buffer applies to products in the primary category unless a product buffer overrides it.
+| Member | Description |
+| --- | --- |
+| `ProductsAsync(ProductQuery? query = null, CancellationToken ct = default)` | Products directly in the category, as a `ProductResponse`. |
+| `ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default)` | Products in the category and all categories below it. |
+| `SubCategories` | Direct child categories. |
+| `SubCategoriesRecursive`, `Ancestors`, `RootCategory` | All categories below, the categories above, and the top category. Not included in JSON. |
+| `FiltersAsync(bool filterable = true, CancellationToken ct = default)` | Filter groups built from the products' metafields. |
+| `StockBuffer` | Units held back from sale for products in the category, unless the product or variant sets its own buffer. |
+| `HasProducts()`, `VirtualUrl` | Whether the category has products, and whether its URL is virtual. |
 
-### Variants and providers
+### `IVariant` and `IVariantGroup`
 
-`IVariant` and `IVariantGroup` are per-store catalog nodes. Product selection requires a variant when the product's variant structure requires one.
+A variant is a version of a product, such as a size or a colour. Variant groups hold the variants of a product. Each exists once for each store.
 
-`IPaymentProvider` and `IShippingProvider` are per-store constrained nodes. Both expose prices and zone/amount constraints; shipping providers also expose `ShippingMethods`. Provider list APIs filter constraints before raising provider events.
+`IVariant` has its own `Price`, `OriginalPrice`, `Prices`, `Vat`, `SKU`, `Backorder`, `Stock`, `Available`, `Description` and `Images`, and points back to its product through `ProductKey`, `ProductId` and `Product`. `Product`, `VariantGroup` and `StockBuffer` are not included in JSON. A product whose variant structure requires a variant cannot be added to the basket without one; Ekom throws `VariantRequiredException`.
+
+### Payment and shipping providers
+
+`IPaymentProvider` and `IShippingProvider` exist once for each store. Both have prices, a zone (the countries they serve) and an order amount range. Shipping providers also have `ShippingMethods`. The provider list methods filter by these limits before the [provider events](events.md#provider-events) run.
+
+### Custom date and time properties
+
+The Umbraco package stores custom date and time properties in Ekom's catalog cache as text in the round-trip format (`O`), not in the server's display culture. This covers the `Umbraco.DateTime`, `Umbraco.DateTimeUnspecified` and `Umbraco.DateTimeWithTimeZone` property editors. A UTC value is stored as `2026-04-10T14:03:55.0000000Z`. This avoids day and month mix-ups when other code, such as the Algolia plugin, turns the text into a date.
+
+- UTC and offset information is kept when the source value has it.
+- A date without a time zone stays without one. Ekom does not convert it.
+- Date-only and time-only editors, custom editors, and text properties that look like dates are not changed.
+
+When you read one of these values as a string, format it yourself for display.
 
 ## Prices
 
-`ICalculatedPrice.Value` is a decimal and `CurrencyString` is formatted output. `IPrice` distinguishes:
+`ICalculatedPrice` is one amount: `Value` (`decimal`) and `CurrencyString` (the formatted text).
 
-- `OriginalValue`/`BeforeDiscount`
-- `BeforeDiscountWithOutVat`
-- `AfterDiscount` and `AfterDiscountWithOutVat`
-- `WithVat` and `WithoutVat`
-- `Vat`, `DiscountAmount`, `Discount`, `HasDiscount`, and `DiscountedQuantity`
+`IPrice` is a price with its VAT and discount:
 
-`IOrderInfo.SubTotal` is an `IPrice`: use `SubTotal.WithoutVat` for the net pre-discount subtotal, while `SubTotal.Value` follows the price model's VAT mode. `GrandTotal` is the order value after discounts, including VAT, shipping and payment fees, before gift-card payment. The concrete `OrderInfo.GrandTotalWithOutVat` is the corresponding pre-gift-card value excluding VAT. `ChargedAmount` is the remaining amount payable after applicable gift cards, floored at zero. Use it for payment requests, not `GrandTotal`. `ChargedVat` currently aliases `Vat`; it includes shipping VAT only when configured and does not add payment-provider VAT, so it is not necessarily the difference between the two grand totals. See [Grand-total compatibility](../guides/orders-and-baskets.md#grand-total-compatibility) for historical JSON and checkout deployment considerations.
+| Member | Description |
+| --- | --- |
+| `Value` | The price, with or without VAT according to the store's price settings. |
+| `OriginalValue` | The price before discounts, as a `decimal`. |
+| `BeforeDiscount`, `BeforeDiscountWithOutVat` | Before discounts, with and without VAT. |
+| `AfterDiscount`, `AfterDiscountWithOutVat` | After discounts, with and without VAT. |
+| `WithVat`, `WithoutVat` | With and without VAT. |
+| `Vat` | The VAT amount. |
+| `DiscountAmount`, `Discount`, `HasDiscount` | The discount amount, the discount applied, and whether there is one. |
+| `DiscountedQuantity` | How many units the discount applies to. `0` by default. |
+| `Currency` | The currency. |
+
+Order totals:
+
+| Member of `IOrderInfo` | Description |
+| --- | --- |
+| `SubTotal` | An `IPrice`. Use `SubTotal.WithoutVat` for the net subtotal before discounts. `SubTotal.Value` follows the store's VAT setting. |
+| `GrandTotal` | The order value after discounts, with VAT, shipping and payment fees, before gift cards. |
+| `ChargedAmount` | What the customer still has to pay after gift cards, never below `0`. Use it in payment requests, not `GrandTotal`. |
+| `Vat` | VAT of the order. Includes shipping VAT only when VAT on shipping is turned on. Does not include VAT on payment fees. |
+| `ChargedVat` | The same value as `Vat`. |
+| `OrderLineTotal`, `OrderLineTotalWithOutVat` | Total of the lines. |
+| `DiscountAmount`, `ProductDiscountAmount` and their `WithOutVat` forms | Order and product discounts. |
+
+The class `OrderInfo` also has `GrandTotalWithOutVat`: the grand total before gift cards, without VAT. Because `Vat` leaves out payment fee VAT, `GrandTotal - GrandTotalWithOutVat` is not always equal to `Vat`. See [Grand total and charged amount](../guides/orders-and-baskets.md#grand-total-and-charged-amount).
 
 ## Product queries and responses
 
-`ProductQueryBase` supplies `Page`, `PageSize`, `SearchQuery`, `Ids`, `Keys`, `Skus`, `SearchFields`, `StoreAlias`, and `AllFiltersVisible`.
+Guide: [Catalog and products](../guides/catalog-and-products.md).
 
-`ProductQuery` adds metafield/property filters, property selectors, `OrderBy`, `FilterOutZeroPriceProducts`, a C#-only predicate `Filter`, and `RaiseEvents` (default true). Its query-string constructor recognizes `filter_*`, `property_*`, `q`, `page`/`p`, and `orderby`; controller body binding does not invoke that query-string behavior.
+`ProductQueryBase` has the members shared by product queries and searches:
 
-`ProductResponse` contains `Products`, current and total counts, page/page-size/page-count, filters, and property selector values. Filtering and paging mean `ProductCount` and `TotalProductCount` are not interchangeable.
+| Member | Type | Default | Description |
+| --- | --- | --- | --- |
+| `Page`, `PageSize` | `int?` | `null` | Paging. Both must be set for paging to apply. |
+| `SearchQuery` | `string` | empty | Text to search for. |
+| `SearchFields` | `List<EkomSearchField>` | empty | Fields to search. `SearchType` is `Exact`, `Wildcard`, `Fuzzy` or `FuzzyAndWilcard` (the default, spelled this way in the code). |
+| `Ids`, `Keys`, `Skus` | lists | empty | Products to load, for the by-ID, by-key and by-SKU methods. |
+| `StoreAlias` | `string` | empty | The store. |
+| `AllFiltersVisible` | `bool` | `false` | `true`: the response's filters are built from all products, before the query's filters and search. `false`: only from the matching products. |
 
-`SearchRequest` adds node ID/type restrictions, filters, `OrderBy` (default `NoOrder`), and an optional Examine index. Search fields support exact, wildcard, fuzzy, and the API's `FuzzyAndWilcard` enum spelling.
+`ProductQuery` adds:
+
+| Member | Type | Default | Description |
+| --- | --- | --- | --- |
+| `MetaFilters` | `Dictionary<string, List<string>>?` | empty | Metafield values to filter by. |
+| `PropertyFilters` | `Dictionary<string, List<string>>?` | empty | Property values to filter by. |
+| `PropertySelectors`, `PropertySelectorsSeparator` | | empty | Properties to collect distinct values from, for building filter menus. |
+| `OrderBy` | `OrderBy?` | `Ekom:DefaultProductOrderBy` | Sort order. `NoOrder` keeps the list order. |
+| `FilterOutZeroPriceProducts` | `bool` | `false` | Leaves out products with a price of `0`. |
+| `Filter` | `Func<IProduct, bool>?` | `null` | Your own condition. C# only. |
+| `RaiseEvents` | `bool` | `true` | `false` skips the filter service and the catalog events. |
+
+`new ProductQuery(IQueryCollection query)` reads a query string: `filter_*`, `property_*`, `q`, `page` or `p`, and `orderby`. The HTTP routes bind the body instead and do not use this constructor.
+
+`SearchRequest` is used by `ProductSearchAsync`. It adds `SearchNodeById`, `NodeTypeAlias`, `MetaFilters`, `PropertyFilters`, `OrderBy` (default `NoOrder`) and `ExamineIndex`.
+
+A `ProductResponse` applies a query in this order:
+
+1. property selectors,
+2. metafield and property filters,
+3. search,
+4. the [`IProductFilterService`](services-and-dependency-injection.md#filter-product-lists) and the `BeforeReturnProductsAsync` event,
+5. the `Filter` condition and `FilterOutZeroPriceProducts`,
+6. sorting, then paging.
+
+| Member of `ProductResponse` | Description |
+| --- | --- |
+| `Products` | The products on the requested page, or all matching products without paging. |
+| `ProductCount`, `TotalProductCount` | Both hold the number of matching products before paging. |
+| `Page`, `PageSize`, `PageCount` | Paging values. Set only when the query has both `Page` and `PageSize`. |
+| `Filters` | Filter groups for the products. |
+| `PropertySelectors` | The values collected for each property selector. |
+
+When the query is `null`, Ekom returns the products as they are, after the filter service and the event, without sorting or paging.
 
 ## Orders
 
+Guide: [Orders and baskets](../guides/orders-and-baskets.md).
+
 ### `IOrderInfo`
 
-An order/cart has a `UniqueId`, `OrderNumber`, status, store/culture, customer, consent/tracking, providers, gift cards, coupon/order discount, dates, quantities, totals, and read-only lines. Mutate it through `Ekom.API.Order`; direct setters on some model properties do not persist by themselves.
+An `IOrderInfo` is a basket or an order. A basket is an order that has not been paid yet.
 
-`GetOrderAsync(Guid)` can return final orders. Current-cart methods enforce current basket semantics. `ReservationIds` is the current name for stock hold IDs and defaults to the legacy `HangfireJobs` contract for compatibility.
+| Member | Description |
+| --- | --- |
+| `UniqueId` | The order key. |
+| `OrderNumber`, `ReferenceId` | The order number shown to customers, and the database reference number. |
+| `StoreInfo`, `Culture` | The store and culture the order was made in. |
+| `OrderLines`, `TotalQuantity` | The lines, read-only, and the total quantity. |
+| `CustomerInformation` | Customer and shipping details. |
+| `PaymentProvider`, `ShippingProvider` | The chosen providers, or `null`. |
+| `Coupon`, `Discount`, `Giftcards` | The order coupon, the order discount and the gift cards. |
+| `Consent`, `Tracking` | The customer's consent and marketing attribution. |
+| `CustomData` | Your own values saved on the order. See [Order custom data](../guides/order-custom-data.md). |
+| `OrderStatus` | The legacy status, `Ekom.Utilities.OrderStatus`. |
+| `CreateDate`, `UpdateDate`, `PaidDate` | Dates. `PaidDate` is `null` until the order is paid. |
+| `ReservationIds` | The stock reservations held for the order. `HangfireJobs` is an older name for the same list. |
+| Totals | See [Prices](#prices). |
+
+`Order.GetOrderAsync(Guid)` returns any order, including completed orders. The methods without a key return only the current basket.
+
+Some members have setters, but setting them does not save anything. Change orders through `Ekom.API.Order`.
 
 ### `IOrderLine`
 
-Each line has a unique `Key`, product/optional variant keys and snapshots, quantity, VAT, amount, discount/coupon, settings, and `OrderLineInfo`. `OrderInfo` is JSON-ignored to avoid a cycle.
+| Member | Description |
+| --- | --- |
+| `Key` | The line key. Use it to change or remove the line. |
+| `ProductKey`, `VariantKey` | The product and the variant, if any. |
+| `Product`, `Variant` | A snapshot of the product and variant, saved with the line. |
+| `Quantity`, `Amount`, `Vat` | Quantity, price (`IPrice`) and VAT rate. |
+| `Coupon`, `Discount` | The line coupon and discount. |
+| `OrderLineInfo`, `Settings` | Line data, such as the `orderline...` values, and line settings. |
+| `OrderInfo` | The order. Not included in JSON. |
 
-Linked line groups use parent/child line metadata and should be created through `AddLinkedOrderLinesAsync` or the HTTP `linkedProducts` payload so validation and persistence are atomic. See [Linked order lines](../guides/linked-order-lines.md).
+Linked lines (add-ons that belong to another line) are saved with links between parent and child lines. Create them with `AddLinkedOrderLinesAsync` or the `linkedProducts` field of `POST /ekom/order/add`, so that they are checked and saved together. See [Linked order lines](../guides/linked-order-lines.md).
 
-### Mutation settings
+### Order settings
 
-`OrderSettings` controls events and carries optional existing order, dynamic request, custom data, Algolia query ID, consent, and tracking. `FireEvents` is the master switch. `AddOrderSettings` adds `OrderAction` and optional variant key; `RemoveOrderSettings` adds variant key; `ChangeOrderSettings` controls the status-changing event; `DiscountOrderSettings` carries the coupon.
+| Class | Adds | Used by |
+| --- | --- | --- |
+| `OrderSettings` | `FireEvents` (default `true`), `FireOnOrderUpdatedEvent` (default `true`), `IsEventHandler`, `OrderInfo`, `ClearShippingProvider`, `CustomData`, `AlgoliaQueryId`, `Consent`, `Tracking` | Most `Order` methods. |
+| `AddOrderSettings` | `OrderAction` (default `AddOrUpdate`), `VariantKey` | Adding lines. |
+| `RemoveOrderSettings` | `VariantKey` | `RemoveOrderLineProductAsync`. |
+| `ChangeOrderSettings` | Nothing | `UpdateStatusAsync`. |
+| `DiscountOrderSettings` | `Coupon` | Coupon methods. |
 
-`OrderAction` governs add behavior; the default is `AddOrUpdate`. The HTTP `OrderRequest` allows decimal quantity and linked products, while its `OrderlineRequest` update model uses a non-negative integer quantity.
+`OrderAction` values: `AddOrUpdate` adds to an existing line of the same product, `Set` sets the quantity, `New` always adds a new line.
+
+Over HTTP, `OrderRequest` (for `POST /ekom/order/add`) takes a decimal quantity and linked products. `OrderlineRequest` (for changing a line) takes a whole-number quantity of `0` or more.
+
+### Status snapshot
+
+`OrderData.Status` and `OrderInfo.Status` return an `Ekom.Models.Orders.OrderStatusSnapshot`. Reading it changes nothing.
+
+| Member | Description |
+| --- | --- |
+| `OrderStatus` | `Draft`, `Open`, `Closed` or `Cancelled`. |
+| `PaymentStatus` | `Pending`, `Authorized`, `Paid`, `PartiallyPaid`, `Failed`, `PartiallyRefunded`, `Refunded` or `Voided`. |
+| `FulfillmentStatus` | `Unfulfilled`, `Picking`, `Picked`, `Packed`, `PartiallyFulfilled` or `Fulfilled`. |
+| `RequiresReview` | `true` when Ekom could not fully work out the statuses from an older order's history. |
+| `LegacyStatus` | The legacy status as text. |
+| `Revision` | Changes when the order is saved. A status change from the manager must name the revision it expects. |
+| `AutoCloseSuppressed` | `true` when staff reopened the order, so it does not close automatically. |
+| `FulfilledQuantities` | Fulfilled quantity per line key. |
+
+The three statuses are `null` when an older order's history does not show them. They are written to JSON as names. Ekom keeps the legacy status in step: legacy `Closed` maps to Closed / Paid / Fulfilled, and legacy `ReadyForDispatch` to Open / Paid / Unfulfilled. See [Order, payment, and fulfillment statuses](../guides/order-statuses.md) for the full mapping.
 
 ## Discounts
 
-`IDiscount` represents configured order/product discount rules; `IProductDiscount` specializes product discount behavior. `Ekom.API.Discounts` returns configured read models, while order coupon methods validate coupon inventory and applicable store discount.
+Guide: [Discounts and coupons](../guides/discounts.md).
 
-`OrderDiscountCalculationRequest` is a non-cart calculation contract: `CouponCode`, `StoreAlias`, and lines containing client ID, SKU/variant identity, quantity, and optional case-insensitive pricing context. The result reports whether it applied, constraints/applicable lines, discount identity, currency/totals, messages, and per-line before/after/discount/VAT values.
+`IDiscount` is a configured discount rule for orders or products. `IProductDiscount` is a discount on products. `Ekom.API.Discounts` returns the configured discounts; the coupon methods on `Order` check coupon uses and the store's discounts.
 
-## Primary stock and reservations
+`OrderDiscountCalculationRequest` prices a coupon without a basket:
 
-Primary stock is keyed by product/variant `Guid`, globally or per store depending on configuration. A missing cache row reads as zero. Effective availability can subtract product/category/variant stock buffers.
+| Member | Description |
+| --- | --- |
+| `CouponCode` | Required. |
+| `StoreAlias` | The store. |
+| `Lines` | Each line has `ClientLineId`, `Sku` (required), `VariantSku`, `VariantKey`, `Quantity` (default `1`) and `PricingContext`, a dictionary of your own pricing values. |
 
-`StockReservationRequest` uses a positive `Quantity`, optional `MinimumRemainingStock`, store/coupon/discount identity, duration, idempotency key, order ID, and payment-attempt ID. This differs from the compatibility facade `ReserveStockAsync`, whose `value` must be negative.
+The result says whether the coupon applied, which lines it applied to and why, the discount, the currency and totals, messages, and the price before and after discount and the VAT of each line.
 
-Reservation states are `Active`, `Consumed`, `Released`, and `Expired`. Results explicitly distinguish creation, idempotent repeats, conflicts, insufficient stock, terminal repeats, not found/not due, and late consumption. Consuming keeps stock deducted; releasing/expiring restores it once. See [Stock reservations](../guides/reservations.md).
+## Sellable stock and reservations
+
+Guides: [Stock](../guides/stock.md), [Stock reservations](../guides/reservations.md).
+
+Sellable stock is kept per product or variant key, for all stores or per store depending on `Ekom:PerStoreStock`. A product with no stock row reads as `0`. Availability subtracts the stock buffer of the variant, product or category.
+
+`StockReservationRequest` asks for a positive `Quantity`. It can also carry `MinimumRemainingStock`, a store, a coupon or discount, a duration, an idempotency key, an order key and a payment attempt key. This differs from `Stock.ReserveStockAsync`, whose `value` must be negative.
+
+A reservation is `Active`, `Consumed`, `Released` or `Expired`. Using it up (`Consumed`) keeps the stock deducted; releasing or expiring it returns the stock once.
 
 ## Warehouse stock
 
-Warehouse inventory is isolated from primary stock and is keyed by normalized `(store alias, warehouse key, SKU)`.
+Warehouse stock is separate from sellable stock. A balance belongs to a store, a warehouse and a SKU. Guide: [Stock](../guides/stock.md#warehouse-stock).
 
-- `WarehouseDefinition`: key, code, name, sort order, visibility.
-- `WarehouseStockBalance`: persisted non-negative balance and update date.
-- `WarehouseStockLevel`: visible definition plus nullable balance; null means no persisted balance, not zero.
-- `WarehouseStockMutationRequest`: `Set` with a balance, or `Clear`.
-- `WarehouseStockBatchResult`: ordered entries and inserted/updated/cleared/unchanged/failed counts.
+| Type | Description |
+| --- | --- |
+| `WarehouseDefinition` | Key, code, name, sort order and whether it is hidden. |
+| `WarehouseStockBalance` | A saved balance, never negative, and when it was updated. |
+| `WarehouseStockLevel` | A visible warehouse with its balance. A `null` balance means none is saved, not `0`. |
+| `WarehouseStockMutationRequest` | `Set` with a `Balance`, or `Clear`. |
+| `WarehouseStockBatchResult` | The result of each entry, in order, and the number of inserted, updated, cleared, unchanged and failed entries. |
 
-SKUs are trimmed and upper-cased. Reads expose only visible published warehouses in the general list APIs. Setting an unchanged value and clearing an absent value return `Unchanged`. Batch failures are per-entry and do not erase successful entries.
+SKUs are trimmed and compared without regard to case. Setting the value that is already saved, or clearing a balance that does not exist, returns `Unchanged`.
 
-## Serialization and HTTP behavior
+## Serialization over HTTP
 
-Ekom controllers serialize interface-backed domain models. JSON-ignored navigation/stock properties may be available in C# but absent over HTTP. Manager/backoffice controllers apply camel-case output explicitly; storefront model binding is generally case-insensitive, so examples use camel case for consistency.
+Ekom's controllers return these interfaces as JSON. Members marked "not included in JSON" on this page are available in C# but missing over HTTP. Manager and backoffice routes write camel-case names. Storefront routes read request bodies without regard to the case of property names; the examples use camel case.
 
-Do not use serialized catalog/order objects as write DTOs unless an endpoint explicitly accepts that type. Use `OrderRequest`, `OrderlineRequest`, `PaymentRequest`, warehouse mutation models, or the documented service methods.
+Do not send these objects back to Ekom to change data. Use the request types the routes accept (`OrderRequest`, `OrderlineRequest`, `PaymentRequest`, warehouse change requests) or the methods in the [.NET API](dotnet-api.md).
 
-## Related reference
+## Related pages
 
-- [.NET API](dotnet-api.md)
-- [HTTP API](http-api.md)
-- [Events](events.md)
-- [Configuration](configuration-reference.md)
+- [.NET API](dotnet-api.md): the methods that return these objects.
+- [HTTP API](http-api.md): the routes that return them as JSON.
+- [Events](events.md): the events that pass them to your code.
+- [Orders and baskets](../guides/orders-and-baskets.md): how orders are built and changed.
+- [Order, payment, and fulfillment statuses](../guides/order-statuses.md): what each status means.
 
-
-## Independent status snapshot
-
-`OrderData.Status` and concrete `OrderInfo.Status` expose `Ekom.Models.Orders.OrderStatusSnapshot`: independent order, payment, and fulfillment dimensions, revision, legacy status, review flag, auto-close suppression, and recorded fulfillment quantities. Reading/serializing the snapshot is side-effect free. JSON uses named enum values; null dimensions and `RequiresReview` indicate unresolved historical evidence.
-
-The existing `Ekom.Utilities.OrderStatus`, `IOrderInfo`, and legacy methods remain available. Canonical state is persisted in additive columns and synchronized with legacy writes. Legacy Closed maps to Closed / Paid / Fulfilled; ReadyForDispatch maps to Open / Paid / Unfulfilled.
-
-See [Order, payment, and fulfillment statuses](../guides/order-statuses.md) for every status, the complete migration table, configuration, supported actions, revision handling, quantity semantics, and migration endpoints. Refund execution and refund status editing remain outside this release.
+[Back to Reference](README.md)
