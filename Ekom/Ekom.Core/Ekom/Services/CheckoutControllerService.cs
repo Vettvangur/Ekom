@@ -590,16 +590,6 @@ public class CheckoutControllerService
             };
         }
 
-        //if (Config.StoreCustomerData)
-        //{
-        //    await using Repositories.DbContext db = DatabaseFactory.GetDatabase();
-
-        //    await db.InsertAsync(new CustomerData
-        //    {
-        //        // Unfinished
-        //    }).ConfigureAwait(false);
-        //}
-
         if (!string.IsNullOrEmpty(order.CustomerInformation.Customer.Name)
             && !string.IsNullOrEmpty(order.CustomerInformation.Customer.Email)) return null;
 

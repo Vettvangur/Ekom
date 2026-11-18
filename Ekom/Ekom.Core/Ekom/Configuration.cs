@@ -355,13 +355,6 @@ public class Configuration
         => string.IsNullOrWhiteSpace(storeAlias) ? null : _configuration[$"Ekom:Reservations:Stores:{storeAlias}:{setting}"];
 
     /// <summary>
-    /// Should Ekom create a ekmCustomerData table and use it to store customer + order data 
-    /// submitted to the checkout controller?
-    /// </summary>
-    public virtual bool StoreCustomerData
-        => _configuration["Ekom:CustomerData"]?.ConvertToBool() ?? false;
-
-    /// <summary>
     /// </summary>
     public virtual Rounding VatCalculationRounding
     {
