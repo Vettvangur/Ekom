@@ -87,14 +87,18 @@ Set the node's `basePaymentProvider` to the name in this table. Ekom ignores upp
 
 | Gateway | Package | `basePaymentProvider` |
 | --- | --- | --- |
-| Borgun (Teya cards) | `Ekom.Payments.Borgun` | `borgun` |
-| Valitor | `Ekom.Payments.Valitor` | `valitor` |
-| Netgiro | `Ekom.Payments.Netgiro` | `netgiro` |
-| Straumur | `Ekom.Payments.Straumur` | `straumur` |
-| AltaPay | `Ekom.Payments.AltaPay` | `altaPay` |
-| PayTrail | `Ekom.Payments.PayTrail` | `payTrail` |
-| Siminn Pay | `Ekom.Payments.SiminnPay` | `siminnPay` |
-| Teya Consumer Loans | `Ekom.Payments.TeyaConsumerloans` | `teyaConsumerloans` |
+| [Stripe](../payments/stripe.md) | `Ekom.Payments.Stripe` | `stripe` |
+| [PayPal](../payments/paypal.md) | `Ekom.Payments.PayPal` | `payPal` |
+| [Borgun (Teya cards)](../payments/borgun.md) | `Ekom.Payments.Borgun` | `borgun` |
+| [Valitor](../payments/valitor.md) | `Ekom.Payments.Valitor` | `valitor` |
+| [Straumur](../payments/straumur.md) | `Ekom.Payments.Straumur` | `straumur` |
+| [Netgiro](../payments/netgiro.md) | `Ekom.Payments.Netgiro` | `netgiro` |
+| [Siminn Pay](../payments/siminn-pay.md) | `Ekom.Payments.SiminnPay` | `siminnPay` |
+| [Teya Consumer Loans](../payments/teya-consumer-loans.md) | `Ekom.Payments.TeyaConsumerloans` | `teyaConsumerloans` |
+| [AltaPay](../payments/altapay.md) | `Ekom.Payments.AltaPay` | `altaPay` |
+| [PayTrail](../payments/paytrail.md) | `Ekom.Payments.PayTrail` | `payTrail` |
+
+Each gateway has its own page in [Payment gateways](../payments/README.md), with its settings and the address to give the gateway.
 
 ### Where a gateway's settings come from
 

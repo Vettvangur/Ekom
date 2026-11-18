@@ -240,7 +240,7 @@ public sealed class MyGatewayModule : IPaymentModule
 
 Providers read their settings with `Ekom.Payments.IUmbracoService.PopulatePaymentProviderProperties`, which Ekom's Umbraco packages implement. It fills each property of the provider's settings class that is still empty, first from the payment provider node and then from `Ekom:Payments:<base provider name>` in configuration. See [Where a gateway's settings come from](providers.md#where-a-gateways-settings-come-from).
 
-The [`AsynchronousExample` provider](https://github.com/Vettvangur/Ekom.Payments/tree/main/PaymentProviders/Ekom.Payments.AsynchronousExample) in the Ekom.Payments repository is a complete provider built this way.
+[Write your own gateway](../payments/write-your-own.md) builds a complete provider step by step. The [`AsynchronousExample` provider](https://github.com/Vettvangur/Ekom.Payments/tree/main/PaymentProviders/Ekom.Payments.AsynchronousExample) in the Ekom.Payments repository is another one built this way.
 
 ## React to recorded payments
 

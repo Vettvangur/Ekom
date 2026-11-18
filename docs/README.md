@@ -10,6 +10,7 @@ These docs cover Ekom on Umbraco 17, 18 and 19. Umbraco 19 is a release candidat
 | --- | --- |
 | Install Ekom on a site for the first time | [Getting started](getting-started/README.md) |
 | Build one part of a store, such as checkout or discounts | [Guides](guides/README.md) |
+| Set up Stripe, PayPal or another payment gateway | [Payment gateways](payments/README.md) |
 | Copy working code for a common task | [Examples](examples/README.md) |
 | Look up a setting, method, event or endpoint | [Reference](reference/README.md) |
 | Work with orders and customers in the backoffice | [Manager](manager/README.md) |
@@ -45,6 +46,10 @@ One guide for each part of a store. Each explains what the feature does, how to 
 - **Checkout, payment and shipping:** [Checkout](guides/checkout.md), [Providers](guides/providers.md), [Payments](guides/payments.md), [Shipping](guides/shipping.md), [Stock reservations](guides/reservations.md), [Gift-card recovery](guides/giftcard-recovery.md)
 - **Discounts:** [Discounts and coupons](guides/discounts.md)
 - **Storefront integration:** [Headless storefronts](guides/headless.md), [Tracking and consent](guides/tracking-and-consent.md)
+
+### [Payment gateways](payments/README.md)
+
+One page for each payment gateway: what to install, which settings to fill in, and what Ekom records. Also how to write your own.
 
 ### [Examples](examples/README.md)
 
