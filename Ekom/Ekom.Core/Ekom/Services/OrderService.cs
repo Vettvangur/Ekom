@@ -288,12 +288,22 @@ partial class OrderService
         // Add timelimit to get the order ? Maybe 1-2 hours ?
         if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
         {
-            OrderInfo? orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId, ct).ConfigureAwait(false);
+            Guid currentOrderId = _ekmRequest.User.OrderId;
 
-            if (Order.IsOrderFinal(orderInfo?.OrderStatus))
+            if (currentOrderId != Guid.Empty)
             {
-                return orderInfo;
+                OrderInfo? orderInfo = await GetOrderAsync(currentOrderId, ct).ConfigureAwait(false);
+
+                // A member who has started a new basket has no completed order to show, as with the cookie.
+                return Order.IsOrderFinal(orderInfo?.OrderStatus) ? orderInfo : null;
             }
+
+            // Completion clears the member's order reference, so the completed order is no longer found
+            // through it. Until the member starts a new basket, their newest completed order in this store is it.
+            OrderData? latest = await _orderRepository.GetLatestOrderByUsernameAsync(
+                _ekmRequest.User.Username, store.Alias, Order.FinalOrderStatuses, ct).ConfigureAwait(false);
+
+            return latest == null ? null : new OrderInfo(latest);
         }
         else
         {

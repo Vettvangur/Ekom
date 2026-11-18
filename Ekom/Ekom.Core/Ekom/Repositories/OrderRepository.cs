@@ -501,4 +501,32 @@ partial class OrderRepository
             .ToListAsync(ct)
             .ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// The newest order of one member in one store that has one of the given statuses, or null.
+    /// </summary>
+    public async Task<OrderData?> GetLatestOrderByUsernameAsync(
+        string customerUsername,
+        string storeAlias,
+        IReadOnlyCollection<OrderStatus> orderStatuses,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(customerUsername) || orderStatuses.Count == 0)
+        {
+            return null;
+        }
+
+        // A list, not an array: on .NET 10 an array would bind Contains to the span overload, which cannot be translated to SQL.
+        List<string> statuses = orderStatuses.Select(x => x.ToString()).ToList();
+
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        return await db.OrderData
+            .Where(x => x.CustomerUsername == customerUsername
+                && x.StoreAlias == storeAlias
+                && statuses.Contains(x.OrderStatusCol))
+            .OrderByDescending(x => x.CreateDate)
+            .FirstOrDefaultAsync(ct)
+            .ConfigureAwait(false);
+    }
 }
