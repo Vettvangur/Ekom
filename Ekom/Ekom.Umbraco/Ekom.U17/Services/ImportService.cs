@@ -120,7 +120,11 @@ public class ImportService : IImportService
             var snapshot = new ImportContentSnapshot(allEkomNodes);
             snapshot.Register(allUmbracoCategories);
             snapshot.Register(allUmbracoProducts);
-            IterateCategoryTreeCore(data.Categories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser, true, syncProgress, snapshot);
+            // Categories missing from the feed are deleted after the product step. Deleting a category
+            // deletes everything under it, so products that the feed moved elsewhere must be moved first.
+            var categoriesAwaitingDelete = new List<IContent>();
+            IterateCategoryTreeCore(data.Categories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, umbracoRootContent, syncUser, true, syncProgress, snapshot, categoriesAwaitingDelete);
+            var pendingCategoryDeletes = HideCategoriesAwaitingDelete(categoriesAwaitingDelete, allUmbracoCategories, allImportCategories);
 
             _logger.LogInformation("IterateCategoryTree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
 
@@ -129,6 +133,8 @@ public class ImportService : IImportService
             stopwatch.Restart();
 
             IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, mediaIndex, syncUser, true, recycleBinNode, productProcessNode, progress: syncProgress);
+
+            DeleteCategoriesAwaitingDelete(pendingCategoryDeletes, data.Products, allUmbracoProducts, allUmbracoCategories, syncUser);
 
             _logger.LogInformation("IterateProductTree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
 
@@ -589,7 +595,7 @@ public class ImportService : IImportService
     private void IterateCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, IContent? parentContent, int syncUser, bool delete = true, ImportSyncProgressTracker? progress = null)
         => IterateCategoryTreeCore(importCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, parentContent, syncUser, delete, progress, new ImportContentSnapshot(allUmbracoCategories));
 
-    private void IterateCategoryTreeCore(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, IContent? parentContent, int syncUser, bool delete, ImportSyncProgressTracker? progress, ImportContentSnapshot snapshot)
+    private void IterateCategoryTreeCore(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, ImportMediaIndex mediaIndex, IContent? parentContent, int syncUser, bool delete, ImportSyncProgressTracker? progress, ImportContentSnapshot snapshot, List<IContent>? categoriesAwaitingDelete = null)
     {
 
         if (parentContent == null || importCategories == null || allImportCategories == null)
@@ -627,6 +633,14 @@ public class ImportService : IImportService
 
                 // Check if the category exists in the imported categories
                 var importCategory = allImportCategories.FirstOrDefault(x => x.Identifier == categoryIdentifier);
+
+                if (importCategory == null && categoriesAwaitingDelete != null)
+                {
+                    // The caller deletes it once products have been moved out of it.
+                    if (!categoriesAwaitingDelete.Contains(umbracoCategory))
+                        categoriesAwaitingDelete.Add(umbracoCategory);
+                    continue;
+                }
 
                 if (importCategory == null)
                 {
@@ -679,7 +693,111 @@ public class ImportService : IImportService
 
             LogSyncProgress(progress);
 
-            IterateCategoryTreeCore(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, content, syncUser, delete, progress, snapshot);
+            IterateCategoryTreeCore(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, mediaIndex, content, syncUser, delete, progress, snapshot, categoriesAwaitingDelete);
+        }
+    }
+
+    private sealed record PendingCategoryDelete(IContent Category, HashSet<int> SubtreeIds, bool HoldsFeedCategory);
+
+    /// <summary>
+    /// Takes the categories that are about to be deleted, and the categories under them, out of the list the
+    /// product step resolves categories from. A product must never be saved or moved into one of them.
+    /// </summary>
+    private static List<PendingCategoryDelete> HideCategoriesAwaitingDelete(List<IContent> categoriesAwaitingDelete, List<IContent> allUmbracoCategories, List<ImportCategory>? allImportCategories)
+    {
+        var pending = new List<PendingCategoryDelete>(categoriesAwaitingDelete.Count);
+        if (categoriesAwaitingDelete.Count == 0)
+            return pending;
+
+        var feedIdentifiers = (allImportCategories ?? new List<ImportCategory>()).Select(x => x.Identifier).ToHashSet();
+        var childrenByParentId = BuildChildrenByParentId(allUmbracoCategories);
+        var hidden = new HashSet<int>();
+
+        foreach (var category in categoriesAwaitingDelete)
+        {
+            var subtreeIds = new HashSet<int> { category.Id };
+            var holdsFeedCategory = false;
+            hidden.Add(category.Id);
+            var queue = new Queue<int>();
+            queue.Enqueue(category.Id);
+
+            while (queue.TryDequeue(out var parentId))
+            {
+                if (!childrenByParentId.TryGetValue(parentId, out var children))
+                    continue;
+
+                foreach (var child in children)
+                {
+                    if (!subtreeIds.Add(child.Id))
+                        continue;
+
+                    // A category that is in the feed stays available to the product step.
+                    if (feedIdentifiers.Contains(child.GetValue<string>(Configuration.ImportAliasIdentifier) ?? ""))
+                        holdsFeedCategory = true;
+                    else
+                        hidden.Add(child.Id);
+
+                    queue.Enqueue(child.Id);
+                }
+            }
+
+            pending.Add(new PendingCategoryDelete(category, subtreeIds, holdsFeedCategory));
+        }
+
+        allUmbracoCategories.RemoveAll(x => hidden.Contains(x.Id));
+
+        return pending;
+    }
+
+    /// <summary>
+    /// Deletes the categories that are missing from the feed. Runs after the product step, so a product that the
+    /// feed lists under another category has already been moved there and keeps its key.
+    /// </summary>
+    private void DeleteCategoriesAwaitingDelete(List<PendingCategoryDelete> pending, List<ImportProduct>? importProducts, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, int syncUser)
+    {
+        if (pending.Count == 0)
+            return;
+
+        var categoriesByIdentifier = BuildContentByIdentifier(allUmbracoCategories);
+        var importProductsByIdentifier = new Dictionary<string, ImportProduct>();
+        foreach (var importProduct in importProducts ?? new List<ImportProduct>())
+            importProductsByIdentifier.TryAdd(importProduct.Identifier, importProduct);
+
+        foreach (var entry in pending)
+        {
+            var category = entry.Category;
+            var categoryIdentifier = category.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
+
+            if (entry.HoldsFeedCategory)
+            {
+                // The feed still lists a category under this one, and deleting would delete that category too.
+                _logger.LogWarning("Category {Id} {Name} ({Identifier}) is not in the import but was not deleted, because a category from the import is still under it.", category.Id, category.Name, categoryIdentifier);
+                continue;
+            }
+
+            // A product that is in the feed can still be here when it keeps its primary category
+            // (PreservePrimaryCategory). Its category is going away, so move it to the feed's first category.
+            foreach (var product in allUmbracoProducts.Where(x => entry.SubtreeIds.Contains(x.ParentId)).ToList())
+            {
+                var productIdentifier = product.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
+                if (!importProductsByIdentifier.TryGetValue(productIdentifier, out var importProduct))
+                    continue;
+
+                var targetIdentifier = importProduct.Categories?.FirstOrDefault();
+                if (string.IsNullOrWhiteSpace(targetIdentifier) || !categoriesByIdentifier.TryGetValue(targetIdentifier, out var target))
+                {
+                    _logger.LogWarning("Product {Id} {Name} ({Identifier}) is deleted with category {CategoryId}, because its import category {TargetIdentifier} does not exist.", product.Id, product.Name, productIdentifier, category.Id, targetIdentifier);
+                    continue;
+                }
+
+                _logger.LogInformation("Product {Id} {Name} ({Identifier}) moved to category {TargetId} before category {CategoryId} is deleted.", product.Id, product.Name, productIdentifier, target.Id, category.Id);
+                MoveContent(product, target.Id, syncUser);
+            }
+
+            _logger.LogInformation($"Delete category Id: {category.Id} Name: {category.Name} Identifier: {categoryIdentifier}");
+
+            DeleteContent(category, syncUser);
+            categoriesDeleted++;
         }
     }
 
@@ -1135,7 +1253,7 @@ public class ImportService : IImportService
             var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Images", "Products", "EventProperties" });
 
             // If no changes are found and not creating then return,
-            if (!HasContentChanges(categoryContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages)
+            if (!HasContentChanges(ImportComparer.Get(categoryContent), compareValue) && !args.IsCreateOperation && !saveImages)
             {
                 return;
             }
@@ -1170,7 +1288,7 @@ public class ImportService : IImportService
                 categoryContent.SortOrder = importCategory.SortOrder.Value;
             }
             
-            categoryContent.SetValue("comparer", compareValue);
+            ImportComparer.Set(categoryContent, compareValue);
 
             categoryContent.Name = importCategory.NodeName;
 
@@ -1246,7 +1364,7 @@ public class ImportService : IImportService
                 : new string[] { "VariantGroups", "Images", "EventProperties", "Files", "Stock", "WarehouseStock", "UpdateSlug" });
 
             // If no changes are found and not creating then return,
-            if (!forceUpdate && !HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
+            if (!forceUpdate && !HasContentChanges(ImportComparer.Get(productContent), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
             {
                 return;
             }
@@ -1332,7 +1450,7 @@ public class ImportService : IImportService
                 productContent.SetValue("enableBackorder", importProduct.EnableBackorder.Value);
             }
 
-            productContent.SetValue("comparer", compareValue);
+            ImportComparer.Set(productContent, compareValue);
 
             productContent.Name = importProduct.NodeName;
 
@@ -1360,7 +1478,7 @@ public class ImportService : IImportService
         var compareValue = importVariantGroup.Comparer ?? ComputeSha256Hash(importVariantGroup, new string[] { "Variants", "Images", "EventProperties" });
 
         // If no changes are found and not creating then return,
-        if (!forceUpdate && !HasContentChanges(variantGroupContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages)
+        if (!forceUpdate && !HasContentChanges(ImportComparer.Get(variantGroupContent), compareValue) && !create && !saveImages)
         {
             return;
         }
@@ -1382,7 +1500,7 @@ public class ImportService : IImportService
             variantGroupContent.SortOrder = importVariantGroup.SortOrder.Value;
         }
 
-        variantGroupContent.SetValue("comparer", compareValue);
+        ImportComparer.Set(variantGroupContent, compareValue);
 
         variantGroupContent.Name = importVariantGroup.NodeName;
 
@@ -1438,7 +1556,7 @@ public class ImportService : IImportService
             : new string[] { "Images", "EventProperties", "Files", "Stock", "WarehouseStock" });
 
         // If no changes are found and not creating then return,
-        if (!forceUpdate && !HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
+        if (!forceUpdate && !HasContentChanges(ImportComparer.Get(variantContent), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
         {
             return;
         }
@@ -1487,7 +1605,7 @@ public class ImportService : IImportService
             }
         }
 
-        variantContent.SetValue("comparer", compareValue);
+        ImportComparer.Set(variantContent, compareValue);
 
         variantContent.Name = importVariant.NodeName;
 
@@ -2814,9 +2932,9 @@ WHERE n.trashed = 0
                 }
             }
 
-            if (media.HasProperty("comparer"))
+            if (media.HasProperty(Configuration.ImportAliasComparer) || media.HasProperty(Configuration.ImportAliasLegacyComparer))
             {
-                var comparer = media.GetValue<string>("comparer");
+                var comparer = ImportComparer.Get(media);
                 if (!string.IsNullOrEmpty(comparer))
                 {
                     _mediaByComparer.TryAdd((mediaType, comparer), media);

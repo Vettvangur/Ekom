@@ -47,6 +47,10 @@ public class Configuration
 
     internal const string Cookie_UmbracoDomain = "EkomUmbracoDomain";
     public static string ImportAliasIdentifier => "ekmIdentifier";
+    /// <summary>The property the import keeps its change-detection value in.</summary>
+    public static string ImportAliasComparer => "ekmComparer";
+    /// <summary>The older alias of <see cref="ImportAliasComparer"/>. Used on a type that does not have the new one.</summary>
+    public static string ImportAliasLegacyComparer => "comparer";
     public static string EkmRequestKey = "umbrtmche-ekmRequest";
 
     /// <summary>
