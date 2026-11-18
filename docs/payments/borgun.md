@@ -41,10 +41,10 @@ The setting names are the properties of `BorgunSettings` in camelCase. Ekom read
 
 | Alias | Required | Default | What it does |
 | --- | --- | --- | --- |
-| `merchantId` | Yes | none | Your Borgun merchant ID. One value per store. The callback is refused when it is empty. |
-| `secretCode` | Yes | none | The secret code Borgun gave you. Ekom signs the request and checks Borgun's answer with it. One value per store. The payment request fails when it is empty. |
+| `merchantId` | Yes | none | Your Borgun merchant ID. One value per store. The payment request fails when it is empty, and Ekom stores no payment. |
+| `secretCode` | Yes | none | The secret code Borgun gave you. Ekom signs the request and checks Borgun's answer with it. One value per store. The payment request fails when it is empty, and Ekom stores no payment. |
 | `paymentGatewayId` | Not checked | `0` | Your Borgun payment gateway ID. Ekom sends it with every payment. One value per store. |
-| `paymentPageUrl` | Yes | none | The address of Borgun's payment page. See [Test it](#test-it) for the two addresses. |
+| `paymentPageUrl` | Yes | none | The address of Borgun's payment page. See [Test it](#test-it) for the two addresses. The payment request fails when it is empty, and Ekom stores no payment. |
 | `preserveDecimalAmounts` | No | `false` | `false`: amounts are rounded to whole units, for example `24990,00`. `true`: amounts keep 2 decimals, for example `19,99`. |
 | `merchantEmail` | No | none | Sent to Borgun as the merchant's email address. One value per store. |
 | `merchantLogo` | No | none | The address of a logo that Borgun shows on its payment page. One value per store. |
@@ -91,7 +91,8 @@ With each payment Ekom sends Borgun the Ekom payment ID as `reference`, and the 
 
 | Borgun outcome | What Ekom records |
 | --- | --- |
-| The callback arrives and is verified | A `Captured` transaction for the order amount of the payment. It holds the authorization code, the masked card number, and the details `orderid` (Borgun order ID) and `step`. Ekom then works out the payment status, see [How the payment status is worked out](../guides/payments.md#how-the-payment-status-is-worked-out). |
+| The callback arrives, is verified and its `status` is `Ok` (case ignored) | A `Captured` transaction for the order amount of the payment. It holds the authorization code, the masked card number, and the details `orderid` (Borgun order ID) and `step`. Ekom then works out the payment status, see [How the payment status is worked out](../guides/payments.md#how-the-payment-status-is-worked-out). |
+| The callback is verified but its `status` is not `Ok` | Nothing. Ekom logs a warning and answers HTTP 200. |
 | Borgun repeats the callback | Nothing new. The capture is recorded once per payment. |
 | The callback cannot be verified | Nothing. Ekom logs an error and answers HTTP 400. |
 | The payment ID is unknown, or belongs to another gateway | Nothing. Ekom answers HTTP 404. |
@@ -125,7 +126,7 @@ Borgun's server must be able to reach `/ekom/payments/borgunresponse` on your si
 ## Limits and things to know
 
 - **Rounding.** With `preserveDecimalAmounts` off, Ekom rounds the total and every line to whole units, half away from zero. Ekom still records the unrounded amount. Turn the setting on for a currency with decimals, such as EUR.
-- **Language.** Ekom sends `IS` when the node's `language` is `is-IS`. Any other value is sent in upper case as it is, so set `language` to a two-letter code such as `en` when you want another language.
+- **Language.** Ekom sends the two-letter language code of the node's `language` in upper case: `IS` for `is-IS`, `EN` for `en-US` or `en`.
 - **Order lines.** Ekom sends one line per payment item. By default that is one line with the order title and the total. To change the lines, use `CheckoutEvents.PaymentOrderItemsPreparingAsync`.
 - **A new secret code affects new payments only.** Ekom checks the callback with the `secretCode` and `merchantId` that were used when the payment started.
 - **Content Security Policy.** The page that sends the customer to Borgun runs a short script. If your site sets a CSP nonce, put it in `HttpContext.Items` under `CspNonce`, or under the key named in `Ekom:CspKey`, and Ekom adds it to the script.

@@ -33,7 +33,7 @@ You need:
 
    Ekom finds the provider at startup. There is no setup code.
 
-2. Create a payment provider node under the store's payment provider container, and set its `basePaymentProvider` to `payTrail`. Fill in `successUrl` and `cancelUrl` too. See [Set up a payment provider](../guides/providers.md#set-up-a-payment-provider).
+2. Create a payment provider node under the store's payment provider container, and set its `basePaymentProvider` to `payTrail`. Fill in `successUrl`, `cancelUrl` and `errorUrl` too. See [Set up a payment provider](../guides/providers.md#set-up-a-payment-provider).
 
 3. Fill in the settings in the [Settings](#settings) table, on the node or in `appsettings.json`.
 
@@ -54,12 +54,14 @@ Each alias is a property of `PayTrailSettings`, written in camelCase. Ekom reads
 | --- | --- | --- | --- |
 | `accountId` | Yes | none | Your PayTrail account ID, sent in the `checkout-account` header. |
 | `secretKey` | Yes | none | Your PayTrail secret key. Signs the requests to PayTrail and checks the signature on its answers. |
-| `apiBaseUrl` | Yes | none | Address of the PayTrail API. The package posts to `/payments` on this host. The settings class names `https://services.paytrail.com` for both test and production. |
-| `algorithm` | Yes | none | The signing algorithm: `sha256` or `sha512`. Sent in the `checkout-algorithm` header. |
-| `platformName` | No | none | Sent in the `platform-name` header when it has a value. |
+| `apiBaseUrl` | No | `https://services.paytrail.com` | Address of the PayTrail API. The package posts to `/payments` on this host. The same address serves test and production. |
+| `algorithm` | No | `sha256` | The signing algorithm: `sha256` or `sha512`, case ignored. Sent in the `checkout-algorithm` header. Any other value fails the payment request. |
+| `platformName` | No | `ekom-vettvangur` | Sent in the `platform-name` header. |
 | `debugLog` | No | `false` | `true` logs the full create-payment request and response, and every answer from PayTrail with the signature removed, at Information level. The payloads contain customer data. Turn it on only while you look for a problem. |
 
-The payment request fails when `accountId`, `secretKey`, `apiBaseUrl` or `algorithm` is empty.
+The payment request fails when `accountId` or `secretKey` is empty, or when `algorithm` is not `sha256` or `sha512`. Ekom checks these before it stores the payment, so a failed request stores no payment.
+
+Ekom uses a default only when the setting is empty on the node, in configuration and in code. Any of the three can set `apiBaseUrl`, `algorithm` and `platformName`.
 
 None of these settings hold one value per store or per language. To use a different PayTrail account in another store, create a second provider node and give it a `configurationKey`.
 
@@ -109,9 +111,10 @@ Values you leave empty in code are still read from the node and configuration.
 3. The customer pays, or cancels, on PayTrail's page.
 4. PayTrail sends the browser back to `/ekom/payments/paytrailresponse` with its signed `checkout-*` values. Separately, PayTrail's server calls the same address with `callback=true`.
 5. When the status is `ok`, Ekom records the payment and sends the customer on to the provider's `successUrl`, with `?orderId=<order id>`.
-6. For every other status, the customer is sent to the cancel URL. Ekom releases the stock holds and the customer ends on the provider's `cancelUrl`. See [Cancel, edit and retry a payment](../guides/checkout.md#cancel-edit-and-retry-a-payment).
+6. When the status is `pending` or `delayed`, the customer is sent to the provider's `successUrl`. The payment is not final, and Ekom keeps the stock holds.
+7. For `fail` and every other status, the customer is sent to the cancel URL. Ekom releases the stock holds and the customer ends on the provider's `cancelUrl`. See [Cancel, edit and retry a payment](../guides/checkout.md#cancel-edit-and-retry-a-payment).
 
-The provider's `errorUrl` is not used by this package.
+When the browser return has a wrong signature, a malformed `checkout-amount`, or an `ok` amount that does not match, the customer is sent to the error URL. Ekom releases the stock holds and the customer ends on the provider's `errorUrl`. If the payment has no error URL, the browser gets the HTTP status code instead: 401 for a wrong signature or a malformed amount, 400 for an amount that does not match.
 
 If PayTrail refuses to create the payment, checkout handles it as described in [If sending to payment fails](../guides/checkout.md#if-sending-to-payment-fails).
 
@@ -129,15 +132,17 @@ What the package sends to PayTrail:
 
 ## What Ekom records
 
-Ekom checks the signature first. The signature is an HMAC over the `checkout-*` values, made with your secret key.
+Ekom checks the signature first. The signature is an HMAC over the `checkout-*` values, made with your secret key and the algorithm in `checkout-algorithm`. Ekom accepts only `sha256` and `sha512` there, and uses `sha256` when it is missing. Any other algorithm counts as a wrong signature.
 
 | PayTrail answer | What Ekom does |
 | --- | --- |
 | Status `ok`, correct signature, amount matches | Records `Captured` for the sum of the payment items, once per payment. The transaction ID is `checkout-transaction-id`, the payment method is `checkout-provider`. Recording the payment completes the order. |
-| Status `ok`, correct signature, amount does not match | Records nothing. Returns HTTP 400 and logs a warning. |
+| Status `ok`, correct signature, amount does not match | Records nothing and logs a warning. Returns HTTP 400 to the server callback. Sends the customer's browser to the error URL. |
 | Status `fail`, correct signature | Records `Failed` with the message "PayTrail reported the payment as failed". |
-| Any other status, such as `pending` or `delayed` | Records nothing. These are not final. |
-| Wrong signature | Records nothing. Returns HTTP 401. |
+| Status `pending` or `delayed` | Records nothing. These are not final. |
+| Any other status | Records nothing. |
+| Wrong signature | Records nothing. Returns HTTP 401 to the server callback. Sends the customer's browser to the error URL. |
+| Correct signature, but `checkout-amount` cannot be read as a whole number | Records nothing. This is a failed verification. Returns HTTP 401 to the server callback. Sends the customer's browser to the error URL. |
 | Missing `signature`, `checkout-stamp`, `checkout-status` or `checkout-amount` | Records nothing. Returns HTTP 400. |
 | A stamp that matches no PayTrail payment | Records nothing. Returns HTTP 404. |
 
@@ -193,7 +198,7 @@ If the log shows `Signature mismatch`, the secret key does not match the account
   - `description`: the item's title.
 
   If the items do not add up to the total after rounding, the package changes the last item to make up the difference and sets its `units` to 1.
-- **The amount must match.** For an `ok` answer, `checkout-amount` must equal the sum of the payment items saved with the payment, in minor units. Otherwise nothing is recorded and the customer sees HTTP 400.
+- **The amount must match.** For an `ok` answer, `checkout-amount` must equal the sum of the payment items saved with the payment, in minor units. Otherwise nothing is recorded, the customer is sent to the error URL, and the server callback gets HTTP 400.
 - **A new secret key affects new payments only.** The callback checks the answer with the secret key that was in use when the payment started, not the current one.
 - **The transaction ID from the create step is not stored.** The package logs it. The transaction ID on the order comes from PayTrail's answer.
 - **Not implemented:** refunds, token payments, rendering PayTrail's payment method buttons, and payment reports.

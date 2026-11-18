@@ -46,7 +46,7 @@ Ekom reads each setting from the property with that alias on the provider node, 
 
 | Alias | Required | Default | What it does |
 | --- | --- | --- | --- |
-| `apiBaseUrl` | Yes | None | The base address of the Consumer Loans API v3. End it with `/`: Ekom adds paths such as `online/token/web` to it. |
+| `apiBaseUrl` | Yes | None | The base address of the Consumer Loans API v3. Must be an absolute address. End it with `/`: Ekom adds paths such as `online/token/web` to it. |
 | `username` | Yes | None | The API user name from Teya. |
 | `password` | Yes | None | The API password from Teya. Ekom sends the user name and password with every API call, as basic authentication. |
 | `merchantId` | Yes | None | Your merchant number at Teya. Sent as `MerchantNumber`. |
@@ -55,9 +55,9 @@ Ekom reads each setting from the property with that alias on the provider node, 
 | `flexibleNumberOfPayments` | Yes | None | `true` or `false`. Sent as `FlexibleNumberOfPayments`. |
 | `tokenValidMinutes` | Yes | None | Minutes the customer has to open the loan portal. |
 | `progressValidMinutes` | Yes | None | Minutes the customer has to finish the loan after opening the portal. |
-| `loanPortalUrl` | Yes | None | The address of Teya's loan portal. Ekom sends the customer to this address combined with the loan token. See [Limits and things to know](#limits-and-things-to-know). |
+| `loanPortalUrl` | Yes | None | The address of Teya's loan portal. Must be an absolute address. Ekom sends the customer to this address with the loan token as the last path segment. See [Limits and things to know](#limits-and-things-to-know). |
 
-Checkout fails before Ekom contacts Teya when any of these is missing, except `loanPortalUrl`. Ekom uses `loanPortalUrl` last, after the loan token is created and the payment is stored. When it is missing, checkout fails at that point.
+Ekom checks all of these before it asks Teya for a loan token or stores a payment. Checkout fails when any of them is missing, or when `apiBaseUrl` or `loanPortalUrl` is not an absolute address.
 
 None of these settings hold one value per store or per language. A node has one value of each.
 
@@ -103,6 +103,7 @@ The order is completed by the background check, not by the customer's return. Th
 Ekom asks Teya for the loan's status (`GET online/status`) every 5 seconds. It keeps asking for `tokenValidMinutes` plus `progressValidMinutes` plus 30 seconds. With both settings at `5`, that is 10 minutes and 30 seconds.
 
 - **`SUCCESS`:** Ekom validates the loan with Teya (`PUT online/validate`), then records the payment, which completes the order. It stops asking.
+- **A validation that fails** with no answer, HTTP 408, HTTP 429 or HTTP 5xx, or **a validated loan that Ekom cannot record**: Ekom tries again at the next interval, within the same time window. It does not validate a validated loan again. When Teya refuses the validation with any other HTTP 4xx answer, Ekom does not try again and stops asking.
 - **`CANCELED`, `FAILED`, `PROGRESSEXPIRED` or `TOKENEXPIRED`:** Ekom records the outcome and stops asking.
 - **Any other status,** such as `CREATED`, `INPROGRESS` or `PENDING`: Ekom asks again.
 - **A status request that fails** with no answer, HTTP 408, HTTP 429 or HTTP 5xx: Ekom tries again at the next interval, within the same time window.
@@ -168,7 +169,7 @@ Register it with `builder.Services.AddHostedService<TeyaActivityForwarder>();`. 
 | Teya status | Recorded on the order |
 | --- | --- |
 | `SUCCESS`, and validation succeeds | `Captured`, for the full payment amount |
-| `SUCCESS`, and validation or recording fails | Nothing new. Ekom logs the error and, when `Ekom:Payments:SendEmailAlerts` is `true`, emails it. The checks stop, and the next restart checks the loan again. |
+| `SUCCESS`, and validation or recording fails | Nothing new. Ekom logs the error and, when `Ekom:Payments:SendEmailAlerts` is `true`, emails it once per loan. Ekom tries again within the time window, except when Teya refuses the validation with an HTTP 4xx answer other than 408 or 429. When the checks stop or the window ends, the payment stays open and the next restart checks the loan again. |
 | `CANCELED` | `Cancelled`, "The loan application was cancelled" |
 | `FAILED`, `PROGRESSEXPIRED` or `TOKENEXPIRED` | `Failed`, "The loan application ended with Teya status ..." |
 | Still in progress when the window has ended, found at a restart | `Note`, asking staff to check the loan with Teya. A note does not change the payment status. |
@@ -202,8 +203,8 @@ After a test loan, look for the log line `Teya Consumer Loans Response - SUCCESS
 
 ## Limits and things to know
 
-- **The portal address.** Ekom combines `loanPortalUrl` and the token as a relative web address, not as a query string. With `https://portal.example/loan/`, the customer goes to `https://portal.example/loan/<token>`. Without the final `/`, the token replaces the last part of the path. A query string in `loanPortalUrl` is dropped.
-- **The validation address.** When it validates the loan, Ekom sends Teya the success address with `&token=<token>` added as `RedirectUrl`.
+- **The portal address.** Ekom adds the token to `loanPortalUrl` as the last path segment, not as a query string. With `https://portal.example/loan/` or `https://portal.example/loan`, the customer goes to `https://portal.example/loan/<token>`. A query string in `loanPortalUrl` is kept.
+- **The validation address.** When it validates the loan, Ekom sends Teya the success address with `token=<token>` added to its query string as `RedirectUrl`. Ekom adds it with `?` when the success address has no query string, and with `&` when it has one.
 - **Amounts.** Ekom sends the order total as it is, without rounding. No currency is sent.
 - **Several servers.** Each server follows only the loans it started. After a restart, every server that shares the database looks at the open loans, so two servers can ask Teya about, and validate, the same loan. The capture is still stored once.
 - **Content Security Policy.** The page that sends the customer to the loan portal is a small inline script. If your site uses a nonce-based Content Security Policy, put the nonce in `HttpContext.Items` under `CspNonce`, or under the key set in `Ekom:CspKey`, and Ekom adds it to the script.

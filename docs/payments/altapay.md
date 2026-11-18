@@ -22,7 +22,7 @@ You need:
 
 - Ekom 1.2 or later. Use version 1.1.0 or later of `Ekom.Payments.AltaPay`.
 - An AltaPay merchant account with access to the merchant API. From AltaPay you need the API user name and password, the name of your terminal, and the base address of the merchant API.
-- A shared secret that is set on your AltaPay terminal. AltaPay uses it to sign its answers, and Ekom uses the same secret to check them. Without it, Ekom records no AltaPay payments.
+- A shared secret that is set on your AltaPay terminal. AltaPay uses it to sign its answers, and Ekom uses the same secret to check them. Without it, the payment request fails.
 
 ## Set it up
 
@@ -40,21 +40,22 @@ You need:
 
 4. Set the shared secret on your AltaPay terminal, and put the same value in `customerInformationSharedSecret`.
 
-5. Decide where AltaPay gets its payment form from, and set `paymentFormUrl`. See [The payment form callback](#the-payment-form-callback).
+5. To give AltaPay your own payment form, set `paymentFormUrl`. See [The payment form callback](#the-payment-form-callback).
 
 You do not register callback addresses at AltaPay. The package sends them with every payment request:
 
 | Address | Sent to AltaPay as | Used for |
 | --- | --- | --- |
-| `/ekom/payments/altaresponse` | `config[callback_ok]` and `config[callback_notification]` | A successful payment, from the customer's browser and from AltaPay's server. |
+| `/ekom/payments/altaresponse?browser=true` | `config[callback_ok]` | The answer from the customer's browser. `browser=true` tells Ekom that the customer's browser made the call. |
+| `/ekom/payments/altaresponse` | `config[callback_notification]` | The answer from AltaPay's server. |
 | `/ekom/payments/altaresponse/fail` | `config[callback_fail]` | A payment that did not go through. |
-| The value of `paymentFormUrl` | `config[callback_form]` | The payment form AltaPay shows. |
+| The value of `paymentFormUrl` | `config[callback_form]` | The payment form AltaPay shows. Sent only when `paymentFormUrl` is set. |
 
 The addresses are made absolute with the scheme and host of the checkout request, or with the host in `hostOverride`. If `PaymentSettings.ReportUrl` is set, for example in a `CheckoutEvents.PayAsync` handler, it replaces the notification address.
 
 ### The payment form callback
 
-The package has a third route, `/ekom/payments/altaresponse/callback`. It accepts GET and POST, raises the `Ekom.Payments.AltaPay.Events.CallbackUrl` event, and returns the event's `Template` as the response body. If no handler sets `Template`, the body is empty.
+The package has a third route, `/ekom/payments/altaresponse/callback`. It accepts GET and POST, raises the `Ekom.Payments.AltaPay.Events.CallbackUrl` event, and returns the event's `Template` as the response body, with the content type `text/html`. If no handler sets `Template`, the body is empty.
 
 To use it, set `paymentFormUrl` to `/ekom/payments/altaresponse/callback` and subscribe to the event once at startup:
 
@@ -72,7 +73,7 @@ Events.CallbackUrl += async (sender, args) =>
 
 `args.Request` holds `OrderId` (AltaPay's `shop_orderid`, which is the Ekom order ID), `Amount`, `Currency`, `Language` and `TransactionInfo`. All handlers run at the same time and share one `args`, so use a single handler.
 
-You can also point `paymentFormUrl` at a page of your own. It must be a path on your site, such as `/altapay-form`, not a full URL.
+You can also point `paymentFormUrl` at a page of your own: a path on your site, such as `/altapay-form`, or an absolute address, such as `https://shop.example.com/altapay-form`.
 
 ## Settings
 
@@ -82,11 +83,13 @@ Each alias is a property of `AltaSettings`, written in camelCase. Ekom reads it 
 | --- | --- | --- | --- |
 | `apiUserName` | Yes | none | User name for the AltaPay merchant API. Sent with basic authentication. |
 | `apiPassword` | Yes | none | Password for the AltaPay merchant API. |
-| `terminal` | Yes | none | The AltaPay terminal name, sent as `terminal`. A payment saved without it cannot be verified. |
-| `baseAddress` | Yes | none | Base address of the AltaPay merchant API. The package posts to `createPaymentRequest` relative to it, so end the address with `/`. |
+| `terminal` | Yes | none | The AltaPay terminal name, sent as `terminal`. |
+| `baseAddress` | Yes | none | Base address of the AltaPay merchant API, as an absolute address. The package posts to `createPaymentRequest` relative to it, so end the address with `/`. |
 | `customerInformationSharedSecret` | Yes | none | The shared secret set on the AltaPay terminal. Ekom uses it to check the checksum on AltaPay's answers. |
-| `paymentFormUrl` | Yes | none | A path on your site, sent as `config[callback_form]`. See [The payment form callback](#the-payment-form-callback). The payment request fails when it is empty. |
+| `paymentFormUrl` | No | none | A path on your site or an absolute address, sent as `config[callback_form]`. When empty, Ekom sends no `config[callback_form]`. See [The payment form callback](#the-payment-form-callback). |
 | `hostOverride` | No | none | A host name, for example `shop.example.com`, used in the callback addresses instead of the host of the checkout request. The scheme stays that of the checkout request. Use it when the site runs on an address AltaPay cannot reach, such as `localhost`. |
+
+Ekom checks the five required settings before it stores the payment. When one is empty, or `baseAddress` is not an absolute address, the payment request fails and Ekom stores no payment. A `paymentFormUrl` that is neither a valid path nor an absolute address also fails the payment request.
 
 None of these settings hold one value per store or per language. To use a different AltaPay account in another store, create a second provider node and give it a `configurationKey`.
 
@@ -114,12 +117,12 @@ Keep `apiPassword` and `customerInformationSharedSecret` out of source control, 
 1. The customer submits payment. The package sends a payment request to AltaPay with the terminal, the Ekom order ID as `shop_orderid`, the amount, the currency, the language, the callback addresses, the store alias, and the order lines.
 2. AltaPay answers with the address of its payment page. The customer's browser is sent there.
 3. The customer pays on AltaPay's page.
-4. When the payment succeeds, AltaPay sends the browser to `/ekom/payments/altaresponse`. Ekom records the payment and sends the customer on to the provider's `successUrl`, with `?orderId=<order id>`.
+4. When the payment succeeds, AltaPay sends the browser to `/ekom/payments/altaresponse?browser=true`. Ekom records the payment and sends the customer on to the provider's `successUrl`, with `?orderId=<order id>`. When AltaPay sends the browser there with any other result, Ekom sends the customer to the error URL.
 5. When the payment fails, AltaPay sends the browser to `/ekom/payments/altaresponse/fail`. Ekom sends the customer to the error URL, which releases the stock holds and ends on the provider's `errorUrl`. See [Cancel, edit and retry a payment](../guides/checkout.md#cancel-edit-and-retry-a-payment).
 
-On the way to the error URL, the package adds AltaPay's values to the query string: `transactionId`, `paymentId`, `reservedAmount`, `capturedAmount`, `refundedAmount`, `currency`, `paymentStatus`, `result`, `errorCode` and `errorMessage` when AltaPay sent them, and `altapayFailed=true`. If the payment has no error URL, the customer goes to `/?altapayerror=true` on your site.
+On the way to the error URL, the package adds AltaPay's values to the query string: `transactionId`, `paymentId`, `reservedAmount`, `capturedAmount`, `refundedAmount`, `currency`, `paymentStatus`, `result`, `errorCode` and `errorMessage` when AltaPay sent them, and `altapayFailed=true`. If the payment has no error URL, the fail route sends the customer to `/?altapayerror=true` on your site. At `/ekom/payments/altaresponse`, a browser answer for a payment with no error URL, or for an order with no AltaPay payment, gets HTTP 200 with the text `Payment not Valid`.
 
-If AltaPay does not return a payment page address, the customer goes straight to the error URL with `errorStatus=paymenterror` and an `errorMessage`. If the AltaPay call itself fails, checkout handles it as described in [If sending to payment fails](../guides/checkout.md#if-sending-to-payment-fails).
+If AltaPay does not return a payment page address, the customer goes straight to the error URL with `errorStatus=paymenterror` and `errorMessage=We could not process your payment. Please try again.` in the query string. If the AltaPay call itself fails, checkout handles it as described in [If sending to payment fails](../guides/checkout.md#if-sending-to-payment-fails).
 
 The language sent to AltaPay is `is` or `en`, taken from the provider node's `language`. Every other language is sent as `is`.
 
@@ -131,12 +134,15 @@ AltaPay refers to a payment by the Ekom order ID. Ekom answers for the latest Al
 | --- | --- |
 | Result `Success` with a correct checksum | Records `Captured` for the amount Ekom requested, once per payment. The transaction ID is AltaPay's `TransactionId`, the masked card number is AltaPay's `CreditCardMaskedPan`. Recording the payment completes the order. |
 | Result `Success` with a missing or wrong checksum | Records nothing. Returns HTTP 500. |
-| Payment saved without `terminal` or `customerInformationSharedSecret` | Records nothing. Returns HTTP 500 and logs an error. |
-| Any other result at `/ekom/payments/altaresponse` | Records nothing. Returns HTTP 200 with the text `Payment not Valid`. |
-| Any answer at `/ekom/payments/altaresponse/fail` | Records nothing. This answer carries no checksum. The customer is sent to the error URL. |
-| An order with no AltaPay payment | Records nothing. Returns HTTP 404. |
+| Result `Success` for a payment saved without `terminal` or `customerInformationSharedSecret` | Records nothing. Returns HTTP 500 and logs an error. |
+| Result `Fail`, `Failed` or `Error` with a correct checksum, at `/ekom/payments/altaresponse` or `/ekom/payments/altaresponse/fail` | Records `Failed`. The message is AltaPay's error message, or `AltaPay reported the payment as failed` when AltaPay sent none. The transaction ID is AltaPay's `TransactionId`. The details are `result` (AltaPay result) and `terminal` (Terminal). Ekom then works out the payment status, see [How the payment status is worked out](../guides/payments.md#how-the-payment-status-is-worked-out). |
+| Any other result that is not `Success`, such as `Open` | Records nothing. |
+| A result that is not `Success` with a missing or wrong checksum, or for a payment saved without `terminal` or `customerInformationSharedSecret` | Records nothing. |
+| An order with no AltaPay payment | Records nothing. Returns HTTP 404, except for a result that is not `Success` at `/ekom/payments/altaresponse`. |
 
-AltaPay sends both a browser answer and a server notification for the same payment. The capture is stored once.
+At `/ekom/payments/altaresponse`, Ekom answers every result that is not `Success` the same way, whether it records a failure or not. The customer's browser (the address with `browser=true`) is sent to the error URL, as described in [What the customer sees](#what-the-customer-sees). AltaPay's server notification gets HTTP 200 with the text `Payment not Valid`. At `/ekom/payments/altaresponse/fail`, the customer is always sent to the error URL.
+
+AltaPay sends both a browser answer and a server notification for the same payment. The capture is stored once, and so is a failure for the same AltaPay transaction.
 
 The capture also stores these details, which the Manager shows with the payment:
 
@@ -149,7 +155,7 @@ The capture also stores these details, which the Manager shows with the payment:
 
 `RawData` holds AltaPay's parsed response.
 
-The package never records `Authorized`, `Failed`, `Cancelled`, `Refunded` or `Voided`.
+The package never records `Authorized`, `Cancelled`, `Refunded` or `Voided`.
 
 ## Capture, refund and cancel
 
@@ -178,7 +184,7 @@ If the log shows `Failed checksum verification` or `No CustomerInformationShared
 - **The checksum is the only proof.** It covers the amount Ekom requested, the currency, the order ID and the shared secret. A payment for a different amount does not pass the check and is not recorded.
 - **A new secret affects new payments only.** The callback checks the answer with the shared secret that was in use when the payment started, not the current one.
 - **The latest attempt wins.** AltaPay sends back the order ID, not the payment ID. When an order has several AltaPay attempts, the answer is matched to the newest one.
-- **`paymentFormUrl` must be a path.** A full URL such as `https://shop.example.com/form` makes the payment request fail, and so does an empty value.
+- **`paymentFormUrl` is a path or an absolute address.** Both `/altapay-form` and `https://shop.example.com/form` work. A value that is neither makes the payment request fail. An empty value sends no payment form address to AltaPay.
 - **Amounts always have two decimals,** also for currencies without minor units such as ISK. Each order line is sent with its `Price` as the unit price and its `Quantity`.
 - **The cancel URL is not used.** The package has no cancel route. A payment that does not go through ends on the error URL.
 - **Error emails.** When a callback throws and `Ekom:Payments:SendEmailAlerts` is `true` (the default), Ekom emails the exception and AltaPay's response through the Umbraco SMTP settings.
