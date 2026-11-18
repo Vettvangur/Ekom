@@ -21,6 +21,8 @@ The examples use one made-up shop throughout: a store with the alias `Store`, pr
 | Import products with images, files and variants | [Import products from another system](imports.md) |
 | Update prices or stock for many products quickly | [Import products from another system](imports.md) |
 | Build category, product, basket and checkout pages | [Build storefront pages](storefront.md) |
+| Add search, filters or a category menu to a storefront | [Build storefront pages](storefront.md) |
+| Show the old price and the saving for a product on sale | [Build storefront pages](storefront.md) |
 | Call Ekom from a headless storefront | [Build storefront pages](storefront.md) |
 | Add a button to an order in Ekom Manager | [Add your own actions to the Manager](manager-actions.md) |
 | Use Ekom from a scheduled job or queue worker | [Use Ekom outside a web request](background-jobs.md) |
@@ -33,7 +35,7 @@ The examples use one made-up shop throughout: a store with the alias `Store`, pr
 | [Use your own product, variant and category classes](custom-models.md) | How to make Ekom create your own classes, with extra properties and your own price rules. |
 | [Replace Ekom services](replace-services.md) | How to swap one of Ekom's services for your own through dependency injection. |
 | [Import products from another system](imports.md) | How to bring in categories, products, images, files, variants, prices and stock, and how to run an import safely. |
-| [Build storefront pages](storefront.md) | Views, controllers and `fetch` calls for the catalog, the basket, coupons, checkout and the receipt. |
+| [Build storefront pages](storefront.md) | Views, controllers and `fetch` calls for the catalog, search and filters, the category menu, sale prices, the basket, coupons, checkout and the receipt. |
 | [Add your own actions to the Manager](manager-actions.md) | How to add your own buttons to an order in the backoffice. |
 | [Use Ekom outside a web request](background-jobs.md) | How to use Ekom from hosted services, queue handlers and scheduled jobs. |
 

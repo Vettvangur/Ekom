@@ -2,13 +2,16 @@
 
 [Ekom docs](../README.md) / [Examples](README.md) / Build storefront pages
 
-These examples build the pages every shop needs: a category page, a product page, the basket, checkout and the receipt. The first six are for a server-rendered Umbraco site: Razor views for the pages and your own controllers for the forms. The last one makes the same basket and checkout calls with `fetch` from a headless storefront.
+These examples build the pages every shop needs: a category page, a product page, the basket, checkout and the receipt. All but the last are for a server-rendered Umbraco site: Razor views for the pages and your own controllers for the forms. The last one makes the same basket and checkout calls with `fetch` from a headless storefront.
 
 The views are the templates of your Umbraco document types. The controllers go in your site project. Each form posts to a controller, the controller calls Ekom's `Order` API and redirects back, and the page then shows the totals Ekom recalculated.
 
 On this page:
 
 - [List a category's products with sorting and paging](#list-a-categorys-products-with-sorting-and-paging)
+- [Search and filter a product list](#search-and-filter-a-product-list)
+- [Show a menu of categories](#show-a-menu-of-categories)
+- [Show a sale price](#show-a-sale-price)
 - [Show a product with its variants and an add-to-basket form](#show-a-product-with-its-variants-and-an-add-to-basket-form)
 - [Show and change the basket](#show-and-change-the-basket)
 - [Apply and remove a coupon](#apply-and-remove-a-coupon)
@@ -167,6 +170,185 @@ What to know:
 - `Available` follows the stock rules: backorder, variants and the stock buffer. See [How Ekom decides that a product is available](../guides/stock.md#how-ekom-decides-that-a-product-is-available).
 - `ProductsRecursiveAsync` includes the products of every subcategory. Use `ProductsAsync` for the products directly in the category.
 - The catalog is read from memory, so listing it on every request does not query the database.
+
+## Search and filter a product list
+
+This partial view adds a search box, a checkbox list for each filterable metafield, and a price range to the category page above. It is a plain `GET` form, so every choice ends up in the address, and the paging and sorting links of the category page keep it.
+
+Save it as `Views/Partials/_ProductFilters.cshtml`:
+
+```cshtml
+@model Ekom.Models.ProductResponse
+@using System.Globalization
+@using Ekom.Models
+@{
+    var query = Context.Request.Query;
+    string culture = CultureInfo.CurrentUICulture.Name;
+
+    // A metafield value is a dictionary from culture to text. Use the customer's language when it is there.
+    string Text(Dictionary<string, string> values)
+        => values.TryGetValue(culture, out string? text) ? text : values.Values.FirstOrDefault() ?? "";
+}
+
+<form method="get">
+    @* Keep the sort order. The page number is left out, so a new search starts on page 1. *@
+    <input type="hidden" name="orderby" value="@query["orderby"]" />
+
+    <label for="q">Search</label>
+    <input type="search" id="q" name="q" value="@query["q"]" />
+
+    @foreach (MetafieldGrouped filter in Model.Filters)
+    {
+        string name = "filter_" + filter.Field.Alias;
+        var chosen = query[name];
+
+        <fieldset>
+            <legend>@Text(filter.Field.Title)</legend>
+
+            @foreach (Dictionary<string, string> value in filter.Values)
+            {
+                string text = Text(value);
+
+                <label>
+                    <input type="checkbox" name="@name" value="@text" checked="@chosen.Contains(text)" />
+                    @text
+                </label>
+            }
+        </fieldset>
+    }
+
+    <fieldset>
+        <legend>Price</legend>
+        <label for="priceFrom">From</label>
+        <input type="number" id="priceFrom" name="property_priceFrom" min="0" step="1" value="@query["property_priceFrom"]" />
+        <label for="priceTo">To</label>
+        <input type="number" id="priceTo" name="property_priceTo" min="0" step="1" value="@query["property_priceTo"]" />
+    </fieldset>
+
+    <button type="submit">Show products</button>
+    <a href="@Context.Request.Path">Clear</a>
+</form>
+```
+
+In the category template, ask for the filters of all products and render the partial above the list:
+
+```cshtml
+ProductResponse result = await category.ProductsRecursiveAsync(
+    new ProductQuery(Context.Request.Query) { PageSize = 24, AllFiltersVisible = true });
+```
+
+```cshtml
+@await Html.PartialAsync("_ProductFilters", result)
+```
+
+What to know:
+
+- `new ProductQuery(Context.Request.Query)` does the filtering. It reads `q` into `SearchQuery`, every `filter_{alias}` into `MetaFilters`, and every `property_{alias}` into `PropertyFilters`. The form only has to use those names.
+- `result.Filters` lists the metafields marked as filterable that the products have, each with its distinct values. With `AllFiltersVisible = true` it is built from the products before filtering, so a checkbox does not disappear when another one is ticked. Without it, the list shrinks to the values of the products left.
+- Several ticked values of one metafield match products that have any of them. A product must match every metafield that has a ticked value. When the metafield has `AllConditionsMustMatch` on, a product must have all the ticked values.
+- A metafield value matches on its text in any language, and the comparison is exact, including upper and lower case. Send the text as Ekom gave it to you, as the checkbox does.
+- `property_priceFrom` and `property_priceTo` are built in. They compare with the product's `OriginalPrice`, which is the price before discounts. Ekom parses them with the culture of the request, so send whole numbers. `property_category` is also built in and takes category IDs. Any other `property_{alias}` filters on the product property with that alias.
+- An input left empty is ignored, so an empty search box or price field does not filter anything.
+- `q` keeps only the products that the search service finds. On Umbraco 17 and 18 that is Examine, and on Umbraco 19 Umbraco's search provider. When no search service is registered, a search returns no products. See [Search](../guides/catalog-and-products.md#search).
+- To search the whole store and not one category, put the same form on a search page and call `Catalog.GetAllProductsAsync(new ProductQuery(Context.Request.Query) { PageSize = 24 })`.
+- The values come from the address and are written back into the form. Razor encodes them, so do not wrap them in `Html.Raw`.
+
+## Show a menu of categories
+
+This partial view renders the store's categories as nested lists. It opens only the branch the customer is in, and marks the category being shown.
+
+Save it as `Views/Partials/_CategoryMenu.cshtml` and render it from your layout with `@await Html.PartialAsync("_CategoryMenu")`:
+
+```cshtml
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Ekom.API
+@using Ekom.Models
+@using Ekom.Utilities
+@inject Catalog Catalog
+@{
+    IReadOnlyList<ICategory> rootCategories = await Catalog.GetRootCategoriesAsync();
+
+    // The IDs of the current page and its ancestors, for example "-1,1050,1062,1088".
+    string currentPath = Model.Path;
+
+    void RenderCategories(IEnumerable<ICategory> categories)
+    {
+        if (!categories.Any())
+        {
+            return;
+        }
+
+        <ul>
+            @foreach (ICategory category in categories)
+            {
+                // True for the category being shown and for every category above it.
+                bool open = category.IsCurrent(currentPath);
+
+                <li>
+                    <a href="@category.Url" aria-current="@(category.Id == Model.Id ? "page" : null)">@category.Title</a>
+
+                    @* Open only the branch the customer is in. *@
+                    @if (open)
+                    {
+                        RenderCategories(category.SubCategories);
+                    }
+                </li>
+            }
+        </ul>
+    }
+}
+
+<nav aria-label="Categories">
+    @{ RenderCategories(rootCategories); }
+</nav>
+```
+
+What to know:
+
+- `GetRootCategoriesAsync()` returns the top-level categories of the store of the current request. Pass a store alias to read another store.
+- `category.IsCurrent(path)` takes the `Path` of the Umbraco page being shown, which is the list of IDs of the page and its ancestors. It is `true` for the current category and for every category above it. It is also `true` on a product page for the categories above the product's node.
+- `SubCategories` holds the categories directly below. To render the whole tree, call `RenderCategories(category.SubCategories)` without the `if`. `SubCategoriesRecursive` gives every category below as one flat list.
+- The catalog is read from memory, so rendering the menu on every page does not query the database.
+- The view inherits `UmbracoViewPage`, so `Model` is the current Umbraco page. On a page that is not Umbraco content, pass the path in yourself.
+
+## Show a sale price
+
+This partial view shows a price. When the price has a discount, it shows the old price struck through, the new price and the saving in percent.
+
+Save it as `Views/Partials/_Price.cshtml` and render it with `@await Html.PartialAsync("_Price", product.Price)`:
+
+```cshtml
+@model Ekom.Models.IPrice
+@{
+    decimal before = Model.BeforeDiscountWithVat.Value;
+    decimal now = Model.WithVat.Value;
+    bool onSale = Model.HasDiscount && now < before;
+}
+
+@if (onSale)
+{
+    int percent = (int)Math.Round((before - now) / before * 100);
+
+    <p>
+        <s><span class="visually-hidden">Was</span> @Model.BeforeDiscountWithVat.CurrencyString</s>
+        <strong><span class="visually-hidden">Now</span> @Model.WithVat.CurrencyString</strong>
+        <span>Save @percent%</span>
+    </p>
+}
+else
+{
+    <p><strong>@Model.WithVat.CurrencyString</strong></p>
+}
+```
+
+What to know:
+
+- `BeforeDiscountWithVat` and `WithVat` are the price before and after the discount, both with VAT in every store. To show prices without VAT, use `BeforeDiscountWithOutVat` and `WithoutVat`. Do not pair `BeforeDiscount` with `WithVat`: in a store whose prices exclude VAT, one has VAT and the other does not.
+- `HasDiscount` is `true` when a discount is attached to the price. The view also checks that the price is lower, so a discount of zero does not show a sale.
+- `product.Price` already has the product discount that applies to the product. Order discounts and coupons are not part of it; they appear on the basket lines. See [Discounts and coupons](../guides/discounts.md).
+- For a product with variants, pass the price of the variant the customer chose, for example `product.PrimaryVariant?.Price ?? product.Price`.
+- `CurrencyString` formats the amount in the price's currency. Do not format `Value` yourself.
+- The `visually-hidden` class is yours to define. It hides "Was" and "Now" on screen and leaves them for screen readers, which do not announce struck-through text.
 
 ## Show a product with its variants and an add-to-basket form
 
