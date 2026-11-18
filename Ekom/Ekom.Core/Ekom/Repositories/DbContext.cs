@@ -8,7 +8,6 @@ public class DbContext : LinqToDB.Data.DataConnection
     public DbContext(string providerName, string connectionString) : base(providerName, connectionString) { }
 
     public ITable<CouponData> CouponData => this.GetTable<CouponData>();
-    public ITable<CustomerData> CustomerData => this.GetTable<CustomerData>();
     public ITable<DiscountStockData> DiscountStockData => this.GetTable<DiscountStockData>();
     public ITable<OrderActivityLog> OrderActivityLog => this.GetTable<OrderActivityLog>();
     public ITable<OrderReview> OrderReviews => this.GetTable<OrderReview>();
