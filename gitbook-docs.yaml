@@ -1,0 +1,18 @@
+# Tells GitBook how to build the Ekom documentation site from this repository.
+# The site has one space, and its pages are the Markdown files in docs/.
+# docs/SUMMARY.md is the table of contents.
+#
+# Do not change `key`. GitBook recognises the space by it, and a new key makes
+# GitBook create a new space and detach the old one from the site.
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+site:
+  title: Ekom
+  structure:
+    - type: space
+      key: ekom-docs
+      title: Ekom
+      path: docs
+      default: true
+      content:
+        directory: ./docs
+        language: en

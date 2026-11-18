@@ -1,6 +1,0 @@
-# Tells GitBook where the documentation is when this repository is synced to a GitBook space.
-root: ./docs/
-
-structure:
-  readme: README.md
-  summary: SUMMARY.md
