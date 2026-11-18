@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Manager](README.md) / Orders
-
 # Orders
+
+[Ekom docs](../README.md) / [Manager](README.md) / Orders
 
 The **Orders** view in Ekom Manager is where you find orders, export them, and keep them up to date: change payment and fulfillment status, correct customer details, add or remove lines, and recover a checkout that did not finish. You see only the stores you have access to.
 

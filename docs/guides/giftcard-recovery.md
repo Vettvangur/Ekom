@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Failed gift-card preparation recovery
-
 # Failed gift-card preparation recovery
+
+[Ekom docs](../README.md) / [Guides](README.md) / Failed gift-card preparation recovery
 
 This page explains what to do when Ekom asked an external gift-card provider to hold a balance for a payment, and the hold may have been made, but Ekom could not accept it. Ekom then keeps a record of what may have happened at the provider and blocks checkout for that order until a person has resolved it.
 

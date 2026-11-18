@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Manager](README.md) / Overview
-
 # Ekom Manager overview
+
+[Ekom docs](../README.md) / [Manager](README.md) / Overview
 
 Ekom Manager is the **Ekom** section of the Umbraco backoffice, where staff work with orders, customers, sales figures and picking-slip printing. This page lists the views, explains the store, currency and date filters they share, and shows which packages supply the Manager and how access is checked.
 

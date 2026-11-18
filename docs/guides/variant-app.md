@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Variant App
-
 # Variant App
+
+[Ekom docs](../README.md) / [Guides](README.md) / Variant App
 
 The Variant App lets editors manage all variant groups and variants of a product in one view, without opening each content node. Use it when a product has many variants, for example a shirt in several colors and sizes.
 

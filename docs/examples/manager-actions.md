@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Examples](README.md) / Add your own actions to the Manager
-
 # Add your own actions to the Manager
+
+[Ekom docs](../README.md) / [Examples](README.md) / Add your own actions to the Manager
 
 An order action is a button that your code adds to an open order in Ekom Manager. These examples add a button that sends the order confirmation email again, a button that sends the order to an ERP system again, and a log entry for every action a staff member runs.
 

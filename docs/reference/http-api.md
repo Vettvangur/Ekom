@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Reference](README.md) / HTTP API
-
 # HTTP API
+
+[Ekom docs](../README.md) / [Reference](README.md) / HTTP API
 
 Ekom adds HTTP routes under `/ekom` to the site. A storefront that runs in the browser or on another server uses them to read the catalog, change the basket and pay. This page lists every route with its method, parameters and responses.
 

@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / Integrations
-
 # Integrations
+
+[Ekom docs](../README.md) / Integrations
 
 Ekom has optional packages that connect a store to Algolia, Klaviyo and Mailchimp. This page shows which package to install for your Umbraco version and where to find each package's instructions. Ekom runs without them.
 

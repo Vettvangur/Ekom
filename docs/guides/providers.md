@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Payment and shipping providers
-
 # Payment and shipping providers
+
+[Ekom docs](../README.md) / [Guides](README.md) / Payment and shipping providers
 
 A provider is an option the customer chooses at checkout: a shipping provider is a delivery method, a payment provider is a way to pay. Each provider is an Umbraco content node that belongs to a store. Read this page when you set up the delivery and payment options of a store, or list them on a storefront.
 

@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / Getting started
-
 # Getting started
+
+[Ekom docs](../README.md) / Getting started
 
 This section takes you from an Umbraco site without Ekom to a site where your own code adds a product to a basket. It is for developers who install Ekom on an Umbraco 17, 18 or 19 site.
 

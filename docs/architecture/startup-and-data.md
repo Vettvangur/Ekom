@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Architecture](README.md) / Startup and data
-
 # Startup and data
+
+[Ekom docs](../README.md) / [Architecture](README.md) / Startup and data
 
 This page describes what Ekom does when a site starts: how it registers itself with Umbraco, which database changes it makes, which content it creates, and how it loads its data into memory. It also covers what happens when one of these steps fails, and where each kind of Ekom data is stored. Read it when you plan a deployment or an upgrade, or when Ekom does not start as expected.
 

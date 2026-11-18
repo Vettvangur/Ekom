@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Order custom data
-
 # Order custom data
+
+[Ekom docs](../README.md) / [Guides](README.md) / Order custom data
 
 Order custom data is a set of your own text keys and values saved on the whole order, such as a gift message or a purchase order number. Use it for values that belong to the order and that Ekom has no field for. Ekom saves the values in the order's stored JSON, so they are there when the order is loaded again.
 

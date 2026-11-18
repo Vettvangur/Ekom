@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Upgrading](README.md) / Upgrade from Umbraco 17 to 18
-
 # Upgrade from Umbraco 17 to 18
+
+[Ekom docs](../README.md) / [Upgrading](README.md) / Upgrade from Umbraco 17 to 18
 
 This page moves an Ekom site from Umbraco 17 to Umbraco 18. On the Ekom side you swap the Umbraco 17 packages for their Umbraco 18 versions. Ekom works the same way on both versions, so storefront code that uses the Ekom API does not change.
 

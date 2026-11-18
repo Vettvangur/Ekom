@@ -88,6 +88,6 @@ Set up, build, test and release Ekom itself.
 ## About these docs
 
 - They describe the current `Ekom` branch. A page says so when something differs between Umbraco 17, 18 and 19.
-- Every page starts with a path back to its section and to this page, and ends with related pages.
+- Every page has a path back to its section and to this page under its title, and ends with related pages.
 - Each plugin keeps its own setup instructions in its README. These docs link to them and do not repeat them.
 - The release history is in [`Ekom/CHANGELOG.md`](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/CHANGELOG.md).

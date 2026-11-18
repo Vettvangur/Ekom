@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Manager](README.md) / Customers
-
 # Customers
+
+[Ekom docs](../README.md) / [Manager](README.md) / Customers
 
 The **Customers** view in Ekom Manager lists the people who ordered in a period, with their lifetime spend, number of orders and how often they come back. Use it to look up one customer's orders or to export a customer list. It is built from order history: it is not a separate customer database, and you cannot edit customers here.
 

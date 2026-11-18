@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Reference](README.md) / Services and dependency injection
-
 # Services and dependency injection
+
+[Ekom docs](../README.md) / [Reference](README.md) / Services and dependency injection
 
 Ekom registers its classes with ASP.NET Core dependency injection when the site starts. This page lists the public services you can inject, their lifetimes, the ones you can replace with your own implementation, and how to register a replacement.
 

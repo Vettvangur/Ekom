@@ -1,6 +1,6 @@
-[Ekom docs](README.md) / [Manager](manager/README.md) / Printer agent protocol
-
 # Printer agent protocol
+
+[Ekom docs](README.md) / [Manager](manager/README.md) / Printer agent protocol
 
 Ekom.Printer creates picking slips as HTML, and a printer agent collects them from the website and prints them. This page describes the HTTP API between the website and an agent, version 1, and the .NET client library you can build on. Use it when you write your own agent instead of using the supplied Windows agent.
 

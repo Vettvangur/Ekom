@@ -1,6 +1,6 @@
-[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Order discounts
-
 # Order discounts
+
+[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Order discounts
 
 An order discount lowers the price of order lines in the basket. Use it for offers that depend on the basket, such as "10% off selected products with the code SPRING10" or "20% off when you buy at least 3". It can run automatically, or only when the customer enters a coupon code.
 

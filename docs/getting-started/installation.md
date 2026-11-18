@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Getting started](README.md) / Installation
-
 # Installation
+
+[Ekom docs](../README.md) / [Getting started](README.md) / Installation
 
 This page shows how to add Ekom to an Umbraco 17, 18 or 19 site, what Ekom does the first time the site starts, and how to check that it is running. You install two NuGet packages in the site's web project. There is no setup code to write.
 

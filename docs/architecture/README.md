@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / Architecture
-
 # Architecture
+
+[Ekom docs](../README.md) / Architecture
 
 This section explains how Ekom is put together: which packages it has, what each one does, what happens when a site starts, and where Ekom keeps its data. Read it when you need to understand Ekom's behavior beyond one feature, for example to plan a deployment, diagnose a startup problem or decide which package a project needs.
 

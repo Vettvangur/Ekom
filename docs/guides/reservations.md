@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Stock reservations
-
 # Stock reservations
+
+[Ekom docs](../README.md) / [Guides](README.md) / Stock reservations
 
 A reservation, also called a hold, takes stock out of the sellable count for a limited time, so that two customers cannot pay for the same last unit. Turn reservations on when stock is scarce and customers pay through an online gateway that takes minutes to finish. You can also create holds from your own code, for example for a quote or a phone order.
 

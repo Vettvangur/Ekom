@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Discounts and coupons
-
 # Discounts and coupons
+
+[Ekom docs](../README.md) / [Guides](README.md) / Discounts and coupons
 
 Ekom lowers prices in two ways: a product discount lowers the price of a product before it reaches the basket, and an order discount lowers the price of order lines once they are in the basket. Use this page to find the right discount guide for your task.
 

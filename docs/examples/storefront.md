@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Examples](README.md) / Build storefront pages
-
 # Build storefront pages
+
+[Ekom docs](../README.md) / [Examples](README.md) / Build storefront pages
 
 These examples build the pages every shop needs: a category page, a product page, the basket, checkout and the receipt. The first six are for a server-rendered Umbraco site: Razor views for the pages and your own controllers for the forms. The last one makes the same basket and checkout calls with `fetch` from a headless storefront.
 

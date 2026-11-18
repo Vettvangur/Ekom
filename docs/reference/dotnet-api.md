@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Reference](README.md) / .NET API
-
 # .NET API
+
+[Ekom docs](../README.md) / [Reference](README.md) / .NET API
 
 The classes in the `Ekom.API` namespace are how your C# code on the server talks to Ekom: read the catalog, change a basket, take payment, and read or change stock and prices. This page lists their public methods, grouped by class.
 

@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Contributing](README.md) / Set up a development environment
-
 # Set up a development environment
+
+[Ekom docs](../README.md) / [Contributing](README.md) / Set up a development environment
 
 This page shows how to prepare a machine to work on Ekom: the tools to install, how to build the two solutions, how to work on a plugin against your local Ekom code, and how to run a sample site. It is for people who change Ekom itself. To use Ekom on a site, see [Getting started](../getting-started/README.md).
 

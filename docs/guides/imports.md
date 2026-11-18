@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Catalog imports
-
 # Catalog imports
+
+[Ekom docs](../README.md) / [Guides](README.md) / Catalog imports
 
 The import service brings catalog data from another system, such as an ERP or PIM system, into Umbraco: categories, products, variant groups, variants, media, prices, stock and warehouse stock. Use it to create the catalog from a feed and keep it in step with that system.
 

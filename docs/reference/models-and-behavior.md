@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Reference](README.md) / Models and behavior
-
 # Models and behavior
+
+[Ekom docs](../README.md) / [Reference](README.md) / Models and behavior
 
 Ekom's APIs return interfaces such as `IStore`, `IProduct`, `IPrice` and `IOrderInfo`. This page lists the members you use most, and the behavior that the member names do not tell you.
 
