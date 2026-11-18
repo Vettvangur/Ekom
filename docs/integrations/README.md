@@ -10,9 +10,9 @@ Each package has its own README with the installation steps, settings and API. T
 
 | Integration | What it does | Umbraco 17 | Umbraco 18 | Umbraco 19 | Instructions |
 | --- | --- | --- | --- | --- | --- |
-| Algolia | Indexes products, categories and content in Algolia, searches them, and sends Algolia Insights events. | `Ekom.Algolia` | `Ekom.Algolia.U18` | `Ekom.Algolia.U19` | [Algolia README](../../Plugins/Ekom.Algolia/README.md) |
-| Klaviyo | Sends order events and catalog data to Klaviyo, and manages subscriptions. | `Ekom.Klaviyo` | `Ekom.Klaviyo.U18` | `Ekom.Klaviyo.U19` | [Klaviyo README](../../Plugins/Ekom.Klaviyo/README.md) |
-| Mailchimp | Manages audience tags and subscriptions, tracks completed purchases, and sends transactional email. | `Ekom.Mailchimp` | `Ekom.Mailchimp.U18` | `Ekom.Mailchimp.U19` | [Mailchimp README](../../Plugins/Ekom.Mailchimp/README.md) |
+| Algolia | Indexes products, categories and content in Algolia, searches them, and sends Algolia Insights events. | `Ekom.Algolia` | `Ekom.Algolia.U18` | `Ekom.Algolia.U19` | [Algolia README](https://github.com/Vettvangur/Ekom/blob/Ekom/Plugins/Ekom.Algolia/README.md) |
+| Klaviyo | Sends order events and catalog data to Klaviyo, and manages subscriptions. | `Ekom.Klaviyo` | `Ekom.Klaviyo.U18` | `Ekom.Klaviyo.U19` | [Klaviyo README](https://github.com/Vettvangur/Ekom/blob/Ekom/Plugins/Ekom.Klaviyo/README.md) |
+| Mailchimp | Manages audience tags and subscriptions, tracks completed purchases, and sends transactional email. | `Ekom.Mailchimp` | `Ekom.Mailchimp.U18` | `Ekom.Mailchimp.U19` | [Mailchimp README](https://github.com/Vettvangur/Ekom/blob/Ekom/Plugins/Ekom.Mailchimp/README.md) |
 
 The package without a suffix is the one for Umbraco 17; its .NET 10 build depends on `Ekom.U17`. The `.U18` and `.U19` packages depend on `Ekom.U18` and `Ekom.U19`. Install the package that matches the Ekom runtime package on your site.
 
@@ -36,9 +36,9 @@ Each method also accepts a delegate to change the options in code, for example `
 
 ## Release history
 
-- [Algolia changelog](../../Plugins/Ekom.Algolia/CHANGELOG.md)
-- [Klaviyo changelog](../../Plugins/Ekom.Klaviyo/CHANGELOG.md)
-- [Mailchimp changelog](../../Plugins/Ekom.Mailchimp/CHANGELOG.md)
+- [Algolia changelog](https://github.com/Vettvangur/Ekom/blob/Ekom/Plugins/Ekom.Algolia/CHANGELOG.md)
+- [Klaviyo changelog](https://github.com/Vettvangur/Ekom/blob/Ekom/Plugins/Ekom.Klaviyo/CHANGELOG.md)
+- [Mailchimp changelog](https://github.com/Vettvangur/Ekom/blob/Ekom/Plugins/Ekom.Mailchimp/CHANGELOG.md)
 
 ## Related pages
 

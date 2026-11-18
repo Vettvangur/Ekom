@@ -60,7 +60,7 @@ Ekom has no data conversion for this step. On the first start it adds any table,
 
 4. Replace each integration package the site uses with its `.U18` package, for example `Ekom.Algolia` with `Ekom.Algolia.U18`.
 5. If the site still references `Ekom.Payments.U17` or `Ekom.Payments.AspNetCore`, remove them and follow [Upgrade payments](payments.md).
-6. Build the solution and fix the compile errors in custom code. They come from Umbraco 18 API changes and from Ekom changes marked BREAKING in the [Ekom changelog](../../Ekom/CHANGELOG.md).
+6. Build the solution and fix the compile errors in custom code. They come from Umbraco 18 API changes and from Ekom changes marked BREAKING in the [Ekom changelog](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/CHANGELOG.md).
 7. Start the site against a copy of the production database. Umbraco upgrades its database first, then Ekom checks its own tables.
 8. If the site used Hangfire for stock holds, follow [Move from Hangfire reservations](reservations.md) before you take orders.
 9. Run the checks in [Check that it worked](#check-that-it-worked). When they pass, repeat steps 7 to 9 on production.

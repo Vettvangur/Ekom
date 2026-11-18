@@ -23,7 +23,7 @@ Each release contains:
 
 - the installer, `Ekom.Printer.Agent-<version>-win-x64-setup.exe`,
 - `SHA256SUMS.txt`, with the hash of every other file,
-- `INSTALLATION.md`, a copy of the [Windows agent guide](../../Ekom/Printing/Ekom.Printer.Agent/README.md),
+- `INSTALLATION.md`, a copy of the [Windows agent guide](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer.Agent/README.md),
 - `LICENSE.txt`,
 - `release.json`, with the version and repository,
 - `ReleaseNotes.md`, the generated change notes.
@@ -52,7 +52,7 @@ Run three checks on the downloaded installer, here for version 1.0.1.
 
 The hash shows that the download is complete and matches the release. The provenance shows which GitHub workflow built it. The Authenticode signature shows the Windows publisher. None of them replaces a test print on the warehouse computer. An installer built locally by hand has no GitHub provenance.
 
-If a release is unsigned, its notes say **Unsigned installer**, and Windows SmartScreen or company application-control rules can block it. The [Windows agent guide](../../Ekom/Printing/Ekom.Printer.Agent/README.md#windows-security-warnings-and-company-managed-pcs) explains how to get it approved.
+If a release is unsigned, its notes say **Unsigned installer**, and Windows SmartScreen or company application-control rules can block it. The [Windows agent guide](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer.Agent/README.md#windows-security-warnings-and-company-managed-pcs) explains how to get it approved.
 
 ## Release a new agent version
 
@@ -130,8 +130,8 @@ The policy is set on nuget.org; there is no API-key secret in GitHub. The policy
 
 ## Related pages
 
-- [Windows agent guide](../../Ekom/Printing/Ekom.Printer.Agent/README.md): install, configure and update the agent.
-- [Ekom.Printer README](../../Ekom/Printing/Ekom.Printer/README.md): website setup and settings.
+- [Windows agent guide](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer.Agent/README.md): install, configure and update the agent.
+- [Ekom.Printer README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md): website setup and settings.
 - [Printer agent protocol](../printer-agent-protocol.md): the API the agent uses.
 - [Build, test and release](build-test-release.md): how the rest of Ekom is released.
 

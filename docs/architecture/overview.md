@@ -69,7 +69,7 @@ Your code normally uses the `Ekom.API` classes or the service interfaces Ekom re
 
 These packages are not needed to run Ekom:
 
-- **Ekom.Printer** prints picking slips for orders on a warehouse printer. See its [README](../../Ekom/Printing/Ekom.Printer/README.md).
+- **Ekom.Printer** prints picking slips for orders on a warehouse printer. See its [README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md).
 - **Algolia, Klaviyo and Mailchimp** integrations, in `Plugins/`. Each has its own package, settings and release. See [Integrations](../integrations/README.md).
 
 ## Related pages

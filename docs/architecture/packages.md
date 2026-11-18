@@ -49,7 +49,7 @@ A class library that only calls the Ekom API can reference the runtime package f
 
 `Ekom.Common`, `Ekom.Core`, `Ekom.AspNetCore`, the three runtime packages and the three web-assets packages are released together, from one Git tag, with the same version number. Use the same version for the runtime and web-assets package on a site.
 
-Each package includes the Ekom `README.md` and `CHANGELOG.md`. The release history is in [`Ekom/CHANGELOG.md`](../../Ekom/CHANGELOG.md).
+Each package includes the Ekom `README.md` and `CHANGELOG.md`. The release history is in [`Ekom/CHANGELOG.md`](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/CHANGELOG.md).
 
 ## Optional packages
 
@@ -57,7 +57,7 @@ These packages are released on their own, with their own version numbers.
 
 | Package | What it does | Documentation |
 | --- | --- | --- |
-| `Ekom.Printer` | Prints picking slips for orders on a warehouse printer, through a Windows agent. Targets .NET 8 and .NET 10, and depends on `Ekom.Core`. | [Ekom.Printer README](../../Ekom/Printing/Ekom.Printer/README.md) |
+| `Ekom.Printer` | Prints picking slips for orders on a warehouse printer, through a Windows agent. Targets .NET 8 and .NET 10, and depends on `Ekom.Core`. | [Ekom.Printer README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md) |
 | `Ekom.Algolia`, `Ekom.Algolia.U18`, `Ekom.Algolia.U19` | Indexes products, categories and content in Algolia, searches them, and sends Algolia Insights events. | [Integrations](../integrations/README.md) |
 | `Ekom.Klaviyo`, `Ekom.Klaviyo.U18`, `Ekom.Klaviyo.U19` | Sends order events and catalog data to Klaviyo, and manages subscriptions. | [Integrations](../integrations/README.md) |
 | `Ekom.Mailchimp`, `Ekom.Mailchimp.U18`, `Ekom.Mailchimp.U19` | Mailchimp audience tags and subscriptions, purchase tracking, and transactional email. | [Integrations](../integrations/README.md) |

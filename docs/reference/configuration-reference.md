@@ -286,7 +286,7 @@ Two packages read further keys of their own:
 
 ## Printing
 
-The optional `Ekom.Printer` package prints picking slips on a warehouse printer through a Windows agent. Its settings are under `Ekom:Printing` and are checked at startup when `Ekom:Printing:Enabled` is `true`. The package README lists every key: see [Ekom.Printer](../../Ekom/Printing/Ekom.Printer/README.md).
+The optional `Ekom.Printer` package prints picking slips on a warehouse printer through a Windows agent. Its settings are under `Ekom:Printing` and are checked at startup when `Ekom:Printing:Enabled` is `true`. The package README lists every key: see [Ekom.Printer](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md).
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
