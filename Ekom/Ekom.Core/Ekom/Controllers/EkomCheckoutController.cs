@@ -172,8 +172,12 @@ public class EkomCheckoutApiController : ControllerBase
             // A top-level GET sends SameSite=Lax basket cookies that provider POSTs may omit.
             callbackData["orderId"] = orderId.ToString();
             callbackData["outcome"] = outcome;
+            callbackData[PaymentReturnViaKey] = "post";
             return Redirect(QueryHelpers.AddQueryString(Request.PathBase.Add(Request.Path).ToString(), callbackData));
         }
+
+        // Set by the POST hand-off above. It describes this request, so it is not passed on as provider data.
+        var arrivedByPost = callbackData.Remove(PaymentReturnViaKey, out var via) && via == "post";
 
         var order = await API.Order.Instance.GetOrderAsync(orderId, ct).ConfigureAwait(false);
 
@@ -192,8 +196,16 @@ public class EkomCheckoutApiController : ControllerBase
         var redirectOrder = submittedOrder == null ? order : new OrderInfo(submittedOrder);
 
         if (attempts != null && outcome is ("cancel" or "error"))
+        {
+            // The return URL is an unsigned GET, so record how this request arrived: a release can
+            // come from the provider's cancel button, but also from the browser re-visiting the URL.
+            var detail = DescribePaymentReturn(arrivedByPost, Request.Headers.Referer.ToString(), callbackData);
+            _logger.LogInformation(
+                "Payment return {Outcome} received. OrderId: {OrderId}; AttemptId: {AttemptId}; {Detail}; UserAgent: {UserAgent}",
+                outcome, orderId, attemptId, detail, CleanLogValue(Request.Headers.UserAgent.ToString()));
             await attempts.ReleaseAsync(orderId, attemptId,
-                outcome == "cancel" ? "payment-cancel" : "payment-error", ct).ConfigureAwait(false);
+                outcome == "cancel" ? "payment-cancel" : "payment-error", detail, ct).ConfigureAwait(false);
+        }
 
         HttpContext.Features.Set<IRequestCultureFeature>(
             new RequestCultureFeature(new RequestCulture(redirectOrder.StoreInfo.Culture), null));
@@ -264,6 +276,55 @@ public class EkomCheckoutApiController : ControllerBase
         }
 
         return data;
+    }
+
+    /// <summary>Query key that marks a payment return handed off from a provider POST.</summary>
+    internal const string PaymentReturnViaKey = "ekomReturnVia";
+
+    private static readonly string[] _paymentReturnLogKeys = ["status", "message", "referenceNumber", "transactionid"];
+
+    /// <summary>
+    /// Describes how a cancel or error return reached Ekom, for the order activity log. Every value
+    /// comes from the request and can be forged, so it is evidence for a person, not proof.
+    /// </summary>
+    internal static string DescribePaymentReturn(bool arrivedByPost, string? referer, IReadOnlyDictionary<string, string?> callbackData)
+    {
+        var refererHost = Uri.TryCreate(referer, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+            && !string.IsNullOrWhiteSpace(uri.Host)
+            ? CleanLogValue(uri.Host)
+            : "none";
+        var parts = new List<string>
+        {
+            "via=" + (arrivedByPost ? "POST" : "GET"),
+            "referer=" + refererHost,
+        };
+
+        foreach (var key in _paymentReturnLogKeys)
+        {
+            if (callbackData.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+            {
+                parts.Add($"{key}={CleanLogValue(value)}");
+            }
+        }
+
+        return string.Join("; ", parts);
+    }
+
+    /// <summary>Keeps a request value to one short log field: no control characters, no field separator.</summary>
+    internal static string CleanLogValue(string? value)
+    {
+        const int maxLength = 100;
+
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+        var cleaned = new char[Math.Min(value.Length, maxLength)];
+        for (var i = 0; i < cleaned.Length; i++)
+        {
+            cleaned[i] = char.IsControl(value[i]) || value[i] == ';' ? ' ' : value[i];
+        }
+
+        return new string(cleaned).Trim();
     }
 
     internal static Dictionary<string, string?> ParsePaymentReturnData(string? queryString)

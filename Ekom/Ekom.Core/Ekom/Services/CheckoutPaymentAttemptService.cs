@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Data;
+using System.Globalization;
 using System.Net;
 
 namespace Ekom.Services;
@@ -331,7 +332,11 @@ internal sealed partial class CheckoutPaymentAttemptService
         return data?.UniqueId == orderId ? data : null;
     }
 
-    public async Task<OrderData?> ReleaseAsync(Guid orderId, Guid? attemptId, string reason, CancellationToken ct = default)
+    public Task<OrderData?> ReleaseAsync(Guid orderId, Guid? attemptId, string reason, CancellationToken ct = default)
+        => ReleaseAsync(orderId, attemptId, reason, null, ct);
+
+    /// <param name="detail">How the release was triggered, appended to the order activity entry.</param>
+    public async Task<OrderData?> ReleaseAsync(Guid orderId, Guid? attemptId, string reason, string? detail, CancellationToken ct = default)
     {
         _logger.LogDebug("Payment release requested. OrderId: {OrderId}; AttemptId: {AttemptId}; Reason: {Reason}", orderId, attemptId, reason);
         CheckoutPaymentOperationScope scope;
@@ -351,7 +356,7 @@ internal sealed partial class CheckoutPaymentAttemptService
         var active = await ReadActiveAsync(db, orderId, ct).ConfigureAwait(false);
         if ((active != null && active.AttemptId != attemptId) || (active == null && attemptId != null))
         {
-            await LogAsync(orderId, $"Payment release ignored: stale or missing attempt token; attempt={attemptId}; reason={reason}; outcome=StaleSkipped").ConfigureAwait(false);
+            await LogAsync(orderId, $"Payment release ignored: stale or missing attempt token; attempt={attemptId}; reason={reason}; outcome=StaleSkipped{DetailSuffix(detail)}").ConfigureAwait(false);
             return null;
         }
         if (await IsPaidOrCompletedAsync(db, data, ct).ConfigureAwait(false) || await RequiresReconciliationAsync(db, orderId, ct).ConfigureAwait(false) ||
@@ -370,7 +375,7 @@ internal sealed partial class CheckoutPaymentAttemptService
             _logger.LogDebug("Payment release skipped. OrderId: {OrderId}; AttemptId: {AttemptId}; Reason: {Reason}; Outcome: {Outcome}", orderId, attemptId, reason, "NoOwnedHolds");
             return null;
         }
-        return await ReleaseOwnedAsync(db, scope, active, data, reason, ct).ConfigureAwait(false);
+        return await ReleaseOwnedAsync(db, scope, active, data, reason, detail, ct).ConfigureAwait(false);
     }
 
     public async Task<CheckoutPaymentOperationScope> BeginEditAsync(OrderInfo order, string reason, CancellationToken ct = default)
@@ -738,8 +743,12 @@ internal sealed partial class CheckoutPaymentAttemptService
             throw Conflict("Checkout preparation still owns this order. Its holds cannot be edited or released.", CheckoutConflictReason.Busy);
     }
 
-    private async Task<OrderData> ReleaseOwnedAsync(DbContext db, CheckoutPaymentOperationScope scope,
+    private Task<OrderData> ReleaseOwnedAsync(DbContext db, CheckoutPaymentOperationScope scope,
         CheckoutPaymentAttemptData? attempt, OrderData data, string reason, CancellationToken ct)
+        => ReleaseOwnedAsync(db, scope, attempt, data, reason, null, ct);
+
+    private async Task<OrderData> ReleaseOwnedAsync(DbContext db, CheckoutPaymentOperationScope scope,
+        CheckoutPaymentAttemptData? attempt, OrderData data, string reason, string? detail, CancellationToken ct)
     {
         if (await IsPaidOrCompletedAsync(db, data, ct).ConfigureAwait(false))
             throw Conflict("Paid or completed orders cannot release payment holds.", CheckoutConflictReason.Completed);
@@ -843,7 +852,7 @@ internal sealed partial class CheckoutPaymentAttemptService
                 : "Payment reservations released.";
             // Commit the outcome with the order reset so success is never recorded before release completes.
             await UpdateReleaseActivityAsync(db, activityId, data.UniqueId,
-                $"{summary} Attempt: {attempt?.AttemptId}; reason={reason}", OrderActivityLogType.Success).ConfigureAwait(false);
+                $"{summary} Attempt: {attempt?.AttemptId}; reason={reason}{AfterSubmitSuffix(attempt)}{DetailSuffix(detail)}", OrderActivityLogType.Success).ConfigureAwait(false);
             await transaction.CommitAsync(ct).ConfigureAwait(false);
             scope.PreserveOwnership = false;
             ClearCache(data.UniqueId);
@@ -868,6 +877,15 @@ internal sealed partial class CheckoutPaymentAttemptService
             throw;
         }
     }
+
+    private static string DetailSuffix(string? detail)
+        => string.IsNullOrWhiteSpace(detail) ? string.Empty : "; " + detail;
+
+    /// <summary>How long the customer had been at the payment provider when the attempt was released.</summary>
+    private static string AfterSubmitSuffix(CheckoutPaymentAttemptData? attempt)
+        => attempt?.SubmittedUtc is DateTime submitted
+            ? string.Create(CultureInfo.InvariantCulture, $"; afterSubmit={Math.Max(0, (long)(DateTime.UtcNow - submitted).TotalSeconds)}s")
+            : string.Empty;
 
     private static async Task UpdateReleaseActivityAsync(DbContext db, Guid activityId, Guid orderId,
         string message, OrderActivityLogType logType)

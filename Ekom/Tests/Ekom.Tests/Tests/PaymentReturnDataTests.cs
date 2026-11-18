@@ -32,6 +32,44 @@ public sealed class PaymentReturnDataTests
         Assert.Equal(attemptId.ToString(), values["attemptId"]);
         Assert.Equal("provider-reference", values["orderid"]);
         Assert.Equal("cancel", values["outcome"]);
+        Assert.Equal("post", values[EkomCheckoutApiController.PaymentReturnViaKey]);
+    }
+
+    [Fact]
+    public void DescribesHowACancelReturnArrived()
+    {
+        var callbackData = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["orderId"] = Guid.NewGuid().ToString(),
+            ["status"] = "CANCELLED",
+            ["message"] = "User; pressed\r\ncancel",
+            ["transactionid"] = " ",
+        };
+
+        var detail = EkomCheckoutApiController.DescribePaymentReturn(
+            true, "https://pay.example.com/checkout/abc?token=secret", callbackData);
+
+        Assert.Equal("via=POST; referer=pay.example.com; status=CANCELLED; message=User  pressed  cancel", detail);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("not a url")]
+    [InlineData("javascript:alert(1)")]
+    public void CancelReturnWithoutAUsableRefererSaysSo(string? referer)
+    {
+        var detail = EkomCheckoutApiController.DescribePaymentReturn(
+            false, referer, new Dictionary<string, string?>(StringComparer.Ordinal));
+
+        Assert.Equal("via=GET; referer=none", detail);
+    }
+
+    [Fact]
+    public void LogValuesAreCutToAShortSingleField()
+    {
+        Assert.Equal(100, EkomCheckoutApiController.CleanLogValue(new string('a', 500)).Length);
+        Assert.Equal(string.Empty, EkomCheckoutApiController.CleanLogValue(null));
     }
 
     [Fact]
