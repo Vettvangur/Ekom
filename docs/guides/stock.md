@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Stock
-
 # Stock
+
+[Ekom docs](../README.md) / [Guides](README.md) / Stock
 
 Ekom keeps a count of how many of each product or variant you can sell, and uses that count to decide what is available and whether an order can go through. This page shows how to read and change stock from code, how to choose between one shared count and a count per store, and how availability is worked out.
 

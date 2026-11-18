@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / Upgrading
-
 # Upgrading
+
+[Ekom docs](../README.md) / Upgrading
 
 This section is for developers who move an existing Ekom site to a newer Umbraco version, or to an Ekom version that changes how payments, shipping or stock reservations work. Each page is a procedure you can follow on a production site: what changes, what to prepare, the steps, and how to check the result.
 

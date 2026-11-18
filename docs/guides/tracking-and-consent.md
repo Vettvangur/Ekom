@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Tracking and consent
-
 # Tracking and consent
+
+[Ekom docs](../README.md) / [Guides](README.md) / Tracking and consent
 
 Ekom can record where a customer came from (campaign values, click IDs, analytics IDs), save it with the basket and the order, and send purchase events from the server to Google Analytics 4 (GA4) and Meta. It follows the customer's consent for analytics and for marketing. Use it when you want server-side purchase tracking that respects your cookie banner.
 

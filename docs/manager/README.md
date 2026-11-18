@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / Manager
-
 # Manager
+
+[Ekom docs](../README.md) / Manager
 
 Ekom Manager is the **Ekom** section of the Umbraco backoffice. Staff use it to find and update orders, look up customers, follow sales in Analytics and track picking-slip printing. It is part of the Ekom packages, not a separate application.
 

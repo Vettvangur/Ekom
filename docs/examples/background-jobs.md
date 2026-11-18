@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Examples](README.md) / Use Ekom outside a web request
-
 # Use Ekom outside a web request
+
+[Ekom docs](../README.md) / [Examples](README.md) / Use Ekom outside a web request
 
 Inside a storefront request, Ekom works out the current store from the address and the current basket from a cookie. A hosted service, a queue handler or a scheduled job has neither. These examples show the calls that work there: they name the store, read orders by ID, change stock, change an order's status and read the catalog for a feed.
 

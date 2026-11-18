@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Manager](README.md) / Activity logs
-
 # Activity logs
+
+[Ekom docs](../README.md) / [Manager](README.md) / Activity logs
 
 An activity log is the history of one order: status changes, payments, shipments, reviews, reservation releases and other events that matter when someone looks at the order. Staff read it in Ekom Manager, and developers can add their own entries from code. It is not a replacement for application logs, error monitoring or detailed diagnostics.
 

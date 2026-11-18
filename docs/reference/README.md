@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / Reference
-
 # Reference
+
+[Ekom docs](../README.md) / Reference
 
 The reference pages list what Ekom exposes: every setting, event, HTTP route, public API class and service, with its exact name, type and default. Use them to look one thing up while you work.
 

@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Contributing](README.md) / Build, test and release
-
 # Build, test and release
+
+[Ekom docs](../README.md) / [Contributing](README.md) / Build, test and release
 
 This page shows how to test a change to Ekom, how to check a package before it is released, and how releases work: which branch releases what, how the version number is chosen, and what the publishing workflow checks. It is for people who change Ekom itself.
 

@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Architecture](README.md) / Overview
-
 # Architecture overview
+
+[Ekom docs](../README.md) / [Architecture](README.md) / Overview
 
 Ekom is an e-commerce package for Umbraco. It is built in layers: a commerce core that does not depend on Umbraco, an Umbraco integration for each supported Umbraco version, and a backoffice user interface. This page describes those layers and how they work together while a site runs.
 

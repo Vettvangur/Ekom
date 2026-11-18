@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Getting started](README.md) / Configuration
-
 # Configuration
+
+[Ekom docs](../README.md) / [Getting started](README.md) / Configuration
 
 Ekom reads its settings from the `Ekom` section of the site's configuration. This page lists the settings most sites look at after installing Ekom: what each one does, its default, and what happens with a wrong value. Ekom runs with all defaults, so you only add the settings you want to change.
 

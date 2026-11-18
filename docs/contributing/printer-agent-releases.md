@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Contributing](README.md) / Printer agent releases
-
 # Printer agent releases
+
+[Ekom docs](../README.md) / [Contributing](README.md) / Printer agent releases
 
 This page describes how the Windows printer agent and the Ekom.Printer NuGet package are built, signed and released, and how to check that a downloaded agent installer is genuine. The agent installer is released on GitHub, separately from Ekom's NuGet packages.
 

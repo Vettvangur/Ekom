@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Getting started](README.md) / Compatibility
-
 # Compatibility
+
+[Ekom docs](../README.md) / [Getting started](README.md) / Compatibility
 
 Ekom ships one pair of packages for each Umbraco major version: a runtime package and a web-assets package. Use this page to find the pair for your site before you install anything.
 

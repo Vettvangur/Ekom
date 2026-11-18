@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Reference](README.md) / Configuration reference
-
 # Configuration reference
+
+[Ekom docs](../README.md) / [Reference](README.md) / Configuration reference
 
 Ekom reads its settings from the `Ekom` section of `appsettings.json`, or from any other ASP.NET Core configuration source such as environment variables or user secrets. This page lists every setting, its type, its default and what it changes.
 

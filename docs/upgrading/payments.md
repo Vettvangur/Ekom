@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Upgrading](README.md) / Upgrade payments
-
 # Upgrade payments
+
+[Ekom docs](../README.md) / [Upgrading](README.md) / Upgrade payments
 
 Ekom now owns the payment contracts and records every payment on its order. Previously the Ekom.Payments packages owned the payment model, and Ekom depended on them. Now each `Ekom.Payments.<Provider>` package builds on Ekom instead. This page covers what a site changes when it moves to this model. The model itself is described in [Payments](../guides/payments.md).
 

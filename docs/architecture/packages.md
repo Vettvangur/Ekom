@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Architecture](README.md) / Packages
-
 # Packages
+
+[Ekom docs](../README.md) / [Architecture](README.md) / Packages
 
 Ekom is published as a set of NuGet packages. A site installs two of them, and those bring in the rest. This page lists every package, what it contains, which project in the repository builds it, and how the packages depend on each other.
 

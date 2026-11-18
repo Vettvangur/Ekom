@@ -1,6 +1,6 @@
-[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Product discounts
-
 # Product discounts
+
+[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Product discounts
 
 A product discount puts the products or categories you select on sale. The lower price shows on the product page and in the basket, and the customer does not need a code. Use it for a sale such as "15% off outdoor furniture". For an offer that needs a coupon code or a minimum quantity, use an [order discount](order-discounts.md) instead.
 

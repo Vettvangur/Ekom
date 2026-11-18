@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / Samples
-
 # Samples
+
+[Ekom docs](../README.md) / Samples
 
 The repository contains a sample Umbraco site for each supported Umbraco version. The Ekom team uses them to develop and test Ekom, and you can read them to see how a storefront, a checkout and the optional packages fit together in a real site. They are examples to learn from, not templates to start a shop from.
 

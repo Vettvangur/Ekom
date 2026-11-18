@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Linked order lines
-
 # Linked order lines
+
+[Ekom docs](../README.md) / [Guides](README.md) / Linked order lines
 
 Linked order lines let you add a product together with add-ons that belong to it, such as engraving, printing, gift wrapping, a warranty or a service. Ekom adds the parent line and all its child lines in one step: either all of them are added, or none.
 

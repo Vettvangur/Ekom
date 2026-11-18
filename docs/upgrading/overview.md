@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Upgrading](README.md) / Before and after an upgrade
-
 # Before and after an upgrade
+
+[Ekom docs](../README.md) / [Upgrading](README.md) / Before and after an upgrade
 
 This page covers what every Ekom upgrade has in common: which packages to install, what Ekom changes in the database when the site starts, how to deploy the backoffice files, and what to test afterwards. Read it once before you follow one of the Umbraco version pages.
 

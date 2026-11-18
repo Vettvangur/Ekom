@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Upgrading](README.md) / Upgrade shipping
-
 # Upgrade shipping
+
+[Ekom docs](../README.md) / [Upgrading](README.md) / Upgrade shipping
 
 This page is for sites that reference the `Ekom.Shipping` packages. The shipping framework is now part of Ekom, and shipments are saved as records on the order. Before, the framework was a set of separate packages, and the shipment was kept in the custom data of the order's shipping provider.
 

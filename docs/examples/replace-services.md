@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Examples](README.md) / Replace Ekom services
-
 # Replace Ekom services
+
+[Ekom docs](../README.md) / [Examples](README.md) / Replace Ekom services
 
 Some of Ekom's behavior sits behind a service that you can replace with your own class through dependency injection. The examples on this page change which order lines need stock, hide products from guests, search the catalog without a search index, and send Ekom's alert emails through Umbraco.
 

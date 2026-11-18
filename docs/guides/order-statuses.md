@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Order, payment, and fulfillment statuses
-
 # Order, payment, and fulfillment statuses
+
+[Ekom docs](../README.md) / [Guides](README.md) / Order, payment, and fulfillment statuses
 
 Every Ekom order has three separate statuses. Each one answers one question:
 

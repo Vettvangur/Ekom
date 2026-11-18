@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / Contributing
-
 # Contributing
+
+[Ekom docs](../README.md) / Contributing
 
 This section is for people who work on Ekom itself: change its source, run its tests and release new versions. If you install Ekom on a site and build a store with it, you do not need this section; start with [Getting started](../getting-started/README.md).
 

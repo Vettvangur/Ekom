@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Stores
-
 # Stores
+
+[Ekom docs](../README.md) / [Guides](README.md) / Stores
 
 A store is one shop inside Ekom. Each store has its own catalog data, prices, discounts, payment and shipping providers, order numbers, basket, cultures and currencies. This page shows how to get the right store in your code, how Ekom picks the store for a request, and which settings decide what stores share.
 

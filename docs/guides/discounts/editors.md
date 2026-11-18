@@ -1,6 +1,6 @@
-[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Configure discounts in Umbraco
-
 # Configure discounts in Umbraco
+
+[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Configure discounts in Umbraco
 
 This page helps you, as a store editor, choose the right kind of discount for an offer and plan it before you open the backoffice. Each kind has its own page with step-by-step instructions.
 
