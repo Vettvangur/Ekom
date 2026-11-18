@@ -26,7 +26,6 @@ public sealed class ConfigurationScope : IDisposable
             ["Ekom:BasketCookieLifetime"] = "360",
             ["Ekom:CategoryRootLevel"] = "3",
             ["Ekom:ReservationTimeout"] = "30",
-            ["Ekom:CustomerData"] = "false",
             ["Ekom:DisableStock"] = "false",
             ["Ekom:VatRoundingScope"] = "PerUnit",
         };
