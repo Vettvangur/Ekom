@@ -140,6 +140,7 @@ The manager is Ekom's backoffice section for orders, customers and analytics. Th
 | --- | --- | --- | --- |
 | `Ekom:Manager:SectionAccessGroup` | string | not set | Comma-separated aliases of the Umbraco user groups that may open the manager. |
 | `Ekom:Manager:StoreGroupPermissions:{storeAlias}` | string array | not set | The Umbraco user groups that may work with one store's orders. |
+| `Ekom:SectionAccessRules` | string | not set | The older name of `Ekom:Manager:SectionAccessGroup`, with the same format. Ekom reads it only when `SectionAccessGroup` and `StoreGroupPermissions` are both empty. Use `SectionAccessGroup` on a new site. |
 | `Ekom:Manager:Customers:IdentityField` | string | `CustomerEmail` | How the Customers view groups orders into customers: `CustomerEmail` or `CustomerUsername`. Any other value stops the site at startup. See [Customers](../manager/customers.md). |
 
 ```json
