@@ -741,6 +741,27 @@ public class CheckoutControllerService
     }
 
     /// <summary>
+    /// The currency code sent to the payment provider: the store's ISO 4217 code.
+    /// A store whose currency has no ISO code is sent as ISK, as before, and the problem is logged.
+    /// </summary>
+    internal static string ResolvePaymentCurrency(string? isoCurrencySymbol, ILogger logger)
+    {
+        string code = isoCurrencySymbol?.Trim() ?? string.Empty;
+
+        if (code.Length == 3 && code.All(char.IsAsciiLetter))
+        {
+            // The store's own currency, also when it is not in the Ekom.Payments.Currency enum.
+            return code.ToUpperInvariant();
+        }
+
+        logger.LogError(
+            "The store currency has no ISO currency code ('{Currency}'). The payment is sent as ISK. Check the store's currency setting.",
+            code);
+
+        return nameof(Currency.ISK);
+    }
+
+    /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
@@ -956,10 +977,7 @@ public class CheckoutControllerService
                 ? ekomPP.GetValue("language", order.StoreInfo.Alias)
                 : "is-IS";
 
-            if (!Enum.TryParse(order.StoreInfo.Currency.ISOCurrencySymbol, out Currency currency))
-            {
-                Logger.LogError("Could not parse currency to Enum. Currency not found in Umbraco.NetPayment.Currency. " + order.StoreInfo.Currency.ISOCurrencySymbol);
-            }
+            string currency = ResolvePaymentCurrency(order.StoreInfo.Currency.ISOCurrencySymbol, Logger);
 
             UmbracoMember currentMember = await MemberService.GetCurrentMember();
 
@@ -982,7 +1000,7 @@ public class CheckoutControllerService
                 SuccessUrl = successUrl,
                 ErrorUrl = paymentReturnErrorUrl,
                 CancelUrl = paymentReturnCancelUrl,
-                Currency = currency.ToString(),
+                Currency = currency,
                 Orders = orderItems,
                 Language = language,
                 Store = storeAlias,
