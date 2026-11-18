@@ -81,12 +81,13 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         get
         {
-            if (Backorder)
+            IProduct? product = Product;
+
+            // Backorder on the product covers every variant. A variant can also turn it on for itself.
+            if (Backorder || product?.Backorder == true)
             {
                 return true;
             }
-
-            IProduct? product = Product;
 
             return product != null
                 ? StockBufferHelper.GetEffectiveStock(Stock, product, this) > 0

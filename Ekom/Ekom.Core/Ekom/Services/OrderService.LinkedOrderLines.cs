@@ -271,7 +271,6 @@ partial class OrderService
         decimal requestedStock = orderInfo.OrderLines
             .Where(x => x.ProductKey == product.Key && x.VariantKey == variant?.Key)
             .Sum(x => x.Quantity) + quantity;
-        VerifyStock(requestedStock, variant?.Stock ?? product.Stock, product, variant);
 
         OrderDynamicRequest? dynamicRequest = CloneDynamicRequest(settings.OrderDynamicRequest);
         if (link != Guid.Empty || dynamicRequest != null)
@@ -288,6 +287,10 @@ partial class OrderService
             orderLineData,
             variant,
             dynamicRequest);
+
+        // The stock policy decides per line, so the line is checked before it joins the order.
+        VerifyStock(requestedStock, variant?.Stock ?? product.Stock, product, variant, orderInfo, orderLine);
+
         orderInfo.orderLines.Add(orderLine);
 
         await ApplyLinkedOrderLineDiscountAsync(product, orderLine, orderInfo, ct)
