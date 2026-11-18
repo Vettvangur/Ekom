@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Payments
-
 # Payments
+
+[Ekom docs](../README.md) / [Guides](README.md) / Payments
 
 Ekom keeps a record of every payment on an order: each attempt at a payment provider and everything that happened to it. From that record Ekom works out the order's payment status, completes the checkout when a payment goes through, and shows the history in the Manager. Read this page when you add a payment gateway, write a payment provider, or pass payment details on to another system.
 

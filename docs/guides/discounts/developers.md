@@ -1,6 +1,6 @@
-[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Discount APIs and behavior
-
 # Discount APIs and behavior
+
+[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Discount APIs and behavior
 
 This page is for developers. It explains how Ekom picks and calculates discounts, how to apply coupons from .NET code and over HTTP, how to add your own eligibility rules, and how another system can quote a coupon. To set up discounts in the backoffice, see the [editor guides](editors.md).
 

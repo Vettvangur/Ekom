@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Examples](README.md) / Import products from another system
-
 # Import products from another system
+
+[Ekom docs](../README.md) / [Examples](README.md) / Import products from another system
 
 These examples bring a catalog from an ERP system into Ekom with `Ekom.Services.IImportService`: categories, products, images, files, variants, prices, stock and warehouse stock. They also show how to update prices and stock fast, and how to run an import safely on a live site. [Catalog imports](../guides/imports.md) explains every operation and option; this page is the code.
 

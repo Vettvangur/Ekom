@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Database price storage
-
 # Database price storage
+
+[Ekom docs](../README.md) / [Guides](README.md) / Database price storage
 
 By default Ekom stores prices on the product and variant nodes in Umbraco, so a price change goes live when the node is published. With database price storage, Ekom keeps prices in a database table instead. An ERP system or importer can then change a price without saving or publishing the node, and the change is live at once.
 

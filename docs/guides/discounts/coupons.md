@@ -1,6 +1,6 @@
-[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Coupons
-
 # Coupons
+
+[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Coupons
 
 A coupon code switches on an order discount when the customer enters it. The code itself holds no amount and no products: those come from the order discount it belongs to. Use coupons for a shared campaign code such as `SPRING10`, for single-use codes that you send to customers, or for any offer that the customer must ask for.
 

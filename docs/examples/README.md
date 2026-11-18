@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / Examples
-
 # Examples
+
+[Ekom docs](../README.md) / Examples
 
 This section has working code for common tasks. Each example is a complete class or view that you can copy into your site and adapt. Every C# example was compiled against Ekom before it was added here.
 

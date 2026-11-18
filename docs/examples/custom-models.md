@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Examples](README.md) / Use your own product, variant and category classes
-
 # Use your own product, variant and category classes
+
+[Ekom docs](../README.md) / [Examples](README.md) / Use your own product, variant and category classes
 
 Ekom builds its catalog objects through factories. Register your own factory and Ekom creates your subclass instead of its own `Product`, `Variant`, `Category` or `Store`. The examples on this page add typed properties from the Umbraco node, give signed-in members their own prices, and add settings to a store.
 

@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Catalog and products
-
 # Catalog and products
+
+[Ekom docs](../README.md) / [Guides](README.md) / Catalog and products
 
 The catalog is the categories, products and variants that a store sells. Editors build it as Umbraco content, and your code reads the published catalog through `Ekom.API.Catalog` or Ekom's HTTP endpoints. This page shows how to find products and categories, list and filter them, search them, and change what Ekom returns.
 

@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Order reviews
-
 # Order reviews
+
+[Ekom docs](../README.md) / [Guides](README.md) / Order reviews
 
 An order review flags a problem on an order that a person has to look at, for example a failed push to an accounting system or a payment that does not match the order. Ekom raises some reviews itself, and your integrations can raise their own. A review stays open until someone resolves it in the manager.
 

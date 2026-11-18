@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Shipping and shipments
-
 # Shipping and shipments
+
+[Ekom docs](../README.md) / [Guides](README.md) / Shipping and shipments
 
 Ekom keeps a record of each shipment of an order: who carries it, its tracking number, and everything that happened to it. Carriers plug into this record, and the Manager shows it to staff. Read this page when you connect a carrier, record shipments from a warehouse system, or send tracking numbers to customers.
 

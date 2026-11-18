@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Examples](README.md) / React to events
-
 # React to events
+
+[Ekom docs](../README.md) / [Examples](README.md) / React to events
 
 These examples run your own code when something happens in Ekom: an order is completed, paid, changed or fulfilled, stock changes, a customer adds to the basket or pays, or the storefront asks for shipping options. Each one is a complete class you can copy into your site project.
 

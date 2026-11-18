@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Getting started](README.md) / Quick start
-
 # Quick start
+
+[Ekom docs](../README.md) / [Getting started](README.md) / Quick start
 
 This page takes a site with Ekom installed to a working basket. You create a store and a product in the backoffice, then write a small service that adds the product to the visitor's basket and reads the basket back. It does not cover payment or a full checkout; the last section points you to the guides for those.
 

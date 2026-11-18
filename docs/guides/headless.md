@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Headless storefronts
-
 # Headless storefronts
+
+[Ekom docs](../README.md) / [Guides](README.md) / Headless storefronts
 
 Ekom has HTTP endpoints for the catalog, the basket, payment and shipping choices, and checkout. Use them when your storefront is a separate front end, for example a JavaScript app, that talks to Ekom over HTTP instead of rendering Umbraco views.
 

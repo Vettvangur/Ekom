@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Upgrading](README.md) / Move from Hangfire reservations
-
 # Move from Hangfire reservations
+
+[Ekom docs](../README.md) / [Upgrading](README.md) / Move from Hangfire reservations
 
 A stock reservation holds stock, or a discount use, for a customer while they pay. Previously Ekom scheduled each hold as a Hangfire job. Now Ekom stores holds in its own `EkomStockReservation` table, through the database connection it already uses, and no longer registers Hangfire storage or Hangfire jobs. This page covers what a site changes when it moves from the Hangfire holds to the database holds. How reservations work today is described in [Stock reservations](../guides/reservations.md).
 

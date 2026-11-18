@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Orders and baskets
-
 # Orders and baskets
+
+[Ekom docs](../README.md) / [Guides](README.md) / Orders and baskets
 
 A basket is the order a customer is still building in a store. It is saved in the database from the first added line, and the same record becomes the order when checkout completes. This page shows how to read the current basket, add and change lines, store customer details, apply coupons and gift cards, and hand the basket to checkout.
 

@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / Guides
-
 # Guides
+
+[Ekom docs](../README.md) / Guides
 
 Each guide covers one part of Ekom: what it does, how to set it up, and how to use it from your code. Read a guide when you are about to build that part of a store.
 

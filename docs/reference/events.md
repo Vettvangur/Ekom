@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Reference](README.md) / Events
-
 # Events
+
+[Ekom docs](../README.md) / [Reference](README.md) / Events
 
 Ekom raises events at fixed points: when it returns catalog data, when a basket or order changes, during checkout, and when stock or prices change. Subscribe to an event to run your own code at that point, for example to hide products, send an email or notify an ERP system.
 

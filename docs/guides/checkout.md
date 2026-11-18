@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Guides](README.md) / Checkout
-
 # Checkout
+
+[Ekom docs](../README.md) / [Guides](README.md) / Checkout
 
 Checkout takes the customer's basket, sends it to payment, and turns it into a completed order once the payment is confirmed. Read this page when you build the checkout steps of a storefront, connect a payment gateway, or need to know what state an order is in when a payment goes wrong.
 

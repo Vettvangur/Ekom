@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Upgrading](README.md) / Upgrade from Umbraco 18 to 19
-
 # Upgrade from Umbraco 18 to 19
+
+[Ekom docs](../README.md) / [Upgrading](README.md) / Upgrade from Umbraco 18 to 19
 
 This page moves an Ekom site from Umbraco 18 to Umbraco 19. You swap the Umbraco 18 packages for their Umbraco 19 versions and move the site to .NET 11. The one Ekom change that affects storefront code is catalog search, because Umbraco 19 replaces the Examine indexes that Ekom searched before.
 

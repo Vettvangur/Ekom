@@ -1,6 +1,6 @@
-[Ekom docs](../README.md) / [Manager](README.md) / Access and permissions
-
 # Manager access and permissions
+
+[Ekom docs](../README.md) / [Manager](README.md) / Access and permissions
 
 This page explains how to decide which backoffice users can open Ekom Manager and which stores each of them can work with. You set it with Umbraco user groups and two settings under `Ekom:Manager`.
 

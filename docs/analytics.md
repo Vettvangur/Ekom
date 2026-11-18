@@ -1,6 +1,6 @@
-[Ekom docs](README.md) / [Manager](manager/README.md) / Analytics
-
 # Analytics
+
+[Ekom docs](README.md) / [Manager](manager/README.md) / Analytics
 
 The **Analytics** view in Ekom Manager shows how a store sells over time: order amount, number of orders and average order value, how many buyers are new or returning, on which weekdays and hours orders are placed, and which products sell most. Use it to follow sales for a period and compare it with the period before.
 
