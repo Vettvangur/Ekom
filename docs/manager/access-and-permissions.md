@@ -51,6 +51,8 @@ Both settings use Umbraco user group **aliases**, not the names shown in the bac
 
 Ekom compares group aliases and store aliases without regard to upper and lower case. It trims spaces around group aliases and ignores blank entries.
 
+A site set up with an older Ekom version may have `Ekom:SectionAccessRules` instead. It is the older name of `Ekom:Manager:SectionAccessGroup` and has the same format. Ekom reads it only when `SectionAccessGroup` and `StoreGroupPermissions` are both empty, so it stops applying as soon as you add either of them. Move its value to `SectionAccessGroup` when you next change these settings.
+
 ## Who can use the Manager
 
 A user must be signed in to the backoffice, approved and not locked out. Then:

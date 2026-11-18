@@ -10,6 +10,7 @@ On this page:
 
 - [Before you start](#before-you-start)
 - [Install the packages](#install-the-packages)
+- [Make Ekom available in your views](#make-ekom-available-in-your-views)
 - [What Ekom does when the site starts](#what-ekom-does-when-the-site-starts)
 - [Check that Ekom is running](#check-that-ekom-is-running)
 - [Fix common installation problems](#fix-common-installation-problems)
@@ -58,6 +59,30 @@ Install the web-assets package in the web project itself. When the web project b
 The runtime package contains an Umbraco composer, `EkomComposer`. Umbraco finds it through `AddComposers()` and runs it at startup. The composer registers Ekom's catalog routing and URLs, its startup steps and its handlers for Umbraco content changes. It then calls `AddEkom`, which registers Ekom's services and adds Ekom's middleware to the request pipeline: session, a request size limit, and Ekom's request and tracking handling.
 
 Do not call `AddEkom` yourself. The composer already calls it, and registering Ekom twice is not supported.
+
+## Make Ekom available in your views
+
+Razor views do not see Ekom until you import its namespaces. Add these lines to `Views/_ViewImports.cshtml`, below the lines Umbraco put there:
+
+```cshtml
+@using Ekom
+@using Ekom.API
+@using Ekom.Interfaces
+@using Ekom.Models
+@using Ekom.Utilities
+
+@inject Catalog _catalog
+@inject Order _order
+@inject global::Ekom.API.Store _store
+@inject global::Ekom.API.Providers _providers
+```
+
+- The `@using` lines let a view name Ekom's types, such as `IProduct` and `ProductQuery`, without their namespace.
+- The `@inject` lines give every view the four Ekom services a storefront uses most: the catalog, the basket and orders, the stores, and the payment and shipping providers.
+- `Store` is written as `global::Ekom.API.Store` because `Ekom.Models` also has a class named `Store`, and the name on its own would be ambiguous. `Providers` is written the same way so that it cannot clash with a namespace of that name in your site.
+- The names `_catalog`, `_order`, `_store` and `_providers` are yours to choose. The sample site uses them. The pages in [Examples](../examples/README.md) inject the services at the top of each view instead, so that each example is complete without this file.
+
+A view in a folder with its own `_ViewImports.cshtml`, such as an area, needs the lines there too.
 
 ## What Ekom does when the site starts
 
