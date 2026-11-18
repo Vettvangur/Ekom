@@ -48,6 +48,46 @@ public sealed class CheckoutStateErrorTests
     }
 
     [Fact]
+    public async Task MissingProductNamesTheOrderLineToRemove()
+    {
+        var lineKey = Guid.NewGuid();
+        var productKey = Guid.NewGuid();
+        var exception = new OrderLineUnavailableException(lineKey, productKey, isVariant: false, "SKU-42", "Blue Mug", "Store");
+        Assert.Contains("SKU-42", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(lineKey.ToString(), exception.Message, StringComparison.Ordinal);
+
+        var response = await Controller().HandleCheckoutStateAsync(new PaymentRequest { ReturnUrl = "/basket" },
+            _ => Task.FromException<CheckoutResponse>(exception));
+
+        Assert.Equal(409, response.HttpStatusCode);
+        Assert.Equal("/basket", response.ReturnUrl);
+        var error = Assert.IsType<CheckoutStateError>(response.ResponseBody);
+        Assert.Equal("productUnavailable", error.Code);
+        Assert.Equal("\"Blue Mug\" is no longer available. Please remove it from your basket to continue.", error.Message);
+        Assert.Equal(lineKey, error.OrderLineKey);
+        Assert.Equal("SKU-42", error.Sku);
+        Assert.False(error.CanRetry);
+        foreach (var json in new[] { JsonSerializer.Serialize(error), Newtonsoft.Json.JsonConvert.SerializeObject(error) })
+        {
+            using var document = JsonDocument.Parse(json);
+            Assert.Equal(lineKey, document.RootElement.GetProperty("orderLineKey").GetGuid());
+            Assert.Equal("SKU-42", document.RootElement.GetProperty("sku").GetString());
+            Assert.DoesNotContain(productKey.ToString(), json, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void MissingProductWithoutTitleFallsBackToSkuThenGenericMessage()
+    {
+        Assert.StartsWith("The product with SKU SKU-42 is no longer available",
+            CheckoutStateError.ProductUnavailable(Guid.NewGuid(), "SKU-42", " ").Message, StringComparison.Ordinal);
+        var generic = CheckoutStateError.ProductUnavailable(Guid.Empty, null, null);
+        Assert.Equal(new CheckoutStateError(CheckoutConflictReason.ProductUnavailable).Message, generic.Message);
+        Assert.Null(generic.OrderLineKey);
+        Assert.Null(generic.Sku);
+    }
+
+    [Fact]
     public async Task GiftcardFailureReceiptIsNotExposedToTheCustomer()
     {
         var failure = new GiftcardReservationFailure

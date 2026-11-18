@@ -451,12 +451,15 @@ public class CheckoutController : ControllerBase
 
         if (checkoutResponse.HttpStatusCode == 409 && checkoutResponse.ResponseBody is CheckoutStateError stateError)
         {
-            return Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+            var stateQuery = new Dictionary<string, string?>
             {
                 ["errorStatus"] = stateError.Code,
                 ["errorMessage"] = stateError.Message,
                 ["canRetry"] = stateError.CanRetry ? "true" : "false",
-            }));
+            };
+            if (stateError.OrderLineKey.HasValue) stateQuery["orderline"] = stateError.OrderLineKey.Value.ToString();
+            if (stateError.Sku != null) stateQuery["sku"] = stateError.Sku;
+            return Redirect(QueryHelpers.AddQueryString(returnUrl, stateQuery));
         }
 
         if (checkoutResponse.HttpStatusCode == 400 && checkoutResponse.ResponseBody is ShippingValidationError shippingError)

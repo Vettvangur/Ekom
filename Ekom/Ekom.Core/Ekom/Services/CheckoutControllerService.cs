@@ -253,6 +253,18 @@ public class CheckoutControllerService
         {
             return CheckoutStateConflict(request, ex);
         }
+        catch (OrderLineUnavailableException ex) when (!paymentStarted)
+        {
+            Logger.LogWarning(ex,
+                "Checkout blocked by a missing {ItemType}. SKU: {Sku}; Title: {Title}; Key: {ItemKey}; Order line: {OrderLineKey}",
+                ex.IsVariant ? "variant" : "product", ex.Sku, ex.Title, ex.ItemKey, ex.OrderLineKey);
+            return new CheckoutResponse
+            {
+                HttpStatusCode = 409,
+                ReturnUrl = request.ReturnUrl,
+                ResponseBody = CheckoutStateError.ProductUnavailable(ex.OrderLineKey, ex.Sku, ex.Title),
+            };
+        }
         catch (StockException ex) when (!paymentStarted)
         {
             return CheckoutStateConflict(request, ex);
