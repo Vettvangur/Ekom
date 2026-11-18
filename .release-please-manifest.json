@@ -1,13 +1,13 @@
 {
-  "Ekom": "1.4.4",
-  "Plugins/Ekom.Klaviyo": "0.2.107",
-  "Plugins/Ekom.Klaviyo/U18": "0.2.107",
-  "Plugins/Ekom.Klaviyo/U19": "0.2.107",
-  "Plugins/Ekom.Algolia": "0.2.76",
-  "Plugins/Ekom.Algolia/U18": "0.2.76",
-  "Plugins/Ekom.Algolia/U19": "0.2.76",
-  "Plugins/Ekom.Mailchimp": "1.6.0",
-  "Plugins/Ekom.Mailchimp/U18": "1.6.0",
-  "Plugins/Ekom.Mailchimp/U19": "1.6.0",
+  "Ekom": "1.4.5",
+  "Plugins/Ekom.Klaviyo": "0.2.108",
+  "Plugins/Ekom.Klaviyo/U18": "0.2.108",
+  "Plugins/Ekom.Klaviyo/U19": "0.2.108",
+  "Plugins/Ekom.Algolia": "0.2.77",
+  "Plugins/Ekom.Algolia/U18": "0.2.77",
+  "Plugins/Ekom.Algolia/U19": "0.2.77",
+  "Plugins/Ekom.Mailchimp": "1.6.1",
+  "Plugins/Ekom.Mailchimp/U18": "1.6.1",
+  "Plugins/Ekom.Mailchimp/U19": "1.6.1",
   "Ekom/Printing/Ekom.Printer": "1.4.1"
 }
