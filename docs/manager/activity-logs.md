@@ -47,6 +47,7 @@ Which messages an order gets depends on the workflows and integrations the site 
 When a payment is cancelled and its reservations are released, Ekom writes one entry before it releases anything, then updates that same entry with the outcome:
 
 - On success the entry reads **Payment cancelled. Payment reservations released.**, with the attempt ID and the reason. It is saved together with the order reset.
+- When the release came from the payment return URL, the entry also shows how the request arrived: `afterSubmit` is the time since the customer was sent to pay, `via` is `POST` for a provider form post and `GET` for a plain browser request, and `referer` is the host the browser came from, or `none`. The provider's `status`, `message`, `referenceNumber` and `transactionid` follow when it sent them. The return URL is not signed, so a `GET` with no provider referer can be the browser re-visiting the URL, not the customer pressing cancel. Treat these values as evidence, not proof.
 - On a failed or uncertain release, the entry becomes an **Alert** with the attempt ID, the reason, the type of failure and what to check. Separate reconciliation warnings stay visible when someone must act.
 - If the process stops, or the outcome cannot be saved, the entry keeps saying the release is in progress and its completion is not confirmed. It never claims success it cannot confirm.
 

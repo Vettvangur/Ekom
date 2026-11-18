@@ -106,6 +106,23 @@ public sealed class CheckoutPaymentAttemptTests
     }
 
     [Fact]
+    public async Task CancelRecordsHowItWasTriggeredAndTimeSinceSubmission()
+    {
+        using var f = new Fixture();
+        var attempt = await f.SubmittedAsync();
+
+        Assert.NotNull(await f.Service.ReleaseAsync(f.OrderId, attempt.AttemptId, "payment-cancel", "via=GET; referer=pay.example.com"));
+        Assert.Null(await f.Service.ReleaseAsync(f.OrderId, Guid.NewGuid(), "payment-cancel", "via=GET; referer=none"));
+
+        using var db = f.Database.Factory.GetDatabase();
+        var logs = await db.GetTable<OrderActivityLog>().ToListAsync();
+        var released = Assert.Single(logs, x => x.Log.StartsWith("Payment cancelled.", StringComparison.Ordinal));
+        Assert.Matches($"reason=payment-cancel; afterSubmit=\\d+s; via=GET; referer=pay\\.example\\.com$", released.Log);
+        var ignored = Assert.Single(logs, x => x.Log.Contains("outcome=StaleSkipped", StringComparison.Ordinal));
+        Assert.EndsWith("; via=GET; referer=none", ignored.Log, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task SubmittedWaitingForPaymentCancelRestoresStockAndIncompleteStatus()
     {
         using var f = new Fixture();
