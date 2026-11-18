@@ -18,6 +18,41 @@ namespace Ekom.Models
         [Newtonsoft.Json.JsonProperty("canRetry")]
         public bool CanRetry { get; }
 
+        /// <summary>The order line the customer must remove. Only set for <c>productUnavailable</c>.</summary>
+        [JsonPropertyName("orderLineKey")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [Newtonsoft.Json.JsonProperty("orderLineKey", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public Guid? OrderLineKey { get; private init; }
+
+        /// <summary>SKU of the unavailable product or variant. Only set for <c>productUnavailable</c>.</summary>
+        [JsonPropertyName("sku")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [Newtonsoft.Json.JsonProperty("sku", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? Sku { get; private init; }
+
+        /// <summary>A product or variant on an order line no longer exists in the store.</summary>
+        public static CheckoutStateError ProductUnavailable(Guid orderLineKey, string? sku, string? title)
+        {
+            sku = string.IsNullOrWhiteSpace(sku) ? null : sku;
+            var name = !string.IsNullOrWhiteSpace(title) ? $"\"{title}\"" : sku != null ? $"The product with SKU {sku}" : null;
+            return new CheckoutStateError("productUnavailable", name == null
+                ? UnavailableProductMessage
+                : $"{name} is no longer available. Please remove it from your basket to continue.")
+            {
+                OrderLineKey = orderLineKey == Guid.Empty ? null : orderLineKey,
+                Sku = sku,
+            };
+        }
+
+        private const string UnavailableProductMessage = "A product in your basket is no longer available. Please remove it to continue.";
+
+        private CheckoutStateError(string code, string message)
+        {
+            Code = code;
+            Message = message;
+            CanRetry = false;
+        }
+
         public CheckoutStateError(CheckoutConflictReason reason = CheckoutConflictReason.PreparationUnavailable)
         {
             (Code, Message) = reason switch
@@ -25,6 +60,7 @@ namespace Ekom.Models
                 CheckoutConflictReason.Busy => ("checkoutBusy", "Checkout is already in progress. Please wait for it to finish or cancel the existing payment before trying again."),
                 CheckoutConflictReason.PaymentReview => ("paymentReviewRequired", "Your payment needs to be reviewed before checkout can continue. Please contact the store before making another payment."),
                 CheckoutConflictReason.CouponUnavailable => ("couponUnavailable", "The coupon on this basket can no longer be used. Please remove it and try again."),
+                CheckoutConflictReason.ProductUnavailable => ("productUnavailable", UnavailableProductMessage),
                 CheckoutConflictReason.Completed => ("checkoutCompleted", "This checkout has already been completed. Please check your order confirmation before making another payment."),
                 _ => ("checkout_state_conflict", "Unable to prepare checkout. Please refresh your basket and try again. If the problem continues, contact the store."),
             };
@@ -40,6 +76,7 @@ namespace Ekom.Models
         PaymentReview,
         Completed,
         CouponUnavailable,
+        ProductUnavailable,
     }
 }
 

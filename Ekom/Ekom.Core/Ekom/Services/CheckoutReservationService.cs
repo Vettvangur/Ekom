@@ -44,13 +44,15 @@ internal sealed class CheckoutReservationService
             if (includeInventory && _policy.RequiresStock(order, line))
             {
                 var product = await Catalog.Instance.GetProductAsync(line.ProductKey, order.StoreInfo.Alias, raiseEvent: false, ct: ct)
-                    .ConfigureAwait(false) ?? throw new StockException($"Product {line.ProductKey} is missing.");
+                    .ConfigureAwait(false) ?? throw new OrderLineUnavailableException(
+                        line.Key, line.ProductKey, isVariant: false, line.Product.SKU, line.Product.Title, order.StoreInfo.Alias);
                 if (line.Product.VariantGroups.Any())
                 {
                     foreach (var ordered in line.Product.VariantGroups.SelectMany(x => x.Variants))
                     {
                         var variant = await Catalog.Instance.GetVariantAsync(ordered.Key, order.StoreInfo.Alias, ct: ct)
-                            .ConfigureAwait(false) ?? throw new StockException($"Variant {ordered.Key} is missing.");
+                            .ConfigureAwait(false) ?? throw new OrderLineUnavailableException(
+                                line.Key, ordered.Key, isVariant: true, ordered.SKU, line.Product.Title, order.StoreInfo.Alias);
                         requests.Add(new StockReservationRequest
                         {
                             Key = ordered.Key, Quantity = line.Quantity,

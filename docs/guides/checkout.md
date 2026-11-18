@@ -225,7 +225,7 @@ If the release itself fails, Ekom logs an error and the attempt stays as it is, 
 | `300` | Offline payment finished. `ResponseBody` is the success URL. | HTTP redirect to the success URL. | HTTP redirect to the success URL. |
 | `400` | Customer name or email missing. | 400 with no body. | Redirect with `errorStatus=invalidData`. |
 | `400` | The shipping choice does not fit. | 400 with a `ShippingValidationError` body. | Redirect with `errorStatus=invalidShippingProvider`, `errorReason` and `errorMessage`. |
-| `409` | Checkout cannot start in the order's current state. | 409 with a `CheckoutStateError` body. | Redirect with `errorStatus`, `errorMessage` and `canRetry`. |
+| `409` | Checkout cannot start in the order's current state. | 409 with a `CheckoutStateError` body. | Redirect with `errorStatus`, `errorMessage` and `canRetry`, plus `orderline` and `sku` for `productUnavailable`. |
 | `530` | Not enough stock. | 530 with a `StockError` body. | Redirect with `errorStatus=stockError`, `errorType` (`product`, `variant` or `unknown`) and, when known, `orderline`. |
 
 An unexpected error returns HTTP 500 from the API, and a redirect with `errorStatus=serverError` from the form endpoint. Details are written to the application log only. From the API, a missing basket, an order without a payment provider, or a payment provider node that no longer exists returns HTTP 404.
@@ -246,7 +246,7 @@ Point `returnUrl` at the checkout step where the customer chooses shipping, show
 
 ### Checkout state errors
 
-The `CheckoutStateError` body has `code`, `message` and `canRetry`. `message` is written for the customer and never contains technical details.
+The `CheckoutStateError` body has `code`, `message` and `canRetry`. `message` is written for the customer and never contains technical details. When the code is `productUnavailable` the body also has `orderLineKey` and `sku` when they are known, and the form endpoint adds them to the redirect as `orderline` and `sku`.
 
 | `code` | Meaning |
 | --- | --- |
@@ -254,6 +254,7 @@ The `CheckoutStateError` body has `code`, `message` and `canRetry`. `message` is
 | `paymentReviewRequired` | A payment needs to be checked by the store before the customer can pay or change the basket. |
 | `checkoutCompleted` | The order is already completed or paid. |
 | `couponUnavailable` | The order's coupon has no uses left. |
+| `productUnavailable` | A product or variant in the basket no longer exists in the store. `message` names the product, and `orderLineKey` is the line the customer must remove. |
 | `checkout_state_conflict` | Checkout could not be prepared for another reason. |
 
 `canRetry` is always `false`. Do not resubmit payment by yourself after a 409. Show the message, reload the basket when it makes sense, and tell the customer to contact the store when the code is `paymentReviewRequired`.
