@@ -308,6 +308,68 @@ public sealed class OrderStateMigrationTests
         await File.WriteAllTextAsync(path + ".report.json", System.Text.Json.JsonSerializer.Serialize(report, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
     }
 
+    [Fact]
+    public async Task SystemChangeNeedsNoBackofficeUserAndRecordsItsActor()
+    {
+        using var fixture = new Fixture(managerAccess: false);
+        var id = fixture.Add("ReadyForDispatch");
+
+        // The manager path still refuses a caller without access.
+        var denied = await Assert.ThrowsAsync<EkomHttpException>(() => fixture.Service.ChangeAsync(id, new(1, "Packed")));
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, denied.StatusCode);
+
+        var packed = await fixture.Service.ChangeAsSystemAsync(id, new("Packed", "Warehouse sync"));
+
+        Assert.Equal(FulfillmentStatus.Packed, packed.FulfillmentStatus);
+        using var db = fixture.Factory.GetDatabase();
+        var log = db.OrderActivityLog.Single(x => x.Key == id);
+        Assert.Equal("Warehouse sync", log.UserName);
+        Assert.StartsWith("Packed:", log.Log);
+    }
+
+    [Fact]
+    public async Task SystemChangeChecksTheRevisionOnlyWhenOneIsGiven()
+    {
+        using var fixture = new Fixture(managerAccess: false);
+        var id = fixture.Add("ReadyForDispatch");
+
+        var stale = await Assert.ThrowsAsync<EkomHttpException>(
+            () => fixture.Service.ChangeAsSystemAsync(id, new("Packed", "Warehouse sync", ExpectedRevision: 7)));
+        Assert.Equal(System.Net.HttpStatusCode.Conflict, stale.StatusCode);
+
+        var first = await fixture.Service.ChangeAsSystemAsync(id, new("Picking", "Warehouse sync"));
+        var second = await fixture.Service.ChangeAsSystemAsync(id, new("Packed", "Warehouse sync", ExpectedRevision: first.Revision));
+
+        Assert.Equal(FulfillmentStatus.Packed, second.FulfillmentStatus);
+    }
+
+    [Fact]
+    public async Task SystemChangeKeepsTheSameRulesAsTheManager()
+    {
+        using var fixture = new Fixture(managerAccess: false);
+        var id = fixture.Add("Pending");
+
+        // An unpaid order cannot be closed, whoever asks.
+        var invalid = await Assert.ThrowsAsync<EkomHttpException>(
+            () => fixture.Service.ChangeAsSystemAsync(id, new("Close", "Nightly job")));
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, invalid.StatusCode);
+
+        var missing = await Assert.ThrowsAsync<EkomHttpException>(
+            () => fixture.Service.ChangeAsSystemAsync(Guid.NewGuid(), new("Packed", "Nightly job")));
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task SystemChangeRequiresAnActor(string actor)
+    {
+        using var fixture = new Fixture(managerAccess: false);
+        var id = fixture.Add("ReadyForDispatch");
+
+        await Assert.ThrowsAsync<ArgumentException>(() => fixture.Service.ChangeAsSystemAsync(id, new("Packed", actor)));
+    }
+
     private static object ProtectedFields(OrderData row) => new { row.UniqueId, row.OrderStatusCol, row.OrderInfo, row.TotalAmount, row.Currency, row.PaidDate, row.CreateDate, row.UpdateDate };
 
     private sealed class Fixture : IDisposable
@@ -319,7 +381,7 @@ public sealed class OrderStateMigrationTests
         public Mock<IOrderStatusPersistenceHandler> Handler { get; } = new(MockBehavior.Strict);
         public Mock<IStockReservationService> Stock { get; } = new(MockBehavior.Strict);
 
-        public Fixture(bool autoClose = true, string? path = null)
+        public Fixture(bool autoClose = true, string? path = null, bool managerAccess = true)
         {
             var connectionString = path == null ? $"Data Source=status-migration-{Guid.NewGuid():N};Mode=Memory;Cache=Shared;Pooling=False" : $"Data Source={path};Pooling=False";
             _connection = new SqliteConnection(connectionString);
@@ -333,7 +395,7 @@ public sealed class OrderStateMigrationTests
             Factory = new DatabaseFactory(root, Mock.Of<IHostEnvironment>(x => x.ContentRootPath == AppContext.BaseDirectory));
             if (path == null) new DatabaseService(Factory, NullLogger<DatabaseService>.Instance, new StockReservationReadiness()).CreateTables();
             var access = new Mock<IManagerAccessService>();
-            access.Setup(x => x.CanAccessManager()).Returns(true);
+            access.Setup(x => x.CanAccessManager()).Returns(managerAccess);
             access.Setup(x => x.CanAccessStore(It.IsAny<string>())).Returns<string>(x => x is "main" or "Store");
             access.Setup(x => x.GetAllowedStoreAliases()).Returns(new[] { "main", "Store" });
             var attempts = new CheckoutPaymentAttemptService(Factory, Stock.Object, new ActivityLogRepository(NullLogger<ActivityLogRepository>.Instance, Factory), NullLogger<CheckoutPaymentAttemptService>.Instance, _cache);
