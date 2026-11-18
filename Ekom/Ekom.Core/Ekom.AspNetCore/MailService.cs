@@ -87,7 +87,7 @@ class MailService : IMailService
                 message.To.Add(email);
             }
 
-            if (_user.Length > 0 && _pass.Length > 0)
+            if (!string.IsNullOrEmpty(_user) && !string.IsNullOrEmpty(_pass))
             {
                 smtp.Timeout = Timeout;
                 smtp.UseDefaultCredentials = false;

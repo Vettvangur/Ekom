@@ -90,18 +90,17 @@ class CheckoutService
 
             oi = new OrderInfo(o);
 
-            CompleteCheckoutEventArgs model = new CompleteCheckoutEventArgs()
+            var model = new CompletingCheckoutEventArgs()
             {
                 OrderInfo = oi,
                 StockValidation = true,
                 UpdateOrderStatus = o.OrderStatus == OrderStatus.OfflinePayment ? false : true,
-                OrderData = o,
-                // Handlers that pass the order on, for example to an ERP system, get the payment with it.
                 Payment = await LoadPaymentAsync(_payments, key, _logger, ct).ConfigureAwait(false),
             };
 
-            CheckoutEvents.OnCompleteCheckout(this, model);
-            await CheckoutEvents.OnCompleteCheckoutAsync(this, model);
+            // A handler that throws must not stop a paid order from completing. Each handler runs on its own.
+            var handlerFailures = await CheckoutEvents.RaiseCompletingCheckoutIsolatedAsync(this, model, ct).ConfigureAwait(false);
+            await ReportHandlerFailuresAsync(o.UniqueId, handlerFailures, nameof(CheckoutEvents.CompletingCheckoutAsync)).ConfigureAwait(false);
 
             if (!await _checkoutReservations.IsCompletedAsync(key, ct).ConfigureAwait(false))
             {
@@ -153,6 +152,8 @@ class CheckoutService
                     logType: OrderActivityLogType.Success,
                     ct: ct)
                 .ConfigureAwait(false);
+
+            await RaiseCompleteCheckoutAsync(o, oi, model).ConfigureAwait(false);
         }
         catch (NotEnoughStockException ex)
         {
@@ -177,7 +178,7 @@ class CheckoutService
 
             await TryRaiseCompletionReviewAsync(o, ex).ConfigureAwait(false);
 
-            await _mailService.SendAsync(subject, body).ConfigureAwait(false);
+            await TrySendAlertAsync(subject, body).ConfigureAwait(false);
 
             throw;
         }
@@ -193,9 +194,79 @@ class CheckoutService
 
             await TryRaiseCompletionReviewAsync(o, ex).ConfigureAwait(false);
 
-            await _mailService.SendAsync(subject, body).ConfigureAwait(false);
+            await TrySendAlertAsync(subject, body).ConfigureAwait(false);
 
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Sends the alert email. A mail failure, such as a missing SMTP host, is logged and never replaces
+    /// the checkout error that is about to be rethrown.
+    /// </summary>
+    private async Task TrySendAlertAsync(string subject, string body)
+    {
+        try
+        {
+            await _mailService.SendAsync(subject, body).ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // The original checkout error matters more than the alert
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            _logger.LogWarning(ex, "Could not send the checkout alert email");
+        }
+    }
+
+    private async Task ReportHandlerFailuresAsync(Guid orderId, IReadOnlyList<Exception> failures, string eventName)
+    {
+        if (failures.Count == 0) return;
+
+        foreach (var failure in failures)
+        {
+            _logger.LogError(failure, "A {Event} handler failed for order {OrderId}. The order is completed anyway.", eventName, orderId);
+        }
+
+        await TryRaiseReviewAsync(
+            orderId,
+            "completion-handler-failed",
+            "Code that runs on order completion failed",
+            "The order was completed, but code that runs when an order completes failed. An integration, such as an export to another system, may not have received this order. See the application log.").ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tells subscribers that the order is completed, so they can send it on, for example to an ERP system.
+    /// Nothing here can fail the order: it is already complete.
+    /// </summary>
+    private async Task RaiseCompleteCheckoutAsync(OrderData completedData, IOrderInfo completedWith, CompletingCheckoutEventArgs settings)
+    {
+        Guid orderId = completedData.UniqueId;
+
+        try
+        {
+            // Read the order again so handlers see the status completion gave it.
+            OrderData? data = await _orderRepo.GetOrderAsync(orderId, CancellationToken.None).ConfigureAwait(false);
+
+            var args = new CompleteCheckoutEventArgs
+            {
+                OrderData = data ?? completedData,
+                OrderInfo = data != null ? new OrderInfo(data) : completedWith,
+                Payment = settings.Payment,
+#pragma warning disable CS0618 // Still filled in, so handlers that read them see what completion did
+                StockValidation = settings.StockValidation,
+                UpdateOrderStatus = settings.UpdateOrderStatus,
+#pragma warning restore CS0618
+            };
+
+            var failures = await CheckoutEvents.RaiseCompleteCheckoutIsolatedAsync(this, args).ConfigureAwait(false);
+
+            await ReportHandlerFailuresAsync(orderId, failures, nameof(CheckoutEvents.CompleteCheckoutAsync)).ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // The order is already completed
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            _logger.LogError(ex, "Could not raise {Event} for completed order {OrderId}", nameof(CheckoutEvents.CompleteCheckoutAsync), orderId);
         }
     }
 
