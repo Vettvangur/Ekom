@@ -29,7 +29,7 @@ Each page says at the top who it is for.
 
 ## Pages about picking-slip printing
 
-Ekom.Printer is a separate package that prints picking slips on a warehouse printer through a Windows agent. Its setup guide is the [Ekom.Printer README](../../Ekom/Printing/Ekom.Printer/README.md). The **Printing** view in the Manager is described in [Overview](overview.md#track-picking-slip-printing).
+Ekom.Printer is a separate package that prints picking slips on a warehouse printer through a Windows agent. Its setup guide is the [Ekom.Printer README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md). The **Printing** view in the Manager is described in [Overview](overview.md#track-picking-slip-printing).
 
 | Page | For | Read it when you want to |
 | --- | --- | --- |

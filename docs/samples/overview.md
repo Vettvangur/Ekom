@@ -29,7 +29,7 @@ The U18 and U19 samples are not complete sites on their own. They link most of t
 - **Replacing an Ekom service.** The sample registers its own `IProductFilterService`, `CustomProductFilterService`. In the Development environment it also replaces the product and variant factories with versions for members.
 - **A storefront and checkout.** The views cover a front page, category and product pages, and a checkout in steps: basket, contact information, delivery options, payment options and receipt.
 - **Member login**, through a small `AuthController`.
-- **Printing.** Printing is set up in `appsettings.json` with a placeholder station. See `Samples/PRINTING.md` in the repository and the [Ekom.Printer README](../../Ekom/Printing/Ekom.Printer/README.md).
+- **Printing.** Printing is set up in `appsettings.json` with a placeholder station. See `Samples/PRINTING.md` in the repository and the [Ekom.Printer README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md).
 - **Settings.** The `Ekom` section of each sample's `appsettings.json` shows many of the settings described in [Configuration](../getting-started/configuration.md).
 
 ## Run a sample

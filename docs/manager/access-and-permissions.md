@@ -160,6 +160,6 @@ With no groups configured, every signed-in backoffice user passes Ekom's Manager
 - [Manager overview](overview.md): the views and the packages that supply them.
 - [Orders](orders.md): what users can do once they have access.
 - [Configuration reference](../reference/configuration-reference.md): every `Ekom` setting.
-- [Ekom.Printer README](../../Ekom/Printing/Ekom.Printer/README.md): the `Ekom:Printing:ManagerGroups` setting for printing actions.
+- [Ekom.Printer README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md): the `Ekom:Printing:ManagerGroups` setting for printing actions.
 
 [Back to Manager](README.md)

@@ -4,7 +4,7 @@
 
 Ekom.Printer creates picking slips as HTML, and a printer agent collects them from the website and prints them. This page describes the HTTP API between the website and an agent, version 1, and the .NET client library you can build on. Use it when you write your own agent instead of using the supplied Windows agent.
 
-**Who this page is for:** developers who build a custom printer agent. To set up printing with the supplied Windows agent, follow the [Ekom.Printer README](../Ekom/Printing/Ekom.Printer/README.md) and the [Windows agent guide](../Ekom/Printing/Ekom.Printer.Agent/README.md) instead.
+**Who this page is for:** developers who build a custom printer agent. To set up printing with the supplied Windows agent, follow the [Ekom.Printer README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md) and the [Windows agent guide](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer.Agent/README.md) instead.
 
 On this page:
 
@@ -17,7 +17,7 @@ On this page:
 
 ## Before you start
 
-The website must have Ekom.Printer installed, `Ekom:Printing:Enabled` set to `true`, and a station configured for your agent under `Ekom:Printing:Stations`. A **station** is one agent with its own alias and token. See the [Ekom.Printer README](../Ekom/Printing/Ekom.Printer/README.md) for the settings and for how to create a token and its `TokenSha256` hash.
+The website must have Ekom.Printer installed, `Ekom:Printing:Enabled` set to `true`, and a station configured for your agent under `Ekom:Printing:Stations`. A **station** is one agent with its own alias and token. See the [Ekom.Printer README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md) for the settings and for how to create a token and its `TokenSha256` hash.
 
 The endpoints exist only when the site calls `app.MapEkomPrinter()` after building the application. When printing is turned off, every station endpoint returns `404 Not Found`.
 
@@ -123,8 +123,8 @@ bool handledJob = await processor.ProcessNextAsync(cancellationToken);
 
 ## Related pages
 
-- [Ekom.Printer README](../Ekom/Printing/Ekom.Printer/README.md): website setup, stations, tokens and retention.
-- [Windows agent guide](../Ekom/Printing/Ekom.Printer.Agent/README.md): the supplied agent, for comparison.
+- [Ekom.Printer README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md): website setup, stations, tokens and retention.
+- [Windows agent guide](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer.Agent/README.md): the supplied agent, for comparison.
 - [Manager overview](manager/overview.md#track-picking-slip-printing): how staff follow and resolve print jobs.
 - [Printer agent releases](contributing/printer-agent-releases.md): how the Windows agent is built and verified.
 

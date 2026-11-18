@@ -38,7 +38,7 @@ Do these before you change any package:
 
 1. Back up the database. Ekom's own database changes only add tables, columns and indexes, but the Umbraco upgrade that runs with them cannot be undone without the backup.
 2. Write down the Ekom packages, payment provider packages, integration packages and versions the site uses now.
-3. Read the entries marked BREAKING in the [Ekom changelog](../../Ekom/CHANGELOG.md) between the Ekom version you have and the one you install. For example, the order status change events were replaced by `OrderEvents.OrderStatusChangedAsync`, `PaymentStatusChangedAsync` and `FulfillmentStatusChangedAsync`.
+3. Read the entries marked BREAKING in the [Ekom changelog](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/CHANGELOG.md) between the Ekom version you have and the one you install. For example, the order status change events were replaced by `OrderEvents.OrderStatusChangedAsync`, `PaymentStatusChangedAsync` and `FulfillmentStatusChangedAsync`.
 4. Find the custom code that uses Umbraco APIs, Ekom events, or the Ekom backoffice files.
 5. Rehearse the upgrade on a copy of the production database before you run it in production.
 

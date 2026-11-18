@@ -71,7 +71,7 @@ Each action asks you to confirm. A reprint uses the stored slip, not newer order
 
 The **Printer stations** cards show for each station: whether it is **Online**, **Offline** or needs an update (**Update required**), the printer name, the store, the statuses that trigger printing, the number of copies, whether automatic printing is enabled, and when the agent last connected. **Online** means the agent contacted the website recently. It does not mean the printer has paper. Station settings are read-only here: they are changed in the website configuration and in the Windows agent.
 
-For developers: Umbraco administrators can always use the manage actions. To give them to other backoffice groups, add the group aliases to `Ekom:Printing:ManagerGroups`. Setup, configuration and the meaning of each setting are in the [Ekom.Printer README](../../Ekom/Printing/Ekom.Printer/README.md).
+For developers: Umbraco administrators can always use the manage actions. To give them to other backoffice groups, add the group aliases to `Ekom:Printing:ManagerGroups`. Setup, configuration and the meaning of each setting are in the [Ekom.Printer README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md).
 
 ## Packages that supply the Manager
 
@@ -109,7 +109,7 @@ The Manager screens call endpoints under `/ekom/manager`, and the Printing view 
 - [Orders](orders.md): find, export and update orders.
 - [Access and permissions](access-and-permissions.md): who can open the Manager and which stores they see.
 - [Order, payment, and fulfillment statuses](../guides/order-statuses.md): what each status means.
-- [Ekom.Printer README](../../Ekom/Printing/Ekom.Printer/README.md): set up picking-slip printing.
+- [Ekom.Printer README](https://github.com/Vettvangur/Ekom/blob/Ekom/Ekom/Printing/Ekom.Printer/README.md): set up picking-slip printing.
 - [Compatibility](../getting-started/compatibility.md): which packages match your Umbraco version.
 
 [Back to Manager](README.md)
