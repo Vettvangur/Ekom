@@ -277,11 +277,10 @@ Ekom defines one key that the provider packages share. Ekom binds it into `Ekom.
 
 The email is sent through `Ekom.Payments.Core`'s mail service. It uses the SMTP server in `Umbraco:CMS:Global:Smtp` (`Host`, `Port`, `Username`, `Password`, `From`) and sends to `Umbraco:CMS:Content:Notifications:Email`.
 
-Two packages read further keys of their own:
+One package reads further keys of its own:
 
 | Key | Read by |
 | --- | --- |
-| `Ekom:Payments:Valitor:VerificationCode` | `ValitorResponseHelper.Verify`, when you call it without a verification code. |
 | `Ekom:Payments:altapay:BaseAddress`, `ApiUserName`, `ApiPassword`, `HostOverride` | The `AltaPay` HTTP client and `AltaService`, which are registered only when your site calls `services.AddAltaPay(configuration)`. The AltaPay payment request itself does not use them. |
 
 ## Printing

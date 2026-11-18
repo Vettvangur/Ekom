@@ -53,6 +53,9 @@ Ekom reads each setting from the property with that alias on the provider node, 
 | `applicationId` | Yes | None | Your Netgiro application ID, a GUID. Sent as `ApplicationID` and used in the request signature. One value per store. |
 | `secret` | Yes | None | Your Netgiro secret key. Ekom signs the payment request with it and verifies Netgiro's callback with it. One value per store. |
 | `paymentPageUrl` | Yes | None | The address of Netgiro's payment page. The customer's browser posts the payment form to it. |
+| `requireNetgiroSignature` | No | `false` | When `true`, Ekom refuses a callback that has no `NetgiroSignature` with HTTP 400 and records nothing. Ekom stores the value with each payment when the payment is requested, so it applies to payments requested after you turn it on. |
+
+Turn on `requireNetgiroSignature` when the log no longer shows the warning `Verified without NetgiroSignature`. That warning means a callback carried only the older `Signature`, which covers neither the amount nor the status.
 
 `applicationId` and `secret` hold one value per store on the provider node, and Ekom reads the value for the order's store. In configuration each setting has one value for all stores. To use a different Netgiro account per store from configuration, give each store's provider node its own `configurationKey`.
 
@@ -91,23 +94,26 @@ Netgiro calls `/ekom/payments/netgiroresponse` with GET or POST. Ekom reads the 
 Ekom checks the call before it records anything:
 
 - `InvoiceNumber` must contain only digits.
-- When the call has `NetgiroSignature`: `TransactionId` must be present, `Status` must be `1` (unconfirmed) or `2` (confirmed), `TotalAmount` must equal the payment amount rounded to whole units, and `NetgiroSignature` must equal SHA-256 of `secret`, `ReferenceNumber`, `TransactionId`, `InvoiceNumber`, `TotalAmount` and `Status`, joined without separators.
-- When the call has no `NetgiroSignature`: `ConfirmationCode` must be present, and `Signature` must equal SHA-256 of `secret`, `ReferenceNumber`, `ConfirmationCode` and `InvoiceNumber`.
+- When the call has `NetgiroSignature`: `TransactionId` must be present, `Status` must be `1` (unconfirmed), `2` (confirmed) or `5` (cancelled), `TotalAmount` must equal the payment amount rounded to whole units, and `NetgiroSignature` must equal SHA-256 of `secret`, `ReferenceNumber`, `TransactionId`, `InvoiceNumber`, `TotalAmount` and `Status`, joined without separators.
+- When the call has no `NetgiroSignature`: `requireNetgiroSignature` must be off, `ConfirmationCode` must be present, and `Signature` must equal SHA-256 of `secret`, `ReferenceNumber`, `ConfirmationCode` and `InvoiceNumber`.
 - The signature must not be the one Ekom sent with the payment request.
 
 | Netgiro call | Recorded on the order | Ekom answers |
 | --- | --- | --- |
-| Verified, status `1` or `2`, or verified without `NetgiroSignature` | `Captured`, for the full payment amount | HTTP 200 |
+| Verified with `NetgiroSignature`, status `1` or `2` | `Captured`, for the full payment amount | HTTP 200 |
+| Verified with `NetgiroSignature`, status `5` | `Cancelled`. A repeated call is stored once. | HTTP 200 |
+| Verified without `NetgiroSignature`, with any status | `Captured`, for the full payment amount. Ekom logs the warning `Verified without NetgiroSignature`. The older `Signature` does not cover the status, so such a call never records `Cancelled`. | HTTP 200 |
 | The same payment confirmed again | Nothing new. Netgiro confirms twice, with status `1` and then `2`, and the capture is stored once. | HTTP 200 |
-| Status `5` (cancelled) or any other status | Nothing | HTTP 400 |
+| `NetgiroSignature` with any status other than `1`, `2` or `5` | Nothing | HTTP 400 |
+| No `NetgiroSignature` while `requireNetgiroSignature` is on | Nothing | HTTP 400 |
 | Fails a check above, or the payment has no stored `secret` or `applicationId` | Nothing. Ekom logs an error. | HTTP 400 |
 | No `ReferenceNumber` | Nothing | HTTP 400 |
 | The payment is not in this site's database, or is not a Netgiro payment | Nothing | HTTP 404 |
 | Recording fails with an error | The capture, if it was stored before the error. A repeated call finishes the completion. | An error. Ekom logs it and, when `Ekom:Payments:SendEmailAlerts` is `true`, emails it. |
 
-Ekom never records `Failed` or `Cancelled` for Netgiro. A cancelled payment is only seen through the customer's return to the cancel address.
+Ekom never records `Failed` for Netgiro. Ekom records `Cancelled` only from a status `5` call with `NetgiroSignature`. Otherwise a cancelled payment is only seen through the customer's return to the cancel address.
 
-The capture holds:
+The capture, and a `Cancelled` record, hold:
 
 - **Transaction ID:** Netgiro's `TransactionId`.
 - **Payment method:** `Netgiro`.
@@ -120,7 +126,7 @@ A `Captured` record completes the order. See [When a payment completes the order
 
 The package only starts payments and records Netgiro's confirmation. It cannot capture, refund or cancel a Netgiro payment. Do that with Netgiro.
 
-Ekom is not told about a refund or a cancellation made at Netgiro. To show it on the order, set the payment status by hand in the Manager. That changes the record only and moves no money.
+Ekom is not told about a refund made at Netgiro. Ekom records a cancellation only when Netgiro sends a status `5` callback with `NetgiroSignature`. See [What Ekom records](#what-ekom-records). To show any other refund or cancellation on the order, set the payment status by hand in the Manager. That changes the record only and moves no money.
 
 ## Test it
 

@@ -57,30 +57,13 @@ Ekom reads each setting from the property with that alias on the provider node, 
 | `apiKey` | Yes | None | Your Siminn Pay API key. Ekom exchanges it for an access token before each call to the API. |
 | `secret` | Yes | None | The shared secret for notifications. Ekom checks the `HMAC` of each notification with it. Without it, every notification is refused and no payment is recorded. |
 | `restrictToLoan` | No | `false` | Sent to Siminn Pay as `restrictToLoan`. |
-| `paymentType` | No | `loan` | Sent to Siminn Pay as `paymentType`. |
-| `timeToLive` | No | `60` | Sent to Siminn Pay as `timeToLive`. A value of `0` or less sends `60`. |
-| `currency` | No | `ISK` | Sent to Siminn Pay as `currency`. |
+| `paymentType` | No | `loan` | Sent to Siminn Pay as `paymentType`. An empty value sends `loan`. |
+| `timeToLive` | No | `60` | Sent to Siminn Pay as `timeToLive`. How long the customer has to answer, in seconds. An empty value, or a value of `0` or less, sends `60`. |
+| `currency` | No | `ISK` | Sent to Siminn Pay as `currency`. An empty value sends `ISK`. |
 
 None of these settings hold one value per store or per language. A node has one value of each.
 
-To change `paymentType`, `timeToLive` or `currency`, set them in code:
-
-```csharp
-using Ekom.Events;
-using Ekom.Payments.SiminnPay;
-using Ekom.Payments.SiminnPay.Model;
-
-CheckoutEvents.PayAsync += (sender, args, ct) =>
-{
-    args.PaymentSettings.SetSiminnPaySettings(new SiminnPaySettings
-    {
-        TimeToLive = 120,
-    });
-    return Task.CompletedTask;
-};
-```
-
-The empty settings, such as `apiKey`, are still filled from the node and configuration.
+Set `paymentType`, `timeToLive` and `currency` on the provider node or in configuration, like the other settings. Ekom uses the default when the setting is empty.
 
 The settings class has more properties: `terminal`, `baseAddress`, `hostOverride`, `paymentFormUrl`, `customerInformationSharedSecret` and `referenceId`. The package does not use them.
 
@@ -103,9 +86,9 @@ Keep the key and the secret out of source control, for example in user secrets o
 ## What the customer sees
 
 1. The customer submits payment in your checkout. Ekom needs the customer's phone number, `CustomerInfo.PhoneNumber`. Without it, checkout fails.
-2. Ekom creates a payment order at Siminn Pay with the amount, the title of the first payment item as description, the order ID as `referenceId`, and the phone number as the recipient, with a notification to the phone.
+2. Ekom creates a payment order at Siminn Pay with the amount rounded to whole units, half away from zero, the title of the first payment item as description, the order ID as `referenceId`, and the phone number as the recipient, with a notification to the phone.
 3. Ekom stores a new payment, with Siminn Pay's order key as its reference.
-4. Ekom sends the customer straight to the provider node's `successUrl`, with `orderId=<order id>` and `siminnPayOrderKey=<order key>` added. The customer has not paid yet.
+4. When the new payment order does not have status `WaitingForCustomer`, the payment request fails with `SiminnPayApiResponseException`, and the message names the status. Checkout fails. Otherwise Ekom sends the customer straight to the provider node's `successUrl`, with `orderId=<order id>` and `siminnPayOrderKey=<order key>` added. The customer has not paid yet.
 5. The customer accepts or declines the payment in the Siminn Pay app.
 6. Siminn Pay sends a notification to `/ekom/payments/siminnpayresponse`. Ekom verifies it, records the outcome and, for a payment, completes the order.
 
@@ -135,12 +118,12 @@ Ekom asks Siminn Pay for the order's status and returns JSON with these values:
 | `PayStatus` | Siminn Pay's status code. See the table below. |
 | `Amount` | The payment amount. |
 | `CreatedAt` | When the payment was requested, in UTC. |
-| `Expires` | `CreatedAt` plus 1 minute. It does not follow `timeToLive`. |
+| `Expires` | `CreatedAt` plus `timeToLive` seconds, with `timeToLive` read from the provider node or configuration. |
 | `NetPaymentOrderId` | The Ekom payment ID. |
 
 The names follow your site's JSON settings, so they can arrive in camelCase.
 
-The endpoint answers HTTP 400 without `siminnPayOrderKey`, and HTTP 404 when the order key does not belong to a Siminn Pay payment on this site. It reads the status only. It records nothing, so the order is completed by the notification, not by this request.
+The endpoint answers HTTP 400 without `siminnPayOrderKey`, HTTP 404 when the order key does not belong to a Siminn Pay payment on this site, and HTTP 502 when Siminn Pay returns no status. It reads the status only. It records nothing, so the order is completed by the notification, not by this request.
 
 Siminn Pay status codes:
 
@@ -161,8 +144,9 @@ Siminn Pay status codes:
 
 Siminn Pay sends its notification to `/ekom/payments/siminnpayresponse`. Ekom finds the payment by Siminn Pay's `orderKey` and checks the notification before it records anything:
 
-- `HMAC` must equal HMAC-SHA256, with `secret` as the key, of the order key, the amount as a whole number with decimals cut off, and `expiresAt` formatted as `dd.MM.yyyy HH:mm:ss`. Upper and lower case are ignored.
-- `amount` must equal the requested amount exactly.
+- `amount` must be a whole number. A notification whose amount has a fraction is refused.
+- `HMAC` must equal HMAC-SHA256, with `secret` as the key, of the order key, the amount as a whole number, and `expiresAt` formatted as `dd.MM.yyyy HH:mm:ss`. Upper and lower case are ignored.
+- `amount` must equal the payment amount rounded to whole units, half away from zero.
 
 | Siminn Pay status | Recorded on the order |
 | --- | --- |
@@ -187,8 +171,8 @@ How Ekom answers notifications:
 | --- | --- |
 | The body is missing or not valid | HTTP 400 |
 | The order key does not belong to a Siminn Pay payment on this site | HTTP 404 |
-| No `secret` is set, or `HMAC` does not match | HTTP 401, nothing recorded |
-| The amount differs from the requested amount | HTTP 400, nothing recorded |
+| No `secret` is set, `HMAC` does not match, or `amount` has a fraction | HTTP 401, nothing recorded |
+| The amount differs from the payment amount rounded to whole units | HTTP 400, nothing recorded |
 | A status that is not final | HTTP 200, nothing recorded |
 | Recorded | HTTP 200 |
 | Recording fails with an error | An error. Ekom logs it and, when `Ekom:Payments:SendEmailAlerts` is `true`, emails it. |
@@ -212,7 +196,7 @@ After a test payment, look for the log line `SiminnPay Response - PaymentSuccess
 ## Limits and things to know
 
 - **The secret is read when the notification arrives.** Ekom does not store Siminn Pay's settings with the payment. It reads them again from the provider node and configuration for each notification and status request. A `secret` or `apiKey` set only in code is missing then, and every notification is refused.
-- **Exact amounts.** Ekom sends the order total as it is, without rounding, and refuses a notification whose amount differs by any amount.
+- **Whole amounts.** Ekom sends the order total rounded to whole units, half away from zero, and refuses a notification whose amount differs from that whole amount.
 - **Phone number.** The phone number must be registered with Siminn Pay. Ekom does not check its format.
 - **The order ID is the reference.** Siminn Pay gets the Ekom order ID as `referenceId`. Ekom finds the payment by Siminn Pay's order key, so a new attempt for the same order does not mix with an older one.
 - **Old events.** `Ekom.Payments.SiminnPay.Model.Events.Success` and `Events.Error` are obsolete and never raised. Use `OrderEvents.PaymentRecordedAsync`. See [React to recorded payments](../guides/payments.md#react-to-recorded-payments).
