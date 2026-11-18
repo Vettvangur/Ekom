@@ -153,7 +153,6 @@ using Ekom.Models.Shipments;
 using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using LegacyOrderStatus = Ekom.Utilities.OrderStatus;
 
 namespace MyShop.Jobs;
 
@@ -162,7 +161,7 @@ public sealed record WarehouseShippedMessage(Guid OrderId, string TrackingNumber
 public sealed class WarehouseShippedHandler(
     Order orderApi,
     IOrderShipments shipments,
-    IOrderReviewService reviews,
+    IOrderStateService orderStates,
     ILogger<WarehouseShippedHandler> logger)
 {
     public async Task HandleAsync(WarehouseShippedMessage message, CancellationToken ct)
@@ -199,25 +198,14 @@ public sealed class WarehouseShippedHandler(
             return;
         }
 
-        if (status.PaymentStatus != PaymentStatus.Paid)
-        {
-            // The legacy Dispatched status would also mark the payment as Paid. Leave this order to a person.
-            await reviews.RaiseAsync(
-                order.UniqueId,
-                source: "warehouse",
-                code: "shipped-before-payment",
-                title: "Shipped before payment",
-                message: $"The warehouse shipped this order with tracking number {message.TrackingNumber}, "
-                    + $"but its payment status is {status.PaymentStatus}. Set the fulfillment status in the Manager.",
-                ct);
-            return;
-        }
-
         try
         {
-            // IOrderStateService needs a signed-in backoffice user. A job uses the legacy status:
-            // Dispatched sets the fulfillment status to Fulfilled, and raises the status change events.
-            await orderApi.UpdateStatusAsync(LegacyOrderStatus.Dispatched, order.UniqueId, userName: "Warehouse", ct: ct);
+            // A job has no backoffice user, so it uses ChangeAsSystemAsync. "Fulfill" without quantities
+            // fulfills every line. It does not change the payment status.
+            await orderStates.ChangeAsSystemAsync(
+                order.UniqueId,
+                new OrderSystemStateChange("Fulfill", Actor: "Warehouse"),
+                ct);
         }
         catch (CheckoutConflictException)
         {
@@ -243,29 +231,28 @@ public sealed class WarehouseQueueConsumer(IServiceScopeFactory scopeFactory)
 
 The composer in the first example registers the handler and the consumer.
 
-`IOrderStateService.ChangeAsync`, the service behind the Manager's status menus, checks that the current backoffice user may work with the order's store. A job has no backoffice user, so it gets an `EkomHttpException` with status `403`. A job changes the status with the legacy status instead, through `Order.UpdateStatusAsync(status, orderId, userName, settings, ct)`. Ekom translates the legacy status into the three statuses:
+`IOrderStateService` is the service behind the Manager's status menus. It has two methods:
 
-| Legacy status you set | Order status | Payment status | Fulfillment status |
-| --- | --- | --- | --- |
-| `Dispatched` | Draft becomes Open | Pending, Authorized and Failed become Paid | Fulfilled |
-| `ReadyForPickup` | Draft becomes Open | Pending, Authorized and Failed become Paid | Packed, unless already Fulfilled or Partially Fulfilled |
-| `ReadyForDispatch` | Draft becomes Open | Pending, Authorized and Failed become Paid | Unchanged |
-| `Cancelled` | Cancelled | Unchanged | Unchanged |
-| `Closed` | Closed | Unchanged | Unchanged |
+| Method | Who it is for | Access check |
+| --- | --- | --- |
+| `ChangeAsync` | The signed-in backoffice user. | Manager access to the order's store. Without a backoffice user it throws `EkomHttpException` with status `403`. |
+| `ChangeAsSystemAsync` | Code with no backoffice user: jobs, queue handlers, integrations. | None. Call it only from trusted server code. |
 
-After that, an Open order that is Paid and Fulfilled is closed automatically, unless automatic closing is off for the store or the order was reopened.
+Both take the same actions: `Fulfill`, `Unfulfilled`, `Picking`, `Picked`, `Packed`, `PartiallyFulfilled`, `PaymentPending`, `PaymentAuthorized`, `PaymentPaid`, `PaymentPartiallyPaid`, `PaymentFailed`, `PaymentVoided`, `Cancel`, `Close` and `Reopen`. See [Order, payment, and fulfillment statuses](../guides/order-statuses.md) for what each one does.
 
 What to know:
 
 - `GetOrderAsync(orderId)` needs no request and no store. It returns any saved order, completed orders included.
-- Every legacy status in the table except `Cancelled` and `Closed` also marks the payment as Paid. The handler checks the payment first and raises an [order review](../guides/order-reviews.md) for an unpaid order, so a person sets its fulfillment in the Manager.
-- `Closed` closes the order without the Paid and Fulfilled check that the Manager's **Close order** makes.
-- The legacy change does not check the order's revision. It applies to the order as it is saved at that moment, also when a staff member changed the status a second before.
-- `UpdateStatusAsync` raises the status change events, `OrderStatusChangedAsync`, `PaymentStatusChangedAsync` and `FulfillmentStatusChangedAsync`, for each status that changed. Pass `new ChangeOrderSettings { FireEvents = false }` to keep them quiet.
-- It writes "Order status changed" to the activity log with the `userName` you pass. Without a user name the entry says "Customer".
-- When a checkout or payment holds the order, `UpdateStatusAsync` throws `CheckoutConflictException`. The handler rethrows it so the queue delivers the message again later.
+- `Fulfill` changes only the fulfillment status. An order that is shipped before it is paid stays unpaid, and stays Open until its payment is recorded.
+- After the change, an Open order that is Paid and Fulfilled is closed automatically, unless automatic closing is off for the store or the order was reopened.
+- `Actor` is required. It is saved as the user name on the order's activity log entry, so name the job or integration.
+- `ChangeAsSystemAsync` checks no access. Never call it with an order ID or an action that came from a storefront request.
+- By default the change applies to the order as it is saved at that moment. Pass `ExpectedRevision` with the revision you read from `order.Status.Revision` to get a `409` when someone changed the status in between.
+- It raises the status change events, `OrderStatusChangedAsync`, `PaymentStatusChangedAsync` and `FulfillmentStatusChangedAsync`, for each status that changed. Pass `Notify: false` to keep them quiet.
+- A rule that is broken throws `EkomHttpException`: `400` for an action the order's state does not allow, such as closing an unpaid order, `404` for an unknown order, and `409` for a revision that no longer matches.
+- When a checkout or payment holds the order, the change throws `CheckoutConflictException`. The handler rethrows it so the queue delivers the message again later.
 - `FindOrderAsync` on `IOrderShipments` finds the order of a tracking number, so a message that arrives twice records the shipment once. Creating a shipment does not change the fulfillment status.
-- `IOrderReviewService.RaiseAsync` returns the open review with the same source and code if there is one, so a repeated message does not raise a second review.
+- Older code sets the legacy status with `Order.UpdateStatusAsync`. That still works, but the legacy statuses cannot express every state: `ReadyForDispatch` also marks the payment as Paid, and `Closed` closes the order without the Paid and Fulfilled check. Use `ChangeAsSystemAsync` in new code.
 
 ## Export a product feed on a schedule
 
@@ -392,7 +379,7 @@ Code that runs without a web request gets these results. They come from the sour
 | `Order.AddOrderLineAsync` | Throws `NullReferenceException`. With no basket to add to, Ekom starts a new one and tries to write the basket cookie to the response. |
 | The other basket changes, such as `UpdateOrderlineQuantityAsync`, `RemoveOrderLineAsync`, `UpdateShippingInformationAsync` and `UpdateCustomerInformationAsync` | Throw `OrderInfoNotFoundException` or `ArgumentException`, because there is no current basket. `ApplyCouponToOrderAsync` returns `false`. |
 | `Order.PayAsync` | Throws `ArgumentNullException`. Payment needs a request. |
-| `IOrderStateService.ChangeAsync` | Throws `EkomHttpException` with status `403`. Use `Order.UpdateStatusAsync`, as above. |
+| `IOrderStateService.ChangeAsync` | Throws `EkomHttpException` with status `403`. Use `IOrderStateService.ChangeAsSystemAsync`, as above. |
 | `product.Price`, `variant.Price` | The store's first currency. |
 | `product.Url`, `category.Url` | The URL for the thread's culture, or empty. |
 | `Order.GetOrderAsync(orderId)`, `UpdateStatusAsync(status, orderId, ...)`, `AddActivityLogAsync`, `UpdateCustomDataAsync(orderId, ...)` | Work. They name the order. |

@@ -46,7 +46,59 @@ On this page:
 
 ### Add the properties the import needs
 
-Ekom does not create the properties the import service reads and writes. Add them to your document types and media types before the first import. Without `comparer` and `ekmIdentifier`, every save throws. [Prepare Umbraco for imports](../examples/imports.md#prepare-umbraco-for-imports) lists each property and where it goes.
+The import stores its own values on the nodes and media items it creates. Ekom does not create these properties. Add them yourself, once, before the first import.
+
+**On the four catalog document types**: `ekmCategory`, `ekmProduct`, `ekmProductVariantGroup` and `ekmProductVariant`.
+
+| Name | Alias | Data type | Required | What the import uses it for |
+| --- | --- | --- | --- | --- |
+| Import identifier | `ekmIdentifier` | Textstring | Yes | Stores each item's `Identifier`. Ekom finds the item by it on the next import. |
+| Import comparer | `ekmComparer` | Textstring | Yes | Stores the value Ekom compares to see whether the item changed. See [Change detection](#change-detection). |
+| Disable sync | `ekmDisableSync` | True/false | No | Lets an editor keep the import away from one node. See [Protect content from the import](#protect-content-from-the-import). |
+
+**On `ekmProduct` and `ekmProductVariant`**, only when you import `Files`:
+
+| Name | Alias | Data type | Required | What the import uses it for |
+| --- | --- | --- | --- | --- |
+| Files | `files` | Multiple Media Picker | When the feed has files | Holds the imported files. Images go in the `images` property, which Ekom creates. |
+
+**On the media types `Image` and `File`**, only when you import media from a URL, bytes or base64:
+
+| Name | Alias | Data type | Required | What the import uses it for |
+| --- | --- | --- | --- | --- |
+| Import comparer | `ekmComparer` | Textstring | Yes | Lets Ekom find media it already imported, so it is not imported twice. |
+| Import identifier | `ekmIdentifier` | Textstring | No | Stores the `Identifier` of the imported media. |
+| Sort order | `ekmSortOrder` | Numeric | No | Stores the `SortOrder` of the imported media. |
+
+The name is yours to choose. The alias and the data type must match the tables.
+
+#### Add them in the backoffice
+
+Document types:
+
+1. Open the **Settings** section and expand **Document Types**. The four catalog types are in the **Ekom** folder, under **Catalog**.
+2. Open `ekmCategory`.
+3. Add a tab or group for the import properties, for example **Import**.
+4. Add a property. Enter the name, then set the alias to the exact value from the table. Umbraco fills in an alias from the name, so unlock the alias field and correct it.
+5. Choose the data type from the table and save the property.
+6. Repeat steps 4 and 5 for each property, then save the document type.
+7. Repeat for `ekmProduct`, `ekmProductVariantGroup` and `ekmProductVariant`.
+
+To add the three shared properties once instead of four times, create a document type that holds them, and add it to the four catalog types as a composition.
+
+Media types:
+
+1. In the **Settings** section, expand **Media Types** and open **Image**.
+2. Add the properties from the media table in the same way, and save.
+3. Repeat for **File**.
+
+#### What to know
+
+- **A missing required property stops the import.** Umbraco throws `InvalidOperationException` ("No PropertyType exists with the supplied alias") when Ekom saves the node or media item.
+- **Use Textstring for the identifier and the comparer.** Ekom finds items and media with a database query on the short-text column. A Textarea stores its value in another column, and the item is not found.
+- **A site that already has `comparer` keeps working.** `comparer` is the older alias of `ekmComparer`. Ekom reads and writes `comparer` on a type that does not have `ekmComparer`. You do not need to rename it. If you add `ekmComparer` beside it, Ekom writes the new property and reads the old value until the new one is filled, so nodes are not saved again because of the change.
+- **The optional properties are safe to leave out.** Without `ekmDisableSync` no node is protected from the import. Without `ekmIdentifier` and `ekmSortOrder` on the media types, those two values are not stored on the media.
+- **Do the same on every environment.** The properties are part of the site's schema, so deploy them the way you deploy other document type changes.
 
 ### Identify every item with a stable identifier
 
@@ -161,13 +213,13 @@ importService.FullSync(data, parentKey: catalogRootKey);
 
 ### What FullSync removes
 
-- **Categories** that are not in the payload are deleted. They are not moved to the recycle node.
+- **Categories** that are not in the payload are deleted permanently, with everything still under them. They are not moved to the recycle node. This happens last, after the product step, so a product that the payload lists under another category has already been moved there and keeps its key. A product that is in the payload but still under the category, because it keeps its primary category, is moved to the payload's first category before the delete. A category is not deleted while a category from the payload is still under it; Ekom logs a warning instead.
 - **Products** that are not in the payload are deleted. When `RecycleBinKey` is set, they are unpublished and moved to that category node instead. Products already in the recycle node stay there.
 - **Products whose new primary category does not exist** are deleted, or moved to the recycle node when it is set.
 - **Variant groups and variants** that are missing from a product in the payload are deleted.
 - Nodes with `ekmDisableSync` set to `true` are never removed.
 
-FullSync refuses to run when no product in the payload has a category. It throws `ArgumentException("No products connected to categories in importProducts, sync stopped")` before it changes any product. This protects the products from a broken feed. Categories are processed before products, so category changes made earlier in the same call stay. A feed with no products at all does not remove any products.
+FullSync refuses to run when no product in the payload has a category. It throws `ArgumentException("No products connected to categories in importProducts, sync stopped")` before it changes any product. This protects the catalog from a broken feed: no product is changed and no category is deleted, because categories are deleted only after the product step. Categories that the payload creates, moves or updates are processed before products, so those changes stay. A feed with no products at all does not remove any products.
 
 When the same product identifier appears twice in the payload, Ekom logs a warning. Do not send duplicates.
 

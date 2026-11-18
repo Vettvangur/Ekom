@@ -15,6 +15,7 @@ This section is for people who work on Ekom itself: change its source, run its t
 | --- | --- |
 | [Set up a development environment](setup.md) | Install the SDKs and Node.js, choose a solution, work on a plugin against local Ekom code, or run a sample site. |
 | [Build, test and release](build-test-release.md) | Run tests, check a package before release, write a pull request title, or release a hotfix. |
+| [Printer agent releases](printer-agent-releases.md) | Build, sign and release the Windows printer agent and the Ekom.Printer package, or verify a downloaded installer. |
 
 ## Other sections
 

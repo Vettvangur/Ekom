@@ -501,10 +501,10 @@ The basket template lists the lines with forms to change the quantity or remove 
     <dt>Products</dt>
     <dd>@basket.SubTotal.WithVat.CurrencyString</dd>
 
-    @if (basket.DiscountAmount.Value > 0)
+    @if (basket.DiscountAmountWithVat.Value > 0)
     {
         <dt>Discounts</dt>
-        <dd>-@basket.DiscountAmount.CurrencyString</dd>
+        <dd>-@basket.DiscountAmountWithVat.CurrencyString</dd>
     }
 
     @if (basket.ShippingProvider is not null)
@@ -529,7 +529,7 @@ The basket template lists the lines with forms to change the quantity or remove 
     }
 
     <dt>Of which VAT</dt>
-    <dd>@basket.Vat.CurrencyString</dd>
+    <dd>@basket.ChargedVat.CurrencyString</dd>
 </dl>
 
 <a href="/checkout/details/">Go to checkout</a>
@@ -541,9 +541,9 @@ What to know:
 - A quantity of 0 removes the line. Removing a line also removes the lines linked to it. See [Linked order lines](../guides/linked-order-lines.md).
 - The quantity form takes whole numbers. If you sell by weight or length, use a decimal field and check how your site's culture writes decimals before you bind it.
 - `OrderLineNotFoundException` means the line is gone, for example because the customer removed it in another tab.
-- The totals add up for a store whose prices include VAT: `SubTotal` is the lines before discounts, `DiscountAmount` is every product and order discount, and `GrandTotal` adds shipping and the payment fee. In a store whose prices exclude VAT, `DiscountAmount` is without VAT and the other totals are with VAT.
+- The totals add up in every store, because each one is with VAT: `SubTotal.WithVat` is the lines before discounts, `DiscountAmountWithVat` is every product and order discount, and `GrandTotal` adds shipping and the payment fee. To show the summary without VAT, use `SubTotal.WithoutVat`, `DiscountAmountWithOutVat` and `GrandTotalWithOutVat`. `DiscountAmount`, without a suffix, is without VAT in a store whose prices exclude VAT, so do not put it next to totals that include VAT.
 - `GrandTotal` is the order value. `ChargedAmount` is what is left to pay after gift cards, and is what the customer is charged.
-- `Vat` is the VAT of the lines, plus the VAT of shipping when the store has `ApplyVatOnShipping` on. It does not include VAT on a payment fee.
+- `ChargedVat` is the VAT of the whole order, with shipping and the payment fee. `Vat` is the VAT of the lines, plus the VAT of shipping when the store has `ApplyVatOnShipping` on; it does not include VAT on a payment fee.
 - Each change saves the whole basket. Two changes at the same moment, for example from two tabs, can overwrite each other.
 
 ## Apply and remove a coupon
@@ -1337,9 +1337,8 @@ else
 What to know:
 
 - Arriving on the success page does not complete an order. An offline payment is completed before the redirect. An online payment is completed when the payment provider's callback records the payment, which can be after the customer arrives. Until then, the order status is `WaitingForPayment` and the page waits.
-- `GetCompletedOrderAsync` returns the order the basket cookie points to, and only when its status is final. `GetOrderAsync(storeAlias)` returns it while it is not final.
+- `GetCompletedOrderAsync` returns the order the basket cookie points to, and only when its status is final. In a store with `UserBasket` turned on, a signed-in member gets their newest completed order in that store, until they start a new basket. `GetOrderAsync(storeAlias)` returns it while it is not final.
 - Do not show `GetOrderAsync(orderId)` to whoever has the order ID. It returns any order and checks nothing.
-- In a store with `UserBasket` turned on, Ekom finds a signed-in member's basket through the member, and clears that reference when the order reaches a final status. `GetCompletedOrderAsync` then finds nothing for the member. For those stores, load the order with `GetOrderAsync(orderId)` and show it only when `order.CustomerInformation.Customer.UserName` is the signed-in member's user name.
 - When the customer cancels at the gateway, Ekom sends them to the provider's `cancelUrl` instead, with the basket as it was. See [Cancel, edit and retry a payment](../guides/checkout.md#cancel-edit-and-retry-a-payment).
 
 ## Call the basket and checkout from a headless storefront

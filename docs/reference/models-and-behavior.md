@@ -103,13 +103,14 @@ When you read one of these values as a string, format it yourself for display.
 
 | Member | Description |
 | --- | --- |
-| `Value` | The price, with or without VAT according to the store's price settings. |
+| `Value` | The price after discounts, with VAT. The same amount as `WithVat`. |
 | `OriginalValue` | The price before discounts, as a `decimal`. |
-| `BeforeDiscount`, `BeforeDiscountWithOutVat` | Before discounts, with and without VAT. |
-| `AfterDiscount`, `AfterDiscountWithOutVat` | After discounts, with and without VAT. |
-| `WithVat`, `WithoutVat` | With and without VAT. |
+| `BeforeDiscount`, `AfterDiscount`, `DiscountAmount` | Before discounts, after discounts and the difference, as the store shows prices: with VAT when the store's prices include VAT, without VAT when they do not. |
+| `BeforeDiscountWithVat`, `BeforeDiscountWithOutVat` | Before discounts, with and without VAT in every store. |
+| `AfterDiscountWithOutVat` | After discounts, without VAT in every store. With VAT, use `WithVat`. |
+| `WithVat`, `WithoutVat` | After discounts, with and without VAT in every store. |
 | `Vat` | The VAT amount. |
-| `DiscountAmount`, `Discount`, `HasDiscount` | The discount amount, the discount applied, and whether there is one. |
+| `Discount`, `HasDiscount` | The discount applied, and whether there is one. |
 | `DiscountedQuantity` | How many units the discount applies to. `0` by default. |
 | `Currency` | The currency. |
 
@@ -117,15 +118,28 @@ Order totals:
 
 | Member of `IOrderInfo` | Description |
 | --- | --- |
-| `SubTotal` | An `IPrice`. Use `SubTotal.WithoutVat` for the net subtotal before discounts. `SubTotal.Value` follows the store's VAT setting. |
+| `SubTotal` | The lines before discounts, as an `IPrice`. Use `SubTotal.WithVat` or `SubTotal.WithoutVat`. |
 | `GrandTotal` | The order value after discounts, with VAT, shipping and payment fees, before gift cards. |
 | `ChargedAmount` | What the customer still has to pay after gift cards, never below `0`. Use it in payment requests, not `GrandTotal`. |
-| `Vat` | VAT of the order. Includes shipping VAT only when VAT on shipping is turned on. Does not include VAT on payment fees. |
-| `ChargedVat` | The same value as `Vat`. |
+| `ChargedVat` | VAT of the whole order: lines, shipping and the payment fee. `GrandTotalWithOutVat + ChargedVat` is `GrandTotal`. |
+| `Vat` | VAT of the lines, plus shipping VAT when `ApplyVatOnShipping` is on for the store. Does not include VAT on the payment fee. |
 | `OrderLineTotal`, `OrderLineTotalWithOutVat` | Total of the lines. |
-| `DiscountAmount`, `ProductDiscountAmount` and their `WithOutVat` forms | Order and product discounts. |
+| `DiscountAmountWithVat`, `DiscountAmountWithOutVat` | Every product and order discount on the lines, with and without VAT in every store. |
+| `ProductDiscountAmountWithVat`, `ProductDiscountAmountWithOutVat` | The product discounts only, with and without VAT in every store. |
+| `DiscountAmount`, `ProductDiscountAmount` | The same discounts as the store shows prices: with VAT when the store's prices include VAT, without VAT when they do not. |
 
-The class `OrderInfo` also has `GrandTotalWithOutVat`: the grand total before gift cards, without VAT. Because `Vat` leaves out payment fee VAT, `GrandTotal - GrandTotalWithOutVat` is not always equal to `Vat`. See [Grand total and charged amount](../guides/orders-and-baskets.md#grand-total-and-charged-amount).
+The class `OrderInfo` also has `GrandTotalWithOutVat`: the grand total before gift cards, without VAT.
+
+Two sets of totals add up in every store, whether or not its prices include VAT:
+
+| | With VAT | Without VAT |
+| --- | --- | --- |
+| Lines before discounts | `SubTotal.WithVat` | `SubTotal.WithoutVat` |
+| Minus discounts | `DiscountAmountWithVat` | `DiscountAmountWithOutVat` |
+| Lines after discounts | `OrderLineTotal` | `OrderLineTotalWithOutVat` |
+| With shipping and the payment fee | `GrandTotal` | `GrandTotalWithOutVat` |
+
+Do not mix the columns, and do not put `DiscountAmount` in either one: in a store whose prices exclude VAT it is the amount without VAT. `SubTotal` is calculated with the store's VAT rate, so in an order whose lines have different VAT rates, `SubTotal.WithVat` minus `DiscountAmountWithVat` can differ from `OrderLineTotal`. See [Grand total and charged amount](../guides/orders-and-baskets.md#grand-total-and-charged-amount).
 
 ## Product queries and responses
 

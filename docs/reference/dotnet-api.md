@@ -141,7 +141,7 @@ Most changing methods take an `OrderSettings` (or a class derived from it). Its 
 | `GetOrderAsync(CancellationToken ct = default)` | The current basket of the request's store, or `null`. |
 | `GetOrderAsync(string? storeAlias, CancellationToken ct = default)` | The current basket of a store, or `null`. |
 | `GetOrderAsync(Guid uniqueId, CancellationToken ct = default)` | Any order by key, including completed orders, or `null`. |
-| `GetCompletedOrderAsync(string storeAlias, CancellationToken ct = default)` | The customer's completed order, found from the basket cookie for the store, or `null`. Throws `ArgumentException` when `storeAlias` is empty. |
+| `GetCompletedOrderAsync(string storeAlias, CancellationToken ct = default)` | The customer's completed order, or `null`. Found from the basket cookie for the store. In a store with `UserBasket` on, a signed-in member gets their newest completed order in that store, until they start a new basket. Throws `ArgumentException` when `storeAlias` is empty. |
 | `GetStatusOrdersAsync(CancellationToken ct = default, params OrderStatus[] orderStatuses)` | Orders with any of the given legacy statuses. |
 | `GetStatusOrdersByCustomerIdAsync(int customerId, CancellationToken ct = default, params OrderStatus[] orderStatuses)` | A member's orders with any of the given statuses. An overload without `customerId` uses the signed-in member. |
 | `GetStatusOrdersByCustomerUsernameAsync(string customerUsername, CancellationToken ct = default, params OrderStatus[] orderStatuses)` | Orders of a username with any of the given statuses. |

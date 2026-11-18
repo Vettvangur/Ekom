@@ -34,8 +34,7 @@ Ekom.Printer is a separate package that prints picking slips on a warehouse prin
 | Page | For | Read it when you want to |
 | --- | --- | --- |
 | [Printer agent protocol](../printer-agent-protocol.md) | Developers building their own printer agent | Talk to the station API without the supplied Windows agent. |
-| [Printer agent releases](../printer-agent-releases.md) | Ekom maintainers, and operators checking a download | Release the Windows agent and the Ekom.Printer package, or verify a downloaded installer. |
-| [Printer staging acceptance](../printer-staging-acceptance.md) | Ekom maintainers | Test a printer release end to end on a staging site before publishing it. |
+| [Printer agent releases](../contributing/printer-agent-releases.md) | Ekom maintainers, and operators checking a download | Release the Windows agent and the Ekom.Printer package, or verify a downloaded installer. |
 
 ## Other sections
 

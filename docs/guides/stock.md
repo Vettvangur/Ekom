@@ -101,7 +101,7 @@ With per-store stock turned on, the methods that take no store alias use the sto
 
 `IProduct.Available` and `IVariant.Available` follow these rules:
 
-1. A product or variant with backorder turned on is always available.
+1. A product with backorder turned on is always available, and so are all of its variants. A variant can also have backorder turned on for itself.
 2. A product with variants is available when at least one variant is available.
 3. A product without variants is available when its usable stock is above zero.
 
@@ -119,7 +119,7 @@ Checkout uses the same buffer rules.
 
 ### Changing which lines need stock
 
-By default a line needs stock unless its product has backorder turned on. To use a different rule at checkout, implement `ICheckoutStockPolicy`. This example lets only wholesale customers order a backorder product beyond its stock:
+By default a line needs stock unless backorder is turned on for its product or for its variant. To use a different rule, implement `ICheckoutStockPolicy`. This example lets only wholesale customers order a backorder product beyond its stock:
 
 ```csharp
 using Ekom.Models;
@@ -150,9 +150,9 @@ builder.Services.AddSingleton<ICheckoutStockPolicy, WholesaleBackorderPolicy>();
 
 What to know:
 
-- The policy is used at checkout only. Adding a line to the basket has its own check, which always requires stock for a product without backorder. A policy therefore cannot let anyone order a product without backorder beyond its stock. It can only tighten the rule for backorder products.
-- Ekom calls the policy when it prepares the checkout and again when it completes the order. The second call can happen without a web request, for example from a payment callback. Base the decision on data saved with the order, not on the current user or session.
-- Only the product's backorder setting counts. A variant's own backorder setting is not checked here.
+- Ekom asks the policy every time stock is checked for a line: when the line is added to the basket, when its quantity changes, when checkout is prepared, and when the order is completed. A line the basket accepts is therefore not refused at checkout by a different rule.
+- Base the decision on data saved with the order, not on the current user or session. Completion can run without a web request, for example from a payment callback. A basket may not have customer details yet, so decide what the answer is for a customer the order does not identify. In this example such a customer is not wholesale and needs stock.
+- Ekom's default policy exempts a line when backorder is on for its product or its variant. A policy of your own replaces that rule, so check `line.Variant?.Backorder` as well if variants use it.
 
 For a version that reads the customer's member group, see [Replace Ekom services](../examples/replace-services.md).
 

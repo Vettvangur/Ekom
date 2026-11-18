@@ -90,7 +90,7 @@ What to know:
 
 ## Send a completed order to your ERP system
 
-`CheckoutEvents.CompleteCheckoutAsync` runs when a paid order is completed. The handler copies the order lines, the customer and the payment into a queue and returns at once. A background service sends the queue to the ERP system with retries, and writes the result to the order's activity log, where staff see it in Ekom Manager.
+`CheckoutEvents.CompleteCheckoutAsync` runs after a paid order has completed. The handler copies the order lines, the customer and the payment into a queue and returns at once. A background service sends the queue to the ERP system with retries, and writes the result to the order's activity log, where staff see it in Ekom Manager.
 
 ```csharp
 using System.Net.Http.Json;
@@ -345,9 +345,9 @@ Put the ERP address in `appsettings.json`:
 What to know:
 
 - The event runs when Ekom completes a paid order: after a payment provider records a captured or authorized payment (in the provider's callback request), in the customer's own checkout request for an offline payment, and when your code calls `Order.CompleteOrderAsync`.
-- It runs before Ekom deducts stock, claims the coupon and updates the order status. If one of those later steps fails, the order is not completed, but your handler has already queued it. Your ERP system must accept that an order it received can be cancelled later.
-- If the handler throws, checkout completion stops. Ekom logs the error, sends its error email and flags the order in the manager's Needs review view. For a gateway payment, the payment attempt is marked for reconciliation. For an offline payment, the order gets the status `PaymentFailed` and the customer sees an error. This is why the handler catches every exception and makes no remote call.
-- The event can run more than once for one order. If completion fails, the payment provider's next callback runs completion again, and code can call `Order.CompleteOrderAsync` again. The `Idempotency-Key` header carries the order's `UniqueId`, so the ERP system can ignore an order it already has. If your ERP system cannot do that, keep a list of sent order IDs in your own database table and check it before you send.
+- It runs after Ekom has taken stock, claimed the coupon and set the order status. `e.OrderInfo` is read again after completion, so it shows the final status. If completion fails, for example when stock ran out, the event is not raised.
+- If the handler throws, the order still completes. Ekom logs the error, runs the other handlers and opens an order review with the code `completion-handler-failed`, so staff know an integration may have missed the order. The handler still catches every exception and makes no remote call, because a slow handler delays the customer's confirmation page.
+- The event can run more than once for one order, because code can call `Order.CompleteOrderAsync` again for an order that has already completed. The `Idempotency-Key` header carries the order's `UniqueId`, so the ERP system can ignore an order it already has. If your ERP system cannot do that, keep a list of sent order IDs in your own database table and check it before you send.
 - Ekom raises this event without a cancellation token. The `ct` your handler gets never cancels.
 - `e.Payment` is `null` when no payment is recorded on the order. It holds the provider, the transaction ID, amounts, the card brand and masked number, and the provider's own details (`GetDetail(key)`, `GetData<T>()`). Send only what the ERP system needs.
 - `line.Amount.WithVat.Value` is the line total after discounts, with VAT. `order.ChargedAmount.Value` is what the customer paid after gift cards.
@@ -938,8 +938,8 @@ public sealed class BulkyItemShippingComponent : IAsyncComponent
 
 What to know:
 
-- The event runs when code asks `Ekom.API.Providers` for the list through its asynchronous methods, for example `GetShippingProvidersAsync` or `GET /ekom/provider/shippingproviders`. It runs after Ekom has filtered the providers by store, country and order amount. Nothing is saved.
-- The synchronous `Providers.GetShippingProviders` runs only the synchronous event `BeforeReturnShippingProviders`, so this handler does not run for it. If your views call the synchronous method, change them to `GetShippingProvidersAsync`.
+- The event runs when code asks `Ekom.API.Providers` for the list, for example with `GetShippingProvidersAsync` or `GET /ekom/provider/shippingproviders`. It runs after Ekom has filtered the providers by store, country and order amount. Nothing is saved.
+- The synchronous `Providers.GetShippingProviders` runs this handler too, and waits for it to finish. Use `GetShippingProvidersAsync` in your views so the handler does not block a thread.
 - The handler runs in the storefront's request, so `Order.Instance.GetOrderAsync` finds the customer's basket from the cookie. `e.StoreAlias` is an empty string when the caller did not give a store; `GetOrderAsync` then uses the store of the current request.
 - Ekom raises this event without a cancellation token. The `ct` your handler gets never cancels.
 - If the handler throws, the exception reaches the caller. Over HTTP, the request fails with `500`.

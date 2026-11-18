@@ -12,6 +12,7 @@ On this page:
 - [Prepare the upgrade](#prepare-the-upgrade)
 - [What Ekom changes in the database at startup](#what-ekom-changes-in-the-database-at-startup)
 - [Deploy the backoffice files](#deploy-the-backoffice-files)
+- [Check code that runs when an order completes](#check-code-that-runs-when-an-order-completes)
 - [Check the site after an upgrade](#check-the-site-after-an-upgrade)
 
 ## Choose your packages
@@ -98,6 +99,16 @@ Because each release has its own folder, you can let browsers and CDNs cache fil
 - Do not cache Umbraco's management API response that lists the installed packages. It must point to the new release after a deployment.
 
 During a rolling deployment, keep the previous release folder on the servers until every backoffice session has reloaded.
+
+## Check code that runs when an order completes
+
+`CheckoutEvents.CompleteCheckout` and `CheckoutEvents.CompleteCheckoutAsync` are raised after the order has completed. Before, they were raised first, and an order could reach a handler and then fail to complete.
+
+- A handler that sends the order to another system or sends an email needs no change. It now runs only for orders that completed, and `args.OrderInfo` shows the final status.
+- A handler that sets `args.StockValidation` or `args.UpdateOrderStatus` no longer changes anything, and the build shows an obsolete warning for it. Move that code to a `CheckoutEvents.CompletingCheckoutAsync` handler, which has the same two properties.
+- A handler that throws no longer stops the order from completing. Ekom logs the error and opens an order review with the code `completion-handler-failed`.
+
+See [Checkout events](../guides/checkout.md#checkout-events).
 
 ## Check the site after an upgrade
 

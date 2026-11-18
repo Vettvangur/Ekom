@@ -147,7 +147,7 @@ ProviderEvents.BeforeReturnPaymentProvidersAsync += (sender, args, ct) =>
 
 `args.Providers` is the list you can filter or replace. `args.StoreAlias` is the store alias passed to the list method. It is an empty string when the caller did not pass a store.
 
-The sync events `BeforeReturnShippingProviders` and `BeforeReturnPaymentProviders` still exist. The async list methods run the sync handlers first, then the async ones. Prefer the async events. Unsubscribe static handlers when the site shuts down.
+The sync events `BeforeReturnShippingProviders` and `BeforeReturnPaymentProviders` still exist. Both the sync and the async list methods run the sync handlers first, then the async ones, so a rule applies whichever method a page calls. The sync methods wait for async handlers to finish; prefer the async methods and the async events. Unsubscribe static handlers when the site shuts down.
 
 These events only change what the list methods return. They do not stop a customer from choosing a provider by its key.
 

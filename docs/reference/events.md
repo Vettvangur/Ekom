@@ -111,7 +111,7 @@ CatalogEvents.BeforeReturnProductsAsync += (args, ct) =>
 | `BeforeReturnShippingProvidersAsync` | `ProviderEvents.ShippingProvidersEventArgs`: `Providers`, `StoreAlias` | `Providers` |
 
 - They run after Ekom has filtered the providers by store, country and order amount.
-- The asynchronous methods on `Providers` run the synchronous events (`BeforeReturnPaymentProviders`, `BeforeReturnShippingProviders`) first, then the asynchronous ones. The synchronous `Providers` methods run only the synchronous events.
+- The asynchronous methods on `Providers` run the synchronous events (`BeforeReturnPaymentProviders`, `BeforeReturnShippingProviders`) first, then the asynchronous ones. The synchronous `Providers` methods run them in the same order, and wait for the asynchronous handlers to finish. Use the asynchronous methods in new code, so that a slow handler does not block a thread.
 - An exception from a handler reaches the caller.
 
 ## Discount events
@@ -248,11 +248,23 @@ OrderEvents.FulfillmentStatusChangedAsync += async (sender, e, ct) =>
 | `ProcessingAsync` | `ProcessingEventArgs`: `OrderInfo`, `StockValidation` (default `true`) | At the start of a payment request, before stock is checked. | Set `StockValidation = false` to skip the stock check. When reservations are on for the store, stock is still reserved. |
 | `PaymentOrderItemsPreparingAsync` | `PaymentOrderItemsPreparingEventArgs`: `OrderInfo`, `PaymentRequest`, `OrderItems` | Before the order items are sent to the payment provider. | The `OrderItems` collection. |
 | `PayAsync` | `PayEventArgs`: `OrderInfo`, `PaymentSettings`, `CustomData` | Before Ekom hands the payment to the provider. | `PaymentSettings`, for example its URLs. Ekom sets the order identifiers in `PaymentSettings.OrderCustomData` again after your handlers. |
-| `CompleteCheckoutAsync` | `CompleteCheckoutEventArgs`: `OrderData`, `OrderInfo`, `StockValidation`, `UpdateOrderStatus`, `Payment` | When a paid order is completed, before stock is deducted and the status is updated. | Set `StockValidation = false` to complete without checking stock. Set `UpdateOrderStatus = false` to leave the status unchanged. |
+| `CompletingCheckoutAsync` | `CompletingCheckoutEventArgs`: `OrderInfo`, `StockValidation`, `UpdateOrderStatus`, `Payment` | When a paid order is about to be completed, before stock is deducted and the status is updated. | Set `StockValidation = false` to complete without checking stock. Set `UpdateOrderStatus = false` to leave the status unchanged. |
 
 - `UpdateOrderStatus` starts as `false` for an order with the legacy status `OfflinePayment`, and `true` otherwise.
 - `Payment` is the payment the order was paid with: provider, transaction ID, amounts and the provider's own details. It is `null` when no payment is recorded, for example when `CompleteOrderAsync` is called directly.
-- An exception from a handler stops the checkout step it runs in.
+- An exception from a `ProcessingAsync`, `PaymentOrderItemsPreparingAsync` or `PayAsync` handler stops the checkout step it runs in.
+- An exception from a `CompletingCheckout` or `CompletingCheckoutAsync` handler does not stop completion. The customer has already paid, so Ekom logs the error, runs the other handlers, completes the order and opens an [order review](../guides/order-reviews.md) with the code `completion-handler-failed`. An `OperationCanceledException` still stops completion.
+- The order can still fail to complete after `CompletingCheckoutAsync`. Do not send the order to another system from it.
+
+`CheckoutEvents.CompleteCheckoutAsync` is a notification. Its synchronous form, `CompleteCheckout`, runs first.
+
+| Event | Arguments | When it runs | If a handler throws |
+| --- | --- | --- | --- |
+| `CompleteCheckoutAsync` | `CompleteCheckoutEventArgs`: `OrderData` and `OrderInfo` (both read again after completion), `Payment` | After an order has been completed: stock is taken, the coupon is counted and the status is set. It is not raised when completion fails. | The order stays completed. Ekom logs the error, runs the other handlers and opens a `completion-handler-failed` review. |
+
+Use `CompleteCheckoutAsync` to send a completed order to another system, send emails or book a shipment. Use `CompletingCheckoutAsync` only to change how an order completes.
+
+`CompleteCheckoutEventArgs` also has `StockValidation` and `UpdateOrderStatus`. They are marked obsolete. They report what completion used, and setting them has no effect, because the order has already completed. Set them in a `CompletingCheckoutAsync` handler.
 
 Turning off stock validation or the status update changes how checkout behaves. Cover it with integration tests.
 

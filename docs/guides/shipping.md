@@ -176,7 +176,7 @@ A shipping provider node names its carrier with three properties: `shippingCarri
 
 `IShippingFulfillmentService` books, retries, prints and deletes the carrier shipment of an order: `CreateAsync`, `RetryAsync`, `GetLabelAsync`, `GetShipmentAsync` and `DeleteAsync`. These methods throw `ShippingException` when the action is not possible in the shipment's state, for example retrying a shipment that did not fail.
 
-When a carrier account is in `Automatic` mode, Ekom books the shipment when checkout completes. It does this from a `CheckoutEvents.CompleteCheckoutAsync` handler. Ekom skips automatic booking when:
+When a carrier account is in `Automatic` mode, Ekom books the shipment after checkout has completed. It does this from a `CheckoutEvents.CompleteCheckoutAsync` handler. Ekom skips automatic booking when:
 
 - the order has no shipping provider,
 - no booking carrier is registered,
@@ -186,7 +186,7 @@ When a carrier account is in `Automatic` mode, Ekom books the shipment when chec
 
 A shipment that cannot be booked never fails the checkout. Ekom logs the error, and the shipment shows its state in the Manager.
 
-The handler runs before completion takes stock. If completion fails after it, for example because stock ran out, the shipment can already be booked for an order that did not complete. Check the shipment when you handle a `completion-stock-failed` or `completion-failed` [order review](order-reviews.md).
+Booking happens only after the order has completed: stock is taken and the status is set. An order whose completion fails, for example because stock ran out, gets no automatic shipment.
 
 ## React to shipment changes
 

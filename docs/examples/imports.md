@@ -19,21 +19,13 @@ On this page:
 
 ## Prepare Umbraco for imports
 
-Ekom does not add the properties the import writes to. Add them to the document and media types before the first import:
+Ekom does not add the properties the import writes to. Before the first import:
 
-| Type | Alias | Editor | Why |
-| --- | --- | --- | --- |
-| `ekmCategory`, `ekmProduct`, `ekmProductVariantGroup`, `ekmProductVariant` | `ekmIdentifier` | Textstring | Ekom stores each item's `Identifier` here and finds the item by it on the next import. |
-| The same four | `comparer` | Textstring | Ekom stores the change-detection value here. |
-| The same four (optional) | `ekmDisableSync` | Toggle | When it is on, the import does not change, move or delete the node. `SyncProductMedia` and `SyncVariantMedia` still change it. |
-| `ekmProduct`, `ekmProductVariant` | `files` | Media Picker, multiple items | Only when you import `Files`. |
-| Media types `Image` and `File` | `comparer` | Textstring | Needed for media from a URL, bytes or base64. |
-| Media types `Image` and `File` (optional) | `ekmIdentifier` | Textstring | Stores the `Identifier` of imported media. |
-| Media types `Image` and `File` (optional) | `ekmSortOrder` | Numeric | Stores the `SortOrder` of imported media. |
+1. Add `ekmIdentifier` and `ekmComparer` (both Textstring) to `ekmCategory`, `ekmProduct`, `ekmProductVariantGroup` and `ekmProductVariant`.
+2. Add `ekmComparer` (Textstring) to the media types `Image` and `File`. The examples import images from URLs.
+3. Create a media folder for imported media, and note the keys of that folder and of the `ekmCatalog` node. The examples read them from `ErpImportOptions`.
 
-- When `ekmIdentifier` or `comparer` is missing, saving the node or media item throws `InvalidOperationException` ("No PropertyType exists with the supplied alias").
-- Use Textstring for `ekmIdentifier` and `comparer`. The single-item methods and the media lookup find items with a database query on the short-text column.
-- Create a media folder for imported media, and note the keys of that folder and of the `ekmCatalog` node. The examples read them from `ErpImportOptions`.
+[Add the properties the import needs](../guides/imports.md#add-the-properties-the-import-needs) lists every property, including the optional ones, and shows how to add them in the backoffice.
 
 ## Sync the whole catalog from an ERP feed
 
@@ -323,7 +315,7 @@ public sealed class ErpCatalogImport
 What to know:
 
 - **FullSync deletes.** Treat the feed as the whole catalog:
-  - A category that is not anywhere in the feed's category tree is deleted permanently, not moved to the Umbraco recycle bin, together with everything below it: subcategories, products, variant groups and variants. `RecycleBinKey` does not save them, and `ekmDisableSync` on a product below the category does not protect it. A product from a deleted category that is still in the feed is created again as a new node, with a new key.
+  - A category that is not anywhere in the feed's category tree is deleted permanently, not moved to the Umbraco recycle bin, together with everything still below it: subcategories, products, variant groups and variants. `RecycleBinKey` does not save them, and `ekmDisableSync` on a product below the category does not protect it. The delete happens after the product step, so a product from that category that is still in the feed has been moved to its new category first and keeps its key.
   - A product that is not in the feed is deleted permanently. When `RecycleBinKey` is set (here `RemovedProductsCategoryKey`), it is unpublished and moved to that category instead, and published again when it comes back.
   - Variant groups and variants that are missing from a product in the feed are deleted permanently.
   - Media items are never deleted. Images and files that are no longer used stay in the media library.
@@ -457,7 +449,7 @@ What to know:
 - **Order:** Ekom has no separate main image. Storefront code uses the first image, for example `product.Images.FirstOrDefault()`. Without an `ekmSortOrder` property on the media types, the field follows the `SortOrder` you send. With that property, Ekom stores `SortOrder` on the media item it creates and orders the field by the stored values; media without a value goes last. The stored value belongs to the media item, so media shared by several products has one order.
 - **The field is replaced:** in `ProductSync` and `FullSync` the images field afterwards holds only the media in `Images`. An empty list removes all images. `SyncProductMedia` merges unless you pass `replaceExisting: true`.
 - **`PreserveExistingValues = true`:** when the field already has any media, Ekom leaves it as it is and ignores the incoming media; only an empty field is filled. On an existing product it also leaves the title, summary, description and extra categories as they are, even when the payload has new values.
-- **A failed download:** when the URL returns an error status or cannot be reached, Ekom logs an error and leaves that image out; the product is saved without it. Other errors, such as a timeout or invalid base64, fail the product (`ImportProduct.Exception`). In a category, variant group or variant they stop the import. With `replaceExisting: true`, any failure throws before the field is changed.
+- **A failed download:** when the URL returns an error status, cannot be reached, times out or is not an absolute URL, Ekom logs an error and leaves that image out; the product is saved without it. Other errors, such as invalid base64, fail the product (`ImportProduct.Exception`). In a category, variant group or variant they stop the import. With `replaceExisting: true`, any failure throws before the field is changed.
 - **Not one transaction:** media items are created before the product is saved. If the product save fails, they stay.
 - `ProductUpdateSync` and `VariantUpdateSync` do not touch media. Use `ProductSync`, `VariantSync` or `SyncProductMedia`.
 

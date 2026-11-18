@@ -1,4 +1,4 @@
-[Ekom docs](README.md) / [Manager](manager/README.md) / Printer agent releases
+[Ekom docs](../README.md) / [Contributing](README.md) / Printer agent releases
 
 # Printer agent releases
 
@@ -23,7 +23,7 @@ Each release contains:
 
 - the installer, `Ekom.Printer.Agent-<version>-win-x64-setup.exe`,
 - `SHA256SUMS.txt`, with the hash of every other file,
-- `INSTALLATION.md`, a copy of the [Windows agent guide](../Ekom/Printing/Ekom.Printer.Agent/README.md),
+- `INSTALLATION.md`, a copy of the [Windows agent guide](../../Ekom/Printing/Ekom.Printer.Agent/README.md),
 - `LICENSE.txt`,
 - `release.json`, with the version and repository,
 - `ReleaseNotes.md`, the generated change notes.
@@ -52,7 +52,7 @@ Run three checks on the downloaded installer, here for version 1.0.1.
 
 The hash shows that the download is complete and matches the release. The provenance shows which GitHub workflow built it. The Authenticode signature shows the Windows publisher. None of them replaces a test print on the warehouse computer. An installer built locally by hand has no GitHub provenance.
 
-If a release is unsigned, its notes say **Unsigned installer**, and Windows SmartScreen or company application-control rules can block it. The [Windows agent guide](../Ekom/Printing/Ekom.Printer.Agent/README.md#windows-security-warnings-and-company-managed-pcs) explains how to get it approved.
+If a release is unsigned, its notes say **Unsigned installer**, and Windows SmartScreen or company application-control rules can block it. The [Windows agent guide](../../Ekom/Printing/Ekom.Printer.Agent/README.md#windows-security-warnings-and-company-managed-pcs) explains how to get it approved.
 
 ## Release a new agent version
 
@@ -70,7 +70,7 @@ The workflow **Build printer agent installer** (`.github/workflows/build-printer
 4. Watch **Build printer agent installer** in GitHub Actions. The build job runs on Windows. It checks installer storage, tests transport and setup validation, builds the NSIS installer, tests the bundled HTML renderer, installs, reinstalls and uninstalls the agent, and prepares the release notes and checksums.
 5. When the build job succeeds, a separate release job attests the installer's build provenance and creates a **draft pre-release** with the files listed under [Download the agent](#download-the-agent).
 6. Edit the draft notes: list the real changes, known issues and the Ekom.Printer package versions you tested with.
-7. Test physical printing and recovery on Windows, for example with [Printer staging acceptance](printer-staging-acceptance.md).
+7. Test physical printing and recovery on Windows.
 8. Publish the release. Keep a candidate that is not validated marked as pre-release. Clear the pre-release flag when you publish a validated stable version.
 
 How the workflow behaves:
@@ -130,10 +130,9 @@ The policy is set on nuget.org; there is no API-key secret in GitHub. The policy
 
 ## Related pages
 
-- [Printer staging acceptance](printer-staging-acceptance.md): test a release end to end before publishing it.
-- [Windows agent guide](../Ekom/Printing/Ekom.Printer.Agent/README.md): install, configure and update the agent.
-- [Ekom.Printer README](../Ekom/Printing/Ekom.Printer/README.md): website setup and settings.
-- [Printer agent protocol](printer-agent-protocol.md): the API the agent uses.
-- [Build, test and release](contributing/build-test-release.md): how the rest of Ekom is released.
+- [Windows agent guide](../../Ekom/Printing/Ekom.Printer.Agent/README.md): install, configure and update the agent.
+- [Ekom.Printer README](../../Ekom/Printing/Ekom.Printer/README.md): website setup and settings.
+- [Printer agent protocol](../printer-agent-protocol.md): the API the agent uses.
+- [Build, test and release](build-test-release.md): how the rest of Ekom is released.
 
-[Back to Manager](manager/README.md)
+[Back to Contributing](README.md)

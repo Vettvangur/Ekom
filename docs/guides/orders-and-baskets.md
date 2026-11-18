@@ -317,7 +317,7 @@ Each order has three statuses: order, payment and fulfillment. See [Order, payme
 2. Customer and provider updates add details and recalculate the order.
 3. When the customer pays online, Ekom sets `WaitingForPayment` before it sends the customer to the provider.
 4. Your payment integration confirms a successful payment on the server and starts completion.
-5. Completion takes the stock, marks the coupon as used, writes the activity log, clears the member's basket reference, and sets `ReadyForDispatch`. A `CompleteCheckout` handler can turn off the status change by setting `UpdateOrderStatus` to `false`.
+5. Completion takes the stock, marks the coupon as used, writes the activity log, clears the member's basket reference, and sets `ReadyForDispatch`. A `CompletingCheckoutAsync` handler can turn off the status change by setting `UpdateOrderStatus` to `false`.
 6. An offline payment provider sets `OfflinePayment` and completes at once. Completion keeps `OfflinePayment` and does not set `ReadyForDispatch`.
 7. Later, fulfillment and the manager can use `ReadyForPickup`, `ReadyForDispatchWhenStockArrives`, `Dispatched`, `Returned`, `Cancelled` or `Closed`.
 
@@ -367,7 +367,7 @@ Pick the read method by what you need:
 | Method | Returns |
 | --- | --- |
 | `GetOrderAsync(storeAlias)` | The current basket, found by member or cookie. Never a final order. |
-| `GetCompletedOrderAsync(storeAlias)` | The order the member or cookie points to, only when it is final. Use it for a receipt right after completion. Throws `ArgumentException` when the store alias is empty. |
+| `GetCompletedOrderAsync(storeAlias)` | The order the cookie points to, only when it is final. In a store with `UserBasket` on, a signed-in member gets their newest completed order in that store, until they start a new basket. Use it for a receipt right after completion. Throws `ArgumentException` when the store alias is empty. |
 | `GetOrderAsync(orderId)` | Any saved order with that GUID, including final orders. It does not check who the customer is. |
 
 For a receipt page, take the completed order ID from the trusted checkout result and load the order on the server. Check that it belongs to the signed-in customer or the protected checkout session, and that its status fits a receipt, before you show customer details. Knowing an order GUID is not permission to see it.

@@ -170,6 +170,17 @@ In JSON the statuses are written as names, such as `PartiallyPaid`.
 
 Use `IOrderStateService.ChangeAsync` in C# (inject `Ekom.Services.IOrderStateService`; the example calls it `orderStates`), or `POST /ekom/manager/orderStates/{orderId}` over HTTP. Both check that the current backoffice user has manager access to the order's store. Code that runs without a signed-in backoffice user, such as a background job, is refused with `403`.
 
+For that code, use `IOrderStateService.ChangeAsSystemAsync`. It takes the same actions and follows the same rules, but checks no access, so call it only from trusted server code:
+
+```csharp
+OrderStatusSnapshot updated = await orderStates.ChangeAsSystemAsync(
+    orderId,
+    new OrderSystemStateChange("Fulfill", Actor: "Warehouse sync"),
+    ct);
+```
+
+`Actor` is required and is saved as the user name on the activity log entry. `ExpectedRevision` is optional here: leave it out to apply the change to the order as it is now. Status change events are raised unless you pass `Notify: false`. See [Use Ekom outside a web request](../examples/background-jobs.md#mark-an-order-as-shipped-from-a-queue-message) for a complete handler.
+
 ```json
 {
   "expectedRevision": 3,
@@ -229,6 +240,8 @@ This is the first mapping, before automatic closing is applied. A recorded paid 
 | `Cancelled` | Cancelled | Pending | Unfulfilled | Payment and fulfillment already stored on the order are kept |
 | `Returned` | Closed | Paid if there is a paid date, otherwise unknown | Fulfilled | Needs review. Not migrated automatically. A return does not mean a refund. |
 | Unknown or invalid value | Unknown | Unknown | Unknown | Needs review. Not migrated automatically. |
+
+When code sets the legacy status on an order that already has its three statuses, the payment column above applies only to the legacy statuses that mean "paid": `OfflinePayment`, `ReadyForDispatch` and `ReadyForDispatchWhenStockArrives`. Setting `Dispatched` or `ReadyForPickup` changes the fulfillment status and leaves the payment status as it is, so an unpaid order is not marked Paid and is not closed automatically.
 
 `OfflinePayment` maps to Paid, including older invoice orders. That is a migration rule, not proof that the invoice was paid. For a new accepted order that is still waiting for payment, use Open / Pending until the store's payment process says otherwise.
 

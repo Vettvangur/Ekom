@@ -328,13 +328,14 @@ Before it completes the order, Ekom checks that the payment belongs to the curre
 ### What completion does
 
 1. Loads the saved order. If the order does not exist, completion stops without an error.
-2. Raises `CheckoutEvents.CompleteCheckout` and then `CheckoutEvents.CompleteCheckoutAsync`. `args.Payment` holds the payment the order was paid with. See [Read the payment in your own code](payments.md#read-the-payment-in-your-own-code).
+2. Raises `CheckoutEvents.CompletingCheckout` and then `CheckoutEvents.CompletingCheckoutAsync`. A handler can change how the order completes here. The order can still fail to complete after this step.
 3. Completes stock: consumes the order's holds and takes the rest from stock, in one transaction. This step is skipped if it already ran for this order.
 4. Marks the coupon as used, when the order has a coupon. If the coupon has no uses left, the order still completes, Ekom opens a review with the code `coupon-exhausted` and writes an alert to the activity log.
-5. Sets the order status to `ReadyForDispatch`. An offline order keeps its `OfflinePayment` status. A handler can turn this step off with `args.UpdateOrderStatus = false`. Setting the status also clears the customer's reference to this order as their current basket.
+5. Sets the order status to `ReadyForDispatch`. An offline order keeps its `OfflinePayment` status. A `CompletingCheckoutAsync` handler can turn this step off with `args.UpdateOrderStatus = false`. Setting the status also clears the customer's reference to this order as their current basket.
 6. Writes `Order Completed.` to the activity log, or `Order Completed. Offline payment.` when the status was not changed.
+7. Reads the order again and raises `CheckoutEvents.CompleteCheckout` and then `CheckoutEvents.CompleteCheckoutAsync`. This is where you send the order to another system or send emails. `args.Payment` holds the payment the order was paid with. See [Read the payment in your own code](payments.md#read-the-payment-in-your-own-code). Automatic shipment booking runs here. A handler that throws cannot undo the completed order.
 
-If completion fails, Ekom opens a review (`completion-stock-failed` when stock ran out, `completion-failed` otherwise), sends an email through the site's `IMailService`, and throws. The payment attempt stays in its completing state, which blocks edits and new payments. The same verified callback can run completion again.
+If completion fails, `CompleteCheckoutAsync` is not raised. Ekom opens a review (`completion-stock-failed` when stock ran out, `completion-failed` otherwise), sends an email through the site's `IMailService`, and throws. The payment attempt stays in its completing state, which blocks edits and new payments. The same verified callback can run completion again.
 
 Stock completion runs at most once per order, guarded by a receipt in the database. Your event handlers and other integrations can run again when a callback is repeated, so make them safe to repeat.
 
@@ -390,14 +391,15 @@ Cancellation inside `ReserveAsync` counts as uncertain. Ekom cannot tell a cance
 
 ## Checkout events
 
-Use the async events. The sync events (`Processing`, `PaymentOrderItemsPreparing`, `Pay`, `CompleteCheckout`) still exist and run before the async ones.
+Use the async events. The sync events (`Processing`, `PaymentOrderItemsPreparing`, `Pay`, `CompletingCheckout`, `CompleteCheckout`) still exist and run before the async ones.
 
 | Event | When | What you can change |
 | --- | --- | --- |
 | `CheckoutEvents.ProcessingAsync` | Before stock is checked or held. | `args.StockValidation = false` skips the product stock check and, with reservations on, the product holds. Discount holds are still made. |
 | `CheckoutEvents.PaymentOrderItemsPreparingAsync` | Before the payment items are sent to the provider. | Edit or replace `args.OrderItems`. |
 | `CheckoutEvents.PayAsync` | Just before the provider is called. | Edit the properties of `args.PaymentSettings`. |
-| `CheckoutEvents.CompleteCheckoutAsync` | At completion, before stock is completed. | `args.StockValidation` and `args.UpdateOrderStatus`. |
+| `CheckoutEvents.CompletingCheckoutAsync` | At completion, before stock is completed. | `args.StockValidation` and `args.UpdateOrderStatus`. |
+| `CheckoutEvents.CompleteCheckoutAsync` | After the order has completed. Not raised when completion fails. | Nothing. It is a notification. |
 
 ```csharp
 CheckoutEvents.PaymentOrderItemsPreparingAsync += (sender, args, ct) =>
@@ -407,13 +409,13 @@ CheckoutEvents.PaymentOrderItemsPreparingAsync += (sender, args, ct) =>
 };
 ```
 
-Handlers run one after the other. An exception in a handler stops the checkout step it belongs to. Unsubscribe static handlers when the site shuts down.
+Handlers run one after the other. An exception in a `ProcessingAsync`, `PaymentOrderItemsPreparingAsync` or `PayAsync` handler stops the checkout step it belongs to. An exception in a `CompletingCheckoutAsync` or `CompleteCheckoutAsync` handler does not stop a paid order from completing: Ekom logs it, runs the other handlers and opens a review with the code `completion-handler-failed`. Unsubscribe static handlers when the site shuts down.
 
 ### Turning off the stock check
 
 `StockValidation = false` turns off a safety check. Use it only when another system decides what stock is available. Holds already saved on the order are still checked and consumed at completion.
 
-`ProcessingAsync` and `CompleteCheckoutAsync` each have their own `StockValidation`. If you set it to `false` only in `ProcessingAsync`, completion still takes stock for lines without holds, and completion fails with `NotEnoughStockException` if there is not enough. That happens after the customer has paid. Set it in both events.
+`ProcessingAsync` and `CompletingCheckoutAsync` each have their own `StockValidation`. If you set it to `false` only in `ProcessingAsync`, completion still takes stock for lines without holds, and completion fails with `NotEnoughStockException` if there is not enough. That happens after the customer has paid. Set it in both events.
 
 ## When checkout is blocked
 

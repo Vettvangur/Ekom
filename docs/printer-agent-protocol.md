@@ -126,6 +126,6 @@ bool handledJob = await processor.ProcessNextAsync(cancellationToken);
 - [Ekom.Printer README](../Ekom/Printing/Ekom.Printer/README.md): website setup, stations, tokens and retention.
 - [Windows agent guide](../Ekom/Printing/Ekom.Printer.Agent/README.md): the supplied agent, for comparison.
 - [Manager overview](manager/overview.md#track-picking-slip-printing): how staff follow and resolve print jobs.
-- [Printer agent releases](printer-agent-releases.md): how the Windows agent is built and verified.
+- [Printer agent releases](contributing/printer-agent-releases.md): how the Windows agent is built and verified.
 
 [Back to Manager](manager/README.md)
