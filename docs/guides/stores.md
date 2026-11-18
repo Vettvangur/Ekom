@@ -1,10 +1,27 @@
+[Ekom docs](../README.md) / [Guides](README.md) / Stores
+
 # Stores
 
-A store is the boundary Ekom uses for catalog data, prices, discounts, providers, order numbering, basket behavior, cultures, and currencies. In request-bound storefront code Ekom can resolve the active store for you. In jobs, message handlers, imports, and other code without a storefront request, pass a store alias explicitly.
+A store is one shop inside Ekom. Each store has its own catalog data, prices, discounts, payment and shipping providers, order numbers, basket, cultures and currencies. This page shows how to get the right store in your code, how Ekom picks the store for a request, and which settings decide what stores share.
 
-## Read stores
+Each store is an `ekmStore` node in Umbraco. The store alias is the name of that node, for example `Store` or `IS`. Most Ekom methods take a store alias.
 
-Inject `Ekom.API.Store` and use the method that matches the context:
+In storefront code that runs inside a web request, Ekom works out the store for you. In background jobs, message handlers, imports and any other code without a storefront request, pass the store alias yourself.
+
+On this page:
+
+- [Get a store in your code](#get-a-store-in-your-code)
+- [How Ekom finds the store for a request](#how-ekom-finds-the-store-for-a-request)
+- [Change the store for the current request](#change-the-store-for-the-current-request)
+- [Cultures](#cultures)
+- [Currencies](#currencies)
+- [Countries](#countries)
+- [Choose what stores share](#choose-what-stores-share)
+- [Refresh the caches](#refresh-the-caches)
+
+## Get a store in your code
+
+Inject `Ekom.API.Store`, or use `Store.Instance` where injection is not possible. Use the method that fits where your code runs.
 
 ```csharp
 using Ekom.API;
@@ -12,137 +29,173 @@ using Ekom.Models;
 
 public sealed class StoreContext(Store stores)
 {
+    // The store of the current request, or the first store.
     public IStore? Current() => stores.GetStore();
 
+    // One store by alias. Throws StoreNotFoundException if the alias is unknown.
     public IStore ByAlias(string alias) =>
         stores.GetStore(alias)
         ?? throw new InvalidOperationException($"Store '{alias}' was not found.");
 
+    // All stores, ordered by their sort order in Umbraco.
     public IEnumerable<IStore> All() => stores.GetAllStores();
 }
 ```
 
-`GetStore()` first uses the store attached to Ekom's current `ContentRequest`. If the request has no resolved store, it returns the first configured store by `SortOrder`; if there are no stores, it returns `null`. This fallback is convenient for a single-store site but can hide missing context in a multi-store application.
+| Method | Returns | When nothing matches |
+| --- | --- | --- |
+| `GetStore()` | The store Ekom resolved for the current request. Without one, the first store by `SortOrder`. | `null` if there are no stores. |
+| `GetStore(alias)` | The store with that alias. Upper and lower case are ignored. | Throws `StoreNotFoundException`. It also throws when there are no stores at all. |
+| `GetAllStores()` | Every store, ordered by `SortOrder`. | An empty list. |
 
-`GetStore(alias)` performs a case-insensitive alias lookup. An empty or unknown alias throws `StoreNotFoundException` when stores exist, rather than silently selecting another store. Prefer this overload whenever the caller already knows the target store.
+`GetStore()` falls back to the first store when the request has no store. On a site with one store that is what you want. On a site with several stores it can hide a missing store in a request, so use `GetStore(alias)` whenever your code already knows which store it works on.
 
-`GetAllStores()` returns cached stores ordered by `SortOrder`. HTTP clients can read the same collection from `GET /ekom/api/stores`; see the [HTTP API reference](../reference/http-api.md#general-data).
+HTTP clients can read the list of stores from `GET /ekom/api/stores`. See the [HTTP API reference](../reference/http-api.md#general-data).
 
-## Domain and request resolution
+## How Ekom finds the store for a request
 
-For ordinary storefront routes, Ekom middleware resolves a store from the request host and first path segment. Domain records are supplied by Umbraco and associated with a store through the store's root content node. Domain matching supports host mappings such as `shop.example.com`, host-and-first-segment mappings, and relative first-segment mappings.
+For normal storefront pages, Ekom middleware picks the store from the host name and the first segment of the request path. It matches them against the domains (culture and hostnames) set up in Umbraco. A domain belongs to a store when it is set on the store's root content node (`storeRootNode` on the `ekmStore` node).
 
-Use the domain API when resolving a store outside the normal middleware path:
+A domain can be:
+
+- a host, such as `shop.example.com`
+- a host and a first path segment, such as `shop.example.com/en`
+- a first path segment only, such as `/en`
+
+To find a store outside the normal request flow, call `GetStoreByDomain`:
 
 ```csharp
-IStore? store = stores.GetStoreByDomain(
-    "shop.example.com/en",
-    "en-US");
+IStore? store = stores.GetStoreByDomain("shop.example.com/en", "en-US");
 ```
 
-The resolver first finds the cached Umbraco domain, then prefers a store with the same root node and requested culture. If that culture-specific match is absent, it uses a store with the same root node. If no domain mapping resolves, the current implementation falls back to the first configured store; it throws only when the store cache is empty. Validate the result when routing must never fall back.
+Ekom looks for a matching domain in this order: host and first segment, then host only, then the first segment on its own. For the first domain that matches, it picks a store with the same root node and the culture you passed. If no store has that culture, it takes any store with the same root node. If you pass an empty culture, Ekom uses the culture of the matched domain.
 
-`stores.GetDomains()` returns all cached `UmbracoDomain` mappings. Each `IStore.Domains` collection contains mappings whose root content ID matches that store's `StoreRootNodeId`.
+If no domain matches, `GetStoreByDomain` returns the first store. It throws an exception only when there are no stores at all. When your routing must never fall back to another store, check the result.
 
-Ekom API routes resolve store context differently from normal storefront pages. Supply `storeAlias` in the route, query, form, or request model where that operation documents it. There is no universal store header contract across the public controllers. See [HTTP API security and request context](../reference/http-api.md#security-and-request-context).
+`stores.GetDomains()` returns every domain Ekom has cached, as `UmbracoDomain` values. `IStore.Domains` holds the domains whose root node is the store's root node (`StoreRootNodeId`).
 
-## Change the current request store
+Ekom's own API routes (under `/ekom/`) find the store differently from storefront pages. Pass `storeAlias` in the route, query, form or request body where the endpoint documents it. There is no single store header that every endpoint reads. See [HTTP API security and request context](../reference/http-api.md#security-and-request-context).
 
-`SetStore(alias)` replaces the active store in Ekom's request context and returns the selected store:
+## Change the store for the current request
+
+`SetStore(alias)` sets the store for the rest of the current HTTP request and returns that store:
 
 ```csharp
 IStore? selected = stores.SetStore("Store");
 ```
 
-This affects later Ekom operations in the same HTTP request. It does not change Umbraco domain configuration, persist a customer preference, or rewrite the request culture. With no `HttpContext`, the method can resolve and return the store but has no request context to update.
+- Ekom calls that use the current store later in the same request now use this store.
+- An empty alias returns `null` and changes nothing.
+- An unknown alias throws `StoreNotFoundException`.
+- Without an `HttpContext`, the method returns the store but has no request to change.
 
-For background work, do not call `SetStore` to create ambient state. Pass the alias to catalog, order, provider, stock, and discount methods instead.
+`SetStore` does not change the domains in Umbraco, does not save a choice for the customer, and does not change the request culture.
+
+Do not call `SetStore` in background work to create a "current" store. Pass the alias to the catalog, order, provider, stock and discount methods instead.
 
 ## Cultures
 
-`IStore.Cultures` is the complete culture list for the store. `IStore.Culture` is the effective culture for the current request:
+`IStore.Cultures` lists every culture of the store. `IStore.Culture` is the culture to use for the current request. Ekom chooses it like this:
 
-1. Ekom reads ASP.NET Core's `IRequestCultureFeature`.
-2. If that culture name exists in `Cultures`, Ekom returns it.
-3. Otherwise Ekom returns the first configured culture.
-4. If the resulting culture list is empty, the model has a final `en-US` culture DTO fallback.
+1. It reads the request culture from ASP.NET Core (`IRequestCultureFeature`).
+2. If that culture is one of the store's `Cultures`, Ekom uses it.
+3. Otherwise Ekom uses the first culture in `Cultures`.
+4. If `Cultures` is empty, Ekom uses `en-US`.
 
 ```csharp
 IStore store = stores.GetStore("Store")!;
 
 string currentCulture = store.Culture.Name;
-IReadOnlyList<CultureInfoDto> supportedCultures = store.Cultures;
+List<CultureInfoDto> supportedCultures = store.Cultures;
 string pathPrefix = store.UrlPrefix(currentCulture);
 ```
 
-Culture DTOs expose names and ISO language metadata without serializing `System.Globalization.CultureInfo` directly. `UrlPrefix(culture)` normalizes a configured non-empty prefix to start with `/` and not end with `/`.
+Cultures are `CultureInfoDto` values. They hold the culture name and ISO language data, so Ekom does not serialize `System.Globalization.CultureInfo` directly.
 
-Store selection and request culture are related but separate. Selecting a store does not itself set ASP.NET Core request localization. Configure localization and Umbraco domains in the host application so the request culture presented to Ekom is the intended one.
+`UrlPrefix(culture)` returns the store's URL prefix for that culture. If the prefix is set, Ekom makes sure it starts with `/` and does not end with `/`. If it is not set, you get an empty value.
+
+The store and the request culture are separate. Choosing a store does not set the ASP.NET Core request culture. Set up localization and Umbraco domains in your site so that the request culture Ekom sees is the one you want.
 
 ## Currencies
 
-`IStore.Currencies` lists the store's configured `CurrencyModel` values. `IStore.Currency` and `GetCurrentCurrency()` resolve the active value in this order:
+`IStore.Currencies` lists the store's currencies as `CurrencyModel` values. `IStore.Currency` and `GetCurrentCurrency()` return the currency to use now. Ekom chooses it in this order:
 
-1. A valid `EkomCurrency-{StoreAlias}` cookie whose value matches `CurrencyModel.CurrencyValue`.
-2. A configured currency whose `CurrencyValue` matches the current request culture name.
-3. The first configured currency.
+1. The `EkomCurrency-{StoreAlias}` cookie, if its value matches the `CurrencyValue` of one of the store's currencies.
+2. The currency whose `CurrencyValue` matches the name of the current request culture.
+3. The first currency of the store.
 
-`CurrencyValue` is the configured culture/region value used for selection. `ISOCurrencySymbol`, `CurrencySymbol`, decimal digits, and formatting are derived from it when .NET can resolve that region.
+`CurrencyValue` is a culture name such as `en-US` or `is-IS`, not an ISO currency code such as `USD`. Ekom uses it to choose the currency. When .NET knows that culture, Ekom takes the ISO currency code (`ISOCurrencySymbol`), the currency symbol, the number of decimals and the format from it.
 
-The HTTP currency operation updates an existing basket, when present, and writes the store-specific currency cookie:
+To let a customer change currency over HTTP, post the `CurrencyValue`:
 
 ```http
 POST /ekom/order/currency?currency=en-US
 ```
 
-Use the exact configured `CurrencyValue`. The endpoint does not create a basket when none exists. In C#, `Order.UpdateCurrencyAsync(currency, orderId, storeAlias)` updates the persisted order but does not write the browser cookie, so application code that exposes its own currency selector must keep browser selection and order currency coordinated.
+This endpoint works on the store of the current request. It does two things:
 
-Changing currency recalculates the order against the selected store currency. Product price behavior is covered in [Catalog and products](catalog-and-products.md), and the returned price contracts are described in [Models and behavior](../reference/models-and-behavior.md#prices).
+- If the customer has a basket, it changes the basket's currency and recalculates it.
+- It writes the `EkomCurrency-{StoreAlias}` cookie. The cookie lasts 360 days.
 
-## Countries and provider availability
+It does not create a basket when there is none. Use a `CurrencyValue` that the store has. If you post another value, the cookie is still written, but Ekom ignores it and falls back to the next rule in the list above.
 
-Countries are not inferred from the current store culture or currency. They are a separate Ekom country list used primarily when filtering shipping and payment providers by configured zones.
+In C#, `Order.UpdateCurrencyAsync(currency, orderId, storeAlias, ct)` changes the currency of a saved order. It does not write the cookie. If you build your own currency switcher, keep the cookie and the order currency in step yourself.
+
+Prices of products are covered in [Catalog and products](catalog-and-products.md). The price types that Ekom returns are described in [Models and behavior](../reference/models-and-behavior.md#prices).
+
+## Countries
+
+Countries do not come from the store's culture or currency. Ekom keeps a separate country list. Its main use is to filter payment and shipping providers by the zones they are set up for.
 
 ```csharp
 IEnumerable<Country> countries = providers.GetAllCountries();
 ```
 
-HTTP clients can call `GET /ekom/api/countries`. Country records contain `Name` and a country `Code`. Provider collection methods apply country filtering only for a two-letter code; an empty or differently sized value does not filter by country. See [Payment and shipping providers](providers.md#availability-constraints).
+`providers` is `Ekom.API.Providers`. HTTP clients can call `GET /ekom/api/countries`. Each `Country` has a `Name` and a `Code`.
 
-## Multi-store behavior
+The provider methods filter by country only when you pass a two-letter code, such as `IS` or `DE`. An empty value, or a value of another length, does not filter by country. See [Payment and shipping providers](providers.md#how-ekom-filters-providers-by-country-and-amount).
 
-Several settings decide whether data is isolated or shared. Treat them independently:
+## Choose what stores share
 
-| Setting | Effect |
-| --- | --- |
-| Store `UserBasket` | Uses the authenticated member's saved `orderId` instead of an order cookie when a signed-in member is available. Falls back to `Ekom:UserBasket`. |
-| Store `ShareBasketBetweenStores` | Uses the shared `ekmOrder` cookie name instead of `ekmOrder-{StoreAlias}`. Falls back to `Ekom:ShareBasket`. Shared stores must use compatible currencies and catalog/order assumptions. |
-| Store `ApplyVatOnShipping` | Controls shipping VAT behavior and falls back to `Ekom:ApplyVatOnShipping`. |
-| `Ekom:PerStoreStock` | Separates primary stock identities by store alias. When false, primary stock is global. |
-| `Ekom:GlobalCatalog` | Allows eligible catalog key/ID lookups to fall back to another store. Route lookups remain in the selected store. |
+Several settings decide whether stores keep data apart or share it. Each one works on its own.
 
-Products, categories, discounts, payment providers, and shipping providers are represented by per-store caches even when their source content overlaps. Always carry the selected alias through a multi-store flow; do not assume that a product or provider resolved for one store is valid in another.
+| Setting | Where | Default | Effect |
+| --- | --- | --- | --- |
+| `userBasket` | Store node | `Ekom:UserBasket`, which is `false` | `true`: a signed-in member has one basket, saved on the member (in `orderId`) instead of in a cookie. |
+| `shareBasketBetweenStores` | Store node | `Ekom:ShareBasket`, which is `false` | `true`: the basket cookie is called `ekmOrder` for every store, instead of `ekmOrder-{StoreAlias}`. |
+| `applyVatOnShipping` | Store node | `Ekom:ApplyVatOnShipping`, which is `false` | Whether VAT is added to shipping. |
+| `Ekom:PerStoreStock` | appsettings | `false` | `true`: each store has its own stock count. `false`: one count per product for all stores. See [Stock](stock.md). |
+| `Ekom:GlobalCatalog` | appsettings | `false` | `true`: looking up a product or category by key, ID or SKU can return one from another store. Looking up by route never leaves the store. See [Catalog and products](catalog-and-products.md#find-a-product-or-category). |
 
-Basket sharing changes only how the basket identifier is named and found. It does not merge orders, convert currencies, or validate that every store can sell every existing line. Enable it only where the participating stores are deliberately compatible. See [Orders and baskets](orders-and-baskets.md#basket-identity-and-resolution) for the basket rules.
+A value set on the store node wins. When the store node does not have the property, Ekom uses the appsettings value.
 
-The complete application-setting list is in [Configuration reference](../reference/configuration-reference.md).
+Ekom keeps products, categories, discounts, payment providers and shipping providers in a separate cache for each store, even when the content behind them is shared. Carry the store alias through every step of a multi-store flow. A product or provider that Ekom found for one store is not automatically valid in another.
 
-## Refresh caches
+Sharing a basket only changes the name of the cookie that finds it. Ekom does not merge orders, does not convert currencies, and does not check that every store can sell every line already in the basket. Turn it on only for stores that use the same currencies and can sell the same products. See [Orders and baskets](orders-and-baskets.md#how-ekom-finds-the-current-basket) for how Ekom finds a basket.
 
-Store and domain reads come from Ekom caches, as do the per-store catalog, discount, and provider models. A full administrative refresh is available through:
+All application settings are listed in the [Configuration reference](../reference/configuration-reference.md).
+
+## Refresh the caches
+
+Ekom reads stores and domains from memory. The catalog, discounts and providers of each store are in memory too. Umbraco tells Ekom when content changes, so you do not normally need to refresh anything.
+
+To rebuild every Ekom cache, call:
 
 ```csharp
 stores.RefreshCache();
 ```
 
-`RefreshCache()` runs Ekom's cache initializer in forced-refresh mode. It is a broad administrative operation, not something to call on normal reads or every request. Use it after bulk or programmatic content changes when the normal Umbraco cache notifications are not sufficient, and expect all dependent per-store caches to be rebuilt.
+`RefreshCache()` rebuilds all of Ekom's caches, for every store. It is a heavy operation. Do not call it on normal reads or on every request. Use it after bulk or code changes to content when Umbraco's change notifications did not reach Ekom.
 
-Ekom also exposes `POST /ekom/backoffice/Cache` for its authenticated Umbraco backoffice integration. That route requires a backoffice session and is not a storefront cache endpoint. This guide intentionally does not prescribe a backoffice editing workflow; store and domain authoring depends on the installed Umbraco/Ekom version and the site's content model.
+Backoffice users can trigger the same rebuild with `POST /ekom/backoffice/Cache`. That route needs a signed-in Umbraco backoffice user, and Ekom logs who started the rebuild. It is not meant for storefront code.
 
-## Related reference
+## Related pages
 
-- [.NET API](../reference/dotnet-api.md#store)
-- [HTTP API](../reference/http-api.md)
-- [Models and behavior](../reference/models-and-behavior.md#istore)
-- [Configuration reference](../reference/configuration-reference.md)
-- [Headless storefronts](headless.md)
+- [Catalog and products](catalog-and-products.md): read products and categories for a store.
+- [Orders and baskets](orders-and-baskets.md): how the basket for a store is found and changed.
+- [Payment and shipping providers](providers.md): filter providers by store and country.
+- [Headless storefronts](headless.md): pass the store alias from a client that talks to Ekom over HTTP.
+- [.NET API reference](../reference/dotnet-api.md#store): every method on `Ekom.API.Store`.
+- [Configuration reference](../reference/configuration-reference.md): all `Ekom` settings.
+
+[Back to Guides](README.md)

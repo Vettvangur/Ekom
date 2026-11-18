@@ -1,51 +1,116 @@
+[Ekom docs](../README.md) / [Guides](README.md) / Order reviews
+
 # Order reviews
 
-Order reviews flag issues that require a person to review an order. They are independent of payment, fulfillment and order status. The Umbraco 17 and 18 manager displays open issues in the Needs review view, beside order numbers, and above the order detail tabs. The Needs review tab is hidden when its filtered count is zero. Resolving the last alert in that view returns to All orders. Counts, totals and exports use the same filtered order set. The Needs review view lists an order whatever its state, including drafts: an order that was paid but whose checkout did not complete is still a draft. Every other view excludes drafts as before.
+An order review flags a problem on an order that a person has to look at, for example a failed push to an accounting system or a payment that does not match the order. Ekom raises some reviews itself, and your integrations can raise their own. A review stays open until someone resolves it in the manager.
 
-## Raise an issue from an integration
+Reviews are separate from the order, payment and fulfillment statuses. Raising or resolving a review never changes a status.
 
-Inject `IOrderReviewService` from `Ekom.Services` (registered by the standard Ekom ASP.NET Core registrations):
+On this page:
+
+- [Where reviews appear in the manager](#where-reviews-appear-in-the-manager)
+- [Raise a review from your integration](#raise-a-review-from-your-integration)
+- [Reviews Ekom raises itself](#reviews-ekom-raises-itself)
+- [Resolve a review in the manager](#resolve-a-review-in-the-manager)
+- [Manager HTTP API](#manager-http-api)
+- [Filter the order list by review](#filter-the-order-list-by-review)
+- [How reviews are stored](#how-reviews-are-stored)
+
+## Where reviews appear in the manager
+
+In the Umbraco 17, 18 and 19 manager, open reviews appear in three places:
+
+- the **Needs review** view of the order list,
+- beside the order number in the list,
+- above the tabs in the order details.
+
+The **Needs review** view lists every order with an open review, whatever its status, drafts included. An order that was paid but whose checkout did not complete is still a draft, so it appears here. Every other view leaves drafts out.
+
+The view is hidden when no order matching the current filters needs review. When you resolve the last review in the view, the manager goes back to **All orders**. Counts, totals and exports use the same filtered orders as the list.
+
+## Raise a review from your integration
+
+Inject `IOrderReviewService` from `Ekom.Services`. The standard Ekom registrations add it.
 
 ```csharp
+using Ekom.Services;
+
 await reviews.RaiseAsync(
     orderId,
     source: "dk-accounting",
     code: "invoice-push-failed",
     title: "Accounting push failed",
     message: "The request timed out. Check whether the invoice exists in DK.",
-    ct: cancellationToken);
+    ct: ct);
 ```
 
-The order must already exist. Source and code are trimmed and lowercased. A matching unresolved issue for the same order/source/code is returned unchanged, including its original message and creation time. Use a different code when two problems need separate review. After resolution, a later failure creates a new review.
+- The order must exist. Otherwise Ekom throws `KeyNotFoundException`.
+- Ekom trims all four values and converts `source` and `code` to lower case.
+- If the order already has an open review with the same source and code, Ekom returns that review unchanged, with its original message and time. Use a different code when two problems need separate reviews.
+- After a review is resolved, raising it again creates a new review. A resolved review is never reopened.
+- Fixing the problem in your integration does not resolve the review. A person resolves it in the manager.
 
-The service is intended for trusted server integrations. HTTP endpoints enforce manager and store access. Do not include secrets or raw exception dumps in messages; treat messages and comments as plain text when building the UI.
+| Field | Required | Maximum length |
+| --- | --- | --- |
+| `source` | Yes | 100 characters |
+| `code` | Yes | 100 characters |
+| `title` | Yes | 200 characters |
+| `message` | Yes | 4,000 characters |
 
-## Automatic checkout reviews
+An empty, blank or too long value throws `ArgumentException`.
 
-Checkout completion automatically raises reviews with source `checkout` for:
+The service is for trusted server code and does not check who is calling. The HTTP endpoints below check manager and store access. Do not put secrets or full exception dumps in messages. Treat messages and comments as plain text when you show them.
 
-- `coupon-exhausted`: a coupon cannot be claimed at completion because it is missing or has no uses remaining. Checkout still completes and the discount is flagged for review.
-- `completion-stock-failed`: completion throws a stock availability error.
-- `completion-failed`: completion throws another error (excluding cancellation).
+## Reviews Ekom raises itself
 
-Failure reviews are recorded before the existing failure email is sent, provided the order was loaded. Review persistence failures are logged without replacing the checkout error or preventing an otherwise successful completion. Reviews use a separate, uncancelled write; completion and review recording are not one atomic transaction.
+### Checkout completion
 
-Draft notes survive background updates in the manager. Saving a note on an alert that another user has resolved returns HTTP 409 and keeps the dialog and note available to copy.
+When checkout completes, Ekom raises reviews with the source `checkout`:
+
+| Code | When |
+| --- | --- |
+| `coupon-exhausted` | The order's coupon could not be marked as used because it no longer exists or has no uses left. Checkout still completes. Check the discount on the order. |
+| `completion-stock-failed` | Completion failed because there was not enough stock. |
+| `completion-failed` | Completion failed with any other error. A cancelled request does not raise a review. |
+
+For the two failure codes, Ekom raises the review before it sends the failure email, as long as the order could be loaded. If saving the review fails, Ekom logs the error. That never replaces the checkout error and never stops a completion that would otherwise succeed. The review is saved separately from the completion, in its own write that is not cancelled with the request.
+
+### Recorded payments
+
+When a payment is recorded on the order, Ekom raises reviews with the source `payment`:
+
+| Code | When |
+| --- | --- |
+| `amount-mismatch` | The captured amount for the order, or the amount of an authorization, differs from the amount to charge by 1 or more in the order's currency. Smaller differences are ignored, because gateways round to whole units. The payment is still recorded and the order still completes. |
+| `paid-checkout-changed` | A payment arrived for a checkout that had been changed or released before it arrived. The order was not completed and is still a draft. Compare the payment with the order, then complete the order or refund the payment. |
+
+The message gives the amounts and the payment ID. A repeated gateway callback does not raise a second review. If saving the review fails, Ekom logs the error and keeps the payment record. See [Payments](payments.md).
+
+## Resolve a review in the manager
+
+1. Open the order and click **Review** on the alert.
+2. The dialog shows the title, message, source and time of the review. Describe what you did.
+3. Leave **Problem is resolved** checked to close the review. Uncheck it to save a note and leave the review open. A note is required when you leave it open.
+4. Click **Mark as reviewed**, or **Save note** when you left the review open.
+
+Every saved review action writes your user name and the UTC time to the order's activity log. The resolution and the log entry are saved together in one transaction. Resolving a review does not retry the integration, change the order status, or do any payment, fulfillment or refund work.
+
+Your note stays in the dialog while the manager refreshes the order in the background. If another user resolved the review while you were writing, saving returns HTTP 409. The dialog stays open with your note, so you can copy it.
 
 ## Manager HTTP API
 
-These routes require the existing `UmbracoUser` authorization policy and access to the order's store. Missing orders or reviews return 404; forbidden access returns 403; invalid input returns 400.
+These endpoints need a signed-in backoffice user (the `UmbracoUser` policy), manager access, and access to the order's store. All responses use camelCase property names.
 
-| Method | Route | Purpose |
+| Method | Route | What it does |
 | --- | --- | --- |
-| GET | `/ekom/manager/orders/{orderId}/reviews` | Open reviews, newest first |
-| POST | `/ekom/manager/orders/{orderId}/reviews` | Raise or reuse an open review |
-| POST | `/ekom/manager/orders/{orderId}/reviews/{reviewId}/resolve` | Resolve an open review |
-| POST | `/ekom/manager/orders/{orderId}/reviews/{reviewId}/review` | Record a note or resolve; returns 409 if already resolved |
+| GET | `/ekom/manager/orders/{orderId}/reviews` | Lists open reviews, newest first. |
+| POST | `/ekom/manager/orders/{orderId}/reviews` | Raises a review, or returns the open one with the same source and code. |
+| POST | `/ekom/manager/orders/{orderId}/reviews/{reviewId}/review` | Saves a note, or resolves the review. |
+| POST | `/ekom/manager/orders/{orderId}/reviews/{reviewId}/resolve` | The same as `/review`. |
 
-GET supports `includeResolved=true` for history, `skip` (default 0) and `take` (default 50, maximum 200). History includes open and resolved reviews. All responses use camelCase property names.
+The list takes `includeResolved=true` to include resolved reviews, `skip` (default `0`) and `take` (default `50`, from `1` to `200`).
 
-Raise body:
+Body to raise a review:
 
 ```json
 {
@@ -56,43 +121,60 @@ Raise body:
 }
 ```
 
-Resolve body:
+Body to resolve a review, or to save a note:
 
 ```json
-{ "comment": "Confirmed the invoice exists in DK." }
+{ "comment": "Confirmed the invoice exists in DK.", "resolved": true }
 ```
 
-Use `{}` when no comment is needed. The authenticated user's name supplies `resolvedBy`; it cannot be supplied in the body. A manager review submitted after the alert was resolved returns HTTP 409 without replacing the original user, time or comment. The server-side `ResolveAsync` API remains idempotent and returns the existing resolution. Resolution does not retry an integration or change the order status. Successful integration retries do not automatically resolve reviews.
+- `resolved` defaults to `true`. Send `"resolved": false` with a comment to save a note and keep the review open.
+- Send `{}` to resolve without a comment.
+- A blank comment is saved as `null`. A comment can be at most 4,000 characters.
+- `resolvedBy` comes from the signed-in user. You cannot set it in the body.
 
-Source/code allow 100 characters each, title 200, message/comment 4000 and reviewer name 200. Empty required fields are rejected; blank comments are stored as null. Timestamps represent UTC.
+| Status code | When |
+| --- | --- |
+| 400 | A value is missing, blank or too long, `skip` or `take` is out of range, or a note was sent without a comment. |
+| 401 | Ekom cannot find the signed-in user's name. |
+| 403 | No manager access, or no access to the order's store. |
+| 404 | No order or no review with that ID. |
+| 409 | The review is already resolved. The first resolution, with its user, time and comment, is kept. |
 
-## Order list and count
+### Resolve from C#
 
-`GET /ekom/manager/SearchOrders` includes `needsReview` on each returned order. The optional query parameter `needsReview=true` filters to orders with open reviews; `false` filters to orders without them; omitting it leaves all orders eligible.
+`IOrderReviewService` has two methods for this:
 
-The existing response `count` and totals respect this filter plus the existing store/date/search filters. Multiple open reviews count as one order. The `needsReview` projection is included in SearchOrders list results; other order APIs retain their existing shapes.
+- `ReviewAsync(orderId, reviewId, reviewedBy, comment, resolved, ct)` works like the HTTP endpoints. It throws `InvalidOperationException` when the review is already resolved.
+- `ResolveAsync(orderId, reviewId, resolvedBy, comment, ct)` can be called more than once. When the review is already resolved, it returns the review as it is, keeps the first resolution and writes nothing to the activity log.
 
-The query uses indexed `EXISTS` checks, does not load review messages, and adds no per-order database calls. It does not deserialize order JSON to determine review status.
+Both return `null` when there is no review with that ID on the order.
 
-## Storage and installation
+## Filter the order list by review
 
-`EkomOrderReviews` stores each issue and its optional resolution in one row. An index on `(OrderId, ResolvedUtc)` supports open-review checks. No background queue, extra history table, version field or cached counter is used. Raising awaits a short database transaction; reviewing reads and updates the unresolved row and writes its activity log in a serializable transaction.
+`GET /ekom/manager/SearchOrders` returns `needsReview` on each order. Add `needsReview=true` to list only orders with an open review, or `needsReview=false` for orders without one. Leave it out to list all orders.
 
-Table/index creation is repeatable and runs during fresh setup and the existing startup schema checks on Umbraco 13, 17 and 18. Existing rows are preserved. Non-Umbraco hosts must provision the same schema before using these APIs, as with the other Ekom tables.
+The `count` and totals in the response follow this filter, together with the store, date and search filters. An order with several open reviews counts once. Other order APIs do not return `needsReview`.
 
-## Automatic payment reviews
+In the manager's order filter, search and export, the view key `NeedsReview` selects orders in every status, drafts included, that have an open review.
 
-Recording a payment raises reviews with source `payment` for:
+The filter uses an indexed `EXISTS` check. It does not load review messages, does not make a database call per order, and does not read the order JSON.
 
-- `amount-mismatch`: the amount captured for the order, or the amount of an authorization, differs from the order total by one currency unit or more. Smaller differences are ignored because gateways round to whole units. The payment is still recorded and the order still completes.
-- `paid-checkout-changed`: a payment arrived for a checkout that was changed or released before it arrived, so the order was not completed and is still a draft. Compare the payment with the order, then complete or refund it.
+## How reviews are stored
 
-The message names the amounts and the payment id. A repeated gateway callback does not raise a second review. A failure to store the review is logged and does not undo the payment record. See [Payments](payments.md).
+Each review, with its resolution, is one row in the `EkomOrderReviews` table. An index on `(OrderId, ResolvedUtc)` makes it fast to find open reviews. Times are in UTC.
 
-## Reviewing in the manager
+- Raising a review runs a short serializable transaction.
+- Resolving or saving a note reads and updates the open row and writes the activity log entry in one serializable transaction.
+- There is no background queue, history table or cached counter.
 
-The Review dialog shows the original title, message, source and creation time. Staff can enter what was done and leave **Problem is resolved** checked to clear the alert, or uncheck it to record a note while leaving the issue open. A note is required when keeping an issue open. Every successful review action records the authenticated user and UTC timestamp in the order activity log. Resolution and activity logging commit atomically; repeated resolution does not duplicate the log or overwrite the first resolution.
+Ekom creates the table and index when it installs, and checks them at every startup on Umbraco 17, 18 and 19. This is safe to repeat and keeps existing rows. If you run Ekom outside Umbraco, create the same table before you use these APIs, as for the other Ekom tables.
 
-`POST /ekom/manager/orders/{orderId}/reviews/{reviewId}/review` accepts `{ "comment": "Checked invoice", "resolved": false }`. Omit `resolved` to resolve. No payment, fulfillment, refund or external integration action is performed.
+## Related pages
 
-The order view key `NeedsReview` is supported by order search and export. It covers orders in every state, drafts included, that have an unresolved review, so several alerts on one order still count as one order.
+- [Order, payment, and fulfillment statuses](order-statuses.md): the statuses that reviews sit beside.
+- [Payments](payments.md): the payment records that can raise reviews.
+- [Checkout](checkout.md): how completion works, and where it can fail.
+- [Manager orders](../manager/orders.md): the order list and details where staff resolve reviews.
+- [HTTP API reference](../reference/http-api.md): every manager endpoint.
+
+[Back to Guides](README.md)

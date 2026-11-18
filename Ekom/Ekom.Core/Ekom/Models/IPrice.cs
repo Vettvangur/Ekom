@@ -45,6 +45,11 @@ public interface IPrice : IVatPrice, ICloneable
     /// </value>
     ICalculatedPrice BeforeDiscountWithOutVat { get; }
     /// <summary>
+    /// The price before the discount, with VAT, whether or not the store's prices include VAT.
+    /// The matching price after the discount is <see cref="WithVat"/>.
+    /// </summary>
+    ICalculatedPrice BeforeDiscountWithVat { get; }
+    /// <summary>
     /// Price after discount with VAT left as-is
     /// </summary>
     ICalculatedPrice AfterDiscount { get; }

@@ -412,6 +412,65 @@ public class ImportTreeSnapshotTests
         fixture.AssertNoReads();
     }
 
+#if !NET8_0
+    [Fact]
+    public void FullSyncMovesFeedProductsOutBeforeDeletingTheirCategory()
+    {
+        using var fixture = new Fixture(Fixture.CategoryId);
+        var doomed = fixture.Categories.Single(x => x.Id == Fixture.CategoryId);
+
+        var pending = fixture.HideCategoriesAwaitingDelete([doomed], [new ImportCategory { Identifier = "processing", ParentIdentifier = "", NodeName = "Processing", Title = [] }]);
+
+        // The product step must not resolve the category that is about to go.
+        Assert.DoesNotContain(doomed, fixture.Categories);
+
+        fixture.DeleteCategoriesAwaitingDelete(pending, [fixture.ProductImport("processing")]);
+
+        var calls = fixture.ContentService.Invocations.Select(x => x.Method.Name).ToList();
+        Assert.Equal(Fixture.ProcessingId, fixture.Product.Object.ParentId);
+        Assert.True(calls.IndexOf(Fixture.MoveMethod) < calls.IndexOf("Delete"));
+        fixture.ContentService.Verify(x => x.Delete(doomed, Fixture.SyncUser), Times.Once);
+        fixture.ContentService.Verify(x => x.Delete(fixture.Product.Object, It.IsAny<int>()), Times.Never);
+        Assert.Equal(1, fixture.Count("categoriesDeleted"));
+    }
+
+    [Fact]
+    public void FullSyncLeavesProductsMissingFromTheFeedInTheDeletedCategory()
+    {
+        using var fixture = new Fixture(Fixture.CategoryId);
+        var doomed = fixture.Categories.Single(x => x.Id == Fixture.CategoryId);
+
+        var pending = fixture.HideCategoriesAwaitingDelete([doomed], []);
+        fixture.DeleteCategoriesAwaitingDelete(pending, []);
+
+        Assert.Equal(Fixture.CategoryId, fixture.Product.Object.ParentId);
+        Assert.DoesNotContain(fixture.ContentService.Invocations, x => x.Method.Name == Fixture.MoveMethod);
+        fixture.ContentService.Verify(x => x.Delete(doomed, Fixture.SyncUser), Times.Once);
+    }
+
+    [Fact]
+    public void FullSyncHidesSubcategoriesOfADeletedCategoryButKeepsOnesFromTheFeed()
+    {
+        using var fixture = new Fixture(Fixture.CategoryId);
+        fixture.Categories.RemoveAll(x => x.Id != Fixture.CategoryId);
+        var doomed = fixture.Categories.Single();
+        var removedChild = fixture.AddDescendant(400, Fixture.CategoryId, "ekmCategory", "removed-child");
+        var feedChild = fixture.AddDescendant(401, Fixture.CategoryId, "ekmCategory", "feed-child");
+        fixture.Categories.Add(removedChild);
+        fixture.Categories.Add(feedChild);
+
+        var pending = fixture.HideCategoriesAwaitingDelete([doomed], [new ImportCategory { Identifier = "feed-child", ParentIdentifier = "", NodeName = "Feed child", Title = [] }]);
+
+        Assert.Equal([feedChild], fixture.Categories);
+
+        fixture.DeleteCategoriesAwaitingDelete(pending, []);
+
+        // Deleting the category would delete the feed's category with it, so it is kept.
+        fixture.ContentService.Verify(x => x.Delete(It.IsAny<IContent>(), It.IsAny<int>()), Times.Never);
+        Assert.Equal(0, fixture.Count("categoriesDeleted"));
+    }
+#endif
+
     private sealed class Fixture : IDisposable
     {
         public const int CategoryId = 10;
@@ -529,6 +588,15 @@ public class ImportTreeSnapshotTests
         public void Iterate(ImportProduct product, bool delete = true, bool recycle = true)
             => Invoke("IterateProductTree", [new List<ImportProduct> { product }, Nodes, Products, Categories,
                 new List<IMedia>(), null, SyncUser, delete, recycle ? Recycle.Object : null, Processing.Object, false, null]);
+
+#if !NET8_0
+        public object HideCategoriesAwaitingDelete(List<IContent> awaitingDelete, List<ImportCategory> importCategories)
+            => typeof(ImportService).GetMethod("HideCategoriesAwaitingDelete", BindingFlags.Static | BindingFlags.NonPublic)!
+                .Invoke(null, [awaitingDelete, Categories, importCategories])!;
+
+        public void DeleteCategoriesAwaitingDelete(object pending, List<ImportProduct> importProducts)
+            => Invoke("DeleteCategoriesAwaitingDelete", [pending, importProducts, Products, Categories, SyncUser]);
+#endif
 
         public void IterateCategories(List<ImportCategory> categories, bool delete)
             => Invoke("IterateCategoryTree", [categories, categories, Categories, new List<IMedia>(), null,

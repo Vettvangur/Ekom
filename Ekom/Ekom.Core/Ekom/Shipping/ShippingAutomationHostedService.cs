@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace Ekom.Shipping;
 
 /// <summary>
-/// Books the carrier shipment when checkout completes, for shipping methods whose carrier account
+/// Books the carrier shipment after checkout has completed, for shipping methods whose carrier account
 /// creates shipments automatically.
 /// </summary>
 internal sealed class ShippingAutomationHostedService : IHostedService
@@ -24,6 +24,7 @@ internal sealed class ShippingAutomationHostedService : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        // Raised after completion, so a shipment is never booked for an order whose completion fails.
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
         return Task.CompletedTask;
     }
@@ -60,7 +61,7 @@ internal sealed class ShippingAutomationHostedService : IHostedService
         {
             _logger.LogError(
                 exception,
-                "Automatic shipment creation failed during checkout completion for order {OrderId}",
+                "Automatic shipment creation failed after checkout completion for order {OrderId}",
                 args.OrderInfo?.UniqueId);
         }
     }

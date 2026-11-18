@@ -152,6 +152,47 @@ public sealed class OrderStateRulesTests
         Assert.Equal("ReadyForDispatch", stale.OriginalOrderStatusCol);
     }
 
+    [Theory]
+    [InlineData("Dispatched", FulfillmentStatus.Fulfilled)]
+    [InlineData("ReadyForPickup", FulfillmentStatus.Packed)]
+    public void LegacyFulfillmentStatusDoesNotMarkAnUnpaidOrderPaid(string legacy, FulfillmentStatus expected)
+    {
+        var previous = new OrderData { OrderStatusCol = "Pending" };
+        Assert.True(OrderStateRules.Initialize(previous, true));
+        Assert.Equal(PaymentStatus.Pending, previous.Status.PaymentStatus);
+
+        var saved = new OrderData { OrderStatusCol = legacy };
+        OrderStateRules.SynchronizeLegacy(saved, previous, true);
+
+        Assert.Equal(PaymentStatus.Pending, saved.Status.PaymentStatus);
+        Assert.Equal(expected, saved.Status.FulfillmentStatus);
+        // An unpaid order is never closed automatically.
+        Assert.Equal(OrderStatus.Open, saved.Status.OrderStatus);
+    }
+
+    [Fact]
+    public void LegacyReadyForDispatchStillMarksAnUnpaidOrderPaid()
+    {
+        var previous = new OrderData { OrderStatusCol = "Pending" };
+        Assert.True(OrderStateRules.Initialize(previous, true));
+
+        var saved = new OrderData { OrderStatusCol = "ReadyForDispatch" };
+        OrderStateRules.SynchronizeLegacy(saved, previous, true);
+
+        Assert.Equal(PaymentStatus.Paid, saved.Status.PaymentStatus);
+    }
+
+    [Fact]
+    public void LegacyDispatchedStillClosesAPaidOrder()
+    {
+        var saved = new OrderData { OrderStatusCol = "Dispatched" };
+        OrderStateRules.SynchronizeLegacy(saved, PaidOrder(), true);
+
+        Assert.Equal(PaymentStatus.Paid, saved.Status.PaymentStatus);
+        Assert.Equal(FulfillmentStatus.Fulfilled, saved.Status.FulfillmentStatus);
+        Assert.Equal(OrderStatus.Closed, saved.Status.OrderStatus);
+    }
+
     [Fact]
     public void AmbiguousHistoryIsNotSilentlyMigrated()
     {

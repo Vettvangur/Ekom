@@ -134,7 +134,10 @@ internal static class OrderStateRules
                         break;
                     default:
                         if (order == OrderStatus.Draft) order = OrderStatus.Open;
-                        if (payment is PaymentStatus.Pending or PaymentStatus.Failed or PaymentStatus.Authorized)
+                        // Dispatched and ReadyForPickup say where the goods are, not that the order was paid.
+                        // Only the legacy statuses that mean "paid" may turn an unpaid order into a paid one.
+                        if (legacy is not (LegacyStatus.Dispatched or LegacyStatus.ReadyForPickup)
+                            && payment is PaymentStatus.Pending or PaymentStatus.Failed or PaymentStatus.Authorized)
                             payment = mapped.PaymentStatus ?? payment;
                         if (legacy == LegacyStatus.Dispatched) fulfillment = FulfillmentStatus.Fulfilled;
                         else if (legacy == LegacyStatus.ReadyForPickup && fulfillment is not (FulfillmentStatus.Fulfilled or FulfillmentStatus.PartiallyFulfilled))

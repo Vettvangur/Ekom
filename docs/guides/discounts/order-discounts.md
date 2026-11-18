@@ -1,143 +1,174 @@
-# Order discounts for editors
+[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Order discounts
 
-[Editor overview](editors.md) | [Product discounts](product-discounts.md) | [Coupons](coupons.md) | [Developer guide](developers.md)
+# Order discounts
 
-Use an order discount for an offer evaluated against the basket: for example, 10% off selected items with a code, or an automatic 20% reduction after a quantity requirement is met.
+An order discount lowers the price of order lines in the basket. Use it for offers that depend on the basket, such as "10% off selected products with the code SPRING10" or "20% off when you buy at least 3". It can run automatically, or only when the customer enters a coupon code.
 
-An order discount applies to eligible order lines. It is not automatically a reduction on every basket item, and it does not imply a discount on shipping fees.
+An order discount lowers the price of order lines only. It does not lower shipping or payment fees.
 
-## Create the discount
+A basket holds one order discount at a time. When a second order discount fits, Ekom keeps the one that gives the lower basket total.
 
-1. Open **Content → Ekom → Discounts → Order Discounts** and find the intended store's container.
-2. Create an **Order Discount**. Give the node a descriptive name, such as "20% off eligible basket items when buying 3 bundles".
-3. Complete **Settings** using the table below.
-4. Confirm the store assignment in **Stores**, and enter values under the matching store/currency fields where provided.
-5. Review any disabled state, ranges, exclusions, and stock restrictions before publishing.
-6. For an automatic offer, switch **Global Discount** on and leave coupon codes out of that discount. For a code-based offer, leave it off and follow the [coupon guide](coupons.md).
+On this page:
 
-Labels and node locations may vary with your site's Umbraco setup.
+- [Create an order discount](#create-an-order-discount)
+- [What each field means](#what-each-field-means)
+- [Global Discount rewards more than Discount Items](#global-discount-rewards-more-than-discount-items)
+- [Qualifying Items and Discount Items are different](#qualifying-items-and-discount-items-are-different)
+- [Choose a quantity mode](#choose-a-quantity-mode)
+- [Stackable adds to a sale price or competes with it](#stackable-adds-to-a-sale-price-or-competes-with-it)
+- [Check the result](#check-the-result)
 
-In Umbraco 17 and 18, the Discount input keeps the currency label before the input and shows `%` after it when Type is Percentage, for example `ISK [20] %`. Fixed discounts have no percentage suffix. The percentage value is still entered as `20` for 20%. Changing Type changes the unit display, not the entered number. Start of Range, End of Range, and other range fields keep their currency labels without a percentage suffix.
+## Create an order discount
 
-## Understand the fields
+1. In the **Content** section, open **Ekom > Discounts > Order Discounts**. If your discounts are grouped in folders, open the folder you want.
+2. Create an **Order Discount**. Give it a name that says what it does, for example "20% off bundles when buying 3".
+3. On the **Settings** tab, fill in the fields. The table in the next section explains each one.
+4. In **Discount**, **Start of Range** and **End of Range**, enter the values for each store and currency. Each field shows one box per store, with one row per currency.
+5. On the **Stores** tab, turn on **Disable** for every store where the offer must not run.
+6. Decide how the offer starts:
+   - **Automatic:** turn on **Global Discount**, and do not add any coupon codes.
+   - **With a code:** leave **Global Discount** off, save, and then add codes on the **Coupons** tab. See [Coupons](coupons.md).
+7. Save and publish.
 
-| Field | What it means | When to use it / example |
+**Type** and **Discount** are required.
+
+When **Type** is **Percentage**, the **Discount** field shows `%` after each box, for example `EUR [20] %`. Enter `20` for 20%, not `0.20`. When **Type** is **Fixed**, there is no `%` and the number is an amount in that row's currency. Changing **Type** does not change the number you typed. **Start of Range** and **End of Range** are always amounts, never percentages.
+
+## What each field means
+
+| Field | What it means | Example |
 | --- | --- | --- |
-| Title | Name of the offer. | Use a meaningful name such as "20% off bundles with 3 items". |
-| Description | Explanation of the offer, where displayed by your storefront. | Describe the selected items and minimum quantity. Text does not enforce conditions; configure the fields too. |
-| Type | Whether Discount is a percentage or a fixed monetary reduction. | Percentage for 20% off; fixed amount for a reduction in the store currency. |
-| Discount | Size of the reduction in the selected type. | Enter `20` for 20%, not `0.20`. A currency label beside the field does not make it monetary when Type is Percentage. |
-| Discount Items | For a non-global offer, products/categories whose eligible units receive the reduction. Global offers bypass this inclusion selection. | Select the bundle category for a category-only coupon offer. See the Global Discount warning below for automatic offers. |
-| Exclude Discount Items | Items removed from the reward selection. | Select a premium product to leave it out of a category-wide offer. |
-| Stackable | Whether this order discount can apply on top of the selected product price reduction. | Leave off for competing offers; switch on only when you intend an additional reduction on sale prices. |
-| Global Discount | Evaluates a couponless offer automatically and broadens reward targeting to all eligible, non-excluded lines. | Switch on for an automatic basket-wide offer, not to restrict rewards to Discount Items. |
-| Quantity Discount Mode | Controls whether and how quantity unlocks rewards. | Choose None, Threshold, or Repeating as described below. |
-| Qualifying Items | Products/categories whose whole-unit quantities count towards the requirement. | Select products customers must buy to unlock the offer. |
-| Required Quantity | Qualifying whole units needed to activate a threshold or complete a repeating group. | `3` means three qualifying units, not three different products or three orders. |
-| Reward Quantity | Maximum eligible whole units discounted per completed group in Repeating mode. | `1` gives one discounted eligible unit for each completed qualifying group. |
-| Start of Range | Minimum qualifying basket amount, inclusive. | Require eligible line amounts to total at least 100 before the offer applies. |
-| End of Range | Maximum qualifying basket amount, inclusive; `0` means no upper limit. | Limit an offer to smaller baskets or leave `0` for no maximum. |
-| Disable | Turns off the discount for the relevant store. | Stop an offer without deleting its configuration. |
+| Title | The name of the offer. Your storefront can show it. | "20% off bundles when buying 3" |
+| Description | Text about the offer. Your storefront can show it. The text does not set any condition. | "Buy 3 bundle items and get 20% off." |
+| Type | **Percentage** takes a share of the price. **Fixed** takes an amount off each discounted unit, not once per order. | **Percentage** |
+| Discount | How much to take off, per store and currency. | `20` for 20% |
+| Discount Items | The products and categories that get the discount. If **Global Discount** is on, this selection does not limit who gets the discount. | The "Bundles" category |
+| Exclude Discount Items | Products and categories that never get this discount, also when **Global Discount** is on. They still count towards **Required Quantity** if they match **Qualifying Items**. | A premium product |
+| Stackable | On: the discount applies on top of a product discount. Off: the two compete and the lower price wins. It does not let a customer use two codes together. | Off |
+| Global Discount | On: the offer applies automatically, without a code, and can reward every product that is not excluded. | On for an automatic offer |
+| Quantity Discount Mode | **None**, **Threshold** or **Repeating**. Empty means **None**. See [Choose a quantity mode](#choose-a-quantity-mode). | **Threshold** |
+| Qualifying Items | The products and categories the customer must buy. Only whole units count. | The "Bundles" category |
+| Required Quantity | How many qualifying units the customer must buy. In **Repeating** mode, the size of one group. | `3` means 3 units, not 3 different products |
+| Reward Quantity | In **Repeating** mode, how many units get the discount for each complete group. Not used in other modes. | `1` |
+| Start of Range | The lowest basket amount for the offer to apply. A basket exactly at this amount qualifies. | `100` |
+| End of Range | The highest basket amount for the offer to apply. A basket exactly at this amount qualifies. `0` means no upper limit. | `0` |
+| Disable (Stores tab) | Turns the offer off in the stores where it is on. The settings are kept. | On for paused stores |
 
-The range amount is the sum of current line amounts for products that allow discounts. It is not restricted to Discount Items and does not include shipping/payment fees. Existing product reductions can affect this amount.
+The basket amount used by **Start of Range** and **End of Range** is the total of all order lines, after product discounts, except products with **Disable Discounts** turned on. It counts every line, not only **Discount Items**. Shipping and payment fees are not counted.
 
-### Global Discount changes the reward selection
+If the basket changes and the offer no longer qualifies, for example because the customer removes items, Ekom removes the offer from the basket. For an offer with a code, the code is removed too, and the customer must enter it again after the basket qualifies.
 
-> **Global does more than remove the need for a code.** It bypasses Discount Items when choosing reward lines. Eligible products outside that selection can receive the discount; Exclude Discount Items and products' Disable Discounts settings still prevent rewards.
+Products with **Disable Discounts** turned on never get an order discount and never count towards **Required Quantity**.
 
-For an automatic offer limited to certain rewards, explicitly exclude unwanted items/categories and test a mixed basket. If exclusions cannot express the intended offer, ask your developer about custom eligibility or use a non-global coupon offer. Threshold and Repeating still require Discount Items to be populated for a valid rule, even though Global Discount bypasses that selection when choosing rewards.
+## Global Discount rewards more than Discount Items
 
-Keep automatic discounts couponless. Adding any coupon codes to the discount prevents automatic global application, even if those codes have no uses left.
+> **Global Discount does more than remove the need for a code.** When it is on, Ekom ignores **Discount Items** when it decides which lines get the discount. Every product in the basket can get the discount, unless it is in **Exclude Discount Items** or has **Disable Discounts** turned on.
 
-### Qualifying items are not the same as discounted items
+To limit an automatic offer to some products, list the products you do not want in **Exclude Discount Items**, and test a basket with mixed products. If you cannot describe the offer with exclusions, use an offer with a code (Global Discount off), or ask your developer for a custom rule.
 
-**Qualifying Items** answers "What must the customer buy?" For non-global offers, **Discount Items** answers "What receives the reduction?" Global offers broaden the reward selection as described above.
+**Threshold** and **Repeating** still need at least one item in **Discount Items**, also when **Global Discount** is on. Without it, the offer never applies.
 
-- For a non-global coupon offer where buying bundle items should discount those same items, select them in both fields.
-- For a non-global coupon offer where buying three main products should unlock a discount on one accessory, select the main products as Qualifying Items and the accessory as Discount Items. The accessory must also be in the basket to receive a reduction.
-- An unrelated product does not count towards a quantity rule merely because it is in the basket.
+Keep automatic offers free of coupon codes. If an order discount has any coupon code, even one with no uses left, Ekom does not apply it automatically.
 
-Select the intended items explicitly rather than relying on an empty selection to mean "everything".
+Ekom checks automatic offers each time a basket is saved, for example when the customer adds a product. A basket that already exists gets a new automatic offer the next time it changes.
 
-Exclusions remove reward targets, not qualifying counts. An excluded reward product can still count towards the requirement if it matches Qualifying Items. Products with Disable Discounts on are omitted from both qualification and rewards.
+## Qualifying Items and Discount Items are different
 
-## Choose the quantity mode
+- **Qualifying Items** answers: what must the customer buy?
+- **Discount Items** answers: what gets cheaper? (When **Global Discount** is off.)
 
-| Mode | Use case | Settings needed |
+Two common setups, both with **Global Discount** off:
+
+- **Buy 3 bundle items, get the bundle items cheaper:** select the bundles in both fields.
+- **Buy 3 main products, get an accessory cheaper:** select the main products in **Qualifying Items** and the accessory in **Discount Items**. The accessory must also be in the basket. Ekom does not add it for the customer.
+
+A product that is in the basket but not in **Qualifying Items** does not count towards the quantity. A product that matches more than one selection in **Qualifying Items** is counted once. If you leave a field empty, it matches nothing; it does not mean "all products".
+
+## Choose a quantity mode
+
+| Mode | Use it for | Fields you must fill in |
 | --- | --- | --- |
-| None | A normal offer without a quantity qualification rule, such as a 10% coupon. | Configure the discount amount and eligible items; quantity-rule fields are not used. |
-| Threshold | Once the minimum is reached, discount all whole eligible reward units. | Discount Items, Qualifying Items, and a positive Required Quantity. |
-| Repeating | Each complete qualifying group unlocks a limited number of discounted units. | Discount Items, Qualifying Items, a positive Required Quantity, and a positive Reward Quantity. |
+| None | An offer without a quantity rule, such as 10% off with a code. Every unit of every matching line gets the discount. | **Discount Items** (or **Global Discount** on) |
+| Threshold | Once the customer reaches the quantity, every whole unit that matches gets the discount. | **Discount Items**, **Qualifying Items**, **Required Quantity** above 0 |
+| Repeating | Each complete group unlocks a set number of discounted units. | **Discount Items**, **Qualifying Items**, **Required Quantity** above 0, **Reward Quantity** above 0 |
 
-Both quantity modes require nonempty Discount Items, even for a global offer. For global offers, this validates the rule but does not restrict reward targets.
+If a required field is empty or 0, the offer never applies.
 
-For quantity modes, fractional quantities are rounded down for qualification and reward allocation. A product matching multiple qualifying selections is counted once, not once per matching category.
+In **Threshold** and **Repeating**, only whole units count, both for qualifying and for the discount. A line with 2.5 units counts as 2.
 
-### Example: automatic 20% off when buying at least three
+When the number of discounted units is limited, Ekom gives the discount to the cheapest matching units first. If a unit already has an equal or bigger product discount, Ekom skips it and gives the discount to the next unit.
 
-**Goal:** discount all whole eligible, non-excluded basket units once the customer buys at least three bundle units. This is a basket-wide automatic offer, not a bundle-only reward restriction.
+### Example: automatic 20% off when buying at least 3
 
-| Setting | Value |
+**Goal:** once the customer has 3 bundle units in the basket, take 20% off. With **Global Discount** on, this is an offer on the whole basket, not only on bundles.
+
+| Field | Value |
 | --- | --- |
 | Type | Percentage |
 | Discount | `20` |
-| Discount Items | Bundle products/category (required for a valid quantity rule; does not restrict global rewards) |
-| Global Discount | On; no coupon codes |
+| Discount Items | Bundles category (required for the rule, but does not limit the reward) |
+| Global Discount | On, with no coupon codes |
 | Stackable | Off |
 | Quantity Discount Mode | Threshold |
-| Qualifying Items | The same bundle products/category |
+| Qualifying Items | Bundles category |
 | Required Quantity | `3` |
-| Reward Quantity | Not used in Threshold mode |
+| Reward Quantity | Not used in **Threshold** |
 
-**Expected result:** a basket containing only two bundle units gets no reduction from this offer. Three qualify. Four also qualify, and all four eligible units receive the reduction, assuming no competing discount or other restriction prevents it. Adding an unrelated eligible item after qualification also discounts that item unless it is excluded.
+**Result:** with 2 bundle units, nothing changes. With 3 or 4 bundle units, every unit gets 20% off. If the customer then adds another product that is not excluded, that product also gets 20% off.
 
-### Example: repeat the offer for complete groups
+### Example: repeat the offer for each complete group
 
-**Goal:** three qualifying bundle units unlock up to three discounted eligible basket units; an incomplete qualifying group does not unlock more rewards.
+Use the same fields, but set **Quantity Discount Mode** to **Repeating**, **Required Quantity** to `3` and **Reward Quantity** to `3`.
 
-Use the same settings as above, but choose **Repeating**, with **Required Quantity = 3** and **Reward Quantity = 3**.
-
-| Bundle units in the basket | Threshold: required 3 | Repeating: required 3, reward 3 |
+| Bundle units in the basket | Threshold, Required Quantity 3 | Repeating, Required Quantity 3, Reward Quantity 3 |
 | --- | --- | --- |
-| 2 | 0 discounted units | 0 discounted units |
-| 3 | 3 discounted units | 3 discounted units |
-| 4 | 4 discounted units | 3 discounted units |
-| 6 | 6 discounted units | 6 discounted units |
+| 2 | 0 units discounted | 0 units discounted |
+| 3 | 3 units discounted | 3 units discounted |
+| 4 | 4 units discounted | 3 units discounted |
+| 6 | 6 units discounted | 6 units discounted |
 
-This comparison assumes the basket contains only eligible bundle items, quantities are whole units, and no other restriction or competing discount changes the result. In a mixed basket, global rewards can go to other eligible items, cheapest first.
+This table assumes the basket holds only bundle units, in whole numbers, with no other discount. In a mixed basket with **Global Discount** on, the discounted units can be other products, cheapest first.
 
-### Example: one discounted unit per three qualifying units
+### Example: 1 discounted unit for every 3
 
-Choose **Repeating**, **Required Quantity = 3**, and **Reward Quantity = 1**. Set the percentage or fixed reduction you want, and select qualifying and discounted items explicitly.
+Set **Quantity Discount Mode** to **Repeating**, **Required Quantity** to `3` and **Reward Quantity** to `1`. Select the qualifying and the discounted products.
 
-- Three qualifying units unlock up to one discounted eligible unit.
-- Six unlock up to two.
-- If qualifying and discounted items are the same, a basket of three can include the one discounted unit. This is not automatically "buy three full-price units and get a fourth discounted".
-- When rewards are limited, Ekom assigns them to the cheapest eligible units first. Existing equal or better product discounts can change which units receive the reward.
+- 3 qualifying units unlock 1 discounted unit. 6 unlock 2.
+- If the qualifying and the discounted products are the same, the discounted unit is one of the 3. This is "buy 3, one of them cheaper", not "buy 3 at full price, get a fourth cheaper".
+- The cheapest matching unit gets the discount first.
 
-## Understand Stackable
+## Stackable adds to a sale price or competes with it
 
-Suppose an eligible item normally costs 100, already has a product discount reducing it to 80, and the order offer is 10% off:
+A product normally costs 100. A product discount already lowers it to 80. The order discount is 10% off.
 
-| Stackable | Intended result |
+| Stackable | Result |
 | --- | --- |
-| Off | Offers compete. The product's 20% reduction is better than the order's 10%, so the item stays at 80. |
-| On | The order reduction can apply to the selected discounted price: 10% off 80 gives 72. |
+| Off | The two discounts compete. 80 is lower than 90 (10% off 100), so the product stays at 80. |
+| On | The order discount applies to the sale price: 10% off 80 gives 72. |
 
-These simplified amounts assume the same currency and VAT treatment and no rounding differences. **Stackable does not mean "combine every offer"**; it describes interaction with product discounts, not unrestricted stacking of multiple order discounts.
+When the two give the same price, the product discount is kept. **Stackable** only decides how an order discount works with product discounts. A basket still holds only one order discount.
 
-For a fixed-amount offer, do not assume the configured value is deducted once from the final order total. It is a reduction on eligible units; test a basket with more than one eligible unit to confirm the intended promotion.
+For a **Fixed** order discount, the amount comes off each discounted unit. Test a basket with more than one unit to see the full saving.
 
-## Publish and verify
+## Check the result
 
-Save and publish the discount using the action available in your editor, then:
+After you publish, check on the storefront:
 
-- For an automatic offer, test without entering any coupon.
-- Test below, exactly at, and above the required quantity. For repeating rules, include an incomplete group.
-- Test qualifying products with no reward products, and reward products with no qualifying products, if they are different selections.
-- Add unrelated and excluded products. A non-global offer should respect Discount Items; a global offer can reward unrelated eligible products, but must respect exclusions.
-- Test an existing product sale with Stackable off and on.
-- Test another store and any configured range or stock restrictions.
-- Check the basket's final totals and which units were discounted.
+1. For an automatic offer, check that it appears without entering a code.
+2. Test a basket below, exactly at and above **Required Quantity**. For **Repeating**, also test an incomplete group, for example 4 units when the group is 3.
+3. If **Qualifying Items** and **Discount Items** differ, test a basket with only qualifying products, and one with only discounted products.
+4. Add a product that is not selected, and one that is excluded. Without **Global Discount**, only **Discount Items** get cheaper. With **Global Discount**, every product that is not excluded can get cheaper.
+5. Test a product that is already on sale, with **Stackable** off and on.
+6. Test another store, and a basket outside **Start of Range** and **End of Range**, if you set them.
+7. Check the basket total and which lines got the discount.
 
-If the offer requires a code, continue with [Coupons](coupons.md). For runtime allocation and integration details, see the [developer guide](developers.md#order-discounts-and-quantity-rules).
+If the offer needs a code, continue with [Coupons](coupons.md).
+
+## Related pages
+
+- [Coupons](coupons.md): add codes to an order discount.
+- [Product discounts](product-discounts.md): sales on products that need no code.
+- [Configure discounts in Umbraco](editors.md): choose the right kind of discount.
+- [Discount APIs and behavior](developers.md#order-discounts-and-quantity-rules): how order discounts are calculated, for developers.
+
+[Back to Guides](../README.md)

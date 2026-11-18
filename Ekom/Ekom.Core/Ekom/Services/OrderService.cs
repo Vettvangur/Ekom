@@ -59,6 +59,7 @@ namespace Ekom.Services;
 partial class OrderService
 {
     readonly Configuration _config;
+    readonly ICheckoutStockPolicy _stockPolicy;
     readonly ILogger<OrderService> _logger;
     readonly HttpContext? _httpCtx;
     readonly IMemoryCache _memoryCache;
@@ -90,9 +91,11 @@ partial class OrderService
         IMemberService memberService,
         DiscountCache discountCache,
         IOrderTrackingService orderTrackingService,
-        CheckoutPaymentAttemptService? paymentAttempts = null)
+        CheckoutPaymentAttemptService? paymentAttempts = null,
+        ICheckoutStockPolicy? stockPolicy = null)
     {
         _logger = logger;
+        _stockPolicy = stockPolicy ?? new DefaultCheckoutStockPolicy();
 
         _config = config;
         _orderRepository = orderRepo;
@@ -123,8 +126,9 @@ partial class OrderService
         DiscountCache discountCache,
         IOrderTrackingService orderTrackingService,
         IHttpContextAccessor httpContextAccessor,
-        CheckoutPaymentAttemptService? paymentAttempts = null)
-        : this(config, orderRepo, couponRepository, orderActivityLogService, logger, storeService, memoryCache, memberService, discountCache, orderTrackingService, paymentAttempts)
+        CheckoutPaymentAttemptService? paymentAttempts = null,
+        ICheckoutStockPolicy? stockPolicy = null)
+        : this(config, orderRepo, couponRepository, orderActivityLogService, logger, storeService, memoryCache, memberService, discountCache, orderTrackingService, paymentAttempts, stockPolicy)
     {
 
         try
@@ -288,12 +292,22 @@ partial class OrderService
         // Add timelimit to get the order ? Maybe 1-2 hours ?
         if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
         {
-            OrderInfo? orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId, ct).ConfigureAwait(false);
+            Guid currentOrderId = _ekmRequest.User.OrderId;
 
-            if (Order.IsOrderFinal(orderInfo?.OrderStatus))
+            if (currentOrderId != Guid.Empty)
             {
-                return orderInfo;
+                OrderInfo? orderInfo = await GetOrderAsync(currentOrderId, ct).ConfigureAwait(false);
+
+                // A member who has started a new basket has no completed order to show, as with the cookie.
+                return Order.IsOrderFinal(orderInfo?.OrderStatus) ? orderInfo : null;
             }
+
+            // Completion clears the member's order reference, so the completed order is no longer found
+            // through it. Until the member starts a new basket, their newest completed order in this store is it.
+            OrderData? latest = await _orderRepository.GetLatestOrderByUsernameAsync(
+                _ekmRequest.User.Username, store.Alias, Order.FinalOrderStatuses, ct).ConfigureAwait(false);
+
+            return latest == null ? null : new OrderInfo(latest);
         }
         else
         {
@@ -540,7 +554,7 @@ partial class OrderService
                 existingStock = Stock.Instance.GetStock(product.Key, store.Alias);
             }
 
-            VerifyStock(quantity, existingStock, product, variant);
+            VerifyStock(quantity, existingStock, product, variant, orderInfo, orderline);
 
             orderline.Quantity = quantity;
 
@@ -1343,7 +1357,7 @@ partial class OrderService
                 // Update orderline quantity with value
                 if (action == OrderAction.Set)
                 {
-                    VerifyStock(quantity, existingStock, product, variant);
+                    VerifyStock(quantity, existingStock, product, variant, orderInfo, orderLine);
                     orderLine.Quantity = quantity;
                 }
                 else
@@ -1353,7 +1367,7 @@ partial class OrderService
                         throw new OrderLineNegativeException("OrderLines cannot be updated to negative quantity");
                     }
 
-                    VerifyStock(quantity + orderLine.Quantity, existingStock, product, variant);
+                    VerifyStock(quantity + orderLine.Quantity, existingStock, product, variant, orderInfo, orderLine);
 
                     orderLine.Quantity += quantity;
 
@@ -1401,8 +1415,6 @@ partial class OrderService
                     throw new OrderLineNegativeException("OrderLines cannot be created with negative quantity");
                 }
 
-                VerifyStock(quantity, existingStock, product, variant);
-
                 // Update orderline when adding product to orderline
 
                 _logger.LogDebug("AddOrderLineToOrderInfo: existingOrderLine Not Found");
@@ -1416,6 +1428,9 @@ partial class OrderService
                     variant,
                     settings.OrderDynamicRequest
                 );
+
+                // The stock policy decides per line, so the line is checked before it joins the order.
+                VerifyStock(quantity, existingStock, product, variant, orderInfo, orderLine);
 
                 orderInfo.orderLines.Add(orderLine);
                 isNewOrderLine = true;
@@ -2074,17 +2089,18 @@ partial class OrderService
                 continue;
             }
 
+            // Provider custom data is HTML-encoded once, by the ordered provider that stores it.
             if (key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
             {
                 customShippingData ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                customShippingData[key] = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(value);
+                customShippingData[key] = value;
                 continue;
             }
 
             if (key.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase))
             {
                 customPaymentData ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                customPaymentData[key] = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(value);
+                customPaymentData[key] = value;
                 continue;
             }
 
@@ -2614,13 +2630,15 @@ partial class OrderService
         return true;
     }
 
-    private void VerifyStock(decimal quantity, decimal existingStock, IProduct product, IVariant? variant = null)
+    private void VerifyStock(decimal quantity, decimal existingStock, IProduct product, IVariant? variant, IOrderInfo order, IOrderLine line)
     {
         var bufferStock = StockBufferHelper.GetConfiguredStockBuffer(product, variant);
         existingStock = StockBufferHelper.GetEffectiveStock(existingStock, product, variant);
 
+        // The same policy answers here and at checkout, so a line the basket accepts is not refused later
+        // for a different reason. The line holds the product as it was when it was added.
         if (!_config.DisableStock
-        && !product.Backorder
+        && _stockPolicy.RequiresStock(order, line)
         && existingStock < quantity)
         {
             throw new NotEnoughStockException(

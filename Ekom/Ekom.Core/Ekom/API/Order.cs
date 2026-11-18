@@ -837,17 +837,20 @@ public partial class Order
     /// </summary>
     /// <param name="orderStatus"></param>
     /// <returns></returns>
+    /// <summary>The statuses of an order that has left the basket stage. See <see cref="IsOrderFinal"/>.</summary>
+    internal static readonly IReadOnlyCollection<OrderStatus> FinalOrderStatuses =
+    [
+        OrderStatus.OfflinePayment,
+        OrderStatus.Pending,
+        OrderStatus.ReadyForDispatch,
+        OrderStatus.ReadyForPickup,
+        OrderStatus.ReadyForDispatchWhenStockArrives,
+        OrderStatus.Dispatched,
+        OrderStatus.Returned,
+        OrderStatus.Cancelled,
+        OrderStatus.Closed,
+    ];
+
     public static bool IsOrderFinal(OrderStatus? orderStatus)
-        => orderStatus != null
-            && (orderStatus.Value == OrderStatus.OfflinePayment
-            || orderStatus.Value == OrderStatus.Pending
-            || orderStatus.Value == OrderStatus.ReadyForDispatch
-            || orderStatus.Value == OrderStatus.ReadyForPickup
-            || orderStatus.Value == OrderStatus.ReadyForDispatchWhenStockArrives
-            || orderStatus.Value == OrderStatus.Dispatched
-            //|| orderStatus.Value == OrderStatus.WaitingForPayment
-            || orderStatus.Value == OrderStatus.Returned
-            || orderStatus.Value == OrderStatus.Cancelled
-            || orderStatus.Value == OrderStatus.Closed
-            );
+        => orderStatus != null && FinalOrderStatuses.Contains(orderStatus.Value);
 }

@@ -1,35 +1,150 @@
+[Ekom docs](../README.md) / [Guides](README.md) / Catalog imports
+
 # Catalog imports
 
-`Ekom.Services.IImportService` synchronizes external catalog data into Umbraco content, media, and sellable stock. Umbraco 17 and 18 also support warehouse-stock imports. It is a synchronous server-side API. Ekom does not expose it as a public HTTP import endpoint; create an authenticated integration boundary appropriate to the site.
+The import service brings catalog data from another system, such as an ERP or PIM system, into Umbraco: categories, products, variant groups, variants, media, prices, stock and warehouse stock. Use it to create the catalog from a feed and keep it in step with that system.
+
+The service is `Ekom.Services.IImportService`. It is a synchronous .NET API that runs on your server. Ekom does not offer it as a public HTTP endpoint. If another system must start an import over HTTP, build your own endpoint and protect it.
+
+On this page:
+
+- [Choose the operation](#choose-the-operation)
+- [Before you start](#before-you-start)
+- [Create or update one product](#create-or-update-one-product)
+- [Synchronize the whole catalog](#synchronize-the-whole-catalog)
+- [Synchronize one category branch or move categories](#synchronize-one-category-branch-or-move-categories)
+- [Update one existing item](#update-one-existing-item)
+- [Synchronize variant groups and variants](#synchronize-variant-groups-and-variants)
+- [Media](#media)
+- [Stock and warehouse stock](#stock-and-warehouse-stock)
+- [Update only prices from an ERP system](#update-only-prices-from-an-erp-system)
+- [Prices in database mode](#prices-in-database-mode)
+- [Control what is saved and published](#control-what-is-saved-and-published)
+- [How imports handle moved content](#how-imports-handle-moved-content)
+- [Import events](#import-events)
+- [Errors and failures](#errors-and-failures)
 
 ## Choose the operation
 
-| Method | Scope |
+| You want to | Method | Deletes content that is not in the payload |
+| --- | --- | --- |
+| Make the whole catalog match a feed | `FullSync(data, parentKey, syncUser)` | Yes: categories, products, variant groups and variants. |
+| Make one category branch match a feed | `CategorySync(data, categoryKey, syncUser)` | Products, variant groups and variants. Not categories. |
+| Move categories to new parents, nothing else | `MoveSync(data, parentKey, syncUser)` | No |
+| Create or update one product with its variants and media | `ProductSync(product, parentKey, mediaRootKey, syncUser, forceUpdate)` | The product's variant groups and variants that are not in the payload. |
+| Update the values of one product that exists | `ProductUpdateSync(product, parentKey, mediaRootKey, syncUser, forceUpdate)` | No. Variants and media are not touched. |
+| Update the values of one category that exists | `CategoryUpdateSync(category, parentKey, syncUser)` | No |
+| Update the values of one variant that exists | `VariantUpdateSync(variant, parentKey, syncUser)` | No |
+| Create or update one variant group under a product | `VariantGroupSync(group, productKey, mediaRootKey, syncUser)` | The product's other variant groups, and variants missing from this group. |
+| Create or update one variant under a variant group | `VariantSync(variant, groupKey, mediaRootKey, syncUser)` | No |
+| Change only the images or files of a product or variant | `SyncProductMedia(...)`, `SyncVariantMedia(...)` | No. Optionally replaces the field's references. |
+| Change only prices, without saving nodes | `Ekom.API.Prices` (not the import service) | No |
+
+`syncUser` is the Umbraco user ID recorded on the changes. The default is `-1`.
+
+## Before you start
+
+### Add the properties the import needs
+
+The import stores its own values on the nodes and media items it creates. Ekom does not create these properties. Add them yourself, once, before the first import.
+
+**On the four catalog document types**: `ekmCategory`, `ekmProduct`, `ekmProductVariantGroup` and `ekmProductVariant`.
+
+| Name | Alias | Data type | Required | What the import uses it for |
+| --- | --- | --- | --- | --- |
+| Import identifier | `ekmIdentifier` | Textstring | Yes | Stores each item's `Identifier`. Ekom finds the item by it on the next import. |
+| Import comparer | `ekmComparer` | Textstring | Yes | Stores the value Ekom compares to see whether the item changed. See [Change detection](#change-detection). |
+| Disable sync | `ekmDisableSync` | True/false | No | Lets an editor keep the import away from one node. See [Protect content from the import](#protect-content-from-the-import). |
+
+**On `ekmProduct` and `ekmProductVariant`**, only when you import `Files`:
+
+| Name | Alias | Data type | Required | What the import uses it for |
+| --- | --- | --- | --- | --- |
+| Files | `files` | Multiple Media Picker | When the feed has files | Holds the imported files. Images go in the `images` property, which Ekom creates. |
+
+**On the media types `Image` and `File`**, only when you import media from a URL, bytes or base64:
+
+| Name | Alias | Data type | Required | What the import uses it for |
+| --- | --- | --- | --- | --- |
+| Import comparer | `ekmComparer` | Textstring | Yes | Lets Ekom find media it already imported, so it is not imported twice. |
+| Import identifier | `ekmIdentifier` | Textstring | No | Stores the `Identifier` of the imported media. |
+| Sort order | `ekmSortOrder` | Numeric | No | Stores the `SortOrder` of the imported media. |
+
+The name is yours to choose. The alias and the data type must match the tables.
+
+#### Add them in the backoffice
+
+Document types:
+
+1. Open the **Settings** section and expand **Document Types**. The four catalog types are in the **Ekom** folder, under **Catalog**.
+2. Open `ekmCategory`.
+3. Add a tab or group for the import properties, for example **Import**.
+4. Add a property. Enter the name, then set the alias to the exact value from the table. Umbraco fills in an alias from the name, so unlock the alias field and correct it.
+5. Choose the data type from the table and save the property.
+6. Repeat steps 4 and 5 for each property, then save the document type.
+7. Repeat for `ekmProduct`, `ekmProductVariantGroup` and `ekmProductVariant`.
+
+To add the three shared properties once instead of four times, create a document type that holds them, and add it to the four catalog types as a composition.
+
+Media types:
+
+1. In the **Settings** section, expand **Media Types** and open **Image**.
+2. Add the properties from the media table in the same way, and save.
+3. Repeat for **File**.
+
+#### What to know
+
+- **A missing required property stops the import.** Umbraco throws `InvalidOperationException` ("No PropertyType exists with the supplied alias") when Ekom saves the node or media item.
+- **Use Textstring for the identifier and the comparer.** Ekom finds items and media with a database query on the short-text column. A Textarea stores its value in another column, and the item is not found.
+- **A site that already has `comparer` keeps working.** `comparer` is the older alias of `ekmComparer`. Ekom reads and writes `comparer` on a type that does not have `ekmComparer`. You do not need to rename it. If you add `ekmComparer` beside it, Ekom writes the new property and reads the old value until the new one is filled, so nodes are not saved again because of the change.
+- **The optional properties are safe to leave out.** Without `ekmDisableSync` no node is protected from the import. Without `ekmIdentifier` and `ekmSortOrder` on the media types, those two values are not stored on the media.
+- **Do the same on every environment.** The properties are part of the site's schema, so deploy them the way you deploy other document type changes.
+
+### Identify every item with a stable identifier
+
+Every import model inherits from `ImportBase`. These members are required:
+
+| Member | What it is |
 | --- | --- |
-| `FullSync(ImportData, parentKey, syncUser)` | Reconciles category/product trees in scope and can delete content absent from the payload. |
-| `MoveSync(ImportData, parentKey, syncUser)` | Reconciles category parent relationships only. |
-| `CategorySync(ImportData, categoryKey, syncUser)` | Synchronizes one category branch and its supplied products. |
-| `ProductSync(ImportProduct, parentKey, mediaRootKey, syncUser, forceUpdate)` | Creates/updates one complete product, including groups, variants and media. |
-| `ProductUpdateSync(...)` | Updates an existing product's own values; missing identifier throws and children/media are not synchronized. |
-| `CategoryUpdateSync(...)` | Updates one existing category. |
-| `VariantGroupSync(...)` | Synchronizes one group under a product. |
-| `VariantSync(...)` | Synchronizes one variant under a group without deleting siblings. |
-| `VariantUpdateSync(...)` | Updates an existing variant by external identifier. |
-| `SyncProductMedia(...)` / `SyncVariantMedia(...)` | Synchronizes a selected media type/content field. |
+| `Identifier` | The item's ID in the other system. Ekom stores it in the `ekmIdentifier` property and uses it to find the item on the next import. |
+| `NodeName` | The name of the Umbraco node. |
+| `Title` | The title, as a dictionary from culture to value, for example `["en-US"] = "Running shoe"`. |
 
-Only one `FullSync`, `MoveSync`, or `CategorySync` can run in-process at a time; a competing operation throws `InvalidOperationException`. Single-entity methods do not use that same guard. Coordinate imports across application nodes externally.
+Identifiers are compared exactly, so upper and lower case matter. Do not use a SKU as the identifier unless the other system never changes it.
 
-## Identity and hierarchy
+### Describe the category tree
 
-Every `ImportBase` requires:
+`ImportData` holds the feed for `FullSync`, `CategorySync` and `MoveSync`:
 
-- `Identifier`: stable external identity, persisted as Ekom's import identifier and used to match existing content.
-- `NodeName`: Umbraco content name.
-- `Title`: dictionary keyed by culture.
+| Member | What it is |
+| --- | --- |
+| `Categories` | The top categories. Each `ImportCategory` has `SubCategories`, so the list is a tree. |
+| `Products` | All products, as a flat list. |
+| `MediaRootKey` | Required. The media folder where new media is created. Always pass a folder that exists. |
+| `RecycleBinKey` | Optional. A category node to move removed products to, instead of deleting them. |
+| `ProductProcessKey` | Optional. A category node for products that come back from the recycle node. |
 
-Do not use a mutable SKU as `Identifier` unless the external system guarantees it is stable. Categories use `ParentIdentifier` to describe hierarchy. A product's first resolvable `Categories` identifier becomes its primary parent; later identifiers are additional category relationships.
+Each `ImportCategory` also has a required `ParentIdentifier`: the identifier of its parent category, or empty for a category directly under the catalog root. Keep `ParentIdentifier` and the `SubCategories` nesting in agreement. When they differ, Ekom moves the category to the parent named in `ParentIdentifier`.
 
-## Minimal product sync
+A product's `Categories` lists category identifiers. The first one that Ekom finds becomes the primary category: the product node lives under it. The other categories are saved in the product's `categories` picker.
+
+### Choose the catalog root
+
+`parentKey` (or `categoryKey`) is the node the import works under. Ekom only finds and changes content below it. When you pass `null`, Ekom uses the first `ekmCatalog` node that is not in the recycle bin. If there is no such node, the import throws `ArgumentNullException`.
+
+### Protect content from the import
+
+Set the `ekmDisableSync` property to `true` on a node to keep the import away from it. Ekom does not update, move or delete a node with this property set. `SyncProductMedia` and `SyncVariantMedia` are the exception: they also change sync-disabled nodes.
+
+### Run one large import at a time
+
+Only one `FullSync`, `MoveSync` or `CategorySync` can run at a time in one application. A second one throws `InvalidOperationException("Sync is already in progress.")`. The single-item methods do not have this guard.
+
+This guard does not work across servers. If more than one server can start imports, make sure yourself that only one runs at a time, and that full, single-product and media jobs on the same catalog do not overlap. Backoffice edits and other writers can still change content during an import.
+
+## Create or update one product
+
+`ProductSync` creates the product if it does not exist and updates it if it does, together with its variant groups, variants and media.
 
 ```csharp
 using Ekom.Models.Import;
@@ -38,10 +153,10 @@ using Ekom.Services;
 var product = new ImportProduct
 {
     Identifier = "erp-product-123",
-    NodeName = "Example product",
+    NodeName = "Trail running shoe",
     Title = new Dictionary<string, object>
     {
-        ["en-US"] = "Example product",
+        ["en-US"] = "Trail running shoe",
     },
     SKU = "SKU-123",
     Categories = ["erp-category-shoes"],
@@ -71,11 +186,192 @@ importService.ProductSync(
     syncUser: -1);
 ```
 
-`ProductSync` requires at least one category identifier that resolves in the selected catalog scope. It synchronizes the supplied `VariantGroups`; groups absent from that product payload are deleted, and variants absent from a supplied group are deleted. Use `ProductUpdateSync` for a product-only patch that must not reconcile children.
+What `ProductSync` does:
 
-## ERP price-only sync without saving or publishing
+- At least one of the product's `Categories` must exist under the catalog root. If none does, Ekom logs a warning and does not save the product.
+- It looks for the existing product only under the primary category. If the product now lives in another category, `ProductSync` creates a new product under the primary category. Use `FullSync` or `CategorySync` to move products, or set `PreservePrimaryCategory` to `true` to find the product anywhere under the root.
+- It synchronizes the product's `VariantGroups`. Variant groups that are not in the payload are deleted. Variants that are not in their group in the payload are deleted.
+- It loads only the media that the payload refers to.
 
-For frequent ERP price changes, enable `Ekom:UseDatabasePrices` and restart Ekom so startup creates the price table:
+To change only the product's own values, without touching its variants, use `ProductUpdateSync`.
+
+## Synchronize the whole catalog
+
+`FullSync` makes the catalog under the root match the payload. Treat the payload as the complete truth: what is missing from it is removed.
+
+```csharp
+var data = new ImportData
+{
+    MediaRootKey = mediaRootKey,
+    RecycleBinKey = removedProductsCategoryKey, // optional
+    Categories = categories,
+    Products = products,
+};
+
+importService.FullSync(data, parentKey: catalogRootKey);
+```
+
+### What FullSync removes
+
+- **Categories** that are not in the payload are deleted permanently, with everything still under them. They are not moved to the recycle node. This happens last, after the product step, so a product that the payload lists under another category has already been moved there and keeps its key. A product that is in the payload but still under the category, because it keeps its primary category, is moved to the payload's first category before the delete. A category is not deleted while a category from the payload is still under it; Ekom logs a warning instead.
+- **Products** that are not in the payload are deleted. When `RecycleBinKey` is set, they are unpublished and moved to that category node instead. Products already in the recycle node stay there.
+- **Products whose new primary category does not exist** are deleted, or moved to the recycle node when it is set.
+- **Variant groups and variants** that are missing from a product in the payload are deleted.
+- Nodes with `ekmDisableSync` set to `true` are never removed.
+
+FullSync refuses to run when no product in the payload has a category. It throws `ArgumentException("No products connected to categories in importProducts, sync stopped")` before it changes any product. This protects the catalog from a broken feed: no product is changed and no category is deleted, because categories are deleted only after the product step. Categories that the payload creates, moves or updates are processed before products, so those changes stay. A feed with no products at all does not remove any products.
+
+When the same product identifier appears twice in the payload, Ekom logs a warning. Do not send duplicates.
+
+### Products that come back
+
+When a product that is in the recycle node appears in the payload again, Ekom moves it to its primary category and publishes it.
+
+`ProductProcessKey` is for a staging step. When both `RecycleBinKey` and `ProductProcessKey` are set and a product that is saved is still under the recycle node, Ekom first moves it to the processing node. Products under either node, with their variant groups and variants, are only saved, never published or unpublished. See [Staging categories](#staging-categories).
+
+### Test before you turn it on
+
+Run the exact payload against a copy of the production database before you run it in production. Check what it would delete.
+
+## Synchronize one category branch or move categories
+
+### CategorySync
+
+`CategorySync(data, categoryKey, syncUser)` works like `FullSync`, with the category `categoryKey` as the root:
+
+- It creates and updates the categories in the payload below that category. It does not delete categories.
+- It synchronizes the products in `data.Products`, and removes products under the branch that are not in the payload, in the same way as `FullSync`, including `RecycleBinKey` and `ProductProcessKey`.
+
+### MoveSync
+
+`MoveSync(data, parentKey, syncUser)` moves existing categories to the parent named in their `ParentIdentifier`. It does not save category values, does not touch products and does not delete anything. It does not raise `SyncFinished`. Send only categories that already exist; use `FullSync` or `CategorySync` to create categories.
+
+## Update one existing item
+
+`ProductUpdateSync`, `CategoryUpdateSync` and `VariantUpdateSync` update one item that already exists. They find it by `Identifier` under the root, with a targeted database query, without loading the rest of the catalog.
+
+- If no item has that identifier, or the item has `ekmDisableSync` set, they throw `ArgumentNullException`. An empty identifier never matches.
+- They do not create, move or delete anything.
+
+`ProductUpdateSync` updates the product's own values, stock, warehouse stock and prices. It does not synchronize variant groups, variants or media. It raises [`ProductImportEvaluating`](#product-eligibility) after it found the product; an excluded product is not saved.
+
+```csharp
+importService.ProductUpdateSync(
+    importProduct,
+    parentKey: catalogRootKey,
+    mediaRootKey: mediaRootKey,
+    syncUser: -1);
+```
+
+## Synchronize variant groups and variants
+
+`VariantGroupSync(group, productKey, mediaRootKey, syncUser)` creates or updates one variant group under the product with key `productKey`, and the variants in it.
+
+- Other variant groups of that product that are not in the call are **deleted**, unless they have `ekmDisableSync` set.
+- Variants in the group that are not in `group.Variants` are deleted.
+
+To add or change one group without removing the others, use `ProductSync` with the full list of groups, or `VariantSync` for each variant.
+
+`VariantSync(variant, groupKey, mediaRootKey, syncUser)` creates or updates one variant under the variant group with key `groupKey`. It does not delete other variants.
+
+## Media
+
+`Images` (on every import model) and `Files` (on products and variants) take a list of `IImportMedia`:
+
+| Type | Use it for | Required members |
+| --- | --- | --- |
+| `ImportMediaFromUdi` | Media that already exists in Umbraco. | `Udi` |
+| `ImportMediaFromExternalUrl` | Media that Ekom downloads. | `Url`, `FileName`, `NodeName` |
+| `ImportMediaFromBytes` | Media you pass as bytes. | `Bytes`, `FileName`, `NodeName` |
+| `ImportMediaFromBase64` | Media you pass as base64 text. | `Base64`, `FileName`, `NodeName` |
+
+All types have `SortOrder` and `Action` (`ImportMediaAction.Add`, the default, or `Delete`). The URL, bytes and base64 types also have `Identifier` and `Comparer`, which Ekom uses to recognize media it imported before, and `Date`.
+
+New media is created under `ImportData.MediaRootKey`, or under the `mediaRootKey` argument of the single-item methods.
+
+- `FullSync` and `CategorySync` load the whole media folder. `MediaRootKey = Guid.Empty` does not leave media alone: the import still processes each item's media list, so existing image fields can be cleared, and an item with URL, bytes or base64 media fails because there is no folder to create the media in.
+- `ProductSync`, `VariantGroupSync` and `VariantSync` load only the media the payload refers to. Media that a save handler adds later, for example an `ImportMediaFromUdi` added in `ProductSaveStarting`, is looked up under the media folder when it is needed.
+- The single-item methods need a `mediaRootKey` that exists.
+
+### Change only the media of a product or variant
+
+`SyncProductMedia` and `SyncVariantMedia` change one media field of one product or variant, and nothing else:
+
+```csharp
+importService.SyncProductMedia(
+    "erp-product-123",
+    images,
+    mediaRootKey,
+    ImportMediaTypes.Image,
+    ImportMediaContentTypes.images,
+    replaceExisting: true,
+    syncUser: -1);
+```
+
+- They find the item by identifier anywhere in the content tree, including unpublished items and items with `ekmDisableSync` set. Items in the recycle bin are ignored. When no item matches, they throw `ArgumentNullException`.
+- `ImportMediaContentTypes.images` or `ImportMediaContentTypes.files` selects the field. `ImportMediaTypes.Image` or `ImportMediaTypes.File` is the kind of media.
+- They load only the media they need: the incoming identifiers, comparers and UDIs, and the media the field already refers to, so that untouched media can keep its place in the order.
+- They do not change product values, categories, children or stock.
+- A published item that changed is saved and published again. An unpublished item is only saved.
+
+By default the incoming media is merged into the field. With `replaceExisting: true` the field afterwards holds only the incoming media:
+
+- Every incoming item must be a supported media type with `Action = ImportMediaAction.Add`. A `Delete` action, an unknown type or a `null` item throws `ArgumentException` before anything is changed.
+- An empty list clears the field.
+- Matching media is reused, references are not duplicated, and the normal order and publish rules apply. Replacing removes references only. It does not delete media items and does not change other fields.
+- If any incoming item cannot be downloaded, imported or found, Ekom throws before it changes the field, so the field keeps its old references. Incoming UDIs must point to media of the right type under the media folder.
+- This is not one transaction. Media files created or updated before the failure stay. A failed content save behaves as it does elsewhere.
+
+If you have your own `IImportService` implementation that only has the older method signatures, merging through the new overload still works, but `replaceExisting: true` throws `NotSupportedException` until you implement it.
+
+If existing code passes an untyped `default` as the sixth argument, write `syncUser: default` or `default(int)`, so the compiler does not pick the new `bool` overload. Calls that pass a user ID, or no user ID, are not affected.
+
+## Stock and warehouse stock
+
+### Sellable stock
+
+`ImportProduct.Stock` and `ImportVariant.Stock` replace the stored stock count. They are not changes to add to it.
+
+- `StoreAlias` is used when `Ekom:PerStoreStock` is `true`. Otherwise one count is set for all stores.
+- A negative value is imported as `0`.
+- Only values that differ from the current count are written. Ekom collects them and writes them in batches of 200, and the import waits for each batch, so the stock is saved when the method returns.
+- A failed batch is logged as an error. It does not stop the import.
+- Stock is written even when the node's content did not change.
+- When the import saves a product or variant node, Ekom does not re-apply the stock value stored on the node by the backoffice stock editor. The stock table keeps the value from the feed or from an earlier ERP update.
+
+A replaced count does not take open reservations into account. Read [Stock reservations](reservations.md) before you import stock into a store that takes orders. See also [Stock](stock.md).
+
+### Warehouse stock
+
+`ImportProduct.WarehouseStock` and `ImportVariant.WarehouseStock` change only the warehouses you list. Warehouses you leave out keep their balance.
+
+```csharp
+product.WarehouseStock =
+[
+    new ImportWarehouseStock
+    {
+        StoreAlias = "Store",
+        WarehouseKey = mainWarehouseKey,
+        Balance = 12m,
+    },
+    new ImportWarehouseStock
+    {
+        StoreAlias = "Store",
+        WarehouseKey = closedWarehouseKey,
+        Clear = true,
+    },
+];
+```
+
+- `Clear = true` removes the balance. Otherwise `Balance` is set.
+- Ekom uses the `SKU` in the payload. When it is empty, warehouse stock is skipped.
+- Each entry is applied on its own. If any entry fails, for example because the warehouse is not set up for that store, the other entries are still saved, and then Ekom throws `InvalidOperationException` with all failed entries. For a product, the product is marked as failed and its content is not saved (see [Errors and failures](#errors-and-failures)). For a variant, the exception stops the import.
+
+Warehouse stock is for display and integrations. It does not change what customers can buy. See [Warehouse stock](stock.md#warehouse-stock).
+
+## Update only prices from an ERP system
+
+When the ERP system changes prices often, you can write prices without saving or publishing any node. This needs database price storage. Turn on `Ekom:UseDatabasePrices` and restart Ekom:
 
 ```json
 {
@@ -85,13 +381,13 @@ For frequent ERP price changes, enable `Ekom:UseDatabasePrices` and restart Ekom
 }
 ```
 
-Use `Ekom.API.Prices.SetPriceAsync` directly for price-only messages. This writes to `EkomPrice` and does not load, save, or publish an Umbraco node. The direct table API throws if database prices are disabled.
+Then call `Ekom.API.Prices` directly for messages that only carry prices. This writes to the `EkomPrice` table. It does not load, save or publish an Umbraco node. It throws `InvalidOperationException` when database prices are turned off. See [Database price storage](database-price-storage.md).
 
-### One price update
+### One price
 
 ```csharp
-// Resolve this GUID from your ERP identifier -> existing Umbraco node key mapping.
-// Use the variant's key when the ERP price belongs to a variant.
+// Map your ERP identifier to the key of the existing Umbraco node.
+// For a variant price, use the variant's key.
 Guid nodeKey = existingProductOrVariantKey;
 
 await Ekom.API.Prices.Instance.SetPriceAsync(
@@ -102,11 +398,14 @@ await Ekom.API.Prices.Instance.SetPriceAsync(
     cancellationToken: cancellationToken);
 ```
 
-`Web` must be your actual Ekom store alias. `en-US` is the configured currency culture value, not the ISO code `USD`. Amounts follow the store's existing VAT-included/excluded pricing convention. The node must already exist; the table API does not look up ERP identifiers, create nodes, or validate that a supplied node/store/currency exists.
+- `Web` must be one of your store aliases.
+- `en-US` is the store's currency value, not the ISO code `USD`.
+- The amount follows the store's own setting for whether prices include VAT.
+- The node must already exist. The price API does not look up ERP identifiers, does not create nodes, and does not check that the node, store or currency exists.
 
 ### A service for an ERP change feed
 
-Inject `Ekom.API.Prices`, which Ekom already registers, into your integration service:
+`Ekom.API.Prices` is registered by Ekom, so you can inject it:
 
 ```csharp
 using Ekom.API;
@@ -145,9 +444,18 @@ public sealed class ErpPriceSync
 }
 ```
 
-Register `ErpPriceSync` in your site's service collection (for example, `services.AddTransient<ErpPriceSync>()`) and invoke it from your ERP job or authenticated integration handler after resolving the feed's ERP identifiers to existing node keys. Each call inserts or replaces one node/property/store/currency price; other prices remain unchanged. Each write commits separately, so a failed feed can have partially applied updates. Replaying an update replaces the same row rather than creating a duplicate. Coordinate concurrent feeds for the same price; the last committed write wins.
+1. Register the service in the site's service setup, for example `services.AddTransient<ErpPriceSync>()`.
+2. In your ERP job or protected integration endpoint, map the feed's ERP identifiers to existing node keys.
+3. Call `ApplyAsync` with the mapped changes.
 
-To update the native discount price, use the same call with `propertyAlias: "ekmDiscountPrice"`:
+How this behaves:
+
+- Each call inserts or replaces one price for one node, price property, store and currency. Other prices do not change.
+- Each call is its own transaction. If the feed fails halfway, the first part stays saved.
+- Sending the same update again replaces the same row. It does not create a duplicate.
+- When two feeds write the same price, the last write wins. Coordinate feeds that can overlap.
+
+To update the discount price, use the same call with `propertyAlias: "ekmDiscountPrice"`:
 
 ```csharp
 await Ekom.API.Prices.Instance.SetPriceAsync(
@@ -156,28 +464,33 @@ await Ekom.API.Prices.Instance.SetPriceAsync(
     cancellationToken: cancellationToken);
 ```
 
-Do not call `IContentService.Save` or `SaveAndPublish` after the direct table API. You can also keep using the built-in importer with its `Price` collection, as shown below.
+Do not call `IContentService.Save` or a publish method after a price-only write.
 
-The importer updates the shared price cache after committing, so subsequent reads and the price editor on that application instance use the table value without a publish or manual cache refresh. The cache is filled at startup and shared across requests and background jobs. Writes from another application instance or directly in SQL require `await prices.FillCacheAsync(cancellationToken)` on each serving instance. Async price writes also await their cache refresh without blocking a thread on the refresh gate or SQL. Existing node values remain the fallback for currencies without an override. The Algolia plugin queues and coalesces committed price changes without content lookups on the ERP writer thread. Background processing resolves the affected products and performs reindexing when enabled. Other search indexes and page caches can subscribe to `Ekom.Events.PriceEvents.PriceChanged`. See [database price storage](database-price-storage.md) for fallback, precision, and switching back to node storage.
+After a write, Ekom updates its in-memory price copy on that server. Later reads and the backoffice price editor on that server show the new price at once, without a publish or a manual refresh. Writes from another server, or straight in SQL, need `await prices.FillCacheAsync(cancellationToken)` on each server that serves the site. For node prices without an override, Ekom keeps using the node value.
 
-### Atomic updates and concurrent editors
+The Algolia plugin queues committed price changes and reindexes the affected products in the background, without slowing down the ERP writer. Other search indexes and page caches can subscribe to `Ekom.Events.PriceEvents.PriceChanged`.
 
-Use `ApplyAsync` when all prices for a product must change together. Validation or a conflict rolls back the entire batch. Identical values are no-ops, including their timestamps and notifications.
+### Change all prices of a product together
+
+Use `ApplyAsync` when all prices of a product must change together. If one change fails its check or conflicts, none of them is saved. Changes to the value already stored do nothing: no new timestamp and no event.
 
 ```csharp
 using Ekom.Models;
 
-await prices.ApplyAsync([
+await prices.ApplyAsync(
+[
     new PriceMutation(productKey, "Web", "en-US", 149.95m),
     new PriceMutation(productKey, "Web", "en-GB", 119.95m),
 ], cancellationToken);
 ```
 
-ERP `SetPrice` and `SetPriceAsync` calls intentionally replace the current value. For edits based on a previously loaded override, use `CheckExpected: true, ExpectedPrice: loadedPrice` on `PriceMutation`. A null expected value means that no override should exist. A mismatch throws `PriceConflictException`; reload before retrying. The variant manager sends its original values and override baseline, writes only edited currencies, and reports a conflict if an edited override changed since loading. Older custom variant clients must supply `originalPriceValues` and `priceOverrides` in database mode.
+`SetPrice` and `SetPriceAsync` always replace the current value, which is what an ERP feed needs. When a person edits a price they loaded earlier, use `CheckExpected: true, ExpectedPrice: loadedPrice` on the `PriceMutation`. `ExpectedPrice: null` means "no override may exist". When the stored value differs, Ekom throws `PriceConflictException`; reload and try again.
 
-### Using the built-in Ekom importer
+The [Variant App](variant-app.md) sends the original values it loaded, writes only the currencies the editor changed, and reports a conflict when someone changed an edited price after it was loaded. A custom client of the Variant App routes must send `originalPriceValues` and `priceOverrides` when database prices are on.
 
-`ImportProduct.Price` and `ImportVariant.Price` (the property name is singular) automatically use the configured storage. Existing integrations can continue passing their usual import payload:
+## Prices in database mode
+
+`ImportProduct.Price` and `ImportVariant.Price` (the property name is singular) follow the price storage setting. You can keep sending your normal import payload:
 
 ```csharp
 // Keep the normal product payload and identifier from your ERP mapping.
@@ -198,149 +511,136 @@ importService.ProductUpdateSync(
     syncUser: -1);
 ```
 
-With `UseDatabasePrices: true`, product and variant prices are written atomically through `Ekom.API.Prices.Apply` before the importer checks whether existing content is unchanged. The default content comparison hash excludes `Price`, so price-only changes update the table without saving or publishing the node. This applies to product/variant update methods and the product/variant steps of full synchronization. New nodes receive a stable key and validated table prices before their first save or publication. An invalid currency price aborts the entire price batch before content is saved. Content and price writes are separate transactions: if the subsequent content save fails, table rows may remain for that key. Retry with the same key or explicitly remove abandoned overrides; do not treat a failed content save as a successful import.
+### With `Ekom:UseDatabasePrices` set to `true`
 
-During `FullSync` and `CategorySync`, table prices are read from the database once per chunk of 200 products (including their variants). A product or variant whose table prices already match the feed skips its own transaction; any difference is still written through `Prices.Apply` before the content save, and invalid prices are still rejected. If another server or direct SQL changes a price after its chunk was read, that row is left as it is for the current run and corrected by the next sync.
+- Product and variant prices are written to the table through `Prices.Apply`, as one batch per node, before the importer checks whether the node's content changed.
+- The default change check (the content hash) leaves out `Price`. A change of price only updates the table; it does not save or publish the node.
+- This applies to the update methods and to the product and variant steps of `FullSync`, `CategorySync` and `ProductSync`.
+- A new node gets its key and its table prices before it is first saved or published.
+- An invalid price stops the whole price batch of that node before its content is saved.
+- An empty `Price` list leaves the table rows as they are.
 
-Other content changes, media changes, or `forceUpdate: true` still use the normal save/publish behavior. When first enabling table mode, existing default comparison hashes may differ because they previously included prices; one content sync establishes the new hash. If you supply your own `Comparer`, it remains authoritative: keep prices out of that value to avoid content saves for price-only changes. Table prices are updated even when your custom comparer is unchanged. Missing prices leave existing table entries untouched.
+`FullSync`, `CategorySync` and `ProductSync` read the table prices from the database once for each chunk of 200 products, including their variants. A product or variant whose table prices already match the feed is skipped without a transaction of its own. Any difference is still written through `Prices.Apply` before the content is saved, and invalid prices are still rejected. If another server or SQL changes a price after its chunk was read, the import leaves that row as it is; the next sync corrects it.
 
-With the option disabled, prices stay on the node and remain part of normal default content change detection. Table writes and content saves are separate operations; a later content-save failure does not roll back table prices already applied to an existing node.
+Other content changes, media changes and `forceUpdate: true` still save and publish as normal.
 
-## Full synchronization is authoritative
+When you first turn on database prices, existing nodes have a content hash that included prices, so the next import saves them once to store the new hash.
 
-Treat `FullSync` as a desired-state operation:
+If you set your own `Comparer`, Ekom uses it as it is. Leave prices out of your comparer, or price-only changes will save the node. Table prices are written even when your comparer has not changed.
 
-- Products absent from the payload are deleted unless their `ekmDisableSync` property is true.
-- If `ImportData.RecycleBinKey` identifies a content node, absent products are unpublished and moved there instead of deleted.
-- A returning product can be restored to its primary category; `ProductProcessKey` participates in the product save flow for that recovery setup.
-- Products whose new primary category cannot be resolved are deleted or moved to the configured recycle node.
-- Variant groups and variants missing from a synchronized product tree are deleted.
-- Full product reconciliation refuses a payload with no product-to-category connections.
+Price writes and content saves are separate transactions. If the content save fails after the prices were written, the table rows stay for that node key. Retry with the same key, or remove the unused overrides. Do not treat a failed content save as a successful import.
 
-Test the exact payload and scope in a non-production database before enabling deletion. `parentKey` determines the catalog root in which content is resolved; an omitted key uses the import service's root resolution.
+### With `Ekom:UseDatabasePrices` set to `false`
 
-### Moves and loaded content
+Prices are stored on the node and are part of the default change check, so a price change saves the node.
 
-Umbraco updates descendant paths when a parent moves. Imports must not subsequently save the pre-move descendant objects. After successful product moves, Ekom refreshes the affected, already-loaded descendants in bounded ID batches before importing variant groups and variants. Reconciliation and recycle-to-processing moves are coalesced before that product's children are processed. Category moves likewise refresh affected loaded descendants before they are reused. This does not reload the full catalog or perform per-variant lookups; products that did not move add no refresh reads.
+## Control what is saved and published
 
-Successful deletions evict the deleted root and its loaded subtree from the import's collections and indexes. Canceled or failed required move/delete operations stop processing rather than treating the operation as successful. These checks do not roll back earlier import changes, and refreshing loaded objects does not repair an already-corrupt database path.
+### Change detection
 
-If a requested descendant is missing, trashed, newly sync-disabled, or has an unexpected parent when refreshed, the import stops before processing that product's children rather than reusing an unsafe snapshot. Parent buckets and canonical lists are compacted at deletion-stage boundaries, avoiding a full sibling-bucket scan for each deleted group or variant.
+Ekom saves a node only when something changed. It compares a value called the comparer, stored on the node, with the comparer of the incoming item.
 
-Refresh cost scales with the affected loaded descendants. Imports moving many large product trees need additional reads; benchmark a move-heavy feed before deployment. These changes add no startup scans or migrations and do not provide distributed coordination. Full, single-product, and media jobs that share a catalog should be coordinated by the integration across application instances; unrelated backoffice or external writes can still overlap.
+- Set `Comparer` yourself, for example to a version number or timestamp from the other system.
+- When you leave it empty, Ekom computes a SHA-256 hash of the item. The hash leaves out children, media, stock, warehouse stock and `EventProperties`, because Ekom handles those separately. With database prices it also leaves out `Price`.
 
-Before deployment, verify this behavior against a non-production Umbraco database:
+A node is saved when the comparer changed, when the node is new, or when its images or files changed.
 
-1. Create a product with a variant group and variants beneath one category, with a destination category at a different tree depth.
-2. Import the product into that destination and change a variant property/comparer so a descendant save is exercised, not skipped by change detection.
-3. Reload the product, group, and variants. Check that each path includes its current parent chain, each level agrees with that path, and the imported descendant values were saved.
-4. Repeat with restoration from recycle and the recycle-to-processing save path. Test both changed and unchanged product comparers, and run the same import again to confirm stability.
-5. Compare a no-move feed with a move-heavy feed: record duration and refresh read counts. Include canceled moves/deletions and missing refreshed descendants; verify that stale descendants are not subsequently saved.
+`forceUpdate: true` on `ProductSync` and `ProductUpdateSync` skips the comparison for the product, its variant groups and its variants. Use it after you change how fields are mapped.
 
-## Change detection and save policy
+### Values on each import item
 
-`Comparer` can be supplied by the integration. When omitted, Ekom computes a SHA-256 hash of the relevant serialized model. Child collections, media, stock, warehouse stock, and transient `EventProperties` are selectively excluded from the parent content hash because they are processed separately.
-
-`forceUpdate: true` bypasses product/group/variant content comparison for `ProductSync` or `ProductUpdateSync`. It is useful after a schema mapping change.
-
-`VariantUpdateSync` and `CategoryUpdateSync` find their node by import identifier with a targeted query and do not load the rest of the catalog; an empty identifier matches nothing. On Umbraco 17.6+ and 18.1+, a `SavePublish` of invariant content runs as one Umbraco save-and-publish operation; older versions save and then publish.
-
-Each imported entity has:
-
-| Property | Behavior |
+| Member | Behavior |
 | --- | --- |
-| `SaveEvent` | `SavePublish` (default), `Save`, or `Unpublish`. |
-| `PreservePublishStatus` | Keeps existing publish state instead of forcing `SaveEvent`; creation still needs a defined state. |
-| `PreserveExistingValues` | Preserves existing images, description and files when corresponding imported values are null/empty. |
-| `PreservePrimaryCategory` | Keeps the physical parent category of an existing product. The first `Categories` value is used only when creating a new product. |
-| `SortOrder` | Applies Umbraco sibling sort order when supplied. |
-| `CreateDate` / `UpdateDate` | Optional content dates; omitted values preserve current dates. |
-| `AdditionalProperties` | Values written to matching Umbraco property aliases. |
-| `EventProperties` | Transient data available to import event handlers and not automatically persisted. |
+| `SaveEvent` | `SavePublish` (default), `Save` or `Unpublish`. See the next table. |
+| `PreservePublishStatus` | `true`: an existing published node is saved and published, an existing unpublished node is only saved, and a new node is saved but not published. |
+| `PreserveExistingValues` | `true`: the import does not write these values on an existing item, even when it sends new ones. For products this covers the title, summary, description and the extra categories; a new product still gets its title and extra categories. For variants it covers the description. Media is handled separately: the incoming media list is ignored when the field already holds any media. |
+| `PreservePrimaryCategory` | Products only. `true`: an existing product stays in its current category, and the first `Categories` value is used only when the product is created. |
+| `SortOrder` | Sets the Umbraco sort order among siblings. |
+| `CreateDate`, `UpdateDate` | Set the node's dates. When empty, the current dates stay. |
+| `AdditionalProperties` | Values for other properties, by property alias. For products and categories, aliases the document type does not have are skipped. |
+| `EventProperties` | Data for your import event handlers. Ekom does not save it. |
 
-Property dictionaries such as `Title`, `Slug`, `Description`, and `Summary` support culture-keyed values. `AdditionalProperties` is the extension point for site-specific document-type properties; values must match the target editor's expected storage format.
+`Title`, `Slug`, `Description` and `Summary` are dictionaries from culture to value. `AdditionalProperties` is how you fill your own document type properties; the values must be in the format the property editor stores.
 
-For `FullSync` and `CategorySync`, the supplied `ImportData.ProductProcessKey` and `RecycleBinKey` define staging categories. When a product's immediate parent is either category, the product, its variant groups, and its variants are saved only, regardless of their `SaveEvent` or `PreservePublishStatus`. The already loaded product is passed down to group and variant saves; this check adds no per-child content lookups or ancestor traversal. Existing product moves from recycle to processing are unchanged. Outside these categories, existing save/publish policy remains in effect, so `SavePublish` with `PreservePublishStatus = false` still attempts to publish newly imported children. Single-entity sync methods do not receive these staging keys and retain their existing behavior.
+Some product and variant values are written only when you send them:
 
-## Media
+- `SKU` is written only when it is not empty. An import cannot clear it.
+- `Vat` is written only when it has a value. An import cannot clear it.
+- `EnableBackorder` is written when it is `true` or `false`. Leave it `null` to keep the current value.
 
-`ImportBase.Images` and product/variant `Files` accept:
+### How SaveEvent is applied
 
-- `ImportMediaFromUdi` for an existing Umbraco media UDI
-- `ImportMediaFromExternalUrl`
-- `ImportMediaFromBytes`
-- `ImportMediaFromBase64`
+| `SaveEvent` | New node | Existing node |
+| --- | --- | --- |
+| `SavePublish` | Saved and published. | Saved and published. |
+| `Unpublish` | Saved, not published. | Saved, then unpublished. |
+| `Save` | Saved, not published. | Saved, not published. A published node stays published with its old content, and the saved changes wait as a draft. |
 
-New media is stored under `ImportData.MediaRootKey` or the method's `mediaRootKey`. External/byte/base64 models support identifiers/comparers, sort order and `ImportMediaAction`. A zero `ImportData.MediaRootKey` makes full/category sync skip loading a media root; single product/variant media operations require the supplied root to resolve.
+`PreservePublishStatus` applies to `SavePublish` only.
 
-`ProductSync`, `VariantGroupSync` and `VariantSync` load only the media the incoming item refers to. Media that a save handler adds afterwards, for example `ImportMediaFromUdi` entries set in `ProductSaveStarting`, is looked up under the media root the first time it is needed. `FullSync` and `CategorySync` load the whole media root.
+When the installed Umbraco version has a single save-and-publish method (added in Umbraco 18.1), Ekom saves and publishes content that does not vary by culture in one operation. Otherwise it saves and then publishes.
 
-`SyncProductMedia` and `SyncVariantMedia` resolve the requested non-trashed content by import identifier across the content tree, including unpublished and `ekmDisableSync` content. They load only relevant media under the supplied root: incoming identifiers, comparers and UDI keys, plus existing references in the selected field so untouched media remains available for ordering. These are media-only operations; they do not reconcile product values, categories, children or stock. Changed published content follows the existing save/publish path; unpublished content is saved without publishing.
+### Staging categories
 
-Existing calls merge incoming media into the selected field. Use the overload with `replaceExisting: true` to replace that field's references with only the incoming media:
+In `FullSync` and `CategorySync`, `ImportData.ProductProcessKey` and `RecycleBinKey` are staging categories. When a product's parent is one of them, the product, its variant groups and its variants are only saved, whatever their `SaveEvent` or `PreservePublishStatus` says. Ekom uses the product it already loaded for this check, so it adds no extra lookups.
 
-```csharp
-importService.SyncProductMedia(
-    identifier,
-    images,
-    mediaRootKey,
-    ImportMediaTypes.Image,
-    ImportMediaContentTypes.images,
-    replaceExisting: true,
-    syncUser: -1);
-```
+Outside these categories the normal rules apply: `SavePublish` with `PreservePublishStatus = false` publishes new children.
 
-The same overload is available on `SyncVariantMedia`, including for the `files` field. Replacement requires supported media inputs with `ImportMediaAction.Add`; delete actions, unknown input types and null elements are rejected. An explicitly empty list clears the selected field. Replacement still reuses matching media, deduplicates references and applies existing ordering and publication rules; it does not delete underlying media items or change other fields.
+The single-item methods do not take staging keys, so this rule does not apply to them.
 
-If any incoming item cannot be downloaded, imported or resolved, replacement throws before changing or saving the content field, leaving its original references unchanged. Incoming UDIs must resolve to the requested media type under the supplied media root. This is not a transaction across media and content: media files created or media metadata updated during preparation are not rolled back, and content save/publication failures retain their existing behavior. Original method signatures remain available. Custom `IImportService` implementations that only implement those signatures can still merge through the new overload with `replaceExisting: false`; replacement throws `NotSupportedException` until they implement it.
+## How imports handle moved content
 
-If an existing call passes an untyped `default` as its sixth argument, name it `syncUser: default` or use `default(int)` to disambiguate it from the new Boolean overload. Ordinary calls using an integer user ID or omitting the user ID are unchanged.
+When Umbraco moves a node, it also updates the path of every node below it. The import must not then save an old copy of those child nodes. Ekom handles this for you:
 
-## Stock and warehouse stock
+- After it moves a product, it reloads the moved product's variant groups and variants before it imports them. It does this in batches of IDs and only for nodes it already loaded.
+- After it moves a category, it reloads the nodes below it before they are used again.
+- Products that did not move cause no extra reads. Ekom does not reload the whole catalog, does not look up variants one by one, adds no startup scans and needs no database migration.
+- When it deletes a node, it removes that node and everything below it from its working lists.
 
-`ImportProduct.Stock` and `ImportVariant.Stock` call `SetStockAsync`; values are absolute snapshots, not deltas. With `PerStoreStock`, supply the relevant `StoreAlias`. Coordinate snapshots with active reservations because an absolute set does not account for external quantities held elsewhere.
+If a move or delete fails or is cancelled, the import stops instead of carrying on as if it worked. If a reloaded child node is missing, in the recycle bin, newly sync-disabled, or under an unexpected parent, the import stops before it processes that product's children. These checks do not undo earlier changes of the import, and reloading cannot repair a path that was already wrong in the database.
 
-Only values that differ from the cached balance are written. They are collected and written in batches of up to 200, and the import waits for them, so stock is persisted when the sync method returns. A failed batch is logged as an error and does not fail the sync. Content saves made by the import do not apply the stock value stored on the node by the backoffice stock editor; the stock table stays as the feed or an earlier ERP update left it.
+The extra reads grow with the number of moved nodes. If your feeds move many large products, measure an import with many moves before you go live.
 
-On Umbraco 17 and 18, warehouse entries are also desired mutations, but only listed identities change:
+### Check moves before you go live
 
-```csharp
-product.WarehouseStock =
-[
-    new ImportWarehouseStock
-    {
-        StoreAlias = "Store",
-        WarehouseKey = warehouseKey,
-        Balance = 12m,
-    },
-    new ImportWarehouseStock
-    {
-        StoreAlias = "Store",
-        WarehouseKey = oldWarehouseKey,
-        Clear = true,
-    },
-];
-```
+Run these steps on a copy of the production database:
 
-The product/variant must have a non-empty SKU. `Clear = true` removes the balance; otherwise `Balance` is set. Omitted warehouse identities remain unchanged. Failures are logged per entry. Warehouse balances are display-only and do not affect checkout.
+1. Create a product with a variant group and variants in one category, and a target category at a different depth in the tree.
+2. Import the product into the target category, and change a variant value or comparer, so that a child node is really saved and not skipped as unchanged.
+3. Reload the product, variant group and variants. Check that each path contains the current parent chain, that each level matches its path, and that the imported values were saved.
+4. Repeat with a product that comes back from the recycle node, and with the move to the processing node. Test with a changed and an unchanged product comparer, and run the same import again to check that nothing changes.
+5. Compare a feed without moves with a feed with many moves: note the time and the number of reloads. Include cancelled moves and deletes, and missing child nodes, and check that old copies of child nodes are not saved.
 
-## Events and error handling
+## Import events
 
-All supported Umbraco integrations expose these static async events:
+Ekom raises these static async events, in `Ekom.Events.ImportEvents`:
 
-- `ImportEvents.CategorySaveStarting`
-- `ImportEvents.ProductImportEvaluating`
-- `ImportEvents.ProductSaveStarting`
-- `ImportEvents.VariantSaveStarting`
-- `ImportEvents.SyncFinished`
+| Event | When | Arguments |
+| --- | --- | --- |
+| `CategorySaveStarting` | Before a category is compared and saved. | `CategoryContent`, `ImportCategory`, `IsCreateOperation`, `ImagesHaveNoChanges` |
+| `ProductImportEvaluating` | Before products are reconciled. See [Product eligibility](#product-eligibility). | `ImportProduct`, `ProductContent`, `ImportRootKey`, `ExcludeFromImport` |
+| `ProductSaveStarting` | Before a product's prices, stock and content are processed. | `ProductContent`, `ImportProduct`, `IsCreateOperation`, `ImagesHaveNoChanges`, `FilesHaveNoChanges` |
+| `VariantSaveStarting` | Before a variant's prices, stock and content are processed. | `VariantContent`, `ImportVariant`, `IsCreateOperation`, `ImagesHaveNoChanges`, `FilesHaveNoChanges` |
+| `SyncFinished` | After an import method finished. | `ImportCategories`, `ImportProducts`, `ImportVariants`, `ImportVariantGroups` (the saved items), `Type` (`ImportSyncType`) |
 
-Starting-event arguments expose the Umbraco `IContent`, import model, creation state, and media no-change flags. `SyncFinished` reports saved model lists and `ImportSyncType`.
+- Each handler is a `Func<TArgs, Task>`. Handlers run one after another.
+- In a starting event, set `ImagesHaveNoChanges` or `FilesHaveNoChanges` to `true` to skip importing that media.
+- `MoveSync` and the media methods do not raise `SyncFinished`. `CategoryUpdateSync` reports `ImportSyncType.VariantUpdateSync`.
 
 ### Product eligibility
 
-Subscribe to `ProductImportEvaluating` to exclude incoming products based on existing content properties without loading the product tree again. `ImportProductEvaluatingEventArgs` exposes the incoming `ImportProduct`, nullable existing `ProductContent`, resolved `ImportRootKey`, and `ExcludeFromImport` (initially false). Scope handlers using `ImportRootKey` and inspect the supplied content directly.
+Subscribe to `ProductImportEvaluating` to leave products out of an import based on the existing node, without loading the product tree again.
+
+`ImportProductEvaluatingEventArgs` gives you:
+
+- `ImportProduct`: the incoming product.
+- `ProductContent`: the existing node that the import found for it, or `null`.
+- `ImportRootKey`: the key of the import root.
+- `ExcludeFromImport`: `false` at first. Set it to `true` to leave the product out.
 
 ```csharp
+using Ekom.Events;
+
 private static Task EvaluateProductAsync(ImportProductEvaluatingEventArgs args)
 {
     if (args.ImportRootKey == catalogRootKey
@@ -353,16 +653,48 @@ private static Task EvaluateProductAsync(ImportProductEvaluatingEventArgs args)
 }
 ```
 
-Register `ImportEvents.ProductImportEvaluating += EvaluateProductAsync` once at startup and unsubscribe at shutdown. Handlers run sequentially; exclusion is cumulative, so assigning false after an earlier exclusion does not reinclude the product. Treat the supplied model and content as read-only during evaluation; use this event to set eligibility, not to mutate identifiers, categories, or persisted content.
+1. Add the handler once at startup: `ImportEvents.ProductImportEvaluating += EvaluateProductAsync`.
+2. Remove it at shutdown.
+3. Use `ImportRootKey` to limit the handler to the imports it is meant for.
 
-Excluding a product removes it from the effective incoming import, including its variant groups and variants:
+How the event works:
 
-- With missing-product removal enabled (`FullSync` and the product reconciliation in `CategorySync`), an existing excluded product is treated as missing: unpublished and moved to the configured recycle node, or deleted when no recycle node is configured. Already-recycled products remain there. Existing `ekmDisableSync` protection remains unchanged.
-- `ProductSync` and `ProductUpdateSync` skip excluded products without removing existing content. `ProductUpdateSync` still throws when the requested existing product cannot be found, before evaluation. Normal `SyncFinished` notifications still run for successfully completed imports, but excluded products are not recorded as saved.
-- A valid nonempty feed where every product is excluded still performs missing-product reconciliation. Originally empty feeds retain the no-removal safeguard, and full-import category validation runs on the original feed before exclusion.
+- Handlers run one after another. Once a handler sets `ExcludeFromImport` to `true`, a later handler cannot set it back to `false`.
+- Treat the product and node as read-only here. Use the event to decide eligibility, not to change identifiers, categories or saved content.
+- The event uses the import's in-memory index and adds no content reads. `ProductContent` is the sync-enabled node the current import can see, not a check across the whole catalog. `ProductSync` looks under the primary category unless `PreservePrimaryCategory` is `true`.
+- `VariantGroupSync`, `VariantSync` and `VariantUpdateSync` do not raise this event.
 
-The event uses the existing in-memory identifier index and adds no content-service reads. `ProductContent` is the matching sync-enabled node available to the current import lookup, or null; it is not a catalog-wide existence guarantee. In particular, `ProductSync` normally looks under the selected primary category unless `PreservePrimaryCategory` is true. Direct variant-only sync methods do not raise this event.
+What happens to an excluded product, including its variant groups and variants:
 
-All products are evaluated before product reconciliation begins. A subscriber exception aborts the import before product moves, restoration, removal, creation, or saving; earlier category processing is not rolled back. The event does not make the import transactional.
+- In `FullSync` and the product step of `CategorySync`, which remove missing products, an existing excluded product is treated as missing. It is unpublished and moved to the recycle node, or deleted when there is no recycle node. A product already in the recycle node stays there. `ekmDisableSync` still protects a node.
+- `ProductSync` and `ProductUpdateSync` skip an excluded product and do not remove the existing node. `ProductUpdateSync` still throws when the product does not exist, before the event runs. `SyncFinished` still runs, but the excluded product is not in the saved list.
+- A feed that has products but where every product is excluded still removes missing products. A feed that has no products at all never removes products. The check that products have categories runs on the feed before exclusion.
 
-Product save failures are attached to `ImportProduct.Exception`, grouped in logs, and included in completion data. Top-level full-sync failures are logged as critical and rethrown. Single update methods throw when their identifier cannot be found. Run imports in a background integration process, capture logs, and refresh/verify catalog caches after large operations as required by the hosting topology.
+Ekom evaluates all products before it starts reconciling them. If a handler throws, the import stops before any product is moved, restored, removed, created or saved. Category changes made earlier in the same import are not undone. The event does not make the import a transaction.
+
+## Errors and failures
+
+An import is not one transaction. A failure stops or skips part of the work, but changes already made stay.
+
+| What fails | What happens |
+| --- | --- |
+| Saving a product (including its prices or warehouse stock) | The error is logged and stored in `ImportProduct.Exception`. The import goes on with the next product. Failed products are listed in the log, grouped by error message, and are included in `SyncFinished`. |
+| Saving a category | The error is logged and rethrown. The import stops. |
+| Saving a variant (including its prices or warehouse stock) | The exception stops the import. A variant that Umbraco reports as "Cannot save a non-current version" is skipped with a warning instead. |
+| A product move or delete that fails or is cancelled | The import stops with `InvalidOperationException`. |
+| Writing a stock batch | The error is logged. The import goes on. |
+| A product with no category that exists under the root | A warning is logged and the product is skipped. |
+| `FullSync` or `MoveSync` as a whole | The error is logged as critical and rethrown. |
+| An update method cannot find its item | `ArgumentNullException`. |
+
+Run imports in a background process, not in a web request, and keep the logs. After a large import, check that the catalog caches on every server show the new data. See [Refresh the caches](stores.md#refresh-the-caches).
+
+## Related pages
+
+- [Database price storage](database-price-storage.md): keep prices in a table and update them without publishing.
+- [Stock](stock.md): what imported stock and warehouse stock mean.
+- [Catalog and products](catalog-and-products.md): how the imported catalog is read on the storefront.
+- [Events](../reference/events.md): every event Ekom raises, including import events.
+- [Configuration reference](../reference/configuration-reference.md): all `Ekom` settings.
+
+[Back to Guides](README.md)

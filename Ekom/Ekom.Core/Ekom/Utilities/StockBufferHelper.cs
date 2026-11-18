@@ -21,6 +21,17 @@ public static class StockBufferHelper
             ?? 0;
     }
 
+    /// <summary>
+    /// Whether an item may be sold beyond its stock. Backorder on the product covers all of its variants,
+    /// and a variant can also turn it on for itself.
+    /// </summary>
+    public static bool AllowsBackorder(IProduct product, IVariant? variant = null)
+        => product.Backorder || variant?.Backorder == true;
+
+    /// <inheritdoc cref="AllowsBackorder(IProduct, IVariant?)"/>
+    public static bool AllowsBackorder(IOrderLine line)
+        => line.Product.Backorder || line.Variant?.Backorder == true;
+
     private static decimal? GetConfiguredStockBuffer(decimal? stockBuffer)
     {
         return stockBuffer is > 0 ? stockBuffer : null;

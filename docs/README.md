@@ -1,50 +1,58 @@
-# Ekom Documentation
+# Ekom documentation
 
-This documentation covers the current Ekom packages for Umbraco 13, 17, 18, and 19. Start with the compatibility and installation guides, then use the topic guides and references as needed.
+Ekom is an e-commerce package for Umbraco. It adds stores, a product catalog, baskets, checkout, payments, shipping, discounts and an order manager to an Umbraco site.
 
-For the product overview and ecosystem landing page, visit [ekomcommerce.com](https://www.ekomcommerce.com/).
+These docs cover Ekom on Umbraco 17, 18 and 19. Umbraco 19 is a release candidate. For a product overview, visit [ekomcommerce.com](https://www.ekomcommerce.com/).
 
-## Getting started
+## Find what you need
 
-- [Compatibility](getting-started/compatibility.md) — choose the correct Umbraco, .NET, runtime, and web-assets packages.
-- [Installation](getting-started/installation.md) — install Ekom and verify first startup.
-- [Configuration](getting-started/configuration.md) — configure the primary application settings.
-- [Quick start](getting-started/quick-start.md) — create a small catalog and basket flow.
+| You want to | Go to |
+| --- | --- |
+| Install Ekom on a site for the first time | [Getting started](getting-started/README.md) |
+| Build one part of a store, such as checkout or discounts | [Guides](guides/README.md) |
+| Copy working code for a common task | [Examples](examples/README.md) |
+| Look up a setting, method, event or endpoint | [Reference](reference/README.md) |
+| Work with orders and customers in the backoffice | [Manager](manager/README.md) |
+| Move a site to a newer Umbraco or Ekom version | [Upgrading](upgrading/README.md) |
+| Understand how Ekom is put together | [Architecture](architecture/README.md) |
+| Connect Algolia, Klaviyo or Mailchimp | [Integrations](integrations/README.md) |
+| See a working example site | [Samples](samples/overview.md) |
+| Work on Ekom itself | [Contributing](contributing/README.md) |
 
-## Architecture
+## New to Ekom
 
-- [Architecture overview](architecture/overview.md)
-- [Packages and projects](architecture/packages.md)
-- [Startup, persistence, and caching](architecture/startup-and-data.md)
+Follow these in order. The first four take you from an empty Umbraco site to a working basket.
 
-## Guides
+1. [Compatibility](getting-started/compatibility.md): pick the packages that match your Umbraco version.
+2. [Installation](getting-started/installation.md): install Ekom and check that it starts.
+3. [Configuration](getting-started/configuration.md): set the main options.
+4. [Quick start](getting-started/quick-start.md): create a small catalog and add a product to a basket.
+5. [Guides](guides/README.md): build the rest of the store, one part at a time.
+6. [Examples](examples/README.md): copy working code for common tasks.
 
-- [Catalog and products](guides/catalog-and-products.md)
-- [Database price storage](guides/database-price-storage.md)
-- [Stores](guides/stores.md)
-- [Orders and baskets](guides/orders-and-baskets.md)
-- [Order, payment, and fulfillment statuses](guides/order-statuses.md)
-- [Order custom data](guides/order-custom-data.md)
-- [Order reviews](guides/order-reviews.md)
-- [Checkout](guides/checkout.md)
-- [Payments](guides/payments.md)
-- [Shipping and shipments](guides/shipping.md)
-- [Providers](guides/providers.md)
-- [Discounts](guides/discounts.md)
-  - [Editor overview](guides/discounts/editors.md)
-  - [Product discounts](guides/discounts/product-discounts.md)
-  - [Order discounts](guides/discounts/order-discounts.md)
-  - [Coupons and usage limits](guides/discounts/coupons.md)
-  - [Developer guide](guides/discounts/developers.md)
-- [Stock](guides/stock.md)
-- [Native SQL reservations](guides/reservations.md)
-- [Tracking and consent](guides/tracking-and-consent.md)
-- [Linked order lines](guides/linked-order-lines.md)
-- [Variant App](guides/variant-app.md)
-- [Catalog imports](guides/imports.md)
-- [Headless usage](guides/headless.md)
+## Sections
 
-## Reference
+### [Getting started](getting-started/README.md)
+
+Install and configure Ekom, and get a first basket working.
+
+### [Guides](guides/README.md)
+
+One guide for each part of a store. Each explains what the feature does, how to set it up and how to use it from your code.
+
+- **Stores and catalog:** [Stores](guides/stores.md), [Catalog and products](guides/catalog-and-products.md), [Variant App](guides/variant-app.md), [Stock](guides/stock.md), [Database price storage](guides/database-price-storage.md), [Catalog imports](guides/imports.md)
+- **Baskets and orders:** [Orders and baskets](guides/orders-and-baskets.md), [Linked order lines](guides/linked-order-lines.md), [Order custom data](guides/order-custom-data.md), [Order statuses](guides/order-statuses.md), [Order reviews](guides/order-reviews.md)
+- **Checkout, payment and shipping:** [Checkout](guides/checkout.md), [Providers](guides/providers.md), [Payments](guides/payments.md), [Shipping](guides/shipping.md), [Stock reservations](guides/reservations.md), [Gift-card recovery](guides/giftcard-recovery.md)
+- **Discounts:** [Discounts and coupons](guides/discounts.md)
+- **Storefront integration:** [Headless storefronts](guides/headless.md), [Tracking and consent](guides/tracking-and-consent.md)
+
+### [Examples](examples/README.md)
+
+Working code you can copy: event handlers, your own product classes, imports with images and variants, storefront pages, Manager actions and background jobs.
+
+### [Reference](reference/README.md)
+
+Exact names, types and defaults, for looking something up.
 
 - [.NET API](reference/dotnet-api.md)
 - [Services and dependency injection](reference/services-and-dependency-injection.md)
@@ -53,40 +61,33 @@ For the product overview and ecosystem landing page, visit [ekomcommerce.com](ht
 - [Configuration reference](reference/configuration-reference.md)
 - [Models and behavior](reference/models-and-behavior.md)
 
-## Manager
+### [Manager](manager/README.md)
 
-- [Manager overview](manager/overview.md)
-- [Access and permissions](manager/access-and-permissions.md)
-- [Orders](manager/orders.md)
-- [Customers](manager/customers.md)
-- [Analytics](analytics.md)
-- [Activity logs](manager/activity-logs.md)
+The Ekom area of the Umbraco backoffice: orders, customers, analytics and who can access them.
 
-## Integrations
+### [Upgrading](upgrading/README.md)
 
-- [Integration packages](integrations/README.md) — compatibility and links to the canonical plugin documentation.
+Step-by-step guides for moving between Umbraco versions and for changes inside Ekom that need action from you.
 
-## Samples
+### [Architecture](architecture/README.md)
 
-- [Sample applications](samples/overview.md)
+How the packages fit together, what happens at startup, and where Ekom keeps its data.
 
-## Upgrading
+### [Integrations](integrations/README.md)
 
-- [Upgrade overview](upgrading/overview.md)
-- [Umbraco 13 to 17](upgrading/umbraco-13-to-17.md)
-- [Umbraco 17 to 18](upgrading/umbraco-17-to-18.md)
-- [Umbraco 18 to 19](upgrading/umbraco-18-to-19.md)
-- [Native reservation migration](upgrading/reservations.md)
-- [Upgrading payments](upgrading/payments.md)
+The optional Algolia, Klaviyo and Mailchimp packages.
 
-## Contributing
+### [Samples](samples/overview.md)
 
-- [Contributor setup](contributing/setup.md)
-- [Build, test, and release](contributing/build-test-release.md)
+The example sites in this repository and what they show.
 
-## Documentation conventions
+### [Contributing](contributing/README.md)
 
-- Documentation describes the current `Ekom` branch unless a page identifies a version-specific difference.
-- Paths and links are repository-relative so they work directly on GitHub.
-- Plugin-specific configuration belongs in each plugin README; this documentation links to it rather than duplicating it.
-- The canonical Ekom release history is [`Ekom/CHANGELOG.md`](../Ekom/CHANGELOG.md).
+Set up, build, test and release Ekom itself.
+
+## About these docs
+
+- They describe the current `Ekom` branch. A page says so when something differs between Umbraco 17, 18 and 19.
+- Every page starts with a path back to its section and to this page, and ends with related pages.
+- Each plugin keeps its own setup instructions in its README. These docs link to them and do not repeat them.
+- The release history is in [`Ekom/CHANGELOG.md`](../Ekom/CHANGELOG.md).

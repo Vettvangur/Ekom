@@ -151,7 +151,7 @@ public partial class Stock
         {
             ct.ThrowIfCancellationRequested();
 
-            if (orderLine.Product.Backorder)
+            if (StockBufferHelper.AllowsBackorder(orderLine))
             {
                 continue;
             }

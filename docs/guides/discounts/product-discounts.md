@@ -1,96 +1,125 @@
-# Product discounts for editors
+[Ekom docs](../../README.md) / [Guides](../README.md) / [Discounts and coupons](../discounts.md) / Product discounts
 
-[Editor overview](editors.md) | [Order discounts](order-discounts.md) | [Coupons](coupons.md) | [Developer guide](developers.md)
+# Product discounts
 
-Use a product discount to put selected products or categories on sale without requiring a coupon or a basket quantity rule. Ekom evaluates applicable product offers and selects the effective price reduction; it does not add several product discounts together.
+A product discount puts the products or categories you select on sale. The lower price shows on the product page and in the basket, and the customer does not need a code. Use it for a sale such as "15% off outdoor furniture". For an offer that needs a coupon code or a minimum quantity, use an [order discount](order-discounts.md) instead.
 
-For "buy at least three" offers or discounts activated by a code, use an [order discount](order-discounts.md) instead.
+When several product discounts fit the same product, Ekom does not add them together. It uses the one that gives the lowest price.
+
+On this page:
+
+- [Create a product discount](#create-a-product-discount)
+- [What each field means](#what-each-field-means)
+- [Example: 15% off a category, except one product](#example-15-off-a-category-except-one-product)
+- [Example: a fixed amount off each item](#example-a-fixed-amount-off-each-item)
+- [Set a sale price on one product](#set-a-sale-price-on-one-product)
+- [Check the result](#check-the-result)
 
 ## Create a product discount
 
-1. Open **Content → Ekom → Discounts → Product Discounts** and find the intended store's container.
-2. Create a **Product Discount** with a descriptive name, such as "15% off outdoor furniture".
-3. Complete **Settings** using the table below.
-4. Confirm the intended store in **Stores** and enter the values under the matching store/currency fields where provided.
-5. Review exclusions, ranges, and Disable before saving and publishing.
+1. In the **Content** section, open **Ekom > Discounts > Product Discounts**. If your discounts are grouped in folders, open the folder you want.
+2. Create a **Product Discount**. Give it a name that says what it does, for example "15% off outdoor furniture".
+3. On the **Settings** tab, fill in the fields. The table in the next section explains each one.
+4. In **Discount**, enter the amount for each store and currency. The field shows one box per store, with one row per currency.
+5. On the **Stores** tab, turn on **Disable** for every store where the sale must not run.
+6. Save and publish.
 
-Use the equivalent location and publishing action if your site's Umbraco setup differs.
+**Type** and **Discount** are required.
 
-In Umbraco 17 and 18, the Discount input keeps the currency label before the input and shows `%` after it when Type is Percentage, for example `ISK [15] %`. Fixed discounts have no percentage suffix. Enter `15` for 15%. Switching Type preserves the number, so check the value before publishing. Other range fields keep their currency labels without a percentage suffix. The Umbraco 13 editor continues to show currency labels for this field.
+When **Type** is **Percentage**, the **Discount** field shows `%` after each box, for example `EUR [15] %`. Enter `15` for 15%, not `0.15`. When **Type** is **Fixed**, there is no `%` and the number is an amount in that row's currency. Changing **Type** does not change the number you typed, so check it again after you switch.
 
-## Understand the fields
+If you leave the amount at `0` for a store or currency, the discount does nothing there.
 
-| Field | What it means | When to use it / example |
+## What each field means
+
+| Field | What it means | Example |
 | --- | --- | --- |
-| Title | Name of the offer. | "15% off outdoor furniture" is easier to maintain than "Discount 1". |
-| Description | Explanation of the offer, where displayed by your storefront. | Describe the sale and exclusions. Text alone does not restrict the discount. |
-| Type | Percentage or fixed monetary reduction. | Choose Percentage for 15% off, or the fixed-amount type for 10 off each unit. |
-| Discount | Value of the reduction. | Enter `15` for 15%, not `0.15`. A fixed value uses the configured store currency. |
-| Discount Items | Products/categories eligible for the offer. | Select an outdoor furniture category to include matching products. An empty selection does not mean all products. |
-| Exclude Discount Items | Products/categories removed from the selected offer. | Select a premium chair to exclude it from a category sale. Exclusions take precedence over inclusion. |
-| Start of Range | Minimum product unit price for eligibility, inclusive. | Limit the sale to products priced at least 100. This is not a minimum basket total. |
-| End of Range | Maximum product unit price for eligibility, inclusive. | Set `500` to cap eligible unit prices at 500, or `0` for no upper limit. |
-| Disable | Turns off the discount for the relevant store. | Pause the offer without deleting its settings. |
+| Title | The name of the offer. Your storefront can show it. | "15% off outdoor furniture" |
+| Description | Text about the offer. Your storefront can show it. The text does not limit the discount. | "All outdoor furniture except the premium chair." |
+| Type | **Percentage** takes a share of the price. **Fixed** takes an amount off each unit. | **Percentage** |
+| Discount | How much to take off, per store and currency. | `15` for 15% |
+| Discount Items | The products and categories that get the discount. A category covers the products under it in the content tree and products linked to that category. If you select nothing, no product gets the discount. | The "Outdoor furniture" category |
+| Exclude Discount Items | Products and categories that never get this discount, even when they are inside a selected category. | The premium chair |
+| Start of Range | The lowest normal unit price that gets the discount. A product priced exactly at this value is included. This is the price of one product, not a basket total. | `100`: only products that cost 100 or more |
+| End of Range | The highest normal unit price that gets the discount. A product priced exactly at this value is included. `0` means no upper limit. | `500`, or `0` for no limit |
+| Disable (Stores tab) | Turns the discount off in the stores where it is on. The settings are kept. | On for the stores where the sale is paused |
 
-Selecting a category can include products under its path or linked to that category. Test the actual catalog selection on your site. A product's own **Disable Discounts** setting can also prevent reductions.
+Two more settings on the product itself affect discounts:
+
+- **Disable Discounts** on a product stops that product and its variants from getting any discount, including order discounts.
+- **Discount Price** on a product or variant is a sale price. See [Set a sale price on one product](#set-a-sale-price-on-one-product).
 
 ## Example: 15% off a category, except one product
 
-**Goal:** put outdoor furniture on sale, but leave the premium chair at its normal price.
+**Goal:** put outdoor furniture on sale, but keep the premium chair at its normal price.
 
-| Setting | Value |
+| Field | Value |
 | --- | --- |
 | Type | Percentage |
-| Discount | `15` |
+| Discount | `15` in each store and currency where the sale runs |
 | Discount Items | Outdoor furniture category |
 | Exclude Discount Items | Premium chair |
 | Start of Range | `0` |
 | End of Range | `0` (no upper limit) |
-| Disable | Off for the intended store |
+| Disable | Off for the stores where the sale runs |
 
-**Expected result:** an included product normally priced at 100 is reduced to 85. The excluded chair and unrelated products receive no reduction from this offer. Another applicable, better product discount can win instead.
+**Result:** a product in the category that normally costs 100 now costs 85. The premium chair and products outside the category keep their normal price. If another product discount gives a bigger reduction on a product, that one is used instead.
 
-**Test:** one included item, the excluded chair, an unrelated item, and an item already on sale. Check another store to ensure the promotion has not been enabled there unintentionally.
+**Check:** add one included product, the premium chair, one unrelated product and one product that is already on sale. Then switch to another store and check that the sale is not running there by mistake.
 
-## Example: a fixed amount off every eligible unit
+## Example: a fixed amount off each item
 
-**Goal:** take 10 off each eligible unit, rather than 10 off the entire basket.
+**Goal:** take 10 off each unit of the selected products.
 
-Choose the fixed-amount **Type**, enter **Discount = 10**, and select the products in **Discount Items**.
+1. Set **Type** to **Fixed**.
+2. Enter `10` in **Discount** for each currency.
+3. Select the products in **Discount Items**.
 
-| Basket | Expected result from this offer |
+| Basket | Result from this discount |
 | --- | --- |
-| One eligible unit normally priced at 100 | Unit price 90; saving 10. |
-| Three eligible units normally priced at 100 each | Unit price 90; total saving 30. |
-| One eligible unit normally priced at 8 | Unit price is clamped at 0, not made negative. |
+| 1 unit that normally costs 100 | Unit price 90. Saving 10. |
+| 3 units that normally cost 100 each | Unit price 90. Saving 30. |
+| 1 unit that normally costs 8 | Unit price 0. The price never goes below 0. |
 
-These simplified examples assume no VAT adjustment and no competing reduction. Your site's fixed-discount VAT policy and rounding can change the displayed saving; check the final prices in your storefront.
+The amount comes off each unit, not once from the basket total. These results assume there is no other discount on the products.
 
-## Set a target selling price
+## Set a sale price on one product
 
-Products and variants can have a native **Discount Price** field (the exact label may vary by site). This means **the price you want to sell at**, not an amount to subtract.
+Products and variants have a **Discount Price** field, directly below **Price**. It holds the price you want to sell at, not the amount to take off.
 
-**Example:** normal price 100, target Discount Price 85. Enter `85`, not `15`.
+**Example:** the normal price is 100 and you want to sell at 85. Enter `85`, not `15`.
 
-This example assumes no before-VAT adjustment to the fixed reduction. Internally, the target becomes an amount off the normal price. If your site applies fixed reductions before VAT to VAT-inclusive prices, the final price can differ from the entered target. Ask your developer to confirm the VAT policy and check the actual storefront and basket prices before advertising an exact selling price.
+1. Open the product, or the variant if the variant has its own price.
+2. In **Discount Price**, enter the sale price for each store and currency.
+3. Save and publish.
+4. Check the price on the product page and in the basket.
 
-1. Open the relevant product or independently priced variant.
-2. Find Discount Price and enter the target for the intended store/currency.
-3. Save and publish, then check the displayed price and basket price.
+How Ekom uses the value:
 
-A positive target below the normal price becomes a candidate product reduction. It competes with configured product discounts rather than stacking on top. Blank, zero, negative, invalid, or non-reducing values do not create a native reduction.
+- A sale price above 0 and below the normal price becomes one more product discount. Ekom compares it with the product discounts that fit the product and uses the lowest price. It does not add them together.
+- An empty field, `0`, or a price that is not below the normal price has no effect.
+- The sale price is in the same form as **Price**: with VAT or without VAT, as your store is set up.
+- A variant with its own price uses its own **Discount Price**. A variant without its own price uses the product's price, and also the product's **Discount Price** and product discounts.
+- **Disable Discounts** on the product also turns off the sale price.
 
-An independently priced variant uses its own target. A variant inheriting the parent's price also inherits the parent's selected discount; do not assume it uses an independent target price.
+## Check the result
 
-## Publish and verify
+Product discounts have no start or end date field. To run a sale for a set period, publish and unpublish the discount at the right time.
 
-- Check included, excluded, and unrelated products.
-- Test at the price-range boundaries and outside them, if used.
-- Test multiple units to confirm percentage/fixed savings.
-- Check variants, other currencies, and another store.
-- Test with another product offer and with an [order discount](order-discounts.md#understand-stackable).
-- Check products with Disable Discounts enabled.
+After you publish, check on the storefront:
 
-The standard discount fields do not include an Ekom date-range setting. If using Umbraco publish/unpublish scheduling, confirm that scheduling workflow separately rather than assuming the discount has a built-in expiry field.
+1. A product that is included, one that is excluded, and one that is not selected.
+2. Products priced at, inside and outside **Start of Range** and **End of Range**, if you set them.
+3. A basket with more than one unit, to see the saving per unit.
+4. Variants, each currency, and each store.
+5. A product that also gets an [order discount](order-discounts.md#stackable-adds-to-a-sale-price-or-competes-with-it).
+6. A product with **Disable Discounts** turned on.
 
-For APIs, custom audience restrictions, and imported native prices, see [Product discounts for developers](developers.md#product-discounts).
+## Related pages
+
+- [Order discounts](order-discounts.md): offers on the basket, with or without a code.
+- [Configure discounts in Umbraco](editors.md): choose the right kind of discount.
+- [Discount APIs and behavior](developers.md#product-discounts): custom rules for product discounts, for developers.
+- [Database price storage](../database-price-storage.md): where prices and sale prices come from when they are stored in the database.
+
+[Back to Guides](../README.md)

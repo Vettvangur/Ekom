@@ -332,32 +332,172 @@ public sealed class LegacyCheckoutReservationTests
             .Callback(() => f.Reviews.Verify(x => x.RaiseAsync(f.Order.UniqueId, "checkout", code,
                 It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None), Times.Once))
             .Returns(Task.CompletedTask);
-        void Fail(object? sender, CompleteCheckoutEventArgs args) => throw failure;
+        // A handler that throws no longer fails completion, so the failure comes from completion itself.
+        f.FailCompletionWith(failure);
+
+        Assert.Same(failure, await Assert.ThrowsAnyAsync<Exception>(() => f.CompleteAsync()));
+
+        f.Mail.Verify(x => x.SendAsync(It.IsAny<string>(), It.IsAny<string>(), null, null), Times.Once);
+    }
+
+    [Fact]
+    public async Task ThrowingCompletionHandlerDoesNotStopCompletionOrOtherHandlers()
+    {
+        using var f = new Fixture(false, false);
+        var laterHandlerRan = false;
+        void Fail(object? sender, CompleteCheckoutEventArgs args) => throw new InvalidOperationException("ERP is down");
+        Task FailAsync(object sender, CompleteCheckoutEventArgs args, CancellationToken ct) => throw new InvalidOperationException("export failed");
+        void Later(object? sender, CompleteCheckoutEventArgs args) => laterHandlerRan = true;
         CheckoutEvents.CompleteCheckout += Fail;
+        CheckoutEvents.CompleteCheckout += Later;
+        CheckoutEvents.CompleteCheckoutAsync += FailAsync;
         try
         {
-            Assert.Same(failure, await Assert.ThrowsAnyAsync<Exception>(() => f.CompleteAsync()));
+            await f.CompleteAsync();
         }
         finally
         {
             CheckoutEvents.CompleteCheckout -= Fail;
+            CheckoutEvents.CompleteCheckout -= Later;
+            CheckoutEvents.CompleteCheckoutAsync -= FailAsync;
         }
-        f.Mail.Verify(x => x.SendAsync(It.IsAny<string>(), It.IsAny<string>(), null, null), Times.Once);
+
+        Assert.True(laterHandlerRan);
+        f.ActivityLog.Verify(x => x.AddOrderLogAsync(f.Order.UniqueId, It.IsAny<string>(), null, OrderActivityLogType.Success, It.IsAny<CancellationToken>()), Times.Once);
+        // Staff are told, once, that an integration may have missed the order.
+        f.Reviews.Verify(x => x.RaiseAsync(f.Order.UniqueId, "checkout", "completion-handler-failed",
+            It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None), Times.Once);
+        f.Mail.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task CompleteCheckoutIsRaisedAfterTheOrderIsCompleted()
+    {
+        using var f = new Fixture(false, false);
+        var order = new List<string>();
+        f.ActivityLog.Setup(x => x.AddOrderLogAsync(f.Order.UniqueId, It.IsAny<string>(), null, OrderActivityLogType.Success, It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("completed")).Returns(Task.CompletedTask);
+        Task Before(object sender, CompletingCheckoutEventArgs args, CancellationToken ct) { order.Add("before"); return Task.CompletedTask; }
+        void After(object? sender, CompleteCheckoutEventArgs args)
+        {
+            if (args.OrderInfo.UniqueId == f.Order.UniqueId && args.OrderData.UniqueId == f.Order.UniqueId) order.Add("after");
+        }
+        Task AfterAsync(object sender, CompleteCheckoutEventArgs args, CancellationToken ct) { order.Add("after async"); return Task.CompletedTask; }
+        CheckoutEvents.CompletingCheckoutAsync += Before;
+        CheckoutEvents.CompleteCheckout += After;
+        CheckoutEvents.CompleteCheckoutAsync += AfterAsync;
+        try
+        {
+            await f.CompleteAsync();
+        }
+        finally
+        {
+            CheckoutEvents.CompletingCheckoutAsync -= Before;
+            CheckoutEvents.CompleteCheckout -= After;
+            CheckoutEvents.CompleteCheckoutAsync -= AfterAsync;
+        }
+
+        Assert.Equal(new[] { "before", "completed", "after", "after async" }, order);
+    }
+
+    [Fact]
+    public async Task CompleteCheckoutIsNotRaisedWhenCompletionFails()
+    {
+        using var f = new Fixture(false, false);
+        var raised = false;
+        void After(object? sender, CompleteCheckoutEventArgs args) => raised = true;
+        Task AfterAsync(object sender, CompleteCheckoutEventArgs args, CancellationToken ct) { raised = true; return Task.CompletedTask; }
+        f.FailCompletionWith(new InvalidOperationException("completion failure"));
+        CheckoutEvents.CompleteCheckout += After;
+        CheckoutEvents.CompleteCheckoutAsync += AfterAsync;
+        try
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => f.CompleteAsync());
+        }
+        finally
+        {
+            CheckoutEvents.CompleteCheckout -= After;
+            CheckoutEvents.CompleteCheckoutAsync -= AfterAsync;
+        }
+
+        Assert.False(raised);
+    }
+
+    [Fact]
+    public async Task ThrowingCompletingHandlerDoesNotStopCompletion()
+    {
+        using var f = new Fixture(false, false);
+        var key = await f.AddLineAsync(3);
+        var controller = f.Controller();
+        await controller.PayAsync(new PaymentRequest(), "en-US", f.Order);
+        Task Fail(object sender, CompletingCheckoutEventArgs args, CancellationToken ct) => throw new InvalidOperationException("rule failed");
+        CheckoutEvents.CompletingCheckoutAsync += Fail;
+        try
+        {
+            await f.CompleteAsync();
+        }
+        finally
+        {
+            CheckoutEvents.CompletingCheckoutAsync -= Fail;
+        }
+
+        Assert.Equal(7, await f.StockAsync(key));
+        f.Reviews.Verify(x => x.RaiseAsync(f.Order.UniqueId, "checkout", "completion-handler-failed",
+            It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None), Times.Once);
+    }
+
+    [Fact]
+    public async Task CompleteCheckoutReportsTheSettingsCompletionUsed()
+    {
+        using var f = new Fixture(false, false);
+        bool? stockValidation = null, updateOrderStatus = null;
+#pragma warning disable CS0618 // The obsolete members still report what completion did
+        void After(object? sender, CompleteCheckoutEventArgs args)
+        {
+            stockValidation = args.StockValidation;
+            updateOrderStatus = args.UpdateOrderStatus;
+        }
+#pragma warning restore CS0618
+        CheckoutEvents.CompleteCheckout += After;
+        try
+        {
+            // The fixture turns both off from a CompletingCheckout handler.
+            await f.CompleteAsync(validateInventory: false);
+        }
+        finally
+        {
+            CheckoutEvents.CompleteCheckout -= After;
+        }
+
+        Assert.False(stockValidation);
+        Assert.False(updateOrderStatus);
+    }
+
+    [Fact]
+    public async Task FailingAlertEmailDoesNotReplaceTheCompletionError()
+    {
+        using var f = new Fixture(false, false);
+        var failure = new InvalidOperationException("completion failure");
+        f.FailCompletionWith(failure);
+        f.Mail.Setup(x => x.SendAsync(It.IsAny<string>(), It.IsAny<string>(), null, null))
+            .ThrowsAsync(new InvalidOperationException("Umbraco:CMS:Global:Smtp:Host is not configured"));
+
+        Assert.Same(failure, await Assert.ThrowsAnyAsync<Exception>(() => f.CompleteAsync()));
     }
 
     [Fact]
     public async Task CancelledCompletionDoesNotRaiseReview()
     {
         using var f = new Fixture(false, false);
-        void Cancel(object? sender, CompleteCheckoutEventArgs args) => throw new OperationCanceledException();
-        CheckoutEvents.CompleteCheckout += Cancel;
+        void Cancel(object? sender, CompletingCheckoutEventArgs args) => throw new OperationCanceledException();
+        CheckoutEvents.CompletingCheckout += Cancel;
         try
         {
             await Assert.ThrowsAsync<OperationCanceledException>(() => f.CompleteAsync());
         }
         finally
         {
-            CheckoutEvents.CompleteCheckout -= Cancel;
+            CheckoutEvents.CompletingCheckout -= Cancel;
         }
         f.Reviews.VerifyNoOtherCalls();
     }
@@ -381,20 +521,20 @@ public sealed class LegacyCheckoutReservationTests
             f.Reviews.Setup(x => x.RaiseAsync(f.Order.UniqueId, "checkout", "coupon-exhausted", It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None))
                 .ThrowsAsync(new InvalidOperationException("review database unavailable"));
         }
-        void ApplyCoupon(object? sender, CompleteCheckoutEventArgs args)
+        void ApplyCoupon(object? sender, CompletingCheckoutEventArgs args)
         {
             var order = (OrderInfo)args.OrderInfo;
             order.Coupon = "EXHAUSTED";
             order.Discount = new OrderedDiscount(Guid.NewGuid(), "Discount", true, 10, default, [], [], null, false, true);
         }
-        CheckoutEvents.CompleteCheckout += ApplyCoupon;
+        CheckoutEvents.CompletingCheckout += ApplyCoupon;
         try
         {
             await f.CompleteAsync();
         }
         finally
         {
-            CheckoutEvents.CompleteCheckout -= ApplyCoupon;
+            CheckoutEvents.CompletingCheckout -= ApplyCoupon;
         }
         f.Reviews.Verify(x => x.RaiseAsync(f.Order.UniqueId, "checkout", "coupon-exhausted", It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None), available == 0 ? Times.Once() : Times.Never());
         using (var db = f.Database.Factory.GetDatabase())
@@ -515,20 +655,25 @@ public sealed class LegacyCheckoutReservationTests
         public void DisableDiscountCacheRefresh() => _scope.Instance.CacheList.Value.Clear();
 
         public Task<decimal> StockAsync(Guid key) => Database.StockAsync(key, _perStore ? "main" : null);
+        /// <summary>Makes completion itself fail, at its last step.</summary>
+        public void FailCompletionWith(Exception failure)
+            => ActivityLog.Setup(x => x.AddOrderLogAsync(Order.UniqueId, It.IsAny<string>(), null, OrderActivityLogType.Success, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(failure);
+
         public async Task CompleteAsync(bool validateInventory = true)
         {
             var service = new CheckoutService(NullLogger<CheckoutService>.Instance, _scope.Instance, Repository,
                 new CouponRepository(_scope.Instance, NullLogger<CouponRepository>.Instance, Mock.Of<ICouponCache>(), Database.Factory, Mock.Of<INodeService>()),
                 Configuration.Resolver.GetRequiredService<OrderService>(), null!, ActivityLog.Object,
                 Mail.Object, Database.Service, Checkout, Reviews.Object);
-            void KeepStatus(object? sender, CompleteCheckoutEventArgs args)
+            void KeepStatus(object? sender, CompletingCheckoutEventArgs args)
             {
                 args.UpdateOrderStatus = false;
                 args.StockValidation = validateInventory;
             }
-            CheckoutEvents.CompleteCheckout += KeepStatus;
+            CheckoutEvents.CompletingCheckout += KeepStatus;
             try { await service.CompleteAsync(Order.UniqueId); }
-            finally { CheckoutEvents.CompleteCheckout -= KeepStatus; }
+            finally { CheckoutEvents.CompletingCheckout -= KeepStatus; }
         }
         public async Task<OrderInfo> ReloadAsync() => new((await Repository.GetOrderAsync(Order.UniqueId))!);
         public LegacyController Controller() => new(_scope.Instance, Database.Factory, Configuration.Resolver);

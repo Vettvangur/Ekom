@@ -122,7 +122,8 @@ public class Providers
         var processed = await ProviderEvents
             .RaiseOnBeforeReturnShippingProvidersAsync(
                 providers,
-                store ?? string.Empty
+                store ?? string.Empty,
+                ct
             );
 
         ct.ThrowIfCancellationRequested();
@@ -225,7 +226,8 @@ public class Providers
         var processed = await ProviderEvents
             .RaiseOnBeforeReturnPaymentProvidersAsync(
                 providers,
-                store ?? string.Empty
+                store ?? string.Empty,
+                ct
             );
 
         ct.ThrowIfCancellationRequested();

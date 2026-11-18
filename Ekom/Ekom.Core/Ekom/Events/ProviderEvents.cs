@@ -16,11 +16,21 @@ public static class ProviderEvents
         IEnumerable<IPaymentProvider> providers,
         string storeAlias)
     {
-        if (BeforeReturnPaymentProviders is null)
+        if (BeforeReturnPaymentProviders is null && BeforeReturnPaymentProvidersAsync is null)
             return providers;
 
         var args = new PaymentProvidersEventArgs(providers, storeAlias);
-        BeforeReturnPaymentProviders.Invoke(null, args);
+
+        BeforeReturnPaymentProviders?.Invoke(null, args);
+
+        // Synchronous compatibility boundary. A rule registered on the async event must also apply to callers
+        // of the synchronous method, or the same customer gets different providers on different pages.
+        if (BeforeReturnPaymentProvidersAsync is not null)
+        {
+            AsyncEventInvoker.InvokeAsync(BeforeReturnPaymentProvidersAsync, sender: null!, args, CancellationToken.None)
+                .GetAwaiter().GetResult();
+        }
+
         return args.Providers;
     }
 
@@ -74,11 +84,21 @@ public static class ProviderEvents
         IEnumerable<IShippingProvider> providers,
         string storeAlias)
     {
-        if (BeforeReturnShippingProviders is null)
+        if (BeforeReturnShippingProviders is null && BeforeReturnShippingProvidersAsync is null)
             return providers;
 
         var args = new ShippingProvidersEventArgs(providers, storeAlias);
-        BeforeReturnShippingProviders.Invoke(null, args);
+
+        BeforeReturnShippingProviders?.Invoke(null, args);
+
+        // Synchronous compatibility boundary. A rule registered on the async event must also apply to callers
+        // of the synchronous method, or the same customer gets different providers on different pages.
+        if (BeforeReturnShippingProvidersAsync is not null)
+        {
+            AsyncEventInvoker.InvokeAsync(BeforeReturnShippingProvidersAsync, sender: null!, args, CancellationToken.None)
+                .GetAwaiter().GetResult();
+        }
+
         return args.Providers;
     }
 

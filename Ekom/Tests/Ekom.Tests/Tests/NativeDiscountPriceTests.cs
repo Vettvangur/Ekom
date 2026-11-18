@@ -471,6 +471,18 @@ public class NativeDiscountPriceTests
         Assert.Equal(120m, order.OrderLineTotal.Value);
         Assert.Equal(100m, order.OrderLineTotalWithOutVat.Value);
         Assert.Equal(20m, order.Vat.Value);
+
+        // The VAT of the whole total, with the shipping and payment fees.
+        Assert.Equal(24m, order.ChargedVat.Value);
+        Assert.Equal(order.GrandTotal.Value, order.GrandTotalWithOutVat.Value + order.ChargedVat.Value);
+
+        // Each set of totals adds up, whether or not the store's prices include VAT.
+        Assert.Equal(120m, order.DiscountAmountWithVat.Value);
+        Assert.Equal(100m, order.DiscountAmountWithOutVat.Value);
+        Assert.Equal(order.OrderLineTotal.Value, order.SubTotal.WithVat.Value - order.DiscountAmountWithVat.Value);
+        Assert.Equal(order.OrderLineTotalWithOutVat.Value, order.SubTotal.WithoutVat.Value - order.DiscountAmountWithOutVat.Value);
+        // DiscountAmount is unchanged: it follows the store's VAT setting.
+        Assert.Equal(vatIncluded ? 120m : 100m, order.DiscountAmount.Value);
     }
 
     [Theory]

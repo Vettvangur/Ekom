@@ -43,6 +43,11 @@ public class OrderedVariant
         }
     }
 
+    /// <summary>
+    /// Whether backorder was turned on for this variant itself when it was ordered.
+    /// </summary>
+    public bool Backorder => Properties.GetPropertyValue("enableBackorder", StoreInfo.Alias).IsBoolean();
+
     public string SKU
     {
         get

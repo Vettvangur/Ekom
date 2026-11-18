@@ -16,7 +16,7 @@ should still run a test print under its service account to verify its driver and
 
 Public downloads are listed under [Printer Agent releases](https://github.com/Vettvangur/Ekom/releases?q=printer-agent-v).
 Tags named `printer-agent-v<version>` trigger tested installer builds and draft pre-releases;
-maintainers publish them after review. See the [release guide](../../../docs/printer-agent-releases.md)
+maintainers publish them after review. See the [release guide](../../../docs/contributing/printer-agent-releases.md)
 for signing configuration, checksums, provenance verification and tag commands.
 
 On a Windows x64 build machine, install the .NET 10 SDK, PowerShell 7 and
@@ -127,7 +127,7 @@ separately signed. Cloud/hardware-backed signing providers may require adapting 
 build integration. Signing identifies the publisher and protects integrity; it does
 not guarantee a clean security assessment or immediate SmartScreen reputation.
 Self-signed certificates do not establish public trust. See the
-[release and signing guide](../../../docs/printer-agent-releases.md).
+[release and signing guide](../../../docs/contributing/printer-agent-releases.md).
 
 ## Configure a warehouse
 

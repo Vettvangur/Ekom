@@ -13,7 +13,7 @@
         return;
     }
 
-    var providers = _providers.GetPaymentProviders();
+    var providers = await _providers.GetPaymentProvidersAsync(ct: Context.RequestAborted);
     var showPaymentError = string.Equals(Context.Request.Query["errorStatus"], "serverError", StringComparison.OrdinalIgnoreCase);
     var showShippingError = string.Equals(Context.Request.Query["errorStatus"], "invalidShippingProvider", StringComparison.OrdinalIgnoreCase);
     var shippingErrorMessage = Context.Request.Query["errorMessage"].ToString();

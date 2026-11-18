@@ -153,7 +153,8 @@ public class ImportMediaService
 
         if (comparers.Count > 0)
         {
-            conditions.Add($"(pt.alias = 'comparer' AND pd.varcharValue IN (@{parameters.Count}))");
+            // A site that set the import up before the property was renamed has the value in 'comparer'.
+            conditions.Add($"(pt.alias IN ('{Configuration.ImportAliasComparer}', '{Configuration.ImportAliasLegacyComparer}') AND pd.varcharValue IN (@{parameters.Count}))");
             parameters.Add(comparers);
         }
 
@@ -330,7 +331,7 @@ ORDER BY n.id",
         try
         {
             var httpClient = _httpClientFactory.CreateClient();
-            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            using var response = await httpClient.GetAsync(url).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             var imageBytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
@@ -339,12 +340,22 @@ ORDER BY n.id",
 
             return memoryStream;
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex) when (IsDownloadFailure(ex))
         {
+            // One file that cannot be fetched is left out. It must not stop the rest of the import.
             _logger.LogError(ex, "Error loading media to stream. Url: {Url}", url);
             return null;
         }
     }
+
+    /// <summary>
+    /// What a download can fail with: an error status or a network error (<see cref="HttpRequestException"/>),
+    /// a timeout (HttpClient reports it as <see cref="OperationCanceledException"/>; no token is passed here, so
+    /// that is the only cause), a connection that drops while the body is read (<see cref="IOException"/>),
+    /// and an address that is not an absolute URL.
+    /// </summary>
+    private static bool IsDownloadFailure(Exception ex)
+        => ex is HttpRequestException or OperationCanceledException or IOException or UriFormatException or InvalidOperationException;
 
     private IMedia CreateMedia(
         MemoryStream stream,
@@ -362,7 +373,7 @@ ORDER BY n.id",
 
         var media = _mediaService.CreateMedia(nodeName, _lastMediaFolder.Id, mediaType.ToString(), userId: syncUser ?? -1);
         media.SetValue(_mediaFileManager, _mediaUrlGenerators, _shortStringHelper, _contentTypeBaseServiceProvider, Constants.Conventions.Media.File, fullFileName, stream);
-        media.SetValue("comparer", comparer);
+        ImportComparer.Set(media, comparer);
 
         if (media.HasProperty("ekmSortOrder") && sortOrder.HasValue)
         {

@@ -15,7 +15,7 @@
 
     var siblings = Model.Siblings()?.Where(x => x.IsDocumentType("checkout"));
     var nextUrl = siblings?.FirstOrDefault(x => x.SortOrder > Model.SortOrder)?.Url() ?? Model.GetSite().Url();
-    var shippingProviders = _providers.GetShippingProviders(order.StoreInfo.Alias, orderAmount: order.OrderLineTotal.Value);
+    var shippingProviders = await _providers.GetShippingProvidersAsync(order.StoreInfo.Alias, orderAmount: order.OrderLineTotal.Value, ct: Context.RequestAborted);
 }
 
 @section Main {

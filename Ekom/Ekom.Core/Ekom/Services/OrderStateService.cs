@@ -32,15 +32,34 @@ internal sealed class OrderStateService : IOrderStateService
         _attempts = attempts; _http = http; _handlers = handlers;
     }
 
-    public async Task<OrderStatusSnapshot> ChangeAsync(Guid orderId, OrderStateChangeRequest request, CancellationToken ct = default)
+    public Task<OrderStatusSnapshot> ChangeAsync(Guid orderId, OrderStateChangeRequest request, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        return ChangeCoreAsync(orderId, request, request.ExpectedRevision, actor: null, ct);
+    }
+
+    public Task<OrderStatusSnapshot> ChangeAsSystemAsync(Guid orderId, OrderSystemStateChange change, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        ArgumentException.ThrowIfNullOrWhiteSpace(change.Action, nameof(change));
+        // The activity log treats an entry without a user name as the customer's, so a system change must say who made it.
+        ArgumentException.ThrowIfNullOrWhiteSpace(change.Actor, nameof(change));
+        return ChangeCoreAsync(orderId,
+            new OrderStateChangeRequest(change.ExpectedRevision ?? 0, change.Action, change.FulfilledQuantities, change.Notify),
+            change.ExpectedRevision, change.Actor.Trim(), ct);
+    }
+
+    /// <param name="actor">Null for the signed-in backoffice user, whose access is checked. Otherwise the name of the trusted caller.</param>
+    private async Task<OrderStatusSnapshot> ChangeCoreAsync(Guid orderId, OrderStateChangeRequest request, int? expectedRevision,
+        string? actor, CancellationToken ct)
+    {
         await using var db = _factory.GetDatabase();
         await using var transaction = await db.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
         var data = await db.OrderData.SingleOrDefaultAsync(x => x.UniqueId == orderId, ct).ConfigureAwait(false)
             ?? throw new EkomHttpException(HttpStatusCode.NotFound, "Order not found.");
-        EnsureAccess(data.StoreAlias);
-        if (request.ExpectedRevision != data.StatusRevision)
+        if (actor == null) EnsureAccess(data.StoreAlias);
+        var userName = actor ?? CurrentUserName();
+        if (expectedRevision.HasValue && expectedRevision.Value != data.StatusRevision)
             throw new EkomHttpException(HttpStatusCode.Conflict, "The order changed. Reload it before saving.");
         await _attempts.EnsureWriteAllowedAsync(db, orderId, ct).ConfigureAwait(false);
         var previousLegacy = data.OrderStatus;
@@ -59,14 +78,14 @@ internal sealed class OrderStateService : IOrderStateService
         if (request.Action.StartsWith("Payment", StringComparison.Ordinal) && data.Status.PaymentStatus is { } manualStatus)
         {
             // Manual payment changes join the order's payment history so the calculated status keeps honouring them.
-            await db.InsertAsync(OrderPaymentService.ManualTransaction(orderId, manualStatus, CurrentUserName()), token: ct).ConfigureAwait(false);
+            await db.InsertAsync(OrderPaymentService.ManualTransaction(orderId, manualStatus, userName), token: ct).ConfigureAwait(false);
         }
         foreach (var handler in _handlers)
             if (previousLegacy != data.OrderStatus) await handler.PersistAsync(db, data, previousLegacy.ToString(), ct).ConfigureAwait(false);
         await db.InsertAsync(new OrderActivityLog
         {
             UniqueID = Guid.NewGuid(), Key = orderId, Date = DateTime.Now,
-            UserName = CurrentUserName() ?? string.Empty,
+            UserName = userName ?? string.Empty,
             LogType = OrderActivityLogType.Success,
             Log = $"{request.Action}: {before.OrderStatus}/{before.PaymentStatus}/{before.FulfillmentStatus} -> {data.Status.OrderStatus}/{data.Status.PaymentStatus}/{data.Status.FulfillmentStatus}"
                 + (request.Action != "Close" && before.OrderStatus != OrderStatus.Closed && data.Status.OrderStatus == OrderStatus.Closed ? ". Closed automatically." : string.Empty),

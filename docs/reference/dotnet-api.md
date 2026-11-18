@@ -1,46 +1,85 @@
-# .NET API Reference
+[Ekom docs](../README.md) / [Reference](README.md) / .NET API
 
-This page covers the in-process C# facades in `Ekom.API`. These are registered with dependency injection and are not HTTP endpoints. For remote or browser clients, use the separate [HTTP API reference](http-api.md).
+# .NET API
 
-## Accessing the facades
+The classes in the `Ekom.API` namespace are how your C# code on the server talks to Ekom: read the catalog, change a basket, take payment, and read or change stock and prices. This page lists their public methods, grouped by class.
 
-Prefer constructor injection:
+These classes run inside your site. They are not HTTP routes; for those, see the [HTTP API](http-api.md).
+
+On this page:
+
+- [Get an API class](#get-an-api-class)
+- [Catalog](#catalog)
+- [Store](#store)
+- [Order and checkout](#order-and-checkout)
+- [Providers](#providers)
+- [Discounts](#discounts)
+- [Stock](#stock)
+- [Warehouse](#warehouse)
+- [Prices](#prices)
+
+## Get an API class
+
+Inject the class in a constructor:
 
 ```csharp
 using Ekom.API;
+using Ekom.Models;
 
-public sealed class CartService(Order order, Catalog catalog)
+public sealed class BasketService(Order order)
 {
-    public Task<IOrderInfo> AddAsync(Guid productKey, string storeAlias, CancellationToken ct)
-        => order.AddOrderLineAsync(productKey, 1, storeAlias, ct: ct);
+    public Task<IOrderInfo> AddShirtAsync(Guid shirtKey, CancellationToken ct)
+        => order.AddOrderLineAsync(shirtKey, 1, "store", ct: ct);
 }
 ```
 
-`Catalog`, `Store`, `Order`, `Providers`, `Discounts`, `Stock`, and `Warehouse` also expose a static `Instance`. It resolves through Ekom's service provider; injection gives clearer lifetimes and is safer for request-dependent code. `Order.Instance` explicitly prefers the current request service provider.
+Where you cannot use injection, use the static `Instance` property. It resolves the class from Ekom's root service provider. `Order.Instance` first tries the services of the current HTTP request.
 
-Most facades are transient. Methods without a `storeAlias` usually resolve the active store from the current request. Supply an alias in background work and other code without an HTTP context.
+| Class | Use it to | Lifetime | Guide |
+| --- | --- | --- | --- |
+| `Catalog` | Read categories, products, variants and search. | Transient | [Catalog and products](../guides/catalog-and-products.md) |
+| `Store` | Read stores and domains, and set the request's store. | Transient | [Stores](../guides/stores.md) |
+| `Order` | Read and change baskets and orders, apply coupons, pay. | Transient | [Orders and baskets](../guides/orders-and-baskets.md) |
+| `Providers` | Read payment and shipping providers, countries and zones. | Transient | [Payment and shipping providers](../guides/providers.md) |
+| `Discounts` | Read the configured discounts. | Transient | [Discounts and coupons](../guides/discounts.md) |
+| `Stock` | Read and change sellable stock and discount stock. | Transient | [Stock](../guides/stock.md) |
+| `Warehouse` | Read and change warehouse stock. | Transient | [Stock](../guides/stock.md#warehouse-stock) |
+| `Prices` | Read and change database price overrides. | Singleton | [Database price storage](../guides/database-price-storage.md) |
+
+Many methods take an optional store alias. Without one, Ekom uses the store of the current HTTP request. Background jobs, imports and message handlers have no request, so always pass the store alias there.
+
+Methods that end in `Async` have a synchronous twin in many cases. Use the asynchronous form.
 
 ## Catalog
 
-`Ekom.API.Catalog` reads the cached catalog. Product and category methods raise [catalog events](events.md#catalog-events) unless their `raiseEvent` argument is `false` or a `ProductQuery` disables events.
+`Ekom.API.Catalog` reads from Ekom's in-memory catalog. Guide: [Catalog and products](../guides/catalog-and-products.md).
 
-| Operation | Methods |
+Most methods raise the [catalog events](events.md#catalog-events). Pass `raiseEvent: false`, or set `ProductQuery.RaiseEvents = false`, to skip them.
+
+### Products
+
+| Method | Returns |
 | --- | --- |
-| Current routed item | `GetProduct[Async](bool raiseEvent = true)`, `GetCategory[Async](bool raiseEvent = true)` |
-| Product lookup | `GetProduct[Async](string sku, ...)`, `GetProduct[Async](Guid key, ...)`, `GetProduct[Async](int id, ...)`, `GetProductByRoute[Async](string route, ...)` |
-| Product lists | `GetAllProducts[Async](...)`, `GetProductsByIds[Async](...)`, `GetProductsByKeys[Async](...)`, `GetProductsBySkus[Async](...)` |
-| Category products | `GetProductsRescursiveByRoute[Async](...)`; the public method name is intentionally spelled `Rescursive` |
-| Category lookup | `GetCategory[Async](string/int/Guid id, ...)`, `GetCategoryByRoute[Async](...)` |
-| Category lists | `GetRootCategories[Async](...)`, `GetAllCategories[Async](...)`, `GetCategoriesByIds[Async](...)`, `GetCategoriesByKeys[Async](...)` |
-| Variants | `GetVariant[Async](Guid/int/string sku, ...)`, `GetVariantsByGroup[Async](int groupId, ...)` |
-| Variant groups | `GetVariantGroup[Async](Guid/int, ...)` |
-| Related products | `GetRelatedProducts[Async](Guid, count = 4, ...)`, `GetRelatedProductsBySku[Async](string, count = 4, ...)` |
-| Search and metadata | `ProductSearchAsync(SearchRequest, ...)`, `GetMetafields()` |
+| `GetProductAsync(bool raiseEvent = true, CancellationToken ct = default)` | The product of the current Umbraco page, or `null`. |
+| `GetProductAsync(Guid key, string? storeAlias = null, bool? global = null, bool raiseEvent = true, CancellationToken ct = default)` | A product by key, or `null`. |
+| `GetProductAsync(int Id, string? storeAlias = null, bool? global = null, bool raiseEvent = true, CancellationToken ct = default)` | A product by Umbraco node ID, or `null`. |
+| `GetProductAsync(string sku, string? storeAlias = null, bool? global = null, bool raiseEvent = true, CancellationToken ct = default)` | A product by SKU, or `null`. |
+| `GetProductByRouteAsync(string route, string? storeAlias = null, bool raiseEvent = true, CancellationToken ct = default)` | A product by URL path, or `null`. Looks in one store only. |
+| `GetAllProductsAsync(ProductQuery? query = null, CancellationToken ct = default)` | `ProductResponse` with all products of the store. An overload takes `string storeAlias` first. |
+| `GetProductsByIdsAsync(ProductQuery? query = null, CancellationToken ct = default)` | `ProductResponse` for `query.Ids`. An overload takes `string storeAlias` first. |
+| `GetProductsByKeysAsync(ProductQuery? query = null, CancellationToken ct = default)` | `ProductResponse` for `query.Keys`. An overload takes `string storeAlias` first. |
+| `GetProductsBySkusAsync(ProductQuery? query = null, CancellationToken ct = default)` | `ProductResponse` for `query.Skus`. An overload takes `string storeAlias` first. |
+| `GetProductsRescursiveByRouteAsync(string route, ProductQuery? query = null, CancellationToken ct = default)` | `ProductResponse` with the products in a category and all categories below it. The method name is spelled `Rescursive`. |
+| `GetRelatedProductsAsync(Guid productId, int count = 4, string? storeAlias = null, CancellationToken ct = default)` | Up to `count` related products. |
+| `GetRelatedProductsBySkuAsync(string sku, int count = 4, string? storeAlias = null, CancellationToken ct = default)` | Up to `count` related products. |
+| `ProductSearchAsync(SearchRequest req, CancellationToken ct = default)` | `ProductResponse` with the products that match the search. |
 
-Product lookup's nullable `global` argument falls back to `Ekom:GlobalCatalog`. Category lookup uses its `global` argument or that setting. Route lookup stays in the selected store. Collection methods return `ProductResponse`, which applies filtering, sorting, paging, and events.
+`global`: when it is `null`, the `Ekom:GlobalCatalog` setting decides whether Ekom also looks in other stores. `true` or `false` overrides the setting.
+
+A `ProductResponse` applies the query's filters, sorting and paging. See [Product queries and responses](models-and-behavior.md#product-queries-and-responses).
 
 ```csharp
-var result = await catalog.GetAllProductsAsync(new ProductQuery
+ProductResponse result = await catalog.GetAllProductsAsync(new ProductQuery
 {
     StoreAlias = "store",
     Page = 1,
@@ -50,63 +89,102 @@ var result = await catalog.GetAllProductsAsync(new ProductQuery
 }, ct);
 ```
 
-The older store-first variant overloads are marked obsolete; use the identifier-first overloads shown above.
+### Categories
+
+| Method | Returns |
+| --- | --- |
+| `GetCategoryAsync(bool raiseEvent = true, CancellationToken ct = default)` | The category of the current Umbraco page, or `null`. |
+| `GetCategoryAsync(Guid Id, string? storeAlias = null, bool global = false, bool raiseEvent = true, CancellationToken ct = default)` | A category by key, or `null`. Overloads take an `int` node ID or a `string` ID. |
+| `GetCategoryByRouteAsync(string route, string? storeAlias = null, bool raiseEvent = true, CancellationToken ct = default)` | A category by URL path, or `null`. Looks in one store only. |
+| `GetRootCategoriesAsync(string? storeAlias = null, CancellationToken ct = default)` | The categories at the level set by `Ekom:CategoryRootLevel`. |
+| `GetAllCategoriesAsync(string? storeAlias = null, CancellationToken ct = default)` | All categories of the store. |
+| `GetCategoriesByIdsAsync(int[] ids, string? storeAlias = null, CancellationToken ct = default)` | Categories by node ID. |
+| `GetCategoriesByKeysAsync(Guid[] keys, string? storeAlias = null, CancellationToken ct = default)` | Categories by key. |
+
+For categories, `global` is a plain `bool`: Ekom looks in other stores when either the argument or `Ekom:GlobalCatalog` is `true`.
+
+### Variants and metafields
+
+| Method | Returns |
+| --- | --- |
+| `GetVariantAsync(Guid Id, string? storeAlias = null, CancellationToken ct = default)` | A variant by key, or `null`. Overloads take an `int` node ID or a `string` SKU. |
+| `GetVariantsByGroupAsync(int id, string? storeAlias = null, CancellationToken ct = default)` | The variants in a variant group. |
+| `GetVariantGroupAsync(Guid key, string? storeAlias = null, CancellationToken ct = default)` | A variant group by key, or `null`. An overload takes an `int` node ID. |
+| `GetMetafields()` | All metafield definitions. |
+
+The overloads that take the store alias first, such as `GetVariant(string storeAlias, Guid key)`, are obsolete.
 
 ## Store
 
-`Ekom.API.Store` exposes store and domain context:
+`Ekom.API.Store` reads stores and the store of the current request. Guide: [Stores](../guides/stores.md).
 
-| Method | Behavior |
+| Method | Returns |
 | --- | --- |
-| `GetStore()` | Returns the request store, or the service's fallback store. |
-| `GetStore(string? storeAlias)` | Resolves an alias. |
-| `GetStoreByDomain(string domain, string culture)` | Resolves a domain/culture mapping. |
-| `GetAllStores()` | Returns configured stores. |
-| `GetDomains()` | Returns known Umbraco domain mappings. |
-| `SetStore(string storeAlias)` | Changes the active request store. |
-| `RefreshCache()` | Rebuilds Ekom caches; use for administration, not normal reads. |
+| `GetStore()` | The store of the current request, or the first store when there is no request store. Can be `null`. |
+| `GetStore(string? storeAlias)` | A store by alias, or `null`. |
+| `GetStoreByDomain(string domain, string culture)` | The store for an Umbraco domain and culture, or `null`. |
+| `GetAllStores()` | All stores. |
+| `GetDomains()` | All Umbraco domains Ekom knows. |
+| `SetStore(string storeAlias)` | Sets the store of the current request and returns it. |
+| `RefreshCache()` | Rebuilds all Ekom caches. Use it for administration, not on normal page requests. |
 
 ## Order and checkout
 
-`Ekom.API.Order` is the cart/order mutation facade. Its asynchronous methods should be preferred over synchronous wrappers.
+`Ekom.API.Order` reads and changes baskets and orders. A basket is an order that has not been paid yet. Guides: [Orders and baskets](../guides/orders-and-baskets.md), [Checkout](../guides/checkout.md).
 
-### Read and lifecycle
+Most changing methods take an `OrderSettings` (or a class derived from it). Its `FireEvents` property turns the [order events](events.md#order-events) for that call on or off.
 
-| Operation | Methods |
+### Read orders
+
+| Method | Returns |
 | --- | --- |
-| Current cart | `GetOrderAsync()`, `GetOrderAsync(string? storeAlias)` |
-| Any order by key | `GetOrderAsync(Guid uniqueId)`; may return a final order and is not a cart-only lookup |
-| Completed current order | `GetCompletedOrderAsync(string storeAlias)` |
-| Query by status/customer | `GetStatusOrdersAsync`, `GetStatusOrdersByCustomerIdAsync`, `GetStatusOrdersByCustomerUsernameAsync`, `GetCompleteCustomerOrdersAsync` |
-| Status | `UpdateStatusAsync(...)`, `IsOrderFinal(OrderStatus?)` |
-| Completion | `CompleteOrderAsync(Guid)`, `ClearCustomerOrderReferenceAsync(Guid, ...)` |
-| Rebuild lines | `ReInitializeOrder(string, ...)` |
-| Activity | `AddActivityLogAsync(Guid, message, userName, logType, ...)` |
+| `GetOrderAsync(CancellationToken ct = default)` | The current basket of the request's store, or `null`. |
+| `GetOrderAsync(string? storeAlias, CancellationToken ct = default)` | The current basket of a store, or `null`. |
+| `GetOrderAsync(Guid uniqueId, CancellationToken ct = default)` | Any order by key, including completed orders, or `null`. |
+| `GetCompletedOrderAsync(string storeAlias, CancellationToken ct = default)` | The customer's completed order, or `null`. Found from the basket cookie for the store. In a store with `UserBasket` on, a signed-in member gets their newest completed order in that store, until they start a new basket. Throws `ArgumentException` when `storeAlias` is empty. |
+| `GetStatusOrdersAsync(CancellationToken ct = default, params OrderStatus[] orderStatuses)` | Orders with any of the given legacy statuses. |
+| `GetStatusOrdersByCustomerIdAsync(int customerId, CancellationToken ct = default, params OrderStatus[] orderStatuses)` | A member's orders with any of the given statuses. An overload without `customerId` uses the signed-in member. |
+| `GetStatusOrdersByCustomerUsernameAsync(string customerUsername, CancellationToken ct = default, params OrderStatus[] orderStatuses)` | Orders of a username with any of the given statuses. |
+| `GetCompleteCustomerOrdersAsync(int customerId, CancellationToken ct = default, string? storeAlias = null)` | A member's completed orders. An overload takes a `string userName`. |
+| `GetPaymentAsync(Guid orderId, CancellationToken ct = default)` | The order's current payment, or `null`. |
+| `static IsOrderFinal(OrderStatus? orderStatus)` | `true` for the legacy statuses `OfflinePayment`, `Pending`, `ReadyForDispatch`, `ReadyForPickup`, `ReadyForDispatchWhenStockArrives`, `Dispatched`, `Returned`, `Cancelled` and `Closed`. |
 
-`IsOrderFinal` returns true for `OfflinePayment`, `Pending`, dispatch/pickup-ready states, `Dispatched`, `Returned`, `Cancelled`, and `Closed`.
+The `GetStatusOrders...` methods throw `ArgumentException` when you pass no status. `OrderStatus` here is the legacy `Ekom.Utilities.OrderStatus`.
 
-### Lines and order data
+### Change order lines
 
-| Operation | Methods |
+| Method | What it does |
 | --- | --- |
-| Add | `AddOrderLineAsync(Guid productId, decimal quantity, string storeAlias, AddOrderSettings? settings = null, ...)` |
-| Add linked group | `AddLinkedOrderLinesAsync(..., IReadOnlyCollection<LinkedOrderLineRequest>, ...)` |
-| Remove | `RemoveOrderLineAsync(Guid lineId, ...)`, `RemoveOrderLineProductAsync(Guid productKey, ...)` |
-| Set quantity | `UpdateOrderlineQuantityAsync(Guid lineId, decimal quantity, ...)` |
-| Merge existing line metadata | `UpdateOrderLineMetadataAsync(Guid orderId, IReadOnlyCollection<OrderLineMetadataUpdate> updates, OrderSettings? settings = null, ...)` |
-| Gift cards | `AddGiftcardAsync(...)`, `RemoveGiftcardAsync(...)` |
-| Customer/tracking | `UpdateCustomerInformationAsync(...)`, `UpdateTrackingAsync(...)` |
-| Providers | `UpdateShippingInformationAsync(...)`, `UpdatePaymentInformationAsync(...)` |
-| Currency | `UpdateCurrencyAsync(...)` |
-| Cookie | `DeleteOrderCookie(...)`, `EnsureOrderCookie(...)` |
+| `AddOrderLineAsync(Guid productId, decimal quantity, string storeAlias, AddOrderSettings? settings = null, CancellationToken ct = default)` | Adds a product or variant to the basket. |
+| `AddLinkedOrderLinesAsync(Guid productId, decimal quantity, string storeAlias, IReadOnlyCollection<LinkedOrderLineRequest> linkedProducts, AddOrderSettings? settings = null, CancellationToken ct = default)` | Adds a line and its linked lines together. See [Linked order lines](../guides/linked-order-lines.md). |
+| `UpdateOrderlineQuantityAsync(Guid lineId, decimal quantity, string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)` | Sets a line's quantity. |
+| `RemoveOrderLineAsync(Guid lineId, string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)` | Removes a line by line key. |
+| `RemoveOrderLineProductAsync(Guid productKey, string storeAlias, RemoveOrderSettings? settings = null, CancellationToken ct = default)` | Removes the line of a product. Set `RemoveOrderSettings.VariantKey` for a variant. |
+| `UpdateOrderLineMetadataAsync(Guid orderId, IReadOnlyCollection<OrderLineMetadataUpdate> updates, OrderSettings? settings = null, CancellationToken ct = default)` | Adds or changes `orderline...` values on existing lines of any order. See below. |
+| `ReInitializeOrder(string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)` | Prices the basket's lines again for the current customer, for example after login. Keeps each line, its quantity, metadata and links. Does not check stock. |
 
-`AddOrderSettings.OrderAction` defaults to `AddOrUpdate`; `VariantKey`, `CustomData`, consent, tracking, and an Algolia query ID can accompany the line. Linked lines are created atomically with their parent. See [Linked order lines](../guides/linked-order-lines.md).
+`AddOrderSettings` adds two properties to `OrderSettings`:
 
-`UpdateOrderLineMetadataAsync` merges `orderline*` string properties into existing lines identified by **line GUID**, regardless of order or payment-attempt state, including completed and reconciliation-required orders. It validates every entry before a single metadata-only database update; duplicate or missing line IDs and invalid property keys reject the whole batch. Existing properties not supplied are retained. It does not recalculate prices, stock, discounts, or providers, release holds, or reset payment state. Fulfillment metadata changes do not invalidate the frozen purchase comparison for payment completion retries. When events are enabled, it sends one order-updated notification (not per-line events). Ownership and concurrency checks still apply: an operation executing on another node or a changed stored order causes a conflict; retry after reloading. Pass the order ID rather than `OrderSettings.OrderInfo`.
+- `OrderAction`: `AddOrUpdate` (default) adds the quantity to an existing line of the same product, `Set` sets the quantity, `New` always adds a new line.
+- `VariantKey`: the variant to add.
 
-`UpdateCustomerInformationAsync` also supports every order/payment-attempt state, including manual repairs during reconciliation. All existing form fields remain supported, including customer/shipping properties and provider selections, with the existing validation and pricing behavior. It does not release holds or reset payment attempts. To target an existing order, supply it through `OrderSettings.OrderInfo`; outer updates refresh that instance under ownership before applying the form. Frozen submitted snapshots remain unchanged, so customer/provider/purchase changes can still prevent automatic completion retry and require manual reconciliation. `FireEvents` only controls events; it is not an override flag. Other cart-edit APIs retain their payment-state restrictions.
+`AddOrderLineAsync` and `AddLinkedOrderLinesAsync` use the store of the current request when `storeAlias` is empty, and throw `ArgumentException` when there is none.
+
+#### Order line metadata
+
+`UpdateOrderLineMetadataAsync` adds or changes string values on existing lines, for example the warehouse a line ships from. The lines are found by line key.
+
+- It works on any order, whatever its order or payment state, including completed orders and orders that need reconciliation.
+- Ekom checks every update first. A missing or repeated line key, an empty update, or a property name that does not start with `orderline` rejects the whole call with `ArgumentException` or `OrderLineNotFoundException`. Nothing is saved.
+- The values you send are merged into the line. Values you do not send stay as they are.
+- It does not recalculate prices, stock, discounts or providers. It does not release holds or reset payment state.
+- With events on, it raises one `OrderUpdated` event, not one per line.
+- Pass the order key. A call with `OrderSettings.OrderInfo` set throws `ArgumentException`. If the order changes while the update runs, it throws `InvalidOperationException`; load the order again and retry.
+
+The manager shows each line's non-empty values, without the `orderline` prefix in the label.
 
 ```csharp
+using Ekom.API;
 using Ekom.Models;
 
 var updates = new[]
@@ -126,81 +204,182 @@ var updates = new[]
 await order.UpdateOrderLineMetadataAsync(orderId, updates, new OrderSettings { FireEvents = false }, ct);
 ```
 
-The U17/U18 manager displays nonempty `OrderLineInfo.Properties` values on each order line; the `orderline` prefix is removed from display labels.
+### Customer, providers, currency and custom data
 
-### Coupons
+| Method | What it does |
+| --- | --- |
+| `UpdateCustomerInformationAsync(Dictionary<string, string> form, OrderSettings? settings = null, CancellationToken ct = default)` | Saves customer and shipping fields, and can change the providers. Throws `ArgumentNullException` when `form` is `null`. |
+| `UpdateTrackingAsync(string storeAlias, OrderTracking tracking, OrderSettings? settings = null, CancellationToken ct = default)` | Saves marketing attribution on the basket. |
+| `UpdateShippingInformationAsync(Guid shippingProvider, string storeAlias, Dictionary<string, string> allData, OrderSettings? settings = null, CancellationToken ct = default)` | Sets the shipping provider. |
+| `UpdatePaymentInformationAsync(Guid paymentProvider, string storeAlias, Dictionary<string, string> allData, OrderSettings? settings = null, CancellationToken ct = default)` | Sets the payment provider. |
+| `UpdateCurrencyAsync(string currency, Guid orderId, string storeAlias, CancellationToken ct = default)` | Changes the order's currency. |
+| `UpdateCustomDataAsync(Guid orderId, IReadOnlyDictionary<string, string> updates, OrderSettings? settings = null, CancellationToken ct = default)` | Adds or changes your own values on the order. See [Order custom data](../guides/order-custom-data.md). |
+| `RemoveCustomDataAsync(Guid orderId, IReadOnlyCollection<string> keys, OrderSettings? settings = null, CancellationToken ct = default)` | Removes your own values from the order. |
+| `DeleteOrderCookie(string? storeAlias = null)` | Removes the basket cookie. |
+| `EnsureOrderCookie(Guid orderId, string? storeAlias = null)` | Sets the basket cookie to the given order. |
 
-`ApplyCouponToOrderAsync`, `RemoveCouponFromOrderAsync`, `SetCouponCodeAsync`, `ApplyCouponToOrderLineAsync`, and `RemoveCouponFromOrderLineAsync` mutate cart discounts. Coupon administration is available through `InsertCouponCodeAsync`, `GenerateCouponCodesAsync`, `RemoveCouponCodeAsync`, and `GetCouponsForDiscountAsync`.
+About `UpdateCustomerInformationAsync`:
 
-Coupon codes are normalized to lower case for application. Applying a missing or exhausted coupon throws a discount exception rather than returning false.
+- It works in every order and payment state, so staff can correct an order that needs reconciliation. It does not release holds or reset payment attempts.
+- To change an order other than the current basket, set `OrderSettings.OrderInfo`. Ekom loads that order again before it applies the form.
+- What the customer submitted for payment is kept as it was. A later change to the customer, providers or lines can therefore stop Ekom from completing the payment automatically, and staff must reconcile it.
+- `FireEvents` only turns events on or off. It does not bypass any check.
+- Other basket-changing methods still refuse changes while a payment is in progress.
 
-### Payment and reservations
+### Coupons and gift cards
 
-`PayAsync(PaymentRequest, string storeAlias, Guid orderId, ...)` and its `IOrderInfo` overload enter the checkout payment pipeline and return `CheckoutResponse`.
+| Method | What it does |
+| --- | --- |
+| `ApplyCouponToOrderAsync(string coupon, string storeAlias, CancellationToken ct = default)` | Applies a coupon to the basket. Returns `false` when a better discount is already on the order. An overload without `storeAlias` uses the request's store. |
+| `RemoveCouponFromOrderAsync(string? storeAlias, DiscountOrderSettings? settings, CancellationToken ct = default)` | Removes the basket's coupon. |
+| `SetCouponCodeAsync(string coupon, string? storeAlias, DiscountOrderSettings? discountOrderSettings = null, CancellationToken ct = default)` | Saves the code in the basket's `Coupon` value without applying a discount. An empty code changes nothing. |
+| `ApplyCouponToOrderLineAsync(Guid productKey, string coupon, string storeAlias)` | Applies a coupon to one line. |
+| `RemoveCouponFromOrderLineAsync(Guid productKey, string? storeAlias, CancellationToken ct = default)` | Removes a line's coupon. |
+| `AddGiftcardAsync(Giftcard giftcard, string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)` | Adds a gift card you have already validated. |
+| `RemoveGiftcardAsync(string code, string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)` | Removes a gift card by code. |
+| `InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId, CancellationToken ct = default)` | Creates a coupon code for a discount. |
+| `GenerateCouponCodesAsync(Guid discountId, CouponGenerationRequest request, CancellationToken ct = default)` | Creates many coupon codes. |
+| `RemoveCouponCodeAsync(string couponCode, Guid discountId)` | Deletes a coupon code. |
+| `GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize, CancellationToken ct = default)` | A page of a discount's coupon codes and the number of pages. An overload without paging returns them all. |
 
-`AddReservationsToOrderAsync` validates and associates reservation IDs with an order; `RemoveReservationsFromOrderAsync` only clears the association. The `AddHangfireJobsToOrderAsync` and `RemoveHangfireJobsFromOrderAsync` names are compatibility wrappers for native SQL reservations, not evidence that current reservations use Hangfire. See [Stock reservations](../guides/reservations.md).
+`ApplyCouponToOrderAsync` lowercases the code and throws when it cannot apply it:
+
+| Exception | When |
+| --- | --- |
+| `CouponApplicationRejectedException` | A `BeforeApplyCouponDiscountAsync` handler rejected the code. See [Discount events](events.md#discount-events). |
+| `ArgumentException` | The code or store alias is empty. |
+| `DiscountNotFoundException` | No coupon has this code. |
+| `DiscountHasNoUsageException` | The coupon has no uses left. |
+| `DiscountUnableToFindCouponException` | The coupon's discount is not in this store. |
+
+### Statuses and activity log
+
+| Method | What it does |
+| --- | --- |
+| `UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string? userName = null, ChangeOrderSettings? settings = null, CancellationToken ct = default)` | Sets the legacy status of an order. The order, payment and fulfillment statuses follow. |
+| `UpdateStatusAsync(string storeAlias, OrderStatus newStatus, ChangeOrderSettings? settings = null, CancellationToken ct = default)` | Same, for the current basket of a store. Throws `OrderInfoNotFoundException` when there is none. |
+| `AddActivityLogAsync(Guid orderId, string message, string? userName = null, OrderActivityLogType logType = OrderActivityLogType.Info, CancellationToken ct = default)` | Writes an entry to the order's activity log. Throws `ArgumentException` for an empty key or message, and `OrderInfoNotFoundException` when the order does not exist. |
+
+With `ChangeOrderSettings { FireEvents = false }`, `UpdateStatusAsync` raises no status change events. See [Order, payment, and fulfillment statuses](../guides/order-statuses.md).
+
+### Payment, completion and reservations
+
+| Method | What it does |
+| --- | --- |
+| `PayAsync(PaymentRequest paymentRequest, string storeAlias, Guid orderId, CancellationToken ct = default)` | Runs the checkout payment for an order and returns a `CheckoutResponse`. An overload takes an `IOrderInfo` instead of the key. `storeAlias` must not be empty. |
+| `CompleteOrderAsync(Guid orderId, CancellationToken ct = default)` | Completes a paid order: deducts stock, uses up the coupon and updates the status. |
+| `ClearCustomerOrderReferenceAsync(Guid orderId, OrderData? order = null, CancellationToken ct = default)` | For an order with a final status, clears the link that makes it the customer's current basket. Does nothing for other orders. |
+| `AddReservationsToOrderAsync(string storeAlias, IEnumerable<string> reservationIds, IOrderInfo orderInfo, CancellationToken ct = default)` | Links stock reservations to an order. |
+| `RemoveReservationsFromOrderAsync(string storeAlias, CancellationToken ct = default)` | Unlinks the reservations from the basket. It does not release them. |
+
+`AddHangfireJobsToOrderAsync` and `RemoveHangfireJobsFromOrderAsync` are older names for the two reservation methods. Reservations do not use Hangfire. See [Stock reservations](../guides/reservations.md).
 
 ## Providers
 
-`Ekom.API.Providers` reads payment/shipping providers, countries, and zones.
+`Ekom.API.Providers` reads payment and shipping providers, countries and zones. Guide: [Payment and shipping providers](../guides/providers.md).
 
-| Method | Behavior |
+| Method | Returns |
 | --- | --- |
-| `GetShippingProviders[Async](store, countryCode, orderAmount, ...)` | Returns providers sorted by `SortOrder`, filtered by zone and amount range. |
-| `GetPaymentProviders[Async](store, countryCode, orderAmount, ...)` | Same for payment providers. A three-argument async-stream overload also exists. |
-| `GetShippingProvider[Async](Guid, IStore/string? store, ...)` | Reads one provider from the selected store cache. |
-| `GetPaymentProvider[Async](Guid, IStore/string? store, ...)` | Reads one payment provider. |
-| `GetAllCountries()` | Returns repository countries. |
-| `GetAllZones()` | Returns cached zones. |
+| `GetPaymentProvidersAsync(string? store = null, string? countryCode = null, decimal orderAmount = 0, CancellationToken ct = default)` | The payment providers a customer can use, sorted by sort order. |
+| `GetShippingProvidersAsync(string? store = null, string? countryCode = null, decimal orderAmount = 0, CancellationToken ct = default)` | The shipping providers a customer can use, sorted by sort order. |
+| `GetPaymentProviderAsync(Guid key, string? storeAlias = null, CancellationToken ct = default)` | One payment provider, or `null`. An overload takes an `IStore`. |
+| `GetShippingProviderAsync(Guid key, string? storeAlias = null, CancellationToken ct = default)` | One shipping provider, or `null`. An overload takes an `IStore`. |
+| `GetAllCountries()` | All countries. |
+| `GetAllZones()` | All zones. |
 
-Country filtering is applied only for a two-letter code. Amount filtering is applied only when `orderAmount > 0`; an end range of zero means no upper limit. Provider events run after these filters.
+- Ekom filters by country only when `countryCode` has two letters. A provider whose zone lists no countries is then left out.
+- Ekom filters by amount only when `orderAmount` is above `0`. A provider whose range ends at `0` has no upper limit.
+- The [provider events](events.md#provider-events) run after these filters.
+- When no store alias is given and the request has no store, the list methods throw `ArgumentException`.
+
+A payment provider method `GetPaymentProvidersAsync(string? store, string? countryCode, decimal orderAmount)` without a cancellation token returns an `IAsyncEnumerable<IPaymentProvider>`.
 
 ## Discounts
 
-`Ekom.API.Discounts` is a read-only facade:
+`Ekom.API.Discounts` reads the configured discounts. It does not change anything. Guide: [Discounts and coupons](../guides/discounts.md).
 
-- `GetDiscounts()` and `GetDiscounts(string storeAlias)` return store discounts.
-- `GetGlobalDiscounts()` and `GetGlobalDiscounts(string storeAlias)` retain entries whose `GlobalDiscount` is true.
+| Method | Returns |
+| --- | --- |
+| `GetDiscounts()` | The discounts of the request's store, or an empty list when there is no store. |
+| `GetDiscounts(string storeAlias)` | The discounts of a store. |
+| `GetGlobalDiscounts()` | The discounts of the request's store whose `GlobalDiscount` is `true`. |
+| `GetGlobalDiscounts(string storeAlias)` | The same for a given store. |
 
-Use `Order` for applying coupons and `Stock` for discount/coupon inventory.
+To apply a coupon, use `Order`. To read or change how many times a discount can be used, use `Stock`.
 
 ## Stock
 
-`Ekom.API.Stock` manages the primary product/variant stock pool.
+`Ekom.API.Stock` reads and changes sellable stock: the count that decides whether a product can be bought. Guide: [Stock](../guides/stock.md).
 
-| Operation | Methods and behavior |
+| Method | What it does |
 | --- | --- |
-| Read | `GetStock(Guid[, storeAlias])`, `GetStockData(Guid[, storeAlias])`; a missing entry is represented as zero-valued `StockData`. |
-| Validate | `ValidateOrderStockAsync(IOrderInfo)` skips backordered products and applies stock buffers. |
-| Increment | `IncrementStockAsync(...)` performs an atomic delta and publishes `StockChangedAsync`. |
-| Set | `SetStockAsync(...)` replaces the balance; prefer increment for concurrent deltas. The `IEnumerable<StockSetRequest>` overload writes many balances in batched transactions. |
-| Reserve | `ReserveStockAsync(...)` accepts a negative compatibility value and returns a reservation ID. |
-| Consume/release wrappers | `CancelRollback` consumes; `RollbackJobAsync` and `CompleteRollback` release. Prefer `IStockReservationService` for explicit async semantics. |
-| Discount stock | `GetDiscountStock[Data]Async`, `UpdateDiscountStockAsync`, `ReserveDiscountStockAsync`. Supplying `coupon` addresses coupon-specific stock. |
+| `GetStock(Guid key)`, `GetStock(Guid key, string storeAlias)` | The stock count. `0` for a product with no stock row. |
+| `GetStockData(Guid key)`, `GetStockData(Guid key, string storeAlias)` | The stock row. A missing row is returned as a `StockData` with `Stock = 0`. |
+| `IncrementStockAsync(Guid key, decimal value, CancellationToken ct = default)` | Changes stock by `value`. An overload takes `string storeAlias` after the key. |
+| `SetStockAsync(Guid key, decimal value, CancellationToken ct = default)` | Replaces the count. An overload takes `string storeAlias` after the key. |
+| `SetStockAsync(IEnumerable<StockSetRequest> requests, CancellationToken ct = default)` | Replaces many counts, in batches of 200. |
+| `ValidateOrderStockAsync(IOrderInfo orderInfo, CancellationToken ct = default)` | Throws `NotEnoughLineStockException` when a line asks for more than is available. Skips backorder products and takes stock buffers into account. |
+| `ReserveStockAsync(Guid key, string storeAlias, decimal value, TimeSpan timeSpan = default, CancellationToken ct = default)` | Holds stock and returns the reservation ID. `value` must be negative. Throws `NotEnoughStockException` when there is not enough. |
+| `RollbackJobAsync(string jobId, CancellationToken ct = default)` | Releases a reservation and returns its stock. |
+| `CancelRollback(string jobId)` | Uses up a reservation, so its stock stays deducted. Throws `StockException` when that fails. |
+| `CompleteRollback(string jobId)` | Releases a reservation. Synchronous. |
+| `GetDiscountStockAsync(Guid key, string coupon = null)` | How many uses a discount, or one of its coupons, has left. |
+| `GetDiscountStockDataAsync(Guid key, string coupon = null)` | The discount stock row. |
+| `UpdateDiscountStockAsync(Guid key, int value, string coupon = null)` | Changes discount stock by `value`. Throws `ArgumentException` when `value` is `0`. |
+| `ReserveDiscountStockAsync(Guid key, int value, string coupon = null, TimeSpan timeSpan = default)` | Holds discount stock and returns the reservation ID. `value` must be negative. |
 
-When `Ekom:PerStoreStock` is false, store aliases are ignored and stock is global by item key. Reservation expiry is persisted and processed by Ekom's hosted worker.
+- When `Ekom:PerStoreStock` is `false`, store aliases are ignored and every store shares one count. When it is `true` and no store alias is given, Ekom uses the request's store, and throws `InvalidOperationException` when there is none.
+- `IncrementStockAsync`, `SetStockAsync` and reservations raise [`StockEvents.StockChangedAsync`](events.md#stock-events).
+- For reservations with explicit results, inject `IStockReservationService` instead. See [Services and dependency injection](services-and-dependency-injection.md#reserve-stock).
 
 ## Warehouse
 
-`Ekom.API.Warehouse` is a separate, SKU-based inventory pool. It does not replace or aggregate into `Stock` automatically.
+`Ekom.API.Warehouse` reads and changes warehouse stock: how many units each warehouse holds, by SKU. It never changes what can be bought. Guide: [Stock](../guides/stock.md#warehouse-stock).
 
-| Method | Result |
+| Method | Returns |
 | --- | --- |
-| `GetWarehousesAsync(storeAlias)` | Visible published warehouse definitions. |
-| `GetAsync(storeAlias, skus)` | Balances across visible warehouses. |
-| `GetAsync(storeAlias, warehouseKey, sku/skus)` | Balance(s) in one configured warehouse. |
-| `GetForSkuAsync(storeAlias, sku)` | Every visible warehouse plus nullable balance for one SKU. |
-| `SetAsync(storeAlias, warehouseKey, sku, balance)` | Sets one non-negative balance. |
-| `SetAsync(storeAlias, warehouseKey, balances)` | Sets unique normalized SKUs one at a time. |
-| `ClearAsync(...)` | Removes a persisted balance and reports whether a row was removed. |
-| `UpdateAsync(mutations)` | Applies a mixed set/clear batch and returns per-entry statuses. |
+| `GetWarehousesAsync(string storeAlias, CancellationToken ct = default)` | The store's published warehouses that are not hidden. |
+| `GetAsync(string storeAlias, IEnumerable<string> skus, CancellationToken ct = default)` | Balances of the SKUs in all visible warehouses. |
+| `GetAsync(string storeAlias, Guid warehouseKey, string sku, CancellationToken ct = default)` | One balance, or `null`. |
+| `GetAsync(string storeAlias, Guid warehouseKey, IEnumerable<string> skus, CancellationToken ct = default)` | Balances of the SKUs in one warehouse. |
+| `GetForSkuAsync(string storeAlias, string sku, CancellationToken ct = default)` | Every visible warehouse with its balance for one SKU. The balance is `null` where none is saved. |
+| `SetAsync(string storeAlias, Guid warehouseKey, string sku, decimal balance, CancellationToken ct = default)` | Saves one balance. Throws `ArgumentOutOfRangeException` for a negative balance. |
+| `SetAsync(string storeAlias, Guid warehouseKey, IEnumerable<WarehouseStockBalanceRequest> balances, CancellationToken ct = default)` | Saves several balances in one warehouse. |
+| `ClearAsync(string storeAlias, Guid warehouseKey, string sku, CancellationToken ct = default)` | Removes a saved balance. Returns `true` when a balance was removed. |
+| `UpdateAsync(IEnumerable<WarehouseStockMutationRequest> mutations, CancellationToken ct = default)` | Applies a list of set and clear changes and reports the result of each one. |
 
-Store aliases are trimmed; SKUs are trimmed and upper-cased. Empty keys/SKUs, unknown warehouses, negative balances, and duplicate normalized identities are rejected. Batch validation/persistence failures appear as `Failed` entries, allowing partial success.
+Ekom trims store aliases and SKUs, and ignores upper and lower case in SKUs. It rejects empty keys and SKUs, warehouses that are not configured for the store, negative balances, and the same store, warehouse and SKU twice in one list. In `UpdateAsync`, these become `Failed` entries and the other entries are still saved.
 
-## Related reference
+## Prices
 
-- [Services and dependency injection](services-and-dependency-injection.md)
-- [Events](events.md)
-- [Models and behavior](models-and-behavior.md)
-- [Configuration](configuration-reference.md)
-- [HTTP API](http-api.md)
+`Ekom.API.Prices` reads and changes price overrides stored in the `EkomPrice` table, so prices can change without publishing Umbraco content. It is a singleton. Guide: [Database price storage](../guides/database-price-storage.md).
+
+| Member | What it does |
+| --- | --- |
+| `Enabled` | `true` when `Ekom:UseDatabasePrices` is `true`. |
+| `GetAsync(Guid nodeKey, string propertyAlias = "price", CancellationToken cancellationToken = default)` | The overrides of a node and price property. Empty when the feature is off. |
+| `SetPriceAsync(Guid nodeKey, string storeAlias, string currency, decimal price, string propertyAlias = "price", CancellationToken cancellationToken = default)` | Saves one override. |
+| `RemovePriceAsync(Guid nodeKey, string storeAlias, string currency, string propertyAlias = "price", CancellationToken cancellationToken = default)` | Removes one override. The node's own price applies again. |
+| `ApplyAsync(IEnumerable<PriceMutation> changes, CancellationToken cancellationToken = default)` | Saves and removes many overrides together. A `PriceMutation` with `Price = null` removes the override. |
+| `Validate(IEnumerable<PriceMutation> changes)` | Checks a batch without saving it. |
+| `IsCurrent(IEnumerable<PriceMutation> changes)` | `true` when the cache already holds exactly these prices. |
+| `Refresh(IEnumerable<Guid> nodeKeys)` | Reloads the cached prices of some nodes from the database. |
+| `FillCacheAsync(CancellationToken cancellationToken = default)` | Reloads all cached prices. Use it after another server or direct SQL changed the table. |
+| `MigrateNodePricesAsync(Guid nodeKey, string? nodeValue, IReadOnlyList<IStore> stores, string propertyAlias = "price", CancellationToken cancellationToken = default)` | Copies a node's prices into missing table rows and returns how many it added. Existing overrides are not replaced. |
+| `Resolve(Guid nodeKey, string propertyAlias, string storeAlias, string nodeValue, IReadOnlyList<CurrencyModel> currencies)` | The node's price value with the overrides applied. |
+
+- Writing while `Ekom:UseDatabasePrices` is `false` throws `InvalidOperationException`.
+- A missing node key or a repeated key in one batch throws `ArgumentException`. A negative price throws `ArgumentOutOfRangeException`.
+- A `PriceMutation` with `CheckExpected = true` throws `PriceConflictException` when the saved price is not `ExpectedPrice`.
+- Every saved change raises [`PriceEvents.PriceChanged`](events.md#price-events).
+- Synchronous twins exist: `Get`, `SetPrice`, `RemovePrice`, `Apply`, `FillCache`.
+
+## Related pages
+
+- [Services and dependency injection](services-and-dependency-injection.md): the lower-level services and how to replace them.
+- [Events](events.md): the events these methods raise.
+- [Models and behavior](models-and-behavior.md): the objects these methods return.
+- [Configuration reference](configuration-reference.md): settings that change how the methods behave.
+- [HTTP API](http-api.md): the same features over HTTP.
+
+[Back to Reference](README.md)

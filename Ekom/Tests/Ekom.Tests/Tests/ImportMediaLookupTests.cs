@@ -55,7 +55,12 @@ public class ImportMediaLookupTests
         Assert.Contains("n.path LIKE @0", query.Sql, StringComparison.Ordinal);
         Assert.Contains("n.uniqueId IN (@3)", query.Sql, StringComparison.Ordinal);
         Assert.Contains("pt.alias = 'ekmIdentifier'", query.Sql, StringComparison.Ordinal);
+#if NET8_0
         Assert.Contains("pt.alias = 'comparer'", query.Sql, StringComparison.Ordinal);
+#else
+        // Media saved before the property was renamed is still found by its old alias.
+        Assert.Contains("pt.alias IN ('ekmComparer', 'comparer')", query.Sql, StringComparison.Ordinal);
+#endif
         var keys = Assert.IsAssignableFrom<IReadOnlyCollection<Guid>>(query.Parameters[3]);
         Assert.Equal(3, keys.Count);
         Assert.Contains(untouched.Object.Key, keys);
