@@ -18,10 +18,10 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
         <PackageIcon>images/Ekom_Logo.png</PackageIcon>
-        <Description>Ekom - E-Commerce solution for Umbraco 19+</Description>
+        <Description>Ekom is a free, open-source e-commerce package for Umbraco. This package is for Umbraco 19.</Description>
         <PackageReleaseNotes></PackageReleaseNotes>
         <Copyright>Copyright 2026</Copyright>
-        <PackageTags>umbraco;ecommerce;ekom</PackageTags>
+        <PackageTags>umbraco;ecommerce;ekom;umbraco-marketplace</PackageTags>
 
         <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
         <PublishRepositoryUrl>true</PublishRepositoryUrl>

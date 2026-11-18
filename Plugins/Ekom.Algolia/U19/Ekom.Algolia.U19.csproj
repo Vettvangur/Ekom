@@ -19,7 +19,7 @@
     <PackageIcon>Ekom_Logo.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Copyright>Copyright 2026</Copyright>
-    <PackageTags>umbraco;ecommerce;ekom;algolia;search;plugin;extension</PackageTags>
+    <PackageTags>umbraco;ecommerce;ekom;algolia;search;plugin;extension;umbraco-marketplace</PackageTags>
 
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>

@@ -19,7 +19,7 @@
         <PackageIcon>images/Ekom_Logo.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Copyright>Copyright 2026</Copyright>
-        <PackageTags>umbraco;ecommerce;ekom;b2c;b2b;klaviyo;plugin;extension</PackageTags>
+        <PackageTags>umbraco;ecommerce;ekom;b2c;b2b;klaviyo;plugin;extension;umbraco-marketplace</PackageTags>
 
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://marketplace.umbraco.com/umbraco-marketplace-schema.json",
+  "Title": "Ekom Mailchimp",
+  "Description": "Mailchimp for Ekom stores. It supports audience tags and subscriptions, tracks completed purchases, and queues Mailchimp Transactional (Mandrill) messages.",
+  "Category": "Campaign & Marketing",
+  "AlternateCategory": "Commerce",
+  "PackageType": "Integration",
+  "LicenseTypes": [
+    "Free"
+  ],
+  "VersionSpecificPackageIds": [
+    {
+      "UmbracoMajorVersion": 18,
+      "PackageId": "Ekom.Mailchimp.U18"
+    },
+    {
+      "UmbracoMajorVersion": 19,
+      "PackageId": "Ekom.Mailchimp.U19"
+    }
+  ],
+  "Tags": [
+    "ekom",
+    "ecommerce",
+    "mailchimp",
+    "email marketing"
+  ],
+  "DocumentationUrl": "https://vettvangur.gitbook.io/ekom/integrations",
+  "IssueTrackerUrl": "https://github.com/Vettvangur/Ekom/issues",
+  "AuthorDetails": {
+    "Name": "Vettvangur",
+    "Description": "Vettvangur is a digital agency in Iceland that builds and maintains Ekom.",
+    "Url": "https://www.vettvangur.is",
+    "ImageUrl": "https://github.com/Vettvangur.png",
+    "SyncContributorsFromRepository": true
+  },
+  "RelatedPackages": [
+    {
+      "PackageId": "Ekom.U17",
+      "GroupTitle": "Requires",
+      "Description": "The Ekom e-commerce package that this integration extends."
+    }
+  ]
+}

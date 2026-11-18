@@ -1,0 +1,111 @@
+{
+  "$schema": "https://marketplace.umbraco.com/umbraco-marketplace-schema.json",
+  "Title": "Ekom",
+  "Description": "Ekom is a free, open-source e-commerce package for Umbraco. The catalog is Umbraco content, so editors manage products where they already work. Orders, customers and analytics are handled in a manager inside the backoffice.",
+  "Category": "Commerce",
+  "PackageType": "Package",
+  "LicenseTypes": [
+    "Free"
+  ],
+  "VersionSpecificPackageIds": [
+    {
+      "UmbracoMajorVersion": 13,
+      "PackageId": "Ekom.U10"
+    },
+    {
+      "UmbracoMajorVersion": 18,
+      "PackageId": "Ekom.U18"
+    },
+    {
+      "UmbracoMajorVersion": 19,
+      "PackageId": "Ekom.U19"
+    }
+  ],
+  "Tags": [
+    "ecommerce",
+    "orders",
+    "checkout",
+    "catalog",
+    "payments",
+    "multi-store",
+    "headless"
+  ],
+  "DocumentationUrl": "https://vettvangur.gitbook.io/ekom",
+  "IssueTrackerUrl": "https://github.com/Vettvangur/Ekom/issues",
+  "AuthorDetails": {
+    "Name": "Vettvangur",
+    "Description": "Vettvangur is a digital agency in Iceland that builds and maintains Ekom.",
+    "Url": "https://www.vettvangur.is",
+    "ImageUrl": "https://github.com/Vettvangur.png",
+    "SyncContributorsFromRepository": true
+  },
+  "Screenshots": [
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/orders-list-light.png",
+      "Caption": "Orders: status tabs, totals, and payment and fulfillment status for every order"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/order-detail-light.png",
+      "Caption": "An order: lines, payment, notes, customer and anything that needs review"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/catalog-products-light.png",
+      "Caption": "Catalog view: price, stock and publish state on every product card"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/catalog-products-detail-light.png",
+      "Caption": "Products of a category, with variants, sale prices and stock levels"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/analytics-overview-light.png",
+      "Caption": "Analytics: order amount, orders and average order value against the previous period"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/analytics-insights-light.png",
+      "Caption": "Analytics: new and returning buyers, busiest days and hours, and most sold products"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/customers-list-light.png",
+      "Caption": "Customers: new and returning customers, with search"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/customer-detail-light.png",
+      "Caption": "A customer: lifetime value, orders, addresses and preferences"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/order-activity-log-light.png",
+      "Caption": "Activity log: every change to an order, with who made it and when"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/printing-light.png",
+      "Caption": "Printing: the picking-slip queue of the optional Ekom.Printer package"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/orders-list-dark.png",
+      "Caption": "Orders in dark mode"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/catalog-products-dark.png",
+      "Caption": "The catalog view in dark mode"
+    },
+    {
+      "ImageUrl": "https://raw.githubusercontent.com/Vettvangur/Ekom/Ekom/docs/images/marketplace/analytics-overview-dark.png",
+      "Caption": "Analytics in dark mode"
+    }
+  ],
+  "RelatedPackages": [
+    {
+      "PackageId": "Ekom.Algolia",
+      "GroupTitle": "Integrations",
+      "Description": "Product, category and content indexing, and product search through Algolia."
+    },
+    {
+      "PackageId": "Ekom.Klaviyo",
+      "Description": "Order events and catalog synchronization with Klaviyo."
+    },
+    {
+      "PackageId": "Ekom.Mailchimp",
+      "Description": "Mailchimp audience tags, subscriptions, purchase tracking and transactional messages."
+    }
+  ]
+}
