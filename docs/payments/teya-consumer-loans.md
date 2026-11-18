@@ -206,7 +206,6 @@ After a test loan, look for the log line `Teya Consumer Loans Response - SUCCESS
 - **The validation address.** When it validates the loan, Ekom sends Teya the success address with `&token=<token>` added as `RedirectUrl`.
 - **Amounts.** Ekom sends the order total as it is, without rounding. No currency is sent.
 - **Several servers.** Each server follows only the loans it started. After a restart, every server that shares the database looks at the open loans, so two servers can ask Teya about, and validate, the same loan. The capture is still stored once.
-- **Credentials are stored with each payment.** Ekom saves all the loan settings, including `username` and `password`, and the loan token in the payment's provider data in the database. The checks after a restart use the saved values.
 - **Content Security Policy.** The page that sends the customer to the loan portal is a small inline script. If your site uses a nonce-based Content Security Policy, put the nonce in `HttpContext.Items` under `CspNonce`, or under the key set in `Ekom:CspKey`, and Ekom adds it to the script.
 - **Polling interval.** `TeyaConsumerloansPollingService.PollingInterval` is 5 seconds. It is a static property that code can change.
 - **Old events.** `Events.Success` and `Events.Error` are obsolete and never raised. Use `OrderEvents.PaymentRecordedAsync`. See [React to recorded payments](../guides/payments.md#react-to-recorded-payments).

@@ -4,6 +4,8 @@ Ekom is an e-commerce package for Umbraco. It adds stores, a product catalog, ba
 
 These docs cover Ekom on Umbraco 17, 18 and 19. Umbraco 19 is a release candidate. For a product overview, visit [ekomcommerce.com](https://www.ekomcommerce.com/).
 
+Ekom is open source. The code, the releases and the issue tracker are on GitHub: [github.com/Vettvangur/Ekom](https://github.com/Vettvangur/Ekom). The payment gateways are in [github.com/Vettvangur/Ekom.Payments](https://github.com/Vettvangur/Ekom.Payments).
+
 ## Find what you need
 
 | You want to | Go to |

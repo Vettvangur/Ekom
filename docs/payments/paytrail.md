@@ -194,8 +194,7 @@ If the log shows `Signature mismatch`, the secret key does not match the account
 
   If the items do not add up to the total after rounding, the package changes the last item to make up the difference and sets its `units` to 1.
 - **The amount must match.** For an `ok` answer, `checkout-amount` must equal the sum of the payment items saved with the payment, in minor units. Otherwise nothing is recorded and the customer sees HTTP 400.
-- **A pending payment ends on the cancel URL.** For `pending` and `delayed`, the customer is sent to the cancel URL, which releases the stock holds and makes the basket editable again. If PayTrail later reports the payment as `ok`, Ekom records it and opens an order review. See [A payment that arrives after its holds were released](../guides/checkout.md#a-payment-that-arrives-after-its-holds-were-released).
-- **The settings are saved with each payment.** The callback checks the answer with the secret key that was in use when the payment started, not the current one. The saved settings include `secretKey`, in the `EkomOrderPayments` table.
+- **A new secret key affects new payments only.** The callback checks the answer with the secret key that was in use when the payment started, not the current one.
 - **The transaction ID from the create step is not stored.** The package logs it. The transaction ID on the order comes from PayTrail's answer.
 - **Not implemented:** refunds, token payments, rendering PayTrail's payment method buttons, and payment reports.
 - **Error emails.** When the response controller throws and `Ekom:Payments:SendEmailAlerts` is `true` (the default), Ekom emails the exception and PayTrail's values, without the signature, through the Umbraco SMTP settings.

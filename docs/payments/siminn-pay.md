@@ -63,7 +63,7 @@ Ekom reads each setting from the property with that alias on the provider node, 
 
 None of these settings hold one value per store or per language. A node has one value of each.
 
-`paymentType`, `timeToLive` and `currency` have a default value in the settings class. Ekom fills a setting from the node or configuration only while it is empty, so a value on the node or in configuration never replaces these defaults. To change them, set them in code:
+To change `paymentType`, `timeToLive` or `currency`, set them in code:
 
 ```csharp
 using Ekom.Events;
@@ -214,7 +214,6 @@ After a test payment, look for the log line `SiminnPay Response - PaymentSuccess
 - **The secret is read when the notification arrives.** Ekom does not store Siminn Pay's settings with the payment. It reads them again from the provider node and configuration for each notification and status request. A `secret` or `apiKey` set only in code is missing then, and every notification is refused.
 - **Exact amounts.** Ekom sends the order total as it is, without rounding, and refuses a notification whose amount differs by any amount.
 - **Phone number.** The phone number must be registered with Siminn Pay. Ekom does not check its format.
-- **No page when Siminn Pay answers with another status.** If the new payment order is not `WaitingForCustomer`, Ekom logs a warning and the checkout response has no content. The payment stays as requested. If the status is `WaitingForNewAmount`, checkout fails with `NotImplementedException`.
 - **The order ID is the reference.** Siminn Pay gets the Ekom order ID as `referenceId`. Ekom finds the payment by Siminn Pay's order key, so a new attempt for the same order does not mix with an older one.
 - **Old events.** `Ekom.Payments.SiminnPay.Model.Events.Success` and `Events.Error` are obsolete and never raised. Use `OrderEvents.PaymentRecordedAsync`. See [React to recorded payments](../guides/payments.md#react-to-recorded-payments).
 

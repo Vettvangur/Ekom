@@ -188,8 +188,7 @@ PayPal's webhook simulator sends events that PayPal cannot verify, so Ekom recor
 
 ## Limits and things to know
 
-- **Currency.** PayPal takes only [its own list of currencies](https://developer.paypal.com/api/rest/reference/currency-codes/), and ISK is not on it. The package does not check the currency before it calls PayPal. To offer PayPal to customers of an Icelandic shop, offer it on a store that charges in another currency, such as EUR or USD.
-- **Ekom's currency list.** Ekom passes the store's currency to the gateway only when it is one of `ISK`, `USD`, `EUR`, `DKK`, `GBP`, `NOK`, `SEK`, `CHF`, `CAD`, `HUF`, `BHD`, `AUD`, `RUB`, `PLN`, `RON`, `HRK` or `CZK`. For any other currency Ekom logs an error and sends `ISK`, which PayPal refuses.
+- **Currency.** PayPal takes only [its own list of currencies](https://developer.paypal.com/api/rest/reference/currency-codes/), and ISK is not on it. To offer PayPal to customers of an Icelandic shop, offer it on a store that charges in another currency, such as EUR or USD.
 - **Amounts.** Ekom rounds the total half away from zero to 2 decimals, or to whole units for HUF, JPY and TWD. The rounded total is the amount stored with the payment.
 - **Cancelled is never recorded.** A customer who leaves PayPal without approving is not recorded as cancelled, because PayPal does not report it.
 - **Pending payments.** A payment that PayPal holds for review sends the customer to the success page, but the order is completed only when the webhook reports the outcome.

@@ -149,7 +149,7 @@ The capture also stores these details, which the Manager shows with the payment:
 
 `RawData` holds AltaPay's parsed response.
 
-The package never records `Authorized`, `Failed`, `Cancelled`, `Refunded` or `Voided`. A payment that fails at AltaPay keeps only its `Requested` transaction, so the payment status stays `Pending`.
+The package never records `Authorized`, `Failed`, `Cancelled`, `Refunded` or `Voided`.
 
 ## Capture, refund and cancel
 
@@ -176,11 +176,9 @@ If the log shows `Failed checksum verification` or `No CustomerInformationShared
 ## Limits and things to know
 
 - **The checksum is the only proof.** It covers the amount Ekom requested, the currency, the order ID and the shared secret. A payment for a different amount does not pass the check and is not recorded.
-- **The settings are saved with each payment.** The callback checks the answer with the secret that was in use when the payment started, not the current one. The saved settings include `apiPassword` and `customerInformationSharedSecret`, in the `EkomOrderPayments` table.
+- **A new secret affects new payments only.** The callback checks the answer with the shared secret that was in use when the payment started, not the current one.
 - **The latest attempt wins.** AltaPay sends back the order ID, not the payment ID. When an order has several AltaPay attempts, the answer is matched to the newest one.
 - **`paymentFormUrl` must be a path.** A full URL such as `https://shop.example.com/form` makes the payment request fail, and so does an empty value.
-- **Host names that start with `ekom`.** The package removes a double slash before `ekom` in every callback address. A site whose host name starts with `ekom`, such as `ekomshop.example`, gets broken callback addresses.
-- **The error message is fixed.** When AltaPay returns no payment page, the `errorMessage` in the query string is a fixed English text that names another company. Show your own message on the error page instead.
 - **Amounts always have two decimals,** also for currencies without minor units such as ISK. Each order line is sent with its `Price` as the unit price and its `Quantity`.
 - **The cancel URL is not used.** The package has no cancel route. A payment that does not go through ends on the error URL.
 - **Error emails.** When a callback throws and `Ekom:Payments:SendEmailAlerts` is `true` (the default), Ekom emails the exception and AltaPay's response through the Umbraco SMTP settings.

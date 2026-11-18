@@ -169,13 +169,11 @@ Each webhook endpoint has its own signing secret. Sites that share one Stripe ac
 ## Limits and things to know
 
 - **Amounts.** Ekom sends amounts in the currency's minor unit, rounded half away from zero to 2 decimals. Zero-decimal currencies, such as JPY, are rounded to whole units. ISK is rounded to whole kronur and sent with two zero decimals, as Stripe requires.
-- **Currency.** Ekom passes the store's currency to the gateway only when it is one of `ISK`, `USD`, `EUR`, `DKK`, `GBP`, `NOK`, `SEK`, `CHF`, `CAD`, `HUF`, `BHD`, `AUD`, `RUB`, `PLN`, `RON`, `HRK` or `CZK`. For any other currency Ekom logs an error and sends `ISK`.
 - **Lines on the Checkout page.** Ekom lists the payment items when their rounded amounts add up to the payment total, and there are 1 to 100 of them. Otherwise, for example with a negative discount line, the customer sees one line with the order name and the total. By default Ekom sends one payment item, the payment title. See [What Ekom does when you submit payment](../guides/checkout.md#what-ekom-does-when-you-submit-payment).
 - **Language.** When `locale` is empty, Ekom sends the two-letter language of the provider node's `language` value if Stripe Checkout has that language. Otherwise Ekom sends no language, and Stripe follows the customer's browser. Icelandic is not on Stripe's list, so with the default `is-IS` the browser decides.
 - **Declined cards** are not recorded. The customer tries again on the same Checkout page.
-- **Delayed capture and other payment methods.** With `useDelayedCapture` on, Ekom records every completed but unpaid Checkout Session as `Authorized`, whatever the payment method. It does not check whether the method can be authorized.
 - **Another currency at Stripe.** If Stripe reports a charge in a different currency from the payment's, a capture is recorded with the payment's own amount, and a refund is not recorded.
-- **The webhook secret is stored with each payment.** Ekom saves `webhookSecret` in the payment's provider data in the database, and verifies every later event of that payment with the saved value. If you change the endpoint's signing secret, events for older payments, such as a later refund, no longer verify once Stripe stops signing with the old secret. The `secretKey` is never stored.
+- **The signing secret of a payment does not change.** Ekom verifies every event of a payment with the `webhookSecret` that was in use when the payment started.
 - **Content Security Policy.** The page that sends the customer to Stripe is a small inline script. If your site uses a nonce-based Content Security Policy, put the nonce in `HttpContext.Items` under `CspNonce`, or under the key set in `Ekom:CspKey`, and Ekom adds it to the script.
 
 ## Related pages

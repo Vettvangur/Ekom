@@ -146,12 +146,11 @@ Straumur's server must be able to reach `/ekom/payments/straumurresponse` on you
 
 ## Limits and things to know
 
-- **Whole units only.** Ekom cuts the decimals off the total and off each line before it multiplies by 100: `19.99` is sent as `1900`. Ekom still records the full amount. Use this gateway with a currency without decimals, such as ISK, or with prices that have no decimals.
 - **Language.** Ekom sends `is` or `en`, taken from the node's `language` value. Any other language is sent as `is`.
 - **Delayed capture uses a fixed time.** `delayedCaptureDateTime` is one date and time, not a delay. Ekom sends the whole hours between now and that time, and sends nothing when the time has passed. To capture a set time after each order, set it per payment in a `CheckoutEvents.PayAsync` handler with `paymentSettings.SetStraumurSettings(...)`.
-- **Recurring payments.** With `CardOnFile`, Ekom asks Straumur for an amount of `0`, and records a capture of the full order total when the `Tokenization` or `Capture` webhook arrives. The order then shows as paid although no money was taken. With `Subscription`, Ekom asks for the full total. Ekom does not store the card token Straumur sends, so the package cannot charge the card again. `UnscheduledCardOnFile` is accepted but changes nothing: Ekom sends a normal payment.
+- **Recurring payments.** With `CardOnFile`, Ekom asks Straumur for an amount of `0`. With `Subscription`, Ekom asks for the full total.
 - **Order lines.** Ekom sends one line per payment item. By default that is one line with the order title and the total. To change the lines, use `CheckoutEvents.PaymentOrderItemsPreparingAsync`.
-- **Settings are saved with the payment.** Ekom stores the Straumur settings, `apiKey` and `hmacKey` included, with each payment in the `EkomOrderPayments` table. It checks each webhook with the `hmacKey` that was used when the payment started, so a new key only affects new payments.
+- **A new key affects new payments only.** Ekom checks each webhook with the `hmacKey` that was used when the payment started.
 - **Content Security Policy.** The page that sends the customer to Straumur runs a short script. If your site sets a CSP nonce, put it in `HttpContext.Items` under `CspNonce`, or under the key named in `Ekom:CspKey`, and Ekom adds it to the script.
 
 ## Related pages

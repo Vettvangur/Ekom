@@ -127,7 +127,7 @@ Borgun's server must be able to reach `/ekom/payments/borgunresponse` on your si
 - **Rounding.** With `preserveDecimalAmounts` off, Ekom rounds the total and every line to whole units, half away from zero. Ekom still records the unrounded amount. Turn the setting on for a currency with decimals, such as EUR.
 - **Language.** Ekom sends `IS` when the node's `language` is `is-IS`. Any other value is sent in upper case as it is, so set `language` to a two-letter code such as `en` when you want another language.
 - **Order lines.** Ekom sends one line per payment item. By default that is one line with the order title and the total. To change the lines, use `CheckoutEvents.PaymentOrderItemsPreparingAsync`.
-- **Settings are saved with the payment.** Ekom stores the Borgun settings, `secretCode` included, with each payment in the `EkomOrderPayments` table. It checks the callback with the `secretCode` and `merchantId` that were used when the payment started, so a new secret code only affects new payments.
+- **A new secret code affects new payments only.** Ekom checks the callback with the `secretCode` and `merchantId` that were used when the payment started.
 - **Content Security Policy.** The page that sends the customer to Borgun runs a short script. If your site sets a CSP nonce, put it in `HttpContext.Items` under `CspNonce`, or under the key named in `Ekom:CspKey`, and Ekom adds it to the script.
 - **Settings the package does not use.** `BorgunSettings` also has `reportUrl`, `language` and `skipReceipt`. Setting them changes nothing. Ekom always asks Borgun to skip its receipt page.
 

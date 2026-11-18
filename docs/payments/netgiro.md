@@ -92,7 +92,7 @@ Ekom checks the call before it records anything:
 
 - `InvoiceNumber` must contain only digits.
 - When the call has `NetgiroSignature`: `TransactionId` must be present, `Status` must be `1` (unconfirmed) or `2` (confirmed), `TotalAmount` must equal the payment amount rounded to whole units, and `NetgiroSignature` must equal SHA-256 of `secret`, `ReferenceNumber`, `TransactionId`, `InvoiceNumber`, `TotalAmount` and `Status`, joined without separators.
-- When the call has no `NetgiroSignature`: `ConfirmationCode` must be present, and `Signature` must equal SHA-256 of `secret`, `ReferenceNumber`, `ConfirmationCode` and `InvoiceNumber`. The amount and status are not part of this signature, so Ekom cannot check them. It logs a warning and records the payment.
+- When the call has no `NetgiroSignature`: `ConfirmationCode` must be present, and `Signature` must equal SHA-256 of `secret`, `ReferenceNumber`, `ConfirmationCode` and `InvoiceNumber`.
 - The signature must not be the one Ekom sent with the payment request.
 
 | Netgiro call | Recorded on the order | Ekom answers |
@@ -139,7 +139,7 @@ After a test payment, look for the log line `Netgiro Payment Response - SUCCESS`
 
 - **Whole amounts.** Ekom rounds `TotalAmount` and each item's `UnitPrice` and `Amount` to whole units, half away from zero. Each value is rounded on its own. By default Ekom sends one payment item. See [What Ekom does when you submit payment](../guides/checkout.md#what-ekom-does-when-you-submit-payment).
 - **No currency is sent.** Netgiro gets amounts only. Ekom records the payment in the order's currency, or `ISK` when none is set.
-- **The secret is stored with each payment.** Ekom saves `applicationId` and `secret` in the payment's provider data in the database, and verifies the callback with the saved values. If you change the secret, payments started before the change are still verified with the old one.
+- **A new secret affects new payments only.** Ekom verifies the callback with the `applicationId` and `secret` that were in use when the payment started.
 - **The callback address comes from the request.** If your site runs behind a proxy, make sure the checkout request carries the public scheme and host. Otherwise Netgiro gets an address it cannot reach, and no payment is recorded.
 - **Content Security Policy.** The page that sends the customer to Netgiro posts the form with a small inline script. If your site uses a nonce-based Content Security Policy, put the nonce in `HttpContext.Items` under `CspNonce`, or under the key set in `Ekom:CspKey`, and Ekom adds it to the script.
 - **Old events.** `Ekom.Payments.Netgiro.Events.Success` and `Events.Error` are obsolete and never raised. Use `OrderEvents.PaymentRecordedAsync`. See [React to recorded payments](../guides/payments.md#react-to-recorded-payments).

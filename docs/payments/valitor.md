@@ -123,13 +123,11 @@ Valitor's server must be able to reach `/ekom/payments/valitorresponse` on your 
 
 ## Limits and things to know
 
-- **Whole units only.** Ekom sends each line's unit price as a whole number and cuts off the decimals: `19.99` is sent as `19`. Ekom still records the full amount. Use this gateway with a currency without decimals, such as ISK, or with prices that have no decimals.
 - **Card loans need 30000.** When `loanType` is not `Disabled` and the total is below 30000 in the order's currency, the payment request fails with `ValitorAHKException`. It also fails when `merchantName` is empty. Checkout then sets the order back to Incomplete, see [If sending to payment fails](../guides/checkout.md#if-sending-to-payment-fails).
 - **Language.** Ekom sends `IS`, `EN`, `DA` or `DE`, taken from the node's `language` value. Any other language is sent as `IS`.
 - **Order lines.** Ekom sends one line per payment item, with its quantity, unit price and discount. By default that is one line with the order title and the total. To change the lines, use `CheckoutEvents.PaymentOrderItemsPreparingAsync`.
-- **Settings are saved with the payment.** Ekom stores the Valitor settings, `verificationCode` included, with each payment in the `EkomOrderPayments` table. It checks the callback with the `verificationCode` that was used when the payment started, so a new code only affects new payments.
+- **A new verification code affects new payments only.** Ekom checks the callback with the `verificationCode` that was used when the payment started.
 - **Content Security Policy.** The page that sends the customer to Valitor runs a short script. If your site sets a CSP nonce, put it in `HttpContext.Items` under `CspNonce`, or under the key named in `Ekom:CspKey`, and Ekom adds it to the script.
-- **`ValitorResponseHelper`.** Its `Verify` method checks the signature with MD5, while the callback checks it with SHA-256. Do not use it to decide whether an order is paid. Read the payment on the order instead.
 - **Settings the package does not use.** `ValitorSettings` also has `reportUrl` and `paymentSuccessfulURLText`. Setting them changes nothing.
 
 ## Related pages
