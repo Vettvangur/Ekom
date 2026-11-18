@@ -1,0 +1,35 @@
+# GitBook settings for the documentation space. See gitbook-docs.yaml in the repository root.
+#
+# The redirects send the addresses of the previous GitBook site to the pages that replaced them.
+# Left side: the old address, without the leading slash. Right side: a file in this folder.
+redirects:
+  what-is-ekom: README.md
+  settings: reference/configuration-reference.md
+  quick-start: getting-started/quick-start.md
+
+  apis-headless/public-endpoints: reference/http-api.md
+  apis-headless/backoffice-endpoints: reference/http-api.md
+
+  functionality/payment-providers: guides/providers.md
+  functionality/shipping-providers: guides/shipping.md
+  functionality/discounts: guides/discounts.md
+
+  how-to/add-to-cart: examples/storefront.md
+  how-to/remove-update-orderline: examples/storefront.md
+  how-to/query-filter-and-render-products: examples/storefront.md
+  how-to/query-and-render-categories: examples/storefront.md
+  how-to/render-and-update-payment-provider: examples/storefront.md
+  how-to/render-and-update-shipping-provider: examples/storefront.md
+  how-to/render-prices-and-discounts: examples/storefront.md
+  how-to/managing-inventory: guides/stock.md
+
+  extend/extend-product-category: examples/custom-models.md
+  events/events: examples/events.md
+  helpers/coming-soon: README.md
+
+  payments/ekom-payments-checkout: guides/payments.md
+  payments/payment-provider-settings: guides/providers.md
+  payments/events: guides/payments.md
+  payments/orderservice: guides/payments.md
+  payments/creating-your-own-payment-provider: guides/payments.md
+  payments/other-settings: reference/configuration-reference.md
