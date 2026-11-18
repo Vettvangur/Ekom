@@ -313,7 +313,17 @@ public class OrderInfo : IOrderInfo
     }
 
     /// <inheritdoc />
-    public ICalculatedPrice ChargedVat => Vat;
+    public ICalculatedPrice ChargedVat
+    {
+        get
+        {
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
+
+            // Every part of the total, so that GrandTotalWithOutVat + ChargedVat is always GrandTotal.
+            // Vat, above, leaves out the payment fee, and shipping unless ApplyVatOnShipping is set.
+            return new CalculatedPrice(GrandTotal.Value - GrandTotalWithOutVat.Value, StoreInfo.Currency);
+        }
+    }
 
 
     /// <inheritdoc />
@@ -373,6 +383,20 @@ public class OrderInfo : IOrderInfo
         }
     }
 
+    /// <inheritdoc />
+    public ICalculatedPrice DiscountAmountWithVat
+    {
+        get
+        {
+            using var calculationScope = OrderPricingCalculationScope.Enter(this);
+            var discountAmount = OrderLines.Sum(x => x.Amount.BeforeDiscountWithVat.Value - x.Amount.WithVat.Value);
+
+            return new CalculatedPrice(
+                discountAmount,
+                StoreInfo.Currency);
+        }
+    }
+
     public ICalculatedPrice DiscountAmountWithOutVat
     {
         get
@@ -412,6 +436,19 @@ public class OrderInfo : IOrderInfo
             && (giftcard.Claimed
                 || !giftcard.ValidUntil.HasValue
                 || giftcard.ValidUntil.Value.ToUniversalTime() > DateTime.UtcNow);
+    }
+
+    /// <inheritdoc />
+    public ICalculatedPrice ProductDiscountAmountWithVat
+    {
+        get
+        {
+            decimal amount = OrderLines
+                .Where(line => !line.Product.DisableDiscounts)
+                .Sum(line => line.Product.Price.BeforeDiscountWithVat.Value - line.Product.Price.WithVat.Value);
+
+            return new CalculatedPrice(amount, StoreInfo.Currency);
+        }
     }
 
     public ICalculatedPrice ProductDiscountAmountWithOutVat

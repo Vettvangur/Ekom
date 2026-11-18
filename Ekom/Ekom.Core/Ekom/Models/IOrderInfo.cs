@@ -84,23 +84,34 @@ public interface IOrderInfo
     /// </summary>
     ICalculatedPrice Vat { get; }
     /// <summary>
-    /// Total amount of value added tax in order.
-    /// This counts up all vat whether it's included in item prices or not.
-    /// Includes Vat from shipping providers and payment providers.
+    /// Total amount of value added tax in the order: order lines, shipping and the payment fee.
+    /// It is the difference between <see cref="GrandTotal"/> and the same total without VAT.
     /// </summary>
     ICalculatedPrice ChargedVat { get; }
     /// <summary>
-    /// Total monetary value of discount with vat in order
+    /// Total monetary value of discount in order, as the store shows prices: with VAT when the store's
+    /// prices include VAT, without VAT when they do not. For a fixed meaning use
+    /// <see cref="DiscountAmountWithVat"/> or <see cref="DiscountAmountWithOutVat"/>.
     /// </summary>
     ICalculatedPrice DiscountAmount { get; }
+    /// <summary>
+    /// Total monetary value of discount with vat in order.
+    /// <c>SubTotal.WithVat</c> minus this is <see cref="OrderLineTotal"/>.
+    /// </summary>
+    ICalculatedPrice DiscountAmountWithVat { get; }
     /// <summary>
     /// Total monetary value of discount without vat in order
     /// </summary>
     ICalculatedPrice DiscountAmountWithOutVat { get; }
     /// <summary>
-    /// Total monetary value of product discount with vat in order
+    /// Total monetary value of product discount in order, as the store shows prices: with VAT when the
+    /// store's prices include VAT, without VAT when they do not.
     /// </summary>
     ICalculatedPrice ProductDiscountAmount { get; }
+    /// <summary>
+    /// Total monetary value of product discount with vat in order
+    /// </summary>
+    ICalculatedPrice ProductDiscountAmountWithVat { get; }
     /// <summary>
     /// Total monetary value of product discount without vat in order
     /// </summary>

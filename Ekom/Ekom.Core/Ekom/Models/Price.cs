@@ -169,6 +169,9 @@ public class Price : IPrice
     public ICalculatedPrice BeforeDiscountWithOutVat
         => CreateSimplePrice(GetTotals().BeforeDiscount.Net);
 
+    public ICalculatedPrice BeforeDiscountWithVat
+        => CreateSimplePrice(GetTotals().BeforeDiscount.Gross);
+
     public ICalculatedPrice AfterDiscount
     {
         get
