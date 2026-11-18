@@ -19,7 +19,7 @@
 
     <PackageReleaseNotes></PackageReleaseNotes>
     <Copyright>Copyright 2026</Copyright>
-    <PackageTags>umbraco;ecommerce;ekom;algolia;search;plugin;extension</PackageTags>
+    <PackageTags>umbraco;ecommerce;ekom;algolia;search;plugin;extension;umbraco-marketplace</PackageTags>
 
     <!-- Symbols & SourceLink -->
     <IncludeSymbols>true</IncludeSymbols>

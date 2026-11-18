@@ -1,6 +1,6 @@
 {
   "$schema": "../../umbraco-package-schema.json",
-  "id": "Ekom.Web.U17",
+  "id": "Ekom.U17",
   "name": "Ekom Web U17",
   "extensions": [
     {

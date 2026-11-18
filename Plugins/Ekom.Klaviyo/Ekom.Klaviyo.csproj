@@ -17,7 +17,7 @@
 
         <PackageReleaseNotes></PackageReleaseNotes>
         <Copyright>Copyright 2025</Copyright>
-        <PackageTags>umbraco;ecommerce;ekom;b2c;b2b;klaviyo,plugin,extension</PackageTags>
+        <PackageTags>umbraco;ecommerce;ekom;b2c;b2b;klaviyo;plugin;extension;umbraco-marketplace</PackageTags>
 
         <!-- Icon & README -->
         <PackageIcon>images/Ekom_Logo.png</PackageIcon>
