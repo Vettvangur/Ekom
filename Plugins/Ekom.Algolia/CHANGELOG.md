@@ -30,6 +30,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.78](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.77...Ekom.Algolia-v0.2.78) (2026-11-20)
+
+
+### Bug Fixes
+
+* **algolia:** limit content indexes to an optional root node ([#1242](https://github.com/Vettvangur/Ekom/issues/1242)) ([e599d2e](https://github.com/Vettvangur/Ekom/commit/e599d2e2ffbbf6006df04422fb6b6f309f5d2f3a))
+
 ## [0.2.77](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.76...Ekom.Algolia-v0.2.77) (2026-11-18)
 
 
