@@ -6,6 +6,7 @@
 
 * **prices:** coalesce table-price notifications, resolve variant parents in the background, and batch price reads during indexing.
 
+* **algolia:** limit a content index to a root node and its descendants with `ContentIndexing:Indexes[*]:RootKey`.
 * **algolia:** support `|splitcomma` for comma-separated product properties and facet attributes.
 * **algolia:** automatically facet filterable metafields and rebuild product indexes when their definitions change.
 * **algolia:** add optional variant-level product indexing for SKU search.
