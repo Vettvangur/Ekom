@@ -83,6 +83,13 @@ public enum AlgoliaOversizedRecordBehavior
 public sealed class AlgoliaContentIndexOptions
 {
     public required string IndexName { get; set; }
+
+    /// <summary>
+    /// Optional key of a content node that limits the index to that node and its descendants.
+    /// Leave empty to index every node of the configured content types.
+    /// </summary>
+    public Guid? RootKey { get; set; }
+
     public IReadOnlyCollection<string> CustomRanking { get; init; } = [];
     public IReadOnlyCollection<AlgoliaContentTypeOptions> ContentTypes { get; init; } = [];
 }

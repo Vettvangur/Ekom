@@ -62,7 +62,8 @@ jobs:
           $ErrorActionPreference = "Stop"
 
           function Get-SemVerFromTag([string] $tag) {
-            if ($tag -match 'v(?<ver>\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?)$') { return $Matches['ver'] }
+            # Ekom 0.2 maintenance releases use a fourth number (e.g. 0.2.71.1) because later 0.2.x numbers belong to the Ekom 1.x line.
+            if ($tag -match 'v(?<ver>\d+\.\d+\.\d+(?:\.\d+)?(?:-[0-9A-Za-z\.-]+)?)$') { return $Matches['ver'] }
             throw "Could not parse SemVer from tag '$tag'"
           }
 

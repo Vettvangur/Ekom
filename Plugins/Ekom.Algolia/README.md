@@ -133,6 +133,7 @@ public sealed class ProductSearchController
         "Indexes": [
           {
             "IndexName": "SearchIndex",
+            "RootKey": "00000000-0000-0000-0000-000000000000",
             "CustomRanking": [
               "desc(updateDateUnixSecond)"
             ],
@@ -281,6 +282,7 @@ public sealed class ProductSearchController
 | `ContentIndexing:OversizedRecords:MaxSizeBytes` | `int` | `100000` | Maximum serialized UTF-8 size of one content record. |
 | `ContentIndexing:Indexes` | `object[]` | `[]` | Content indexes to maintain. Index names resolve as `{IndexName}.{Environment}.{Culture}`. |
 | `ContentIndexing:Indexes[*]:CustomRanking` | `string[]` | `[]` | Ordered Algolia custom-ranking expressions applied to each resolved primary content index. Omit or leave empty to preserve the setting managed in Algolia. |
+| `ContentIndexing:Indexes[*]:RootKey` | `Guid` | none | Optional content node key. When set, the index only includes that node and its descendants, so sites that share content type aliases can keep separate indexes. Nodes moved outside the root are removed from the index on their next publish. If the key does not resolve, the index is skipped and a warning is logged. |
 | `ContentIndexing:Indexes[*]:ContentTypes[*]:Alias` | `string` | required | Umbraco content type alias to include in the content index. |
 | `ContentIndexing:Indexes[*]:ContentTypes[*]:Properties` | `string[]` | `[]` | Property aliases to index. Use `|unix` or `|unixms` for numeric dates, or `|striphtml` for searchable plain text from rich-text values. |
 | `Search:Enabled` | `bool` | `true` | Enables Algolia search services. |

@@ -28,6 +28,14 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## 0.2.71.1 (2026-11-20)
+
+Maintenance release for Ekom 0.2.x.
+
+### Bug Fixes
+
+* **algolia:** limit a content index to a root node and its descendants with `ContentIndexing:Indexes[*]:RootKey`.
+
 ## [0.2.71](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.70...Ekom.Algolia-v0.2.71) (2026-11-09)
 
 

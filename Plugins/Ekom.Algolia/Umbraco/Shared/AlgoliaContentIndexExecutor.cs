@@ -127,6 +127,9 @@ internal sealed class AlgoliaContentIndexExecutor
 
         foreach (var index in indexes)
         {
+            if (!TryGetRootId(index, out var rootId))
+                continue;
+
             foreach (var contentTypeAlias in GetConfiguredAliases(index))
             {
                 ct.ThrowIfCancellationRequested();
@@ -135,7 +138,7 @@ internal sealed class AlgoliaContentIndexExecutor
                 if (contentType is null)
                     continue;
 
-                var entities = GetAllOfType(contentType.Id);
+                var entities = GetAllOfType(contentType.Id).Where(x => IsAtOrUnderRoot(x, rootId));
                 var (upsertsByCulture, _) = BuildPerCultureBuckets(entities, allCultures);
 
                 foreach (var (culture, content) in upsertsByCulture)
@@ -208,7 +211,30 @@ internal sealed class AlgoliaContentIndexExecutor
         foreach (var index in _options.ContentIndexing.Indexes)
         {
             var configuredAliases = GetConfiguredAliases(index);
-            var indexEntities = entities.Where(x => configuredAliases.Contains(x.ContentType.Alias)).DistinctBy(x => x.Id).ToList();
+            var configuredEntities = entities.Where(x => configuredAliases.Contains(x.ContentType.Alias)).DistinctBy(x => x.Id).ToList();
+            if (configuredEntities.Count == 0)
+                continue;
+
+            if (!TryGetRootId(index, out var rootId))
+                continue;
+
+            var indexEntities = new List<IContent>(configuredEntities.Count);
+            var outsideRootKeys = new List<string>();
+            foreach (var entity in configuredEntities)
+            {
+                if (IsAtOrUnderRoot(entity, rootId))
+                    indexEntities.Add(entity);
+                else
+                    outsideRootKeys.Add(entity.Key.ToString());
+            }
+
+            // A node can be moved out of the configured root, so remove it from this index.
+            if (outsideRootKeys.Count > 0)
+            {
+                foreach (var culture in allCultures)
+                    await DeleteAsync(outsideRootKeys, culture, index, ct).ConfigureAwait(false);
+            }
+
             if (indexEntities.Count == 0)
                 continue;
 
@@ -591,6 +617,41 @@ internal sealed class AlgoliaContentIndexExecutor
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x, _ => AlgoliaContentFieldTransform.None, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private bool TryGetRootId(AlgoliaContentIndexOptions index, out int? rootId)
+    {
+        rootId = null;
+        if (index.RootKey is not { } rootKey || rootKey == Guid.Empty)
+            return true;
+
+        var root = _contentService.GetById(rootKey);
+        if (root is null || root.Trashed)
+        {
+            _logger.LogWarning(
+                "Algolia content index {IndexName} skipped because RootKey {RootKey} does not match a content node outside the recycle bin.",
+                index.IndexName,
+                rootKey);
+            return false;
+        }
+
+        rootId = root.Id;
+        return true;
+    }
+
+    private static bool IsAtOrUnderRoot(IContent content, int? rootId)
+    {
+        if (rootId is not { } id || content.Id == id)
+            return true;
+
+        var segment = id.ToString(CultureInfo.InvariantCulture);
+        foreach (var part in content.Path.Split(','))
+        {
+            if (part == segment)
+                return true;
+        }
+
+        return false;
     }
 
     private static HashSet<string> GetConfiguredAliases(AlgoliaContentIndexOptions index)
