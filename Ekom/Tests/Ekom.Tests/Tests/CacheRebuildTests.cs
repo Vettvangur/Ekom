@@ -74,7 +74,7 @@ public class CacheRebuildTests
         using (fixture.Config.CacheRebuild.Begin())
         {
             fixture.Cache.ClearCache();
-            Assert.Throws<InvalidOperationException>(() => fixture.Cache.FillCache());
+            Assert.ThrowsAny<InvalidOperationException>(() => fixture.Cache.FillCache());
         }
 
         Assert.Same(originalDictionary, fixture.Cache.Cache);

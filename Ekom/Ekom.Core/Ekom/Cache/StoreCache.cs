@@ -47,7 +47,7 @@ class StoreCache : BaseCache<IStore>
         }
 
         if (count == 0)
-            throw new InvalidOperationException("No published Ekom stores were found. The cache rebuild cannot be published.");
+            throw new EkomNotConfiguredException("No published Ekom stores were found. The cache rebuild cannot be published.");
 
         stopwatch.Stop();
         _logger.LogInformation(
