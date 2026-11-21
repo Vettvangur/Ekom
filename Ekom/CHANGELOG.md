@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* **cache:** retry the startup cache build after any failure, not only after a content change. A database timeout while the caches were filled at startup left the store empty, with every request failing on `No store found in cache`, until the caches were rebuilt from the backoffice. A site with no Ekom root or store yet is not retried.
+
 * **orders:** exclude linked-group parents from order-line merging by checking child-to-parent references, keeping standalone additions separate even when the parent link is empty.
 
 * **orders:** match the parent link when adding order lines, so standalone products do not merge into linked child lines with the same product or variant.
