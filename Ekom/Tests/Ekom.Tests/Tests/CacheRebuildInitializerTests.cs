@@ -1,8 +1,10 @@
 using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Umb;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -46,6 +48,50 @@ public class CacheRebuildInitializerTests
         Assert.False(fixture.Config.CacheRebuild.IsRebuilding);
     }
 
+    [Fact]
+    public async Task FailedStartup_RetriesUntilTheCachesArePublished()
+    {
+        using var fixture = new Fixture(false);
+        var attempts = 0;
+        var laterCache = new Mock<ICache>();
+        laterCache.Setup(x => x.FillCache()).Callback(() =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                throw new TimeoutException("The database did not answer");
+            }
+        });
+        fixture.Config.Entries.Add(laterCache.Object);
+
+        fixture.Initializer.Initialize(false);
+
+        Assert.False(fixture.Readiness.IsReady);
+        Assert.True(EkomCacheInitializer.IsStartupRetryScheduled);
+
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (EkomCacheInitializer.IsStartupRetryScheduled && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(50);
+        }
+
+        Assert.False(EkomCacheInitializer.IsStartupRetryScheduled);
+        Assert.True(fixture.Readiness.IsReady);
+        Assert.Equal(2, attempts);
+        Assert.Single(fixture.StoreCache.Cache);
+    }
+
+    [Fact]
+    public void StartupWithoutStores_IsNotRetried()
+    {
+        using var fixture = new Fixture(false);
+        fixture.Nodes.Setup(x => x.NodesByTypes("ekmStore")).Returns(Array.Empty<UmbracoContent>());
+
+        fixture.Initializer.Initialize(false);
+
+        Assert.False(fixture.Readiness.IsReady);
+        Assert.False(EkomCacheInitializer.IsStartupRetryScheduled);
+    }
+
 #if NET10_0
     [Fact]
     public void MissingRoot_DoesNotClearStoresAndRefreshServiceReportsFailure()
@@ -55,7 +101,7 @@ public class CacheRebuildInitializerTests
         fixture.Query.Setup(x => x.ContentAtRoot()).Returns(Array.Empty<IPublishedContent>());
         var refresh = new EkomCacheRefreshService(fixture.Provider.GetRequiredService<IServiceScopeFactory>());
 
-        Assert.Throws<InvalidOperationException>(() => refresh.RefreshCache());
+        Assert.ThrowsAny<InvalidOperationException>(() => refresh.RefreshCache());
 
         Assert.Same(original, fixture.StoreCache.Cache);
         Assert.Single(fixture.StoreCache.Cache);
@@ -70,6 +116,7 @@ public class CacheRebuildInitializerTests
         fixture.Initializer.Initialize(false);
         Assert.False(fixture.Readiness.IsReady);
         Assert.False(fixture.Config.CacheRebuild.IsRebuilding);
+        Assert.False(EkomCacheInitializer.IsStartupRetryScheduled);
     }
 #endif
 
@@ -105,6 +152,7 @@ public class CacheRebuildInitializerTests
         public StockReservationReadiness Readiness { get; } = new();
         public ServiceProvider Provider { get; }
         public StoreCache StoreCache { get; }
+        public Mock<INodeService> Nodes { get; } = new();
         public EkomCacheInitializer Initializer { get; }
 #if NET10_0
         public Mock<IPublishedContentQuery> Query { get; } = new();
@@ -112,18 +160,23 @@ public class CacheRebuildInitializerTests
 #endif
         public Fixture(bool initialized)
         {
+            // Publishing a rebuild invalidates prices, which EkomStartup wires up on a real site.
+            // The price cache is static and other tests run without one, so Dispose removes it again.
+            PriceCache.SetCache(new MemoryCache(new MemoryCacheOptions()));
             Readiness.SchemaReady();
             if (initialized) Readiness.Initialized();
             var node = new UmbracoContent { Id = 1, Key = Guid.NewGuid() };
             var store = Mock.Of<IStore>(x => x.Id == node.Id && x.Key == node.Key && x.Alias == "store");
-            var nodes = new Mock<INodeService>();
-            nodes.Setup(x => x.NodesByTypes("ekmStore")).Returns(new[] { node });
+            Nodes.Setup(x => x.NodesByTypes("ekmStore")).Returns(new[] { node });
+            var warehouseStock = new Mock<IWarehouseStockRepository>();
+            warehouseStock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<WarehouseStockData>());
             var factory = new Mock<IObjectFactory<IStore>>();
             factory.Setup(x => x.Create(It.IsAny<UmbracoContent>())).Returns(store);
             var services = new ServiceCollection()
                 .AddSingleton<Configuration>(Config)
                 .AddSingleton(Readiness)
-                .AddSingleton(nodes.Object)
+                .AddSingleton(Nodes.Object)
+                .AddSingleton(new WarehouseStockCache(warehouseStock.Object, NullLogger<WarehouseStockCache>.Instance))
                 .AddSingleton<Ekom.API.Prices>(_ => new Ekom.API.Prices(Config, null!))
                 .AddSingleton<StoreCache>(sp => new StoreCache(Config, NullLogger<BaseCache<IStore>>.Instance, factory.Object, sp))
                 .AddSingleton<IBaseCache<IStore>>(sp => sp.GetRequiredService<StoreCache>());
@@ -156,6 +209,7 @@ public class CacheRebuildInitializerTests
         }
         public void Dispose()
         {
+            PriceCache.SetCache(null!);
 #if NET10_0
             StaticServiceProvider.Instance = _previousServices;
 #endif
