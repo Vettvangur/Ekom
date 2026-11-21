@@ -208,3 +208,6 @@ internal sealed class CacheRebuildCoordinator
 
 /// <summary>A live cache mutation overlapped the rebuild, so it was discarded and can be retried.</summary>
 internal sealed class CacheRebuildConflictException(string message) : InvalidOperationException(message);
+
+/// <summary>The site has no Ekom root or store yet, so there is nothing to build and retrying cannot help.</summary>
+internal sealed class EkomNotConfiguredException(string message) : InvalidOperationException(message);

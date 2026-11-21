@@ -1,4 +1,5 @@
 using Ekom.Cache;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
@@ -60,9 +61,10 @@ internal sealed class EkomCacheInitializer
                 // A requested rebuild must report failure to the backoffice caller.
                 if (isRestarting) throw;
 
-                // Nothing is live yet after a failed startup build, so content that kept changing
-                // must not leave the catalog empty until someone rebuilds it by hand.
-                if (scheduleRetry && !wasInitialized && ex is CacheRebuildConflictException)
+                // Nothing is live yet after a failed startup build, so a failure that can pass on its own
+                // (content that kept changing, a database that timed out) must not leave the catalog empty
+                // until someone rebuilds it by hand. A site with no store configured yet is left alone.
+                if (scheduleRetry && !wasInitialized && ex is not (EkomNotConfiguredException or EkomRootNodeException))
                 {
                     ScheduleStartupRetry();
                 }
@@ -71,6 +73,8 @@ internal sealed class EkomCacheInitializer
     }
 
     private static int _startupRetryScheduled;
+
+    internal static bool IsStartupRetryScheduled => Volatile.Read(ref _startupRetryScheduled) == 1;
 
     private void ScheduleStartupRetry()
     {
