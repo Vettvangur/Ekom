@@ -1,6 +1,5 @@
 using Ekom.Services;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -26,11 +25,8 @@ public sealed class CheckoutPaymentAttemptUrlTests
         using (operation.Enter())
         {
             var uri = new Uri(controller.ReturnUrl(orderId, "cancel"));
-            var values = QueryHelpers.ParseQuery(uri.Query);
-            Assert.Equal("/store/ekom/checkout/payment-return", uri.AbsolutePath);
-            Assert.Equal(orderId.ToString(), values["orderId"]);
-            Assert.Equal(attemptId.ToString(), values["attemptId"]);
-            Assert.Equal("cancel", values["outcome"]);
+            Assert.Equal($"/store/ekom/checkout/payment-return/cancel/{orderId}/{attemptId}", uri.AbsolutePath);
+            Assert.Equal(string.Empty, uri.Query);
             Assert.Equal(attemptId, controller.AttemptId);
         }
 

@@ -36,6 +36,29 @@ public sealed class PaymentReturnDataTests
     }
 
     [Fact]
+    public async Task OrderIdInPathSurvivesAProviderThatReplacesTheQueryString()
+    {
+        // Teya drops the return URL's query string and appends its own status and orderid.
+        var orderId = Guid.NewGuid();
+        var context = new DefaultHttpContext();
+        context.Request.Method = HttpMethods.Post;
+        context.Request.Path = $"/ekom/checkout/payment-return/cancel/{orderId}";
+        context.Request.QueryString = new QueryString("?status=CANCEL&orderid=32204");
+        var controller = new EkomCheckoutApiController(NullLogger<EkomCheckoutApiController>.Instance, null!)
+        {
+            ControllerContext = new ControllerContext { HttpContext = context },
+        };
+
+        var result = Assert.IsType<RedirectResult>(await controller.PaymentReturnAsync("cancel", orderId));
+
+        var values = EkomCheckoutApiController.ParsePaymentReturnData(result.Url[(result.Url.IndexOf('?'))..]);
+        Assert.Equal(orderId.ToString(), values["orderId"]);
+        Assert.Equal("cancel", values["outcome"]);
+        Assert.Equal("32204", values["orderid"]);
+        Assert.Equal("CANCEL", values["status"]);
+    }
+
+    [Fact]
     public void DescribesHowACancelReturnArrived()
     {
         var callbackData = new Dictionary<string, string?>(StringComparer.Ordinal)
