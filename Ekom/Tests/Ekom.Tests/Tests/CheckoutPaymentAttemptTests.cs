@@ -762,6 +762,65 @@ public sealed class CheckoutPaymentAttemptTests
     }
 
     [Fact]
+    public async Task CustomerDetailsChangedAfterSubmissionCompleteWithThePaidDetails()
+    {
+        using var f = new Fixture();
+        var attempt = await f.SubmittedAsync();
+        var paid = await f.ReadAsync();
+        using (var db = f.Database.Factory.GetDatabase())
+        {
+            var json = JObject.Parse(paid.OrderInfo);
+            json["CustomerInformation"] = new JObject { ["Customer"] = new JObject { ["Name"] = "Newer Name" } };
+            await db.GetTable<OrderData>().Where(x => x.UniqueId == f.OrderId)
+                .Set(x => x.OrderInfo, json.ToString(Formatting.None))
+                .Set(x => x.CustomerName, "Newer Name").Set(x => x.CustomerEmail, "newer@example.test").UpdateAsync();
+        }
+
+        OrderData? completedWith = null;
+        Assert.True(await f.Service.CompleteAsync(f.OrderId, attempt.AttemptId, async () => completedWith = await f.ReadAsync()));
+
+        Assert.NotNull(completedWith);
+        Assert.Equal(paid.CustomerName, completedWith!.CustomerName);
+        Assert.Equal(paid.CustomerEmail, completedWith.CustomerEmail);
+        Assert.True(CheckoutPaymentAttemptService.SamePurchase(paid.OrderInfo, completedWith.OrderInfo));
+        using var read = f.Database.Factory.GetDatabase();
+        Assert.Equal(CheckoutPaymentAttemptState.Completed,
+            (await read.GetTable<CheckoutPaymentAttemptData>().SingleAsync(x => x.AttemptId == attempt.AttemptId)).State);
+        var note = Assert.Single(await read.GetTable<OrderActivityLog>().ToListAsync(),
+            x => x.Log.Contains("Customer details were changed after payment was submitted", StringComparison.Ordinal));
+        Assert.Contains("Customer.Name=Newer Name", note.Log, StringComparison.Ordinal);
+        Assert.Equal(OrderActivityLogType.Alert, note.LogType);
+    }
+
+    [Theory]
+    [InlineData("total")]
+    [InlineData("purchase")]
+    public async Task CustomerDetailsChangedWithAnotherChangeStillNeedsReconciliation(string other)
+    {
+        using var f = new Fixture();
+        var attempt = await f.SubmittedAsync();
+        using (var db = f.Database.Factory.GetDatabase())
+        {
+            var json = JObject.Parse((await f.ReadAsync()).OrderInfo);
+            json["CustomerInformation"] = new JObject { ["Customer"] = new JObject { ["Name"] = "Newer Name" } };
+            if (other == "purchase") json["Giftcards"] = JArray.FromObject(new[] { new Giftcard { Code = "added", Amount = 1 } });
+            var update = db.GetTable<OrderData>().Where(x => x.UniqueId == f.OrderId)
+                .Set(x => x.OrderInfo, json.ToString(Formatting.None)).Set(x => x.CustomerName, "Newer Name");
+            if (other == "total") update = update.Set(x => x.TotalAmount, 1m);
+            await update.UpdateAsync();
+        }
+
+        var completed = false;
+        Assert.False(await f.Service.CompleteAsync(f.OrderId, attempt.AttemptId, () => { completed = true; return Task.CompletedTask; }));
+
+        Assert.False(completed);
+        Assert.Equal("Newer Name", (await f.ReadAsync()).CustomerName);
+        using var read = f.Database.Factory.GetDatabase();
+        Assert.Equal(CheckoutPaymentAttemptState.ReconciliationRequired,
+            (await read.GetTable<CheckoutPaymentAttemptData>().SingleAsync(x => x.AttemptId == attempt.AttemptId)).State);
+    }
+
+    [Fact]
     public async Task CompletionIsIdempotentAndFailedCompletionBlocksEditsAndRelease()
     {
         using var f = new Fixture();

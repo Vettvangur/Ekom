@@ -532,10 +532,16 @@ internal sealed partial class CheckoutPaymentAttemptService
             }
         }
         if (active.AttemptId == attemptId && active.State == CheckoutPaymentAttemptState.Completed) return true;
+        // A customer who went back from the payment page, changed their details and then paid on the
+        // old page has paid for the frozen purchase. When nothing else differs, the order is completed
+        // with the details it was paid with, and the newer details are noted on the order.
+        var paidCustomer = active.AttemptId == attemptId &&
+            active.State is CheckoutPaymentAttemptState.Submitted or CheckoutPaymentAttemptState.CompletionPending
+            ? ReadPaidCustomerDetails(active, data) : null;
         if (active.AttemptId != attemptId ||
             active.State is not (CheckoutPaymentAttemptState.Submitted or CheckoutPaymentAttemptState.CompletionPending) ||
-            active.SubmittedOrderInfo == null || !SamePurchase(active.SubmittedOrderInfo, data.OrderInfo) ||
-            !SameOrderData(active.SubmittedOrderData, data) ||
+            active.SubmittedOrderInfo == null ||
+            paidCustomer == null && (!SamePurchase(active.SubmittedOrderInfo, data.OrderInfo) || !SameOrderData(active.SubmittedOrderData, data)) ||
             !await HoldsActiveAsync(db, JsonConvert.DeserializeObject<List<string>>(active.ReservationIds) ?? [],
                 active.State == CheckoutPaymentAttemptState.CompletionPending, ct).ConfigureAwait(false))
         {
@@ -544,6 +550,32 @@ internal sealed partial class CheckoutPaymentAttemptService
         }
         scope.AttemptId = active.AttemptId;
         scope.PreserveOwnership = true;
+        if (paidCustomer != null)
+        {
+            var restored = await db.GetTable<OrderData>()
+                .Where(x => x.UniqueId == orderId && x.PaidDate == null &&
+                    db.GetTable<CheckoutPaymentOperationData>().Any(o => o.OrderId == x.UniqueId && o.Owner == scope.Owner))
+                .Set(x => x.OrderInfo, paidCustomer.OrderInfo)
+                .Set(x => x.CustomerId, paidCustomer.Submitted.CustomerId)
+                .Set(x => x.CustomerEmail, paidCustomer.Submitted.CustomerEmail)
+                .Set(x => x.CustomerName, paidCustomer.Submitted.CustomerName)
+                .Set(x => x.CustomerUsername, paidCustomer.Submitted.CustomerUsername)
+                .Set(x => x.ShippingCountry, paidCustomer.Submitted.ShippingCountry)
+                .Set(x => x.UpdateDate, DateTime.Now)
+                .UpdateAsync(ct).ConfigureAwait(false);
+            if (restored != 1)
+            {
+                scope.PreserveOwnership = false;
+                await ReconciliationAsync(orderId, attemptId, "Customer details changed after payment was submitted and could not be restored").ConfigureAwait(false);
+                return false;
+            }
+            CheckoutPaymentOperationScope.ForgetPersistedOrder(orderId);
+            ClearCache(orderId);
+            _logger.LogInformation("Payment completes with the customer details it was submitted with. OrderId: {OrderId}; AttemptId: {AttemptId}", orderId, attemptId);
+            await LogAsync(orderId,
+                $"Customer details were changed after payment was submitted. The order is completed with the details it was paid with. Changes not applied: {paidCustomer.Changes}",
+                OrderActivityLogType.Alert).ConfigureAwait(false);
+        }
         await SetStateAsync(db, active.AttemptId, CheckoutPaymentAttemptState.CompletionPending, ct).ConfigureAwait(false);
         scope.PreserveOwnership = false;
         try
@@ -1042,6 +1074,42 @@ internal sealed partial class CheckoutPaymentAttemptService
         }
         return JToken.DeepEquals(Normalize(left), Normalize(right));
     }
+
+    private sealed record PaidCustomerDetails(OrderData Submitted, string OrderInfo, string Changes);
+
+    // Returns the order with the submitted customer details put back, when those details are the
+    // only difference between the frozen purchase and the current order. Otherwise null.
+    private static PaidCustomerDetails? ReadPaidCustomerDetails(CheckoutPaymentAttemptData attempt, OrderData current)
+    {
+        if (attempt.SubmittedOrderInfo == null || attempt.SubmittedOrderData == null) return null;
+        var submitted = JsonConvert.DeserializeObject<OrderData>(attempt.SubmittedOrderData);
+        if (submitted == null || !SameOrderIdentity(submitted, current)) return null;
+        if (SamePurchase(attempt.SubmittedOrderInfo, current.OrderInfo) && SameOrderData(attempt.SubmittedOrderData, current)) return null;
+
+        const string customer = nameof(OrderInfo.CustomerInformation);
+        var paid = JObject.Parse(attempt.SubmittedOrderInfo)[customer];
+        var json = JObject.Parse(current.OrderInfo);
+        var changed = json[customer];
+        if (paid == null) json.Remove(customer);
+        else json[customer] = paid.DeepClone();
+        var restored = json.ToString(Formatting.None);
+        if (!SamePurchase(attempt.SubmittedOrderInfo, restored)) return null;
+
+        var changes = new List<string>();
+        foreach (var value in (changed as JContainer)?.DescendantsAndSelf().OfType<JValue>() ?? [])
+        {
+            var path = value.Path.StartsWith(customer + ".", StringComparison.Ordinal) ? value.Path[(customer.Length + 1)..] : value.Path;
+            var before = paid?.SelectToken(path);
+            if (!JToken.DeepEquals(before, value) && !(before == null && string.IsNullOrEmpty(value.ToString())))
+                changes.Add($"{path}={value}");
+        }
+        return new PaidCustomerDetails(submitted, restored, changes.Count == 0 ? "none recorded" : string.Join("; ", changes));
+    }
+
+    private static bool SameOrderIdentity(OrderData submitted, OrderData current)
+        => submitted.UniqueId == current.UniqueId && submitted.ReferenceId == current.ReferenceId &&
+            submitted.OrderNumber == current.OrderNumber && submitted.TotalAmount == current.TotalAmount &&
+            submitted.Currency == current.Currency && submitted.StoreAlias == current.StoreAlias;
 
     private static bool SameOrderData(string? snapshot, OrderData current)
     {
