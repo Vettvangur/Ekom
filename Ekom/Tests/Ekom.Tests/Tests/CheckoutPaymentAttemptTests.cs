@@ -384,6 +384,41 @@ public sealed class CheckoutPaymentAttemptTests
     }
 
     [Fact]
+    public async Task RefusalBecauseCheckoutIsLockedIsWrittenToTheActivityLogOnce()
+    {
+        using var f = new Fixture();
+        var order = new OrderInfo(await f.ReadAsync());
+        await using var running = await f.Service.BeginCheckoutAsync(order);
+
+        for (var i = 0; i < 2; i++)
+        {
+            var conflict = await Assert.ThrowsAsync<CheckoutConflictException>(() => f.NewService().BeginCheckoutAsync(order));
+            Assert.Equal(CheckoutConflictReason.Busy, conflict.Reason);
+        }
+
+        using var db = f.Database.Factory.GetDatabase();
+        var entry = Assert.Single(await db.GetTable<OrderActivityLog>().ToListAsync(),
+            x => x.Log.Contains("checkout is locked", StringComparison.Ordinal));
+        Assert.Equal(f.OrderId, entry.Key);
+        Assert.Contains("action=payment; code=checkoutBusy", entry.Log, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task OpenSubmittedAttemptIsReplacedByANewCheckout()
+    {
+        using var f = new Fixture();
+        var old = await f.SubmittedAsync();
+        var order = new OrderInfo(await f.ReadAsync());
+        await using var checkout = await f.Service.BeginCheckoutAsync(order);
+        Assert.NotEqual(old.AttemptId, checkout.AttemptId);
+        Assert.Empty(order.ReservationIds);
+        Assert.Equal(10, await f.Database.StockAsync(f.StockKey));
+        using var db = f.Database.Factory.GetDatabase();
+        Assert.Equal(CheckoutPaymentAttemptState.Released,
+            (await db.GetTable<CheckoutPaymentAttemptData>().SingleAsync(x => x.AttemptId == old.AttemptId)).State);
+    }
+
+    [Fact]
     public async Task ExpiredAttemptIsReleasedBeforeFreshCheckoutIsAllocated()
     {
         using var f = new Fixture();

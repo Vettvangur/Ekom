@@ -36,7 +36,10 @@ internal sealed partial class CheckoutPaymentAttemptService
         _statusPersistenceHandlers = statusPersistenceHandlers?.ToArray() ?? Array.Empty<IOrderStatusPersistenceHandler>();
     }
 
-    public async Task<CheckoutPaymentOperationScope> BeginCheckoutAsync(IOrderInfo order, CancellationToken ct = default)
+    public Task<CheckoutPaymentOperationScope> BeginCheckoutAsync(IOrderInfo order, CancellationToken ct = default)
+        => RecordLockedAsync(order.UniqueId, "payment", () => BeginCheckoutCoreAsync(order, ct));
+
+    private async Task<CheckoutPaymentOperationScope> BeginCheckoutCoreAsync(IOrderInfo order, CancellationToken ct)
     {
         var scope = await AcquireAsync(order.UniqueId, ct).ConfigureAwait(false);
         try
@@ -56,13 +59,15 @@ internal sealed partial class CheckoutPaymentAttemptService
                 if (active.State == CheckoutPaymentAttemptState.CompletionPending ||
                     active.State == CheckoutPaymentAttemptState.ReconciliationRequired)
                     throw Conflict("Payment requires reconciliation before retrying checkout.", CheckoutConflictReason.PaymentReview);
-                if (active.State != CheckoutPaymentAttemptState.ReleasePending &&
-                    active.State != CheckoutPaymentAttemptState.Preparing &&
-                    !await HasExpiredAsync(db, active, data, ct).ConfigureAwait(false))
-                    throw Conflict("A payment attempt is already active. Cancel it before retrying.", CheckoutConflictReason.Busy);
-                var resetReason = active.State == CheckoutPaymentAttemptState.Preparing
-                    ? "Unsubmitted attempt before checkout retry"
-                    : "Expired or release-pending attempt before checkout retry";
+                // Paying again replaces an open attempt, as a basket edit does. A customer who left the
+                // payment page with the back button has no other way to end it. A payment that still
+                // arrives for the replaced attempt is sent to reconciliation.
+                var resetReason = active.State switch
+                {
+                    CheckoutPaymentAttemptState.Preparing => "Unsubmitted attempt before checkout retry",
+                    CheckoutPaymentAttemptState.Submitted => "Open payment attempt replaced by a new payment",
+                    _ => "Release-pending attempt before checkout retry",
+                };
                 data = await ReleaseOwnedAsync(db, scope, active, data, resetReason, ct).ConfigureAwait(false);
                 Apply(order, data);
             }
@@ -373,7 +378,10 @@ internal sealed partial class CheckoutPaymentAttemptService
         return await ReleaseOwnedAsync(db, scope, active, data, reason, ct).ConfigureAwait(false);
     }
 
-    public async Task<CheckoutPaymentOperationScope> BeginEditAsync(OrderInfo order, string reason, CancellationToken ct = default)
+    public Task<CheckoutPaymentOperationScope> BeginEditAsync(OrderInfo order, string reason, CancellationToken ct = default)
+        => RecordLockedAsync(order.UniqueId, reason, () => BeginEditCoreAsync(order, reason, ct));
+
+    private async Task<CheckoutPaymentOperationScope> BeginEditCoreAsync(OrderInfo order, string reason, CancellationToken ct)
     {
         var scope = await AcquireAsync(order.UniqueId, ct).ConfigureAwait(false);
         // Nested customer/provider saves during checkout must not release its own holds.
@@ -416,7 +424,10 @@ internal sealed partial class CheckoutPaymentAttemptService
         }
     }
 
-    public async Task<CheckoutPaymentOperationScope> BeginOrderInformationUpdateAsync(OrderInfo order, CancellationToken ct = default)
+    public Task<CheckoutPaymentOperationScope> BeginOrderInformationUpdateAsync(OrderInfo order, CancellationToken ct = default)
+        => RecordLockedAsync(order.UniqueId, "order information update", () => BeginOrderInformationUpdateCoreAsync(order, ct));
+
+    private async Task<CheckoutPaymentOperationScope> BeginOrderInformationUpdateCoreAsync(OrderInfo order, CancellationToken ct)
     {
         var nested = CheckoutPaymentOperationScope.Current?.OrderId == order.UniqueId;
         var scope = await AcquireAsync(order.UniqueId, orderInformationUpdate: true, ct).ConfigureAwait(false);
@@ -438,7 +449,10 @@ internal sealed partial class CheckoutPaymentAttemptService
         }
     }
 
-    public async Task<CheckoutPaymentOperationScope> BeginReservationUpdateAsync(OrderInfo order, CancellationToken ct = default)
+    public Task<CheckoutPaymentOperationScope> BeginReservationUpdateAsync(OrderInfo order, CancellationToken ct = default)
+        => RecordLockedAsync(order.UniqueId, "reservation update", () => BeginReservationUpdateCoreAsync(order, ct));
+
+    private async Task<CheckoutPaymentOperationScope> BeginReservationUpdateCoreAsync(OrderInfo order, CancellationToken ct)
     {
         var scope = await AcquireAsync(order.UniqueId, ct).ConfigureAwait(false);
         if (CheckoutPaymentOperationScope.Current?.OrderId == order.UniqueId) return scope;
@@ -925,16 +939,6 @@ internal sealed partial class CheckoutPaymentAttemptService
         => await HasUnresolvedGiftcardRecoveryAsync(db, orderId, ct).ConfigureAwait(false) ||
             await db.GetTable<CheckoutPaymentOperationData>().AnyAsync(x => x.OrderId == orderId && x.ReconciliationRequired, ct).ConfigureAwait(false);
 
-    private static async Task<bool> HasExpiredAsync(DbContext db, CheckoutPaymentAttemptData attempt, OrderData data, CancellationToken ct)
-    {
-        if (attempt.ExpiresUtc <= DateTime.UtcNow) return true;
-        var ids = attempt.SubmittedOrderInfo == null
-            ? await ReadOwnedIdsAsync(db, data, ct).ConfigureAwait(false)
-            : JsonConvert.DeserializeObject<List<string>>(attempt.ReservationIds) ?? [];
-        if (ids.Count == 0) return false;
-        return !await HoldsActiveAsync(db, ids, false, ct).ConfigureAwait(false);
-    }
-
     private static async Task<bool> HoldsActiveAsync(DbContext db, IReadOnlyCollection<string> ids, bool allowConsumed, CancellationToken ct)
     {
         foreach (var id in ids)
@@ -1055,6 +1059,32 @@ internal sealed partial class CheckoutPaymentAttemptService
         _cache.Remove(orderId);
         _cache.Remove(orderId.ToString());
     }
+
+    // A request refused because the order is locked is written to the order's activity log,
+    // so the store can see why a customer could not pay or change the basket.
+    private async Task<T> RecordLockedAsync<T>(Guid orderId, string action, Func<Task<T>> run)
+    {
+        try
+        {
+            return await run().ConfigureAwait(false);
+        }
+        catch (CheckoutConflictException ex) when (ex.Reason is CheckoutConflictReason.Busy or CheckoutConflictReason.PaymentReview)
+        {
+            // A storefront that keeps retrying must not fill the log with the same line.
+            var key = $"ekom-checkout-locked:{orderId}:{action}:{ex.Message}";
+            if (!_cache.TryGetValue(key, out _))
+            {
+                _cache.Set(key, true, LockedLogInterval);
+                var review = ex.Reason == CheckoutConflictReason.PaymentReview;
+                await LogAsync(orderId,
+                    $"Request refused because checkout is locked; action={action}; code={(review ? "paymentReviewRequired" : "checkoutBusy")}; detail={ex.Message}",
+                    review ? OrderActivityLogType.Alert : OrderActivityLogType.Info).ConfigureAwait(false);
+            }
+            throw;
+        }
+    }
+
+    private static readonly TimeSpan LockedLogInterval = TimeSpan.FromMinutes(1);
 
     private async Task LogAsync(Guid orderId, string message, OrderActivityLogType logType = OrderActivityLogType.Info)
     {
