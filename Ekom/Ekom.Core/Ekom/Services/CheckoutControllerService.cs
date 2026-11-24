@@ -8,7 +8,6 @@ using Ekom.Utilities;
 using LinqToDB;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
@@ -1199,17 +1198,15 @@ public class CheckoutControllerService
     /// <summary>Current checkout attempt identity for custom payment-provider implementations.</summary>
     protected Guid? CurrentPaymentAttemptId => CheckoutPaymentOperationScope.Current?.AttemptId;
 
-    /// <summary>Build a cancel/error return URL that identifies the submitted payment attempt.</summary>
+    /// <summary>
+    /// Build a cancel/error return URL that identifies the submitted payment attempt. The values are
+    /// path segments, not query values, because some providers (Teya) replace the query string.
+    /// </summary>
     protected string BuildPaymentReturnUrl(Guid orderId, string outcome)
     {
-        string baseUrl = $"{_httpCtx.Request.Scheme}://{_httpCtx.Request.Host}{_httpCtx.Request.PathBase}/ekom/checkout/payment-return";
+        string url = $"{_httpCtx.Request.Scheme}://{_httpCtx.Request.Host}{_httpCtx.Request.PathBase}/ekom/checkout/payment-return/{Uri.EscapeDataString(outcome)}/{orderId}";
 
-        return QueryHelpers.AddQueryString(baseUrl, new Dictionary<string, string?>
-        {
-            ["orderId"] = orderId.ToString(),
-            ["attemptId"] = CurrentPaymentAttemptId?.ToString(),
-            ["outcome"] = outcome
-        });
+        return CurrentPaymentAttemptId is Guid attemptId ? $"{url}/{attemptId}" : url;
     }
 
 #pragma warning restore CA1062 // Validate arguments of public methods

@@ -143,11 +143,27 @@ public class EkomCheckoutApiController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// Cancel and error return from a payment provider. The order, outcome and attempt are read from
+    /// the path when present, since some providers (Teya) replace the return URL's query string.
+    /// </summary>
     [Route("payment-return")]
+    [Route("payment-return/{routeOutcome}/{routeOrderId:guid}/{routeAttemptId:guid?}")]
     [AcceptVerbs("GET", "POST")]
-    public async Task<IActionResult> PaymentReturnAsync(CancellationToken ct = default)
+    public async Task<IActionResult> PaymentReturnAsync(
+        [FromRoute] string? routeOutcome = null,
+        [FromRoute] Guid? routeOrderId = null,
+        [FromRoute] Guid? routeAttemptId = null,
+        CancellationToken ct = default)
     {
         Dictionary<string, string?> callbackData = await GetPaymentReturnDataAsync(ct);
+
+        if (routeOrderId != null)
+        {
+            callbackData["orderId"] = routeOrderId.Value.ToString();
+            if (!string.IsNullOrWhiteSpace(routeOutcome)) callbackData["outcome"] = routeOutcome;
+            if (routeAttemptId != null) callbackData["attemptId"] = routeAttemptId.Value.ToString();
+        }
 
         if (!TryGetRequiredGuid(callbackData, "orderId", out Guid orderId))
         {
