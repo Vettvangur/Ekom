@@ -287,7 +287,7 @@ These are information updates instead. They are allowed in any order state and k
 
 Viewing the basket or the receipt changes nothing.
 
-Do not change customer details while a payment is running. The frozen purchase includes them, and a payment confirmed for a purchase that has changed does not complete the order: it needs review. Custom data and order line metadata are not part of the frozen purchase.
+The frozen purchase includes the customer details. If they are changed while a payment is running and the payment is then confirmed, Ekom completes the order with the details it was paid with, as long as nothing else has changed. The newer details are not applied. Ekom writes them to the order's activity log as an alert, so the store can check them with the customer. If anything else differs as well, such as the total or the basket, the order is not completed and needs review. Custom data and order line metadata are not part of the frozen purchase.
 
 ### When the customer pays again
 
