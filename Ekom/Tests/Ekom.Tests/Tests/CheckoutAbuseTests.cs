@@ -44,13 +44,36 @@ public sealed class CheckoutAbuseTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task SecondCheckoutWithinTheWindowIsBusy(bool reservations)
+    public async Task SecondCheckoutWithinTheWindowReplacesTheFirst(bool reservations)
     {
         using var f = new CheckoutPaymentWindowFixture(reservations);
         Assert.Equal("230", await f.PayAsync());
+        var first = await f.CurrentAttemptIdAsync();
 
-        Assert.Equal("409 checkoutBusy", await f.PayAsync());
+        Assert.Equal("230", await f.PayAsync());
+        Assert.NotEqual(first, await f.CurrentAttemptIdAsync());
+        Assert.Equal(CheckoutPaymentAttemptState.Released, await f.AttemptStateAsync(first));
         Assert.Equal(reservations ? 9 : 10, await f.StockAsync());
+
+        Assert.True(await f.ProviderConfirmsPaymentAsync());
+        Assert.True(await f.StockCompletedAsync());
+        Assert.Equal(9, await f.StockAsync());
+    }
+
+    // The customer pays on the first payment page after opening a second one.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task PaymentForAReplacedAttemptDoesNotComplete(bool reservations)
+    {
+        using var f = new CheckoutPaymentWindowFixture(reservations);
+        Assert.Equal("230", await f.PayAsync());
+        var first = await f.CurrentAttemptIdAsync();
+        Assert.Equal("230", await f.PayAsync());
+
+        Assert.False(await f.ProviderConfirmsPaymentAsync(first));
+        Assert.Equal(CheckoutPaymentAttemptState.ReconciliationRequired, await f.AttemptStateAsync(first));
+        Assert.False(await f.StockCompletedAsync());
     }
 
     // The provider confirms after the hold expired, when the stock may already be sold.
