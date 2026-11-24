@@ -250,7 +250,7 @@ The `CheckoutStateError` body has `code`, `message` and `canRetry`. `message` is
 
 | `code` | Meaning |
 | --- | --- |
-| `checkoutBusy` | Another checkout or basket change for this order is running, or a payment attempt is still active. |
+| `checkoutBusy` | Another checkout or basket change for this order is running right now. |
 | `paymentReviewRequired` | A payment needs to be checked by the store before the customer can pay or change the basket. |
 | `checkoutCompleted` | The order is already completed or paid. |
 | `couponUnavailable` | The order's coupon has no uses left. |
@@ -289,9 +289,13 @@ Viewing the basket or the receipt changes nothing.
 
 Do not change customer details while a payment is running. The frozen purchase includes them, and a payment confirmed for a purchase that has changed does not complete the order: it needs review. Custom data and order line metadata are not part of the frozen purchase.
 
+### When the customer pays again
+
+A customer who leaves the payment page with the browser's back button does not pass through the cancel return, so the attempt stays open. When they submit payment again, Ekom ends the open attempt, releases its holds and starts a new attempt, as it does for a basket change. The old payment page can still be open at the gateway. A payment confirmed for it does not complete the order: it needs review.
+
 ### When the customer closes the payment page
 
-Nothing happens until the attempt's deadline. Then the expiry worker gives the stock back, and the next payment submission resets the old attempt. An attempt without holds, for example with reservations turned off, also ends after the store's `Reservations:Timeout`.
+Nothing happens until the customer pays again or the attempt's deadline passes. At the deadline the expiry worker gives the stock back. An attempt without holds, for example with reservations turned off, also ends after the store's `Reservations:Timeout`.
 
 ### A payment that arrives after its holds were released
 
@@ -423,6 +427,8 @@ Handlers run one after the other. An exception in a `ProcessingAsync`, `PaymentO
 Ekom records an owner for each order while a checkout, basket change, return or completion runs, on any server. If a request stops at a point where Ekom cannot know whether its database writes or the payment went through, Ekom keeps the owner. A later request cannot pick up or undo the old request's work. The owner has no timeout, and Ekom never takes over an order because time has passed.
 
 Ekom finishes its own cleanup even when the browser disconnects. It uses a separate cancellation token for it, so a closed browser does not leave half-saved state. Once the gift-card integration has returned claims, Ekom saves them and, if checkout did not reach payment, releases them, whether the browser is still connected or not.
+
+A request that is refused with `checkoutBusy` or `paymentReviewRequired` is written to the order's activity log, with the action that was refused and the reason. The same refusal is written at most once a minute.
 
 To unblock an order, a store editor uses **Release Lock** in the Manager:
 
