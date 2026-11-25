@@ -80,7 +80,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             ProductsEntity,
             store,
             replica: null,
-            localeOverride: orderInfo.StoreInfo.Culture,
+            localeOverride: store.ResolveLocale(orderInfo.StoreInfo.Culture),
             currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
         var evt = new AlgoliaInsightsEvent
@@ -113,7 +113,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             ProductsEntity,
             store,
             replica: null,
-            localeOverride: orderInfo.StoreInfo.Culture,
+            localeOverride: store.ResolveLocale(orderInfo.StoreInfo.Culture),
             currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
         var events = CreateOrderConversionEvents(
@@ -143,7 +143,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             ProductsEntity,
             store,
             replica: null,
-            localeOverride: orderInfo.StoreInfo.Culture,
+            localeOverride: store.ResolveLocale(orderInfo.StoreInfo.Culture),
             currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
         var events = CreateOrderConversionEvents(
