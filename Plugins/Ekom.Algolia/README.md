@@ -760,7 +760,7 @@ Product records provide the following fields without requiring any `Indexing:Pro
 - Identity: `objectID`, `Sku`, `ProductId`, and `IsVariant`.
 - Content: `NodeName`, `Title`, `Summary`, `Description`, and `Url`.
 - Images: `image_url` and `ImageUrls`.
-- Pricing: `Price`, `PriceWithVat`, `PriceWithoutVat`, `PriceFormatted`, `PriceWithVatFormatted`, `PriceWithoutVatFormatted`, `Discounted`, `OriginalPrice`, `OriginalPriceFormatted`, and `Currency`.
+- Pricing: `Price`, `PriceWithVat`, `PriceWithoutVat`, `PriceFormatted`, `PriceWithVatFormatted`, `PriceWithoutVatFormatted`, `Discounted`, `OriginalPrice`, `OriginalPriceFormatted`, `DiscountAmount`, `DiscountPercentage`, and `Currency`.
 - Availability and ranking: `Available`, `ProductRanking`, and `CategoryRanking`.
 - Store context and dates: `StoreAlias`, `Locale`, `CreatedAt`, and `UpdatedAt`.
 - Categories: `categoryPageId`, `hierarchical_categories.lvl0`, additional hierarchy levels when present, and `category_paths`.
@@ -768,6 +768,8 @@ Product records provide the following fields without requiring any `Indexing:Pro
 Optional fields are omitted when no value is available. `Stock` is included only when `Stores[*]:IncludeStock` is enabled. Variant-specific fields are included when variant indexing is enabled, as described below.
 
 `PriceFormatted` and `PriceWithVatFormatted` use Ekom's currency formatting for the VAT-inclusive indexed price. `PriceWithoutVatFormatted` formats the VAT-exclusive indexed price. `Discounted` is `true` when Ekom has a discount configured for the resolved price. `OriginalPrice` and `OriginalPriceFormatted` represent the resolved price before discount using the store's configured display VAT basis.
+
+`DiscountAmount` is Ekom's discount amount for the resolved price, and `DiscountPercentage` is that amount as a percentage of `OriginalPrice`, rounded to two decimals. Both use the store's configured display VAT basis, like `OriginalPrice`. Both are `0` when the resolved price has no discount and are omitted when the product has no price. Variant records use the variant's own price. Only discounts that Ekom applies to the product price are included; coupons and order-level discounts are not. Both fields are numeric, so they can be filtered without facet configuration, for example `numericFilters: "DiscountPercentage >= 20"`. Rebuild the product index to add the fields to existing records.
 
 `Title` is a required top-level field. `NodeName` contains the Umbraco node name.
 
