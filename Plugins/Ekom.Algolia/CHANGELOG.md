@@ -28,6 +28,14 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## 0.2.71.3 (2026-11-25)
+
+Maintenance release for Ekom 0.2.x.
+
+### Bug Fixes
+
+* **algolia:** round `DiscountPercentage` to a whole number so facet values match the percentage shown on product cards.
+
 ## 0.2.71.2 (2026-11-25)
 
 Maintenance release for Ekom 0.2.x.
