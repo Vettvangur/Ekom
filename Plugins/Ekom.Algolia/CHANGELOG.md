@@ -31,6 +31,13 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## [0.2.80](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.79...Ekom.Algolia-v0.2.80) (2026-11-25)
+
+
+### Bug Fixes
+
+* **algolia:** round the discount percentage to a whole number ([#1264](https://github.com/Vettvangur/Ekom/issues/1264)) ([b58dc24](https://github.com/Vettvangur/Ekom/commit/b58dc249dfa9b7c9d2c2f763cae5314c2469936f))
+
 ## [0.2.79](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.78...Ekom.Algolia-v0.2.79) (2026-11-25)
 
 
