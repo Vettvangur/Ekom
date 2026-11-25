@@ -126,6 +126,32 @@ public class AlgoliaProductIndexMapperTests
         Assert.Equal(hasDiscount, record!.Discounted);
     }
 
+    [Fact]
+    public void Maps_Discount_Amount_And_Percentage_From_The_Resolved_Price()
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct();
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(25m, record!.DiscountAmount);
+        Assert.Equal(20m, record.DiscountPercentage);
+    }
+
+    [Fact]
+    public void Maps_Zero_Discount_Amount_And_Percentage_Without_Discount()
+    {
+        var mapper = CreateMapper();
+        var product = CreateProduct(hasDiscount: false);
+
+        var record = mapper.Map(product.Object, CreateStore(), "products");
+
+        Assert.NotNull(record);
+        Assert.Equal(0m, record!.DiscountAmount);
+        Assert.Equal(0m, record.DiscountPercentage);
+    }
+
     [Theory]
     [InlineData("0", false)]
     [InlineData("1", true)]
@@ -519,6 +545,8 @@ public class AlgoliaProductIndexMapperTests
         Assert.True(variantRecord.Discounted);
         Assert.Equal(12m, variantRecord.OriginalPrice);
         Assert.Equal("12 kr.", variantRecord.OriginalPriceFormatted);
+        Assert.Equal(2m, variantRecord.DiscountAmount);
+        Assert.Equal(16.67m, variantRecord.DiscountPercentage);
     }
 
     [Fact]
@@ -1073,6 +1101,7 @@ public class AlgoliaProductIndexMapperTests
         price.SetupGet(x => x.WithVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 100m && p.CurrencyString == "100 kr."));
         price.SetupGet(x => x.WithoutVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 80m && p.CurrencyString == "80 kr."));
         price.SetupGet(x => x.BeforeDiscount).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 125m && p.CurrencyString == "125 kr."));
+        price.SetupGet(x => x.DiscountAmount).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 25m && p.CurrencyString == "25 kr."));
         price.SetupGet(x => x.HasDiscount).Returns(hasDiscount);
         price.SetupGet(x => x.Currency).Returns(new Ekom.Models.CurrencyModel { CurrencyValue = "ISK", CurrencyFormat = "0" });
 
@@ -1120,6 +1149,7 @@ public class AlgoliaProductIndexMapperTests
         price.SetupGet(x => x.WithVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 10m && p.CurrencyString == "10 kr."));
         price.SetupGet(x => x.WithoutVat).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 8m && p.CurrencyString == "8 kr."));
         price.SetupGet(x => x.BeforeDiscount).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 12m && p.CurrencyString == "12 kr."));
+        price.SetupGet(x => x.DiscountAmount).Returns(Mock.Of<Ekom.Models.ICalculatedPrice>(p => p.Value == 2m && p.CurrencyString == "2 kr."));
         price.SetupGet(x => x.HasDiscount).Returns(true);
         price.SetupGet(x => x.Currency).Returns(new Ekom.Models.CurrencyModel { CurrencyValue = "ISK", CurrencyFormat = "0" });
 

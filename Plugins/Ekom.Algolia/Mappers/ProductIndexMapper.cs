@@ -39,6 +39,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var allowedProps = BuildAllowedProperties(product, store);
         var allowedTransforms = allowedProps.ToDictionary(x => x.Key, x => x.Value.Transform, StringComparer.OrdinalIgnoreCase);
         var price = ResolvePrice(product, store);
+        var discount = ResolveDiscount(price);
         var locale = store.Locale;
         var categoryLevels = BuildCategoryLevels(product, locale);
         var nodeName = GetNodeName(product);
@@ -117,6 +118,8 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             Discounted = price?.HasDiscount ?? false,
             OriginalPrice = price?.BeforeDiscount.Value,
             OriginalPriceFormatted = NullIfWhiteSpace(price?.BeforeDiscount.CurrencyString),
+            DiscountAmount = discount.Amount,
+            DiscountPercentage = discount.Percentage,
             Currency = NullIfWhiteSpace(price?.Currency.ISOCurrencySymbol ?? store.Currency),
             Available = product.Available ? 1 : 0,
             ProductRanking = ResolveRank(product, store.Alias),
@@ -226,6 +229,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             .ToList();
 
         var price = ResolvePrice(variant, store);
+        var discount = ResolveDiscount(price);
         var variantDescription = ResolveVariantDescription(product, variant, store, baseIndexName, configuredFields);
         var attributes = CopyAttributes(productRecord.Data);
 
@@ -280,6 +284,8 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             Discounted = price?.HasDiscount ?? productRecord.Discounted,
             OriginalPrice = price?.BeforeDiscount.Value ?? productRecord.OriginalPrice,
             OriginalPriceFormatted = NullIfWhiteSpace(price?.BeforeDiscount.CurrencyString) ?? productRecord.OriginalPriceFormatted,
+            DiscountAmount = discount.Amount ?? productRecord.DiscountAmount,
+            DiscountPercentage = discount.Percentage ?? productRecord.DiscountPercentage,
             Currency = NullIfWhiteSpace(price?.Currency.ISOCurrencySymbol ?? store.Currency) ?? productRecord.Currency,
             Available = variant.Available ? 1 : 0,
             ProductRanking = productRecord.ProductRanking,
@@ -786,6 +792,23 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         {
             return null;
         }
+    }
+
+    private static (decimal? Amount, decimal? Percentage) ResolveDiscount(IPrice? price)
+    {
+        if (price is null)
+            return (null, null);
+
+        if (!price.HasDiscount)
+            return (0m, 0m);
+
+        var before = price.BeforeDiscount.Value;
+        var amount = price.DiscountAmount.Value;
+        var percentage = before > 0m
+            ? Math.Round(amount / before * 100m, 2, MidpointRounding.AwayFromZero)
+            : 0m;
+
+        return (amount, percentage);
     }
 
     private static IPrice? ResolvePrice(IProduct product, AlgoliaResolvedStore store)
