@@ -805,7 +805,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var before = price.BeforeDiscount.Value;
         var amount = price.DiscountAmount.Value;
         var percentage = before > 0m
-            ? Math.Round(amount / before * 100m, 2, MidpointRounding.AwayFromZero)
+            ? Math.Round(amount / before * 100m, 0, MidpointRounding.AwayFromZero)
             : 0m;
 
         return (amount, percentage);

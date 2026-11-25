@@ -546,7 +546,7 @@ public class AlgoliaProductIndexMapperTests
         Assert.Equal(12m, variantRecord.OriginalPrice);
         Assert.Equal("12 kr.", variantRecord.OriginalPriceFormatted);
         Assert.Equal(2m, variantRecord.DiscountAmount);
-        Assert.Equal(16.67m, variantRecord.DiscountPercentage);
+        Assert.Equal(17m, variantRecord.DiscountPercentage);
     }
 
     [Fact]
