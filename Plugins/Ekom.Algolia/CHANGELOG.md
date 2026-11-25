@@ -28,6 +28,15 @@
 * **algolia:** make index rebuild lifecycle logs identify exact indexes and completion state.
 * **algolia:** make collection transformation rebuilds resilient to transient transport failures.
 
+## 0.2.71.4 (2026-11-25)
+
+Maintenance release for Ekom 0.2.x.
+
+### Bug Fixes
+
+* **algolia:** limit a content index to the cultures of an Ekom store with `ContentIndexing:Indexes[*]:StoreAlias`, so culture-invariant content no longer creates an index for every Umbraco language.
+* **algolia:** fall back to the store locale when a search or Insights event names a locale the store does not have, instead of targeting an index that is never built.
+
 ## 0.2.71.3 (2026-11-25)
 
 Maintenance release for Ekom 0.2.x.

@@ -90,6 +90,12 @@ public sealed class AlgoliaContentIndexOptions
     /// </summary>
     public Guid? RootKey { get; set; }
 
+    /// <summary>
+    /// Optional alias of the Ekom store this index belongs to. When set, the index is only maintained
+    /// for the cultures of that store instead of every Umbraco language.
+    /// </summary>
+    public string? StoreAlias { get; set; }
+
     public IReadOnlyCollection<string> CustomRanking { get; init; } = [];
     public IReadOnlyCollection<AlgoliaContentTypeOptions> ContentTypes { get; init; } = [];
 }
@@ -227,6 +233,29 @@ public sealed class AlgoliaResolvedStore
             .SelectMany(locale => currencies.Select(currency => WithSelection(locale, currency)))
             .DistinctBy(x => new { x.Locale, x.Currency })
             .ToList();
+    }
+
+    /// <summary>
+    /// Returns the requested locale when the store supports it, otherwise the store's own locale.
+    /// A locale the store does not have is never indexed, so it must not be used to name an index.
+    /// </summary>
+    internal string? ResolveLocale(string? requestedLocale)
+    {
+        if (string.IsNullOrWhiteSpace(requestedLocale))
+            return Locale;
+
+        // Without store data there is nothing to validate against.
+        if (Locales.Count == 0)
+            return requestedLocale;
+
+        var requested = requestedLocale.Trim();
+        foreach (var locale in Locales)
+        {
+            if (locale.Equals(requested, StringComparison.OrdinalIgnoreCase))
+                return locale;
+        }
+
+        return Locale;
     }
 
     public AlgoliaResolvedStore WithSelection(string? locale, string? currency)
