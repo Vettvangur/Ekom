@@ -117,23 +117,57 @@ namespace Ekom.Utilities
 
             MvcForm form = htmlHelper.BeginForm(actionName, "Checkout", new { }, FormMethod.Post, true, htmlAttributes: htmlAttributes != null ? htmlAttributes : new { @class = className, @id = Id });
            
-            var request = htmlHelper.ViewContext.HttpContext.Request;
-            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.QueryString.Value ?? "");
+            var returnUrl = BuildCheckoutReturnUrl(htmlHelper.ViewContext.HttpContext.Request);
 
-            var filteredQuery = query
-                .Where(kvp =>
-                    !string.Equals(kvp.Key, "errorStatus", StringComparison.OrdinalIgnoreCase) &&
-                    !string.Equals(kvp.Key, "errorMessage", StringComparison.OrdinalIgnoreCase))
-                .SelectMany(kvp => kvp.Value, (kvp, value) => $"{kvp.Key}={value}");
-
-            var baseUrl = request.Path;
-            var queryString = string.Join("&", filteredQuery);
-            var returnUrl = $"{request.Scheme}://{request.Host}{baseUrl}{(string.IsNullOrEmpty(queryString) ? "" : "?" + queryString)}";
-
-
-            htmlHelper.ViewContext.Writer.WriteLine($"<input type='hidden' name='returnUrl' value='{returnUrl}' />");
+            // The return URL is built from the request, so it is encoded before it is written into the page.
+            htmlHelper.ViewContext.Writer.WriteLine(
+                $"<input type='hidden' name='returnUrl' value='{System.Net.WebUtility.HtmlEncode(returnUrl)}' />");
 
             return form;
+        }
+
+        // Values the checkout adds to the return URL when it sends the customer back with an error.
+        private static readonly HashSet<string> CheckoutErrorQueryKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "errorStatus",
+            "errorMessage",
+            "errorReason",
+            "errorType",
+            "canRetry",
+            "orderline",
+        };
+
+        // Values the payment return adds when it sends the customer back from a cancelled or failed payment.
+        private static readonly HashSet<string> PaymentReturnQueryKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "orderId",
+            "outcome",
+            "attemptId",
+        };
+
+        /// <summary>
+        /// The current page's URL without the checkout's error and payment return values, for the form's
+        /// returnUrl field. Query keys and values are URL-encoded again, because parsing the query string
+        /// decodes them.
+        /// </summary>
+        internal static string BuildCheckoutReturnUrl(Microsoft.AspNetCore.Http.HttpRequest request)
+        {
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.QueryString.Value ?? "");
+
+            // A payment return always carries an outcome. Its values describe that one return, and a
+            // provider's own orderid next to Ekom's orderId would make the return URL invalid.
+            var isPaymentReturn = query.ContainsKey("outcome");
+
+            var pairs = query
+                .Where(kvp => !CheckoutErrorQueryKeys.Contains(kvp.Key))
+                .Where(kvp => !isPaymentReturn || !PaymentReturnQueryKeys.Contains(kvp.Key))
+                .SelectMany(
+                    kvp => kvp.Value,
+                    (kvp, value) => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(value ?? string.Empty)}");
+
+            var queryString = string.Join("&", pairs);
+
+            return $"{request.Scheme}://{request.Host}{request.Path}{(queryString.Length == 0 ? "" : "?" + queryString)}";
         }
     }
 }
