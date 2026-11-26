@@ -146,3 +146,20 @@ test('loading unwrapped rich text never marks the workspace changed', async () =
   await element.load();
   assert.equal(savedChanges.length, 0, 'reloading does not mark it changed');
 });
+
+test('legacy toggle values load as booleans and save back as "0"/"1"', () => {
+  for (const [stored, expected] of [['0', false], ['1', true], ['false', false], ['true', true], [false, false], [true, true], [0, false], [1, true], ['', false], [undefined, false]]) {
+    assert.equal(createEditor(stored, 'Umbraco.TrueFalse').editor.value, expected, `stored ${JSON.stringify(stored)}`);
+  }
+  const element = createEditor('0', 'Umbraco.TrueFalse');
+  assert.equal(element.value.values['is-IS'], '0', 'loading does not rewrite stored values');
+  element.emitChange = () => {};
+  element.emitTitleChanged = () => {};
+  element.editor.value = true;
+  element.onWrappedEditorChange({ stopPropagation() {} });
+  assert.equal(element.value.values['is-IS'], '1');
+  element.editor.value = false;
+  element.onWrappedEditorChange({ stopPropagation() {} });
+  assert.equal(element.value.values['is-IS'], '0');
+  assert.equal(createEditor('0', 'Umbraco.TextBox').editor.value, '0');
+});

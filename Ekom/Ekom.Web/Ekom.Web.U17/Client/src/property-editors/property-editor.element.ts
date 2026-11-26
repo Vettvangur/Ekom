@@ -320,7 +320,7 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
       values: {
         ...defaults,
         ...this.internalValue.values,
-        [this.currentTab.value]: this.editor.value,
+        [this.currentTab.value]: this.toStoredValue(this.editor.value),
       },
     };
     this.unwrappedValue = undefined;
@@ -482,6 +482,10 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
     const value = storedValue === undefined && defaultValue != null ? structuredClone(defaultValue) : storedValue;
     const alias = this.wrappedDataType?.propertyEditorAlias;
 
+    if (alias === 'Umbraco.TrueFalse') {
+      return this.toBoolean(value);
+    }
+
     if ((alias !== 'Umbraco.RichText' && alias !== 'Umbraco.TinyMCE') || typeof value !== 'string') {
       return value;
     }
@@ -497,6 +501,25 @@ export class EkomPropertyEditorElement extends UmbLitElement implements UmbPrope
     }
 
     return { markup: value };
+  }
+
+  // Legacy toggles are stored as "0"/"1", which the Umbraco toggle would read as checked.
+  private toBoolean(value: unknown): boolean {
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      return normalized === '1' || normalized === 'true' || normalized === 'y';
+    }
+
+    return value === true || value === 1;
+  }
+
+  // Keep the "0"/"1" format that Ekom reads on the server.
+  private toStoredValue(value: unknown): unknown {
+    if (this.wrappedDataType?.propertyEditorAlias !== 'Umbraco.TrueFalse') {
+      return value;
+    }
+
+    return this.toBoolean(value) ? '1' : '0';
   }
 
   private syncCurrentEditorValue(): void {
