@@ -23,6 +23,8 @@
 
 ### Bug Fixes
 
+* **algolia:** limit a content index to the cultures of an Ekom store with `ContentIndexing:Indexes[*]:StoreAlias`, so culture-invariant content no longer creates an index for every Umbraco language.
+* **algolia:** fall back to the store locale when a search or Insights event names a locale the store does not have, instead of targeting an index that is never built.
 * **algolia:** send Insights events and stock availability updates from background workers so add-to-cart, checkout, and stock changes no longer wait on Algolia.
 * **algolia:** delete previously indexed product records when an incremental index filter rejects the product, scoped to the affected locale and currency target.
 * **algolia:** classify add-to-cart and purchase Insights conversions with ecommerce event subtypes.

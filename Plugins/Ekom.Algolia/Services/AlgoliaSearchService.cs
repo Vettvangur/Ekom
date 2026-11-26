@@ -80,7 +80,7 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
             return EmptyResponse<AlgoliaProductRecord>(trimmedQuery, query.Page, query.HitsPerPage);
 
         var store = _storeResolver.Resolve(request.StoreAlias);
-        var target = store.WithSelection(request.Locale ?? store.Locale, request.Currency ?? store.Currency);
+        var target = store.WithSelection(store.ResolveLocale(request.Locale), request.Currency ?? store.Currency);
         var indexName = _indexNameBuilder.BuildPrimary(ProductsEntity, target);
 
         query.IndexName = indexName;
@@ -138,7 +138,7 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
             return EmptyResponse<AlgoliaCategoryRecord>(trimmedQuery, query.Page, query.HitsPerPage);
 
         var store = _storeResolver.Resolve(request.StoreAlias);
-        var target = store.WithSelection(request.Locale ?? store.Locale, currency: null);
+        var target = store.WithSelection(store.ResolveLocale(request.Locale), currency: null);
         var indexName = _indexNameBuilder.BuildPrimary(CategoriesEntity, target, currencyOverride: string.Empty);
 
         query.IndexName = indexName;
@@ -195,7 +195,7 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
             return EmptyResponse<AlgoliaQuerySuggestionRecord>(trimmedQuery, query.Page, query.HitsPerPage);
 
         var store = _storeResolver.Resolve(request.StoreAlias);
-        var target = store.WithSelection(request.Locale ?? store.Locale, request.Currency ?? store.Currency);
+        var target = store.WithSelection(store.ResolveLocale(request.Locale), request.Currency ?? store.Currency);
         var indexName = _indexNameBuilder.BuildQuerySuggestions(QuerySuggestionsEntity, target);
 
         query.IndexName = indexName;
@@ -403,9 +403,9 @@ internal sealed class AlgoliaSearchService : IAlgoliaSearchService
         var contentCulture = target.Culture ?? request.Locale ?? store.Locale;
         indexName = target.Kind switch
         {
-            AlgoliaFederatedSearchTargetKind.Products when _options.Search.Products => _indexNameBuilder.BuildPrimary(ProductsEntity, store.WithSelection(request.Locale ?? store.Locale, request.Currency ?? store.Currency)),
-            AlgoliaFederatedSearchTargetKind.Categories when _options.Search.Categories => _indexNameBuilder.BuildPrimary(CategoriesEntity, store.WithSelection(request.Locale ?? store.Locale, currency: null), currencyOverride: string.Empty),
-            AlgoliaFederatedSearchTargetKind.QuerySuggestions when _options.Search.QuerySuggestions => _indexNameBuilder.BuildQuerySuggestions(QuerySuggestionsEntity, store.WithSelection(request.Locale ?? store.Locale, request.Currency ?? store.Currency)),
+            AlgoliaFederatedSearchTargetKind.Products when _options.Search.Products => _indexNameBuilder.BuildPrimary(ProductsEntity, store.WithSelection(store.ResolveLocale(request.Locale), request.Currency ?? store.Currency)),
+            AlgoliaFederatedSearchTargetKind.Categories when _options.Search.Categories => _indexNameBuilder.BuildPrimary(CategoriesEntity, store.WithSelection(store.ResolveLocale(request.Locale), currency: null), currencyOverride: string.Empty),
+            AlgoliaFederatedSearchTargetKind.QuerySuggestions when _options.Search.QuerySuggestions => _indexNameBuilder.BuildQuerySuggestions(QuerySuggestionsEntity, store.WithSelection(store.ResolveLocale(request.Locale), request.Currency ?? store.Currency)),
             AlgoliaFederatedSearchTargetKind.Content when _options.ContentIndexing.Enabled && !string.IsNullOrWhiteSpace(target.ContentIndexName) && !string.IsNullOrWhiteSpace(contentCulture) => _contentIndexNameResolver.Resolve(target.ContentIndexName, contentCulture),
             _ => string.Empty
         };
