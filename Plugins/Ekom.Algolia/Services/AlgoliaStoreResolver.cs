@@ -43,7 +43,7 @@ internal sealed class AlgoliaStoreResolver
         return new AlgoliaResolvedStore
         {
             Alias = resolvedAlias,
-            Locale = ekomStore?.Culture?.Name,
+            Locale = ResolveDefaultLocale(ekomStore?.Culture?.Name, locales),
             Currency = ekomStore?.Currency?.CurrencyValue,
             IncludeStock = configuredStore?.IncludeStock ?? false,
             EnableAvailabilityUpdates = configuredStore?.EnableAvailabilityUpdates ?? false,
@@ -55,6 +55,21 @@ internal sealed class AlgoliaStoreResolver
             Collections = configuredStore?.Collections ?? new(),
             LanguageSettings = configuredStore?.LanguageSettings ?? new(),
         };
+    }
+
+    // Ekom reports "en-US" when a store culture cannot be read, so only accept a culture the store lists.
+    internal static string? ResolveDefaultLocale(string? storeLocale, IReadOnlyList<string> locales)
+    {
+        if (locales.Count == 0)
+            return storeLocale;
+
+        foreach (var locale in locales)
+        {
+            if (locale.Equals(storeLocale, StringComparison.OrdinalIgnoreCase))
+                return locale;
+        }
+
+        return locales[0];
     }
 
     private AlgoliaIndexingOptions ResolveIndexing(AlgoliaStoreIndexingOptions? storeIndexing)

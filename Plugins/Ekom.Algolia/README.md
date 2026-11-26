@@ -134,6 +134,7 @@ public sealed class ProductSearchController
           {
             "IndexName": "SearchIndex",
             "RootKey": "00000000-0000-0000-0000-000000000000",
+            "StoreAlias": "Store",
             "CustomRanking": [
               "desc(updateDateUnixSecond)"
             ],
@@ -283,6 +284,7 @@ public sealed class ProductSearchController
 | `ContentIndexing:Indexes` | `object[]` | `[]` | Content indexes to maintain. Index names resolve as `{IndexName}.{Environment}.{Culture}`. |
 | `ContentIndexing:Indexes[*]:CustomRanking` | `string[]` | `[]` | Ordered Algolia custom-ranking expressions applied to each resolved primary content index. Omit or leave empty to preserve the setting managed in Algolia. |
 | `ContentIndexing:Indexes[*]:RootKey` | `Guid` | none | Optional content node key. When set, the index only includes that node and its descendants, so sites that share content type aliases can keep separate indexes. Nodes moved outside the root are removed from the index on their next publish. If the key does not resolve, the index is skipped and a warning is logged. |
+| `ContentIndexing:Indexes[*]:StoreAlias` | `string` | none | Optional Ekom store alias. When set, the index is only maintained for the cultures of that store: culture-invariant content is no longer written to every Umbraco language, and culture-variant content skips cultures the store does not have. If the store cultures cannot be resolved, the index is skipped and a warning is logged. |
 | `ContentIndexing:Indexes[*]:ContentTypes[*]:Alias` | `string` | required | Umbraco content type alias to include in the content index. |
 | `ContentIndexing:Indexes[*]:ContentTypes[*]:Properties` | `string[]` | `[]` | Property aliases to index. Use `|unix` or `|unixms` for numeric dates, or `|striphtml` for searchable plain text from rich-text values. |
 | `Search:Enabled` | `bool` | `true` | Enables Algolia search services. |
@@ -685,7 +687,7 @@ Standard content index names resolve as `{IndexName}.{Environment}.{Culture}`:
 SearchIndex.prod.en-US
 ```
 
-Only the store alias must be configured in `appsettings.json`. Locale and currency are resolved from the Ekom store and the current request/order context. Background indexing falls back to the store's default culture and currency.
+Only the store alias must be configured in `appsettings.json`. Locale and currency are resolved from the Ekom store and the current request/order context. Background indexing falls back to the store's default culture and currency. A search or event that names a locale the store does not have also uses the store's default culture, because indexes are only built for the store's cultures.
 
 ```json
 {

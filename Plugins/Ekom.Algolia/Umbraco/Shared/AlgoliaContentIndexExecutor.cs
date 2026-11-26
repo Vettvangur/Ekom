@@ -39,6 +39,7 @@ internal sealed class AlgoliaContentIndexExecutor
     private readonly IScopeProvider _scopeProvider;
     private readonly IMemoryCache _cache;
     private readonly ContentIndexNameResolver _indexNameResolver;
+    private readonly AlgoliaStoreResolver _storeResolver;
     private readonly AlgoliaSearchCacheVersionProvider _searchCacheVersions;
     private readonly ILogger<AlgoliaContentIndexExecutor> _logger;
 
@@ -59,6 +60,7 @@ internal sealed class AlgoliaContentIndexExecutor
         IScopeProvider scopeProvider,
         IMemoryCache cache,
         ContentIndexNameResolver indexNameResolver,
+        AlgoliaStoreResolver storeResolver,
         AlgoliaSearchCacheVersionProvider searchCacheVersions,
         ILogger<AlgoliaContentIndexExecutor> logger,
         IEnumerable<IAlgoliaContentEnricher>? enrichers = null,
@@ -76,6 +78,7 @@ internal sealed class AlgoliaContentIndexExecutor
         _scopeProvider = scopeProvider;
         _cache = cache;
         _indexNameResolver = indexNameResolver;
+        _storeResolver = storeResolver;
         _searchCacheVersions = searchCacheVersions;
         _logger = logger;
         _enrichers = (enrichers ?? []).OrderBy(x => x.Order).ToList();
@@ -130,6 +133,9 @@ internal sealed class AlgoliaContentIndexExecutor
             if (!TryGetRootId(index, out var rootId))
                 continue;
 
+            if (!TryGetIndexCultures(index, allCultures, out var indexCultures, out var storeCulturesOnly))
+                continue;
+
             foreach (var contentTypeAlias in GetConfiguredAliases(index))
             {
                 ct.ThrowIfCancellationRequested();
@@ -139,7 +145,7 @@ internal sealed class AlgoliaContentIndexExecutor
                     continue;
 
                 var entities = GetAllOfType(contentType.Id).Where(x => IsAtOrUnderRoot(x, rootId));
-                var (upsertsByCulture, _) = BuildPerCultureBuckets(entities, allCultures);
+                var (upsertsByCulture, _) = BuildPerCultureBuckets(entities, indexCultures, storeCulturesOnly);
 
                 foreach (var (culture, content) in upsertsByCulture)
                 {
@@ -218,6 +224,9 @@ internal sealed class AlgoliaContentIndexExecutor
             if (!TryGetRootId(index, out var rootId))
                 continue;
 
+            if (!TryGetIndexCultures(index, allCultures, out var indexCultures, out var storeCulturesOnly))
+                continue;
+
             var indexEntities = new List<IContent>(configuredEntities.Count);
             var outsideRootKeys = new List<string>();
             foreach (var entity in configuredEntities)
@@ -231,14 +240,14 @@ internal sealed class AlgoliaContentIndexExecutor
             // A node can be moved out of the configured root, so remove it from this index.
             if (outsideRootKeys.Count > 0)
             {
-                foreach (var culture in allCultures)
+                foreach (var culture in indexCultures)
                     await DeleteAsync(outsideRootKeys, culture, index, ct).ConfigureAwait(false);
             }
 
             if (indexEntities.Count == 0)
                 continue;
 
-            var (upsertsByCulture, deletesByCulture) = BuildPerCultureBuckets(indexEntities, allCultures);
+            var (upsertsByCulture, deletesByCulture) = BuildPerCultureBuckets(indexEntities, indexCultures, storeCulturesOnly);
 
             foreach (var (culture, content) in upsertsByCulture)
             {
@@ -272,7 +281,10 @@ internal sealed class AlgoliaContentIndexExecutor
 
         foreach (var index in _options.ContentIndexing.Indexes)
         {
-            foreach (var culture in allCultures)
+            if (!TryGetIndexCultures(index, allCultures, out var indexCultures, out _))
+                continue;
+
+            foreach (var culture in indexCultures)
                 await DeleteAsync(objectIds, culture, index, ct).ConfigureAwait(false);
         }
 
@@ -639,6 +651,30 @@ internal sealed class AlgoliaContentIndexExecutor
         return true;
     }
 
+    private bool TryGetIndexCultures(
+        AlgoliaContentIndexOptions index,
+        IReadOnlyList<string> allCultures,
+        out IReadOnlyList<string> cultures,
+        out bool storeCulturesOnly)
+    {
+        cultures = allCultures;
+        storeCulturesOnly = false;
+        if (string.IsNullOrWhiteSpace(index.StoreAlias))
+            return true;
+
+        cultures = _storeResolver.Resolve(index.StoreAlias).Locales;
+        storeCulturesOnly = true;
+        if (cultures.Count > 0)
+            return true;
+
+        // Falling back to every Umbraco language would create indexes the store does not have.
+        _logger.LogWarning(
+            "Algolia content index {IndexName} skipped because no cultures could be resolved for store {Store}.",
+            index.IndexName,
+            index.StoreAlias);
+        return false;
+    }
+
     private static bool IsAtOrUnderRoot(IContent content, int? rootId)
     {
         if (rootId is not { } id || content.Id == id)
@@ -660,10 +696,17 @@ internal sealed class AlgoliaContentIndexExecutor
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-    private static (Dictionary<string, List<IContent>> UpsertsByCulture, Dictionary<string, HashSet<string>> DeletesByCulture) BuildPerCultureBuckets(
+    /// <summary>
+    /// Groups content by the cultures it is indexed for. Culture-invariant content goes to every culture in
+    /// <paramref name="indexCultures"/>. Culture-variant content goes to its own cultures, limited to
+    /// <paramref name="indexCultures"/> when <paramref name="storeCulturesOnly"/> is set.
+    /// </summary>
+    internal static (Dictionary<string, List<IContent>> UpsertsByCulture, Dictionary<string, HashSet<string>> DeletesByCulture) BuildPerCultureBuckets(
         IEnumerable<IContent> entities,
-        IEnumerable<string> allCultures)
+        IEnumerable<string> indexCultures,
+        bool storeCulturesOnly = false)
     {
+        var targetCultures = indexCultures.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
         var upserts = new Dictionary<string, List<IContent>>(StringComparer.OrdinalIgnoreCase);
         var deletes = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -674,6 +717,9 @@ internal sealed class AlgoliaContentIndexExecutor
                 var cultures = entity.CultureInfos?.Values.Select(x => x.Culture).Where(x => !string.IsNullOrWhiteSpace(x)) ?? [];
                 foreach (var culture in cultures)
                 {
+                    if (storeCulturesOnly && !targetCultures.Contains(culture, StringComparer.OrdinalIgnoreCase))
+                        continue;
+
                     if (entity.IsCulturePublished(culture))
                         AddList(upserts, culture, entity);
                     else
@@ -682,7 +728,7 @@ internal sealed class AlgoliaContentIndexExecutor
             }
             else
             {
-                foreach (var culture in allCultures.Where(x => !string.IsNullOrWhiteSpace(x)))
+                foreach (var culture in targetCultures)
                 {
                     if (entity.Published)
                         AddList(upserts, culture, entity);
