@@ -3,8 +3,8 @@ var y = (u, l, t) => l in u ? m(u, l, { enumerable: !0, configurable: !0, writab
 var a = (u, l, t) => y(u, typeof l != "symbol" ? l + "" : l, t);
 import { UmbChangeEvent as b } from "@umbraco-cms/backoffice/event";
 import { UMB_DOCUMENT_WORKSPACE_CONTEXT as C } from "@umbraco-cms/backoffice/document";
-import { createExtensionElement as v } from "@umbraco-cms/backoffice/extension-api";
-import { umbExtensionsRegistry as T } from "@umbraco-cms/backoffice/extension-registry";
+import { createExtensionElement as T } from "@umbraco-cms/backoffice/extension-api";
+import { umbExtensionsRegistry as v } from "@umbraco-cms/backoffice/extension-registry";
 import { UmbLitElement as w } from "@umbraco-cms/backoffice/lit-element";
 import { UMB_PROPERTY_CONTEXT as E, UMB_PROPERTY_DATASET_CONTEXT as N } from "@umbraco-cms/backoffice/property";
 import { UmbPropertyEditorConfigCollection as k } from "@umbraco-cms/backoffice/property-editor";
@@ -119,11 +119,11 @@ class S extends w {
     const t = this.wrappedDataType.view;
     if (t == null || t.length === 0)
       throw new Error("The wrapped data type does not expose a property editor UI alias.");
-    const e = T.getByAlias(t);
+    const e = v.getByAlias(t);
     if (e == null)
       throw new Error(`Could not find property editor UI "${t}".`);
     (o = (i = this.editor) == null ? void 0 : i.destroy) == null || o.call(i), this.editorContainer.replaceChildren();
-    const r = await v(e);
+    const r = await T(e);
     if (r == null)
       throw new Error(`Could not create property editor UI "${t}".`);
     r.manifest = e, r.name = `${this.name ?? this.propertyAlias}.${this.currentTab.value}`, r.value = this.getCurrentEditorValue(), r.config = new k(this.getWrappedConfig()), r.readonly = this.readonly, r.mandatory = !1, this.stringIsNullOrWhiteSpace(this.mandatoryMessage) || (r.mandatoryMessage = this.mandatoryMessage), r.toggleAttribute("readonly", this.readonly), r.addEventListener("change", (s) => this.onWrappedEditorChange(s)), r.addEventListener("property-value-change", (s) => this.onWrappedEditorChange(s)), this.editor = r, this.editorContainer.append(r), this.tryAutofillFromNodeName((n = this.propertyDatasetContext) == null ? void 0 : n.getName());
@@ -140,7 +140,7 @@ class S extends w {
       values: {
         ...r,
         ...this.internalValue.values,
-        [this.currentTab.value]: this.editor.value
+        [this.currentTab.value]: this.toStoredValue(this.editor.value)
       }
     }, this.unwrappedValue = void 0, this.emitChange(), this.emitTitleChanged();
   }
@@ -220,6 +220,8 @@ class S extends w {
   getCurrentEditorValue() {
     var o, n;
     const t = this.currentTab == null || (o = this.internalValue.values) == null ? void 0 : o[this.currentTab.value], e = this.getUnwrappedRichText(), r = t === void 0 && e != null ? structuredClone(e) : t, i = (n = this.wrappedDataType) == null ? void 0 : n.propertyEditorAlias;
+    if (i === "Umbraco.TrueFalse")
+      return this.toBoolean(r);
     if (i !== "Umbraco.RichText" && i !== "Umbraco.TinyMCE" || typeof r != "string")
       return r;
     try {
@@ -229,6 +231,19 @@ class S extends w {
     } catch {
     }
     return { markup: r };
+  }
+  // Legacy toggles are stored as "0"/"1", which the Umbraco toggle would read as checked.
+  toBoolean(t) {
+    if (typeof t == "string") {
+      const e = t.trim().toLowerCase();
+      return e === "1" || e === "true" || e === "y";
+    }
+    return t === !0 || t === 1;
+  }
+  // Keep the "0"/"1" format that Ekom reads on the server.
+  toStoredValue(t) {
+    var e;
+    return ((e = this.wrappedDataType) == null ? void 0 : e.propertyEditorAlias) !== "Umbraco.TrueFalse" ? t : this.toBoolean(t) ? "1" : "0";
   }
   syncCurrentEditorValue() {
     this.editor == null || this.currentTab == null || (this.editor.value = this.getCurrentEditorValue());
