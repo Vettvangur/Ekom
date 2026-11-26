@@ -58,6 +58,32 @@ public sealed class PaymentReturnDataTests
     }
 
     [Fact]
+    public void RedirectToTheCancelPageHasNoKeysThatDifferOnlyByCase()
+    {
+        var orderId = Guid.NewGuid();
+        var attemptId = Guid.NewGuid().ToString();
+        var callbackData = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["orderid"] = "32204",
+            ["Outcome"] = "provider-outcome",
+            ["status"] = "CANCEL",
+            ["orderId"] = "stale",
+            ["attemptId"] = attemptId,
+            ["empty"] = null,
+        };
+
+        var query = EkomCheckoutApiController.BuildPaymentReturnRedirectQuery(callbackData, orderId, "cancel");
+
+        Assert.Equal(4, query.Count);
+        Assert.Equal(orderId.ToString(), query["orderId"]);
+        Assert.Equal("cancel", query["outcome"]);
+        Assert.Equal(attemptId, query["attemptId"]);
+        Assert.Equal("CANCEL", query["status"]);
+        Assert.Contains("orderId", query.Keys);
+        Assert.DoesNotContain("orderid", query.Keys);
+    }
+
+    [Fact]
     public async Task InvalidAttemptTokenIsRejectedBeforeAnyOrderLookup()
     {
         var context = new DefaultHttpContext();
