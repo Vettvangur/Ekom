@@ -137,16 +137,30 @@ namespace Ekom.Utilities
             "orderline",
         };
 
+        // Values the payment return adds when it sends the customer back from a cancelled or failed payment.
+        private static readonly HashSet<string> PaymentReturnQueryKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "orderId",
+            "outcome",
+            "attemptId",
+        };
+
         /// <summary>
-        /// The current page's URL without the checkout's error values, for the form's returnUrl field.
-        /// Query keys and values are URL-encoded again, because parsing the query string decodes them.
+        /// The current page's URL without the checkout's error and payment return values, for the form's
+        /// returnUrl field. Query keys and values are URL-encoded again, because parsing the query string
+        /// decodes them.
         /// </summary>
         internal static string BuildCheckoutReturnUrl(Microsoft.AspNetCore.Http.HttpRequest request)
         {
             var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.QueryString.Value ?? "");
 
+            // A payment return always carries an outcome. Its values describe that one return, and a
+            // provider's own orderid next to Ekom's orderId would make the return URL invalid.
+            var isPaymentReturn = query.ContainsKey("outcome");
+
             var pairs = query
                 .Where(kvp => !CheckoutErrorQueryKeys.Contains(kvp.Key))
+                .Where(kvp => !isPaymentReturn || !PaymentReturnQueryKeys.Contains(kvp.Key))
                 .SelectMany(
                     kvp => kvp.Value,
                     (kvp, value) => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(value ?? string.Empty)}");

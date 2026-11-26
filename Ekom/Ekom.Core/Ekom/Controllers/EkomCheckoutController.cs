@@ -265,12 +265,7 @@ public class EkomCheckoutApiController : ControllerBase
             redirectUrlSetting,
             new Uri(Request.GetEncodedUrl()));
 
-        callbackData["orderId"] = orderId.ToString();
-        callbackData["outcome"] = outcome;
-
-        var redirectQuery = callbackData
-            .Where(x => !string.IsNullOrWhiteSpace(x.Key) && x.Value != null)
-            .ToDictionary(x => x.Key, x => x.Value, StringComparer.Ordinal);
+        var redirectQuery = BuildPaymentReturnRedirectQuery(callbackData, orderId, outcome);
 
         return Redirect(QueryHelpers.AddQueryString(redirectUrl, redirectQuery));
     }
@@ -341,6 +336,35 @@ public class EkomCheckoutApiController : ControllerBase
         }
 
         return new string(cleaned).Trim();
+    }
+
+    /// <summary>
+    /// The query Ekom adds to the provider's cancel or error page. Keys are unique regardless of case,
+    /// because a checkout form on that page copies the query into its return URL, which is read
+    /// case-insensitively and rejects repeated keys. Ekom's own values win over a provider key that
+    /// differs only by case, such as Teya's lowercase orderid.
+    /// </summary>
+    internal static Dictionary<string, string?> BuildPaymentReturnRedirectQuery(
+        IReadOnlyDictionary<string, string?> callbackData, Guid orderId, string outcome)
+    {
+        var query = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["orderId"] = orderId.ToString(),
+            ["outcome"] = outcome,
+        };
+
+        if (callbackData.TryGetValue("attemptId", out var attemptId) && attemptId != null)
+        {
+            query["attemptId"] = attemptId;
+        }
+
+        foreach (var item in callbackData)
+        {
+            if (string.IsNullOrWhiteSpace(item.Key) || item.Value == null) continue;
+            query.TryAdd(item.Key, item.Value);
+        }
+
+        return query;
     }
 
     internal static Dictionary<string, string?> ParsePaymentReturnData(string? queryString)

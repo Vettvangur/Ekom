@@ -54,6 +54,28 @@ public class CheckoutFormReturnUrlTests
     }
 
     [Fact]
+    public void ReturnUrl_DropsThePaymentReturnValues_SoTheNextPayIsAccepted()
+    {
+        // Teya adds its own status and lowercase orderid; the payment return adds orderId, outcome and attemptId.
+        var request = Request(
+            $"?step=payment&status=CANCEL&orderid=32204&orderId={Guid.NewGuid()}&outcome=cancel&attemptId={Guid.NewGuid()}");
+
+        var returnUrl = HtmlHelperExtensions.BuildCheckoutReturnUrl(request);
+
+        Assert.Equal("https://shop.example/checkout/?step=payment&status=CANCEL", returnUrl);
+        Assert.True(CheckoutReturnUrl.TryNormalize(returnUrl, request, out var normalized));
+        Assert.Equal("/checkout/?step=payment&status=CANCEL", normalized);
+    }
+
+    [Fact]
+    public void ReturnUrl_KeepsAnOrderIdThatIsNotFromAPaymentReturn()
+    {
+        var returnUrl = HtmlHelperExtensions.BuildCheckoutReturnUrl(Request("?orderId=abc"));
+
+        Assert.Equal("https://shop.example/checkout/?orderId=abc", returnUrl);
+    }
+
+    [Fact]
     public void ReturnUrl_WithoutQueryHasNoQuestionMark()
     {
         Assert.Equal("https://shop.example/checkout/", HtmlHelperExtensions.BuildCheckoutReturnUrl(Request("")));
