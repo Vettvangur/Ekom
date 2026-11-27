@@ -9,5 +9,8 @@
   "Plugins/Ekom.Mailchimp": "1.6.1",
   "Plugins/Ekom.Mailchimp/U18": "1.6.1",
   "Plugins/Ekom.Mailchimp/U19": "1.6.1",
-  "Ekom/Printing/Ekom.Printer": "1.4.1"
+  "Ekom/Printing/Ekom.Printer": "1.4.1",
+  "Plugins/Ekom.Brevo": "1.0.0",
+  "Plugins/Ekom.Brevo/U18": "1.0.0",
+  "Plugins/Ekom.Brevo/U19": "1.0.0"
 }
