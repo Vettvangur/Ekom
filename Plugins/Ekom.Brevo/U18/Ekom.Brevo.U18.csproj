@@ -8,7 +8,7 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Ekom.Brevo.U18</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>Vettvangur</Authors>
     <Company>Vettvangur</Company>
     <Title>Ekom Brevo Plugin for Umbraco 18</Title>
