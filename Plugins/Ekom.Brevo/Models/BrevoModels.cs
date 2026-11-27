@@ -39,6 +39,10 @@ public sealed record BrevoAttachment(string Name, ReadOnlyMemory<byte> Content);
 
 public sealed record BrevoTransactionalMessage
 {
+    /// <summary>Optional Ekom order identifier for durable delivery lookup.</summary>
+    public string? OrderId { get; init; }
+    /// <summary>Optional store-scoped caller key. Reusing it with different content throws; retained for the configured retention period.</summary>
+    public string? IdempotencyKey { get; init; }
     public required string StoreAlias { get; init; }
     public BrevoEmailAddress? Sender { get; init; }
     public BrevoEmailAddress? ReplyTo { get; init; }

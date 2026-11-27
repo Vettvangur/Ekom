@@ -154,6 +154,3 @@ internal abstract class BrevoDispatcher : BackgroundService
 
 internal sealed class BrevoMarketingDispatcher(IOptions<BrevoOptions> options, BrevoHttpClient client, ILogger<BrevoMarketingDispatcher> logger)
     : BrevoDispatcher(options.Value.Dispatching, client, logger);
-
-internal sealed class BrevoTransactionalDispatcher(IOptions<BrevoOptions> options, BrevoHttpClient client, ILogger<BrevoTransactionalDispatcher> logger)
-    : BrevoDispatcher(options.Value.Transactional.Dispatching, client, logger);

@@ -22,6 +22,6 @@ public interface IBrevoOrderService
 
 public interface IBrevoTransactionalService
 {
-    /// <summary>Queues a serialized snapshot. Await Completion to observe Brevo acceptance or failure.</summary>
+    /// <summary>Commits a serialized snapshot to the outbox. Completion observes the API result in this process; use IBrevoDeliveryService after restart.</summary>
     ValueTask<BrevoSubmission> SendAsync(BrevoTransactionalMessage message, CancellationToken cancellationToken = default);
 }

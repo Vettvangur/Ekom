@@ -84,6 +84,8 @@ Authenticate your sending domain and configure an approved sender in Brevo. Inje
 var submission = await transactional.SendAsync(new BrevoTransactionalMessage
 {
     StoreAlias = "iceland",
+    OrderId = "order-1234",
+    IdempotencyKey = "order-1234:confirmation",
     To = [new("customer@example.com", "Example Customer")],
     TemplateId = 23,
     Parameters = new Dictionary<string, object?> { ["ORDER_NUMBER"] = "1234" },
@@ -101,7 +103,7 @@ For direct content, omit `TemplateId` and set `Subject` plus `HtmlContent`, `Tex
 
 ## Queueing and failures
 
-Contact/order work and transactional email use independent, single-consumer queues. Marketing operations retain admission order so a subscription cannot overtake an earlier unsubscribe retry. Each queue has these settings under `Dispatching` or `Transactional:Dispatching`:
+Contact/order work retains its in-memory single-consumer queue and admission ordering. Transactional email uses a durable outbox in the configured Umbraco database (SQL Server or SQLite), with one worker per host and database claims shared across instances. Each queue has these settings under `Dispatching` or `Transactional:Dispatching`:
 
 | Setting | Default |
 | --- | --- |
@@ -112,11 +114,72 @@ Contact/order work and transactional email use independent, single-consumer queu
 | InitialRetryDelaySeconds | 2 |
 | MaxRetryDelaySeconds | 120 |
 
-Queue admission returns Queued, Disabled, ConfigurationMissing, QueueFull, or (orders only) Duplicate. Invalid payloads throw before admission; cancelled callers throw cancellation before admission. Queued submissions expose a completion task: Accepted, Failed, Unknown, or Cancelled. Background failures log correlation ID, store, status, and HTTP status without payloads or provider error text. Inspect `Completion` for application-specific failure reporting; GetListsAsync propagates read failures directly.
+Queue admission returns Queued, Disabled, ConfigurationMissing, QueueFull, or Duplicate (orders or emails with an `IdempotencyKey`). Invalid payloads throw before admission; cancelled callers throw cancellation before admission. Queued submissions expose a completion task: Accepted, Failed, Unknown, or Cancelled. Background failures log correlation ID, store, status, and HTTP status without payloads or provider error text. Inspect `Completion` for application-specific failure reporting; GetListsAsync propagates read failures directly.
 
-HTTP 429 retries honor Retry-After. If the server requests a delay above the configured maximum, work fails instead of retrying too early. Replay-safe contact operations also retry 5xx/network errors. Orders, DOI messages, and transactional emails do not retry ambiguous network/5xx failures, and return Unknown. Queue admission cancellation does not cancel work already accepted. Shutdown closes admission, cancels in-flight work, and completes unsent work as Cancelled.
+HTTP 429 retries honor Retry-After. If the server requests a delay above the configured maximum, work fails instead of retrying too early. Replay-safe contact operations also retry 5xx/network errors. Orders, DOI messages, and transactional emails do not retry ambiguous network/5xx failures, and return Unknown. Queue admission cancellation does not cancel work already accepted. Shutdown closes admission and cancels in-flight requests. Local completion tasks for unsent emails complete as Cancelled, but their durable rows remain Pending and resume on restart. Use the durable delivery service after restart; completion tasks themselves are process-local. Contact/order shutdown behavior is unchanged.
 
-Queues are in memory: process crashes lose pending work and completion results. Durable outbox/replay tooling, delivery webhooks, SMS, carts, and catalog synchronization are outside phase one.
+### Durable email outbox
+
+`AddBrevo()` uses Ekom's `DatabaseFactory` and the existing `umbracoDbDSN` connection. Three plugin-owned tables (`EkomBrevoEmail`, `EkomBrevoEvent`, `EkomBrevoLock`) and lookup indexes are created lazily on first use. The database account needs schema creation permission on first deployment. Schema setup and queue mutations use database transactions; no Brevo HTTP request runs inside a database transaction. Run all instances against the same database. SQLite supports multiple processes using the same local database file; use SQL Server for multiple application servers.
+
+`Queued` is returned only after the serialized email is committed. Database failures propagate to the caller rather than reporting successful admission. Queue count and byte limits apply globally to Pending and Sending emails. Store/API keys are resolved at send time and never stored in the outbox. Payloads and attachments contain customer data: apply your normal database access, backup and encryption policies. Accepted payloads are cleared immediately; failed/unknown payloads remain until retention expires.
+
+Optional `IdempotencyKey` values deduplicate email submissions per store across instances and restarts. Repeating the same key and content returns Duplicate with the original CorrelationId; different content/order metadata throws. Keys are hashed before storage, and remain effective only while the row is retained. The correlation header counts toward payload byte limits. `OrderId` is optional application metadata; callers supply it when sending an order email. Phase 2 does not automatically send order confirmations.
+
+HTTP 429 retry time and attempt count are stored durably. Other ambiguous email failures (timeouts, network errors, HTTP 408/5xx) become Unknown. A crashed Sending lease also becomes Unknown instead of being sent again, even if the process crashed before making the HTTP call. This prioritizes avoiding duplicate customer emails over automatic recovery of uncertain sends; check Brevo before deliberately submitting a replacement. Exactly-once inbox delivery is not guaranteed. Disabling the integration pauses the worker; a store whose transactional sending is disabled, or whose key is missing, produces a definitive Failed result without sending.
+
+Settings under `Transactional:Persistence`:
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| PollIntervalSeconds | 2 | Idle queue and cross-instance completion polling (1-60) |
+| LeaseSeconds | 120 | Crash recovery deadline (60-3600; HTTP timeout is 30 seconds) |
+| RetentionDays | 30 | Terminal history, event and dedup retention (1-365) |
+
+The worker removes expired terminal rows and their events hourly. Pending and Sending rows are preserved. Retention is measured from the last queue-state update, not webhook arrival. All workers should use the same settings and synchronized UTC clocks. There is no upgrade recovery for emails that existed only in the old process's memory; drain that queue before deploying.
+
+### Delivery tracking and failed emails
+
+Inject `IBrevoDeliveryService` from `Ekom.Brevo.Services`:
+
+```csharp
+var status = await deliveries.GetAsync("iceland", submission.CorrelationId, cancellationToken);
+var orderEmails = await deliveries.GetByOrderAsync("iceland", "order-1234", cancellationToken);
+var failures = await deliveries.GetFailuresAsync("iceland", take: 100, cancellationToken: cancellationToken);
+// Only a definitive Failed send can be requeued; Unknown and Accepted are refused.
+var retried = await deliveries.RetryAsync("iceland", submission.CorrelationId, cancellationToken);
+```
+
+The status includes queue state, attempts, timestamps, HTTP status, Brevo message ID, order ID and recipient events in occurrence order. API Accepted is separate from inbox Delivered. Events are per recipient, so one email can have both delivered and bounced recipients. GetByOrderAsync returns the latest 100 sends; GetFailuresAsync returns up to 100 Failed/Unknown sends. These services are for trusted application code; no public read/retry endpoint exposes customer data. Manual retry resets the attempt budget, obeys queue capacity and uses current credentials.
+
+### Transactional email webhooks
+
+Webhooks default to disabled. Configure a random bearer secret (32-256 characters, no whitespace) through secret storage:
+
+```json
+"Transactional": {
+  "Enabled": true,
+  "Webhooks": { "Enabled": true, "Token": "replace-with-a-random-secret-from-secret-storage" }
+}
+```
+
+Use `Ekom__Brevo__Transactional__Webhooks__Token` for the global secret. An optional store `Transactional:WebhookToken` overrides it. Map the route in the application's endpoint setup:
+
+```csharp
+using Ekom.Brevo.Webhooks;
+// WebApplication implements IEndpointRouteBuilder; call before app.Run().
+app.MapBrevoWebhooks();
+```
+
+Configure a Brevo **transactional** webhook for the HTTPS URL `https://your-shop.example/ekom/brevo/webhooks/iceland`. Set Brevo's webhook `auth` to `{ "type": "bearer", "token": "the-same-secret" }`. Subscribe to `sent`, `delivered`, `softBounce`, `hardBounce`, `blocked`, `spam`, `invalid`, `deferred`, `error`, and `unsubscribed` as available in Brevo. Subscription event names differ from delivered payload names (for example `hardBounce` sends `hard_bounce`). Keep the URL store alias aligned with the sending store; configure one route per store/account as needed.
+
+The endpoint accepts single objects or batches (maximum 100 events and 64 KiB), authenticates before reading the body, and commits events before returning 200. Invalid requests return 400, missing/incorrect authentication 401, oversized bodies 413, and disabled integration/webhooks 404. Storage failures return 5xx for provider retry. Unknown account messages and unsupported engagement events are acknowledged and ignored. SMS/WhatsApp and marketing webhooks are not supported.
+
+Tracking uses normalized `message-id` (angle brackets removed) and the generated `X-Mailin-custom` correlation header. Events arriving before the API response are retained. Duplicate events are identified by email correlation, provider message ID, recipient, event type and UTC `ts_event`; Brevo's `id` identifies the webhook configuration and is not treated as an event ID. Events are stored independently, so an older event arriving late does not overwrite a newer one. A webhook can supply a missing message ID for an Unknown send, but does not automatically authorize replay or change its API outcome.
+
+See Brevo's [webhook payloads](https://developers.brevo.com/docs/transactional-webhooks) and [bearer authentication](https://developers.brevo.com/docs/secured-webhooks).
+
+Contact/order queues remain in memory. SMS, WhatsApp, carts, catalog synchronization, and a backoffice delivery UI are outside phase 2.
 
 ## Validation
 
