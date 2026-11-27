@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <BrevoUmbracoVersion Condition="'$(BrevoUmbracoVersion)' == ''">17</BrevoUmbracoVersion>
+    <TargetFramework Condition="'$(BrevoUmbracoVersion)' != '19'">net10.0</TargetFramework>
+    <TargetFramework Condition="'$(BrevoUmbracoVersion)' == '19'">net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ekom.Brevo\Ekom.Brevo.csproj" Condition="'$(BrevoUmbracoVersion)' == '17'" />
+    <ProjectReference Include="..\Ekom.Brevo\U18\Ekom.Brevo.U18.csproj" Condition="'$(BrevoUmbracoVersion)' == '18'" />
+    <ProjectReference Include="..\Ekom.Brevo\U19\Ekom.Brevo.U19.csproj" Condition="'$(BrevoUmbracoVersion)' == '19'" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>Ekom.Brevo.U19</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Vettvangur</Authors>
+    <Company>Vettvangur</Company>
+    <Title>Ekom Brevo Plugin for Umbraco 19</Title>
+    <Description>Brevo integration for Ekom on Umbraco 19.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+    <PackageTags>ekom;umbraco;brevo;ecommerce;umbraco-marketplace</PackageTags>
+    <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>images/Ekom_Logo.png</PackageIcon>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DefineConstants>$(DefineConstants);UMBRACO_18;UMBRACO_19</DefineConstants>
+    <EkomPackageVersion>1.4.9</EkomPackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseProjectReferences)' == 'true'">
+    <ProjectReference Include="..\..\..\Ekom\Ekom.Umbraco\Ekom.U19\Ekom.U19.csproj"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseProjectReferences)' != 'true'">
+    <PackageReference Include="Ekom.U19" Version="$(EkomPackageVersion)"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\**\*.cs" Exclude="..\bin\**\*.cs;..\obj\**\*.cs;..\U18\**\*.cs;..\U19\**\*.cs"/>
+    <None Include="..\README.md" Pack="true" PackagePath="\"/>
+    <None Include="..\CHANGELOG.md" Pack="true" PackagePath="\"/>
+    <None Include="..\..\..\Ekom_Logo.png" Link="Ekom_Logo.png" Pack="true" PackagePath="images/"/>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,28 @@
+name: validate-ekom-brevo
+
+on:
+  pull_request:
+    paths:
+      - 'Plugins/Ekom.Brevo/**'
+      - 'Plugins/Ekom.Brevo.Tests/**'
+      - '.github/workflows/*ekom-brevo*.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        umbraco: [17, 18, 19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+      - name: Test Brevo integration
+        run: dotnet test Plugins/Ekom.Brevo.Tests/Ekom.Brevo.Tests.csproj -c Release -p:BrevoUmbracoVersion=${{ matrix.umbraco }}
