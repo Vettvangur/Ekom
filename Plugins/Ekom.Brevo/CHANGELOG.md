@@ -7,6 +7,13 @@
 - Add delivery/order lookup and explicit retry of definitive failures through IBrevoDeliveryService.
 - Keep email-only sending and Umbraco 17, 18 and 19 support.
 
+## [1.2.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Brevo-v1.1.0...Ekom.Brevo-v1.2.0) (2026-11-27)
+
+
+### Features
+
+* **brevo:** add persistent email queue and delivery webhooks ([#1281](https://github.com/Vettvangur/Ekom/issues/1281)) ([ff442c4](https://github.com/Vettvangur/Ekom/commit/ff442c41331b74cca35ada8b93cdfda96886a1d9))
+
 ## [1.1.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Brevo-v1.0.0...Ekom.Brevo-v1.1.0) (2026-11-27)
 
 
