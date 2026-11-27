@@ -38,6 +38,7 @@ internal sealed class BrevoConfiguration(IOptions<BrevoOptions> options)
 
 internal sealed class BrevoOptionsValidator : IValidateOptions<BrevoOptions>
 {
+    private static bool ValidToken(string? token) => token is { Length: >= 32 and <= 256 } && !token.Any(char.IsWhiteSpace) && !token.Any(char.IsControl);
     public ValidateOptionsResult Validate(string? name, BrevoOptions options)
     {
         if (!options.ApiBaseUrl.IsAbsoluteUri || options.ApiBaseUrl.Scheme != Uri.UriSchemeHttps
@@ -54,6 +55,15 @@ internal sealed class BrevoOptionsValidator : IValidateOptions<BrevoOptions>
                 || dispatcher.MaxMessageBytes <= 0 || dispatcher.MaxQueueBytes < dispatcher.MaxMessageBytes)
                 return ValidateOptionsResult.Fail("Brevo queue limits and retry settings are invalid.");
         }
+        var persistence = options.Transactional.Persistence;
+        if (persistence.PollIntervalSeconds is < 1 or > 60 || persistence.LeaseSeconds is < 60 or > 3600
+            || persistence.RetentionDays is < 1 or > 365)
+            return ValidateOptionsResult.Fail("Brevo persistence settings are invalid.");
+        if (options.Transactional.Webhooks.Enabled
+            && !ValidToken(options.Transactional.Webhooks.Token))
+            return ValidateOptionsResult.Fail("Enabled Brevo webhooks require a global bearer token of at least 32 characters.");
+        if (options.Stores.Any(x => x.Transactional.WebhookToken != null && !ValidToken(x.Transactional.WebhookToken)))
+            return ValidateOptionsResult.Fail("Brevo store webhook tokens must have at least 32 characters and no whitespace.");
         return ValidateOptionsResult.Success;
     }
 }

@@ -1,6 +1,8 @@
 using Ekom.Brevo.Dispatching;
 using Ekom.Brevo.Http;
+using Ekom.Brevo.Persistence;
 using Ekom.Brevo.Services;
+using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -21,6 +23,9 @@ public static class BrevoServiceCollectionExtensions
             client.Timeout = TimeSpan.FromSeconds(30);
         }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
             .RemoveAllLoggers();
+        services.TryAddSingleton<DatabaseFactory>();
+        services.TryAddSingleton<BrevoEmailStore>();
+        services.TryAddSingleton<IBrevoDeliveryService>(sp => sp.GetRequiredService<BrevoEmailStore>());
         services.TryAddSingleton<BrevoConfiguration>();
         services.TryAddSingleton<BrevoHttpClient>();
         services.TryAddSingleton<BrevoMarketingDispatcher>();

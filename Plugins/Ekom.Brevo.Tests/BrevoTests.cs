@@ -21,9 +21,11 @@ public sealed class BrevoTests
         StoreAlias = "shop", To = [new("customer@example.com")], Subject = "Order", TextContent = "Thank you",
     };
 
-    internal static IHost CreateHost(RecordingHandler handler, Action<BrevoOptions>? configure = null)
+    internal static IHost CreateHost(RecordingHandler handler, Action<BrevoOptions>? configure = null, string? databasePath = null)
         => Host.CreateDefaultBuilder().ConfigureLogging(x => x.ClearProviders()).ConfigureServices(services =>
         {
+            services.AddSingleton(_ => new BrevoTestDatabase(databasePath));
+            services.AddSingleton(sp => sp.GetRequiredService<BrevoTestDatabase>().Factory);
             services.AddBrevo(options =>
             {
                 options.Enabled = true;
@@ -32,6 +34,7 @@ public sealed class BrevoTests
                 options.Subscriptions.DoubleOptInTemplateId = 42;
                 options.Subscriptions.DoubleOptInRedirectUrl = new Uri("https://shop.example.com/confirmed");
                 options.Transactional.Enabled = true;
+                options.Transactional.Persistence.PollIntervalSeconds = 1;
                 options.Transactional.DefaultFromEmail = "sender@example.com";
                 options.Dispatching.InitialRetryDelaySeconds = 1;
                 options.Transactional.Dispatching.InitialRetryDelaySeconds = 1;
@@ -271,8 +274,8 @@ public sealed class BrevoTests
         using var handler = new RecordingHandler();
         using var host = CreateHost(handler, o =>
         {
-            o.Transactional.Dispatching.MaxMessageBytes = 300;
-            o.Transactional.Dispatching.MaxQueueBytes = 300;
+            o.Transactional.Dispatching.MaxMessageBytes = 400;
+            o.Transactional.Dispatching.MaxQueueBytes = 400;
         });
         var emails = host.Services.GetRequiredService<IBrevoTransactionalService>();
         await Assert.ThrowsAsync<ArgumentException>(async () => await emails.SendAsync(Email with { TextContent = new string('x', 400) }));
@@ -291,6 +294,8 @@ public sealed class BrevoTests
         // A separate host lets this test control the in-flight request precisely.
         using var controlled = Host.CreateDefaultBuilder().ConfigureLogging(x => x.ClearProviders()).ConfigureServices(services =>
         {
+            services.AddSingleton(_ => new BrevoTestDatabase());
+            services.AddSingleton(sp => sp.GetRequiredService<BrevoTestDatabase>().Factory);
             services.AddBrevo(o => { o.Enabled = true; o.ApiKey = "key"; o.Transactional.Enabled = true; o.Transactional.DefaultFromEmail = "sender@example.com"; });
             services.AddHttpClient("Ekom.Brevo").ConfigurePrimaryHttpMessageHandler(() => handler);
         }).Build();

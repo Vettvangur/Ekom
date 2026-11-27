@@ -41,6 +41,8 @@ public sealed class BrevoOrderOptions
 
 public sealed class BrevoTransactionalOptions
 {
+    public BrevoPersistenceOptions Persistence { get; set; } = new();
+    public BrevoWebhookOptions Webhooks { get; set; } = new();
     public bool Enabled { get; set; }
     public string? ApiKey { get; set; }
     public string? DefaultFromEmail { get; set; }
@@ -51,6 +53,7 @@ public sealed class BrevoTransactionalOptions
 
 public sealed class BrevoTransactionalStoreOptions
 {
+    public string? WebhookToken { get; set; }
     public bool? Enabled { get; set; }
     public string? ApiKey { get; set; }
     public string? DefaultFromEmail { get; set; }
@@ -66,4 +69,17 @@ public sealed class BrevoDispatcherOptions
     public int MaxRetryDelaySeconds { get; set; } = 120;
     public int MaxMessageBytes { get; set; } = 9 * 1024 * 1024;
     public long MaxQueueBytes { get; set; } = 64 * 1024 * 1024;
+}
+
+public sealed class BrevoPersistenceOptions
+{
+    public int PollIntervalSeconds { get; set; } = 2;
+    public int LeaseSeconds { get; set; } = 120;
+    public int RetentionDays { get; set; } = 30;
+}
+
+public sealed class BrevoWebhookOptions
+{
+    public bool Enabled { get; set; }
+    public string? Token { get; set; }
 }
