@@ -26,6 +26,15 @@
         "Ekom.Algolia.U18",
         "Ekom.Algolia.U19"
       ]
+    },
+    {
+      "type": "linked-versions",
+      "groupName": "Ekom.Brevo",
+      "components": [
+        "Ekom.Brevo",
+        "Ekom.Brevo.U18",
+        "Ekom.Brevo.U19"
+      ]
     }
   ],
   "packages": {
@@ -189,6 +198,51 @@
           "xpath": "/Project/PropertyGroup/PackageVersion"
         }
       ]
+    },
+    "Plugins/Ekom.Brevo": {
+      "component": "Ekom.Brevo",
+      "package-name": "Ekom.Brevo",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "initial-version": "1.0.0",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Ekom.Brevo.csproj",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ],
+      "changelog-path": "CHANGELOG.md"
+    },
+    "Plugins/Ekom.Brevo/U18": {
+      "component": "Ekom.Brevo.U18",
+      "package-name": "Ekom.Brevo.U18",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "initial-version": "1.0.0",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Ekom.Brevo.U18.csproj",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ],
+      "skip-changelog": true
+    },
+    "Plugins/Ekom.Brevo/U19": {
+      "component": "Ekom.Brevo.U19",
+      "package-name": "Ekom.Brevo.U19",
+      "include-component-in-tag": true,
+      "release-type": "simple",
+      "initial-version": "1.0.0",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "Ekom.Brevo.U19.csproj",
+          "xpath": "/Project/PropertyGroup/Version"
+        }
+      ],
+      "skip-changelog": true
     }
   },
   "pull-request-title-pattern": "chore${scope}: release ${component} ${version}",

@@ -4,7 +4,7 @@ This file orients coding agents working in this repository.
 
 ## Scope
 - Repo root: `D:\Ekom\Ekom`
-- Plugins: `Plugins/Ekom.Algolia`, `Plugins/Ekom.Klaviyo`, and `Plugins/Ekom.Mailchimp`
+- Plugins: `Plugins/Ekom.Algolia`, `Plugins/Ekom.Klaviyo`, `Plugins/Ekom.Mailchimp`, and `Plugins/Ekom.Brevo`
 - Tests live in: `Ekom/Tests/Ekom.Tests`
 - Solutions: `Ekom Build.sln`, `Ekom Site.sln`
 
@@ -14,6 +14,7 @@ This file orients coding agents working in this repository.
 - Build site solution: `dotnet build "Ekom Site.sln"`
 - Build plugin only: `dotnet build "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj"`
 - Pack plugin: `dotnet pack "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj"`
+- Brevo tests (Umbraco 17/18/19): `dotnet test "Plugins/Ekom.Brevo.Tests/Ekom.Brevo.Tests.csproj" -p:BrevoUmbracoVersion=17` (repeat with `18` and `19`). Brevo supports Umbraco 17+ only.
 - Tests (all): `dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj"`
 - Tests via site solution: `dotnet test "Ekom Site.sln"`
 - Single test by name: `dotnet test "Ekom/Tests/Ekom.Tests/Ekom.Tests.csproj" --filter "FullyQualifiedName~PriceTests"`
