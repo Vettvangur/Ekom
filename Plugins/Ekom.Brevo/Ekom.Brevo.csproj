@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>Ekom.Brevo</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Vettvangur</Authors>
+    <Company>Vettvangur</Company>
+    <Title>Ekom Brevo Plugin</Title>
+    <Description>Brevo contacts, orders, and transactional email integration for Ekom on Umbraco 17.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+    <PackageTags>ekom;umbraco;brevo;ecommerce;umbraco-marketplace</PackageTags>
+    <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>images/Ekom_Logo.png</PackageIcon>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <EkomPackageVersion>1.4.9</EkomPackageVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <DefineConstants>$(DefineConstants);UMBRACO_17</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseProjectReferences)' == 'true' and '$(TargetFramework)' == 'net10.0'">
+    <ProjectReference Include="..\..\Ekom\Ekom.Umbraco\Ekom.U17\Ekom.U17.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseProjectReferences)' != 'true' and '$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Ekom.U17" Version="$(EkomPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="U18\**\*.cs;U19\**\*.cs;Umbraco\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <Compile Include="Umbraco\Shared\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\Ekom_Logo.png" Link="Ekom_Logo.png" Pack="true" PackagePath="images/" />
+  </ItemGroup>
+
+</Project>
