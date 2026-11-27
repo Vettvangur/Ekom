@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0 (2026-11-27)
+
+
+### Features
+
+* **brevo:** add integration and automated NuGet releases ([#1278](https://github.com/Vettvangur/Ekom/issues/1278)) ([58bd95f](https://github.com/Vettvangur/Ekom/commit/58bd95f143a8079fe6e241a88200ec118f84cda4))
+
 ## 1.0.0
 
 - Add Brevo integration for Umbraco 17, 18, and 19.
