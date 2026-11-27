@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/Vettvangur/Ekom/compare/Ekom.Brevo-v1.0.0...Ekom.Brevo-v1.1.0) (2026-11-27)
+
+
+### Miscellaneous Chores
+
+* **Ekom.Brevo:** Synchronize Ekom.Brevo versions
+
 ## 1.0.0 (2026-11-27)
 
 
